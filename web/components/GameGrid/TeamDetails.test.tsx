@@ -5,6 +5,7 @@ import { EXTENDED_DAY_ABBREVIATION, GameData, Team, WeekData } from "lib/NHL/typ
 import TeamDetails, { TeamDetailsProps } from "./TeamDetails";
 import TeamRow from "./TeamRow";
 import TransposedGrid from "./TransposedGrid";
+import { TEAM_FORECAST_CATEGORIES, TEAM_FORECAST_CREDITS, TeamForecastContext, TeamForecastRecord } from "./utils/teamForecasts";
 
 const teams: Record<number, Team> = {
   12: { id: 12, name: "Carolina Hurricanes", abbreviation: "CAR", logo: "/car.svg" },
@@ -31,6 +32,28 @@ const defaults: TeamDetailsProps = {
   coveredDates: dates, scheduleCoverage: { known: 7, expected: 7 },
 };
 
+const forecastContext: TeamForecastContext = {
+  seasonId: 20262027, scheduleRevision: "schedule-r1", rosterRevision: "roster-r1", rosterScope: "skaters",
+  games: [{ gameId: 1, startsAt: "2026-10-08T23:00:00Z", state: "scheduled" },
+    { gameId: 2, startsAt: "2026-10-11T23:00:00Z", state: "scheduled" }],
+};
+function forecast(overrides: Partial<TeamForecastRecord> = {}): TeamForecastRecord {
+  return { teamId: 12, gameId: 1, seasonId: 20262027, category: "G", mean: 2.4,
+    unit: "count", scope: "full_game_regulation_overtime", conditioning: "unconditional",
+    creditDefinition: TEAM_FORECAST_CREDITS.G, rosterScope: "skaters", rosterRevision: "roster-r1",
+    scheduleRevision: "schedule-r1", startsAt: forecastContext.games[0].startsAt, status: "qualified",
+    allowedUses: { totals: true, comparison: false }, revisionId: "fixture-output-r1", modelVersion: "fixture-model-v1",
+    comparisonLineageId: "fixture-run-r1", sourceWatermark: "fixture-input-r1", sourceAvailableAt: "2026-10-07T13:00:00Z",
+    cutoffAt: "2026-10-07T14:00:00Z", issuedAt: "2026-10-07T14:30:00Z", availableAt: "2026-10-07T14:31:00Z",
+    expiresAt: "2026-10-07T22:00:00Z", ...overrides };
+}
+const forecastSchedule = {
+  THU: game(1, dates[3], "FUT", { startTimeUTC: forecastContext.games[0].startsAt }),
+  SUN: game(2, dates[6], "PRE", { startTimeUTC: forecastContext.games[1].startsAt }),
+};
+const weekly = () => within(screen.getByLabelText("Remaining-week category forecasts"));
+const categoryCard = (label: string) => within(screen.getByLabelText(label)).getByText("G", { exact: true }).closest("div")!;
+
 describe("Game Grid team previews", () => {
   it("distinguishes a covered bye from unavailable schedule data", () => {
     const { rerender } = render(<TeamDetails {...defaults} />);
@@ -38,7 +61,7 @@ describe("Game Grid team previews", () => {
     expect(screen.getAllByText("No remaining games")).toHaveLength(7);
     rerender(<TeamDetails {...defaults} scheduleCoverage={undefined} coveredDates={undefined} />);
     expect(screen.getByText("Schedule unavailable for this selection. Retry the schedule read.")).toBeTruthy();
-    expect(screen.getAllByText("Unavailable")).toHaveLength(7);
+    expect(weekly().getAllByText("Unavailable")).toHaveLength(7);
     expect(screen.queryByText("No remaining games")).toBeNull();
   });
 
@@ -52,8 +75,8 @@ describe("Game Grid team previews", () => {
     render(<TeamDetails {...defaults} schedule={schedule} extended excludedDays={["FRI"]}
       leagueSlateCounts={[1, 0, 6, null, 8, 0, 2, 4, 4, 0]} />);
     expect(screen.getByText(/1 confirmed upcoming regular-season game in the included dates/)).toBeTruthy();
-    expect(screen.getAllByText("Unavailable")).toHaveLength(7);
-    expect(screen.getAllByText("Coverage: 0 of 1 games")).toHaveLength(7);
+    expect(weekly().getAllByText("Unavailable")).toHaveLength(7);
+    expect(weekly().getAllByText("Coverage: 0 of 1 games")).toHaveLength(7);
     const previews = within(screen.getByRole("list")).getAllByRole("listitem");
     expect(previews).toHaveLength(6);
     expect(previews.map((preview) => preview.textContent?.match(/(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), Oct \d+, 2026/)?.[0])).toEqual([
@@ -93,7 +116,7 @@ describe("Game Grid team previews", () => {
     expect(screen.getByText(new RegExp(`${expectedGames} confirmed upcoming regular-season game`))).toBeTruthy();
     expect(screen.queryByText(/Remaining eligibility is unavailable/) !== null).toBe(uncertain);
     if (expectedGames > 0 || uncertain) {
-      expect(screen.getAllByText("Unavailable")).toHaveLength(7);
+      expect(weekly().getAllByText("Unavailable")).toHaveLength(7);
       expect(screen.queryByText("No remaining games")).toBeNull();
     } else {
       expect(screen.getAllByText("No remaining games")).toHaveLength(7);
@@ -105,24 +128,95 @@ describe("Game Grid team previews", () => {
     render(<TeamDetails {...defaults} schedule={{ THU: game(1, dates[3], "PRE") }} />);
     expect(screen.getByText(/0 confirmed upcoming regular-season games/)).toBeTruthy();
     expect(screen.getByText(/Remaining eligibility is unavailable/)).toBeTruthy();
-    expect(screen.getAllByText("Unavailable")).toHaveLength(7);
+    expect(weekly().getAllByText("Unavailable")).toHaveLength(7);
     expect(screen.queryByText("No remaining games")).toBeNull();
   });
 
-  it("labels a known partial subtotal and retains a genuine forecast zero", () => {
-    const summaries: TeamDetailsProps["summaries"] = {
-      G: { status: "partial", mean: 2.4, knownGames: 1, expectedGames: 2, limitations: ["One game has no admitted source."] },
-      A: { status: "available", mean: 0, knownGames: 2, expectedGames: 2, limitations: [] },
-    };
-    const schedule = { THU: game(1, dates[3]), SUN: game(2, dates[6]) };
-    const { rerender } = render(<TeamDetails {...defaults} schedule={schedule} summaries={summaries} />);
-    expect(screen.getByText("2.4")).toBeTruthy();
-    expect(screen.getByText("Known subtotal, 1 of 2 games")).toBeTruthy();
-    expect(screen.getByText("0.0")).toBeTruthy();
-    expect(screen.getAllByText("Unavailable")).toHaveLength(5);
-    rerender(<TeamDetails {...defaults} schedule={schedule} summaries={summaries} scheduleCoverage={{ known: 6, expected: 7 }} />);
-    expect(screen.getByText("Known subtotal, 2 of 2 games")).toBeTruthy();
+  it("derives partial totals and true zero from the displayed game records", () => {
+    const forecastRecords = [forecast(), ...forecastContext.games.map((item) => forecast({
+      gameId: item.gameId, startsAt: item.startsAt, category: "A", mean: 0, creditDefinition: TEAM_FORECAST_CREDITS.A,
+    }))];
+    const props = { ...defaults, schedule: forecastSchedule, forecastRecords, forecastContext };
+    const { rerender } = render(<TeamDetails {...props} />);
+    expect(weekly().getByText("2.4")).toBeTruthy();
+    expect(weekly().getByText("Known subtotal, 1 of 2 games")).toBeTruthy();
+    expect(weekly().getByText("0.0")).toBeTruthy();
+    expect(weekly().getAllByText("Unavailable")).toHaveLength(5);
+    expect(within(screen.getByLabelText("Game 1 category forecasts")).getByText("2.4")).toBeTruthy();
+    expect(categoryCard("Game 2 category forecasts").textContent).toContain("Unavailable");
+    expect(screen.getAllByText(/Model: fixture-model-v1. Cutoff: 2026-10-07T14:00:00Z/)).toHaveLength(3);
+    rerender(<TeamDetails {...props} scheduleCoverage={{ known: 6, expected: 7 }} />);
+    expect(weekly().getByText("Known subtotal, 2 of 2 games")).toBeTruthy();
     expect(screen.getByText(/Incomplete schedule coverage may omit games/)).toBeTruthy();
+  });
+
+  it("reconciles every complete category total to rounded per-game means", () => {
+    const records = TEAM_FORECAST_CATEGORIES.flatMap((category) => forecastContext.games.map((item) => forecast({
+      gameId: item.gameId, startsAt: item.startsAt, category, mean: 1.24,
+      unit: category === "PIM" ? "minutes" : "count", creditDefinition: TEAM_FORECAST_CREDITS[category],
+    })));
+    render(<TeamDetails {...defaults} schedule={forecastSchedule} forecastRecords={records} forecastContext={forecastContext} />);
+    expect(weekly().getAllByText("2.4")).toHaveLength(7);
+    expect(within(screen.getByLabelText("Game 1 category forecasts")).getAllByText("1.2")).toHaveLength(7);
+    expect(within(screen.getByLabelText("Game 2 category forecasts")).getAllByText("1.2")).toHaveLength(7);
+    expect(weekly().getAllByText("Coverage: 2 of 2 games")).toHaveLength(7);
+    expect(screen.queryByText(/Category forecasts and forecast source freshness unavailable for this game/)).toBeNull();
+  });
+
+  it.each([
+    ["stale", { expiresAt: defaults.asOf }], ["conditional", { conditioning: "conditional_playing" }],
+    ["goals used as PPP", { category: "PPP", creditDefinition: "team_power_play_goals" }],
+    ["another season", { seasonId: 20252026 }], ["another team", { teamId: 13 }],
+    ["another game", { gameId: 3 }], ["another schedule", { scheduleRevision: "other" }],
+  ] as Array<[string, Partial<TeamForecastRecord>]>)("keeps %s records unavailable in totals and game cards", (_, overrides) => {
+    render(<TeamDetails {...defaults} schedule={forecastSchedule} forecastContext={forecastContext} forecastRecords={[forecast(overrides)]} />);
+    expect(weekly().getAllByText("Unavailable")).toHaveLength(7);
+    expect(within(screen.getByLabelText("Game 1 category forecasts")).getAllByText("Unavailable")).toHaveLength(7);
+    expect(screen.queryByText(/Model: fixture-model/)).toBeNull();
+  });
+
+  it("excludes next-week and excluded game means from totals while keeping full-game previews", () => {
+    const nextStart = "2026-10-12T23:00:00Z";
+    const context = { ...forecastContext, games: [...forecastContext.games, { gameId: 3, startsAt: nextStart, state: "scheduled" as const }] };
+    render(<TeamDetails {...defaults} extended excludedDays={["THU"]} forecastContext={context}
+      schedule={{ ...forecastSchedule, nMON: game(3, "2026-10-12", "FUT", { startTimeUTC: nextStart }) }}
+      coveredDates={[...dates, "2026-10-12"]}
+      forecastRecords={context.games.map((item) => forecast({ gameId: item.gameId, startsAt: item.startsAt, mean: item.gameId }))} />);
+    expect(weekly().getByText("2.0")).toBeTruthy();
+    expect(within(screen.getByLabelText("Game 1 category forecasts")).getByText("1.0")).toBeTruthy();
+    expect(within(screen.getByLabelText("Game 3 category forecasts")).getByText("3.0")).toBeTruthy();
+  });
+
+  it("withdraws forecasts at start and on same-week schedule refresh", () => {
+    const props = { ...defaults, schedule: forecastSchedule, forecastContext, forecastRecords: [forecast()] };
+    const { rerender } = render(<TeamDetails {...props} />);
+    expect(weekly().getByText("2.4")).toBeTruthy();
+    rerender(<TeamDetails {...props} schedule={{ ...forecastSchedule, THU: { ...forecastSchedule.THU, gameState: "LIVE" } }} />);
+    expect(weekly().queryByText("2.4")).toBeNull();
+    expect(within(screen.getByLabelText("Game 1 category forecasts")).queryByText("2.4")).toBeNull();
+    rerender(<TeamDetails {...props} asOf={forecastContext.games[0].startsAt} />);
+    expect(weekly().queryByText("2.4")).toBeNull();
+  });
+
+  it("does not trust a forecast context that differs from the displayed start", () => {
+    render(<TeamDetails {...defaults} schedule={{ ...forecastSchedule, THU: { ...forecastSchedule.THU, startTimeUTC: "2026-10-08T22:00:00Z" } as PreviewFixture }}
+      forecastContext={forecastContext} forecastRecords={[forecast()]} />);
+    expect(weekly().getAllByText("Unavailable")).toHaveLength(7);
+  });
+
+  it.each(["MON", "THU"] as const)("keeps an inferred %s game date unknown rather than claiming an empty week", (day) => {
+    render(<TeamDetails {...defaults} schedule={{ [day]: { ...forecastSchedule.THU, gameDate: undefined } }} forecastContext={forecastContext} forecastRecords={[forecast()]} />);
+    expect(weekly().getAllByText("Unavailable")).toHaveLength(7);
+    expect(weekly().queryByText("No remaining games")).toBeNull();
+  });
+
+  it("keeps out-of-horizon records unavailable even if supplied in a selected column", () => {
+    const startsAt = "2026-10-12T23:00:00Z";
+    const outside = { ...forecastSchedule.THU, gameDate: "2026-10-12", startTimeUTC: startsAt };
+    render(<TeamDetails {...defaults} schedule={{ THU: outside }} coveredDates={[...dates, "2026-10-12"]}
+      forecastRecords={[forecast({ startsAt })]} forecastContext={{ ...forecastContext, games: [{ ...forecastContext.games[0], startsAt }] }} />);
+    expect(within(screen.getByLabelText("Game 1 category forecasts")).getAllByText("Unavailable")).toHaveLength(7);
+    expect(screen.queryByText(/Model: fixture-model/)).toBeNull();
   });
 
   it("labels historical selections without live remaining predictions", () => {
