@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { orMock, rangeMock, rows } = vi.hoisted(() => {
+const { orMock, rangeMock, rawRangeMock, rows } = vi.hoisted(() => {
   const gameId = 2025020001;
   const generatedRows = Array.from({ length: 1001 }, (_, index) => {
     const home = index % 2 === 0;
@@ -23,6 +23,11 @@ const { orMock, rangeMock, rows } = vi.hoisted(() => {
   });
   return {
     rows: generatedRows,
+    rawRangeMock: vi.fn(async (from: number, to: number, gameIds: number[]) => ({
+      data: generatedRows.filter(row => gameIds.includes(row.game_id)).map(row => ({
+        shift_id: row.id, game_id: row.game_id, player_id: row.player_id, team_id: row.team_id,
+      })).slice(from, to + 1), error: null as Error | null,
+    })),
     orMock: vi.fn(),
     rangeMock: vi.fn(async (from: number, to: number) => ({
       data: generatedRows.slice(from, to + 1),
@@ -33,17 +38,18 @@ const { orMock, rangeMock, rows } = vi.hoisted(() => {
 
 vi.mock("lib/supabase/server", () => ({
   default: {
-    from: vi.fn(() => {
+    from: vi.fn((table: string) => {
+      let gameIds: number[] = [];
       const query: any = {
         select: vi.fn(() => query),
-        in: vi.fn(() => query),
+        in: vi.fn((_column: string, ids: number[]) => { gameIds = ids; return query; }),
         eq: vi.fn(() => query),
         or: vi.fn((filter: string) => {
           orMock(filter);
           return query;
         }),
         order: vi.fn(() => query),
-        range: rangeMock,
+        range: table === "nhl_api_shift_rows" ? (from: number, to: number) => rawRangeMock(from, to, gameIds) : rangeMock,
       };
       return query;
     }),
@@ -53,6 +59,8 @@ vi.mock("lib/supabase/server", () => ({
 import {
   buildNhlApiShiftPlayerManifest,
   classifyStoredShiftChartStrengthGames,
+  classifyStoredShiftChartStrengthGamesAgainstRawSource,
+  fetchNhlApiShiftPlayerManifest,
 } from "./shiftChartCompletenessServer";
 
 describe("stored shift strength pagination", () => {
@@ -118,5 +126,78 @@ describe("stored shift strength pagination", () => {
         ],
       ),
     ).toThrow("Contradictory NHL API shift player team");
+  });
+});
+
+
+const completeRows = rows.slice(0, 10);
+const completeRawRows = completeRows.map(row => ({ shift_id: row.id, game_id: row.game_id, player_id: row.player_id, team_id: row.team_id }));
+beforeEach(() => { vi.clearAllMocks(); });
+
+describe("raw-manifest preflight classification", () => {
+  it("reports an empty raw source as partial without inventing a zero-player roster", async () => {
+    const gameId = 2026010048;
+    const classifications = await classifyStoredShiftChartStrengthGamesAgainstRawSource([gameId]);
+    expect(classifications.get(gameId)).toMatchObject({ status: "partial", rowCount: 0,
+      expectedPlayerCount: null, reasons: ["missing:rows", "missing:raw_shift_player_manifest"] });
+    await expect(fetchNhlApiShiftPlayerManifest([gameId])).rejects.toThrow("Incomplete NHL API shift player manifest");
+  });
+
+  it("never admits complete-looking strength rows without a verified raw manifest", async () => {
+    rawRangeMock.mockResolvedValueOnce({ data: [], error: null });
+    rangeMock.mockResolvedValueOnce({ data: completeRows, error: null });
+    const classifications = await classifyStoredShiftChartStrengthGamesAgainstRawSource([rows[0].game_id]);
+    expect(classifications.get(rows[0].game_id)).toMatchObject({ status: "partial", rowCount: 10,
+      expectedPlayerCount: null, reasons: ["missing:raw_shift_player_manifest"] });
+  });
+
+  it("keeps independently complete games usable while another game has no raw coverage", async () => {
+    const gameId = rows[0].game_id;
+    rawRangeMock.mockResolvedValueOnce({ data: completeRawRows, error: null });
+    rangeMock.mockResolvedValueOnce({ data: completeRows, error: null });
+    const classifications = await classifyStoredShiftChartStrengthGamesAgainstRawSource([gameId, 2026010048]);
+    expect(classifications.get(gameId)).toMatchObject({ status: "complete", expectedPlayerCount: 10, rowCount: 10 });
+    expect(classifications.get(2026010048)).toMatchObject({ status: "partial", expectedPlayerCount: null });
+  });
+
+  it("preserves contradictory identity and database errors rather than reclassifying them as missing", async () => {
+    rawRangeMock.mockResolvedValueOnce({ data: [...completeRawRows, { ...completeRawRows[0], shift_id: 9999, team_id: 2 }], error: null });
+    await expect(classifyStoredShiftChartStrengthGamesAgainstRawSource([rows[0].game_id])).rejects.toThrow("Contradictory NHL API shift player team");
+    rawRangeMock.mockResolvedValueOnce({ data: [], error: new Error("database unavailable") });
+    await expect(classifyStoredShiftChartStrengthGamesAgainstRawSource([rows[0].game_id])).rejects.toThrow("database unavailable");
+  });
+
+  it.each([
+    { name: "three teams", data: [...completeRawRows, { shift_id: 9999, game_id: rows[0].game_id, player_id: 9999, team_id: 3 }], error: "Invalid NHL API shift team cardinality" },
+    { name: "thin three-team evidence", data: [...completeRawRows.slice(0, 2), { shift_id: 9999, game_id: rows[0].game_id, player_id: 9999, team_id: 3 }], error: "Invalid NHL API shift team cardinality" },
+    { name: "four teams", data: [1, 2, 3, 4].map(team_id => ({ shift_id: team_id, game_id: rows[0].game_id, player_id: team_id, team_id })), error: "Invalid NHL API shift team cardinality" },
+    { name: "malformed extra team identity", data: [...completeRawRows, { shift_id: 9999, game_id: rows[0].game_id, player_id: 9999, team_id: 0 }], error: "Invalid NHL API shift manifest row" },
+  ])("rejects $name as corruption before reading strength rows", async ({ data, error }) => {
+    const gameId = rows[0].game_id;
+    rawRangeMock.mockResolvedValueOnce({ data, error: null });
+    await expect(classifyStoredShiftChartStrengthGamesAgainstRawSource([gameId])).rejects.toThrow(error);
+    expect(rangeMock).not.toHaveBeenCalled();
+    expect(() => buildNhlApiShiftPlayerManifest([gameId], data)).toThrow(error);
+  });
+
+  it.each([
+    { name: "one team", data: completeRawRows.filter(row => row.team_id === 1) },
+    { name: "thin two-team evidence", data: completeRawRows.slice(0, 4) },
+  ])("retains $name as partial with unknown expected coverage", async ({ data }) => {
+    const gameId = rows[0].game_id;
+    rawRangeMock.mockResolvedValueOnce({ data, error: null });
+    rangeMock.mockResolvedValueOnce({ data: completeRows, error: null });
+    const classifications = await classifyStoredShiftChartStrengthGamesAgainstRawSource([gameId]);
+    expect(classifications.get(gameId)).toMatchObject({ status: "partial", rowCount: 10,
+      expectedPlayerCount: null, reasons: ["missing:raw_shift_player_manifest"] });
+    expect(() => buildNhlApiShiftPlayerManifest([gameId], data)).toThrow("Incomplete NHL API shift player manifest");
+  });
+
+  it("keeps invalid persisted strength rows invalid when the raw manifest is missing", async () => {
+    rawRangeMock.mockResolvedValueOnce({ data: [], error: null });
+    rangeMock.mockResolvedValueOnce({ data: [{ ...completeRows[0], total_es_toi: "bad-clock" }], error: null });
+    const classifications = await classifyStoredShiftChartStrengthGamesAgainstRawSource([rows[0].game_id]);
+    expect(classifications.get(rows[0].game_id)).toMatchObject({ status: "invalid", expectedPlayerCount: null });
+    expect(classifications.get(rows[0].game_id)?.reasons).toContain("missing:raw_shift_player_manifest");
   });
 });

@@ -10,6 +10,7 @@ import Link from "next/link";
 import Header from "./Header";
 import TeamRow from "./TeamRow";
 import TeamDetails from "./TeamDetails";
+import useTeamForecasts from "./utils/useTeamForecasts";
 import TotalGamesPerDayRow from "./TotalGamesPerDayRow";
 import FourWeekGrid from "./utils/FourWeekGrid";
 import PlayerPickupTable from "components/PlayerPickupTable/PlayerPickupTable";
@@ -160,6 +161,8 @@ function GameGridInternal({
   const scheduleDays = mode === "10-Day-Forecast" ? EXTENDED_DAYS : DAYS;
   const selectedScheduleReady = !currentLoading && !selectedCalendar.error &&
     selectedCalendar.coverage.known === selectedCalendar.coverage.expected;
+  const teamForecasts = useTeamForecasts(currentSchedule, selectedScheduleReady,
+    JSON.stringify(selectedCalendar.retrievedAtByDate ?? {}));
   const [expandedTeamIds, setExpandedTeamIds] = useState<ReadonlySet<number>>(new Set());
   const selectedWeekStart = dates[0];
   useEffect(() => { setExpandedTeamIds(new Set()); }, [selectedWeekStart]);
@@ -286,6 +289,15 @@ function GameGridInternal({
       extended={mode === "10-Day-Forecast"}
       leagueSlateCounts={regularNumGamesPerDay}
       coveredDates={selectedCalendar.coveredDates}
+      scheduleRetrievedAtByDate={selectedCalendar.retrievedAtByDate}
+      asOf={teamForecasts.checkedAt}
+      forecastRecords={teamForecasts.records}
+      forecastContext={teamForecasts.contexts[teamId]}
+      forecastReadStatus={teamForecasts.status === "loading" ? "Reading team forecasts…"
+        : teamForecasts.status === "error" ? "Team forecast reader unavailable. Schedule details remain available."
+        : `Team forecast reader inspected ${teamForecasts.inspected} records; ${teamForecasts.rejected} lack the required category admission contract.${teamForecasts.contexts[teamId] ? "" : " Schedule and roster admission context unavailable."}`}
+      forecastReadPending={teamForecasts.status === "loading"}
+      onRetryForecasts={teamForecasts.retry}
       scheduleCoverage={{ known: selectedCalendar.coveredDates.filter((date) =>
         date >= format(new Date(dates[0]), "yyyy-MM-dd") && date <= format(new Date(dates[1]), "yyyy-MM-dd")).length, expected: 7 }}
     />

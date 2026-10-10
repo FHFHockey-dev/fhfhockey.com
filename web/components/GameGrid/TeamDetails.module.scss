@@ -14,21 +14,22 @@
   line-height: 1.45;
   overflow-wrap: anywhere;
 
-  h3, h4, h5, p { margin: 0; }
-  h3 { font-size: 18px; }
-  h4 { margin-top: 16px; font-size: 15px; }
-  h5 { font-size: 15px; }
+  h2, h3, h4, p { margin: 0; }
+  h2 { font-size: 18px; }
+  h3 { margin-top: 16px; font-size: 15px; }
+  h4 { font-size: 15px; }
   p + p { margin-top: 4px; }
 }
 
 .horizon { margin-top: 6px !important; }
 .metadata, .coverage, .limitations { color: v.$text-secondary; font-size: 12px; }
-.categories {
+.categories, .gameCategories {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 8px;
   margin: 10px 0 0;
 }
+.gameCategories { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
 .category {
   padding: 10px;
   border: 1px solid v.$border-secondary;
@@ -100,5 +101,5 @@
   .details { padding: 12px; border-radius: 12px; }
   .detailRow > td.detailCell { padding: 6px; }
   .detailRow > td.detailCell > div { width: min(100%, calc(100vw - 48px)); }
-  .categories { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .categories, .gameCategories { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

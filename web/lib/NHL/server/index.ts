@@ -440,6 +440,8 @@ type GameWeek = {
     season: number;
     gameScheduleState?: string;
     gameState?: string;
+    startTimeUTC?: string;
+    venue?: string | { default?: string };
     awayTeam: {
       id: number;
       abbrev: string;
@@ -472,6 +474,7 @@ export async function getSchedule(
     data: TEAM_DAY_DATA,
     numGamesPerDay,
     coveredDates: gameWeek.map((day) => day.date),
+    retrievedAt: new Date().toISOString(),
   };
 
   // Get number of games per day
@@ -534,6 +537,8 @@ export async function getSchedule(
         gameDate: day.date,
         gameScheduleState: game.gameScheduleState,
         gameState: game.gameState,
+        startTimeUTC: game.startTimeUTC,
+        venue: game.venue,
         gameType: derivedGameType,
         homeTeam: {
           id: homeTeam.id,

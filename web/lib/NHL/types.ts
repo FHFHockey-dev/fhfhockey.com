@@ -283,6 +283,8 @@ export type GameData = {
   gameDate?: string;
   gameScheduleState?: string;
   gameState?: string;
+  startTimeUTC?: string;
+  venue?: string | { default?: string };
   /** NHL game type: 1=Preseason, 2=Regular, 3=Playoffs */
   gameType?: number;
   homeTeam: TeamGameData;
@@ -297,6 +299,8 @@ export type ScheduleData = {
   data: Record<number, WeekData>;
   numGamesPerDay: number[];
   coveredDates?: string[];
+  /** Time this reader received the schedule; never provider source freshness. */
+  retrievedAt?: string;
 };
 
 export interface ExtendedWeekData extends WeekData {
