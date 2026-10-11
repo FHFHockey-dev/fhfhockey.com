@@ -4,7 +4,7 @@ const dbState = vi.hoisted(() => ({ rows: [] as Record<string, unknown>[], calls
   rollingFrom: null as null | ((table: string) => unknown) }));
 vi.mock("lib/supabase/server", () => ({ default: {
   from(table: string) {
-    if (table === "rolling_player_game_metrics" && dbState.rollingFrom) return dbState.rollingFrom(table);
+    if (["rolling_player_game_metrics", "rolling_player_metric_support_payloads"].includes(table) && dbState.rollingFrom) return dbState.rollingFrom(table);
     dbState.calls.push(["from", [table]]);
     const query: Record<string, unknown> = { then(resolve: (value: unknown) => void) {
       resolve({ data: dbState.rows, error: null });
@@ -155,10 +155,17 @@ describe("counted rolling skater history", () => {
     sog_per_60_avg_all: 7.5, goals_total_all: 0, toi_seconds_avg_all: 900,
   }));
   type Reply = { data?: unknown; count?: unknown; error?: unknown; thrown?: Error };
-  function fixture(source = rows(501), replies: Reply[] = []) {
+  function fixture(source: Record<string, any>[] = rows(501), replies: Reply[] = [], supportRows: any[] = [], supportReplies: Reply[] = []) {
     const reads: number[][] = [];
     const queries: Array<Record<string, any>> = [];
     const from = vi.fn((table: string) => {
+      if (table === "rolling_player_metric_support_payloads") {
+        const query: Record<string, any> = {};
+        for (const name of ["select", "in", "eq", "lt", "gt", "order"]) query[name] = vi.fn(() => query);
+        query.range = vi.fn(async (start: number, end: number) => ({ data: supportRows.slice(start, end + 1), count: supportRows.length,
+          error: null, ...supportReplies[Math.floor(start / 500)] }));
+        return query;
+      }
       expect(table).toBe("rolling_player_game_metrics");
       const query: Record<string, any> = {};
       for (const name of ["select", "in", "eq", "lt", "gt", "order", "limit"]) query[name] = vi.fn(() => query);
@@ -201,6 +208,51 @@ describe("counted rolling skater history", () => {
     expect(actual).toEqual(source);
     expect(db.reads).toEqual([[0, 499], [500, 999], [1000, 1499], [1500, 1999]]);
   });
+  it("hydrates pruned conversion counts without overwriting authoritative values or imputing missing fields", async () => {
+    const source = [{ ...rows(1)[0], goals_total_all: null, shots_total_all: null, assists_total_all: null, goals_total_last5: 0 }];
+    const support = [{ ...source[0], payload_schema_version: 1, support_payload: { historicalCompatibility: {
+      goals_total_all: 331, shots_total_all: 510, assists_total_all: 63, goals_total_last5: 0, toi_seconds_avg_all: 900,
+      shots_total_last5: null, player_id: 999, arbitrary_projection: 999,
+    } } }];
+    fixture(source, [], support);
+    const actual = await fetch();
+    expect(actual[0]).toMatchObject({ goals_total_all: 331, shots_total_all: 510, assists_total_all: 63,
+      goals_total_last5: 0, toi_seconds_avg_all: 900, player_id: 7 });
+    expect(actual[0]).not.toHaveProperty("arbitrary_projection");
+    expect(actual[0].shots_total_last5).toBeUndefined();
+    expect(source[0].goals_total_all).toBeNull();
+    fixture(source);
+    expect((await fetch())[0].goals_total_all).toBeNull();
+  });
+
+  it("pages sidecars independently when only a subset of history has durable payloads", async () => {
+    const source = rows(501).map(row => ({ ...row, goals_total_all: null }));
+    const support = source.map(row => ({ ...row, payload_schema_version: 1,
+      support_payload: { historicalCompatibility: { goals_total_all: 0 } } }));
+    const db = fixture(source, [], support);
+    expect((await fetch()).every(row => row.goals_total_all === 0)).toBe(true);
+    expect(db.from).toHaveBeenCalledWith("rolling_player_metric_support_payloads");
+  });
+
+  it.each([{ game_id: 99 }, { season: 20252026 }, { payload_schema_version: 2 }, { support_payload: null },
+    { support_payload: { historicalCompatibility: [] } }, { support_payload: { historicalCompatibility: { goals_total_all: -1 } } },
+    { support_payload: { historicalCompatibility: { goals_total_all: "331" } } },
+    { support_payload: { historicalCompatibility: { goals_total_all: 9 } } }])("rejects malformed or substituted sidecar %j", changed => {
+    const source = rows(1), support = { ...source[0], payload_schema_version: 1, support_payload: { historicalCompatibility: { goals_total_all: 1 } }, ...changed };
+    fixture(source, [], [support]);
+    return expect(fetch()).rejects.toMatchObject({ status: "incomplete", reason: "invalid_support_row" });
+  });
+
+  it("rejects duplicate, truncated, uncounted and denied sidecar reads", async () => {
+    const source = rows(1), support = { ...source[0], payload_schema_version: 1, support_payload: { historicalCompatibility: {} } };
+    fixture(source, [], [support, support]);
+    await expect(fetch()).rejects.toMatchObject({ reason: "duplicate_row" });
+    for (const reply of [{ count: null }, { count: 1, data: [] }, { error: new Error("denied") }]) {
+      fixture(source, [], [support], [reply]);
+      await expect(fetch()).rejects.toMatchObject({ status: "incomplete" });
+    }
+  });
+
   it("does not treat a count-less retained read shape as complete", async () => {
     const db = fixture(rows(1501), [{ data: rows(1000), count: null }]);
     await expect(fetch()).rejects.toMatchObject({ status: "incomplete", reason: "invalid_count" });
@@ -214,7 +266,7 @@ describe("counted rolling skater history", () => {
     expect(db.queries[0].order.mock.calls).toEqual([["game_date", { ascending: false }],
       ["player_id", { ascending: true }], ["game_id", { ascending: false }]]);
     expect(await fetch([])).toEqual([]);
-    expect(db.from).toHaveBeenCalledTimes(1);
+    expect(db.from).toHaveBeenCalledTimes(2);
   });
   it("retains the requested PP scope and existing row values", async () => {
     const source = rows(1).map(row => ({ ...row, strength_state: "pp" }));

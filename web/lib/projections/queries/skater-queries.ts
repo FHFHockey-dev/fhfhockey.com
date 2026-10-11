@@ -1,5 +1,6 @@
 import supabase from "lib/supabase/server";
 import { getCompatibilityFieldOrder } from "lib/rollingPlayerMetricCompatibility";
+import { ROLLING_PLAYER_SUPPORT_PAYLOAD_TABLE, ROLLING_PLAYER_SUPPORT_PAYLOAD_SCHEMA_VERSION } from "lib/supabase/Upserts/rollingPlayerSupportPayload";
 import {
   TREND_BAND_METRIC_PRIORITY,
   TREND_BAND_WINDOW_PRIORITY
@@ -154,7 +155,7 @@ export class SkaterRollingReadIncompleteError extends Error {
 
   constructor(
     readonly reason: "invalid_scope" | "read_failed" | "invalid_count" | "count_drift"
-      | "row_limit_exceeded" | "invalid_page" | "invalid_row" | "duplicate_row" | "unstable_order",
+      | "row_limit_exceeded" | "invalid_page" | "invalid_row" | "duplicate_row" | "unstable_order" | "invalid_support_row",
     cause?: unknown
   ) {
     super(`Rolling skater history read incomplete: ${reason}`, { cause });
@@ -166,7 +167,8 @@ export class SkaterRollingReadIncompleteError extends Error {
 export async function fetchRollingRows(
   playerIds: number[],
   strengthState: "ev" | "pp",
-  cutoffDate: string
+  cutoffDate: string,
+  db = supabase
 ): Promise<RollingRow[]> {
   assertSupabase();
   if (playerIds.length === 0) return [];
@@ -191,7 +193,7 @@ export async function fetchRollingRows(
   for (;;) {
     let result: { data: unknown; count: number | null; error: unknown };
     try {
-      result = await supabase
+      result = await db
         .from("rolling_player_game_metrics")
         .select(ROLLING_ROW_SELECT_CLAUSE, { count: "exact" })
         .in("player_id", ids)
@@ -236,7 +238,66 @@ export async function fetchRollingRows(
       seen.add(key);
       rows.push(row);
     }
-    if (rows.length === total) return rows;
+    if (rows.length === total) break;
+  }
+  if (!rows.length) return rows;
+
+  // The rolling writer stores pruned historical fields in a durable sidecar.
+  // Join only matching event identities; absent fields remain unknown.
+  const key = (row: { player_id: number; game_id: number; game_date: string; strength_state: string }) =>
+    `${row.player_id}:${row.game_id}:${row.game_date}:${row.strength_state}`;
+  const byKey = new Map(rows.map(row => [key(row), { ...row }]));
+  const metrics = ROLLING_ROW_SELECT_CLAUSE.split(",").filter(field =>
+    !["player_id", "game_id", "game_date", "season", "strength_state"].includes(field));
+  const supportSeen = new Set<string>();
+  let offset = 0, supportTotal: number | null = null;
+  for (;;) {
+    let result: { data: unknown; count: number | null; error: unknown };
+    try {
+      result = await db.from(ROLLING_PLAYER_SUPPORT_PAYLOAD_TABLE)
+        .select("player_id,game_id,game_date,season,strength_state,payload_schema_version,support_payload,updated_at", { count: "exact" })
+        .in("player_id", ids).eq("strength_state", strengthState)
+        .lt("game_date", cutoffDate).gt("game_date", oneYearAgo)
+        .order("game_date", { ascending: false }).order("player_id", { ascending: true })
+        .order("game_id", { ascending: false }).range(offset, offset + 499);
+    } catch (cause) {
+      throw new SkaterRollingReadIncompleteError("read_failed", cause);
+    }
+    if (result.error) throw new SkaterRollingReadIncompleteError("read_failed", result.error);
+    const count = result.count;
+    if (!Number.isSafeInteger(count) || count! < 0) throw new SkaterRollingReadIncompleteError("invalid_count");
+    if (count! > 5000) throw new SkaterRollingReadIncompleteError("row_limit_exceeded");
+    if (supportTotal !== null && count !== supportTotal) throw new SkaterRollingReadIncompleteError("count_drift");
+    supportTotal = count;
+    if (!Array.isArray(result.data) || result.data.length !== Math.min(500, count! - offset)) {
+      throw new SkaterRollingReadIncompleteError("invalid_page");
+    }
+    for (const support of result.data) {
+      const matched = support && byKey.get(key(support));
+      const payload = support?.support_payload?.historicalCompatibility;
+      if (!matched || support.season !== matched.season
+        || support.payload_schema_version !== ROLLING_PLAYER_SUPPORT_PAYLOAD_SCHEMA_VERSION
+        || !support.support_payload || typeof support.support_payload !== "object" || Array.isArray(support.support_payload)
+        || payload !== undefined && (!payload || typeof payload !== "object" || Array.isArray(payload))) {
+        throw new SkaterRollingReadIncompleteError("invalid_support_row");
+      }
+      if (supportSeen.has(key(support))) throw new SkaterRollingReadIncompleteError("duplicate_row");
+      supportSeen.add(key(support));
+      for (const field of metrics) {
+        const value = payload?.[field];
+        if (value === undefined || value === null) continue;
+        if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+          throw new SkaterRollingReadIncompleteError("invalid_support_row");
+        }
+        const wide = (matched as any)[field];
+        if (typeof wide === "number" && Number.isFinite(wide) && wide !== value) {
+          throw new SkaterRollingReadIncompleteError("invalid_support_row");
+        }
+        if (wide === null || wide === undefined) (matched as any)[field] = value;
+      }
+    }
+    offset += result.data.length;
+    if (offset === supportTotal) return rows.map(row => byKey.get(key(row))!);
   }
 }
 
