@@ -604,6 +604,18 @@
   }
 }
 
+@media (min-width: #{v.$breakpoint-mobile-lg + 1px}) and (max-width: #{v.$breakpoint-desktop - 1px}) {
+  .gameLink {
+    flex-basis: max-content;
+    min-width: max-content;
+    max-width: none;
+  }
+
+  .combinedGameCard {
+    grid-template-columns: minmax(max-content, 1fr) max-content minmax(max-content, 1fr);
+  }
+}
+
 .broadcastLabel {
   position: absolute;
   top: v.$space-xs;
@@ -884,7 +896,7 @@
 
     &[data-game-state="live"] {
       border-color: rgba(v.$success-color, 0.48);
-      box-shadow: inset 2px 0 0 rgba(v.$success-color, 0.8);
+      border-left: 3px solid rgba(v.$success-color, 0.8);
     }
 
     &:hover {
@@ -1556,7 +1568,7 @@
 
     &[data-game-state="live"] {
       border-color: rgba(v.$success-color, 0.55);
-      box-shadow: inset 2px 0 0 rgba(v.$success-color, 0.78);
+      border-left: 3px solid rgba(v.$success-color, 0.78);
     }
 
     &[data-game-state="scheduled"] {
@@ -1995,6 +2007,7 @@
   }
 
   .desktopTableSurface {
+    --homepage-table-time-width: 9rem;
     min-width: 0;
     overflow: clip;
     border: 1px solid rgba(v.$color-white, 0.085);
@@ -2014,7 +2027,7 @@
 
     &[data-table-columns^="medium"] {
       grid-template-columns:
-        76px
+        var(--homepage-table-time-width)
         minmax(250px, 1.55fr)
         minmax(88px, 0.62fr)
         minmax(88px, 0.62fr)
@@ -2024,7 +2037,7 @@
     }
 
     &[data-table-columns="heavy"] {
-      grid-template-columns: 62px minmax(0, 1fr) minmax(52px, 72px) 12px;
+      grid-template-columns: var(--homepage-table-time-width) minmax(0, 1fr) minmax(52px, 72px) 12px;
       gap: 5px;
     }
   }
@@ -2081,7 +2094,11 @@
   }
 
   .desktopTableTime {
+    display: block;
+    overflow: visible;
     color: v.$text-primary;
+    text-overflow: clip;
+    white-space: normal;
   }
 
   .desktopTableMetric {
@@ -5393,7 +5410,7 @@
 
     &[data-game-state="live"] {
       border-color: rgba(v.$success-color, 0.48);
-      box-shadow: inset 2px 0 0 rgba(v.$success-color, 0.8);
+      border-left: 3px solid rgba(v.$success-color, 0.8);
     }
 
     &:hover {
@@ -6076,6 +6093,40 @@
       font-family: v.$font-family-primary, sans-serif;
       font-size: 1.1rem;
       line-height: 1;
+    }
+  }
+}
+
+@media (max-width: #{v.$breakpoint-desktop - 1px}) {
+  .mobileGameLink[data-game-state="scheduled"] .mobileGameTime {
+    line-height: 1.4;
+    white-space: normal;
+
+    > div,
+    > div > span {
+      display: block;
+      white-space: normal;
+    }
+  }
+
+  .mobileGamesSlate[data-slate-mode="light"] .mobileGameLink[data-game-state="scheduled"] {
+    grid-template-rows: minmax(20px, auto) minmax(48px, 1fr) auto auto auto;
+  }
+
+  .mobileGamesSlate[data-slate-mode="medium"],
+  .mobileGamesSlate[data-slate-mode="heavy"] {
+    .mobileGameLink[data-game-state="scheduled"] {
+      grid-template-rows: auto auto;
+
+      > * {
+        grid-row: 2;
+      }
+
+      .mobileGameTime {
+        grid-row: 1;
+        grid-column: 1 / -1;
+        justify-self: start;
+      }
     }
   }
 }

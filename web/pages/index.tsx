@@ -55,6 +55,9 @@ const debugLog = (...args: any[]) => {
   }
 };
 
+// Re-enable the homepage promotion for next draft season.
+const SHOW_DRAFT_DASHBOARD_PROMO = false;
+
 const HOMEPAGE_TOOL_TABS = [
   { id: "draft-ranker", label: "Draft Ranker" },
   { id: "transaction-trends", label: "Transaction Trends" },
@@ -176,18 +179,20 @@ const Home: NextPage = ({
           openingNightDate={openingNightDate}
           openingNightStartTime={openingNightStartTime}
         />
-        <section className={styles.draftDashboardBanner} aria-labelledby="draft-dashboard-banner-title">
-          <Image src="/pictures/draft-dashboard-hero.png" alt="" fill sizes="(max-width: 768px) 100vw, 1200px" className={styles.draftBannerArt} />
-          <div className={styles.draftBannerCopy}>
-            <p className={styles.draftBannerEyebrow}>Your draft. Every angle.</p>
-            <h2 id="draft-dashboard-banner-title">FHFH <span>Draft Dashboard</span></h2>
-            <p>Compare projections, track every pick, and build your roster.</p>
-            <div className={styles.draftBannerActions}>
-              <Link href="/draft-dashboard">Open Draft Dashboard</Link>
-              <Link href="/account?section=draft-pro" className={styles.draftProPromotion}>Explore Draft Pro</Link>
+        {SHOW_DRAFT_DASHBOARD_PROMO ? (
+          <section className={styles.draftDashboardBanner} aria-labelledby="draft-dashboard-banner-title">
+            <Image src="/pictures/draft-dashboard-hero.png" alt="" fill sizes="(max-width: 768px) 100vw, 1200px" className={styles.draftBannerArt} />
+            <div className={styles.draftBannerCopy}>
+              <p className={styles.draftBannerEyebrow}>Your draft. Every angle.</p>
+              <h2 id="draft-dashboard-banner-title">FHFH <span>Draft Dashboard</span></h2>
+              <p>Compare projections, track every pick, and build your roster.</p>
+              <div className={styles.draftBannerActions}>
+                <Link href="/draft-dashboard">Open Draft Dashboard</Link>
+                <Link href="/account?section=draft-pro" className={styles.draftProPromotion}>Explore Draft Pro</Link>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        ) : null}
         <ClientOnly>
           {draftRankerHomepageEnabled ? (
             <div className={styles.homepageToolSwitcher}>
