@@ -474,12 +474,12 @@ describe("update-nst-gamelog automatic season cursor", () => {
     expect(fetchedDates()).toEqual(["2026-09-29", "2026-10-02", "2026-10-03"]);
   });
 
-  it("skips already complete data when revisiting the resume date", async () => {
+  it("does not infer complete source coverage from a stored row sample", async () => {
     db.tables.nst_gamelog_5v5_counts = Array.from({ length: 5 }, (_, id) => ({
       date_scraped: "2026-10-02", player_id: id, goals: 1
     }));
     await run({ datasetType: "fiveOnFiveCounts" });
-    expect(fetchedDates()).toEqual(["2026-09-29", "2026-10-03"]);
+    expect(fetchedDates()).toEqual(["2026-09-29", "2026-10-02", "2026-10-03"]);
   });
 
   it("keeps explicit historical dates guarded instead of silently moving them", async () => {
@@ -694,7 +694,32 @@ describe("update-nst-gamelog automatic season cursor", () => {
     expect(db.audits.at(-1).rows_affected).toBe(180);
   });
 
+
+  it("refetches a partially resolved source instead of certifying five stored rows as complete", async () => {
+    db.tables.players = Array.from({ length: 5 }, (_, i) => ({ id: i + 1, fullName: "Test Player " + i, position: "C" }));
+    const source = "<table><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>TOI</th></tr></thead><tbody>" +
+      db.tables.players.map((player) => "<tr><td>" + player.fullName + "</td><td>BOS</td><td>C</td><td>10:00</td></tr>").join("") +
+      "<tr><td>Unmatched Example</td><td>BOS</td><td>C</td><td>10:00</td></tr></tbody></table>";
+    fetchNstTextByUrlMock.mockResolvedValue({ response: { status: 200 }, text: source });
+    const first = await run({ dates: "2026-10-03", datasetType: "allStrengthsCounts" });
+    expect(db.tables.nst_gamelog_as_counts).toHaveLength(5);
+    expect(first.body.nstProgress.sourceOutcomes.counts.parse_or_identity_unresolved).toBe(1);
+    fetchNstTextByUrlMock.mockClear();
+    const second = await run({ dates: "2026-10-03", datasetType: "allStrengthsCounts" });
+    expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(1);
+    expect(second.body.success).toBe(false);
+    expect(second.body.nstProgress.sourceOutcomes.counts.parse_or_identity_unresolved).toBe(1);
+    expect(second.body.nstProgress.sourceOutcomes.counts.already_present).toBe(0);
+    expect(second.body.nstProgress.sourceOutcomes.coverage).toBe("not_verified");
+    db.tables.players.push({ id: 6, fullName: "Unmatched Example", position: "C" });
+    const recovered = await run({ dates: "2026-10-03", datasetType: "allStrengthsCounts" });
+    expect(db.tables.nst_gamelog_as_counts).toHaveLength(6);
+    expect(recovered.body.nstProgress.sourceOutcomes.counts.rows_persisted).toBe(1);
+    expect(recovered.body.nstProgress.sourceOutcomes.coverage).toBe("not_verified");
+  });
+
   it("retains unresolved identity evidence even when matched rows can be persisted", async () => {
+    db.tables.players = [{ id: 1, fullName: "Test Player 0", position: "C" }];
     fetchNstTextByUrlMock.mockResolvedValue({ response: { status: 200 }, text:
       "<table><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>TOI</th></tr></thead><tbody>" +
       "<tr><td>Test Player 0</td><td>BOS</td><td>C</td><td>10:00</td></tr>" +

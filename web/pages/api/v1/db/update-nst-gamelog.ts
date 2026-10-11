@@ -7,7 +7,7 @@
  * --- Query Parameters ---
  *
  * 1. `runMode` (optional): Specifies the operation mode for the data fetch.
- *    - `incremental` (default): Rotates current-season attempts using an audit bookmark, skipping stored complete data.
+ *    - `incremental` (default): Rotates bounded current-season source attempts using an audit bookmark.
  *      This is the most common mode for daily updates.
  *      Example: /api/v1/db/update-nst-gamelog
  *      Example: /api/v1/db/update-nst-gamelog?runMode=incremental
@@ -442,38 +442,6 @@ export function getDatesBetween(start: Date, end: Date): string[] {
   return dates;
 }
 
-async function dateIsComplete(table: string, date: string): Promise<boolean> {
-  // Must be schema-agnostic across counts/rates/on-ice tables.
-  // The previous implementation queried `goals_per_60`, which doesn't exist for many
-  // tables, causing false "incomplete" signals and endless re-fetching.
-  const { data, error } = await supabase
-    .from(table)
-    .select("*")
-    .eq("date_scraped", date)
-    .limit(10);
-  if (error) return false;
-  if (!data || data.length < 5) return false;
-
-  const ignoredKeys = new Set([
-    "player_id",
-    "date_scraped",
-    "player_name",
-    "team",
-    "position",
-    "season"
-  ]);
-
-  const hasAnyStatValue = (row: Record<string, any>) => {
-    for (const [k, v] of Object.entries(row)) {
-      if (ignoredKeys.has(k)) continue;
-      if (v !== null && typeof v !== "undefined") return true;
-    }
-    return false;
-  };
-
-  return data.some((r: any) => hasAnyStatValue(r));
-}
-
 async function fetchScheduledGameDateMap(args: {
   seasonIds: readonly string[];
   startDate: string;
@@ -821,31 +789,6 @@ async function getLatestDateSupabase(args: {
     console.log("No existing date found in any Supabase table.");
   }
   return latestDate;
-}
-
-async function checkDataExists(
-  datasetType: string,
-  date: string
-): Promise<boolean> {
-  const tableName = getTableName(datasetType);
-  if (tableName === "unknown_table") return false; // Already warned in getTableName
-
-  // Existence check only: avoid `count: "exact"` (expensive) and avoid HEAD-only calls.
-  const { data, error } = await supabase
-    .from(tableName)
-    .select("player_id")
-    .eq("date_scraped", date)
-    .limit(1);
-
-  if (error) {
-    console.error(
-      `Error checking data existence in ${tableName} for date ${date}:`,
-      error.message
-    );
-    return false; // Assume not exists on error to allow processing attempt
-  }
-
-  return (data?.length ?? 0) > 0;
 }
 
 function cleanHeader(h: string): string {
@@ -1716,41 +1659,15 @@ async function processUrls(
 
     // rely on global NST limiter; do not add extra spacing here
 
-    let shouldFetch = true;
-    let skipReason = "";
-
-    if (!isFullRefresh) {
-      const dataExists = await checkDataExists(datasetType, date);
-      if (dataExists) {
-        const tableName = getTableName(datasetType);
-        const complete = await dateIsComplete(tableName, date);
-        if (complete) {
-          shouldFetch = false;
-          skipReason =
-            "Data already exists and appears complete (incremental update).";
-        } else {
-          console.log(
-            `Existing data for ${date} in ${tableName} appears incomplete; refetching.`
-          );
-        }
-      }
-    } else {
-      skipReason =
-        "Full refresh requested, fetching regardless of existing data.";
-      console.log(
-        `\nFull refresh\nOverwrite = ${isFullRefresh},\nMode = ${
-          isFullRefresh ? "Full" : "Incremental"
-        }\n`
-      );
-    }
-
+    // Stored row samples cannot establish that every provider row was parsed
+    // and resolved. Refetch the selected item within the existing request cap.
     let fetchSuccess = false;
     let parseResult: any[] = [];
     let upsertSuccess = false;
     let upsertedCount = 0;
-    let outcome: NstGamelogOutcome = "already_present";
+    let outcome: NstGamelogOutcome = "parse_or_identity_unresolved";
 
-    if (shouldFetch) {
+    {
       if (
         options?.maxRequests !== undefined &&
         requestsAttempted >= options.maxRequests
@@ -1801,10 +1718,6 @@ async function processUrls(
         );
         upsertSuccess = true;
       }
-    } else {
-      console.log(`Skipping fetch for ${url}: ${skipReason}`);
-      fetchSuccess = true;
-      upsertSuccess = true;
     }
 
     totalRowsProcessed += upsertedCount;
@@ -1818,13 +1731,13 @@ async function processUrls(
       tableName: getTableName(datasetType),
       dateUrlCount: { current: i + 1, total: urlsQueue.length },
       totalUrlCount: { current: totalProcessed, total: urlsQueue.length },
-      rowsProcessed: shouldFetch && fetchSuccess ? parseResult.length : 0,
-      rowsPrepared: shouldFetch && fetchSuccess ? parseResult.length : 0,
+      rowsProcessed: fetchSuccess ? parseResult.length : 0,
+      rowsPrepared: fetchSuccess ? parseResult.length : 0,
       rowsUpserted: upsertedCount
     });
     printTotalProgress(totalProcessed, urlsQueue.length);
 
-    if (shouldFetch && !fetchSuccess) {
+    if (!fetchSuccess) {
       console.warn(`Adding URL to failed list: ${url}`);
       failedUrls.push(item);
     }
@@ -2129,6 +2042,9 @@ async function main(
   );
   const startTime = Date.now();
   troublesomePlayers.length = 0; // Clear troublesome list for this run
+  // A warm route instance must not retain missing identities across requests.
+  playerIdCache = null;
+  playerIdMemo.clear();
 
   let totalRowsAffected = 0;
   let failedUrlCountAfterRetry = 0;
@@ -2494,7 +2410,7 @@ async function main(
             : NST_TABLE_NAMES
         });
         // Revisit the cursor date so partial writes/retries can finish it.
-        // processUrls skips complete data when overwrite is false.
+        // processUrls bounds source attempts without certifying stored row samples.
         startDate = parseDateInTimeZone(latestDateStr ?? seasonStartDate, timeZone);
         console.log(
           `Incremental Update: Season ${cursorSeason.id}, resuming ${latestDateStr ?? seasonStartDate}.`
