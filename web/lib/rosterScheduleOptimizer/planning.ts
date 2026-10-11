@@ -988,7 +988,6 @@ function* extensions(snapshot: PlanningSnapshot, intent: PlanIntent, prior: Plan
   // Give every candidate/date a chance before expanding the long tail of drop choices.
   for (const { player, date, step } of proposals) {
     yield [step];
-    for (const drop of drops.slice(0, 2)) if (drop.id !== player.id) yield [{ ...step, id: `${step.id}:drop:${drop.id}`, dropPlayerId: drop.id }];
     for (const entry of [...snapshot.roster].sort((a, b) => a.playerId.localeCompare(b.playerId))) {
       const reservePlayer = snapshot.players.find(item => item.id === entry.playerId);
       if (!reservePlayer || !owned.has(entry.playerId) || ["IR", "IR+", "NA"].includes(entry.position)) continue;
@@ -997,6 +996,7 @@ function* extensions(snapshot: PlanningSnapshot, intent: PlanIntent, prior: Plan
         yield [prerequisite, { ...step, dependsOn: [prerequisite.id] }];
       }
     }
+    for (const drop of drops.slice(0, 2)) if (drop.id !== player.id) yield [{ ...step, id: `${step.id}:drop:${drop.id}`, dropPlayerId: drop.id }];
   }
   for (const { player, step } of proposals) for (const drop of drops.slice(2)) if (drop.id !== player.id)
     yield [{ ...step, id: `${step.id}:drop:${drop.id}`, dropPlayerId: drop.id }];
@@ -1049,6 +1049,32 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   const coverageComplete = candidates.length >= availableCount;
   if (!coverageComplete) limitations.add(`Candidate shortlist contains ${candidates.length} of ${availableCount} available players.`);
   type State = { steps: PlanStep[]; evaluation: PlanEvaluation };
+  const orderStates = (states: State[], preferred: PlanningObjective) => {
+    const stableOrder = (a: State, b: State) => a.steps.map(step => step.id).join("|").localeCompare(b.steps.map(step => step.id).join("|"));
+    const adds = (state: State) => state.steps.filter(step => step.type === "add").length;
+    const drops = (state: State) => state.steps.filter(step => step.type === "drop" || step.dropPlayerId).length;
+    states.sort((a, b) => compareEvaluations(a.evaluation, b.evaluation, intent, preferred, coverageTarget, categoryMode) || stableOrder(a, b));
+    // Reorder only exact supported equivalents in their existing positions.
+    // Pairwise category tradeoffs are not a transitive global sort relation.
+    const groups = new Map<string, number[]>();
+    states.forEach((state, index) => {
+      const plan = state.evaluation;
+      if (!plan.comparisonEligible || !plan.forecastManifestId
+        || (categoryMode ? !plan.categoryResults.length || plan.categoryResults.some(row => !finite(row.own)) : !finite(plan.projectedValue))) return;
+      const key = JSON.stringify(stableValue({ objective: plan.objective, manifest: plan.forecastManifestId,
+        activeGames: plan.activeGames, outcome: categoryMode ? plan.categoryResults : plan.projectedValue, goalie: plan.goalie,
+        preferredGoalieStarts: intent.goalieCoverage === "cover" && intent.goalieWindow !== "any"
+          ? plan.assignments.filter(row => row.slotId.startsWith("G#") && preferredGoalieDate(row.date, intent)).length : null,
+        // Category acquisition-period tradeoffs retain the existing partial order.
+        categoryCost: categoryMode ? { acquisitions: plan.acquisitions, adds: adds(state) } : null }));
+      const group = groups.get(key) ?? [];
+      group.push(index); groups.set(key, group);
+    });
+    for (const indices of groups.values()) {
+      const equivalent = indices.map(index => states[index]).sort((a, b) => adds(a) - adds(b) || drops(a) - drops(b) || stableOrder(a, b));
+      indices.forEach((index, offset) => { states[index] = equivalent[offset]; });
+    }
+  };
   const noMoves: Record<PlanningObjective, State> = { agp: { steps: [], evaluation: noMoveAgp }, outcome: { steps: [], evaluation: noMoveOutcome } };
   const frontiers: Record<PlanningObjective, State[]> = { agp: [noMoves.agp], outcome: [noMoves.outcome] };
   let evaluated = 3, generated = 0, maxDepthReached = 0, complete = true, beamPruned = false, phasePruned = false, timedOut = false;
@@ -1093,8 +1119,7 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
       // Keep them until the existing disclosed beam bound; current category
       // dominance alone cannot prove their extension paths interchangeable.
       const retained = next;
-      retained.sort((a, b) => compareEvaluations(a.evaluation, b.evaluation, intent, searchObjective, coverageTarget, categoryMode) || (categoryMode ? 0 : a.steps.length - b.steps.length) ||
-        a.steps.map(step => step.id).join("|").localeCompare(b.steps.map(step => step.id).join("|")));
+      orderStates(retained, searchObjective);
       if (retained.length) anyNext = true;
       if (retained.length > beamWidth - 1) beamPruned = true;
       frontiers[searchObjective] = [noMoves[searchObjective], ...retained.slice(0, beamWidth - 1)];
@@ -1109,8 +1134,7 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   const depthPruned = maxSteps === 0 ? candidates.length > 0 : (["agp", "outcome"] as const).some(searchObjective => frontiers[searchObjective].slice(1).some(state => !extensions(snapshot, intent, state.steps, candidates).next().done));
   if (depthPruned) limitations.add("Acquisition depth limit left additional sequences unexplored.");
   if (categoryMode) limitations.add("Category alternatives use projected means without calibrated joint scenarios and are not globally ranked. Presentation order is deterministic; incomparable supported tradeoffs remain available within search bounds.");
-  all.sort((a, b) => compareEvaluations(a.evaluation, b.evaluation, intent, objective, coverageTarget, categoryMode) || (categoryMode ? 0 : a.steps.length - b.steps.length) ||
-    a.steps.map(step => step.id).join("|").localeCompare(b.steps.map(step => step.id).join("|")));
+  orderStates(all, objective);
   const supported = all.filter(state => state.steps.length && safeAlternative(snapshot, state.evaluation.objective === "agp" ? noMoveAgp : noMoveOutcome, state.evaluation, coverageTarget));
   const retained = categoryMode ? supported.filter(candidate => !supported.some(other => other.evaluation.objective === candidate.evaluation.objective
     && compareCategoryEvaluations(snapshot, other.evaluation, candidate.evaluation, coverageTarget) === "better")) : supported;

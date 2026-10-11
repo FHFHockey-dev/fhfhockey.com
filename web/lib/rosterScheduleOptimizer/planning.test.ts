@@ -1295,6 +1295,75 @@ describe("planning engine", () => {
     expect(ratio.goalie.risk).toBe(false);
     expect(ratio.categoryResults[0].result).toBe("win");
   });
+  it.each(["points", "categories"] as const)("prefers equivalent vacant or reserve capacity before drops in %s", mode => {
+    for (const capacity of ["vacancy", "IR", "IR+"] as const) {
+      const data = snapshot();
+      data.rules.rosterSlots = capacity === "vacancy" ? { C: 1, BN: 2 } : { C: 1, BN: 1, [capacity]: 1 };
+      if (capacity !== "vacancy") data.players[0].reserveEligibility = [capacity];
+      if (mode === "categories") {
+        data.rules.scoring = { mode, weights: {}, categories: [{ key: "pts", direction: "higher" }] };
+        data.opponent = { roster: [], realized: { pts: 0 }, remaining: { pts: 0 } };
+      }
+      data.forecasts = data.forecasts.map(row => row.playerId === "c" ? { ...row, stats: { pts: 3 } } : row);
+      const before = structuredClone(data);
+      const result = planRoster(data, intent, { maxSteps: 1, maxCandidates: 1, maxEvaluations: 100 });
+      const best = result.alternatives.find(plan => plan.steps.some(step => step.type === "add"));
+      expect(best).toMatchObject({ legal: true, budgetVerified: true, comparisonEligible: true, activeGames: 2,
+        projectedStats: { pts: 6 }, acquisitions: { p: 1 } });
+      expect(best?.steps.some(step => step.type === "drop" || step.dropPlayerId)).toBe(false);
+      expect(best?.steps.filter(step => step.type === "add")).toHaveLength(1);
+      expect(best?.steps.filter(step => step.type === "reserve")).toHaveLength(capacity === "vacancy" ? 0 : 1);
+      const selected = result.alternatives.find(plan => plan.steps.some(step => step.dropPlayerId));
+      expect(selected).toBeDefined();
+      const selectedIntent = { ...intent, steps: selected!.steps };
+      expect(planRoster(data, selectedIntent, { maxSteps: 1, maxCandidates: 1 }).selected.steps).toEqual(selected!.steps);
+      expect(data).toEqual(before);
+    }
+  });
+  it("checks legal reserve capacity before spending a narrow search quota on drops", () => {
+    const data = snapshot();
+    data.players[0].reserveEligibility = ["IR"];
+    data.rules.rosterSlots.IR = 1;
+    data.forecasts = data.forecasts.map(row => row.playerId === "c" ? { ...row, stats: { pts: 3 } } : row);
+    const result = planRoster(data, intent, { maxSteps: 1, maxCandidates: 1, maxEvaluations: 7 });
+    expect(result.alternatives.some(plan => plan.steps.some(step => step.type === "reserve")
+      && plan.steps.some(step => step.type === "add") && !plan.steps.some(step => step.dropPlayerId))).toBe(true);
+    expect(result.search.complete).toBe(false);
+    data.lockedAssignments = [{ date: "2026-10-05", slotId: "C#0", playerId: "a" }];
+    expect(planRoster(data, intent, { maxSteps: 1, maxCandidates: 1 }).alternatives
+      .every(plan => !plan.steps.some(step => step.type === "reserve" && step.playerId === "a"))).toBe(true);
+  });
+  it("counts acquisitions rather than reserve transfers for exactly equal point outcomes", () => {
+    const data = snapshot();
+    data.players[0].reserveEligibility = ["IR"];
+    data.players.push(player("d", "D", "free_agent"), player("e", "E", "free_agent"));
+    data.rules.rosterSlots.IR = 1;
+    data.games = data.games.filter(game => game.teamAbbreviation !== "C" || game.date === "2026-10-05");
+    for (const [team, dates] of [["D", ["2026-10-06"]], ["E", ["2026-10-05", "2026-10-06"]]] as const) {
+      for (const date of dates) data.games.push({ ...data.games[0], id: `${team}${date}`, teamAbbreviation: team,
+        scheduleRevision: `${team}${date}`, date, startsAt: `${date}T20:00:00Z` });
+    }
+    data.forecasts = data.games.map(game => issuedForecast(data, game.teamAbbreviation.toLowerCase(), game.id,
+      { stats: { pts: ["C", "D", "E"].includes(game.teamAbbreviation) ? 3 : 1 } }));
+    const result = planRoster(data, { ...intent, alternativeCount: 20 },
+      { maxSteps: 2, maxCandidates: 3, maxEvaluations: 1000, beamWidth: 64 });
+    const equivalent = result.alternatives.filter(plan => plan.objective === "outcome" && plan.projectedValue === 6 && plan.activeGames === 2);
+    expect(equivalent.some(plan => plan.steps.filter(step => step.type === "add").length === 2)).toBe(true);
+    expect(equivalent[0].steps.map(step => step.type)).toEqual(["reserve", "add"]);
+    expect(equivalent[0].acquisitions).toEqual({ p: 1 });
+  });
+  it("does not promote a lower-value reserve alternative ahead of meaningful gains", () => {
+    const data = snapshot();
+    data.players[0].reserveEligibility = ["IR"];
+    data.rules.rosterSlots.IR = 1;
+    data.forecasts = data.forecasts.map(row => ({ ...row, stats: { pts: row.playerId === "a"
+      ? row.gameId === "A0" ? 10 : 1 : row.playerId === "c" ? 6 : 0 } }));
+    const result = planRoster(data, { ...intent, alternativeCount: 20 }, { maxSteps: 1, maxCandidates: 1, maxEvaluations: 100 });
+    const best = result.alternatives.find(plan => plan.steps.length);
+    expect(best).toMatchObject({ projectedValue: 16, activeGames: 2, acquisitions: { p: 1 } });
+    expect(result.alternatives.some(plan => plan.projectedValue === 16 && plan.steps.some(step => step.dropPlayerId === "b"))).toBe(true);
+    expect(result.alternatives.some(plan => plan.projectedValue === 12 && plan.steps.some(step => step.type === "reserve"))).toBe(true);
+  });
   it("finds an IR prerequisite with default search budget when all drops are protected", () => {
     const data = snapshot();
     data.players[1].reserveEligibility = ["IR"];
