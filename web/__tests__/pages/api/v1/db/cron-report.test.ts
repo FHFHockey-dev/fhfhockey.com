@@ -1369,6 +1369,57 @@ ${JSON.stringify(jobs)}
     expect(row.reason).not.toContain('"dependencyContract"');
   });
 
+
+  it("uses retained responseOutcome failures when the response preview is truncated", async () => {
+    cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{
+      job_name: "ingest-projection-inputs", run_time: "2026-03-20T12:00:01.000Z", status: "failure",
+      details: { method: "POST", url: "/api/v1/db/ingest-projection-inputs", statusCode: 500,
+        response: '{"success":false,"results":[…',
+        responseTruncated: true,
+        responseOutcome: { success: false, error: "INVALID_PROJECTION_RAW_SHIFT_ROWS", rowsUpserted: 0,
+          errors: { count: 15, sample: [{ gameId: 2026010056, date: "2026-09-26", message: "duplicate raw interval" }] } } },
+    }], error: null });
+    const res = createMockRes(); await handler({ method: "GET" } as any, res);
+    const row = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits.find((row: any) => row.jobName === "ingest-projection-inputs");
+    expect(row).toMatchObject({ status: "failure", reason: "INVALID_PROJECTION_RAW_SHIFT_ROWS", rowsUpserted: null, failedRows: null });
+    expect(row.failedRowSamples).toEqual(["date: 2026-09-26 | game: 2026010056 | duplicate raw interval"]);
+  });
+
+  it("uses retained responseOutcome failed preflight gates without claiming missing tail metrics", async () => {
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{
+      job_name: "run-forge-projection-v2", run_time: "2026-03-20T12:00:01.000Z", status: "failure",
+      details: { method: "POST", url: "/api/v1/db/run-projection-v2", response: '{"success":false,"pipeline":[…',
+        responseOutcome: { success: false, error: "Preflight freshness checks failed.", preflight: {
+          status: "FAIL", gateCount: 10, failedGateCount: 3,
+          failedGates: [{ gate_key: "skater_derived_freshness", status: "FAIL", detail: "six teams missing recent rows" },
+            { gate_key: "projection_derived_v2", status: "FAIL", detail: "player_latest=none" },
+            { gate_key: "stale_goalie_game_rows", status: "FAIL", detail: "five teams missing goalie rows" }] } } },
+    }], error: null });
+    const res = createMockRes(); await handler({ method: "GET" } as any, res);
+    const row = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits.find((row: any) => row.jobName === "run-forge-projection-v2");
+    expect(row.reason).toBe("Preflight freshness checks failed.");
+    expect(row.failedRowSamples).toEqual([
+      "gate: skater_derived_freshness | six teams missing recent rows",
+      "gate: projection_derived_v2 | player_latest=none",
+      "gate: stale_goalie_game_rows | five teams missing goalie rows",
+    ]);
+    expect(row.rowsUpserted).toBeNull();
+  });
+
+  it("prefers an intact full response over a conflicting responseOutcome summary", async () => {
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{
+      job_name: "run-forge-projection-v2", run_time: "2026-03-20T12:00:01.000Z", status: "failure",
+      details: { method: "POST", url: "/api/v1/db/run-projection-v2",
+        response: { success: false, error: "complete original failure", errors: ["complete witness"] },
+        responseOutcome: { success: false, error: "conflicting summary", errors: { sample: ["summary witness"] } } },
+    }], error: null });
+    const res = createMockRes(); await handler({ method: "GET" } as any, res);
+    const row = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits.find((row: any) => row.jobName === "run-forge-projection-v2");
+    expect(row.reason).toBe("complete original failure");
+    expect(row.failedRowSamples).toEqual(["complete witness"]);
+  });
+
   it("prefers a nested failed-stage root cause over generic summary and declaration metadata", async () => {
     cronJobAuditSelectMock.mockResolvedValue({ data: [{ job_name: "run-forge-projection-v2", run_time: "2026-03-20T12:00:01.000Z", status: "failure",
       details: { method: "POST", url: "/api/v1/db/run-projection-v2", response: { success: false, message: "Pipeline failed", pipeline: { stages: [{ message: "declarative contract" }] }, results: [{ status: "success", message: "healthy stage" }, { status: "failed", error: { message: "[NHL] Invalid shift roster for game 2026010001" } }] } } }], error: null });

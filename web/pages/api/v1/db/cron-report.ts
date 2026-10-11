@@ -636,6 +636,7 @@ function formatFailureSample(value: unknown): string | null {
     }
   };
 
+  addPart("gate", ["gate_key"]);
   addPart("date", ["date", "gameDate", "game_date", "date_scraped"]);
   addPart("player", ["playerId", "player_id"]);
   addPart("game", ["gameId", "game_id"]);
@@ -755,6 +756,17 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
 
   const obj = parsedDetails as Record<string, unknown>;
   const response = parseJsonMaybe(obj.response);
+  // The bounded outcome is diagnostic evidence, not a substitute for the full
+  // response or its write metrics. Use it only when that response is unavailable.
+  const missingResponse = response == null ||
+    (typeof response === "string" && /^[{[]\s*"/.test(response.trim()));
+  const outcome = missingResponse && obj.responseOutcome &&
+    typeof obj.responseOutcome === "object" && !Array.isArray(obj.responseOutcome)
+    ? obj.responseOutcome as Record<string, any> : null;
+  const outcomeSamples = [
+    ...(Array.isArray(outcome?.errors?.sample) ? outcome.errors.sample.slice(0, 3) : []),
+    ...(Array.isArray(outcome?.preflight?.failedGates) ? outcome.preflight.failedGates.slice(0, 3) : []),
+  ];
   const timing = extractAuditTimingRecord(parsedDetails);
   const { route, routePath } = parseUrlPieces(
     typeof obj.url === "string" ? obj.url : null
@@ -767,7 +779,8 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
   ]);
   const skaterFreshnessFailureCount =
     getDirectNumericField(response, ["skaterFreshnessFailureCount"]) ?? 0;
-  const failedRowSamples = collectFailureEntries(response)
+  const fullResponseFailures = collectFailureEntries(response);
+  const failedRowSamples = (fullResponseFailures.length ? fullResponseFailures : outcomeSamples)
     .map((entry) => formatFailureSample(entry))
     .filter((entry): entry is string => Boolean(entry))
     .slice(0, 3);
@@ -783,7 +796,8 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
     method: typeof obj.method === "string" ? obj.method.toUpperCase() : null,
     error: extractPrimaryMessage(obj.error),
     response,
-    responseMessage: extractPrimaryMessage(response),
+    responseMessage: (outcome ? extractPrimaryMessage({ ...outcome, errors: outcomeSamples }) : null)
+      ?? extractPrimaryMessage(response),
     goalieRowsProcessed,
     skaterRowsProcessed,
     skaterFreshnessFailureCount,
