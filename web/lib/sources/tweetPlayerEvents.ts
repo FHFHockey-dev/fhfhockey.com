@@ -33,19 +33,20 @@ export type TweetPlayerEvent = {
 function isQuestionedClaim(text: string): boolean {
   return /\?(?=\s|["'’”)]|$)/.test(text);
 }
-const TENTATIVE_AVAILABILITY = /\b(if|could|may|might|possibly|expected|expect|would|gtd|hopeful|hopes?|should|think|speculation|speculates?|hypothetical|assuming|not confirmed|no decision|undecided|questionable|not (?:yet |been )?ruled out|hasn.t been ruled out|not out|game.time decision|day.to.day)\b/i;
+const TENTATIVE_AVAILABILITY = /\b(if|could|may|might|possibly|expected|expect|would|gtd|hopeful|hopes?|should|think|speculation|speculates?|hypothetical|assuming|not confirmed|no decision|undecided|questionable|not (?:yet |been )?ruled out|hasn.t been ruled out|not out|game.time decision|day.to.day|too early to (?:tell|know))\b/i;
 
 export function injuryAvailability(text: string): TweetPlayerEvent["availability"] {
   if (isQuestionedClaim(text)) return "uncertain";
   if (TENTATIVE_AVAILABILITY.test(text)) return "uncertain";
-  if (/\b(will not play|won't play|not available|ruled out|remains out|still out|out tonight|out (?:a minimum of |at least |for )?(?:the season|\d+|one|two|three|four|weeks?|months?|tonight|tomorrow)|will not return to (?:tonight.s|the) game|placed on (?:ir|ltir|injured reserve))\b/i.test(text)) return "out";
-  if (classifyInjuryEvent(text) === "confirmed_return") return "available";
+  const availabilityText = text.replace(/\b(?:not|no longer)\s+(?:(?:currently|listed)\s+)?on (?:ir|ltir|injured reserve)\b/gi, "");
+  if (/\b(will not play|won't play|not available|ruled out|remains out|still out|out tonight|out (?:for )?(?:a minimum of |at least )?(?:the (?:rest of (?:the )?)?season|\d+|one|two|three|four|weeks?|months?|tonight|tomorrow)|will not return to (?:tonight.s|the) game|(?:placed )?on (?:ir|ltir|injured reserve))\b/i.test(availabilityText)) return "out";
+  if (classifyInjuryEvent(availabilityText) === "confirmed_return") return "available";
   return "unknown";
 }
 
 const NUMBER_WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12 };
 export function extractInjuryTimeline(text: string, publishedAt: string | null): InjuryTimeline | null {
-  const range = text.match(/\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(?:\s*(?:[-–—]|to)\s*(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve))?\s*(days?|weeks?|months?)\b/i);
+  const range = text.match(/\b(\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(?:\s*(?:[-–—]|to)\s*(\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve))?\s*(days?|weeks?|months?)\b/i);
   const relative = text.match(/\b(tomorrow|tonight|today)\b/i);
   const weekday = text.match(/\b(?:(next|last)\s+)?(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday)\b/i);
   const vague = text.match(/\b(day.to.day|week.to.week|indefinitely|indefinite|next week|next month|rest of (?:the )?season|after (?:the )?break)\b/i);
@@ -83,7 +84,7 @@ export function classifyInjuryEvent(text: string, previous?: "injured" | "health
   if (!negatedReturn && /\b(will play|will return|returns? (?:tonight|to the lineup)|back in the lineup|cleared to play|available tonight|good to go)\b/i.test(text)) return "confirmed_return";
   if (!negatedReturn && /\bfully healthy\b.{0,80}\bready (?:to go )?for (?:training )?camp\b/i.test(text) && !TENTATIVE_AVAILABILITY.test(text)) return "confirmed_return";
   if (/\b(still out|remains out|(?:still )?day[ -]to[ -]day|continues? (?:to|rehab)|recovering|recovery)\b/i.test(text)) return "ongoing";
-  if (negatedReturn || /\b(injur\w*|out (?:tonight|tomorrow|for (?:the season|\d+))|sidelined|ruled out|surgery|day.to.day|week.to.week)\b/i.test(text)) {
+  if (negatedReturn || /\b(injur\w*|out (?:tonight|tomorrow|(?:for )?(?:the (?:rest of (?:the )?)?season|\d+))|sidelined|ruled out|surgery|day.to.day|week.to.week)\b/i.test(text)) {
     if (previous === "injured") return "ongoing";
     if ((previous === "healthy" && /\b(injur\w*|surgery|setback)\b/i.test(text)) || /\b(suffered|sustained|left (?:the )?(?:game|practice)|new injury)\b/i.test(text)) return "new_injury";
   }
@@ -91,7 +92,7 @@ export function classifyInjuryEvent(text: string, previous?: "injured" | "health
 }
 
 export function extractInjuryTimelines(text: string, publishedAt: string | null): InjuryTimeline[] {
-  return text.replace(/\b(Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\./gi, "$1").split(/[.;]|\s+(?:and|but)\s+/i).map((clause) => extractInjuryTimeline(clause, publishedAt))
+  return text.replace(/\b(Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\./gi, "$1").split(/(?<!\d)\.|\.(?!\d)|;|\s+(?:and|but)\s+/i).map((clause) => extractInjuryTimeline(clause, publishedAt))
     .filter((timeline): timeline is InjuryTimeline => timeline != null);
 }
 
@@ -162,7 +163,7 @@ export function extractTweetPlayerEvents(args: {
     const previousEnd = mentions[first - 1]?.end ?? 0;
     const prefix = args.text.slice(previousEnd, start);
     const clausePrefix = prefix.split(/[.;\n]|\b(?:and|but|while|whereas)\b/i).at(-1) ?? "";
-    const evidenceStart = /\b(hopeful|hopes?|expected|expect|would|should|could|might|may|if|think|speculation|speculates?|hypothetical|assuming|not confirmed|did not confirm|confirmed|starting goalie|starting goaltender|starter)\b/i.test(clausePrefix)
+    const evidenceStart = /\b(too early to (?:tell|know)|hopeful|hopes?|expected|expect|would|should|could|might|may|if|think|speculation|speculates?|hypothetical|assuming|not confirmed|did not confirm|confirmed|starting goalie|starting goaltender|starter)\b/i.test(clausePrefix)
       ? start - clausePrefix.length : start;
     // A sentence boundary also stops evidence before an unresolved subject.
     const remainder = args.text.slice(mentionEnd, nextMention);
@@ -173,7 +174,13 @@ export function extractTweetPlayerEvents(args: {
     const delimitedSubjectBoundary = remainder.search(/(?:[,–—]|\b(?:and|but|while|whereas)\b)\s+(?!(?:org|the organization|no decision)\b)(?=(?:[\p{L}'’.-]+\s+){1,4}(?:will|won't|is|was|remains|could|may|might|should)\b)/iu);
     const boundaries = [sentenceBoundary < 0 ? -1 : sentenceBoundary + 1, subjectBoundary, delimitedSubjectBoundary].filter((position) => position >= 0);
     const boundary = boundaries.length ? Math.min(...boundaries) : -1;
-    const end = boundary < 0 ? nextMention : mentionEnd + boundary;
+    // Only a sole named goalie leading onto the ice anchors this immediate
+    // explicit pronoun claim; intervening sentences/subjects remain unresolved.
+    const startContinuation = player.position === "G" && first === last && boundary === sentenceBoundary + 1
+      && /\bleads?\b[^.;\n]*\b(?:on|in)to the ice\b/i.test(args.text.slice(start, mentionEnd + boundary))
+      ? remainder.slice(sentenceBoundary + 1).match(/^\s*(?:he|she)(?:['’]ll|\s+will)\s+(?:get the start|start)\b[^.;\n]*(?:[.!?]|$)/i) : null;
+    const end = startContinuation ? mentionEnd + sentenceBoundary + 1 + startContinuation[0].length
+      : boundary < 0 ? nextMention : mentionEnd + boundary;
     const text = args.text.slice(evidenceStart, end).trimEnd();
     const evidence = { start: evidenceStart, end: evidenceStart + text.length, text };
     const events: TweetPlayerEvent[] = [];
@@ -183,7 +190,7 @@ export function extractTweetPlayerEvents(args: {
       const predicate = args.text.slice(mentions[last]!.end, evidence.end).replace(/^\s*\(\s*/, "");
       const historical = /\b(yesterday|last (?:night|game|season|week)|this season)\b/i.test(text)
         && !/\b(tonight|today|tomorrow|this (?:afternoon|evening))\b/i.test(text);
-      const affirmative = /\b(confirmed|starting goal(?:ie|tender))\b/i.test(clausePrefix)
+      const affirmative = Boolean(startContinuation) || /\b(confirmed|starting goal(?:ie|tender))\b/i.test(clausePrefix)
         || /^\s*(?:(?:will|to)\s+start\b|(?:(?:is|will be)\s+)?(?:starting|(?:the\s+)?starter|in (?:net|goal))\b|gets? the (?:start|nod)\b|backs? (?:him|her|them) up\b|(?:is\s+)?(?:the\s+)?backup\b|confirmed\b|starts?(?:\s+in (?:net|goal)\b|\s+(?:tonight|today|tomorrow|this (?:afternoon|evening))\b|(?=\s*(?:[.!?]|$))))/i.test(predicate);
       const state = observation || historical || /\b(practice|morning skate|camp)\b/i.test(text) || isQuestionedClaim(text) || TENTATIVE_AVAILABILITY.test(text) ? "projected"
         : /\b(did(?:n.t| not) confirm|projected)\b/i.test(text) ? "projected"
@@ -192,7 +199,7 @@ export function extractTweetPlayerEvents(args: {
       events.push({ playerId: player.playerId, playerName: player.fullName, kind: "goalie", state, goalieRole: /\b(backs? (?:him|her|them) up|backup)\b/i.test(text) ? "backup" : "starter", observation, evidence, timeline: null, timelines: [], availability: state === "ruled_out" ? "out" : "unknown" });
     }
     const hasInjuryContext = events.length === 0 || /\b(injur\w*|surgery|recover\w*|re[ -]?evaluat\w*|setback)\b/i.test(text) || args.priorStatus?.get(player.playerId) === "injured";
-    if (hasInjuryContext && (injuryAvailability(text) === "out" || /\b(injur\w*|return\w*|(?:remains|still) out|out (?:tonight|tomorrow|for (?:the season|\d+))|will play|will not play|won't play|surgery|re[ -]?evaluat\w*|setback|available|fully healthy|recover\w*|day[ -]to[ -]day|placed on (?:ir|ltir))\b/i.test(text))) events.push({ playerId: player.playerId, playerName: player.fullName, kind: "injury", state: classifyInjuryEvent(text, args.priorStatus?.get(player.playerId)), evidence,
+    if (hasInjuryContext && (injuryAvailability(text) === "out" || /\b(injur\w*|return\w*|(?:remains|still) out|out (?:tonight|tomorrow|(?:for )?(?:the (?:rest of (?:the )?)?season|\d+))|will play|suit up|will not play|won't play|surgery|re[ -]?evaluat\w*|setback|available|fully healthy|recover\w*|day[ -]to[ -]day|placed on (?:ir|ltir))\b/i.test(text))) events.push({ playerId: player.playerId, playerName: player.fullName, kind: "injury", state: classifyInjuryEvent(text, args.priorStatus?.get(player.playerId)), evidence,
       timeline: extractInjuryTimeline(text, args.publishedAt), timelines: extractInjuryTimelines(text, args.publishedAt), availability: injuryAvailability(text) });
     if (/\b(?:took|taking) rushes\b/i.test(text)) events.push({ playerId: player.playerId, playerName: player.fullName,
       kind: "participation", state: "observed", observation: "practice", evidence, timeline: null, timelines: [], availability: /\b(no decision|undecided)\b/i.test(text) ? "uncertain" : "unknown" });

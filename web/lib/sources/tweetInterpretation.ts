@@ -1,7 +1,7 @@
 import type { TweetPlayerEvent } from "./tweetPlayerEvents";
 import { normalizeIdentityName, resolvePlayerIdentity, type PlayerIdentity } from "./playerIdentity";
 
-export const TWEET_INTERPRETATION_VERSION = "2026-10-10.2";
+export const TWEET_INTERPRETATION_VERSION = "2026-10-11.1";
 export type EvidenceSpan = { start: number; end: number; text: string };
 export type TweetUnit = {
   situation: "es_forward" | "es_defense" | "pp" | "pk" | "goalie" | "scratch" | "injury";
@@ -93,7 +93,7 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
     version: TWEET_INTERPRETATION_VERSION,
     rosterRevision: roster.map((player) => [player.playerId, player.fullName, player.lastName, player.teamId, player.position, ...(player.aliases ?? [])].join(":")).sort().join("|"),
     units: [], unresolved: [],
-    context: /\b(camp|practice groups?|split squad)\b/i.test(text) ? "camp" : /\b(practice|morning skate)\b/i.test(text) ? "practice" : /\b(tonight|today|this afternoon|vs\.?|against|warmups?|starting goal(?:ie|tender)|in (?:net|goal)|gets the start|starts)\b/i.test(text) ? "game" : "unknown",
+    context: /\b(camp|practice groups?|split squad)\b/i.test(text) ? "camp" : /\b(practice|morning skate)\b/i.test(text) ? "practice" : /\b(tonight|today|this afternoon|vs\.?|against|warmups?|starting goal(?:ie|tender)|in (?:net|goal)|gets? the start|starts)\b/i.test(text) ? "game" : "unknown",
     certainty: /\bconfirmed\b/i.test(text) ? "confirmed" : /\b(projected|expected)\b/i.test(text) ? "projected" : "reported",
   };
   if (/\b11\s*(?:f\b|forwards?\b)[^\n]{0,30}7\s*(?:d\b|defen[cs]emen\b)/i.test(text)) result.formation = { forwards: 11, defense: 7 };
@@ -210,6 +210,9 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
       continue;
     }
     if (!kind) continue;
+    if (!rowKind && (kind === "es_forward" || kind === "es_defense")) {
+      ordinals.set(`${group}:${kind}`, result.units.filter((unit) => unit.situation === kind && unit.group === group).length + 1);
+    }
     sawStructure = true;
     result.units.push({ situation: kind, number: rowKind === kind ? ordinals.get(`${group}:${kind}`)! : result.units.filter((unit) => unit.situation === kind && unit.group === group).length + 1,
       explicitNumber: false, players, evidence, group, complete: true });

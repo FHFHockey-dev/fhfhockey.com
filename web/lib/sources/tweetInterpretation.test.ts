@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { classifyGameDayTweet } from "./lineupSourceIngestion";
 import { completeEvenStrengthUnits, interpretTweetUnits, requiresRelativeGameDateReview, segmentPlayerRow } from "./tweetInterpretation";
-import { classifyInjuryEvent, extractInjuryTimeline, extractInjuryTimelines, extractTweetPlayerEvents } from "./tweetPlayerEvents";
+import { classifyInjuryEvent, extractInjuryTimeline, extractInjuryTimelines, extractTweetPlayerEvents, injuryAvailability } from "./tweetPlayerEvents";
 import { assignmentsFor } from "../player-forecasts/sourceObservations";
 import { buildLinesCccSourceFromIftttEvent } from "./linesCccIngestion";
 import { reconcileAlias } from "./tweetAliasReconciliation";
@@ -607,5 +607,70 @@ describe("retained audit claim regressions", () => {
   it("does not turn a skater pair or an undeclared short forward row into defense", () => {
     expect(interpretTweetUnits("Warmup lines:\nNorris-McLeod", roster).units.every((unit) => !unit.complete)).toBe(true);
     expect(interpretTweetUnits("Lines:\nNorris-McLeod-Hart", [...roster, { playerId: 100, fullName: "Carter Hart", lastName: "Hart", position: "G" }]).units.every((unit) => !unit.complete)).toBe(true);
+  });
+});
+
+
+describe("Oct11 verified original regressions", () => {
+  const fixture = JSON.parse(readFileSync(resolve(process.cwd(), "lib/sources/fixtures/october11TroublesomeTweets.json"), "utf8"));
+  const original = (id: string) => fixture.records.find((record: any) => record.tweetId === id);
+  const events = (id: string) => {
+    const record = original(id);
+    return extractTweetPlayerEvents({ text: record.text, players: record.players, publishedAt: record.publishedAt });
+  };
+
+  it("keeps Shesterkin's season-long absence explicit without applying an old starter claim", () => {
+    expect(events("2108957630253113386")).toMatchObject([{ playerName: "Igor Shesterkin", kind: "injury", availability: "out", times: { applicability: "unresolved" } }]);
+    expect(extractTweetPlayerEvents({ text: "Shesterkin might be out for the rest of the season.", players: original("2108957630253113386").players, publishedAt: null })).toMatchObject([{ availability: "uncertain" }]);
+  });
+
+  it("preserves Veleno's decimal absence range separately from Korpisalo's four weeks", () => {
+    expect(events("2108958442983686184")).toMatchObject([
+      { playerName: "Joonas Korpisalo", availability: "out", timeline: { minimum: 4, maximum: 4, unit: "weeks" } },
+      { playerName: "Joe Veleno", availability: "out", timeline: { purpose: "absence", minimum: 3, maximum: 3.5, unit: "months", text: "3-3.5 months" }, timelines: [{ minimum: 3, maximum: 3.5 }] },
+    ]);
+  });
+
+  it("retains Dubois's uncertain tomorrow appearance and Roy's DTD separately", () => {
+    expect(events("2108961406007570942")).toMatchObject([
+      { playerName: "Pierre-Luc Dubois", availability: "uncertain", timeline: { targetDate: "2026-10-11" }, times: { applicability: "unresolved" } },
+      { playerName: "Matt Roy", state: "ongoing", availability: "uncertain" },
+    ]);
+  });
+
+  it("binds Merilainen's explicit pronoun start to the sole preceding goalie", () => {
+    const record = original("2108996072647573721");
+    expect(events(record.tweetId)).toMatchObject([{ playerName: "Leevi Meriläinen", kind: "goalie", state: "confirmed", times: { observation: record.publishedAt, applicability: "unresolved" } }]);
+    const ambiguous = `${record.text.split(". He")[0]}. Another goalie is ready. He’ll get the start.`;
+    expect(extractTweetPlayerEvents({ text: ambiguous, players: record.players, publishedAt: record.publishedAt }).some(event => event.state === "confirmed")).toBe(false);
+  });
+
+  it("retains Lindgren's explicit injured reserve status without confirming a game appearance", () => {
+    expect(events("2108233461026726263")).toMatchObject([{ playerName: "Ryan Lindgren", availability: "out", times: { applicability: "unresolved" } }]);
+    expect(extractTweetPlayerEvents({ text: "Lindgren is no longer on injured reserve.", players: original("2108233461026726263").players, publishedAt: null }).some(event => event.availability === "out")).toBe(false);
+  });
+
+  it("keeps separate availability predicates after negated IR membership", () => {
+    expect(injuryAvailability("Lindgren is no longer on injured reserve.")).toBe("unknown");
+    expect(injuryAvailability("Lindgren is no longer on injured reserve and will play tonight.")).toBe("available");
+    expect(injuryAvailability("Lindgren is not on IR and will play tonight.")).toBe("available");
+    expect(injuryAvailability("Lindgren is no longer on injured reserve but will not play tonight.")).toBe("out");
+    expect(injuryAvailability("Lindgren is no longer on injured reserve and might play tonight.")).toBe("uncertain");
+    expect(injuryAvailability("Lindgren is not on IR and will play tonight?")).toBe("uncertain");
+  });
+
+  it("numbers Carolina's first implicit structured row before later rows", () => {
+    const record = original("2109051291372777568");
+    const result = interpretTweetUnits(record.text, record.players);
+    expect(result.units.filter(unit => unit.situation === "es_forward").map(unit => unit.number)).toEqual([1, 2, 3, 4]);
+    expect(completeEvenStrengthUnits(result)).toHaveLength(7);
+    for (const unit of result.units) for (const span of unit.evidence) expect(record.text.slice(span.start, span.end)).toBe(span.text);
+    expect(result.events?.some(event => event.kind === "goalie" && event.state === "confirmed") ?? false).toBe(false);
+  });
+
+  it("does not turn Seattle's verified image-only caption into automated lineup rows", () => {
+    const record = original("2108693031641551200");
+    expect(interpretTweetUnits(record.text, record.players).units).toEqual([]);
+    expect(completeEvenStrengthUnits(interpretTweetUnits(record.text, record.players))).toEqual([]);
   });
 });
