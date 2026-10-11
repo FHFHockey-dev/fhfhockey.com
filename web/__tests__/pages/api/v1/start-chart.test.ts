@@ -1030,6 +1030,38 @@ describe("/api/v1/start-chart", () => {
     expect(body.forecastAdmission.exclusionCounts.missing_participation).toBe(1);
   });
 
+  it("compares a PPP-only packet through RSO and the Start Chart API without filling missing heads", async () => {
+    const fixture = consumerGameRevisionFixture();
+    const row = fixture.revision.payload.players[0] as any;
+    row.players = { id: row.player_id, fullName: "Fixture PP skater", position: "C" };
+    for (const prefix of ["proj_goals", "proj_assists", "proj_shots"]) {
+      for (const strength of ["es", "pp", "pk"]) row[`${prefix}_${strength}`] = null;
+    }
+    Object.assign(row, { proj_goals_pp: 0.2, proj_assists_pp: 0.1, proj_hits: null, proj_blocks: null, proj_pim: null });
+    sharedAdmissionInputs(fixture);
+    const admitted = publicPlanningForecasts([fixture.revision], fixture.players,
+      normalizePlanningGames(fixture.scheduleRows), fixture.now, {}, [], fixture.seasonId);
+    expect(admitted).toHaveLength(1);
+    expect(admitted[0].stats.PP_POINTS).toBeCloseTo(0.3);
+    expect(admitted[0].conditioning).toBe("unconditional");
+    const body = await serveAdmissionFixture(fixture);
+    expect(body.players).toHaveLength(1);
+    expect(body.players[0].forecast.expected).toEqual(admitted[0].stats);
+    expect(body.players[0].forecast.conditional).toEqual(admitted[0].conditionalStats);
+    expect(body.players[0].proj_fantasy_points).toBeNull();
+    for (const key of ["GOALS", "ASSISTS", "SHOTS_ON_GOAL", "HITS", "BLOCKED_SHOTS", "PENALTY_MINUTES", "TIME_ON_ICE_PER_GAME"]) {
+      expect(body.players[0].forecast.expected[key]).toBeNull();
+    }
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const category = createMockRes();
+    await handler({ method: "POST", query: { date: fixture.date }, body: { mode: "categories", category: "PP_POINTS" } } as any, category);
+    expect(category.statusCode).toBe(200);
+    expect(category.headers["Cache-Control"]).toBe("private, no-store");
+    expect(category.body.players[0].boardScore.categoryValue).toBeCloseTo(admitted[0].stats.PP_POINTS!);
+    expect(category.body.players[0].boardScore.points).toBeNull();
+    expect(category.body.players[0].position_ranks.C).toBe(1);
+  });
+
   it("preserves usable targets while withholding incomplete totals and unadmitted players", async () => {
     const fixture = consumerGameRevisionFixture();
     (fixture.revision.payload.players[0] as any).proj_goals_pk = null;

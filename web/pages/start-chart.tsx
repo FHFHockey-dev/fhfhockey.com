@@ -356,6 +356,7 @@ export default function StartChartPage() {
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [scoring, setScoring] = useState<BoardScoringRequest>(() => parseBoardScoringRequest({}));
   const [scoringTouched, setScoringTouched] = useState(false);
+  const selectedCategoryRef = useRef<string | null>(null);
   const [scoringError, setScoringError] = useState<string | null>(null);
   const [activePosition, setActivePosition] =
     useState<StartChartPosition>("C");
@@ -827,7 +828,19 @@ export default function StartChartPage() {
             id="start-chart-mode"
             className={styles.selectInput}
             value={scoring.mode}
-            onChange={(event) => { setScoringTouched(true); setScoring({ ...scoring, mode: event.target.value as "points" | "categories", category: event.target.value === "categories" ? "SHOTS_ON_GOAL" : null }); }}
+            onChange={(event) => {
+              const mode = event.target.value as "points" | "categories";
+              const categories = ["SHOTS_ON_GOAL", ...BOARD_CATEGORIES.filter(category => category !== "SHOTS_ON_GOAL")];
+              const category = mode === "categories" ? selectedCategoryRef.current ?? categories.find(key =>
+                (playersByPosition.get(activePosition) ?? []).some(player => {
+                  const forecast = player.forecast;
+                  const value = (forecast?.expected ?? forecast?.conditional ?? forecast?.legacy)?.[key];
+                  return typeof value === "number" && Number.isFinite(value);
+                })) ?? "SHOTS_ON_GOAL" : null;
+              selectedCategoryRef.current = category ?? selectedCategoryRef.current;
+              setScoringTouched(true);
+              setScoring({ ...scoring, mode, category });
+            }}
           >
             <option value="points">Fantasy points</option>
             <option value="categories">Individual category</option>
@@ -836,7 +849,7 @@ export default function StartChartPage() {
         {scoring.mode === "categories" ? <div className={styles.filterGroup}>
           <label htmlFor="start-chart-category">Category</label>
           <select id="start-chart-category" className={styles.selectInput} value={scoring.category ?? "SHOTS_ON_GOAL"}
-            onChange={(event) => { setScoringTouched(true); setScoring({ ...scoring, category: event.target.value }); }}>
+            onChange={(event) => { selectedCategoryRef.current = event.target.value; setScoringTouched(true); setScoring({ ...scoring, category: event.target.value }); }}>
             {BOARD_CATEGORIES.map((category) => <option key={category} value={category}>{category.replaceAll("_", " ")}</option>)}
           </select>
         </div> : null}

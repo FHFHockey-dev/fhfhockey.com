@@ -3,6 +3,7 @@ import { selectTeamFormGames, summarizeTeamForm } from "lib/projections/startCha
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildBoardValidationDisclosure } from "lib/projections/starterBoardValidation";
+import { BOARD_CATEGORIES } from "lib/projections/starterBoardScoring";
 
 const swrState = vi.hoisted(() => ({
   data: null as any,
@@ -382,6 +383,43 @@ describe("StartChartPage", () => {
     expect((screen.getByRole("button", { name: "Previous day" }) as HTMLButtonElement).disabled).toBe(true);
     fireEvent.change(input, { target: { value: "2026-02-06" } });
     expect(input.value).toBe("2026-02-07");
+  });
+
+  it.each([0, 0.3])("selects the available PPP category with value %s when other heads are unavailable", value => {
+    const stats = { ...Object.fromEntries(BOARD_CATEGORIES.map(key => [key, null])), PP_POINTS: value };
+    swrState.data = { ...buildApiData(), contractVersion: 2, players: [player({
+      proj_fantasy_points: null, proj_goals: null, proj_assists: null, proj_shots: null,
+      proj_hits: null, proj_blocks: null, proj_pim: null, proj_toi_minutes: null,
+      forecast: { conditioning: "unconditional", participationProbability: 1, probabilityStatus: "confirmed_evidence",
+        expected: stats, conditional: stats, legacy: null, distributionStatus: "means_only_unvalidated", evidence: [], conflicts: [] },
+    })] };
+    routerState.router.query = { position: "C" };
+    const view = render(<StartChartPage />);
+    fireEvent.change(screen.getByLabelText("Compare"), { target: { value: "categories" } });
+    expect((screen.getByLabelText("Category") as HTMLSelectElement).value).toBe("PP_POINTS");
+    const panel = document.getElementById("start-chart-panel-C")!;
+    expect(panel.querySelector("strong")?.textContent).toBe(value.toFixed(2));
+    expect(panel.querySelector("ol li")?.textContent).toContain("PP POINTS");
+    fireEvent.change(screen.getByLabelText("Category"), { target: { value: "SHOTS_ON_GOAL" } });
+    expect(panel.querySelector("strong")?.textContent).toBe("—");
+    view.rerender(<StartChartPage />);
+    expect((screen.getByLabelText("Category") as HTMLSelectElement).value).toBe("SHOTS_ON_GOAL");
+    fireEvent.change(screen.getByLabelText("Compare"), { target: { value: "points" } });
+    fireEvent.change(screen.getByLabelText("Compare"), { target: { value: "categories" } });
+    expect((screen.getByLabelText("Category") as HTMLSelectElement).value).toBe("SHOTS_ON_GOAL");
+    expect(panel.querySelector("strong")?.textContent).toBe("—");
+  });
+
+  it("keeps shots as the category default when an observed zero is available", () => {
+    const stats = { SHOTS_ON_GOAL: 0, PP_POINTS: 0.3 };
+    swrState.data = { ...buildApiData(), contractVersion: 2, players: [player({
+      forecast: { conditioning: "unconditional", participationProbability: 1, probabilityStatus: "confirmed_evidence",
+        expected: stats, conditional: stats, legacy: null, distributionStatus: "means_only_unvalidated", evidence: [], conflicts: [] },
+    })] };
+    routerState.router.query = { position: "C" };
+    render(<StartChartPage />);
+    fireEvent.change(screen.getByLabelText("Compare"), { target: { value: "categories" } });
+    expect((screen.getByLabelText("Category") as HTMLSelectElement).value).toBe("SHOTS_ON_GOAL");
   });
 
   it("displays the versioned fantasy scoring formula supplied by the API", () => {
