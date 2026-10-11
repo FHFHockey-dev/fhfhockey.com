@@ -57,6 +57,84 @@ export function hashProjectionRawJson(payload: unknown): string {
   return createHash("sha256").update(serialized).digest("hex");
 }
 
+
+const RAW_SHIFT_ROWS_ERROR = "INVALID_PROJECTION_RAW_SHIFT_ROWS";
+const RAW_SHIFT_WITNESS_LIMIT = 3;
+
+/** A conservative projection of the SQL's bigint/integer/text tuple, not a gate. */
+function rawShiftTypedValue(value: unknown, kind: "bigint" | "integer" | "text"): string | null | undefined {
+  if (value == null) return null;
+  if (kind === "text") {
+    if (typeof value === "string") return value;
+    if (typeof value === "boolean" || (typeof value === "number" && Number.isSafeInteger(value))) return String(value);
+    return undefined;
+  }
+  const text = typeof value === "number" && Number.isSafeInteger(value)
+    ? String(value)
+    : typeof value === "string" && /^[+-]?\d+$/.test(value.trim()) && value.length <= 32
+      ? value.trim()
+      : undefined;
+  if (text === undefined) return undefined;
+  const integer = BigInt(text);
+  const min = kind === "bigint" ? BigInt("-9223372036854775808") : BigInt(-2147483648);
+  const max = kind === "bigint" ? BigInt("9223372036854775807") : BigInt(2147483647);
+  return integer >= min && integer <= max ? integer.toString() : undefined;
+}
+
+/** Only enrich SQL's known rejection. Never validate, alter or reject an accepted RPC. */
+function rawShiftRejectionError(error: unknown, payload: NhleShiftChartsRawPayload, gameId: number, envelopeHash: string): Error {
+  const original = toError(error, "Projection raw snapshot RPC failed");
+  if (original.message !== RAW_SHIFT_ROWS_ERROR) return original;
+  const fields = ["gameId", "playerId", "teamId", "shiftNumber", "period", "startTime", "endTime", "duration", "typeCode"] as const;
+  const tuples = new Map<string, number>();
+  const witnesses: { ordinal: number; providerId: number | null; reasons: string[]; duplicateOfOrdinal?: number }[] = [];
+  let offendingRows = 0;
+  let typedProjectionComplete = true;
+  for (const [index, row] of payload.data.entries()) {
+    const record = row as unknown as Record<string, unknown>;
+    const reasons: string[] = [];
+    const values = fields.map((field) => {
+      const kind = field === "gameId" || field === "playerId" || field === "teamId"
+        ? "bigint" : field === "shiftNumber" || field === "period" || field === "typeCode"
+          ? "integer" : "text";
+      const value = rawShiftTypedValue(record[field], kind);
+      if (value === undefined) reasons.push(`${field}_typed_projection_unresolved`);
+      else if (field === "gameId" && value !== String(gameId)) reasons.push("gameId_mismatch");
+      else if (value === null && field !== "duration") reasons.push(`${field}_null`);
+      else if (value !== null && (field === "playerId" || field === "teamId") && BigInt(value) <= BigInt(0)) reasons.push(`${field}_nonpositive`);
+      else if (value !== null && (field === "shiftNumber" || field === "period") && BigInt(value) < BigInt(0)) reasons.push(`${field}_negative`);
+      return value;
+    });
+    let duplicateOfOrdinal: number | undefined;
+    if (values.some((value) => value === undefined)) typedProjectionComplete = false;
+    else {
+      const tuple = JSON.stringify(values);
+      duplicateOfOrdinal = tuples.get(tuple);
+      if (duplicateOfOrdinal !== undefined) reasons.push("duplicate_typed_tuple");
+      else tuples.set(tuple, index + 1);
+    }
+    if (reasons.length === 0) continue;
+    offendingRows++;
+    if (witnesses.length < RAW_SHIFT_WITNESS_LIMIT) {
+      witnesses.push({
+        ordinal: index + 1,
+        providerId: typeof record.id === "number" && Number.isSafeInteger(record.id) && record.id > 0 ? record.id : null,
+        reasons,
+        ...(duplicateOfOrdinal === undefined ? {} : { duplicateOfOrdinal }),
+      });
+    }
+  }
+  return new Error(`${RAW_SHIFT_ROWS_ERROR} ${JSON.stringify({
+    envelopeHash,
+    rawRows: payload.data.length,
+    distinctTypedRows: typedProjectionComplete ? tuples.size : null,
+    typedProjectionComplete,
+    offendingRows,
+    witnesses,
+    truncated: offendingRows > witnesses.length,
+  })}`);
+}
+
 function parseIdentity(args: {
   rawPayloadId: unknown;
   snapshotVersion: unknown;
@@ -152,10 +230,10 @@ export async function captureProjectionRawSourceSnapshots(args: {
       p_shift_source_url: shiftSourceUrl,
     });
   } catch (error) {
-    throw toError(error, "Projection raw snapshot RPC failed");
+    throw rawShiftRejectionError(error, args.shiftPayload, args.gameId, shiftPayloadHash);
   }
   if (result.error) {
-    throw toError(result.error, "Projection raw snapshot RPC failed");
+    throw rawShiftRejectionError(result.error, args.shiftPayload, args.gameId, shiftPayloadHash);
   }
   if (
     !Array.isArray(result.data) ||

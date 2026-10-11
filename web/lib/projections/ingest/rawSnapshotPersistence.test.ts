@@ -2,6 +2,13 @@ import { createHash } from "node:crypto";
 
 import { describe, expect, it, vi } from "vitest";
 
+const { auditInsert } = vi.hoisted(() => ({ auditInsert: vi.fn() }));
+vi.mock("lib/supabase/server", () => ({
+  default: { from: vi.fn(() => ({ insert: auditInsert })) },
+}));
+
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+
 import {
   captureProjectionRawSourceSnapshots,
   hashProjectionRawJson,
@@ -165,5 +172,140 @@ describe("projection raw snapshot persistence", () => {
         shiftPayload,
       }),
     ).rejects.toThrow("invalid PBP identity");
+  });
+});
+
+type RawPayload = Parameters<typeof captureProjectionRawSourceSnapshots>[0]["shiftPayload"];
+const ROW_ERROR = "INVALID_PROJECTION_RAW_SHIFT_ROWS";
+
+async function rejectedWitness(rows: Record<string, unknown>[], thrown = false) {
+  const payload = { source: "json-api", total: rows.length, data: rows } as RawPayload;
+  const before = JSON.stringify(payload);
+  const rpc = thrown
+    ? vi.fn().mockRejectedValue(new Error(ROW_ERROR))
+    : vi.fn().mockResolvedValue({ data: null, error: { message: ROW_ERROR } });
+  let message = "";
+  try {
+    await captureProjectionRawSourceSnapshots({ supabase: { rpc } as any, gameId: GAME_ID, pbp, shiftPayload: payload });
+  } catch (error) {
+    message = (error as Error).message;
+  }
+  expect(rpc).toHaveBeenCalledTimes(1);
+  expect(rpc.mock.calls[0][1].p_shift_payload).toBe(payload);
+  expect(JSON.stringify(payload)).toBe(before);
+  expect(message.startsWith(`${ROW_ERROR} `)).toBe(true);
+  // The natural ingest receipt copies Error.message into its JSON errors array.
+  const receipt = JSON.parse(JSON.stringify({ errors: [{ stage: "capture_raw_sources", message }] }));
+  const witness = JSON.parse(receipt.errors[0].message.slice(ROW_ERROR.length + 1));
+  expect(witness.envelopeHash).toBe(hashProjectionRawJson(payload));
+  return { witness, message };
+}
+
+describe("SQL rejection witnesses", () => {
+  it("compares typed tuples rather than provider IDs or arbitrary metadata", async () => {
+    const { witness } = await rejectedWitness([
+      { ...shiftPayload.data[0], id: 101 },
+      { ...shiftPayload.data[0], id: 102, playerId: "0010", teamId: "1", period: "01", shiftNumber: "1", typeCode: "517", firstName: "private metadata" },
+    ]);
+    expect(witness).toMatchObject({ rawRows: 2, distinctTypedRows: 1, offendingRows: 1, witnesses: [{ ordinal: 2, providerId: 102, duplicateOfOrdinal: 1, reasons: ["duplicate_typed_tuple"] }] });
+  });
+
+  it("reports nonpositive IDs even on non-interval records", async () => {
+    const { witness } = await rejectedWitness([{ ...shiftPayload.data[0], id: 103, typeCode: 505, playerId: 0, teamId: -1 }]);
+    expect(witness.witnesses[0].reasons).toEqual(["playerId_nonpositive", "teamId_nonpositive"]);
+  });
+
+  it.each(["playerId", "teamId", "shiftNumber", "period", "startTime", "endTime", "typeCode"])("reports missing and null %s", async (field) => {
+    const missing: Record<string, unknown> = { ...shiftPayload.data[0], id: 104 };
+    delete missing[field];
+    for (const row of [missing, { ...missing, [field]: null }]) {
+      const { witness } = await rejectedWitness([row]);
+      expect(witness.witnesses[0].reasons).toContain(`${field}_null`);
+      expect(witness.distinctTypedRows).toBe(1);
+    }
+  });
+
+  it("bounds witnesses and never includes provider metadata or unsafe IDs", async () => {
+    const { witness, message } = await rejectedWitness(Array.from({ length: 200 }, () => ({ ...shiftPayload.data[0], id: "SECRET-ID", firstName: "SECRET-METADATA".repeat(1000) })));
+    expect(witness).toMatchObject({ rawRows: 200, distinctTypedRows: 1, offendingRows: 199, truncated: true });
+    expect(witness.witnesses).toHaveLength(3);
+    expect(witness.witnesses.every((row: { providerId: unknown }) => row.providerId === null)).toBe(true);
+    expect(message.length).toBeLessThan(1500);
+    expect(message).not.toContain("SECRET");
+  });
+
+  it("enriches thrown RPC rejections and preserves unrelated errors", async () => {
+    const { witness } = await rejectedWitness([{ ...shiftPayload.data[0], period: -1, shiftNumber: -1 }], true);
+    expect(witness.witnesses[0].reasons).toEqual(["shiftNumber_negative", "period_negative"]);
+    const original = new Error("transport failed");
+    await expect(captureProjectionRawSourceSnapshots({ supabase: { rpc: vi.fn().mockRejectedValue(original) } as any, gameId: GAME_ID, pbp, shiftPayload })).rejects.toBe(original);
+  });
+
+  it("keeps unsupported text casts unresolved instead of guessing", async () => {
+    const { witness } = await rejectedWitness([{ ...shiftPayload.data[0], duration: { arbitrary: "private" } }]);
+    expect(witness.distinctTypedRows).toBeNull();
+    expect(witness.typedProjectionComplete).toBe(false);
+    expect(witness.witnesses[0].reasons).toEqual(["duration_typed_projection_unresolved"]);
+  });
+
+
+  it("keeps SQL's nullable duration and zero-valued shift/period/type semantics", async () => {
+    const { duration: _duration, ...withoutDuration } = shiftPayload.data[0];
+    const base = { ...withoutDuration, shiftNumber: 0, period: 0, typeCode: 0 };
+    const { witness } = await rejectedWitness([
+      { ...base, id: 201 }, { ...base, id: 202, duration: null }, { ...base, id: 203, duration: "" },
+    ]);
+    expect(witness).toMatchObject({ distinctTypedRows: 2, offendingRows: 1 });
+    expect(witness.witnesses[0]).toMatchObject({ ordinal: 2, duplicateOfOrdinal: 1, reasons: ["duplicate_typed_tuple"] });
+  });
+
+  it("compares supported SQL text casts as typed text", async () => {
+    const { witness } = await rejectedWitness([
+      { ...shiftPayload.data[0], startTime: 0, endTime: false, id: 301 },
+      { ...shiftPayload.data[0], startTime: "0", endTime: "false", id: 302 },
+    ]);
+    expect(witness).toMatchObject({ distinctTypedRows: 1, typedProjectionComplete: true });
+    expect(witness.witnesses[0].reasons).toEqual(["duplicate_typed_tuple"]);
+  });
+
+  it("bounds a witness with every required predicate failing", async () => {
+    const rows = Array.from({ length: 4 }, (_, index) => ({ gameId: GAME_ID, id: Number.MAX_SAFE_INTEGER - index }));
+    const { witness, message } = await rejectedWitness(rows);
+    expect(witness.witnesses).toHaveLength(3);
+    expect(message.length).toBeLessThan(1500);
+    expect(JSON.stringify({ errors: [{ message }] }).length).toBeLessThan(2000);
+  });
+
+
+  it("retains the safe witness through the actual audit response-message path", async () => {
+    const { message } = await rejectedWitness([{ ...shiftPayload.data[0], playerId: 0 }]);
+    auditInsert.mockReset().mockResolvedValue({ error: null });
+    const handler = withCronJobAudit(async (_req, res) => {
+      try { throw new Error(message); }
+      catch (error) {
+        res.status(200).json({ success: false, failedRows: 1, errors: [{ gameId: GAME_ID, stage: "capture_raw_sources", message: (error as Error).message }] });
+      }
+    }, { jobName: "synthetic-raw-capture" });
+    const res = {
+      statusCode: 200, headersSent: false, body: undefined as unknown,
+      status(code: number) { this.statusCode = code; return this; },
+      json(body: unknown) { this.body = body; this.headersSent = true; return this; },
+    };
+    await handler({ method: "GET", url: "/synthetic-only" }, res);
+    expect(auditInsert).toHaveBeenCalledTimes(1);
+    const stored = auditInsert.mock.calls[0][0].details.response;
+    expect(stored.length).toBeLessThan(4000);
+    expect(JSON.parse(stored).errors[0].message).toBe(message);
+    expect((res.body as { errors: { message: string }[] }).errors[0].message).toBe(message);
+  });
+
+  it("accepts equal physical intervals with distinct shift numbers and preserves RPC bytes", async () => {
+    const payload = { ...shiftPayload, data: [{ ...shiftPayload.data[0], id: 105 }, { ...shiftPayload.data[0], id: 106, shiftNumber: 2, duration: { deliberately: "unsupported local text cast" }, extra: { private: "metadata" } }] } as unknown as RawPayload;
+    const before = JSON.stringify(payload);
+    const rpc = vi.fn().mockResolvedValue({ data: [{ game_id: GAME_ID, pbp_raw_payload_id: 101, pbp_raw_snapshot_version: 7, pbp_raw_payload_hash: hashProjectionRawJson(pbp), shift_raw_payload_id: 102, shift_raw_snapshot_version: 9, shift_raw_payload_hash: hashProjectionRawJson(payload) }], error: null });
+    await expect(captureProjectionRawSourceSnapshots({ supabase: { rpc } as any, gameId: GAME_ID, pbp, shiftPayload: payload })).resolves.toMatchObject({ gameId: GAME_ID });
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc.mock.calls[0][1].p_shift_payload).toBe(payload);
+    expect(JSON.stringify(payload)).toBe(before);
   });
 });
