@@ -803,33 +803,56 @@ test("manual league eligibility must be confirmed and survives a reload", async 
   expect(errors).toEqual([]);
 });
 
-test("goalie competition stays unresolved across the worker and evidence view", async ({ page }) => {
+test("goalie competition stays unresolved across the worker and evidence view", async ({ page }, testInfo) => {
   const players: PlanningPlayer[] = [7, 8].map(id => ({ ...fixturePlayer(id, `Goalie ${id}`, "CAR"),
     playerClass: "goalie", eligiblePositions: ["G"], availability: id === 7 ? "manager_available" : "unknown" }));
   const workspace = fixtureWorkspace(players, { ...fixtureRules, rosterSlots: { G: 1 },
     scoring: { mode: "points", weights: { SAVES_GOALIE: 1 }, categories: [] },
     goalieMinimum: { required: 1, credited: 0, counts: "starts", penalty: "none" } });
-  const games = [fixtureGame("goalie-first", 5, "CAR"), fixtureGame("goalie-second", 6, "CAR")];
+  workspace.context.endDate = date(9);
+  const games = [fixtureGame("goalie-first", 8, "CAR"), fixtureGame("goalie-second", 9, "CAR")];
   let probability = 0.8;
   await seedWorkspace(page, workspace);
   await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true,
     data: { players, games, forecasts: players.map(member => ({ ...fixtureForecast(member, games[0], 0),
       stats: { SAVES_GOALIE: 20 }, startProbability: probability })), evidence: {} } } }));
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/roster-schedule-optimizer");
   await expect(page.getByRole("button", { name: "Show schedule-capacity assignment" })).toBeVisible();
   const outcome = page.getByRole("region", { name: "Plan summary" }).locator("article").filter({ hasText: "Projected outcome" }).locator("strong");
   await expect(outcome).toHaveText("—");
   await page.getByRole("button", { name: "Matchup", exact: true }).click();
-  await expect(page.getByText(/Starter evidence is incompatible/)).toContainText("projected starts unknown");
-  await expect(page.getByText(/Starter evidence is incompatible/)).toContainText("0 confirmed starts");
+  const pairs = page.getByRole("group", { name: "Back-to-back goalie evidence" });
+  const early = page.getByRole("group", { name: "Early goalie window" });
+  const late = page.getByRole("group", { name: "Late goalie window" });
+  await expect(pairs.getByText(/Starter evidence is incompatible/)).toContainText("projected starts unknown");
+  await expect(pairs.getByText(/Starter evidence is incompatible/)).toContainText("0 confirmed starts");
   await page.reload();
   await page.getByRole("button", { name: "Matchup", exact: true }).click();
-  await expect(page.getByText(/Starter evidence is incompatible/)).toBeVisible();
+  await expect(pairs.getByText(/Starter evidence is incompatible/)).toBeVisible();
   probability = 0.4;
   await page.reload();
   await page.getByRole("button", { name: "Matchup", exact: true }).click();
-  await expect(page.getByText(/0.4 projected across 1\/2 evidenced games/)).toBeVisible();
+  await expect(pairs.getByText(/0.4 projected across 1\/2 evidenced games/)).toBeVisible();
   await expect(page.getByText(/Starter evidence is incompatible/)).toHaveCount(0);
+  await expect(early).toContainText("Early · Mon–Thu");
+  await expect(early).toContainText("0.4 projected across 1/1 evidenced games");
+  await expect(late).toContainText("projected starts unknown");
+  await openPlanningSetup(page);
+  await page.getByRole("combobox", { name: "Split", exact: true }).selectOption("mon_wed");
+  await expect(early).toContainText("No remaining scheduled games in this window.");
+  await expect(late).toContainText("Late · Thu–Sun");
+  await expect(late).toContainText("0.4 projected across 1/2 evidenced games");
+  await expect(late).toContainText("1 goalie with unknown availability");
+  await page.getByRole("button", { name: /Planning setup ·/ }).click();
+  await expectDesktopFrameVisible(page);
+  await page.screenshot({ path: testInfo.outputPath("goalie-windows-desktop.png"), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("navigation", { name: "Workspace views" }).getByRole("button", { name: "Matchup", exact: true }).click();
+  await late.scrollIntoViewIfNeeded();
+  await expect(late).toBeInViewport();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await page.screenshot({ path: testInfo.outputPath("goalie-windows-mobile.png"), fullPage: true });
 });
 
 for (const mode of ["assignment-only", "totals-only", "legacy", "unproven-lineage"] as const) {

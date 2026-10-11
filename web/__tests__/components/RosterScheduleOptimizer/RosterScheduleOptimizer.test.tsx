@@ -548,16 +548,64 @@ describe("RosterScheduleOptimizer workspace", () => {
       players: goalies, games, forecasts, roster: [{ playerId: "7", position: "active" }], rules: workspace.rules,
       realized: {}, opponent: null, evidence: {}, lockedAssignments: [] };
     const view = render(<GoalieEvidence snapshot={snapshot} />);
-    expect(screen.getByText(/Starter evidence is incompatible/).textContent).toContain("projected starts unknown");
-    expect(screen.getByText(/Starter evidence is incompatible/).textContent).toContain("0 confirmed starts");
+    const pairs = () => within(screen.getByRole("group", { name: "Back-to-back goalie evidence" }));
+    expect(pairs().getByText(/Starter evidence is incompatible/).textContent).toContain("projected starts unknown");
+    expect(pairs().getByText(/Starter evidence is incompatible/).textContent).toContain("0 confirmed starts");
     const valid = forecasts.map(row => ({ ...row, startProbability: 0.4 }));
     view.rerender(<GoalieEvidence snapshot={{ ...snapshot, forecasts: valid }} />);
-    expect(screen.getByText(/0.4 projected across 1\/2 evidenced games/)).toBeTruthy();
+    expect(pairs().getByText(/0.4 projected across 1\/2 evidenced games/)).toBeTruthy();
     expect(screen.queryByText(/Starter evidence is incompatible/)).toBeNull();
+    const late = within(screen.getByRole("group", { name: "Late goalie window" }));
+    expect(late.getByText(/1 unique known goalie option/)).toBeTruthy();
+    expect(late.getByText(/0 confirmed starts/)).toBeTruthy();
+    expect(late.getByText(/0.4 projected across 1\/2 evidenced games/)).toBeTruthy();
+    expect(late.getByText(/1 goalie with unknown availability/)).toBeTruthy();
+    view.rerender(<GoalieEvidence snapshot={{ ...snapshot, players: goalies.map(goalie => ({ ...goalie, availability: "free_agent" })),
+      forecasts: valid.map(row => ({ ...row, startProbability: 0.5 })) }} />);
+    expect(late.getByText(/2 unique known goalie options/)).toBeTruthy();
+    expect(late.getByText(/1 projected across 1\/2 evidenced games/)).toBeTruthy();
+    expect(late.getByText(/0 confirmed starts/)).toBeTruthy();
+    for (const missing of [false, true]) {
+      const partial = valid.map(row => ({ ...row, startProbability: row.playerId === "7" ? 0.4 : null }));
+      view.rerender(<GoalieEvidence snapshot={{ ...snapshot, players: goalies.map(goalie => ({ ...goalie, availability: "free_agent" })),
+        forecasts: missing ? partial.filter(row => row.playerId === "7") : partial }} />);
+      expect(late.getByText(/0.4 projected \(known subtotal\)/)).toBeTruthy();
+      expect(late.getByText(/1 partially evidenced team game/)).toBeTruthy();
+    }
     view.rerender(<GoalieEvidence snapshot={{ ...snapshot, forecasts: valid.map(row => ({ ...row,
       sourceKind: undefined, issuedContext: undefined, cutoffAt: undefined, expiresAt: undefined })) }} />);
-    expect(screen.getByText(/projected starts unknown/)).toBeTruthy();
+    expect(pairs().getByText(/projected starts unknown/)).toBeTruthy();
     expect(screen.queryByText(/projected across/)).toBeNull();
+  });
+  it("separates remaining goalie windows by the selected split without hiding unknown timing or availability", () => {
+    const workspace = defaultWorkspace(new Date("2026-10-08T12:00:00Z"));
+    const goalies = [1, 2, 3, 4].map(id => ({ ...player, id: String(id), nhlId: id, playerClass: "goalie" as const,
+      eligiblePositions: ["G"], teamAbbreviation: id === 3 ? "NJD" : id === 4 ? "BOS" : "CAR",
+      availability: id === 2 || id === 4 ? "free_agent" as const : "unknown" as const }));
+    const games: PlanningSnapshot["games"] = [7, 8, 9, 10, 11, 12].map(day => ({ id: String(day), date: `2026-10-${String(day).padStart(2, "0")}`,
+      startsAt: day === 10 ? null : `2026-10-${String(day).padStart(2, "0")}T23:00:00Z`,
+      teamAbbreviation: day === 10 ? "NJD" : day >= 11 ? "BOS" : "CAR", opponent: "NYR", home: true,
+      status: day === 11 ? "cancelled" : "scheduled" }));
+    const snapshot: PlanningSnapshot = { id: "goalie-windows", context: { ...workspace.context, startDate: "2026-10-05", endDate: "2026-10-11", timeZone: "UTC" },
+      players: goalies, games, forecasts: [], roster: [{ playerId: "1", position: "active" }], rules: workspace.rules,
+      realized: {}, opponent: null, evidence: {}, lockedAssignments: [] };
+    const view = render(<GoalieEvidence snapshot={snapshot} />);
+    const early = () => within(screen.getByRole("group", { name: "Early goalie window" }));
+    const late = () => within(screen.getByRole("group", { name: "Late goalie window" }));
+    expect(early().getByText("Early · Mon–Thu")).toBeTruthy();
+    expect(early().getByText(/2 unique known goalie options/)).toBeTruthy();
+    expect(early().getByText(/1 remaining team game/)).toBeTruthy();
+    expect(late().getByText(/2 remaining team games/)).toBeTruthy();
+    expect(late().getByText(/1 game with unverified start time/)).toBeTruthy();
+    expect(late().getByText(/1 goalie with unknown availability/)).toBeTruthy();
+    view.rerender(<GoalieEvidence snapshot={snapshot} goalieSplit="mon_wed" />);
+    expect(early().getByText("Early · Mon–Wed")).toBeTruthy();
+    expect(early().getByText("No remaining scheduled games in this window.")).toBeTruthy();
+    expect(late().getByText("Late · Thu–Sun")).toBeTruthy();
+    expect(late().getByText(/2 unique known goalie options/)).toBeTruthy();
+    expect(late().getByText(/3 remaining team games/)).toBeTruthy();
+    expect(late().getByText(/projected starts unknown/)).toBeTruthy();
+    expect(snapshot.context).toEqual({ ...workspace.context, startDate: "2026-10-05", endDate: "2026-10-11", timeZone: "UTC" });
   });
   it("labels the selected statistical source and its permitted uses without implying a total", () => {
     const scoring = { mode: "points" as const, weights: { GOALS: 1 }, categories: [] };
