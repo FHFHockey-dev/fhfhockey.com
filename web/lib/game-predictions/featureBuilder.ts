@@ -892,7 +892,8 @@ function shareFromCounts(
 function summarizeRecentTeamRows(
   rows: NstTeamGamelogRow[],
 ): TeamRecentWindowFeatures {
-  const games = sumNumbers(rows, (row) => row.gp) || rows.length;
+  // The recent-form builder admits only GP=1 observations before slicing.
+  const games = rows.length;
   const goalsFor = sumNumbers(rows, (row) => row.gf);
   const goalsAgainst = sumNumbers(rows, (row) => row.ga);
   const xgf = sumNumbers(rows, (row) => row.xgf);
@@ -939,13 +940,25 @@ function buildTeamRecentFormFeatures(
   teamAbbreviation: string,
   seasonId: number,
   sourceAsOfDate: string,
+  warnings: FeatureBuildWarning[],
 ): TeamRecentFormFeatures | null {
-  const teamRows = rows
-    .filter(
-      (row) =>
-        row.team_abbreviation === teamAbbreviation && row.date < sourceAsOfDate,
-    )
+  const candidateRows = rows.filter(
+    (row) =>
+      row.team_abbreviation === teamAbbreviation && row.date < sourceAsOfDate,
+  );
+  // Match ingestion's one-team-game contract, including for legacy stored rows.
+  // Cumulative snapshots overlap and cannot be treated as independent games.
+  const teamRows = candidateRows
+    .filter((row) => toNumber(row.gp) === 1)
     .sort((a, b) => b.date.localeCompare(a.date));
+  const rejectedRows = candidateRows.length - teamRows.length;
+  if (rejectedRows > 0) {
+    warnings.push({
+      code: "invalid_recent_form_grain",
+      source: "nst_team_gamelogs_as_counts",
+      message: `${teamAbbreviation} recent form excluded ${rejectedRows} row(s): GP must equal 1 for a per-game observation.`,
+    });
+  }
   if (teamRows.length === 0) return null;
 
   const currentSeasonRows = teamRows.filter(
@@ -2034,6 +2047,7 @@ function buildTeamSideFeatures(args: {
     team.abbreviation,
     inputs.game.seasonId,
     inputs.sourceAsOfDate,
+    warnings,
   );
   const trustedCtpiRows = inputs.teamCtpiRows.filter((row) =>
     isTrustedRecentTeamFormPayload({

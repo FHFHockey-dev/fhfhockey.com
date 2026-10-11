@@ -589,6 +589,143 @@ describe("game prediction feature builder", () => {
     expect(payload.matchup.homeMinusAwayRecent10PointPct).toBe(0.5);
   });
 
+  it("rejects overlapping cumulative NST snapshots instead of counting five rows as 410 games", () => {
+    const cumulativeRows = Array.from({ length: 5 }, (_, index) => ({
+      ...createNstTeamGamelogRow({
+        teamAbbreviation: "BOS",
+        date: `2026-01-0${index + 1}`,
+        gf: 246,
+        ga: 164,
+        xgf: 240,
+        xga: 180,
+        sf: 2460,
+        sa: 2050,
+        points: 100,
+      }),
+      gp: 82,
+    }));
+    const payload = buildGamePredictionFeatureSnapshotPayload(
+      createInputs({ nstTeamGamelogRows: cumulativeRows }),
+    );
+
+    expect(payload.home.recentForm?.last5Games ?? null).toBeNull();
+    expect(payload.home.recentForm).toBeNull();
+    expect(payload.missingFeatures).toContain("home.recent_form");
+    expect(payload.fallbackFlags.home_recent_form_fallback).toBe(true);
+    expect(
+      payload.matchup.homeMinusAwayRecent10GoalDifferentialPerGame,
+    ).toBeNull();
+    expect(payload.warnings).toContainEqual({
+      code: "invalid_recent_form_grain",
+      source: "nst_team_gamelogs_as_counts",
+      message: "BOS recent form excluded 5 row(s): GP must equal 1 for a per-game observation.",
+    });
+  });
+
+  it("filters cumulative NST rows before current and cross-season windows and freshness", () => {
+    const validRow = createNstTeamGamelogRow({
+      teamAbbreviation: "BOS",
+      date: "2026-01-07",
+      gf: 3,
+      ga: 1,
+      xgf: 2.5,
+      xga: 1.5,
+      sf: 30,
+      sa: 25,
+      points: 2,
+    });
+    const validRows = [
+      validRow,
+      { ...validRow, date: "2025-04-01", season_id: 20242025 },
+    ];
+    const expected = buildGamePredictionFeatureSnapshotPayload(
+      createInputs({ nstTeamGamelogRows: validRows }),
+    );
+    const payload = buildGamePredictionFeatureSnapshotPayload(
+      createInputs({
+        nstTeamGamelogRows: [
+          ...validRows,
+          ...Array.from({ length: 6 }, (_, index) => ({
+            ...validRow,
+            date: index % 2 === 0 ? "2026-01-09" : "2025-04-15",
+            season_id: index % 2 === 0 ? 20252026 : 20242025,
+            gp: 80 + index,
+            gf: 200 + index,
+          })),
+        ],
+      }),
+    );
+
+    expect(payload.home.recentForm).toEqual(expected.home.recentForm);
+    expect(payload.sourceCutoffs).toEqual(expected.sourceCutoffs);
+    expect(payload.home.recentForm).toMatchObject({
+      sourceMaxDate: "2026-01-07",
+      currentSeasonGames: 1,
+      last5Games: 1,
+      seasonToDateGames: 1,
+      priorSeasonGamesUsed: 1,
+      earlySeasonPrior: { games: 1 },
+      crossSeasonLast20: { games: 2 },
+      crossSeasonLast40: { games: 2 },
+    });
+    expect(payload.warnings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "invalid_recent_form_grain" }),
+        expect.objectContaining({ code: "sparse_recent_form" }),
+      ]),
+    );
+  });
+
+  it.each([null, 0, -1, 0.5, Number.NaN, Number.POSITIVE_INFINITY])(
+    "does not infer a game from NST GP=%s",
+    (gp) => {
+      const row = createInputs().nstTeamGamelogRows[0]!;
+      const payload = buildGamePredictionFeatureSnapshotPayload(
+        createInputs({ nstTeamGamelogRows: [{ ...row, gp }] }),
+      );
+
+      expect(payload.home.recentForm).toBeNull();
+      expect(payload.fallbackFlags.home_recent_form_fallback).toBe(true);
+      expect(payload.warnings).toContainEqual(
+        expect.objectContaining({ code: "invalid_recent_form_grain" }),
+      );
+    },
+  );
+
+  it("keeps NST windows in games for valid per-game observations", () => {
+    const rows = Array.from({ length: 6 }, (_, index) =>
+      createNstTeamGamelogRow({
+        teamAbbreviation: "BOS",
+        date: `2026-01-0${index + 1}`,
+        gf: index + 1,
+        ga: 1,
+        xgf: 3,
+        xga: 2,
+        sf: 30,
+        sa: 25,
+        points: 2,
+      }),
+    );
+    const payload = buildGamePredictionFeatureSnapshotPayload(
+      createInputs({ nstTeamGamelogRows: rows }),
+    );
+
+    expect(payload.home.recentForm).toMatchObject({
+      last5Games: 5,
+      last10Games: 6,
+      currentSeasonGames: 6,
+      seasonToDateGames: 6,
+      last5GoalsForPerGame: 4,
+      last5GoalDifferentialPerGame: 3,
+      last5PointPct: 1,
+    });
+    expect(
+      payload.warnings.some(
+        (warning) => warning.code === "invalid_recent_form_grain",
+      ),
+    ).toBe(false);
+  });
+
   it("builds long-window, season-to-date, and early-season prior NST features", () => {
     const priorHomeRows = Array.from({ length: 4 }, (_, index) =>
       createNstTeamGamelogRow({
