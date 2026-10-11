@@ -776,6 +776,41 @@ describe("planning engine", () => {
     data.lockedAssignments = [{ date: "2026-10-06", playerId: "a", slotId: null }];
     expect(evaluatePlan(data, intent, "outcome").recommendation?.exclusions?.[0].reason).toBe("locked_bench");
   });
+  it.each([
+    { label: "retains the pre-drop game", first: 10, later: 10, other: 2, split: false, value: 10, selected: ["a"] },
+    { label: "retains the pre-reserve game", first: 10, later: 10, other: 2, split: false, value: 10, selected: ["a"] },
+    { label: "excludes games lost after a planned drop", first: 5, later: 100, other: 4, split: false, value: 8, selected: ["b", "b"] },
+    { label: "admits the replacement only at the next lineup lock", first: 10, later: 10, other: 2, split: true, value: 13, selected: ["a", "c"] },
+  ])("uses lock-time ownership and retained weekly opportunities: $label", scenario => {
+    const data = snapshot();
+    data.rules.lineupMode = "weekly";
+    data.rules.lineupPeriods = [{ id: "w1", start: "2026-10-05T00:00:00Z",
+      end: scenario.split ? "2026-10-06T00:00:00Z" : "2026-10-12T00:00:00Z", lockAt: "2026-10-05T00:00:00Z" }];
+    if (scenario.split) data.rules.lineupPeriods.push({ id: "w2", start: "2026-10-06T00:00:00Z",
+      end: "2026-10-12T00:00:00Z", lockAt: "2026-10-06T00:00:00Z" });
+    data.games = data.games.filter(game => game.id !== "C0").map(game => ({ ...game,
+      startsAt: game.teamAbbreviation === "B" ? `${game.date}T22:00:00Z` : game.startsAt }));
+    data.forecasts = data.games.map(game => issuedForecast(data, game.teamAbbreviation.toLowerCase(), game.id,
+      { stats: { pts: game.teamAbbreviation === "A" ? game.id === "A0" ? scenario.first : scenario.later
+        : game.teamAbbreviation === "B" ? scenario.other : 3 } }));
+    const move = { id: "later", type: "add" as const, playerId: "c", dropPlayerId: "a", at: "2026-10-05T21:00:00Z",
+      effectiveAt: "2026-10-05T21:00:00Z", conditional: true, dependsOn: [] };
+    const selectedIntent: PlanIntent = { ...intent, steps: [move] };
+    if (scenario.label === "retains the pre-reserve game") {
+      data.players[0].reserveEligibility = ["IR"];
+      data.rules.rosterSlots.IR = 1;
+      selectedIntent.steps = [{ id: "reserve", type: "reserve", playerId: "a", reservePosition: "IR", at: move.at,
+        effectiveAt: move.effectiveAt, conditional: false, dependsOn: [] }, { ...move, dropPlayerId: undefined, dependsOn: ["reserve"] }];
+    }
+    const before = structuredClone(data);
+    const result = evaluatePlan(data, selectedIntent, "outcome", undefined, false);
+    expect(result).toMatchObject({ legal: true, comparisonEligible: true, budgetVerified: true,
+      projectedValue: scenario.value, activeGames: scenario.selected.length, acquisitions: { p: 1 } });
+    expect(result.assignments.map(row => row.playerId)).toEqual(scenario.selected);
+    expect(result.steps).toEqual(selectedIntent.steps);
+    expect(result.limitations.some(text => text.includes("Future availability for c must be rechecked"))).toBe(true);
+    expect(data).toEqual(before);
+  });
   it("reports unavailable outcome with no usable forecasts and retains AGP baseline", () => {
     const data = snapshot();
     data.forecasts = [];

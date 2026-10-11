@@ -518,6 +518,11 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
     if (dayGames.some(game => !game.startsAt)) limitations.add("Some game start times are unknown; same-day acquisitions cannot claim those starts.");
     playsByDate.set(date, plays);
     scheduledGames += plays.length;
+  }
+  // Record game-time ownership before choosing a weekly lineup. The mutable
+  // timeline cannot answer an earlier lock-time query after a later transaction.
+  for (const date of dates) {
+    const plays = playsByDate.get(date)!;
     let rows: PlanningAssignment[];
     if (snapshot.rules.lineupMode === "weekly") {
       const period = lineupPeriodForDate(date);
@@ -527,15 +532,16 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
       if (!period || !lockAt) limitations.add(`Weekly lineup window or lock time is unverified for ${date}.`);
       let locked = weekly.get(window);
       if (!locked) {
-        const weekGames = games.filter(game => {
-          const candidate = lineupPeriodForDate(game.date);
+        const weekPlays = dates.filter(candidateDate => {
+          const candidate = lineupPeriodForDate(candidateDate);
           return candidate?.id === window;
-        });
+        }).flatMap(candidateDate => playsByDate.get(candidateDate) ?? []);
+        const rosterAtWindow = buildTimeline(snapshot, intent, steps).at(lockAt ?? snapshot.context.asOf);
         const aggregate: Play[] = [];
-        for (const [id, member] of timeline.at(gameTime(dayGames[0], snapshot.context.timeZone))) {
+        for (const [id, member] of rosterAtWindow) {
           const player = players.get(id);
           if (!player || ["IR", "IR+", "NA"].includes(member.position) || !lockAt || time(member.since) > time(lockAt)) continue;
-          const playerGames = weekGames.filter(game => game.teamAbbreviation === player.teamAbbreviation);
+          const playerGames = weekPlays.filter(play => play.player.id === id).map(play => play.game);
           if (!playerGames.length) continue;
           const stats: StatLine = {};
           let missing = false;
@@ -562,7 +568,6 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
           playerSlots.set(lock.playerId, lock.slotId);
           if (!uniqueLocks.some(item => item.playerId === lock.playerId && item.slotId === lock.slotId)) uniqueLocks.push(lock);
         }
-        const rosterAtWindow = timeline.at(gameTime(dayGames[0], snapshot.context.timeZone));
         for (const lock of uniqueLocks) if (!rosterAtWindow.has(lock.playerId)) {
           limitations.add(`Locked weekly player ${lock.playerId} is not rostered in ${window}.`);
           invalidLocks = true;
