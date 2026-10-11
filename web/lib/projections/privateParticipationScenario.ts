@@ -170,7 +170,7 @@ export function validatePrivateParticipationScenario(input: PrivateParticipation
       indicator: reduced ? reduced.probability as 0 | 1 : null,
       appearanceProbability: null, calibratedProbability: false as const,
       sourceValidity: validity, evidenceIds: reduced?.evidenceIds ?? [],
-      blockReasons: [...new Set(problems)], validatedEvidence: evidence,
+      blockReasons: [...new Set(problems)], validatedEvidence: reduced ? evidence : null,
       retainedFacts: facts, retainedConflicts: conflicts,
       currentAbsenceOfNewsVerified: false as const,
       notReleasedGameForecast: true as const, publicAdmissionAllowed: false as const,

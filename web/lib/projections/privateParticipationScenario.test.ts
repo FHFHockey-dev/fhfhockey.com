@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
+import { skaterParticipationFromEvidence } from "./starterBoardScoring";
 import { validatePrivateParticipationScenario, type PrivateParticipationConflict,
   type PrivateParticipationFact, type PrivateParticipationIntake } from "./privateParticipationScenario";
 
@@ -38,12 +39,24 @@ const excluded = () => {
 const blocked = (input: PrivateParticipationIntake, reason?: string) => {
   const result = validatePrivateParticipationScenario(input);
   expect(result).toMatchObject({ status: "BLOCKED", indicator: null, appearanceProbability: null,
-    calibratedProbability: false, notReleasedGameForecast: true, publicAdmissionAllowed: false });
+    calibratedProbability: false, notReleasedGameForecast: true, publicAdmissionAllowed: false, validatedEvidence: null });
   if (reason) expect(result.blockReasons).toContain(reason);
   return result;
 };
 
 describe("private participation scenario intake — fictional mechanics only", () => {
+  it.each(["hash-mismatch", "expired", "canonical-mismatch"])("does not expose reducible evidence after %s rejection", kind => {
+    const input = populated();
+    if (kind === "hash-mismatch") input.facts[0].source.bodySha256 = "0".repeat(64);
+    if (kind === "expired") input.facts[0].source.expiresAt = input.evaluatedAt;
+    if (kind === "canonical-mismatch") input.facts[0].canonicalPlayerId = 1;
+    const result = blocked(input);
+    expect(skaterParticipationFromEvidence(result.validatedEvidence ?? undefined, {
+      gameId: input.target.gameId, teamId: input.target.teamId, playerId: input.target.nhlPlayerId,
+    })).toBeNull();
+    expect(result.retainedFacts).toEqual(input.facts);
+    expect(result.retainedConflicts).toEqual(input.conflicts);
+  });
   it("keeps missing actual evidence unknown instead of inferring exclusion", () => {
     blocked(fixture(), "confirmed_participation_missing_or_conflicting");
   });
@@ -54,6 +67,9 @@ describe("private participation scenario intake — fictional mechanics only", (
       evidencePolicy: "confirmed_evidence_0_or_1_not_calibrated_p_play", calibratedProbability: false,
       currentAbsenceOfNewsVerified: false, notReleasedGameForecast: true, publicAdmissionAllowed: false,
       evidenceIds: ["fictional-ev"], sourceValidity: [{ evidenceId: "fictional-ev", validUntil: "2026-10-11T20:45:00Z" }] });
+    expect(skaterParticipationFromEvidence(result.validatedEvidence ?? undefined, {
+      gameId: result.target.gameId, teamId: result.target.teamId, playerId: result.target.nhlPlayerId,
+    })?.probability).toBe(1);
   });
   it("preserves explicit exclusion as scenario0, rather than treating zero as unknown", () => {
     expect(validatePrivateParticipationScenario({ ...fixture(), facts: [excluded()] })).toMatchObject({ status: "READY", indicator: 0, appearanceProbability: null });

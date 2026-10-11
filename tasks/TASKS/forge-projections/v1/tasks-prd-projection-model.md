@@ -122,3 +122,28 @@
 - [x] 5.5 Add observability: structured logs, `projection_runs.status` transitions, failure capture, and run metrics summaries
 - [x] 5.6 Implement backtest report job (at least last 30 days): MAE for shots/goals, interval coverage, and a stored artifact (table row or file path)
 - [x] 5.7 Document ops runbooks (how to run locally, how to backfill, how to debug missing data) and keep PRD open questions updated
+
+
+## October 11 private HIT/BLK participation intake checkpoint
+
+This tranche records **accepted private local engineering**. The historical implementation rows above retain their original scope. Actual target participation, predictive qualification, issuance, public serving and the full RSO case are not accepted by this checkpoint.
+
+- [x] OCT11-P1 Implement the private participation intake in `web/lib/projections/privateParticipationScenario.ts` with exact canonical/NHL player, team, game, season and cutoff/evaluation binding; retain original body/hash, source/parser, publication/receipt/created/accepted times, child assignment, expiry and conflict-resolution receipts.
+- [x] OCT11-P2 Reuse the existing time/participation validators; preserve unknown appearance and reject missing, future, expired, uncertain/DTD/projected or unresolved contradictory facts. Only an exact accepted observation selection may supersede involved evidence. The numeric 0/1 indicator is explicitly an evidence-policy scenario, with calibrated probability and public admission false.
+- [x] OCT11-P3 Close the independently reproduced output-contract defect: every BLOCKED result exposes `validatedEvidence: null`; raw `retainedFacts`/`retainedConflicts` remain available for audit. The valid scenario control still reduces to 1; body-hash mismatch, evaluation-time expiry and canonical-player mismatch each reduce to null downstream.
+- [x] OCT11-P4 Freeze and independently review the exact two-file correction. Owner checks passed 29/29 fictional mechanics regressions, scoped pair lint and direct-pair TypeScript. The same reviewer re-ran the byte-identical four-case probe and accepted PRIVATE LOCAL v2. No aggregate suite, capture, producer, ordinary replay or hosted write was performed for this correction.
+
+Remaining gates are separate from the accepted local implementation:
+
+- [ ] OCT11-G1 Supply genuine exact-target current confirmed EV or explicit-exclusion receipts, then resolve source validity/expiry, contradictions, later downgrades and supersession at the explicit diagnostic evaluation time. Accepted immutable PRIVATE BLOCKED readiness v3 remains unchanged; its held inputs do not establish current applicability.
+- [ ] OCT11-G2 Supply authentic provider eligibility and a common legal slot/date for the two selected players through the RSO owner. Native wing positions, roster membership and stored `game_key=477` do not establish this.
+- [ ] OCT11-G3 Obtain separately authorized genuine ordinary issuance/selection with actual clocks and a legitimate new cutoff after later evidence. The morning historical reconstruction keeps its original identity/cutoff and cannot become an issued context through this validator.
+- [ ] OCT11-G4 Close the existing full ten-category consumer case only with supported/admitted G/A/PPP/SOG/HIT/BLK and W/GA/SV/SO inputs and actual required context. The retained provisional conditional HIT/BLK mechanics do not close missing heads or qualify predictive accuracy; goals-only team totals and goalie expected-start reports cannot substitute.
+- [ ] OCT11-G5 Obtain separate release/public-serving authority and TJ's disposition of the paused RSO goal. No public imports, forecast admission, model-weight change, schema/data publish or goal resumption follows from private engineering acceptance.
+
+Evidence and ownership:
+
+- Correction handoff: `/Users/tim/Documents/Codex/2026-10-11/task/private-participation-intake-v1/correction-v2/HANDOFF-v2.json`, SHA256 `3a16fec974dfa680b7eede8d636c04ae8ac6612aa634fedfb62e7120c3885ffb`.
+- Same-reviewer acceptance: `/Users/tim/Documents/Codex/2026-10-10/task-6/oct11-release/independent-reviews/FORGE-ACCEPTANCE-v2.json`, SHA256 `17eb8a365c81d2c222d3b12a8afdd90421ebf334774c2aceb0c7e623cdf597df`.
+- Frozen source/test SHA256: `858309b484fde6867c88a74d78efbf158ce4b0cba168fbd911ab3719abff48e8` / `aa2e21ad6d8c1deeac60447233ddbd634627e5296dc472830fc298897b926206`.
+- Prior rejected v1, accepted 19-source checkpoint and immutable PRIVATE BLOCKED v3 were preserved. The new pair remains uncommitted/frozen. FORGE claims only its registered source pair and this checklist; Executive owns the central super-goal status, and the RSO owner retains its seven files.
