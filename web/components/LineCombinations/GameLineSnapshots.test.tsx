@@ -32,6 +32,70 @@ describe("game Lines presentation", () => {
     expect(screen.getAllByRole("link", { name: "@fixtureauthor" }).length).toBeGreaterThan(0);
     expect(screen.getByText("PP2: No applicable report")).toBeTruthy();
   });
+  it("keeps entry and in-game publication times distinct from relay and ingestion times", () => {
+    const data = fixtureResponse(0);
+    const warmup = fixtureClaim();
+    const observation = fixtureClaim("late-arrival", {
+      kind: "iga", phase: "in_game", unit: null, text: "A later in-game change",
+      time: { ...warmup.time, originalPublishedAt: "2026-10-01T23:20:00Z", relayPublishedAt: "2026-10-01T23:40:00Z", ingestedAt: "2026-10-01T23:45:00Z", interpretedAt: "2026-10-01T23:46:00Z", effectiveAt: "2026-10-01T23:20:00Z" },
+    });
+    data.teams[0]!.observations = [observation];
+    data.teams[0]!.history = [warmup, observation];
+    data.teams[0]!.ppDefaults = [];
+    render(<GameLineSnapshots data={data} />);
+    const entry = screen.getByLabelText("TBL game-entry lineup");
+    const rail = screen.getByLabelText("TBL in-game updates");
+    expect(Array.from(entry.querySelectorAll("time")).map((time) => time.getAttribute("datetime"))).toEqual([warmup.time.originalPublishedAt]);
+    expect(Array.from(rail.querySelectorAll("time")).map((time) => time.getAttribute("datetime"))).toEqual([observation.time.originalPublishedAt]);
+    expect(within(rail).getByText("Ingested " + new Date(observation.time.ingestedAt).toLocaleString())).toBeTruthy();
+    expect(within(entry).queryByText(observation.text)).toBeNull();
+    expect(within(rail).getByText(observation.text)).toBeTruthy();
+  });
+  it("does not substitute known relay or arrival times for unresolved publication time", () => {
+    const data = fixtureResponse(0);
+    const warmup = fixtureClaim();
+    const time = { ...warmup.time, originalPublishedAt: null, effectiveAt: null, rawDisplay: "6:34 PM", timezone: null, precision: "display" as const };
+    data.teams[0]!.entry!.units[0]!.claims = [{ ...warmup, time }];
+    data.teams[0]!.observations = [fixtureClaim("unknown-time", { kind: "iga", phase: "unknown", unit: null, time })];
+    data.teams[0]!.ppDefaults = [];
+    render(<GameLineSnapshots data={data} />);
+    const entry = screen.getByLabelText("TBL game-entry lineup");
+    const rail = screen.getByLabelText("TBL in-game updates");
+    expect(within(entry).getByText("6:34 PM · timezone unresolved")).toBeTruthy();
+    expect(within(rail).getByText("6:34 PM · timezone unresolved")).toBeTruthy();
+    expect(entry.querySelector("time")).toBeNull();
+    expect(rail.querySelector("time")).toBeNull();
+    expect(within(rail).getByText("Ingested " + new Date(time.ingestedAt).toLocaleString())).toBeTruthy();
+  });
+  it("replaces a carried PP default with a projected report for the selected next game", () => {
+    const data = fixtureResponse(0);
+    const priorBase = fixturePP(1);
+    const prior = { ...priorBase, time: { ...priorBase.time, relayPublishedAt: "2026-10-01T23:34:00Z", ingestedAt: "2026-10-01T23:35:00Z", interpretedAt: "2026-10-01T23:36:00Z" } };
+    const unit = fixtureUnit(["New A", "New B", "New C", "New D", "New E"], "pp", 1);
+    unit.players = unit.players.map((player, index) => ({ ...player, playerId: 201 + index }));
+    const replacement = fixturePP(1, {
+      id: "next-game-projection", captureId: "capture:next-game-projection", originalIdentity: "original:next-game-projection",
+      gameId: fixtureNext.id, phase: "pregame", certainty: "projected", unit,
+      binding: { ...prior.binding, scheduleIdentity: fixtureNext.scheduleIdentity },
+      time: { ...prior.time, originalPublishedAt: "2026-10-03T22:00:00Z", relayPublishedAt: "2026-10-03T22:01:00Z", ingestedAt: "2026-10-03T22:02:00Z", interpretedAt: "2026-10-03T22:03:00Z", effectiveAt: "2026-10-03T22:00:00Z" },
+    });
+    data.game = fixtureNext;
+    data.teams[0]!.entry = null;
+    const carried = reconcilePP({ game: fixtureNext, games: data.games, teamId: 14, claims: [prior], now: fixtureNow, carryForward: true });
+    data.teams[0]!.ppDefaults = carried;
+    const view = render(<GameLineSnapshots data={data} />);
+    expect(screen.getByText("Carried forward from 2026-10-01 · TBL at NYR")).toBeTruthy();
+    data.teams[0]!.ppDefaults = reconcilePP({ game: fixtureNext, games: data.games, teamId: 14, claims: [prior, replacement], previous: carried, now: "2026-10-03T22:30:00Z", carryForward: true });
+    view.rerender(<GameLineSnapshots data={data} />);
+    const entry = screen.getByLabelText("TBL game-entry lineup");
+    expect(within(entry).getByText("New A — New B — New C — New D — New E")).toBeTruthy();
+    expect(within(entry).getByText("Projected")).toBeTruthy();
+    expect(within(entry).queryByText(/^Carried forward from/)).toBeNull();
+    expect(within(entry).queryByText("Explicitly confirmed")).toBeNull();
+    expect(entry.querySelector("time")?.getAttribute("datetime")).toBe(replacement.time.originalPublishedAt);
+    expect(within(entry).getByText("No applicable game-entry lineup has been recorded.")).toBeTruthy();
+    expect(data.teams[0]!.ppDefaults[0]!.replacesId).toBe(carried[0]!.id);
+  });
   it("does not hide older history and supports accessible expand/collapse", () => {
     render(<GameLineSnapshots data={fixtureResponse(10)} />);
     expect(screen.getAllByText(/Holmberg\/Point\/Guentzel together/)).toHaveLength(8);
