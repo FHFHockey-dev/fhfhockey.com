@@ -25,7 +25,7 @@ export function reserveBenchEvaluation(budget: BenchEvaluationBudget): boolean {
   return true;
 }
 
-const unchecked = (row: BenchDecision) => !["locked_bench", "locked_capacity", "ineligible"].includes(row.reason);
+const unchecked = (row: BenchDecision) => !["locked_bench", "locked_capacity", "weekly_lock", "ineligible"].includes(row.reason);
 export function deferBenchDecisions(evaluation: PlanEvaluation): PlanEvaluation {
   if (!evaluation.recommendation?.eligible || evaluation.objective !== "outcome"
     || !evaluation.recommendation.exclusions?.some(unchecked)) return evaluation;
@@ -67,6 +67,7 @@ export function explainBenchDecisions(args: {
     const player = players.get(row.playerId)!;
     const { dates, locks } = scopeForDate(row.date);
     if (locks.some(lock => lock.playerId === row.playerId && lock.slotId === null)) return { ...row, reason: "locked_bench" };
+    if (row.reason === "weekly_lock") return row;
     const eligible = slots.filter(slot => canEligibilityOccupySlot(normalizeEligibility(player.eligiblePositions), slot.type));
     if (!eligible.length) return { ...row, reason: "ineligible" };
     const open = eligible.filter(slot => !locks.some(lock => lock.slotId === slot.id));

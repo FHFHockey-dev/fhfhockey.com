@@ -4,6 +4,7 @@ import styles from "./RosterScheduleOptimizer.module.scss";
 const reasons: Record<BenchDecision["reason"], string> = {
   locked_bench: "Preserved bench lock.",
   locked_capacity: "Eligible active slots are locked.",
+  weekly_lock: "Not eligible at this weekly lineup lock.",
   ineligible: "No eligible active slot under these league rules.",
   unresolved_quality: "Start/sit unresolved: comparable forecast evidence is missing.",
   negative_value: "Benching this appearance avoids a negative scoring contribution.",

@@ -209,7 +209,7 @@ export type BenchDecision = {
   date: string;
   playerId: string;
   gameId: string;
-  reason: "locked_bench" | "locked_capacity" | "ineligible" | "unresolved_quality" | "negative_value"
+  reason: "locked_bench" | "locked_capacity" | "weekly_lock" | "ineligible" | "unresolved_quality" | "negative_value"
     | "whole_lineup_scoring" | "schedule_capacity" | "lower_lineup_value" | "equal_lineup_value"
     | "category_tradeoff" | "minimum_priority" | "decision_unresolved" | "explanation_incomplete";
   value: number | null;

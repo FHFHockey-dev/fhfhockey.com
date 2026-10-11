@@ -743,13 +743,17 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
     // Fixed weekly assignments are not necessarily explicit user/provider locks.
     const locks = snapshot.lockedAssignments.filter(lock => snapshot.rules.lineupMode === "weekly"
       ? lineupPeriodForDate(lock.date)?.id === windowByDate.get(date) : lock.date === date);
+    const weeklyPeriod = snapshot.rules.lineupMode === "weekly" ? lineupPeriodForDate(date) : null;
+    const weeklyLockedOut = !!weeklyPeriod?.lockAt && Number.isFinite(time(weeklyPeriod.lockAt))
+      && !weeklyCandidates.get(weeklyPeriod.id)?.some(candidate => candidate.player.id === play.player.id);
     const value = playValue(play, snapshot, opponent, applicability);
     const reason = locks.some(lock => lock.playerId === play.player.id && lock.slotId === null) ? "locked_bench"
       : !eligibleSlots.length ? "ineligible"
-        : eligibleSlots.every(slot => locks.some(lock => lock.slotId === slot.id)) ? "locked_capacity"
-          : !recommendationEligible ? "unresolved_quality"
-            : objective === "agp" ? "schedule_capacity"
-              : value !== null && value < 0 && competing.length < eligibleSlots.length ? "negative_value" : "whole_lineup_scoring";
+        : weeklyLockedOut ? "weekly_lock"
+          : eligibleSlots.every(slot => locks.some(lock => lock.slotId === slot.id)) ? "locked_capacity"
+            : !recommendationEligible ? "unresolved_quality"
+              : objective === "agp" ? "schedule_capacity"
+                : value !== null && value < 0 && competing.length < eligibleSlots.length ? "negative_value" : "whole_lineup_scoring";
     return { date, playerId: play.player.id, gameId: play.game.id, reason, value, competingPlayerIds: competing.map(row => row.playerId) };
   }));
   const comparisonEligible = inputEligible && projectedValue !== null && [...playsByDate.values()].flat()
@@ -1153,7 +1157,7 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
     const key = `${evaluation.objective}:${JSON.stringify(evaluation.steps)}`;
     if (!explained.has(key)) {
       const needsEvidence = evaluation.objective === "outcome" && evaluation.recommendation?.eligible
-        && evaluation.recommendation.exclusions?.some(row => !["locked_bench", "locked_capacity", "ineligible"].includes(row.reason));
+        && evaluation.recommendation.exclusions?.some(row => !["locked_bench", "locked_capacity", "weekly_lock", "ineligible"].includes(row.reason));
       explained.set(key, !needsEvidence ? evaluation : reserveBenchEvaluation(benchBudget)
         ? evaluatePlan(snapshot, intent, evaluation.objective, evaluation.steps, true, benchBudget)
         : deferBenchDecisions(evaluation));

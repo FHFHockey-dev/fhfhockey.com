@@ -420,6 +420,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(document.body.textContent).not.toContain("999");
     for (const [reason, text] of [["unresolved_quality", /comparable forecast evidence is missing/],
       ["locked_bench", /Preserved bench lock/], ["locked_capacity", /Eligible active slots are locked/],
+      ["weekly_lock", /Not eligible at this weekly lineup lock/],
       ["explanation_incomplete", /placement checking reached its work or time limit/]] as const) {
       view.rerender(<BenchDecisions {...props} decisions={[{ ...row, reason }]} />);
       expect(screen.getByText(text)).toBeTruthy();

@@ -809,6 +809,25 @@ describe("planning engine", () => {
     expect(result.assignments.map(row => row.playerId)).toEqual(scenario.selected);
     expect(result.steps).toEqual(selectedIntent.steps);
     expect(result.limitations.some(text => text.includes("Future availability for c must be rechecked"))).toBe(true);
+    const explained = evaluatePlan(data, selectedIntent, "outcome");
+    expect(explained).toMatchObject({ comparisonEligible: true, projectedValue: scenario.value, recommendation: { eligible: true } });
+    if (!scenario.split) {
+      const lockedOut = explained.recommendation?.exclusions?.find(row => row.playerId === "c");
+      expect(lockedOut?.reason).toBe("weekly_lock");
+      expect(lockedOut?.evidence).toBeUndefined();
+    }
+    if (scenario.label === "retains the pre-drop game") {
+      expect(planRoster(data, selectedIntent, { maxSteps: 0 }).selected.recommendation?.eligible).toBe(true);
+      const bounded = planRoster(data, selectedIntent, { maxSteps: 0, maxBenchEvaluations: 0 }).selected;
+      expect(bounded.recommendation?.eligible).toBe(false);
+      expect(bounded.recommendation?.exclusions?.find(row => row.playerId === "c")?.reason).toBe("weekly_lock");
+      const missing = { ...data, forecasts: data.forecasts.filter(row => row.gameId !== "B0") };
+      expect(evaluatePlan(missing, selectedIntent, "outcome").comparisonEligible).toBe(false);
+      const unknownLock = { ...data, rules: { ...data.rules, lineupPeriods: data.rules.lineupPeriods.map(period => ({ ...period, lockAt: null })) } };
+      const unknown = evaluatePlan(unknownLock, selectedIntent, "outcome");
+      expect(unknown.recommendation?.eligible).toBe(false);
+      expect(unknown.recommendation?.exclusions?.every(row => row.reason !== "weekly_lock")).toBe(true);
+    }
     expect(data).toEqual(before);
   });
   it("reports unavailable outcome with no usable forecasts and retains AGP baseline", () => {
