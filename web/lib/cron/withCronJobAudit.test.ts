@@ -351,6 +351,74 @@ describe("withCronJobAudit", () => {
     );
   });
 
+  it("retains structured preflight outcomes when the legacy response preview is truncated", async () => {
+    const response = {
+      success: false,
+      asOfDate: "2026-10-11",
+      error: "Preflight freshness checks failed",
+      preflight: {
+        status: "FAIL",
+        asOfDate: "2026-10-11",
+        gates: [
+          { gate_key: "core_roster_schedule", status: "PASS", detail: "ready" },
+          { gate_key: "projection_derived_v2", status: "FAIL", detail: "player_latest=none, team_latest=none, goalie_latest=none" },
+          { gate_key: "stale_goalie_game_rows", status: "FAIL", detail: "teams_missing_recent_goalie_rows=5" },
+        ],
+      },
+      termination: { state: "blocked", resumeRequired: true, nextStartDate: "2026-10-11" },
+      pipeline: { description: "x".repeat(5000), arbitrary: "not a receipt field" },
+    };
+    const wrapped = withCronJobAudit(async (_req, res) => res.status(422).json(response));
+    const res = createMockRes();
+
+    await wrapped(createMockReq(), res);
+
+    const row = insertMock.mock.calls[0][0];
+    expect(row.status).toBe("failure");
+    expect(row.details.response).toHaveLength(4000);
+    expect(() => JSON.parse(row.details.response)).toThrow();
+    expect(row.details.responseTruncated).toBe(true);
+    expect(row.details.responseOutcome).toEqual({
+      success: false,
+      error: "Preflight freshness checks failed",
+      asOfDate: "2026-10-11",
+      termination: response.termination,
+      preflight: {
+        status: "FAIL", asOfDate: "2026-10-11", gateCount: 3, failedGateCount: 2,
+        failedGates: response.preflight.gates.slice(1),
+      },
+    });
+    expect(res.statusCode).toBe(422);
+    expect(res.body).toEqual(response);
+  });
+
+  it("bounds game failure witnesses and failed gates without losing their total counts", async () => {
+    const errors = Array.from({ length: 5 }, (_, index) => ({
+      gameId: 2026010056 + index, date: "2026-09-26", stage: "capture_raw_sources",
+      message: "INVALID_PROJECTION_RAW_SHIFT_ROWS " + "x".repeat(3000), arbitrary: "excluded",
+    }));
+    const gates = Array.from({ length: 12 }, (_, index) => ({
+      gate_key: `gate_${index}`, status: "FAIL", detail: "x".repeat(1000), arbitrary: "excluded",
+    }));
+    const wrapped = withCronJobAudit(async (_req, res) => res.json({
+      success: false, nextGameId: 2026010056, rowsUpserted: null, errors,
+      preflight: { status: "FAIL", gates }, arbitrary: "excluded",
+    }));
+
+    await wrapped(createMockReq(), createMockRes());
+
+    const outcome = insertMock.mock.calls[0][0].details.responseOutcome;
+    expect(outcome).toMatchObject({ success: false, nextGameId: 2026010056, rowsUpserted: null });
+    expect(outcome.errors).toMatchObject({ count: 5 });
+    expect(outcome.errors.sample).toHaveLength(3);
+    expect(outcome.errors.sample[0]).toMatchObject({ gameId: 2026010056, date: "2026-09-26", stage: "capture_raw_sources" });
+    expect(outcome.errors.sample[0].message).toHaveLength(2000);
+    expect(outcome.preflight).toMatchObject({ gateCount: 12, failedGateCount: 12 });
+    expect(outcome.preflight.failedGates).toHaveLength(10);
+    expect(outcome.preflight.failedGates[0].detail).toHaveLength(300);
+    expect(JSON.stringify(outcome)).not.toContain("arbitrary");
+  });
+
   it("reports a failed final-audit receipt when persistence returns an error", async () => {
     const consoleErrorSpy = vi
       .spyOn(console, "error")

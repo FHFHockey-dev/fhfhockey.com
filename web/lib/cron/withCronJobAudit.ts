@@ -29,6 +29,56 @@ function safeJson(value: unknown, maxLen: number): string | null {
   }
 }
 
+function outcomeFields(value: unknown, keys: readonly string[], maxLen = 300) {
+  const result: Record<string, string | number | boolean | null> = {};
+  if (!value || typeof value !== "object" || Array.isArray(value)) return result;
+  const record = value as Record<string, unknown>;
+  for (const key of keys) {
+    const field = record[key];
+    if (typeof field === "string") result[key] = truncateString(field, maxLen);
+    else if (field === null || typeof field === "boolean" ||
+      (typeof field === "number" && Number.isFinite(field))) result[key] = field;
+  }
+  return result;
+}
+
+/** Keep outcome facts queryable even when the legacy response preview is cut. */
+function responseOutcome(body: unknown) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return null;
+  const record = body as Record<string, unknown>;
+  const outcome: Record<string, unknown> = outcomeFields(record, [
+    "success", "status", "error", "asOfDate", "nextGameId", "nextStartDate",
+    "lastCompletedGameId", "rowsUpserted", "rowsVerified", "rowsPruned",
+  ], 2000);
+  if (Array.isArray(record.errors)) {
+    outcome.errors = {
+      count: record.errors.length,
+      sample: record.errors.slice(0, 3).map((error) =>
+        typeof error === "string" ? { message: truncateString(error, 2000) }
+          : outcomeFields(error, ["gameId", "date", "stage", "message"], 2000)),
+    };
+  }
+  if (record.termination && typeof record.termination === "object") {
+    outcome.termination = outcomeFields(record.termination, [
+      "state", "resumeRequired", "nextStartDate",
+    ]);
+  }
+  if (record.preflight && typeof record.preflight === "object") {
+    const preflight = record.preflight as Record<string, unknown>;
+    const gates = Array.isArray(preflight.gates) ? preflight.gates : null;
+    const failedGates = gates?.filter((gate) =>
+      gate && typeof gate === "object" && gate.status === "FAIL");
+    outcome.preflight = {
+      ...outcomeFields(preflight, ["status", "asOfDate"]),
+      gateCount: gates?.length ?? null,
+      failedGateCount: failedGates?.length ?? null,
+      failedGates: failedGates?.slice(0, 10).map((gate) =>
+        outcomeFields(gate, ["gate_key", "status", "detail"])) ?? null,
+    };
+  }
+  return outcome;
+}
+
 function inferRowsAffected(body: unknown): number | null {
   const tryNumber = (v: unknown) =>
     typeof v === "number" && Number.isFinite(v) ? v : null;
@@ -250,6 +300,8 @@ export function withCronJobAudit(
 
     let finalAuditStatus: "persisted" | "failed" = "persisted";
 
+    const responsePreview = safeJson(capturedBody, 4000);
+
     const row: CronAuditRow = {
       job_name: jobName,
       status: inferredFailure ? "failure" : "success",
@@ -272,7 +324,9 @@ export function withCronJobAudit(
           thrown != null
             ? ((thrown as any)?.message ?? safeJson(thrown, 2000))
             : null,
-        response: safeJson(capturedBody, 4000),
+        response: responsePreview,
+        responseTruncated: responsePreview?.endsWith("…") ?? false,
+        responseOutcome: responseOutcome(capturedBody),
       },
     };
 
