@@ -3,6 +3,8 @@ import { persistTweetProjectionReports, enrichTweetInjuryHistory } from "lib/sou
 import { processLineSnapshotEvidence } from "lib/lines/processor";
 import { rosterSeasonForDate } from "lib/sources/playerIdentity";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withCronJobTiming } from "lib/cron/timingContract";
+import { ForecastScheduleError } from "lib/player-forecasts/scopeReads";
 import moment from "moment-timezone";
 import { starterBoardFlags } from "lib/projections/starterBoardFlags";
 import { getCurrentSeason, getTeams } from "lib/NHL/server";
@@ -313,6 +315,7 @@ async function persistLineSourceSnapshotRow(args: {
 
 export default withCronJobAudit(
   adminOnly(async (req, res) => {
+    const startedAt = Date.now();
     if (req.method !== "POST") {
       res.setHeader("Allow", "POST");
       return res.status(405).json({
@@ -966,6 +969,26 @@ export default withCronJobAudit(
     });
     } catch (error) {
       await failTweetEvents(req.supabase, pendingEvents, processingStage);
+      if (error instanceof ForecastScheduleError) {
+        const receipt = error.receipt;
+        return res.status(500).json(withCronJobTiming({
+          success: false,
+          error: error.message,
+          scheduleRejection: {
+            readStatus: receipt.readStatus,
+            validationStatus: receipt.validationStatus,
+            stage: receipt.stage,
+            scope: { fromDate: receipt.scope.fromDate, throughDate: receipt.scope.throughDate, teamId: receipt.scope.teamId },
+            discoveredGames: receipt.discoveredGames,
+            checkedGames: receipt.checkedGames,
+            unreadGames: receipt.unreadGames,
+            reasons: receipt.reasons,
+            rejectedGames: receipt.rejectedGames.slice(0, 5).map(({ gameId, reasons }) => ({ gameId, reasons })),
+            rejectedGameCount: receipt.rejectedGames.length,
+            rejectedGameSampleTruncated: receipt.rejectedGames.length > 5,
+          },
+        }, startedAt));
+      }
       throw error;
     }
   }),

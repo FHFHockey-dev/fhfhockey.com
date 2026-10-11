@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => ({
   rpc: vi.fn(),
   syncLineCombinationSourceWinners: vi.fn(),
   capturePlayerForecastSourceRows: vi.fn(),
+  auditInsert: vi.fn().mockResolvedValue({ error: null }),
 }));
 
 vi.mock("lib/NHL/server", () => ({
@@ -39,16 +40,12 @@ vi.mock("utils/adminOnlyMiddleware", () => ({
     ),
 }));
 
-vi.mock("lib/cron/withCronJobAudit", () => ({
-  withCronJobAudit: (handler: any) => async (req: any, res: any) => {
-    try {
-      await handler(req, res);
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        error: error?.message ?? "Unknown error",
-      });
-    }
+vi.mock("lib/supabase/server", () => ({
+  default: {
+    from: (table: string) => {
+      if (table !== "cron_job_audit") throw new Error(`Unexpected audit table ${table}`);
+      return { insert: mocks.auditInsert };
+    },
   },
 }));
 
@@ -63,6 +60,8 @@ import handler from "../../../../../pages/api/v1/db/update-line-sources";
 import cccHandler from "../../../../../pages/api/v1/db/update-lines-ccc";
 import releaseHandler from "../../../../../pages/api/v1/db/starter-board-release";
 import { projectionInputHash } from "lib/projections/inputCapture";
+import { ForecastScheduleError, type ForecastScheduleRejection } from "lib/player-forecasts/scopeReads";
+import * as tweetProjectionStorage from "lib/sources/tweetProjectionStorage";
 
 type LineSourceEventFixture = {
   id: string;
@@ -529,6 +528,78 @@ describe("/api/v1/db/update-line-sources", () => {
         logo: "/teamLogos/UTA.png",
       },
     ]);
+  });
+
+  async function rejectDuringProjection(error: Error) {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    vi.stubEnv("TWEET_PIPELINE_PUBLISHING_ENABLED", "true");
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 404 })));
+    const event = buildEvent({ id: "schedule-rejection", sourceKey: "gamedaylines", sourceAccount: "GameDayLines",
+      tweetId: "2049626619221008663", text: "#Habs lines\nCaufield - Suzuki - Slafkovsky" });
+    const { eventUpdateMock } = createSupabaseMocks([event]);
+    const baseFrom = mocks.from.getMockImplementation()!;
+    const jobQuery: any = { eq: () => jobQuery, then: (resolve: any) => Promise.resolve({ error: null }).then(resolve) };
+    const jobUpdate = vi.fn(() => jobQuery);
+    mocks.from.mockImplementation((table: string) => {
+      if (table === "tweet_pipeline_jobs") return { update: jobUpdate };
+      if (["rosters", "tweet_player_memberships", "fhfh_player_identities", "fhfh_player_identity_aliases"].includes(table)) {
+        return { select: () => paginatedRoster({ data: [], error: null }) };
+      }
+      return baseFrom(table);
+    });
+    mocks.rpc.mockResolvedValue({ data: true, error: null });
+    const projection = vi.spyOn(tweetProjectionStorage, "persistTweetProjectionReports").mockRejectedValueOnce(error);
+    const res = createMockRes();
+    try { await handler(createMockReq(), res); } finally { projection.mockRestore(); }
+    expect(jobUpdate).toHaveBeenCalledWith(expect.objectContaining({ status: "failed", failure_stage: "projection_storage", lease_expires_at: null }));
+    expect(eventUpdateMock).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(500);
+    const audit = mocks.auditInsert.mock.calls.at(-1)![0];
+    expect(audit).toMatchObject({ status: "failure", rows_affected: null, details: { statusCode: 500 } });
+    expect(JSON.parse(audit.details.response)).toEqual(res.body);
+    return { res, audit };
+  }
+
+  it("retains a bounded safe receipt for complete schedule reconciliation rejection in the failed response and audit", async () => {
+    const reasons: ForecastScheduleRejection["reasons"] = ["season_mismatch", "type_mismatch",
+      "date_mismatch", "identity_conflict", "invalid_start", "start_time_mismatch", "invalid_receipt", "unknown_status", "missing_sides", "conflicting_versions", "conflicting_sides"];
+    const receipt: ForecastScheduleRejection = { readStatus: "complete", validationStatus: "rejected", stage: "reconciliation",
+      scope: { fromDate: "2026-10-10", throughDate: null, teamId: 5 }, discoveredGames: 80, checkedGames: 80, unreadGames: 0, reasons,
+      rejectedGames: Array.from({ length: 6 }, (_, index) => ({ gameId: 2026020983 + index, reasons: index === 0 ? ["start_time_mismatch"] : reasons })) };
+    Object.assign(receipt, { rawSource: "PRIVATE_SENTINEL" });
+    Object.assign(receipt.scope, { credentials: "PRIVATE_SENTINEL" });
+    Object.assign(receipt.rejectedGames[0]!, { rawSource: "PRIVATE_SENTINEL" });
+    const error = Object.assign(new ForecastScheduleError(receipt), { credentials: "PRIVATE_SENTINEL" });
+    const { res, audit } = await rejectDuringProjection(error);
+    expect(res.body).toMatchObject({ success: false, error: error.message, scheduleRejection: {
+      readStatus: "complete", validationStatus: "rejected", stage: "reconciliation", scope: { fromDate: "2026-10-10", throughDate: null, teamId: 5 },
+      discoveredGames: 80, checkedGames: 80, unreadGames: 0, reasons, rejectedGameCount: 6, rejectedGameSampleTruncated: true,
+    } });
+    expect(res.body.scheduleRejection.scope).toEqual({ fromDate: "2026-10-10", throughDate: null, teamId: 5 });
+    expect(res.body.scheduleRejection.rejectedGames).toHaveLength(5);
+    expect(res.body.scheduleRejection.rejectedGames[0]).toEqual({ gameId: 2026020983, reasons: ["start_time_mismatch"] });
+    expect(JSON.stringify(res.body)).not.toContain("PRIVATE_SENTINEL");
+    expect(audit.details.response.length).toBeLessThan(4000);
+    expect(res.body.timing.durationMs).toBeTypeOf("number");
+  });
+  it.each(["canonical_games", "team_game_status"] as const)("distinguishes an incomplete %s schedule read without inventing unknown counts", async (stage) => {
+    const receipt: ForecastScheduleRejection = { readStatus: "incomplete", validationStatus: "rejected", stage,
+      scope: { fromDate: "2026-10-10", throughDate: null, teamId: 5 }, discoveredGames: null, checkedGames: 0, unreadGames: null,
+      reasons: [stage === "canonical_games" ? "read_deadline" : "incomplete_read"], rejectedGames: [] };
+    const { res } = await rejectDuringProjection(new ForecastScheduleError(receipt));
+    expect(res.body).toMatchObject({ success: false, scheduleRejection: {
+      ...receipt, rejectedGameCount: 0, rejectedGameSampleTruncated: false,
+    } });
+  });
+  it("keeps generic errors on the existing failure path without serializing an arbitrary schedule receipt", async () => {
+    const error = Object.assign(new Error("Projection temporarily unavailable"), {
+      name: "ForecastScheduleError", receipt: { credentials: "PRIVATE_SENTINEL", stage: "reconciliation" }, rawSource: "PRIVATE_SENTINEL",
+    });
+    const { res, audit } = await rejectDuringProjection(error);
+    expect(res.body).toMatchObject({ success: false, error: "Projection temporarily unavailable" });
+    expect(res.body.scheduleRejection).toBeUndefined();
+    expect(JSON.stringify(res.body)).not.toContain("PRIVATE_SENTINEL");
+    expect(audit.details.error).toBe("Projection temporarily unavailable");
   });
 
   it("leaves events pending when required immutable evidence capture fails", async () => {
