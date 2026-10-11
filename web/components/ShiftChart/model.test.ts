@@ -8,6 +8,7 @@ import {
   sortedPlayers,
   statsAt,
   toiAt,
+  UnavailableGameError,
 } from "./model";
 import { gameFixture } from "./testFixtures";
 import { getTOIData } from "components/LinemateMatrix";
@@ -23,11 +24,41 @@ describe("Game Grid replay model", () => {
     f.shifts.data.push(f.shifts.data[0]);
     const game = normalizeGame(f.box, f.shifts, f.pbp);
     expect(game.players.find((p) => p.id === 202)?.shifts).toEqual([]);
+    expect(toiAt(game.players.find((p) => p.id === 202)!, 3600)).toBe(0);
+    expect(toiAt(game.players.find((p) => p.id === 102)!, 20)).toBe(0);
     const player = game.players[0];
     expect(toiAt(player, 20)).toBe(20);
     expect(toiAt(player, 45)).toBe(30);
     expect(toiAt(player, 90)).toBe(60);
     expect(toiAt(player, 3600)).toBe(90);
+  });
+  it.each(["goal", "shot-on-goal"])(
+    "reports incomplete shifts for a rostered player with a retained %s",
+    (eventType) => {
+      const f = gameFixture();
+      f.shifts.data = f.shifts.data.filter((shift) => shift.playerId !== 101);
+      f.pbp.plays = f.pbp.plays.filter((play) => play.typeDescKey === eventType);
+      let error: unknown;
+      try {
+        normalizeGame(f.box, f.shifts, f.pbp);
+      } catch (caught) {
+        error = caught;
+      }
+      expect(error).toBeInstanceOf(UnavailableGameError);
+      expect(error).toMatchObject({
+        message: "Shift data is incomplete for a player with a recorded goal or shot.",
+        date: f.box.gameDate,
+      });
+    },
+  );
+  it("does not infer missing roster shifts from an unrostered shooter", () => {
+    const f = gameFixture();
+    f.pbp.plays.push({
+      ...f.pbp.plays[0],
+      eventId: 4,
+      details: { eventOwnerTeamId: 68, shootingPlayerId: 999 },
+    });
+    expect(() => normalizeGame(f.box, f.shifts, f.pbp)).not.toThrow();
   });
   it("uses half-open shift boundaries and actual goalie shifts", () => {
     const game = fixtureGame();

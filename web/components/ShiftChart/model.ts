@@ -268,6 +268,11 @@ export function normalizeGame(
     });
   }
   events.sort((a, b) => a.time - b.time);
+  if (events.some((event) => playerMap.get(event.playerId)?.shifts.length === 0))
+    throw new UnavailableGameError(
+      "Shift data is incomplete for a player with a recorded goal or shot.",
+      date,
+    );
   // Keep the existing penalty interpretation, adapting its legacy period field at the boundary.
   const blocks = getPowerPlayBlocks(
     plays
