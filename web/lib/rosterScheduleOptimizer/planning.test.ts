@@ -388,9 +388,10 @@ describe("planning engine", () => {
     permuted.players.forEach(item => { item.name = `Renamed ${item.id}`; });
     expect(planRoster(permuted, intent, { maxSteps: 0 }).selected.recommendation).toEqual(result.selected.recommendation);
   });
-  it("withholds quality certification when a checked legal placement improves the selected lineup", () => {
+  it.each([1, 1e-9])("withholds quality certification when a checked legal placement improves the selected lineup at scale %s", weight => {
     const data = snapshot();
     data.context.endDate = data.context.startDate;
+    data.rules.scoring.weights = { pts: weight };
     const inferior = evaluatePlan({ ...data, lockedAssignments: [{ date: data.context.startDate, playerId: "a", slotId: "C#1" }] }, intent, "outcome", [], false);
     const result = explainBenchDecisions({ snapshot: data, intent, evaluation: inferior,
       scopeForDate: date => ({ dates: [date], locks: [] }),
@@ -398,7 +399,7 @@ describe("planning engine", () => {
     expect(result.recommendation).toMatchObject({ eligible: false, mode: "schedule_capacity" });
     expect(result.comparisonEligible).toBe(false);
     expect(result.recommendation?.exclusions?.[0]).toMatchObject({ reason: "decision_unresolved",
-      evidence: { selectedScore: 1, withPlayerScore: 2 } });
+      evidence: { selectedScore: weight, withPlayerScore: 2 * weight } });
   });
   it("counts competing bench targets and explains missing discovery by opportunity", () => {
     const data = snapshot();
@@ -1245,6 +1246,48 @@ describe("planning engine", () => {
     const result = planRoster(data, { ...intent, protectedPlayerIds: ["a", "b"] }, { maxCandidates: 1, maxSteps: 1 });
     expect(result.alternatives.every(item => item.steps.length === 0)).toBe(true);
     expect(result.baseline.goalie.risk).toBe(true);
+  });
+  it.each([1, 1e-9, 1e-15])("preserves distinct goalie lineup gains at a league points scale of %s", weight => {
+    const data = snapshot();
+    data.players = data.players.filter(row => row.id !== "c").map(row => ({ ...row, eligiblePositions: ["G"], playerClass: "goalie" as const }));
+    data.roster = data.players.map(row => ({ playerId: row.id, position: "active" }));
+    data.games = data.games.filter(game => game.teamAbbreviation !== "C");
+    data.rules.rosterSlots = { G: 1, BN: 1 };
+    data.rules.scoring.weights = { saves: weight };
+    data.rules.goalieMinimum = { required: 1, credited: 0, counts: "starts", penalty: "none", periodStart: "2026-10-05", periodEnd: "2026-10-07" };
+    data.realized = {};
+    data.forecasts = data.games.map(game => {
+      const member = data.players.find(row => row.teamAbbreviation === game.teamAbbreviation)!;
+      return issuedForecast(data, member.id, game.id, { stats: { saves: member.id === "a" ? 1 : game.date === "2026-10-05" ? 3 : 2 },
+        startProbability: member.id === "a" ? 1 : 0.25, confirmedStart: member.id === "a" });
+    });
+    const manager = { ...intent, goalieCoverage: "cover" as const };
+    for (const result of [evaluatePlan(data, manager, "outcome"), planRoster(data, manager, { maxSteps: 0 }).selected]) {
+      expect(result.assignments.map(row => `${row.date}:${row.playerId}`).sort()).toEqual(["2026-10-05:b", "2026-10-06:a"]);
+      expect(result.projectedValue).toBe(4 * weight);
+      expect(result.goalie).toMatchObject({ credited: 0, projected: 1.25, risk: false, minimumSatisfied: false });
+      expect(result.comparisonEligible).toBe(true);
+      expect(result.recommendation?.eligible).toBe(true);
+      for (const row of result.recommendation!.exclusions!) {
+        if (row.evidence) expect(row.evidence.withPlayerScore).toBeLessThanOrEqual(row.evidence.selectedScore);
+      }
+    }
+  });
+  it.each([
+    { a: 1, b: 2, reason: "lower_lineup_value" },
+    { a: 0, b: 1, reason: "lower_lineup_value" },
+    { a: -1, b: 0, reason: "negative_value" },
+    { a: 1, b: 1, reason: "equal_lineup_value" },
+  ])("distinguishes tiny bench outcomes from exact ties: $reason ($a, $b)", ({ a, b, reason }) => {
+    const data = snapshot();
+    data.context.endDate = data.context.startDate;
+    data.games = data.games.filter(game => game.date === data.context.startDate);
+    data.rules.scoring.weights = { pts: 1e-9 };
+    data.forecasts = data.forecasts.filter(row => data.games.some(game => game.id === row.gameId))
+      .map(row => ({ ...row, stats: { pts: row.playerId === "a" ? a : b } }));
+    const result = evaluatePlan(data, intent, "outcome");
+    expect(result.recommendation?.eligible).toBe(true);
+    expect(result.recommendation?.exclusions).toContainEqual(expect.objectContaining({ reason }));
   });
   it("prioritizes projected goalie-minimum coverage before points without crediting future starts", () => {
     const data = snapshot();

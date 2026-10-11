@@ -454,7 +454,7 @@ function refineOutcomeLineup(
         seen.add(identity);
         const value = score(candidate);
         evaluated++;
-        if (compare(value, bestScore) > 0 && (!points || value.coverage !== bestScore.coverage || value.value > bestScore.value + 1e-8)) { best = candidate; bestScore = value; }
+        if (compare(value, bestScore) > 0) { best = candidate; bestScore = value; }
         if (Number.isFinite(value.value)) next.push({ rows: candidate, value });
         if (evaluated >= 100) break;
       }

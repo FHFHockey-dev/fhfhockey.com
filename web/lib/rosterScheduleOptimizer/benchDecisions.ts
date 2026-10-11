@@ -103,11 +103,11 @@ export function explainBenchDecisions(args: {
     const withPlayerScore = score(best)!;
     const minimumPriority = compareCoverage(evaluation, best) > 0;
     const coverageImproves = compareCoverage(evaluation, best) < 0;
-    const improves = coverageImproves || !minimumPriority && withPlayerScore > selectedScore + 1e-8;
+    const improves = coverageImproves || !minimumPriority && withPlayerScore > selectedScore;
     if (improves) unresolved = true;
     const reason = improves ? "decision_unresolved" : minimumPriority ? "minimum_priority"
       : scoreBasis === "category_outcomes" || scoreBasis === "category_assignment" ? "category_tradeoff"
-        : Math.abs(withPlayerScore - selectedScore) <= 1e-8 ? "equal_lineup_value"
+        : withPlayerScore === selectedScore ? "equal_lineup_value"
           : row.value !== null && row.value < 0 ? "negative_value" : "lower_lineup_value";
     const selectedBySlot = new Map(evaluation.assignments.filter(item => dates.includes(item.date)).map(item => [`${item.date}:${item.slotId}`, item]));
     const forcedBySlot = new Map(best.assignments.filter(item => dates.includes(item.date)).map(item => [`${item.date}:${item.slotId}`, item]));
