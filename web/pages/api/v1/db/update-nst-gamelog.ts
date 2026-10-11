@@ -7,7 +7,7 @@
  * --- Query Parameters ---
  *
  * 1. `runMode` (optional): Specifies the operation mode for the data fetch.
- *    - `incremental` (default): Rotates current-season attempts using an audit bookmark, skipping stored complete data.
+ *    - `incremental` (default): Rotates bounded current-season source attempts using an audit bookmark.
  *      This is the most common mode for daily updates.
  *      Example: /api/v1/db/update-nst-gamelog
  *      Example: /api/v1/db/update-nst-gamelog?runMode=incremental
@@ -167,6 +167,7 @@ const playerNameMapping: Record<string, { fullName: string }> = {
   "Cameron Atkinson": { fullName: "Cam Atkinson" },
   "Nicholas Paul": { fullName: "Nick Paul" },
   "Joseph Veleno": { fullName: "Joe Veleno" },
+  "Josh Mahura": { fullName: "Joshua Mahura" },
   "Janis Moser": { fullName: "J.J. Moser" },
   "Nathan Légaré": { fullName: "Nathan Legare" },
   "Mat?j Blümel": { fullName: "Matěj Blümel" },
@@ -440,38 +441,6 @@ export function getDatesBetween(start: Date, end: Date): string[] {
     current = addDays(current, 1);
   }
   return dates;
-}
-
-async function dateIsComplete(table: string, date: string): Promise<boolean> {
-  // Must be schema-agnostic across counts/rates/on-ice tables.
-  // The previous implementation queried `goals_per_60`, which doesn't exist for many
-  // tables, causing false "incomplete" signals and endless re-fetching.
-  const { data, error } = await supabase
-    .from(table)
-    .select("*")
-    .eq("date_scraped", date)
-    .limit(10);
-  if (error) return false;
-  if (!data || data.length < 5) return false;
-
-  const ignoredKeys = new Set([
-    "player_id",
-    "date_scraped",
-    "player_name",
-    "team",
-    "position",
-    "season"
-  ]);
-
-  const hasAnyStatValue = (row: Record<string, any>) => {
-    for (const [k, v] of Object.entries(row)) {
-      if (ignoredKeys.has(k)) continue;
-      if (v !== null && typeof v !== "undefined") return true;
-    }
-    return false;
-  };
-
-  return data.some((r: any) => hasAnyStatValue(r));
 }
 
 async function fetchScheduledGameDateMap(args: {
@@ -823,31 +792,6 @@ async function getLatestDateSupabase(args: {
   return latestDate;
 }
 
-async function checkDataExists(
-  datasetType: string,
-  date: string
-): Promise<boolean> {
-  const tableName = getTableName(datasetType);
-  if (tableName === "unknown_table") return false; // Already warned in getTableName
-
-  // Existence check only: avoid `count: "exact"` (expensive) and avoid HEAD-only calls.
-  const { data, error } = await supabase
-    .from(tableName)
-    .select("player_id")
-    .eq("date_scraped", date)
-    .limit(1);
-
-  if (error) {
-    console.error(
-      `Error checking data existence in ${tableName} for date ${date}:`,
-      error.message
-    );
-    return false; // Assume not exists on error to allow processing attempt
-  }
-
-  return (data?.length ?? 0) > 0;
-}
-
 function cleanHeader(h: string): string {
   return h
     .replace(/[\u200B-\u200D\uFEFF]/g, "") // remove zero-width chars (ZWSP, ZWNJ, ZWJ, BOM)
@@ -940,13 +884,30 @@ async function loadPlayerIdCache(): Promise<Map<string, PlayerCacheRow[]>> {
   return cache;
 }
 
+export function getNstPlayerIdFromHref(href: string): number | null {
+  try {
+    const url = new URL(href, BASE_URL);
+    const ids = url.searchParams.getAll("playerid");
+    if (
+      url.protocol !== "https:" ||
+      !["data.naturalstattrick.com", "www.naturalstattrick.com", "naturalstattrick.com"].includes(url.host) ||
+      url.pathname !== "/playerreport.php" ||
+      ids.length !== 1 || !/^\d{7}$/.test(ids[0])
+    ) return null;
+    return Number(ids[0]);
+  } catch {
+    return null;
+  }
+}
+
 async function getPlayerIdByName(
   fullName: string,
-  position: string
+  position: string,
+  providerPlayerId?: number | null
 ): Promise<number | null> {
   const searchName = resolveMappedPlayerName(fullName);
 
-  const memoKey = `${searchName}|${String(position ?? "").toUpperCase()}`;
+  const memoKey = `${searchName}|${String(position ?? "").toUpperCase()}|${providerPlayerId ?? (providerPlayerId === null ? "invalid" : "absent")}`;
   if (playerIdMemo.has(memoKey)) return playerIdMemo.get(memoKey) ?? null;
 
   const requiresPositionCheck = ["Elias Pettersson", "Sebastian Aho"].includes(
@@ -956,23 +917,43 @@ async function getPlayerIdByName(
   try {
     const cache = await loadPlayerIdCache();
     const candidates = getPlayerCacheCandidates(cache, searchName);
+    if (providerPlayerId !== undefined) {
+      // NST playerreport IDs are NHL IDs (public.players' analytics key).
+      // Require the canonical name/explicit alias too; never fall back from a
+      // conflicting or malformed provider identity to a same-name player.
+      const match = candidates?.find((c) => c.id === providerPlayerId);
+      if (match && (!requiresPositionCheck || match.position === position.toUpperCase())) {
+        playerIdMemo.set(memoKey, match.id);
+        return match.id;
+      }
+      playerIdMemo.set(memoKey, null);
+      troublesomePlayers.push(`${fullName} (${position}) [Provider ID unresolved: ${providerPlayerId}]`);
+      return null;
+    }
     if (candidates && candidates.length > 0) {
       if (candidates.length === 1 && !requiresPositionCheck) {
         playerIdMemo.set(memoKey, candidates[0].id);
         return candidates[0].id;
       }
       const pos = String(position ?? "").toUpperCase();
-      const match = candidates.find((c) => c.position === pos);
-      if (match) {
-        playerIdMemo.set(memoKey, match.id);
-        return match.id;
+      const matches = candidates.filter((c) => c.position === pos);
+      if (matches.length === 1) {
+        playerIdMemo.set(memoKey, matches[0].id);
+        return matches[0].id;
       }
-      // Ambiguous or missing-position match. Fall through to DB query.
+      playerIdMemo.set(memoKey, null);
+      troublesomePlayers.push(`${fullName} (${position}) [Ambiguous canonical identity]`);
+      return null;
     }
   } catch (e: any) {
     console.warn(
       `Player cache lookup failed for "${searchName}" (${position}); falling back to DB query: ${e?.message ?? e}`
     );
+  }
+
+  if (providerPlayerId !== undefined) {
+    playerIdMemo.set(memoKey, null);
+    return null;
   }
 
   let query = supabase.from("players").select("id").eq("fullName", searchName);
@@ -981,7 +962,7 @@ async function getPlayerIdByName(
     query = query.eq("position", position.toUpperCase());
   }
 
-  const { data, error } = await query.limit(1).maybeSingle();
+  const { data, error } = await query.limit(2);
 
   if (error) {
     console.error(
@@ -991,7 +972,7 @@ async function getPlayerIdByName(
     return null;
   }
 
-  if (!data) {
+  if (!data || data.length !== 1) {
     if (!troublesomePlayers.some((p) => p.startsWith(fullName))) {
       troublesomePlayers.push(
         `${fullName} (${position}) [Mapped: ${searchName}]`
@@ -1001,8 +982,8 @@ async function getPlayerIdByName(
     return null;
   }
 
-  playerIdMemo.set(memoKey, data.id);
-  return data.id;
+  playerIdMemo.set(memoKey, data[0].id);
+  return data[0].id;
 }
 
 async function upsertData(
@@ -1312,6 +1293,7 @@ async function fetchAndParseData(
       table.find("tbody tr").each((_, tr) => {
         const rowData: any = {};
         let playerFullName: string | null = null;
+        let providerPlayerId: number | null | undefined;
         let playerPosition: string | null = null;
         let playerTeam: string | null = null;
         const cells = $(tr).find("td");
@@ -1334,6 +1316,8 @@ async function fetchAndParseData(
 
             if (originalHeader === "Player") {
               playerFullName = $(td).text().trim();
+              const href = $(td).find("a").attr("href");
+              if (href !== undefined) providerPlayerId = getNstPlayerIdFromHref(href);
               return;
             }
             if (originalHeader === "Position") {
@@ -1403,6 +1387,7 @@ async function fetchAndParseData(
         ) {
           rowData["_player_full_name_temp"] = playerFullName;
           rowData["_player_position_temp"] = playerPosition;
+          rowData["_player_provider_id_temp"] = providerPlayerId;
           rowData["date_scraped"] = effectiveDate;
           rowData["season"] = parseInt(seasonId, 10);
           dataRowsCollected.push(rowData);
@@ -1426,7 +1411,8 @@ async function fetchAndParseData(
 
         const playerId = await getPlayerIdByName(
           playerFullName,
-          playerPosition
+          playerPosition,
+          row["_player_provider_id_temp"]
         );
 
         if (!playerId) {
@@ -1436,6 +1422,7 @@ async function fetchAndParseData(
         row["player_id"] = playerId;
         delete row["_player_full_name_temp"];
         delete row["_player_position_temp"];
+        delete row["_player_provider_id_temp"];
         Object.defineProperty(row, "__nstDebug", {
           value: {
             playerName: playerFullName,
@@ -1716,41 +1703,15 @@ async function processUrls(
 
     // rely on global NST limiter; do not add extra spacing here
 
-    let shouldFetch = true;
-    let skipReason = "";
-
-    if (!isFullRefresh) {
-      const dataExists = await checkDataExists(datasetType, date);
-      if (dataExists) {
-        const tableName = getTableName(datasetType);
-        const complete = await dateIsComplete(tableName, date);
-        if (complete) {
-          shouldFetch = false;
-          skipReason =
-            "Data already exists and appears complete (incremental update).";
-        } else {
-          console.log(
-            `Existing data for ${date} in ${tableName} appears incomplete; refetching.`
-          );
-        }
-      }
-    } else {
-      skipReason =
-        "Full refresh requested, fetching regardless of existing data.";
-      console.log(
-        `\nFull refresh\nOverwrite = ${isFullRefresh},\nMode = ${
-          isFullRefresh ? "Full" : "Incremental"
-        }\n`
-      );
-    }
-
+    // Stored row samples cannot establish that every provider row was parsed
+    // and resolved. Refetch the selected item within the existing request cap.
     let fetchSuccess = false;
     let parseResult: any[] = [];
     let upsertSuccess = false;
     let upsertedCount = 0;
-    let outcome: NstGamelogOutcome = "already_present";
+    let outcome: NstGamelogOutcome = "parse_or_identity_unresolved";
 
-    if (shouldFetch) {
+    {
       if (
         options?.maxRequests !== undefined &&
         requestsAttempted >= options.maxRequests
@@ -1801,10 +1762,6 @@ async function processUrls(
         );
         upsertSuccess = true;
       }
-    } else {
-      console.log(`Skipping fetch for ${url}: ${skipReason}`);
-      fetchSuccess = true;
-      upsertSuccess = true;
     }
 
     totalRowsProcessed += upsertedCount;
@@ -1818,13 +1775,13 @@ async function processUrls(
       tableName: getTableName(datasetType),
       dateUrlCount: { current: i + 1, total: urlsQueue.length },
       totalUrlCount: { current: totalProcessed, total: urlsQueue.length },
-      rowsProcessed: shouldFetch && fetchSuccess ? parseResult.length : 0,
-      rowsPrepared: shouldFetch && fetchSuccess ? parseResult.length : 0,
+      rowsProcessed: fetchSuccess ? parseResult.length : 0,
+      rowsPrepared: fetchSuccess ? parseResult.length : 0,
       rowsUpserted: upsertedCount
     });
     printTotalProgress(totalProcessed, urlsQueue.length);
 
-    if (shouldFetch && !fetchSuccess) {
+    if (!fetchSuccess) {
       console.warn(`Adding URL to failed list: ${url}`);
       failedUrls.push(item);
     }
@@ -2129,6 +2086,9 @@ async function main(
   );
   const startTime = Date.now();
   troublesomePlayers.length = 0; // Clear troublesome list for this run
+  // A warm route instance must not retain missing identities across requests.
+  playerIdCache = null;
+  playerIdMemo.clear();
 
   let totalRowsAffected = 0;
   let failedUrlCountAfterRetry = 0;
@@ -2494,7 +2454,7 @@ async function main(
             : NST_TABLE_NAMES
         });
         // Revisit the cursor date so partial writes/retries can finish it.
-        // processUrls skips complete data when overwrite is false.
+        // processUrls bounds source attempts without certifying stored row samples.
         startDate = parseDateInTimeZone(latestDateStr ?? seasonStartDate, timeZone);
         console.log(
           `Incremental Update: Season ${cursorSeason.id}, resuming ${latestDateStr ?? seasonStartDate}.`
