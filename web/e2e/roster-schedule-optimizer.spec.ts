@@ -233,14 +233,42 @@ test("streams A to B to C through successive conditional acquisitions and keeps 
   await expect(page.getByRole("region", { name: "Plan summary" }).getByText("3", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("region", { name: "Itinerary" }).getByText("ADD Bravo Center", { exact: true })).toBeVisible();
   await expect(page.getByRole("region", { name: "Itinerary" }).getByText("ADD Charlie Center", { exact: true })).toBeVisible();
+  const nextAction = page.getByText("Next selected action: ADD Bravo Center", { exact: true });
+  await expect(nextAction).toBeVisible();
+  await expect(page.getByText("Review inputs and rule checks before acting.", { exact: false })).toBeVisible();
   await page.getByRole("button", { name: /Show (lineup analysis|schedule-capacity assignment)/ }).click();
+  await openPlanningSetup(page);
   await page.getByText("League rules and scoring").click();
+  await page.getByRole("button", { name: "Confirm planning inputs", exact: true }).click();
+  await openPlanDetails(page);
+  await expect(page.getByText("Recheck availability and clearance before this conditional move.", { exact: false })).toBeVisible();
+  await page.evaluate(() => {
+    const retained = JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!);
+    retained.rules.unsupported = ["Some league scoring or roster rules are unsupported."];
+    localStorage.setItem("fhfh:rso:workspace:v1", JSON.stringify(retained));
+  });
+  await page.reload();
+  await openPlanDetails(page);
+  await openPlanningSetup(page);
+  await page.getByText("League rules and scoring").click();
+  await page.getByRole("button", { name: "Confirm planning inputs", exact: true }).click();
+  await expect(page.getByText("Review inputs and rule checks before acting.", { exact: false })).toBeVisible();
+  await expect(page.getByText("Recheck availability and clearance before this conditional move.", { exact: false })).toHaveCount(0);
   await page.getByText("Scoring, budgets, and lock windows", { exact: true }).click();
   for (const [width, height] of [[1440, 900], [1920, 1080]]) {
     await page.setViewportSize({ width, height });
     await expectDesktopFrameVisible(page);
     await page.screenshot({ path: testInfo.outputPath(`roster-optimizer-stream-${width}.png`), fullPage: true });
   }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("navigation", { name: "Workspace views" }).getByRole("button", { name: "Itinerary", exact: true }).click();
+  await openPlanDetails(page);
+  await nextAction.scrollIntoViewIfNeeded();
+  await expect(nextAction).toBeInViewport();
+  await expect(page.getByText("Review inputs and rule checks before acting.", { exact: false })).toBeVisible();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).intent)).toEqual(workspace.intent);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await page.screenshot({ path: testInfo.outputPath("roster-optimizer-next-action-mobile.png"), fullPage: true });
 });
 
 test("weekly lock keeps one fixed occupant across a window, including a confirmed midpoint assignment", async ({ page }) => {

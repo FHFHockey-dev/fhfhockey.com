@@ -873,12 +873,72 @@ describe("RosterScheduleOptimizer workspace", () => {
       { id: "b", type: "add", playerId: bravo.id, dropPlayerId: player.id, at: workspace.context.asOf, effectiveAt: workspace.context.asOf, conditional: true, dependsOn: [] },
       { id: "c", type: "add", playerId: charlie.id, dropPlayerId: bravo.id, at: workspace.context.asOf, effectiveAt: workspace.context.asOf, conditional: true, dependsOn: ["b"] },
     ];
+    workspace.intent.steps.reverse();
     window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
     vi.stubGlobal("fetch", fetchMock);
     render(<RosterScheduleOptimizer />);
     const row = (await screen.findByText("ADD Charlie Center")).closest("div")!;
     expect(within(row).getByText(`Acquisition cost: ${cost ?? "unknown"} · Drop: Bravo Center`)).toBeTruthy();
     expect(within(row).getByText("Requires: ADD Bravo Center")).toBeTruthy();
+    expect(screen.getByText("Next selected action: ADD Bravo Center")).toBeTruthy();
+    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent).toEqual(workspace.intent);
+  });
+
+  it.each([false, true])("identifies the next selected action without promoting an unresolved plan (mistimed prerequisite: %s)", async mistimedPrerequisite => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-10T12:00:00Z"));
+    const workspace = defaultWorkspace();
+    const bravo = { ...player, id: "fhfh:2", nhlId: 2, name: "Bravo Center" };
+    workspace.manualPlayers = [player, bravo];
+    workspace.intent.steps = [
+      { id: "later", type: "drop", playerId: player.id, at: "2026-10-12T12:00:00Z", effectiveAt: "2026-10-12T12:00:00Z", conditional: false, dependsOn: [] },
+      { id: "earlier", type: "add", playerId: bravo.id, at: "2026-10-11T12:00:00Z", effectiveAt: "2026-10-13T12:00:00Z", conditional: true, dependsOn: mistimedPrerequisite ? ["later"] : [] },
+    ];
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<RosterScheduleOptimizer />);
+    if (mistimedPrerequisite) {
+      expect(await screen.findByText("Review action times and prerequisites to identify the next move.")).toBeTruthy();
+      expect(screen.queryByText(/Next selected action:/)).toBeNull();
+      expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent).toEqual(workspace.intent);
+      return;
+    }
+    const next = await screen.findByText("Next selected action: ADD Bravo Center");
+    expect(next.parentElement?.textContent).toContain("Review inputs and rule checks before acting.");
+    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent).toEqual(workspace.intent);
+    vi.setSystemTime(new Date("2026-10-11T13:00:00Z"));
+    fireEvent.click(screen.getByRole("button", { name: /^Candidates$/ }));
+    expect(next.parentElement?.textContent).toContain("Selected action time has passed; review the plan before acting.");
+    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent).toEqual(workspace.intent);
+  });
+
+  it("keeps the next selected action review-only after confirmation with unsupported rules", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-10T12:00:00Z"));
+    const workspace = defaultWorkspace();
+    workspace.context = { ...workspace.context, startDate: "2026-10-10", endDate: "2026-10-12", timeZone: "UTC" };
+    const member = { ...player, canDrop: true, availability: "rostered" as const, eligibilityVerified: true };
+    workspace.manualPlayers = [member];
+    workspace.roster = [{ playerId: player.id, position: "active" }];
+    workspace.rules = { ...workspace.rules, rosterSlots: { C: 1, BN: 1 }, acquisitionTiming: "same_day", acquisitionCost: 1,
+      periods: [{ id: "week", start: "2026-10-10T00:00:00Z", end: "2026-10-13T00:00:00Z", remaining: 3, source: "manager" }],
+      scoring: { mode: "points", weights: { GOALS: 1 }, categories: [] },
+      unsupported: ["Some league scoring or roster rules are unsupported."] };
+    workspace.intent.steps = [{ id: "drop", type: "drop", playerId: player.id, at: "2026-10-11T12:00:00Z", effectiveAt: "2026-10-11T12:00:00Z", conditional: false, dependsOn: [] }];
+    planningState.evaluate = (snapshot, intent) => {
+      const result = planRoster(snapshot, intent);
+      expect(result.selected.legal).toBe(true);
+      expect(result.selected.budgetVerified).toBe(true);
+      return result;
+    };
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"), json: async () => ({ success: true, data: { ...data, players: [member] } }) })));
+    render(<RosterScheduleOptimizer />);
+    const next = await screen.findByText("Next selected action: DROP Alpha Center");
+    fireEvent.click(screen.getByRole("button", { name: "Confirm planning inputs" }));
+    expect(next.parentElement?.textContent).toContain("Review inputs and rule checks before acting.");
+    expect(next.parentElement?.textContent).not.toContain("Confirm this selected move with your provider.");
+    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent).toEqual(workspace.intent);
   });
 
   it.each([null, "C#1"].flatMap(slotId => [false, true].map(providerConflict => ({ slotId, providerConflict }))))("uses a saved manager $slotId lock through refresh, undo, save and reopen (provider conflict: $providerConflict)", async ({ slotId, providerConflict }) => {
