@@ -30,7 +30,7 @@ function source(value: unknown = payload(), revisionId = "synthetic-revision-1")
   return { revisionId, payload: value, bodyUtf8, rawBytesHash: digest(bodyUtf8) };
 }
 function audit(sources: unknown[] = [source()]) {
-  const bytes = Buffer.from(JSON.stringify({ evidenceKind: "synthetic_mechanics_only", retainedHistorySources: sources }));
+  const bytes = new Uint8Array(Buffer.from(JSON.stringify({ evidenceKind: "synthetic_mechanics_only", retainedHistorySources: sources })));
   return auditRetainedPlayerPpEvidence(bytes, digest(bytes), target);
 }
 afterEach(() => { for (const path of directories.splice(0)) rmSync(path, { recursive: true }); vi.unstubAllGlobals(); });
@@ -174,10 +174,10 @@ describe("retained PP auditor: synthetic mechanics only, no qualification eviden
   });
 
   it("fails closed before examining sources on input byte mismatch and invalid JSON", () => {
-    const bytes = Buffer.from(JSON.stringify({ retainedHistorySources: [source()] }));
+    const bytes = new Uint8Array(Buffer.from(JSON.stringify({ retainedHistorySources: [source()] })));
     expect(auditRetainedPlayerPpEvidence(bytes, "0".repeat(64), target)).toMatchObject({ sources: [], inputBinding: { status: "mismatched" } });
     expect(auditRetainedPlayerPpEvidence(bytes, "invalid", target).sources).toEqual([]);
-    const invalid = Buffer.from("{");
+    const invalid = new Uint8Array(Buffer.from("{"));
     expect(auditRetainedPlayerPpEvidence(invalid, digest(invalid), target).issues).toContain("invalid_input_json_or_utf8");
     expect(audit([]).issues).toContain("empty_retained_history_sources");
     expect(audit([null]).sources[0].positiveRetainedPpCredits.points).toBeNull();
@@ -187,11 +187,11 @@ describe("retained PP auditor: synthetic mechanics only, no qualification eviden
     const network = vi.fn(() => { throw new Error("Network forbidden"); }); vi.stubGlobal("fetch", network);
     const directory = mkdtempSync(join(tmpdir(), "synthetic-retained-pp-")); directories.push(directory);
     const path = join(directory, "inputs.json");
-    const bytes = Buffer.from(JSON.stringify({ evidenceKind: "synthetic_mechanics_only", retainedHistorySources: [source()] }));
+    const bytes = new Uint8Array(Buffer.from(JSON.stringify({ evidenceKind: "synthetic_mechanics_only", retainedHistorySources: [source()] })));
     writeFileSync(path, bytes);
     const args = ["--input", path, "--input-sha256", digest(bytes), "--player-id", "8478402", "--team-id", "22"];
     expect(runRetainedPlayerPpAudit(args).sources[0].positiveRetainedPpCredits.points).toBe(1);
-    expect(readFileSync(path)).toEqual(bytes); expect(network).not.toHaveBeenCalled();
+    expect(new Uint8Array(readFileSync(path))).toEqual(bytes); expect(network).not.toHaveBeenCalled();
     expect(() => runRetainedPlayerPpAudit([...args, "--input", path])).toThrow("Use --input");
     expect(() => runRetainedPlayerPpAudit([...args.slice(0, 6), "--team-id", "0"])).toThrow("Use --input");
     expect(() => runRetainedPlayerPpAudit(["--input", path])).toThrow("Use --input");

@@ -119,7 +119,7 @@ function auditSource(value: unknown, sourceIndex: number, sources: unknown[], ta
 
   const body = source?.bodyUtf8;
   const expectedHash = typeof source?.rawBytesHash === "string" ? source.rawBytesHash : null;
-  const actualHash = typeof body === "string" ? hash(Buffer.from(body, "utf8")) : null;
+  const actualHash = typeof body === "string" ? hash(new Uint8Array(Buffer.from(body, "utf8"))) : null;
   let hashStatus: Check = typeof body !== "string" ? "missing" : !sha256(expectedHash) ? "invalid" : actualHash === expectedHash ? "matched" : "mismatched";
   let parsedPayload: Check = "missing";
   if (typeof body === "string") {
@@ -243,9 +243,9 @@ export function runRetainedPlayerPpAudit(args: string[]) {
   const inputPath = options.get("--input")!;
   const stat = statSync(inputPath);
   if (!stat.isFile() || stat.size > 32 * 1024 * 1024) throw new Error("Input must be a local regular file of at most 32 MiB");
-  const bytes = readFileSync(inputPath);
+  const bytes = new Uint8Array(readFileSync(inputPath));
   const result = auditRetainedPlayerPpEvidence(bytes, options.get("--input-sha256")!, target);
-  if (hash(readFileSync(inputPath)) !== result.inputBinding.actualHash) throw new Error("Input changed during audit");
+  if (hash(new Uint8Array(readFileSync(inputPath))) !== result.inputBinding.actualHash) throw new Error("Input changed during audit");
   return result;
 }
 
