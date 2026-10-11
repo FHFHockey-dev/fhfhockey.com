@@ -286,7 +286,7 @@ export async function runPerGameGoalieStage(args: {
     const baseShotsAgainst = Number(
       Math.max(0, adjustedBaseShotsAgainst).toFixed(3),
     );
-    const teamGoalsFor = teamGoalsByTeamId.get(c.teamId) ?? 0;
+    const teamGoalsFor = teamGoalsByTeamId.get(c.teamId) ?? null;
     if (!teamOffenseEnvironmentCache.has(teamDateKey(c.opponentTeamId))) {
       teamOffenseEnvironmentCache.set(
         teamDateKey(c.opponentTeamId),
@@ -349,7 +349,7 @@ export async function runPerGameGoalieStage(args: {
       0.88,
       0.92,
     );
-    const adjustedTeamGoalsFor = Number(
+    const adjustedTeamGoalsFor = teamGoalsFor === null ? null : Number(
       Math.max(
         0,
         teamGoalsFor *
@@ -385,17 +385,17 @@ export async function runPerGameGoalieStage(args: {
         teamGoalieStarterContextCache.get(teamDateKey(c.teamId)) ??
         (await fetchTeamGoalieStarterContext(c.teamId, asOfDate));
       teamGoalieStarterContextCache.set(teamDateKey(c.teamId), starterContext);
-      const opponentGoalsForRaw = teamGoalsByTeamId.get(c.opponentTeamId) ?? 0;
-      const opponentGoalsFor = Number(
+      const opponentGoalsForRaw = teamGoalsByTeamId.get(c.opponentTeamId) ?? null;
+      const opponentGoalsFor = opponentGoalsForRaw === null ? null : Number(
         Math.max(
           0,
           opponentGoalsForRaw *
             (1 + teamStrengthContextAdjustment.opponentGoalsForPctAdjustment),
         ).toFixed(3),
       );
-      const teamIsWeaker =
-        adjustedTeamGoalsFor + TEAM_STRENGTH_WEAKER_GAP < opponentGoalsFor;
-      const opponentIsWeak = opponentGoalsFor <= WEAK_OPPONENT_GF_THRESHOLD;
+      const teamIsWeaker = adjustedTeamGoalsFor === null || opponentGoalsFor === null ? null
+        : adjustedTeamGoalsFor + TEAM_STRENGTH_WEAKER_GAP < opponentGoalsFor;
+      const opponentIsWeak = opponentGoalsFor === null ? null : opponentGoalsFor <= WEAK_OPPONENT_GF_THRESHOLD;
       const isB2B =
         starterContext.previousGameDate != null &&
         daysBetweenDates(asOfDate, starterContext.previousGameDate) === 1;
@@ -595,7 +595,8 @@ export async function runPerGameGoalieStage(args: {
           evidenceCutoffAt: args.evidenceCutoffAt ?? null,
           confirmationEvidenceIds: confirmation.map(item => item.evidenceId).sort(),
           nonStartAssumption: "zero_relief_minutes",
-          conditional: seasonForecast?.stats ?? organicConditional,
+          conditional: { ...(seasonForecast?.stats ?? organicConditional),
+            ...(scenarioModel.winProbability === null ? { WINS_GOALIE: null } : {}) },
           seasonBootstrap: seasonForecast?.disclosure ?? null,
         });
       }
@@ -612,7 +613,7 @@ export async function runPerGameGoalieStage(args: {
         proj_goals_allowed: Number(
           scenarioModel.projectedGoalsAllowed.toFixed(3),
         ),
-        proj_win_prob: Number(scenarioModel.winProbability.toFixed(4)),
+        proj_win_prob: scenarioModel.winProbability === null ? null : Number(scenarioModel.winProbability.toFixed(4)),
         proj_shutout_prob: Number(scenarioModel.shutoutProbability.toFixed(4)),
         modeled_save_pct: Number(scenarioModel.modeledSavePct.toFixed(4)),
         workload_save_pct_penalty: Number(scenarioWorkloadPenalty.toFixed(4)),
@@ -631,7 +632,7 @@ export async function runPerGameGoalieStage(args: {
         proj_goals_allowed: Number(
           selectedGoalieFullStartModel.projectedGoalsAllowed.toFixed(3),
         ),
-        proj_win_prob: Number(
+        proj_win_prob: selectedGoalieFullStartModel.winProbability === null ? null : Number(
           selectedGoalieFullStartModel.winProbability.toFixed(4),
         ),
         proj_shutout_prob: Number(
@@ -751,7 +752,7 @@ export async function runPerGameGoalieStage(args: {
         (goalsAllowed * goalieHorizonTotalScalar).toFixed(3),
       ),
       proj_saves: Number((saves * goalieHorizonTotalScalar).toFixed(3)),
-      proj_win_prob: Number((winProb * goalieHorizonTotalScalar).toFixed(4)),
+      proj_win_prob: winProb === null ? null : Number((winProb * goalieHorizonTotalScalar).toFixed(4)),
       proj_shutout_prob: Number(
         (shutoutProb * goalieHorizonTotalScalar).toFixed(4),
       ),

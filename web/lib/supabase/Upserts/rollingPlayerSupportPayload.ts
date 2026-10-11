@@ -1,3 +1,5 @@
+import type { RollingPlayerAlignedCountSupport } from "lib/rollingPlayerCountSupport";
+
 export const ROLLING_PLAYER_SUPPORT_PAYLOAD_TABLE =
   "rolling_player_metric_support_payloads" as const;
 
@@ -6,6 +8,7 @@ export const ROLLING_PLAYER_SUPPORT_PAYLOAD_SCHEMA_VERSION = 1 as const;
 export type RollingPlayerSupportScalar = string | number | boolean | null;
 
 export type RollingPlayerSupportPayload = {
+  alignedCountSupport?: RollingPlayerAlignedCountSupport | null;
   recomputeSupport?: Record<string, RollingPlayerSupportScalar>;
   historicalCompatibility?: Record<string, RollingPlayerSupportScalar>;
   deprecatedCompatibility?: Record<string, RollingPlayerSupportScalar>;

@@ -1,3 +1,5 @@
+import { readAlignedCountSupport } from "lib/rollingPlayerCountSupport";
+import type { RollingRow } from "../types/run-forge-projections.types";
 import {
   GOALIE_GSAA_PRIOR_MAX_ABS,
   SKATER_IXG_PER_SHOT_BASELINE,
@@ -539,5 +541,90 @@ export function computeStrengthSplitConversionRates(args: {
     goalRatePp: clamp(goalRatePpRaw * args.goalRateMultiplier, 0.03, 0.45),
     assistRateEs: clamp(assistRateEsRaw * args.assistRateMultiplier, 0.2, 1.7),
     assistRatePp: clamp(assistRatePpRaw * args.assistRateMultiplier, 0.3, 2)
+  };
+}
+
+/** Conversion learning consumes paired observations, never legacy independent scalar windows. */
+export function computeSupportedStrengthSplitConversionRates(args: {
+  ev: RollingRow | undefined;
+  pp: RollingRow | undefined;
+  goalRateMultiplier: number;
+  assistRateMultiplier: number;
+}) {
+  const support = (row: RollingRow | undefined, strengthState: "ev" | "pp") => row
+    ? readAlignedCountSupport(row.aligned_count_support, {
+        playerId: row.player_id, strengthState,
+        anchor: { gameId: row.game_id, gameDate: row.game_date, seasonId: row.season },
+      }) : null;
+  const ev = support(args.ev, "ev"), pp = support(args.pp, "pp");
+  // Each call uses its own pair's common frame. Zero placeholders belong only
+  // to unused calculations; absent pairs are withheld below, never observations.
+  const calculate = (name: "goalPerShot" | "assistPerGoal") => {
+    const e = ev?.pairs[name], p = pp?.pairs[name];
+    return computeStrengthSplitConversionRates({
+      evGoalsRecent: name === "goalPerShot" ? e?.last5.numerator ?? 0 : e?.last5.denominator ?? 0,
+      evGoalsAll: name === "goalPerShot" ? e?.all.numerator ?? 0 : e?.all.denominator ?? 0,
+      evShotsRecent: name === "goalPerShot" ? e?.last5.denominator ?? 0 : 0,
+      evShotsAll: name === "goalPerShot" ? e?.all.denominator ?? 0 : 0,
+      evAssistsRecent: name === "assistPerGoal" ? e?.last5.numerator ?? 0 : 0,
+      evAssistsAll: name === "assistPerGoal" ? e?.all.numerator ?? 0 : 0,
+      ppGoalsRecent: name === "goalPerShot" ? p?.last5.numerator ?? 0 : p?.last5.denominator ?? 0,
+      ppGoalsAll: name === "goalPerShot" ? p?.all.numerator ?? 0 : p?.all.denominator ?? 0,
+      ppShotsRecent: name === "goalPerShot" ? p?.last5.denominator ?? 0 : 0,
+      ppShotsAll: name === "goalPerShot" ? p?.all.denominator ?? 0 : 0,
+      ppAssistsRecent: name === "assistPerGoal" ? p?.last5.numerator ?? 0 : 0,
+      ppAssistsAll: name === "assistPerGoal" ? p?.all.numerator ?? 0 : 0,
+      goalRateMultiplier: args.goalRateMultiplier, assistRateMultiplier: args.assistRateMultiplier,
+    });
+  };
+  const goals = calculate("goalPerShot"), assists = calculate("assistPerGoal");
+  return {
+    goalRateEs: ev?.pairs.goalPerShot && ev.pairs.goalPerShot.all.denominator > 0 ? goals.goalRateEs : null,
+    goalRatePp: pp?.pairs.goalPerShot && pp.pairs.goalPerShot.all.denominator > 0 ? goals.goalRatePp : null,
+    assistRateEs: ev?.pairs.assistPerGoal && ev.pairs.assistPerGoal.all.denominator > 0 ? assists.assistRateEs : null,
+    assistRatePp: pp?.pairs.assistPerGoal && pp.pairs.assistPerGoal.all.denominator > 0 ? assists.assistRatePp : null,
+    support: { ev, pp },
+  };
+}
+
+/** Withhold unsupported learned heads and their derived bands/scenarios together. */
+export function applySupportedSkaterConversionHeads<T extends {
+  proj_goals_es: number | null; proj_goals_pp: number | null;
+  proj_assists_es: number | null; proj_assists_pp: number | null; uncertainty: unknown;
+}>(row: T, rates: ReturnType<typeof computeSupportedStrengthSplitConversionRates>) {
+  const available = {
+    goals_es: rates.goalRateEs !== null, goals_pp: rates.goalRatePp !== null,
+    assists_es: rates.goalRateEs !== null && rates.assistRateEs !== null,
+    assists_pp: rates.goalRatePp !== null && rates.assistRatePp !== null,
+  };
+  const uncertainty = structuredClone(row.uncertainty) as Record<string, unknown>;
+  const record = (value: unknown): Record<string, unknown> | null =>
+    value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
+  const mask = (target: Record<string, unknown> | null) => {
+    if (!target) return;
+    for (const [key, usable] of Object.entries(available)) if (!usable && key in target) target[key] = null;
+  };
+  mask(uncertainty);
+  for (const [key, usable] of Object.entries({
+    g: available.goals_es && available.goals_pp, a: available.assists_es && available.assists_pp,
+    pts: Object.values(available).every(Boolean), ppp: available.goals_pp && available.assists_pp,
+  })) if (!usable && key in uncertainty) uncertainty[key] = null;
+  const model = record(uncertainty.model), selection = record(model?.skater_selection);
+  if (selection) {
+    selection.conversion_count_support = { policy: "aligned_observations_required", ...rates.support };
+    const conversion = record(selection.conversion_rates);
+    if (conversion) for (const [key, value] of Object.entries({
+      goal_rate_es: rates.goalRateEs, goal_rate_pp: rates.goalRatePp,
+      assist_rate_es: rates.assistRateEs, assist_rate_pp: rates.assistRatePp,
+    })) if (value === null) conversion[key] = null;
+    const scenarios = record(selection.role_scenarios)?.scenario_stat_lines;
+    if (Array.isArray(scenarios)) for (const scenario of scenarios) mask(record(scenario));
+  }
+  mask(record(record(model?.holdout_baselines)?.current_baseline));
+  return { ...row, uncertainty,
+    proj_goals_es: available.goals_es ? row.proj_goals_es : null,
+    proj_goals_pp: available.goals_pp ? row.proj_goals_pp : null,
+    proj_assists_es: available.assists_es ? row.proj_assists_es : null,
+    proj_assists_pp: available.assists_pp ? row.proj_assists_pp : null,
   };
 }

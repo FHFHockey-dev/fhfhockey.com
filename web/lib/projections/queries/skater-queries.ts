@@ -1,4 +1,5 @@
 import supabase from "lib/supabase/server";
+import { readAlignedCountSupport } from "lib/rollingPlayerCountSupport";
 import { getCompatibilityFieldOrder } from "lib/rollingPlayerMetricCompatibility";
 import { ROLLING_PLAYER_SUPPORT_PAYLOAD_TABLE, ROLLING_PLAYER_SUPPORT_PAYLOAD_SCHEMA_VERSION } from "lib/supabase/Upserts/rollingPlayerSupportPayload";
 import {
@@ -283,6 +284,12 @@ export async function fetchRollingRows(
       }
       if (supportSeen.has(key(support))) throw new SkaterRollingReadIncompleteError("duplicate_row");
       supportSeen.add(key(support));
+      if (Object.prototype.hasOwnProperty.call(support.support_payload, "alignedCountSupport")) {
+        matched.aligned_count_support = readAlignedCountSupport(support.support_payload.alignedCountSupport, {
+          playerId: matched.player_id, strengthState,
+          anchor: { gameId: matched.game_id, gameDate: matched.game_date, seasonId: matched.season },
+        });
+      }
       for (const field of metrics) {
         const value = payload?.[field];
         if (value === undefined || value === null) continue;

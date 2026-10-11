@@ -49,7 +49,7 @@ describe("goalie producer confirmation evidence", () => {
   });
   const evidence = (assertions = [assertion()]): DailyBoardEvidence => ({ informationCutoffAt: cutoff, assertions, conflicts: [] });
   async function run(source?: DailyBoardEvidence, options: {
-    probability?: number; override?: boolean; cutoffAt?: string | null; horizon?: number;
+    probability?: number; override?: boolean; cutoffAt?: string | null; horizon?: number; goalsFor?: number | null; opponentGoalsFor?: number | null;
   } = {}) {
     const probability = options.probability ?? 0.8;
     const cache = <T,>(value: T) => new Map([[`10:${date}`, value], [`11:${date}`, value]]);
@@ -67,7 +67,10 @@ describe("goalie producer confirmation evidence", () => {
         seasonStartPctByGoalieId: new Map(), seasonGamesPlayedByGoalieId: new Map(),
         override: options.override === false ? null : { goalieId: 100, starterProb: probability },
       }],
-      teamShotsByTeamId: new Map([[11, { shotsEs: 25, shotsPp: 5 }]]), teamGoalsByTeamId: new Map([[10, 3], [11, 3]]),
+      teamShotsByTeamId: new Map([[11, { shotsEs: 25, shotsPp: 5 }]]), teamGoalsByTeamId: new Map([
+        ...(options.goalsFor === null ? [] : [[10, options.goalsFor ?? 3] as [number, number]]),
+        ...(options.opponentGoalsFor === null ? [] : [[11, options.opponentGoalsFor ?? 3] as [number, number]]),
+      ]),
       teamAbbreviationById: new Map(), teamStrengthPriorCache: cache(null), teamFiveOnFiveProfileCache: cache(null),
       teamNstExpectedGoalsCache: cache(null), teamDefensiveEnvironmentCache: cache({ avgShotsAgainstLast10: null, avgShotsAgainstLast5: null }),
       teamOffenseEnvironmentCache: cache({ avgShotsForLast10: null, avgShotsForLast5: null, avgGoalsForLast10: null, avgGoalsForLast5: null }),
@@ -94,6 +97,24 @@ describe("goalie producer confirmation evidence", () => {
     selected: { goalieId: result.selected.goalieId, starterProbability: result.selected.starterProbability, saves: result.selected.saves },
     candidates: result.candidates.map(row => ({ playerId: row.playerId, startingProbability: row.startingProbability, conditional: row.conditional })),
     marketMean: result.market.expected_value,
+  });
+
+  it.each([true, false])("preserves nullable offense through goalie output, candidate branches and metadata (override=%s)", async override => {
+    const missing = await run(undefined, { override, goalsFor: null, opponentGoalsFor: null });
+    expect(missing.row.proj_win_prob).toBeNull();
+    expect(missing.candidates.every(row => row.conditional.WINS_GOALIE === null)).toBe(true);
+    expect(missing.row.proj_saves).toBeGreaterThan(0);
+    expect(missing.market.expected_value).toBeGreaterThan(0);
+    expect(missing.row.uncertainty.model.scenario_metadata.blended_projection.proj_win_prob).toBeNull();
+    const zero = await run(undefined, { override, goalsFor: 0, opponentGoalsFor: 0 });
+    expect(zero.row.proj_win_prob).not.toBeNull();
+    if (!override) {
+      expect(missing.row.uncertainty.model.starter_selection.model_context).toMatchObject({ team_is_weaker: null, opponent_is_weak: null });
+      expect(missing.row.uncertainty.model.starter_selection.opponent_offense_context).toMatchObject({
+        team_goals_for_pre_strength_adjustment: null, team_goals_for_post_strength_adjustment: null,
+        opponent_goals_for_post_strength_adjustment: null,
+      });
+    }
   });
 
   it.each([0.4, 0.8, 1])("does not manufacture confirmation from override %s or legacy booleans", async probability => {

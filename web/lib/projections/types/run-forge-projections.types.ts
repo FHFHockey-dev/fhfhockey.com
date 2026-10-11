@@ -1,3 +1,5 @@
+import type { RollingPlayerAlignedCountSupport } from "lib/rollingPlayerCountSupport";
+
 export type GameRow = {
   id: number;
   date: string;
@@ -19,6 +21,7 @@ export type LineCombinationContext = {
 };
 
 export type RollingRow = {
+  aligned_count_support?: RollingPlayerAlignedCountSupport | null;
   game_id: number;
   season: number;
   player_id: number;
@@ -313,7 +316,7 @@ export type StarterScenarioProjection = {
   proj_shots_against: number;
   proj_saves: number;
   proj_goals_allowed: number;
-  proj_win_prob: number;
+  proj_win_prob: number | null;
   proj_shutout_prob: number;
   modeled_save_pct: number;
   workload_save_pct_penalty: number;

@@ -1,4 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { createAlignedCountSupportBuilder } from "lib/rollingPlayerCountSupport";
 import {
   createHistoricalRatioAccumulator,
   createRatioRollingAccumulator,
@@ -10,6 +11,7 @@ import {
   updateHistoricalAverageAccumulator
 } from "./rollingHistoricalAverages";
 
+let fetchCounts: typeof import("./fetchRollingPlayerAverages").__testables.fetchCounts;
 let buildGameRecords: typeof import("./fetchRollingPlayerAverages").__testables.buildGameRecords;
 let buildRunSummary: typeof import("./fetchRollingPlayerAverages").__testables.buildRunSummary;
 let summarizeSourceTracking: typeof import("./fetchRollingPlayerAverages").__testables.summarizeSourceTracking;
@@ -39,6 +41,7 @@ beforeAll(async () => {
   vi.resetModules();
   ({
     __testables: {
+      fetchCounts,
       buildGameRecords,
       buildRunSummary,
       summarizeSourceTracking,
@@ -1541,6 +1544,38 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
 });
 
 describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
+  it("retains source identity in the aligned-count read instead of projecting it away", async () => {
+    const raw = { id: 11, player_id: 7, date_scraped: "2026-10-03", season: 20262027, goals: 0, shots: 4, total_assists: null };
+    const query: any = {};
+    let fields: string[] = [];
+    query.select = vi.fn((value: string) => { fields = value.split(",").map(field => field.trim()); return query; });
+    for (const method of ["eq", "gte", "lte", "order"]) query[method] = vi.fn(() => query);
+    query.range = vi.fn(async () => ({ error: null, data: [Object.fromEntries(Object.entries(raw).filter(([field]) => fields.includes(field)))] }));
+    const db = { from: vi.fn(() => query) };
+    const rows = await fetchCounts("nst_gamelog_pp_counts", 7, "2026-10-03", "2026-10-03", db as any);
+    expect(rows).toEqual([raw]);
+    expect(db.from).toHaveBeenCalledWith("nst_gamelog_pp_counts");
+    expect(query.eq).toHaveBeenCalledWith("player_id", 7);
+    expect(query.gte).toHaveBeenCalledWith("date_scraped", "2026-10-03");
+    expect(query.lte).toHaveBeenCalledWith("date_scraped", "2026-10-03");
+  });
+
+  it("stores aligned count support only in the exact-anchor sidecar while preserving legacy scalars", () => {
+    const game = { id: 1, date: "2026-10-03", seasonId: 20262027 };
+    const aligned = createAlignedCountSupportBuilder({ playerId: 7, strengthState: "pp", sourceTable: "nst_gamelog_pp_counts", startDate: game.date,
+      canonicalGames: [game], countsRows: [{ id: 11, player_id: 7, date_scraped: game.date, season: game.seasonId, goals: 0, shots: 4, total_assists: 1 }],
+    }).push({ player_id: 7, game_id: 1, date: game.date, season_id: game.seasonId });
+    const row = { player_id: 7, game_id: 1, game_date: game.date, season: game.seasonId, strength_state: "pp", aligned_count_support: aligned };
+    const split = splitRollingUpsertRowForDurableStorage(row);
+    expect(split.rankingRow).not.toHaveProperty("aligned_count_support");
+    expect(compactRollingUpsertRowForRankingStorage(row)).not.toHaveProperty("aligned_count_support");
+    expect(split.supportRow?.support_payload.alignedCountSupport).toEqual(aligned);
+    expect(splitRollingUpsertRowForDurableStorage({ ...row, goals_total_all: 331 }).supportRow?.support_payload.historicalCompatibility?.goals_total_all).toBe(331);
+    expect(row.aligned_count_support).toEqual(aligned);
+    expect(() => splitRollingUpsertRowForDurableStorage({ ...row, game_id: 99 })).toThrow("storage anchor");
+    expect(splitRollingUpsertRowForDurableStorage({ ...row, aligned_count_support: null }).supportRow?.support_payload.alignedCountSupport).toBeNull();
+  });
+
   it.each([900, 0, null])("retains model TOI averages in both storage paths: %s", (seconds) => {
     const row = {
       player_id: 8470613,

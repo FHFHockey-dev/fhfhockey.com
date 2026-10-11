@@ -251,7 +251,8 @@ import {
   computeSkaterSampleShrinkageAdjustments,
   computeSkaterShotQualityAdjustments,
   computeSkaterTeamLevelContextAdjustments,
-  computeStrengthSplitConversionRates,
+  computeSupportedStrengthSplitConversionRates,
+  applySupportedSkaterConversionHeads,
 } from "../calculators/skater-adjustments";
 import {
   blendTopStarterScenarioOutputs,
@@ -1329,6 +1330,9 @@ export async function runPerGameSkaterStage(args: {
       goals: number;
       assists: number;
       powerPlayPoints: number;
+      goalsAvailable: boolean;
+      assistsAvailable: boolean;
+      powerPlayPointsAvailable: boolean;
       blockedShots: number;
       lineupSourceGameDate: string | null;
       lineupRecencyDays: number | null;
@@ -1877,6 +1881,7 @@ export async function runPerGameSkaterStage(args: {
         toiPp: number;
         shotsEs: number;
         shotsPp: number;
+        conversionSupport: ReturnType<typeof computeSupportedStrengthSplitConversionRates>;
         goalRateEs: number;
         goalRatePp: number;
         assistRateEs: number;
@@ -2152,40 +2157,9 @@ export async function runPerGameSkaterStage(args: {
       const shotsEs = computeShotsFromRate(boundedToiEs, sogPer60Ev);
       const shotsPp = computeShotsFromRate(boundedToiPp, sogPer60Pp);
 
-      // Online learning: blend recent and season-long conversion rates.
-      const goalsTotal = safeNumber(ev?.goals_total_all, 0);
-      const shotsTotal = safeNumber(ev?.shots_total_all, 0);
-      const assistsTotal = safeNumber(ev?.assists_total_all, 0);
-      const goalsRecent = safeNumber(ev?.goals_total_last5, 0);
-      const shotsRecent = safeNumber(ev?.shots_total_last5, 0);
-      const assistsRecent = safeNumber(ev?.assists_total_last5, 0);
-      const ppGoalsTotal = safeNumber(pp?.goals_total_all, 0);
-      const ppShotsTotal = safeNumber(pp?.shots_total_all, 0);
-      const ppAssistsTotal = safeNumber(pp?.assists_total_all, 0);
-      const ppGoalsRecent = safeNumber(pp?.goals_total_last5, 0);
-      const ppShotsRecent = safeNumber(pp?.shots_total_last5, 0);
-      const ppAssistsRecent = safeNumber(pp?.assists_total_last5, 0);
-      if (ppShotsTotal <= 0 && ppShotsRecent <= 0) {
-        metrics.data_quality.missing_pp_conversion_samples += 1;
-      }
-
-      learningCounters.players += 1;
-      if (shotsRecent > 0) learningCounters.goalRecent += 1;
-      if (goalsRecent > 0) learningCounters.assistRecent += 1;
-
-      const splitRates = computeStrengthSplitConversionRates({
-        evGoalsRecent: goalsRecent,
-        evShotsRecent: shotsRecent,
-        evGoalsAll: goalsTotal,
-        evShotsAll: shotsTotal,
-        evAssistsRecent: assistsRecent,
-        evAssistsAll: assistsTotal,
-        ppGoalsRecent,
-        ppShotsRecent,
-        ppGoalsAll: ppGoalsTotal,
-        ppShotsAll: ppShotsTotal,
-        ppAssistsRecent,
-        ppAssistsAll: ppAssistsTotal,
+      // Conversion counts must share an explicitly retained canonical observation frame.
+      const splitRates = computeSupportedStrengthSplitConversionRates({
+        ev, pp,
         goalRateMultiplier:
           shotQualityAdjustment.goalRateMultiplier *
           onIceContextAdjustment.goalEnvironmentMultiplier *
@@ -2198,23 +2172,28 @@ export async function runPerGameSkaterStage(args: {
           opponentGoalieContextAdjustment.assistRateMultiplier *
           restScheduleAdjustment.assistRateMultiplier,
       });
+      if (splitRates.goalRatePp === null) metrics.data_quality.missing_pp_conversion_samples += 1;
+      learningCounters.players += 1;
+      if ((splitRates.support.ev?.pairs.goalPerShot?.last5.denominator ?? 0) > 0) learningCounters.goalRecent += 1;
+      if ((splitRates.support.ev?.pairs.assistPerGoal?.last5.denominator ?? 0) > 0) learningCounters.assistRecent += 1;
+      // Fixed priors remain internal benchmarks. Missing learned heads are masked before persistence.
       const goalRateEs = clamp(
-        splitRates.goalRateEs * sampleWeight + (1 - sampleWeight) * 0.095,
+        (splitRates.goalRateEs ?? 0.095) * sampleWeight + (1 - sampleWeight) * 0.095,
         0.025,
         0.3,
       );
       const goalRatePp = clamp(
-        splitRates.goalRatePp * sampleWeight + (1 - sampleWeight) * 0.145,
+        (splitRates.goalRatePp ?? 0.145) * sampleWeight + (1 - sampleWeight) * 0.145,
         0.04,
         0.45,
       );
       const assistRateEs = clamp(
-        splitRates.assistRateEs * sampleWeight + (1 - sampleWeight) * 0.72,
+        (splitRates.assistRateEs ?? 0.72) * sampleWeight + (1 - sampleWeight) * 0.72,
         0.2,
         1.7,
       );
       const assistRatePp = clamp(
-        splitRates.assistRatePp * sampleWeight + (1 - sampleWeight) * 0.95,
+        (splitRates.assistRatePp ?? 0.95) * sampleWeight + (1 - sampleWeight) * 0.95,
         0.3,
         2,
       );
@@ -2269,6 +2248,7 @@ export async function runPerGameSkaterStage(args: {
       const trendGoalMultiplier = trendAdjustment?.goalRateMultiplier ?? 1;
       const trendAssistMultiplier = trendAdjustment?.assistRateMultiplier ?? 1;
       projected.set(playerId, {
+        conversionSupport: splitRates,
         toiEs: boundedToiEs * availabilityMultiplier,
         toiPp: boundedToiPp * availabilityMultiplier,
         shotsEs: shotsEs * availabilityMultiplier * trendShotMultiplier,
@@ -3057,7 +3037,7 @@ export async function runPerGameSkaterStage(args: {
         },
       });
 
-      const playerUpsert = {
+      const playerUpsert = applySupportedSkaterConversionHeads({
         run_id: runId,
         as_of_date: asOfDate,
         horizon_games: horizonGames,
@@ -3089,11 +3069,11 @@ export async function runPerGameSkaterStage(args: {
         proj_blocks: Number((projBlocks * teamHorizonTotalScalar).toFixed(3)),
         uncertainty: uncertaintyWithRole,
         updated_at: new Date().toISOString(),
-      };
+      }, p.conversionSupport);
       playerUpserts.push({
         ...playerUpsert,
         uncertainty: {
-          ...uncertaintyWithRole,
+          ...playerUpsert.uncertainty,
           native_goal_accounting: buildNativePlayerGoalAccounting(playerUpsert),
         },
       });
@@ -3110,10 +3090,12 @@ export async function runPerGameSkaterStage(args: {
         assists: Number(
           ((assistsEs + assistsPp) * teamHorizonTotalScalar).toFixed(3),
         ),
-        // Match the PP heads consumed by the board; rounding raw totals again can disagree.
-        powerPlayPoints: Number(
-          (playerUpsert.proj_goals_pp + playerUpsert.proj_assists_pp).toFixed(3),
-        ),
+        // Internal benchmark values are never exported when their heads are unavailable.
+        powerPlayPoints: Number((Number((goalsPp * teamHorizonTotalScalar).toFixed(3)) +
+          Number((assistsPp * teamHorizonTotalScalar).toFixed(3))).toFixed(3)),
+        goalsAvailable: playerUpsert.proj_goals_es !== null && playerUpsert.proj_goals_pp !== null,
+        assistsAvailable: playerUpsert.proj_assists_es !== null && playerUpsert.proj_assists_pp !== null,
+        powerPlayPointsAvailable: playerUpsert.proj_goals_pp !== null && playerUpsert.proj_assists_pp !== null,
         blockedShots: Number((projBlocks * teamHorizonTotalScalar).toFixed(3)),
         lineupSourceGameDate: lcContext.sourceGameDate,
         lineupRecencyDays: lcRecency.daysStale,
@@ -3157,6 +3139,9 @@ export async function runPerGameSkaterStage(args: {
       for (const [marketType, marketSummary] of Object.entries(
         marketSummaryByType,
       )) {
+        if ((["player_goals", "player_goal_scorer_anytime", "player_points"].includes(marketType) && !projectionInput.goalsAvailable)
+          || (["player_assists", "player_points"].includes(marketType) && !projectionInput.assistsAvailable)
+          || (marketType === "player_power_play_points" && !projectionInput.powerPlayPointsAvailable)) continue;
         const expectedValue = getProjectionValueForPropMarket({
           marketType,
           projection: {
@@ -3283,6 +3268,8 @@ export async function runPerGameSkaterStage(args: {
           horizonGames,
           teamHorizonScalars,
         ),
+        ...(teamGoalAccounting.reportedComponents.esMean === null ? { goals_es: null } : {}),
+        ...(teamGoalAccounting.reportedComponents.ppMean === null ? { goals_pp: null } : {}),
         native_goal_accounting: teamGoalAccounting,
         native_roster_contributor_coverage: nativeRosterCoverage,
       },
@@ -3295,10 +3282,8 @@ export async function runPerGameSkaterStage(args: {
       shotsEs: Number(teamUpsert.proj_shots_es ?? 0),
       shotsPp: Number(teamUpsert.proj_shots_pp ?? 0),
     });
-    teamGoalsByTeamId.set(
-      teamId,
-      teamGoalAccounting.reportedEsPpMean,
-    );
+    if (teamGoalAccounting.reportedEsPpMean === null) teamGoalsByTeamId.delete(teamId);
+    else teamGoalsByTeamId.set(teamId, teamGoalAccounting.reportedEsPpMean);
 
     // Goalie: pick the highest probability starter from goalie_start_projections if available.
     const goalieOverride = goalieOverrideByTeamId.get(teamId);

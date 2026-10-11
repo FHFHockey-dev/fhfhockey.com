@@ -8,8 +8,8 @@ export type NativeSkaterGoalRow = {
   team_id: number;
   as_of_date: string;
   horizon_games: number;
-  proj_goals_es: number;
-  proj_goals_pp: number;
+  proj_goals_es: number | null;
+  proj_goals_pp: number | null;
   proj_goals_pk: null;
   uncertainty?: {
     model?: {
@@ -130,6 +130,13 @@ function sumReportedMeans(values: number[]): number {
   return Number(sum.toFixed(3));
 }
 
+/** Unknown components invalidate the requested sum, without hiding invalid known inputs. */
+function sumAvailableReportedMeans(values: readonly (number | null)[]): number | null {
+  const known = values.filter((value): value is number => value !== null);
+  const sum = sumReportedMeans(known);
+  return values.length > 0 && known.length === values.length ? sum : null;
+}
+
 function assertScope(scope: { game_id: number; team_id: number; horizon_games: number; as_of_date: string }) {
   if (![scope.game_id, scope.team_id, scope.horizon_games].every(value => Number.isSafeInteger(value) && value > 0)
     || !/^\d{4}-\d{2}-\d{2}$/.test(scope.as_of_date) || !Number.isFinite(Date.parse(scope.as_of_date))
@@ -167,7 +174,7 @@ export function buildNativePlayerGoalAccounting(row: NativeSkaterGoalRow) {
   if (!Number.isSafeInteger(row.player_id) || row.player_id <= 0 || row.proj_goals_pk !== null) {
     throw new Error("Invalid native player goal identity or unsupported PK output");
   }
-  const reportedEsPpMean = sumReportedMeans([row.proj_goals_es, row.proj_goals_pp]);
+  const reportedEsPpMean = sumAvailableReportedMeans([row.proj_goals_es, row.proj_goals_pp]);
   const selection = row.uncertainty?.model?.skater_selection;
   // Only EV/availability conflicts affect skater appearance, matching the evidence helper.
   // Keep the complete conflicts in the stored selection; scope only this participation calculation.
@@ -184,6 +191,8 @@ export function buildNativePlayerGoalAccounting(row: NativeSkaterGoalRow) {
   const bootstrap = selection?.season_bootstrap;
   const bootstrapBlend = Boolean(bootstrap && (bootstrap.fantasyWeight > 0 || bootstrap.historyWeight > 0));
   const reasons: string[] = [...endpointGaps];
+  if (row.proj_goals_es === null) reasons.push("missing_reported_es_goal_head");
+  if (row.proj_goals_pp === null) reasons.push("missing_reported_pp_goal_head");
   if (!oneGame) reasons.push("scaled_horizon_is_not_a_player_game");
   if (!conditional) reasons.push("legacy_availability_is_not_participation");
   if (forecast.participationProbability === null) reasons.push("unknown_participation");
@@ -228,8 +237,8 @@ export function buildNativeTeamGoalAccounting(args: {
     throw new Error("Native team goals require distinct contributors and matching game/team/horizon/date scope");
   }
   const contributors = args.playerRows.map(buildNativePlayerGoalAccounting);
-  const esMean = sumReportedMeans(args.playerRows.map(row => row.proj_goals_es));
-  const ppMean = sumReportedMeans(args.playerRows.map(row => row.proj_goals_pp));
+  const esMean = sumAvailableReportedMeans(args.playerRows.map(row => row.proj_goals_es));
+  const ppMean = sumAvailableReportedMeans(args.playerRows.map(row => row.proj_goals_pp));
   const unmodeledRosterPlayerIds = args.currentRosterPlayerIds.filter(id => !ids.includes(id));
   const unexpectedProjectedPlayerIds = ids.filter(id => !args.currentRosterPlayerIds.includes(id));
   const reasons = new Set<string>([...endpointGaps, "unknown_residual_scorers", "unproved_game_time_roster", "unproved_goalie_scoring"]);
@@ -246,7 +255,7 @@ export function buildNativeTeamGoalAccounting(args: {
     horizonGames: args.horizonGames,
     reportedBasis: "sum_of_serialized_player_components" as const,
     reportedComponents: { esMean, ppMean, pkMean: null },
-    reportedEsPpMean: sumReportedMeans([esMean, ppMean]),
+    reportedEsPpMean: sumAvailableReportedMeans([esMean, ppMean]),
     sumOfPlayerConditionalEsPpMeans: allConditional ? sumReportedMeans(contributors.map(row => row.conditionalEsPpMean!)) : null,
     expectedListedEsPpMeanGivenGamePlayed: allIntegrated ? sumReportedMeans(contributors.map(row => row.expectedEsPpMeanGivenGamePlayed!)) : null,
     residualMean: null,

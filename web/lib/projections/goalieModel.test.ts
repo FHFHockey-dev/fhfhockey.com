@@ -161,3 +161,21 @@ describe("computeGoalieProjectionModel", () => {
     expect(highQuality.blowupRisk).toBeLessThan(lowQuality.blowupRisk);
   });
 });
+
+
+describe("goalie model unavailable team offense", () => {
+  const input = { projectedShotsAgainst: 30, starterProbability: 0.8, projectedGoalsFor: 3,
+    evidence: { recentStarts: 10, recentShotsAgainst: 300, recentGoalsAllowed: 24, seasonStarts: 20, seasonShotsAgainst: 600,
+      seasonGoalsAllowed: 50, baselineStarts: 60, baselineShotsAgainst: 1800, baselineGoalsAllowed: 162, residualStdDev: 1 } };
+  it("withholds wins for unknown offense while preserving independent defense outputs and real zero offense", () => {
+    const known = computeGoalieProjectionModel(input);
+    const missing = computeGoalieProjectionModel({ ...input, projectedGoalsFor: null });
+    const { winProbability: _known, ...knownDefense } = known;
+    const { winProbability: _missing, ...missingDefense } = missing;
+    expect(missing.winProbability).toBeNull(); expect(missingDefense).toEqual(knownDefense);
+    expect(computeGoalieProjectionModel({ ...input, projectedGoalsFor: 0 }).winProbability).not.toBeNull();
+  });
+  it.each([NaN, Infinity, -1, undefined])("rejects invalid offense instead of zero filling it: %s", value => {
+    expect(() => computeGoalieProjectionModel({ ...input, projectedGoalsFor: value as number })).toThrow();
+  });
+});

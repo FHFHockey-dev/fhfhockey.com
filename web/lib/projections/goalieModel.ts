@@ -21,7 +21,7 @@ export type GoalieEvidence = {
 export type GoalieModelInput = {
   projectedShotsAgainst: number;
   starterProbability: number;
-  projectedGoalsFor: number;
+  projectedGoalsFor: number | null;
   evidence: GoalieEvidence;
   leagueSavePct?: number;
 };
@@ -30,7 +30,7 @@ export type GoalieModelOutput = {
   modeledSavePct: number;
   projectedGoalsAllowed: number;
   projectedSaves: number;
-  winProbability: number;
+  winProbability: number | null;
   shutoutProbability: number;
   blowupRisk: number;
   volatilityIndex: number;
@@ -115,7 +115,10 @@ export function computeGoalieProjectionModel(
   const leagueSavePct = clamp(input.leagueSavePct ?? 0.9, 0.84, 0.94);
   const projectedShotsAgainst = Math.max(0, input.projectedShotsAgainst);
   const starterProbability = clamp(input.starterProbability, 0, 1);
-  const projectedGoalsFor = Math.max(0, input.projectedGoalsFor);
+  if (input.projectedGoalsFor !== null && (!Number.isFinite(input.projectedGoalsFor) || input.projectedGoalsFor < 0)) {
+    throw new Error("Projected goals for must be finite and nonnegative, or explicitly unavailable");
+  }
+  const projectedGoalsFor = input.projectedGoalsFor;
 
   const recentShots = Math.max(0, input.evidence.recentShotsAgainst);
   const recentGoals = Math.max(0, input.evidence.recentGoalsAllowed);
@@ -187,9 +190,8 @@ export function computeGoalieProjectionModel(
     1
   );
 
-  const goalDiff = projectedGoalsFor - projectedGoalsAllowed;
-  const baseWinProb = 1 / (1 + Math.exp(-goalDiff / 1.25));
-  const winProbability = clamp(baseWinProb * starterProbability, 0, 1);
+  const winProbability = projectedGoalsFor === null ? null
+    : clamp((1 / (1 + Math.exp(-(projectedGoalsFor - projectedGoalsAllowed) / 1.25))) * starterProbability, 0, 1);
   const shutoutBase = Math.exp(-projectedGoalsAllowed);
   const shutoutProbability = clamp(shutoutBase * starterProbability, 0, 1);
 

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { createAlignedCountSupportBuilder } from "lib/rollingPlayerCountSupport";
 
 const dbState = vi.hoisted(() => ({ rows: [] as Record<string, unknown>[], calls: [] as Array<[string, unknown[]]>,
   rollingFrom: null as null | ((table: string) => unknown) }));
@@ -223,6 +224,22 @@ describe("counted rolling skater history", () => {
     expect(source[0].goals_total_all).toBeNull();
     fixture(source);
     expect((await fetch())[0].goals_total_all).toBeNull();
+  });
+
+  it("hydrates only exact-anchor aligned support without converting legacy scalars into proof", async () => {
+    const source = rows(1), row = source[0];
+    const aligned = createAlignedCountSupportBuilder({ playerId: row.player_id, strengthState: "ev", sourceTable: "nst_gamelog_es_counts",
+      startDate: row.game_date, canonicalGames: [{ id: row.game_id, date: row.game_date, seasonId: row.season }],
+      countsRows: [{ id: 1, player_id: row.player_id, date_scraped: row.game_date, season: row.season, goals: 0, shots: 4, total_assists: null }],
+    }).push({ player_id: row.player_id, game_id: row.game_id, date: row.game_date, season_id: row.season })!;
+    const sidecar = { ...row, payload_schema_version: 1, support_payload: { alignedCountSupport: aligned } };
+    fixture(source, [], [sidecar]);
+    expect((await fetch())[0].aligned_count_support).toEqual(aligned);
+    expect(source[0]).not.toHaveProperty("aligned_count_support");
+    fixture(source, [], [{ ...sidecar, support_payload: { alignedCountSupport: { ...aligned, anchor: { ...aligned.anchor, gameId: 99 } } } }]);
+    expect((await fetch())[0]).toMatchObject({ aligned_count_support: null, goals_total_all: 0, sog_per_60_all: 6.25 });
+    fixture(source);
+    expect((await fetch())[0]).not.toHaveProperty("aligned_count_support");
   });
 
   it("pages sidecars independently when only a subset of history has durable payloads", async () => {

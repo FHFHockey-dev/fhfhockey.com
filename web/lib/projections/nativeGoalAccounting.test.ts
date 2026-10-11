@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
+import { createAlignedCountSupportBuilder } from "lib/rollingPlayerCountSupport";
+import { applySupportedSkaterConversionHeads, computeSupportedStrengthSplitConversionRates } from "./calculators/skater-adjustments";
 import { buildNativePlayerGoalAccounting, buildNativeTeamGoalAccounting, buildNativeSkaterParticipationFields,
   selectConfirmedNativeSkaterCandidates, buildNativeRosterContributorCoverage, type NativeSkaterGoalRow, type NativeRosterSelection } from "./nativeGoalAccounting";
 import type { BoardAssertion, DailyBoardEvidence } from "./dailyBoardEvidence";
@@ -10,6 +12,7 @@ import { completeBoardSkaterStatsFromProjection } from "./starterBoardScoring";
 const producer = vi.hoisted(() => ({
   roster: (teamId: number) => Array.from({ length: 18 }, (_, index) => teamId * 100 + index + 1),
   ppLine: { goalsPp: 0.1114, assistsPp: 0.2 },
+  countsAvailable: true,
   playerWrites: vi.fn(async (rows: unknown[]) => rows.length),
   teamWrites: vi.fn(async (_row: unknown) => 1),
 }));
@@ -27,7 +30,16 @@ vi.mock("./queries/line-combo-queries", () => ({ fetchRecentTeamLineCombinations
 }] }));
 vi.mock("./queries/skater-queries", () => ({
   fetchCurrentRosterPlayerIds: async (teamId: number) => producer.roster(teamId),
-  fetchRollingRows: async () => [], fetchSkaterRecencyEvents: async () => new Map(),
+  fetchRollingRows: async (ids: number[], strength: "ev" | "pp") => producer.countsAvailable ? ids.map(id => {
+    const game = { id: 2026020001, date: "2026-10-06", seasonId: 20262027 };
+    const support = createAlignedCountSupportBuilder({ playerId: id, strengthState: strength,
+      sourceTable: strength === "ev" ? "nst_gamelog_es_counts" : "nst_gamelog_pp_counts", startDate: game.date,
+      canonicalGames: [game], countsRows: [{ id, player_id: id, date_scraped: game.date, season: game.seasonId, goals: 1, shots: 8, total_assists: 1 }],
+    }).push({ player_id: id, game_id: game.id, date: game.date, season_id: game.seasonId });
+    return { player_id: id, game_id: game.id, game_date: game.date, season: game.seasonId, strength_state: strength,
+      aligned_count_support: support, toi_seconds_avg_all: 800, sog_per_60_all: 6, shots_total_all: 8 };
+  }) : [],
+  fetchSkaterRecencyEvents: async (rows: any[]) => new Map(rows.map(row => [row.player_id, { date: row.game_date, seasonId: row.season, type: 2 }])) ,
   fetchLatestWgoSkaterDeploymentProfiles: async () => new Map(),
   fetchLatestSkaterContextProfiles: async () => ({ shotQuality: new Map(), onIceContext: new Map() }),
   fetchLatestSkaterTrendAdjustments: async () => ({ adjustments: new Map(), diagnostics: {
@@ -275,7 +287,7 @@ describe("native team contributor reconciliation", () => {
       residualMean: null, fullOfficialPlayMean: null, fullGameEligible: false });
     expect(accounted.reasons).toEqual(expect.arrayContaining(["unknown_residual_scorers", "unproved_game_time_roster", "unproved_goalie_scoring"]));
     expect(team([player(103)], [100]).unexpectedProjectedPlayerIds).toEqual([103]);
-    expect(team([])).toMatchObject({ reportedEsPpMean: 0, expectedListedEsPpMeanGivenGamePlayed: null, fullOfficialPlayMean: null });
+    expect(team([])).toMatchObject({ reportedEsPpMean: null, expectedListedEsPpMeanGivenGamePlayed: null, fullOfficialPlayMean: null });
   });
 
   it("rejects duplicate contributors, substituted scope and malformed current rosters", () => {
@@ -296,12 +308,15 @@ describe("native skater-stage accounting integration", () => {
       expectedPpp: 0.311, rawRoundedPpp: 0.312, teamPp: 1.998, teamGoals: 7.992, playerGoals: 0.444 },
     { label: "heads rounding up", goalsPp: 0.1116, assistsPp: 0.2006, ppHead: 0.112, assistHead: 0.201,
       expectedPpp: 0.313, rawRoundedPpp: 0.312, teamPp: 2.016, teamGoals: 8.01, playerGoals: 0.445 },
-    { label: "genuine zero PP heads", goalsPp: 0, assistsPp: 0, ppHead: 0, assistHead: 0,
+    { label: "serialized zero PP heads with supported conversion counts", goalsPp: 0, assistsPp: 0, ppHead: 0, assistHead: 0,
       expectedPpp: 0, rawRoundedPpp: 0, teamPp: 0, teamGoals: 5.994, playerGoals: 0.333 },
+    { label: "unavailable conversion heads", goalsPp: 0.1114, assistsPp: 0.2004, ppHead: null, assistHead: null,
+      expectedPpp: null, rawRoundedPpp: 0.312, teamPp: null, teamGoals: null, playerGoals: null, countsAvailable: false },
   ])("writes reconciled serialized goals and PPP for $label without qualifying full-game means", async fixture => {
     producer.playerWrites.mockClear();
     producer.teamWrites.mockClear();
     producer.ppLine = { goalsPp: fixture.goalsPp, assistsPp: fixture.assistsPp };
+    producer.countsAvailable = fixture.countsAvailable !== false;
     const asOfDate = "2026-10-07";
     const cached = <T>(value: T) => new Map([10, 11].map(teamId => [`${teamId}:${asOfDate}`, value]));
     const teamGoalsByTeamId = new Map<number, number>();
@@ -338,35 +353,67 @@ describe("native skater-stage accounting integration", () => {
     for (let index = 0; index < 2; index++) {
       const rows = producer.playerWrites.mock.calls[index][0] as Array<NativeSkaterGoalRow & { uncertainty: { native_goal_accounting: unknown } }>;
       const written = producer.teamWrites.mock.calls[index][0] as Record<string, any>;
-      expect(written).toMatchObject({ proj_goals_es: 5.994, proj_goals_pp: fixture.teamPp, proj_goals_pk: null });
-      expect(written.proj_goals_es).toBe(Number(rows.reduce((sum, row) => sum + row.proj_goals_es, 0).toFixed(3)));
-      expect(written.proj_goals_es).not.toBe(Number((18 * 0.3334).toFixed(3)));
-      expect(teamGoalsByTeamId.get(written.team_id)).toBe(fixture.teamGoals);
-      expect(teamGoalsByTeamId.get(written.team_id)).toBe(written.uncertainty.native_goal_accounting.reportedEsPpMean);
-      expect(teamGoalsByTeamId.get(written.team_id)).toBe(Number((written.proj_goals_es + written.proj_goals_pp).toFixed(3)));
-      const rawTeamGoals = Number((18 * (0.3334 + fixture.goalsPp)).toFixed(3));
-      if (rawTeamGoals !== fixture.teamGoals) expect(teamGoalsByTeamId.get(written.team_id)).not.toBe(rawTeamGoals);
+      const unavailable = fixture.teamGoals === null;
+      expect(written).toMatchObject({ proj_goals_es: unavailable ? null : 5.994, proj_goals_pp: fixture.teamPp, proj_goals_pk: null });
+      expect(written.uncertainty.native_goal_accounting.reportedEsPpMean).toBe(fixture.teamGoals);
+      if (unavailable) {
+        expect(teamGoalsByTeamId.has(written.team_id)).toBe(false);
+        expect(written.uncertainty).toMatchObject({ goals_es: null, goals_pp: null });
+      } else {
+        expect(written.proj_goals_es).toBe(Number(rows.reduce((sum, row) => sum + row.proj_goals_es!, 0).toFixed(3)));
+        expect(written.proj_goals_es).not.toBe(Number((18 * 0.3334).toFixed(3)));
+        expect(teamGoalsByTeamId.get(written.team_id)).toBe(fixture.teamGoals);
+        expect(teamGoalsByTeamId.get(written.team_id)).toBe(Number((written.proj_goals_es + written.proj_goals_pp).toFixed(3)));
+      }
       expect(written.uncertainty.native_goal_accounting).toMatchObject({ fullGameEligible: false, fullOfficialPlayMean: null,
         expectedListedEsPpMeanGivenGamePlayed: null, residualMean: null });
       expect(written.uncertainty.native_roster_contributor_coverage).toMatchObject({
         version: "native-roster-contributor-coverage-v1", eligibleUnprojectedSkaterPlayerIds: [], residualMean: null,
       });
       expect(written.uncertainty.native_roster_contributor_coverage.contributors).toHaveLength(18);
-      expect(rows[0].uncertainty.native_goal_accounting).toMatchObject({ reportedComponents: { esMean: 0.333, ppMean: fixture.ppHead, pkMean: null },
+      expect(rows[0].uncertainty.native_goal_accounting).toMatchObject({ reportedComponents: { esMean: unavailable ? null : 0.333, ppMean: fixture.ppHead, pkMean: null },
         esBucketDefinition: "bootstrap_all_strength_minus_pp_blend", expectedEsPpMeanGivenGamePlayed: null, fullGameEligible: false });
       for (const row of rows) {
         const prediction = playerPredictionOutputRows.filter(output => output.player_id === row.player_id);
-        expect(prediction).toHaveLength(1);
-        expect(prediction[0]).toMatchObject({ metric_key: marketType, player_id: row.player_id, team_id: row.team_id,
+        expect(prediction).toHaveLength(unavailable ? 0 : 1);
+        if (!unavailable) expect(prediction[0]).toMatchObject({ metric_key: marketType, player_id: row.player_id, team_id: row.team_id,
           game_id: row.game_id, expected_value: fixture.expectedPpp, metadata: { horizon_games: 1, run_id: "synthetic-native-goal-accounting" } });
         expect(row).toMatchObject({ proj_goals_pp: fixture.ppHead, proj_assists_pp: fixture.assistHead,
           proj_goals_pk: null, proj_assists_pk: null, proj_shots_pk: null });
         const boardStats = completeBoardSkaterStatsFromProjection(row);
-        expect(boardStats.proj_pp_points).toBeCloseTo(fixture.expectedPpp, 12);
+        if (unavailable) {
+          expect(boardStats.proj_pp_points).toBeNull();
+          expect(row).toMatchObject({ proj_hits: 1, proj_blocks: 1 });
+        } else expect(boardStats.proj_pp_points).toBeCloseTo(fixture.expectedPpp!, 12);
         expect(boardStats).toMatchObject({ proj_goals: null, proj_assists: null, proj_shots: null, proj_pim: null, proj_toi_minutes: null });
-        if (fixture.expectedPpp !== fixture.rawRoundedPpp) expect(prediction[0].expected_value).not.toBe(fixture.rawRoundedPpp);
+        if (!unavailable && fixture.expectedPpp !== fixture.rawRoundedPpp) expect(prediction[0].expected_value).not.toBe(fixture.rawRoundedPpp);
       }
     }
-    expect(playerPredictionOutputRows).toHaveLength(36);
+    expect(playerPredictionOutputRows).toHaveLength(fixture.teamGoals === null ? 0 : 36);
+  });
+});
+
+
+describe("nullable native conversion accounting boundary", () => {
+  it("accounts the actual mask-then-player-then-team sequence without manufacturing goal evidence", () => {
+    const base = player();
+    const source = { ...base, proj_assists_es: 0.2, proj_assists_pp: 0.1, uncertainty: base.uncertainty };
+    const masked = applySupportedSkaterConversionHeads(source, computeSupportedStrengthSplitConversionRates({
+      ev: undefined, pp: undefined, goalRateMultiplier: 1, assistRateMultiplier: 1,
+    }));
+    expect(buildNativePlayerGoalAccounting(masked)).toMatchObject({ reportedComponents: { esMean: null, ppMean: null },
+      reportedEsPpMean: null, conditionalEsPpMean: null, expectedEsPpMeanGivenGamePlayed: null });
+    expect(team([masked])).toMatchObject({ reportedComponents: { esMean: null, ppMean: null }, reportedEsPpMean: null });
+  });
+  it("preserves supported components and zero while withholding every incomplete required sum", () => {
+    const partial = player(101, { proj_goals_es: 0, proj_goals_pp: null });
+    expect(buildNativePlayerGoalAccounting(partial)).toMatchObject({ reportedComponents: { esMean: 0, ppMean: null }, reportedEsPpMean: null });
+    expect(team([player(), partial])).toMatchObject({ reportedComponents: { esMean: 0.4, ppMean: null },
+      reportedEsPpMean: null, sumOfPlayerConditionalEsPpMeans: null, expectedListedEsPpMeanGivenGamePlayed: null });
+    expect(team([player(101, { proj_goals_es: 0, proj_goals_pp: 0 })])).toMatchObject({ reportedEsPpMean: 0 });
+  });
+  it.each([NaN, Infinity, -1, 0.3334, undefined, "0"])("still rejects invalid known input beside a null component: %s", value => {
+    expect(() => buildNativePlayerGoalAccounting(player(100, { proj_goals_es: null, proj_goals_pp: value as number }))).toThrow();
+    expect(() => team([player(100, { proj_goals_es: null, proj_goals_pp: value as number })])).toThrow();
   });
 });
