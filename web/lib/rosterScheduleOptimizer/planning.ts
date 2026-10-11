@@ -884,11 +884,9 @@ function safeAlternative(snapshot: PlanningSnapshot, baseline: PlanEvaluation, e
   if (!baseline.comparisonEligible || !evaluation.comparisonEligible || baseline.projectedValue === null || evaluation.projectedValue === null || evaluation.projectedValue < baseline.projectedValue && !coverageImproves) return false;
   if (evaluation.projectedValue === baseline.projectedValue && evaluation.activeGames <= baseline.activeGames && !coverageImproves && !(baseline.goalie.risk && !evaluation.goalie.risk)) return false;
   for (const step of evaluation.steps) if (step.dropPlayerId) {
-    if (evaluation.activeGames < baseline.activeGames) return false;
     const added = snapshot.players.find(player => player.id === step.playerId);
     const dropped = snapshot.players.find(player => player.id === step.dropPlayerId);
     if (!added || !dropped) return false;
-    if (finite(added.holdValue) && finite(dropped.holdValue) && added.holdValue < dropped.holdValue) return false;
   }
   return true;
 }

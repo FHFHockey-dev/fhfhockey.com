@@ -237,6 +237,33 @@ describe("planning engine", () => {
     data.forecasts = data.forecasts.filter(row => row.playerId !== "a");
     expect(candidateActivePoints(data, intent).get("d")).toBeNull();
   });
+  it.each(["fewer-starts", "lower-hold-value"])("retains an improving full-roster drop/add alternative despite %s", kind => {
+    const data = snapshot();
+    data.players = data.players.filter(member => member.id !== "b");
+    data.roster = [{ playerId: "a", position: "active" }];
+    data.rules.rosterSlots = { C: 1 };
+    data.games = data.games.filter(game => game.teamAbbreviation === "A"
+      || game.teamAbbreviation === "C" && (kind === "lower-hold-value" || game.id === "C0"));
+    data.forecasts = data.games.map(game => issuedForecast(data, game.teamAbbreviation === "A" ? "a" : "c", game.id,
+      { stats: { pts: game.teamAbbreviation === "A" ? 1 : 10 } }));
+    if (kind === "lower-hold-value") { data.players[0].holdValue = 10; data.players[1].holdValue = 1; }
+    const before = structuredClone(data);
+    const result = planRoster(data, intent, { maxSteps: 1, maxCandidates: 1, maxEvaluations: 100 });
+    expect(result.baseline).toMatchObject({ activeGames: 2, projectedValue: 2, steps: [], comparisonEligible: true });
+    expect(result.noMoveAgp).toMatchObject({ activeGames: 2, projectedValue: 2, steps: [] });
+    expect(result.noMoveOutcome).toMatchObject({ activeGames: 2, projectedValue: 2, steps: [] });
+    const alternative = result.alternatives.find(plan => plan.objective === "outcome"
+      && plan.steps.some(step => step.playerId === "c" && step.dropPlayerId === "a"));
+    expect(alternative).toMatchObject({ activeGames: kind === "fewer-starts" ? 1 : 2,
+      projectedValue: kind === "fewer-starts" ? 10 : 20, legal: true, budgetVerified: true, comparisonEligible: true,
+      acquisitions: { p: 1 } });
+    expect(alternative?.steps).toHaveLength(1);
+    expect(alternative?.limitations.some(value => value.includes("Future availability for c must be rechecked"))).toBe(true);
+    expect(result.selected.steps).toEqual(intent.steps);
+    expect(data).toEqual(before);
+    const protectedResult = planRoster(data, { ...intent, protectedPlayerIds: ["a"] }, { maxSteps: 1, maxCandidates: 1 });
+    expect(protectedResult.alternatives.every(plan => plan.steps.length === 0)).toBe(true);
+  });
   it("ranks candidate horizon points only from complete permitted forecast coverage", () => {
     const data = snapshot();
     expect(candidateHorizonPoints(data).get("c")).toBe(4);
