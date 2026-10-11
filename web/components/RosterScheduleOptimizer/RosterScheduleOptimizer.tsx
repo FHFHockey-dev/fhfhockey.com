@@ -21,7 +21,9 @@ import CategoryGains from "./CategoryGains";
 import CompactSchedule, { defaultScheduleDate } from "./CompactSchedule";
 
 type Access = { eligible: boolean; capabilities: string[]; expiresAt?: string | null };
-type RequestFeedback = { key: string; userId: string | undefined; state: "busy" | "success" | "error"; text: string };
+type RequestFeedback = { key: string; userId: string | undefined; state: "busy" | "success" | "partial" | "error"; text: string };
+const PROVIDER_REFRESH_INTERVAL = 5 * 60_000;
+type ProviderRefreshSchedule = { key: string; userId: string | undefined; nextAutoAt: number; cooldownUntil: number; delay: number; blocked: boolean };
 type AccountRecord = { workspace: PlanningWorkspace; snapshot: PlanningSnapshot | null; version: number; updatedAt: string };
 type Tab = "itinerary" | "roster" | "candidates" | "matchup";
 type OwnTeam = { id: string; external_league_id: string; team_name: string; provider: string; team_metadata: unknown; external_leagues?: { league_name: string | null } | null };
@@ -110,6 +112,8 @@ export default function RosterScheduleOptimizer() {
   const [proposal, setProposal] = useState<RevisionProposal | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [providerRefresh, setProviderRefresh] = useState<RequestFeedback | null>(null);
+  const [settledProviderRefresh, setSettledProviderRefresh] = useState(0);
+  const [online, setOnline] = useState(() => typeof navigator === "undefined" || navigator.onLine !== false);
   const [accountSave, setAccountSave] = useState<RequestFeedback | null>(null);
   const [actionFeedback, setActionFeedback] = useState<{ key: string; userId: string | undefined; text: string; intentRevision?: number } | null>(null);
   const [loadingData, setLoadingData] = useState(false);
@@ -133,7 +137,17 @@ export default function RosterScheduleOptimizer() {
   const history = useRef<PlanningWorkspace[]>([]);
   const workspaceElement = useRef<HTMLDivElement>(null);
   const providerAbort = useRef<AbortController | null>(null);
-  const providerPending = useRef<Promise<boolean> | null>(null);
+  const providerPending = useRef<{ key: string; userId: string; promise: Promise<boolean> } | null>(null);
+  const providerSchedule = useRef<ProviderRefreshSchedule | null>(null);
+  const scheduleFor = useCallback((key: string, userId: string | undefined) => {
+    if (providerSchedule.current?.key !== key || providerSchedule.current.userId !== userId) providerSchedule.current = { key, userId, nextAutoAt: 0, cooldownUntil: 0, delay: PROVIDER_REFRESH_INTERVAL, blocked: false };
+    return providerSchedule.current;
+  }, []);
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine !== false);
+    window.addEventListener("online", update); window.addEventListener("offline", update);
+    return () => { window.removeEventListener("online", update); window.removeEventListener("offline", update); };
+  }, []);
   const accountSaveRequest = useRef<{ key: string; userId: string } | null>(null);
   const reachInput = (view: Tab, selector: string) => {
     setTab(view);
@@ -190,7 +204,8 @@ export default function RosterScheduleOptimizer() {
   const refreshUnavailable = viewingSaved ? "Saved inputs are read-only. Continue manually to work with this saved plan."
     : !user?.id ? "Sign in to check access for provider synchronization."
       : !canSync ? checkingAccess ? "Checking access for provider synchronization…" : accessError ? "Provider refresh is disabled until access can be verified. Try again shortly." : "Provider synchronization requires active in-season access. Your account connection is unchanged."
-        : !workspace.context.teamId.trim() || workspace.context.teamId === "manual" ? "Select an owned team before refreshing provider inputs." : null;
+        : !online ? "You are offline. Reconnect to refresh provider inputs; your selected plan is preserved."
+          : !workspace.context.teamId.trim() || workspace.context.teamId === "manual" ? "Select an owned team before refreshing provider inputs." : null;
   const refreshBusy = !refreshUnavailable && refreshFeedback?.state === "busy";
   const saveFeedback = accountSave?.key === accountKey && accountSave.userId === user?.id ? accountSave : null;
   const saveBusy = saveFeedback?.state === "busy";
@@ -215,6 +230,7 @@ export default function RosterScheduleOptimizer() {
     let requestGeneration = 0;
     setAccess(null); setAccessError(null); setCheckingAccess(true);
     const load = async () => {
+      if (navigator.onLine === false) return;
       const generation = ++requestGeneration;
       const current = () => !controller.signal.aborted && generation === requestGeneration;
       try {
@@ -229,10 +245,11 @@ export default function RosterScheduleOptimizer() {
       } catch { if (current()) { setCheckingAccess(false); setAccess(null); setAccessError(user?.id ? "Provider synchronization is unavailable because access could not be checked. Your account connection is unchanged; try again shortly." : null); } }
     };
     void load();
-    const visible = () => { if (document.visibilityState === "visible") void load(); };
+    const visible = () => { if (document.visibilityState === "visible" && navigator.onLine !== false) void load(); };
     document.addEventListener("visibilitychange", visible);
-    const timer = setInterval(() => { if (document.visibilityState === "visible") void load(); }, 5 * 60_000);
-    return () => { controller.abort(); clearInterval(timer); document.removeEventListener("visibilitychange", visible); };
+    window.addEventListener("online", visible);
+    const timer = setInterval(visible, 5 * 60_000);
+    return () => { controller.abort(); clearInterval(timer); document.removeEventListener("visibilitychange", visible); window.removeEventListener("online", visible); };
   }, [user?.id]);
   useEffect(() => { providerAbort.current?.abort(); setConnected(null); setCapabilities(null); setProposal(null); setAccount(null); setViewingSaved(false); setNotice(current => current === "Saved to account." ? null : current); }, [user?.id]);
   useEffect(() => {
@@ -270,19 +287,30 @@ export default function RosterScheduleOptimizer() {
   workspaceRef.current = workspace;
   const refreshProvider = useCallback((signal?: AbortSignal): Promise<boolean> => {
     const { context, userId } = providerRef.current;
-    if (context.provider === "manual" || !canSync || !userId || !context.teamId.trim() || context.teamId === "manual" || signal?.aborted) return Promise.resolve(false);
-    if (providerAbort.current && !providerAbort.current.signal.aborted && providerPending.current) return providerPending.current;
+    if (viewingSaved || context.provider === "manual" || !canSync || !userId || !context.teamId.trim() || context.teamId === "manual" || signal?.aborted || navigator.onLine === false) return Promise.resolve(false);
+    const requestKey = workspaceContextKey(context);
+    if (providerAbort.current && !providerAbort.current.signal.aborted && providerPending.current?.key === requestKey && providerPending.current.userId === userId) return providerPending.current.promise;
+    const schedule = scheduleFor(requestKey, userId);
+    if (Date.now() < schedule.cooldownUntil) {
+      setProviderRefresh({ key: requestKey, userId, state: "error", text: `Provider refresh is paused until ${new Date(schedule.cooldownUntil).toLocaleTimeString()}. Your selected plan is preserved.` });
+      return Promise.resolve(false);
+    }
+    if (signal && schedule.blocked) return Promise.resolve(false);
     providerAbort.current?.abort();
     const controller = new AbortController();
     providerAbort.current = controller;
-    signal?.addEventListener("abort", () => controller.abort(), { once: true });
-    const requestKey = workspaceContextKey(context);
+    const abort = () => controller.abort();
+    signal?.addEventListener("abort", abort, { once: true });
     const currentRequest = () => !controller.signal.aborted && userId === providerRef.current.userId && requestKey === workspaceContextKey(providerRef.current.context);
     setProviderRefresh({ key: requestKey, userId, state: "busy", text: "Refreshing provider inputs…" });
     const pending = (async () => { try {
       const headers = await authHeaders(); if (controller.signal.aborted || userId !== providerRef.current.userId) return false;
       const response = await fetch("/api/v1/roster-schedule-optimizer/provider", { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ provider: context.provider, teamId: context.teamId, startDate: context.startDate, endDate: context.endDate, timeZone: context.timeZone }), signal: controller.signal });
-      const body = await response.json(); if (!response.ok || !body.success) throw new Error(requestErrorMessage(body.error, "Provider refresh failed."));
+      const body = await response.json(); if (!currentRequest()) return false;
+      if (typeof body.retryAfterSeconds === "number" && Number.isFinite(body.retryAfterSeconds) && body.retryAfterSeconds >= 0) schedule.cooldownUntil = Math.max(schedule.cooldownUntil, Date.now() + body.retryAfterSeconds * 1000);
+      else if (response.status === 429 || body.code === "yahoo_rate_limited") schedule.cooldownUntil = Math.max(schedule.cooldownUntil, Date.now() + PROVIDER_REFRESH_INTERVAL);
+      schedule.blocked = response.status === 401 || response.status === 403 || body.code === "yahoo_reauth_required" || body.code === "yahoo_access_denied";
+      if (!response.ok || !body.success) throw new Error(requestErrorMessage(body.error, "Provider refresh failed."));
       const current = providerRef.current.context;
       if (controller.signal.aborted || userId !== providerRef.current.userId || requestKey !== workspaceContextKey(current)) return false;
       const next = body.snapshot as PlanningSnapshot;
@@ -295,38 +323,61 @@ export default function RosterScheduleOptimizer() {
       const overrides = providerRef.current.overrides ?? {};
       setConnected(next); connectedRef.current = next; setCapabilities(body.capabilities as ProviderCapabilities); setWorkspace((current) => ({ ...retainProviderInputs(current, next), context: next.context }));
       setProposal(reconcileIntent(supplementProviderRules(next, overrides, providerRef.current.locks).snapshot, providerRef.current.intent, sameContext ? supplementProviderRules(previous, overrides, providerRef.current.locks).snapshot : undefined)); setNotice(null); setLastUpdated(new Date().toISOString());
-      setProviderRefresh({ key: workspaceContextKey(next.context), userId, state: "success", text: unchanged ? "Provider refresh completed. Inputs are unchanged; selected moves were kept." : "Provider inputs refreshed. Selected moves were kept." });
-      return true;
-    } catch (error) { if (currentRequest()) setProviderRefresh({ key: requestKey, userId, state: "error", text: message(error) }); return false; }
+      const complete = !body.code && body.capabilities?.roster !== false && body.capabilities?.availability !== false;
+      schedule.key = workspaceContextKey(next.context);
+      schedule.delay = complete ? PROVIDER_REFRESH_INTERVAL : Math.min(schedule.delay * 2, 30 * 60_000);
+      schedule.nextAutoAt = Math.max(Date.now() + schedule.delay, schedule.cooldownUntil);
+      setProviderRefresh({ key: schedule.key, userId, state: complete ? "success" : "partial", text: complete ? unchanged ? "Provider refresh completed. Inputs are unchanged; selected moves were kept." : "Provider inputs refreshed. Selected moves were kept." : "Provider inputs partly refreshed. Selected moves were kept; some provider facts remain unverified." });
+      return complete;
+    } catch (error) {
+      if (currentRequest()) {
+        schedule.delay = Math.min(schedule.delay * 2, 30 * 60_000);
+        schedule.nextAutoAt = Math.max(Date.now() + schedule.delay, schedule.cooldownUntil);
+        setProviderRefresh({ key: requestKey, userId, state: "error", text: message(error) });
+      }
+      return false;
+    }
     finally {
+      signal?.removeEventListener("abort", abort);
       if (providerAbort.current === controller) {
         providerAbort.current = null; providerPending.current = null;
+        if (currentRequest()) setSettledProviderRefresh(current => current + 1);
         if (controller.signal.aborted) setProviderRefresh(current => current?.key === requestKey && current.userId === userId ? null : current);
       }
     } })();
-    providerPending.current = pending;
+    providerPending.current = { key: requestKey, userId, promise: pending };
     return pending;
-  }, [canSync]);
+  }, [canSync, viewingSaved, scheduleFor]);
   useEffect(() => {
-    if (workspace.context.provider === "manual" || !canSync) return;
+    if (viewingSaved || workspace.context.provider === "manual" || !canSync || !user?.id || !workspace.context.teamId.trim() || workspace.context.teamId === "manual") return;
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | null = null;
-    let delay = 5 * 60_000;
     let refreshing = false;
-    const refresh = async () => {
-      if (controller.signal.aborted || document.visibilityState !== "visible" || refreshing) return;
-      refreshing = true;
-      const succeeded = await refreshProvider(controller.signal);
-      refreshing = false;
-      if (controller.signal.aborted || !canAutoUpkeep) return;
-      delay = succeeded ? 5 * 60_000 : Math.min(delay * 2, 30 * 60_000);
-      timer = setTimeout(() => void refresh(), delay);
+    const clearTimer = () => { if (timer) clearTimeout(timer); timer = null; };
+    const scheduleNext = () => {
+      clearTimer();
+      if (controller.signal.aborted) return;
+      const schedule = scheduleFor(accountKey, providerRef.current.userId);
+      if (!canAutoUpkeep || schedule.blocked || document.visibilityState !== "visible" || navigator.onLine === false) return;
+      timer = setTimeout(() => void refresh(), Math.min(2_147_483_647, Math.max(0, Math.max(schedule.nextAutoAt, schedule.cooldownUntil) - Date.now())));
     };
-    if (workspace.context.teamId !== "manual") void refresh();
-    const visible = () => { if (document.visibilityState !== "visible") return; if (timer) clearTimeout(timer); void refresh(); };
-    document.addEventListener("visibilitychange", visible);
-    return () => { controller.abort(); providerAbort.current?.abort(); if (timer) clearTimeout(timer); document.removeEventListener("visibilitychange", visible); };
-  }, [accountKey, workspace.context.provider, workspace.context.teamId, canSync, canAutoUpkeep, refreshProvider]);
+    const refresh = async () => {
+      clearTimer();
+      if (controller.signal.aborted || document.visibilityState !== "visible" || navigator.onLine === false || refreshing) return;
+      const schedule = scheduleFor(accountKey, providerRef.current.userId);
+      if (schedule.blocked) return;
+      if (Date.now() < Math.max(schedule.nextAutoAt, schedule.cooldownUntil)) { scheduleNext(); return; }
+      refreshing = true;
+      await refreshProvider(controller.signal);
+      refreshing = false;
+      scheduleNext();
+    };
+    void refresh();
+    const availability = () => { clearTimer(); if (document.visibilityState === "visible" && navigator.onLine !== false) void refresh(); };
+    document.addEventListener("visibilitychange", availability);
+    window.addEventListener("online", availability); window.addEventListener("offline", availability);
+    return () => { controller.abort(); providerAbort.current?.abort(); clearTimer(); document.removeEventListener("visibilitychange", availability); window.removeEventListener("online", availability); window.removeEventListener("offline", availability); };
+  }, [accountKey, user?.id, workspace.context.provider, workspace.context.teamId, canSync, canAutoUpkeep, viewingSaved, refreshProvider, scheduleFor, settledProviderRefresh]);
   useEffect(() => {
     const current = connected?.context;
     const connectedKey = current ? workspaceContextKey(current) : null;

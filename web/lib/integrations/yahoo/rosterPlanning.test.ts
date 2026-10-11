@@ -228,12 +228,17 @@ describe("Yahoo snapshot evidence", () => {
     expect(mocks.planningData).toHaveBeenLastCalledWith(db, expect.objectContaining({ timeZone: "America/New_York" }), { now });
     mocks.draftResource.mockResolvedValue({ payload: { league_key: "453.l.1", time_zone: "UTC", draft_status: "postdraft" }, transport });
 
-    for (const mode of ["repeated", "oversized", "stale", "wrong-scope", "failed", "deadline", "bounded", "ownership-only"]) {
+    for (const mode of ["repeated", "oversized", "stale", "wrong-scope", "failed", "rate-limited", "optional-limited", "deadline", "bounded", "ownership-only"]) {
       const starts: number[] = [];
       const clock = mode === "deadline" ? vi.spyOn(Date, "now").mockReturnValueOnce(0).mockReturnValue(8000) : null;
       mocks.planningResource.mockImplementation(async ({ resource }: any) => {
-        if (resource.type !== "available_page" || mode === "failed") throw new Error("Optional availability read failed");
+        if (resource.type !== "available_page") {
+          if (mode === "optional-limited") throw new YahooLiveDraftError("Slow down.", 429, "yahoo_rate_limited", resource.type === "team" ? 3600 : 1200);
+          throw new Error("Optional availability read failed");
+        }
+        if (mode === "failed") throw new Error("Optional availability read failed");
         starts.push(resource.start);
+        if (mode === "rate-limited") throw new YahooLiveDraftError("Slow down.", 429, "yahoo_rate_limited", 3600);
         const ids = mode === "bounded" ? Array.from({ length: 25 }, (_, index) => 2002 + resource.start + index)
           : mode === "repeated" && resource.start === 0 ? [2002, ...Array.from({ length: 24 }, (_, index) => 2100 + index)]
             : mode === "oversized" ? Array.from({ length: 26 }, (_, index) => 2002 + index) : [2002];
@@ -255,6 +260,10 @@ describe("Yahoo snapshot evidence", () => {
         if (mode === "deadline") {
           expect(starts).toEqual([]);
           expect(partial.capabilities.limitations.join(" ")).toContain("time budget");
+        }
+        if (mode === "rate-limited" || mode === "optional-limited") {
+          expect(partial).toMatchObject({ code: "yahoo_rate_limited", retryAfterSeconds: 3600 });
+          expect(starts).toEqual(mode === "rate-limited" ? [0] : []);
         }
         if (mode === "bounded") {
           expect(starts).toHaveLength(81);
@@ -305,6 +314,16 @@ describe("Yahoo snapshot evidence", () => {
 });
 
 describe("provider snapshot route", () => {
+  it("propagates curated cooldowns for required failures and partial snapshots", async () => {
+    mocks.allowed = true;
+    mocks.snapshot.mockRejectedValueOnce(new YahooLiveDraftError("Slow down.", 429, "yahoo_rate_limited", 3600));
+    const limited = res(); await providerHandler(req("POST", { provider: "yahoo", teamId: "selected", startDate: "2026-10-01", endDate: "2026-10-07" }), limited);
+    expect(limited.statusCode).toBe(429);
+    expect(limited.body).toMatchObject({ success: false, code: "yahoo_rate_limited", retryAfterSeconds: 3600 });
+    mocks.snapshot.mockResolvedValueOnce({ snapshot: { id: "partial" }, capabilities: { availability: false }, code: "yahoo_rate_limited", retryAfterSeconds: 1200 });
+    const partial = res(); await providerHandler(req("POST", { provider: "yahoo", teamId: "selected", startDate: "2026-10-01", endDate: "2026-10-07" }), partial);
+    expect(partial.body).toMatchObject({ success: true, code: "yahoo_rate_limited", retryAfterSeconds: 1200 });
+  });
   it("returns curated provider diagnostics while keeping raw exceptions private", async () => {
     mocks.allowed = true;
     const log = vi.spyOn(console, "error").mockImplementation(() => undefined);

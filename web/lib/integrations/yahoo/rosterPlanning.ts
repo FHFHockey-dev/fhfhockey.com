@@ -135,7 +135,7 @@ export async function readRequiredPlanningResource<T>(read: () => Promise<T>): P
 
 export async function loadYahooPlanningSnapshot(args: {
   db: SupabaseClient<any>; userId: string; teamId: string; startDate: string; endDate: string; timeZone?: string; now?: Date;
-}): Promise<{ snapshot: PlanningSnapshot; capabilities: ProviderCapabilities }> {
+}): Promise<{ snapshot: PlanningSnapshot; capabilities: ProviderCapabilities; code?: string; retryAfterSeconds?: number | null }> {
   const { db, userId } = args;
   const now = args.now ?? new Date();
   const { data: team, error: teamError } = await db.from("external_teams").select("*")
@@ -148,6 +148,17 @@ export async function loadYahooPlanningSnapshot(args: {
   assertYahooLeagueGameContext(league.external_league_key, gameContext);
   const query = parsePlanningDataQuery({ seasonId: gameContext.targetSeasonId, startDate: args.startDate, endDate: args.endDate });
   const provider = { client: db, userId, connectedAccountId: team.connected_account_id, context: gameContext, leagueKey: league.external_league_key, format: "standard_json" as const, now };
+  let refreshError: YahooLiveDraftError | undefined;
+  let retryAfterSeconds: number | null = null;
+  const optionalFailure = (error: unknown) => {
+    if (error instanceof YahooLiveDraftError) {
+      if (error.retryAfterSeconds !== null && Number.isFinite(error.retryAfterSeconds) && error.retryAfterSeconds >= 0) retryAfterSeconds = Math.max(retryAfterSeconds ?? 0, error.retryAfterSeconds);
+      const authorizationFailed = (code: string) => code === "yahoo_reauth_required" || code === "yahoo_access_denied";
+      if (!refreshError || authorizationFailed(error.code)
+        || (!authorizationFailed(refreshError.code) && error.code === "yahoo_rate_limited")) refreshError = error;
+    }
+    return null;
+  };
   const settingsResponse = await readRequiredPlanningResource(() => fetchYahooDraftResource({ ...provider, resource: "settings" }));
   if (text(yahooValue(settingsResponse.payload, "league_key")) !== league.external_league_key) throw new Error("Yahoo settings league mismatch");
   const providerTimeZone = text(yahooValue(settingsResponse.payload, "time_zone"));
@@ -157,10 +168,10 @@ export async function loadYahooPlanningSnapshot(args: {
   const [data, rosterResponse, scoreboardResult, leagueRosterResult, leagueResult, teamResult] = await Promise.all([
     loadPlanningData(db, { ...query, timeZone }, { now }),
     readRequiredPlanningResource(() => fetchYahooBoardResource({ ...provider, resource: { type: "roster", teamKey: team.external_team_key, date: today } })),
-    fetchYahooPlanningResource({ ...provider, resource: { type: "scoreboard" } }).then(value => value, () => null),
-    fetchYahooBoardResource({ ...provider, resource: { type: "league_rosters" } }).then(value => value, () => null),
-    fetchYahooPlanningResource({ ...provider, resource: { type: "league" } }).then(value => value, () => null),
-    fetchYahooPlanningResource({ ...provider, resource: { type: "team", teamKey: team.external_team_key } }).then(value => value, () => null),
+    fetchYahooPlanningResource({ ...provider, resource: { type: "scoreboard" } }).then(value => value, optionalFailure),
+    fetchYahooBoardResource({ ...provider, resource: { type: "league_rosters" } }).then(value => value, optionalFailure),
+    fetchYahooPlanningResource({ ...provider, resource: { type: "league" } }).then(value => value, optionalFailure),
+    fetchYahooPlanningResource({ ...provider, resource: { type: "team", teamKey: team.external_team_key } }).then(value => value, optionalFailure),
   ]);
   const acquisitionEvidence = yahooPlanningAcquisitions({ settings: settingsResponse, league: leagueResult, team: teamResult,
     weeks: data.matchupWeeks, gameKey: gameContext.gameKey, leagueKey: league.external_league_key, teamKey: team.external_team_key,
@@ -269,6 +280,7 @@ export async function loadYahooPlanningSnapshot(args: {
   let repeatedPageIdentity = false;
   // Read all pages within a disclosed bound, independent of forecast availability.
   for (let start = 0; start <= 2000; start += 25) {
+    if ((retryAfterSeconds ?? 0) > 0 || refreshError?.code === "yahoo_rate_limited" || refreshError?.code === "yahoo_reauth_required" || refreshError?.code === "yahoo_access_denied") break;
     if (Date.now() - availabilityStarted >= 8000) { limitations.push("Availability discovery reached its time budget; remaining players are unknown."); break; }
     try {
       const result = await fetchYahooPlanningResource({ ...provider, resource: { type: "available_page", start } });
@@ -281,7 +293,7 @@ export async function loadYahooPlanningSnapshot(args: {
         else candidates.set(row.player_key, row);
       }
       if (rows.length < 25) { availabilityComplete = !repeatedPageIdentity; break; }
-    } catch { limitations.push("Availability coverage is partial; unverified players remain unknown."); break; }
+    } catch (error) { optionalFailure(error); limitations.push("Availability coverage is partial; unverified players remain unknown."); break; }
   }
   if (!availabilityComplete) limitations.push("Available-player discovery did not reach the end of the provider list.");
   for (const row of candidates.values()) {
@@ -326,5 +338,6 @@ export async function loadYahooPlanningSnapshot(args: {
       availability: { source: `Yahoo league ownership (${pagesChecked} pages)`, asOf: now.toISOString(), seasonId: query.seasonId, completeness: availabilityComplete ? "complete" : "partial", limitations: availabilityComplete ? [] : ["Only individually verified availability may be actionable."] },
     },
   };
-  return { snapshot, capabilities: { roster: fresh && ownRows.length === roster.length && roster.length > 0, availability: availabilityComplete, rules: false, matchup: opponent !== null, acquisitions: false, limitations } };
+  return { snapshot, capabilities: { roster: fresh && ownRows.length === roster.length && roster.length > 0, availability: availabilityComplete, rules: false, matchup: opponent !== null, acquisitions: false, limitations },
+    ...(refreshError ? { code: refreshError.code, retryAfterSeconds } : {}) };
 }

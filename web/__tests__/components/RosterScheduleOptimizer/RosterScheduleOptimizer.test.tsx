@@ -29,6 +29,150 @@ const benchReceipt: NonNullable<BenchDecision["evidence"]> = { startDate: "2026-
     participation: [{ gameId: "game", basis: "appearance", probability: 0.5, confirmed: false }] }] };
 afterEach(() => { cleanup(); window.localStorage.clear(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); fetchMock.mockClear(); authState.user = null; authState.teams = []; planningState.evaluate = null; });
 
+describe("active provider refresh scheduling", () => {
+  const success = (snapshot: PlanningSnapshot) => ({ ok: true, status: 200, json: async () => ({ success: true, snapshot,
+    capabilities: { roster: true, availability: true, limitations: [] } }) });
+  function setup(reply: (snapshot: PlanningSnapshot, read: number) => Promise<unknown> = async snapshot => success(snapshot), initiallyOnline = true, accountSnapshot = false) {
+    vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-11T12:00:00Z"));
+    const network = vi.spyOn(navigator, "onLine", "get").mockReturnValue(initiallyOnline);
+    const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+    authState.user = { id: "fixture-refresh-manager" };
+    const workspace = defaultWorkspace();
+    workspace.context = { ...workspace.context, provider: "yahoo", teamId: "fixture-team", leagueId: "fixture-league" };
+    workspace.roster = [{ playerId: player.id, position: "active" }];
+    workspace.manualPlayers = [player]; workspace.intent.protectedPlayerIds = [player.id];
+    workspace.intent.steps = [{ id: "fixture-selected-add", type: "add", playerId: "fixture-candidate", at: `${workspace.context.startDate}T00:00:00Z`, effectiveAt: `${workspace.context.startDate}T00:00:00Z`, conditional: false, dependsOn: [] }];
+    const snapshot: PlanningSnapshot = { id: "fixture-provider", context: workspace.context, players: [player], roster: workspace.roster,
+      rules: workspace.rules, lockedAssignments: [], games: [], forecasts: [], realized: {}, opponent: null, evidence: {} };
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    let reads = 0;
+    vi.stubGlobal("fetch", vi.fn((url: string) => {
+      if (url.endsWith("/provider")) return reply(snapshot, ++reads);
+      return Promise.resolve({ ok: true, json: async () => url.includes("/data?") ? { success: true, data }
+        : url.endsWith("/access") ? { data: { eligible: true, capabilities: ["rso_sync", "rso_auto_upkeep"] } }
+          : { data: accountSnapshot ? { workspace, snapshot, version: 1, updatedAt: workspace.context.asOf } : null } });
+    }));
+    const view = render(<RosterScheduleOptimizer />);
+    return { ...view, network, visibility, workspace, snapshot, reads: () => reads,
+      saved: () => JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!) };
+  }
+  const advance = (ms = 0) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
+  const returned = async () => { fireEvent(document, new Event("visibilitychange")); await advance(); };
+
+  it("makes no offline provider calls, pauses hidden polling and refreshes only a stale return", async () => {
+    const state = setup(undefined, false); await advance(); expect(state.reads()).toBe(0);
+    state.network.mockReturnValue(true); fireEvent(window, new Event("online")); await advance(); expect(state.reads()).toBe(1);
+    await returned(); await returned(); expect(state.reads()).toBe(1);
+    state.visibility.mockReturnValue("hidden"); await returned(); await advance(60 * 60_000); expect(state.reads()).toBe(1);
+    state.visibility.mockReturnValue("visible"); await returned(); expect(state.reads()).toBe(2);
+    state.network.mockReturnValue(false); fireEvent(window, new Event("offline")); await advance(10 * 60_000); expect(state.reads()).toBe(2);
+    expect((screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText(/You are offline/)).toBeTruthy();
+    state.network.mockReturnValue(true); fireEvent(window, new Event("online")); await advance();
+    expect(state.reads()).toBe(3); expect(state.saved().intent).toEqual(state.workspace.intent);
+  });
+  it("honors a Retry-After longer than the backoff across explicit refresh and visibility returns", async () => {
+    const state = setup(async (snapshot, read) => read === 1 ? { ok: false, status: 429,
+      json: async () => ({ success: false, code: "yahoo_rate_limited", retryAfterSeconds: 3600, error: "Yahoo asked us to slow down." }) } : success(snapshot));
+    await advance(); expect(state.reads()).toBe(1);
+    fireEvent.click(screen.getByRole("button", { name: "Refresh provider" })); await advance();
+    expect(screen.getByText(/Provider refresh is paused until/)).toBeTruthy();
+    await returned(); await advance(3_599_999); expect(state.reads()).toBe(1);
+    await advance(1); expect(state.reads()).toBe(2);
+    await advance(5 * 60_000); expect(state.reads()).toBe(3); expect(state.saved().intent).toEqual(state.workspace.intent);
+  });
+  it("keeps partial facts and nonzero intent without treating a throttled partial response as fresh", async () => {
+    const state = setup(async (snapshot, read) => read === 1 ? { ok: true, status: 200,
+      json: async () => ({ success: true, snapshot, capabilities: { roster: true, availability: false, limitations: [] },
+        code: "yahoo_rate_limited", retryAfterSeconds: 1200 }) } : success(snapshot));
+    await advance(); expect(screen.getByText(/Provider inputs partly refreshed/)).toBeTruthy();
+    expect(state.saved().intent).toEqual(state.workspace.intent);
+    await advance(5 * 60_000); await returned(); expect(state.reads()).toBe(1);
+    await advance(15 * 60_000); expect(state.reads()).toBe(2);
+    await advance(5 * 60_000); expect(state.reads()).toBe(3);
+  });
+  it("backs off partial discovery without inventing a rate-limit value", async () => {
+    const state = setup(async (snapshot, read) => read === 1 ? { ok: true, status: 200,
+      json: async () => ({ success: true, snapshot, capabilities: { roster: true, availability: false, limitations: [] } }) } : success(snapshot));
+    await advance(); await advance(5 * 60_000); await returned(); expect(state.reads()).toBe(1);
+    await advance(5 * 60_000); expect(state.reads()).toBe(2);
+  });
+  it("pauses automatic permission retries and resumes polling after an explicit successful retry", async () => {
+    const state = setup(async (snapshot, read) => read === 1 ? { ok: false, status: 403,
+      json: async () => ({ success: false, code: "yahoo_access_denied", error: "Reconnect Yahoo and verify league access." }) } : success(snapshot));
+    await advance(); await advance(60 * 60_000); await returned(); expect(state.reads()).toBe(1);
+    fireEvent.click(screen.getByRole("button", { name: "Refresh provider" })); await advance(); expect(state.reads()).toBe(2);
+    await advance(5 * 60_000); expect(state.reads()).toBe(3);
+  });
+  it("shares one in-flight request across return events and keeps deliberate Undo intent", async () => {
+    let release!: (response: unknown) => void;
+    const state = setup(async (snapshot, read) => read === 1 ? success(snapshot) : new Promise(resolve => { release = resolve; }));
+    await advance(); fireEvent.change(screen.getByRole("combobox", { name: "Goalie choice" }), { target: { value: "cover" } });
+    const p2 = state.saved().intent;
+    fireEvent.click(screen.getByRole("button", { name: "Refresh provider" })); await advance();
+    await returned(); await returned(); expect(state.reads()).toBe(2);
+    await act(async () => release(success({ ...state.snapshot, context: { ...state.snapshot.context, asOf: "2026-10-11T12:01:00Z" } })));
+    await advance(); expect(state.saved().intent).toEqual(p2);
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(state.saved().intent.steps).toEqual(state.workspace.intent.steps);
+    expect(state.saved().intent.goalieCoverage).toBe(state.workspace.intent.goalieCoverage);
+    expect(state.saved().context.asOf).toBe("2026-10-11T12:01:00Z");
+  });
+  it("does not let an old account response impose a cooldown on the current account", async () => {
+    let release!: (response: unknown) => void;
+    const state = setup(async (snapshot, read) => read === 1 ? new Promise(resolve => { release = resolve; }) : success(snapshot));
+    await advance(); expect(state.reads()).toBe(1);
+    authState.user = { id: "fixture-other-manager" }; state.rerender(<RosterScheduleOptimizer />); await advance();
+    expect(state.reads()).toBe(2);
+    await act(async () => release({ ok: false, status: 429, json: async () => ({ success: false, code: "yahoo_rate_limited", retryAfterSeconds: 3600, error: "Old account response." }) }));
+    await advance(); await advance(5 * 60_000); expect(state.reads()).toBe(3);
+    expect(screen.queryByText("Old account response.")).toBeNull();
+  });
+  it.each(["", "   "])("does not schedule zero-delay refreshes after clearing the team to %j", async teamId => {
+    const state = setup(); await advance(); expect(state.reads()).toBe(1);
+    const timers = vi.getTimerCount();
+    fireEvent.change(screen.getByRole("textbox", { name: "Team ID" }), { target: { value: teamId } });
+    await advance(10);
+    expect(state.reads()).toBe(1);
+    expect(vi.getTimerCount()).toBeLessThan(timers);
+    expect(screen.getByText("Select an owned team before refreshing provider inputs.")).toBeTruthy();
+    expect(state.saved().intent).toEqual(state.workspace.intent);
+  });
+  it.each([
+    { status: 429, code: "yahoo_rate_limited", retryAfterSeconds: 3600 },
+    { status: 401, code: "yahoo_reauth_required", retryAfterSeconds: undefined },
+    { status: 403, code: "yahoo_access_denied", retryAfterSeconds: undefined },
+  ])("keeps the current context's $status block when a retired refresh settles", async ({ status, code, retryAfterSeconds }) => {
+    let release!: (response: unknown) => void;
+    const state = setup(async (snapshot, read) => read === 1 ? new Promise(resolve => { release = resolve; })
+      : read === 2 ? { ok: false, status, json: async () => ({ success: false, code, retryAfterSeconds, error: "Current context is paused." }) }
+        : success({ ...snapshot, context: { ...snapshot.context, teamId: "fixture-next-team" } }));
+    await advance(); expect(state.reads()).toBe(1);
+    fireEvent.change(screen.getByRole("textbox", { name: "Team ID" }), { target: { value: "fixture-next-team" } });
+    await advance(); expect(state.reads()).toBe(2);
+    await act(async () => release(success(state.snapshot))); await advance();
+    await returned(); expect(state.reads()).toBe(2);
+    if (status === 429) {
+      await advance(3_599_999); expect(state.reads()).toBe(2);
+      await advance(1); expect(state.reads()).toBe(3);
+    } else {
+      await advance(60 * 60_000); await returned(); expect(state.reads()).toBe(2);
+      fireEvent.click(screen.getByRole("button", { name: "Refresh provider" })); await advance();
+      expect(state.reads()).toBe(3);
+    }
+    expect(state.saved().context.teamId).toBe("fixture-next-team");
+    expect(state.saved().intent).toEqual(state.workspace.intent);
+  });
+  it("does not refresh an account snapshot opened read-only even when sync access is active", async () => {
+    const state = setup(undefined, true, true); await advance(); expect(state.reads()).toBe(1);
+    fireEvent.click(screen.getByRole("button", { name: "View account save" })); await advance();
+    const retained = state.saved();
+    await advance(60 * 60_000); await returned(); expect(state.reads()).toBe(1);
+    expect(state.saved()).toEqual(retained);
+    expect((screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+});
+
 describe("provisional schedule freshness warnings", () => {
   const context = { ...defaultWorkspace().context, startDate: "2026-10-10", endDate: "2026-10-10", asOf: "2026-10-10T15:00:00Z" };
   const evidence = (asOf: string | null) => ({ source: "roster_optimizer_team_games", asOf, seasonId: 20262027, completeness: "complete" as const, limitations: [] });
@@ -1126,9 +1270,8 @@ describe("RosterScheduleOptimizer workspace", () => {
     let release!: (response: unknown) => void;
     let requestSignal: AbortSignal | null | undefined;
     let reads = 0;
-    const timers = vi.spyOn(globalThis, "setTimeout");
     const response = (snapshot: PlanningSnapshot) => ({ ok: true, json: async () => ({ success: true, snapshot,
-      capabilities: { roster: true, availability: false, rules: true, matchup: false, acquisitions: false, limitations: [] } }) });
+      capabilities: { roster: true, availability: true, rules: true, matchup: false, acquisitions: false, limitations: [] } }) });
     vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => {
       if (url.endsWith("/provider")) {
         if (++reads === 1) return Promise.resolve(response(initial));
@@ -1141,8 +1284,6 @@ describe("RosterScheduleOptimizer workspace", () => {
     const saved = () => JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!);
     render(<RosterScheduleOptimizer />);
     await waitFor(() => expect(saved().context.asOf).toBe(initial.context.asOf));
-    const scheduledChecks = () => timers.mock.calls.filter(([, delay]) => delay === 5 * 60_000).length;
-    expect(scheduledChecks()).toBe(1);
     const refresh = screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement;
     fireEvent.click(refresh);
     expect(refresh.getAttribute("aria-busy")).toBe("true");
@@ -1162,7 +1303,6 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(screen.getByText("Provider refresh completed. Inputs are unchanged; selected moves were kept.").getAttribute("role")).toBe("status");
     expect(refresh.disabled).toBe(false);
     expect(refresh.getAttribute("aria-busy")).toBe("false");
-    expect(scheduledChecks()).toBe(2);
     expect(saved()).toMatchObject({ context: unchanged.context, roster: workspace.roster, intent: workspace.intent });
   });
 
@@ -1285,7 +1425,7 @@ describe("RosterScheduleOptimizer workspace", () => {
   ])("refreshes the selected $field and ignores a late response for the previous scope", async ({ label, value, field }) => {
     authState.user = { id: "manager" };
     const workspace = defaultWorkspace();
-    workspace.context = { ...workspace.context, provider: "yahoo", leagueId: "first-league", teamId: "team" };
+    workspace.context = { ...workspace.context, provider: "yahoo", leagueId: "first-league", teamId: "team", timeZone: "UTC" };
     window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
     const pending: { init?: RequestInit; resolve: (response: unknown) => void }[] = [];
     vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => {
@@ -1342,8 +1482,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     await waitFor(() => expect(saved().context).toEqual(snapshot.context));
     expect(saved()).toMatchObject({ roster: snapshot.roster, rules: snapshot.rules, intent: workspace.intent });
     expect(screen.queryByText(/Provider inputs do not match/)).toBeNull();
-    await waitFor(() => expect(requests.mock.calls.some(([url, init]) => url.endsWith("/provider")
-      && JSON.parse(init?.body as string).timeZone === "America/New_York")).toBe(true));
+    expect(requests.mock.calls.filter(([url]) => url.endsWith("/provider"))).toHaveLength(1);
     expect(requests.mock.calls.some(([url, init]) => url.endsWith("/provider")
       && JSON.parse(init?.body as string).timeZone === "UTC")).toBe(true);
     expect(requests.mock.calls.some(([url]) => url.includes("/data?") && url.includes("timeZone=America%2FNew_York"))).toBe(true);
@@ -2034,6 +2173,8 @@ describe("compact RSO schedule", () => {
     const reserve = input.roster.find(row => row.position === "IR+")!;
     input.roster.find(row => row.position === "IR")!.position = "IR+";
     expect(compactGroups(input).flatMap(group => group.rows).find(row => row.playerId === reserve.playerId)?.status).toBe("Reserve capacity conflict");
+    input.rules.rosterSlots.IR = 1;
+    input.roster.find(row => row.playerId === "p23")!.position = "IR";
     input.rules.acquisitionTiming = "same_day";
     input.rules.acquisitionCost = 0;
     input.rules.periods = [{ id: "week", start: "2026-10-05T00:00:00Z", end: "2026-10-12T00:00:00Z", remaining: 1, source: "manager" }];

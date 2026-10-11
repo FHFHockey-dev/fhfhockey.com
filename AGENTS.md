@@ -14,8 +14,8 @@
 
 ## Branch Naming
 
-- Use `octoberBranch` for ongoing implementation. `master` is the release branch: reconcile accepted work into it, then sync `octoberBranch` from the released commit before continuing.
-- Use an isolated `chef/` branch only when concurrent ownership or review requires it. Reconcile accepted changes back into the October workflow and preserve unfinished work before cleanup.
+- Use `/Users/tim/Code/fhfhockey.com` on `octoberBranch` as the sole local FHFH editing checkout and branch. Preserve `fhfhockey-october` and other historical worktrees without further edits. `master` is the release branch: reconcile accepted work into it, then sync `octoberBranch` from the released commit before continuing.
+- Coordinate concurrent work through exact file ownership in the canonical checkout. Do not start another editing branch or worktree unless the user explicitly changes the sole-checkout instruction; preserve existing divergent history and unfinished work.
 - Name new agent-created branches `chef/<descriptive-name>`, not `codex/`. Keep `master` and `octoberBranch` as the long-lived branches.
 - Before deleting a branch, check for unmerged commits and unfinished work; preserve unique work before cleanup.
 

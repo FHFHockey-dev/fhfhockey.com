@@ -89,6 +89,7 @@ vi.mock("@supabase/supabase-js", () => ({
   })
 }));
 
+import retainedNst from "../../../../fixtures/nst/oct1-identity-source.json";
 import handler from "../../../../../pages/api/v1/db/update-nst-gamelog";
 import { NstResponseError } from "lib/nst/client";
 import { fromZonedTime } from "date-fns-tz";
@@ -104,6 +105,7 @@ import {
   buildNstStatusUrl,
   filterReverseSeasonsForHistoricalDatedNst,
   getPlayerCacheCandidates,
+  getNstPlayerIdFromHref,
   getDatesBetween,
   normalizeTargetDates,
   parseDatesParam,
@@ -174,6 +176,19 @@ describe("update-nst-gamelog request scoping", () => {
     expect(resolveMappedPlayerName("Frederic Gaudreau")).toBe(
       "Frederick Gaudreau"
     );
+  });
+
+  it("maps only the verified exact Josh Mahura spelling", () => {
+    expect(resolveMappedPlayerName("Josh Mahura")).toBe("Joshua Mahura");
+    expect(resolveMappedPlayerName("Josh Example")).toBe("Josh Example");
+    expect(resolveMappedPlayerName("Joshua Mahura")).toBe("Joshua Mahura");
+  });
+
+  it("accepts only an NST playerreport link with one valid NHL player ID", () => {
+    expect(getNstPlayerIdFromHref("playerreport.php?playerid=8481559&sit=all")).toBe(8481559);
+    for (const href of ["https://example.com/playerreport.php?playerid=8481559", "playerreport.php?playerid=8481559&playerid=8483456", "playerreport.php?playerid=oops", "playerteams.php?playerid=8481559"]) {
+      expect(getNstPlayerIdFromHref(href)).toBeNull();
+    }
   });
 
   it("maps only the exact Joseph Veleno alias without changing other Joseph or Joe names", () => {
@@ -694,6 +709,55 @@ describe("update-nst-gamelog automatic season cursor", () => {
     expect(db.audits.at(-1).rows_affected).toBe(180);
   });
 
+
+  it.each(["allStrengthsCounts", "allStrengthsRates"])("binds retained Oct1 %s rows to Mahura and NHL Jack Hughes", async (datasetType) => {
+    // Provider HTML fragments retain original source hash and receipt time.
+    db.tables.players = [
+      { id: 8483456, fullName: "Jack Hughes", position: "C" },
+      { id: 8481559, fullName: "Jack Hughes", position: "C" },
+      { id: 8479372, fullName: "Joshua Mahura", position: "D" },
+      { id: 8476539, fullName: "Jonathan Marchessault", position: "C" }
+    ];
+    const source = retainedNst.slices.find((slice) => slice.datasetType === datasetType)!;
+    fetchNstTextByUrlMock.mockResolvedValue({ response: { status: 200 }, text: source.html });
+    db.games.push({ date: source.date, seasonId: 20262027, type: 2 });
+    const res = await run({ dates: source.date, datasetType, overwrite: "yes" });
+    const table = datasetType === "allStrengthsCounts" ? "nst_gamelog_as_counts" : "nst_gamelog_as_rates";
+    const rows = db.tables[table];
+    expect(rows.map((row) => row.player_id).sort()).toEqual([8476539, 8479372, 8481559]);
+    expect(rows.find((row) => row.player_id === 8481559)).toMatchObject({ toi: 1548, date_scraped: "2026-10-01" });
+    expect(rows.every((row) => !Object.keys(row).some((key) => key.endsWith("_temp")))).toBe(true);
+    expect(res.body.nstProgress.sourceOutcomes.counts.parse_or_identity_unresolved).toBe(0);
+    expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([undefined, "playerreport.php?playerid=8483456", "playerreport.php?playerid=bad", "https://example.com/playerreport.php?playerid=8481559"])("preserves unresolved Hughes identity for missing or conflicting link %s", async (href) => {
+    db.tables.players = [
+      { id: 8483456, fullName: "Jack Hughes", position: "C" },
+      { id: 8481559, fullName: "Jack Hughes", position: "C" }
+    ];
+    // A conflicting provider ID has no matching name candidate in this case.
+    if (href?.includes("8483456")) db.tables.players[0].fullName = "Different Player";
+    const name = href === undefined ? "Jack Hughes" : '<a href="' + href + '">Jack Hughes</a>';
+    fetchNstTextByUrlMock.mockResolvedValue({ response: { status: 200 }, text:
+      '<table><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>TOI</th></tr></thead><tbody><tr><td>' + name + '</td><td>N.J</td><td>C</td><td>25:48</td></tr></tbody></table>' });
+    db.games.push({ date: "2026-10-01", seasonId: 20262027, type: 2 });
+    const res = await run({ dates: "2026-10-01", datasetType: "allStrengthsCounts", overwrite: "yes" });
+    expect(db.tables.nst_gamelog_as_counts ?? []).toHaveLength(0);
+    expect(res.body.nstProgress.sourceOutcomes.counts.parse_or_identity_unresolved).toBeGreaterThan(0);
+  });
+
+  it("preserves fractional PK rates from the retained Sep30 rows", async () => {
+    db.tables.players = [
+      { id: 8470613, fullName: "Brent Burns", position: "D" },
+      { id: 8471724, fullName: "Kris Letang", position: "D" }
+    ];
+    const source = retainedNst.slices.find((slice) => slice.datasetType === "penaltyKillRatesOi")!;
+    fetchNstTextByUrlMock.mockResolvedValue({ response: { status: 200 }, text: source.html });
+    db.games.push({ date: source.date, seasonId: 20262027, type: 2 });
+    await run({ dates: source.date, datasetType: source.datasetType, overwrite: "yes" });
+    expect(db.tables.nst_gamelog_pk_rates_oi.map((row) => row.on_the_fly_starts_per_60)).toEqual([41.22, 156.52]);
+  });
 
   it("refetches a partially resolved source instead of certifying five stored rows as complete", async () => {
     db.tables.players = Array.from({ length: 5 }, (_, i) => ({ id: i + 1, fullName: "Test Player " + i, position: "C" }));

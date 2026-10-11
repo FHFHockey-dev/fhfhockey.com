@@ -51,6 +51,41 @@ async function expectDesktopFrameVisible(page: import("@playwright/test").Page) 
   expect(frame.summaryTop).toBeGreaterThanOrEqual(frame.bannerBottom - 1);
 }
 
+test("connected refresh fixtures preserve nonzero intent through offline, cooldown, Undo and reopen", async ({ page }, testInfo) => {
+  await page.clock.install({ time: new Date("2026-10-11T12:00:00Z") });
+  await installDraftProAuthenticatedFixtures(page, () => ({ access: { eligible: false, grantingSources: [], expiresAt: null, verifiedAt: null, nextVerificationAt: null, reason: "no_active_grant", capabilities: [], providerReadiness: { stripe: false, patreon: false, yahoo: false } } }));
+  const storageKey = `sb-${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fyhftlxokyjtpndbkfse.supabase.co").hostname.split(".")[0]}-auth-token`;
+  await page.addInitScript(key => { const session = localStorage.getItem("sb-127-auth-token"); if (session) localStorage.setItem(key, session); }, storageKey);
+  const players = [fixturePlayer(1, "Alpha Center", "CAR"), fixturePlayer(2, "Bravo Center", "NJD")]; players[1].availability = "free_agent";
+  const workspace = fixtureWorkspace(players, { ...fixtureRules, rosterSlots: { C: 1, BN: 2 }, periods: [{ id: "fixture-week", start: "2026-10-11T00:00:00Z", end: "2026-10-19T00:00:00Z", remaining: 2, source: "manager" }] });
+  workspace.context = { ...workspace.context, provider: "yahoo", leagueId: "fixture-league", teamId: "fixture-team", startDate: "2026-10-12", endDate: "2026-10-18", asOf: "2026-10-11T12:00:00Z" };
+  workspace.intent.steps = [{ id: "fixture-add", type: "add", playerId: players[1].id, at: "2026-10-12T12:00:00Z", effectiveAt: "2026-10-12T12:00:00Z", conditional: false, dependsOn: [] }]; workspace.intent.protectedPlayerIds = [players[0].id];
+  await seedWorkspace(page, workspace);
+  await page.route("**/api/v1/roster-schedule-optimizer/access", route => route.fulfill({ json: { data: { eligible: true, capabilities: ["rso_sync", "rso_auto_upkeep"] } } }));
+  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true, data: { players, games: [], forecasts: [], evidence: {} } } }));
+  let reads = 0;
+  await page.route("**/api/v1/roster-schedule-optimizer/provider", route => {
+    const read = ++reads;
+    const snapshot: PlanningSnapshot = { id: `fixture-refresh-${read}`, context: { ...workspace.context, asOf: read === 1 ? "2026-10-11T12:00:00Z" : "2026-10-11T12:01:00Z" }, players, roster: workspace.roster, rules: workspace.rules, lockedAssignments: [], games: [], forecasts: [], realized: {}, opponent: null, evidence: {} };
+    return route.fulfill({ json: { success: true, snapshot, capabilities: { roster: true, availability: read !== 2, limitations: [] }, ...(read === 2 ? { code: "yahoo_rate_limited", retryAfterSeconds: 1200 } : {}) } });
+  });
+  const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!) as PlanningWorkspace);
+  const visibility = (value: "visible" | "hidden") => page.evaluate(value => { Object.defineProperty(document, "visibilityState", { configurable: true, get: () => value }); document.dispatchEvent(new Event("visibilitychange")); }, value);
+  const network = (value: boolean) => page.evaluate(value => { Object.defineProperty(navigator, "onLine", { configurable: true, get: () => value }); window.dispatchEvent(new Event(value ? "online" : "offline")); }, value);
+  await page.setViewportSize({ width: 1440, height: 900 }); await page.goto("/roster-schedule-optimizer");
+  await expect.poll(() => reads).toBe(1); await expect(page.getByText("Provider inputs refreshed. Selected moves were kept.")).toBeVisible();
+  await openPlanningSetup(page); await page.getByRole("combobox", { name: "Goalie choice" }).selectOption("cover"); const p2 = (await saved()).intent;
+  await visibility("hidden"); await visibility("visible"); expect(reads).toBe(1);
+  await page.getByRole("button", { name: "Refresh provider" }).click(); await expect(page.getByText(/Provider inputs partly refreshed/)).toBeVisible(); expect(reads).toBe(2); expect((await saved()).intent).toEqual(p2);
+  await network(false); await page.clock.fastForward(5 * 60_000); await expect(page.getByRole("button", { name: "Refresh provider" })).toBeDisabled(); expect(reads).toBe(2);
+  await network(true); await visibility("hidden"); await visibility("visible"); await page.getByRole("button", { name: "Refresh provider" }).click(); await expect(page.getByText(/Provider refresh is paused until/)).toBeVisible(); expect(reads).toBe(2);
+  await page.clock.fastForward(15 * 60_000 + 1000); await expect.poll(() => reads).toBe(3);
+  await page.getByRole("button", { name: "Undo" }).click(); expect((await saved()).intent).toMatchObject({ steps: workspace.intent.steps, protectedPlayerIds: workspace.intent.protectedPlayerIds, goalieCoverage: workspace.intent.goalieCoverage });
+  await page.reload(); await expect.poll(() => reads).toBe(4); expect((await saved()).intent.steps).toEqual(workspace.intent.steps); expect((await saved()).context.asOf).toBe("2026-10-11T12:01:00Z");
+  await page.screenshot({ path: testInfo.outputPath("rso-refresh-fixture.png") });
+  await writeFile(testInfo.outputPath("refresh-fixture-receipt.json"), JSON.stringify({ reads, scope: "Fictional intercepted session/provider and local storage; controlled online/visibility/time. Authentic isolation and account saves not accepted.", nonzeroP2: p2 }, null, 2));
+});
+
 test.beforeEach(async ({ page }) => {
   await page.route("**/*", route => {
     const host = new URL(route.request().url()).hostname;

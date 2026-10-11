@@ -167,6 +167,7 @@ const playerNameMapping: Record<string, { fullName: string }> = {
   "Cameron Atkinson": { fullName: "Cam Atkinson" },
   "Nicholas Paul": { fullName: "Nick Paul" },
   "Joseph Veleno": { fullName: "Joe Veleno" },
+  "Josh Mahura": { fullName: "Joshua Mahura" },
   "Janis Moser": { fullName: "J.J. Moser" },
   "Nathan Légaré": { fullName: "Nathan Legare" },
   "Mat?j Blümel": { fullName: "Matěj Blümel" },
@@ -883,13 +884,30 @@ async function loadPlayerIdCache(): Promise<Map<string, PlayerCacheRow[]>> {
   return cache;
 }
 
+export function getNstPlayerIdFromHref(href: string): number | null {
+  try {
+    const url = new URL(href, BASE_URL);
+    const ids = url.searchParams.getAll("playerid");
+    if (
+      url.protocol !== "https:" ||
+      !["data.naturalstattrick.com", "www.naturalstattrick.com", "naturalstattrick.com"].includes(url.host) ||
+      url.pathname !== "/playerreport.php" ||
+      ids.length !== 1 || !/^\d{7}$/.test(ids[0])
+    ) return null;
+    return Number(ids[0]);
+  } catch {
+    return null;
+  }
+}
+
 async function getPlayerIdByName(
   fullName: string,
-  position: string
+  position: string,
+  providerPlayerId?: number | null
 ): Promise<number | null> {
   const searchName = resolveMappedPlayerName(fullName);
 
-  const memoKey = `${searchName}|${String(position ?? "").toUpperCase()}`;
+  const memoKey = `${searchName}|${String(position ?? "").toUpperCase()}|${providerPlayerId ?? (providerPlayerId === null ? "invalid" : "absent")}`;
   if (playerIdMemo.has(memoKey)) return playerIdMemo.get(memoKey) ?? null;
 
   const requiresPositionCheck = ["Elias Pettersson", "Sebastian Aho"].includes(
@@ -899,23 +917,43 @@ async function getPlayerIdByName(
   try {
     const cache = await loadPlayerIdCache();
     const candidates = getPlayerCacheCandidates(cache, searchName);
+    if (providerPlayerId !== undefined) {
+      // NST playerreport IDs are NHL IDs (public.players' analytics key).
+      // Require the canonical name/explicit alias too; never fall back from a
+      // conflicting or malformed provider identity to a same-name player.
+      const match = candidates?.find((c) => c.id === providerPlayerId);
+      if (match && (!requiresPositionCheck || match.position === position.toUpperCase())) {
+        playerIdMemo.set(memoKey, match.id);
+        return match.id;
+      }
+      playerIdMemo.set(memoKey, null);
+      troublesomePlayers.push(`${fullName} (${position}) [Provider ID unresolved: ${providerPlayerId}]`);
+      return null;
+    }
     if (candidates && candidates.length > 0) {
       if (candidates.length === 1 && !requiresPositionCheck) {
         playerIdMemo.set(memoKey, candidates[0].id);
         return candidates[0].id;
       }
       const pos = String(position ?? "").toUpperCase();
-      const match = candidates.find((c) => c.position === pos);
-      if (match) {
-        playerIdMemo.set(memoKey, match.id);
-        return match.id;
+      const matches = candidates.filter((c) => c.position === pos);
+      if (matches.length === 1) {
+        playerIdMemo.set(memoKey, matches[0].id);
+        return matches[0].id;
       }
-      // Ambiguous or missing-position match. Fall through to DB query.
+      playerIdMemo.set(memoKey, null);
+      troublesomePlayers.push(`${fullName} (${position}) [Ambiguous canonical identity]`);
+      return null;
     }
   } catch (e: any) {
     console.warn(
       `Player cache lookup failed for "${searchName}" (${position}); falling back to DB query: ${e?.message ?? e}`
     );
+  }
+
+  if (providerPlayerId !== undefined) {
+    playerIdMemo.set(memoKey, null);
+    return null;
   }
 
   let query = supabase.from("players").select("id").eq("fullName", searchName);
@@ -924,7 +962,7 @@ async function getPlayerIdByName(
     query = query.eq("position", position.toUpperCase());
   }
 
-  const { data, error } = await query.limit(1).maybeSingle();
+  const { data, error } = await query.limit(2);
 
   if (error) {
     console.error(
@@ -934,7 +972,7 @@ async function getPlayerIdByName(
     return null;
   }
 
-  if (!data) {
+  if (!data || data.length !== 1) {
     if (!troublesomePlayers.some((p) => p.startsWith(fullName))) {
       troublesomePlayers.push(
         `${fullName} (${position}) [Mapped: ${searchName}]`
@@ -944,8 +982,8 @@ async function getPlayerIdByName(
     return null;
   }
 
-  playerIdMemo.set(memoKey, data.id);
-  return data.id;
+  playerIdMemo.set(memoKey, data[0].id);
+  return data[0].id;
 }
 
 async function upsertData(
@@ -1255,6 +1293,7 @@ async function fetchAndParseData(
       table.find("tbody tr").each((_, tr) => {
         const rowData: any = {};
         let playerFullName: string | null = null;
+        let providerPlayerId: number | null | undefined;
         let playerPosition: string | null = null;
         let playerTeam: string | null = null;
         const cells = $(tr).find("td");
@@ -1277,6 +1316,8 @@ async function fetchAndParseData(
 
             if (originalHeader === "Player") {
               playerFullName = $(td).text().trim();
+              const href = $(td).find("a").attr("href");
+              if (href !== undefined) providerPlayerId = getNstPlayerIdFromHref(href);
               return;
             }
             if (originalHeader === "Position") {
@@ -1346,6 +1387,7 @@ async function fetchAndParseData(
         ) {
           rowData["_player_full_name_temp"] = playerFullName;
           rowData["_player_position_temp"] = playerPosition;
+          rowData["_player_provider_id_temp"] = providerPlayerId;
           rowData["date_scraped"] = effectiveDate;
           rowData["season"] = parseInt(seasonId, 10);
           dataRowsCollected.push(rowData);
@@ -1369,7 +1411,8 @@ async function fetchAndParseData(
 
         const playerId = await getPlayerIdByName(
           playerFullName,
-          playerPosition
+          playerPosition,
+          row["_player_provider_id_temp"]
         );
 
         if (!playerId) {
@@ -1379,6 +1422,7 @@ async function fetchAndParseData(
         row["player_id"] = playerId;
         delete row["_player_full_name_temp"];
         delete row["_player_position_temp"];
+        delete row["_player_provider_id_temp"];
         Object.defineProperty(row, "__nstDebug", {
           value: {
             playerName: playerFullName,

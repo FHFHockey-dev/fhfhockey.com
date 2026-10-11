@@ -1,0 +1,118 @@
+@use "styles/vars" as v;
+@use "styles/panel" as p;
+
+// The original fixed-square tokens stay local to this isolated social variant.
+$share-square-size: 1080px;
+$share-preview-max: 540px;
+$share-square-padding: 48px;
+$share-title-size: 64px;
+$share-team-size: 46px;
+$share-value-size: 46px;
+$share-caption-size: 24px;
+$share-label-size: 26px;
+$share-rail-size: 8px;
+
+@font-face { font-family: "Share Roboto Condensed"; src: url("/fonts/social-share/RobotoCondensed-Variable.ttf") format("truetype"); font-weight: 100 900; font-display: block; }
+@font-face { font-family: "Share Train One"; src: url("/fonts/social-share/TrainOne-Regular.ttf") format("truetype"); font-weight: 400; font-display: block; }
+@font-face { font-family: "Share Martian Mono"; src: url("/fonts/social-share/MartianMono-Variable.ttf") format("truetype"); font-weight: 100 800; font-display: block; }
+
+.page {
+  width: 100%; min-width: 0; max-width: 1440px; margin: 0 auto;
+  padding: v.$space-md; color: v.$text-primary; font-family: "Share Roboto Condensed", v.$font-family-primary;
+  -webkit-font-smoothing: antialiased;
+  *, *::before, *::after { box-sizing: border-box; }
+  h1, h2, h3, p { margin: 0; }
+  h1 { font-size: v.$font-size-xxl; color: v.$color-white; text-wrap: balance; }
+  h2 { font-size: v.$font-size-lg; color: v.$color-white; }
+  a { color: v.$color-blue-300; }
+  button {
+    @include v.button-style;
+    min-height: v.$touch-target-min; font-weight: 700; font-size: v.$font-size-sm;
+    background: v.$background-dark; border-color: v.$border-soft; color: v.$text-primary;
+    &:hover:not(:disabled) { background: v.$surface-2; border-color: v.$primary-color; }
+    &[aria-pressed="true"] { background: v.$draft-action; border-color: v.$primary-color; color: v.$color-white; }
+    &:active:not(:disabled) { transform: scale(0.96); }
+  }
+  input, select {
+    min-height: v.$touch-target-min; max-width: 100%; min-width: 0; border: v.$border-subtle;
+    border-radius: v.$radius-control; background: v.$background-dark; color: v.$text-primary;
+    font: inherit; padding: v.$space-xs v.$space-sm; color-scheme: dark;
+    &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; box-shadow: v.$focus-ring; }
+  }
+}
+.heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: v.$space-sm; margin-bottom: v.$space-md; }
+.eyebrow { color: v.$color-blue-300; text-transform: uppercase; letter-spacing: v.$mobile-letter-spacing-wide; font-size: v.$font-size-xs; }
+.scope { color: v.$text-secondary; font-size: v.$font-size-sm; }
+.panel { @include p.panel-shell($padding: v.$space-md, $overflow: visible); min-width: 0; }
+.controls { display: flex; flex-wrap: wrap; gap: v.$space-sm; align-items: flex-end; label { display: grid; gap: v.$space-xs; min-width: 0; max-width: 100%; } }
+.days { margin: v.$space-md 0 0; padding: 0; border: 0; display: flex; flex-wrap: wrap; gap: v.$space-xs;
+  legend { margin-bottom: v.$space-xs; font-size: v.$font-size-sm; color: v.$text-secondary; }
+  button { flex: 1 0 90px; padding: v.$space-xs; display: grid; gap: v.$space-xxs; text-align: center; font-variant-numeric: tabular-nums; }
+  strong { color: v.$color-white; } span, small { font-size: v.$font-size-xs; }
+}
+.status { padding: v.$space-sm 0; font-size: v.$font-size-sm; p + p { margin-top: v.$space-xs; } }
+.workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: v.$space-md; }
+.panelHeader { @include p.panel-header($padding-y: v.$space-xs, $padding-x: 0); margin-bottom: v.$space-sm; flex-wrap: wrap; span { font-size: v.$font-size-sm; color: v.$text-secondary; } }
+.previewFrame { max-width: $share-preview-max; width: 100%; position: relative; overflow: hidden; margin: 0 auto; min-height: v.$control-height-md; }
+.actions { display: flex; flex-wrap: wrap; gap: v.$space-xs; margin-top: v.$space-sm; button:first-child { border-color: v.$primary-color; } }
+.explanation { color: v.$text-secondary; font-size: v.$font-size-sm; margin-bottom: v.$space-sm !important; }
+.teamList { list-style: none; padding: 0; margin: 0; max-height: 880px; overflow-y: auto;
+  li { padding: v.$space-sm 0; border-bottom: 1px solid v.$border-soft; }
+  li > div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: v.$space-xs; }
+  strong { color: v.$color-white; } span { color: v.$color-blue-300; font-variant-numeric: tabular-nums; }
+  p { font-size: v.$font-size-xs; color: v.$text-secondary; margin-top: v.$space-xs; overflow-wrap: anywhere; }
+}
+
+// The captured node has a fixed editorial layout. Only its outer preview scales.
+.square {
+  width: $share-square-size; height: $share-square-size; padding: $share-square-padding;
+  transform-origin: top left; position: absolute; inset: 0 auto auto 0; display: flex; flex-direction: column;
+  background: v.$background-dark; color: v.$color-white; font-family: "Share Roboto Condensed", sans-serif;
+  border: 1px solid v.$border-soft; font-variant-numeric: tabular-nums;
+  &::before { content: ""; position: absolute; inset: 0 0 auto; height: $share-rail-size; background: v.$primary-color; }
+}
+.squareBrand { display: flex; align-items: center; justify-content: space-between; gap: v.$space-md;
+  strong { font: 400 $share-team-size "Share Train One", sans-serif; color: v.$primary-color; }
+  span { font-size: $share-caption-size; letter-spacing: v.$mobile-letter-spacing-wide; color: v.$text-secondary; }
+  img { display: block; }
+}
+.squareTitle { margin: v.$space-sm 0;
+  h2 { font-size: $share-title-size; line-height: 1.05; font-weight: 900; white-space: pre-line; margin: v.$space-sm 0; color: v.$color-white; }
+  p { font-size: $share-label-size; color: v.$text-secondary; }
+  p:first-child { color: v.$color-blue-300; text-transform: uppercase; letter-spacing: v.$mobile-letter-spacing-wide; font-weight: 700; }
+}
+.leaders { flex: 1; display: flex; flex-direction: column; gap: v.$space-sm; min-height: 0; }
+.leader { @include p.panel-shell($padding: v.$space-md, $variant: flat); box-shadow: none; display: grid; grid-template-columns: 1fr 1.05fr; align-items: center; gap: v.$space-lg; min-height: 146px;
+  &::before { content: ""; position: absolute; inset: 0 auto 0 0; width: $share-rail-size; background: v.$primary-color; }
+}
+.teamIdentity { min-width: 0;
+  h3 { font-size: $share-team-size; font-weight: 800; line-height: 1.02; text-wrap: balance; overflow-wrap: normal; margin-top: v.$space-xs; }
+}
+.rank { font-size: $share-caption-size; color: v.$color-blue-300; font-weight: 700; }
+.metrics { display: grid; grid-template-columns: 1fr 1fr 1.3fr; align-items: center; gap: v.$space-sm;
+  div { display: grid; gap: v.$space-sm; text-align: center; }
+  strong { font: 600 $share-value-size "Share Martian Mono", monospace; color: v.$color-white; }
+  span { font-size: $share-caption-size; color: v.$text-secondary; line-height: 1.1; }
+}
+.noGames { font-size: $share-team-size; color: v.$text-secondary; padding-top: v.$space-xxl; }
+.itinerary { margin-top: v.$space-sm;
+  h3 { font-size: $share-label-size; color: v.$color-blue-300; margin-bottom: v.$space-sm; }
+  > p { font-size: $share-caption-size; margin-top: v.$space-xs; }
+}
+.itineraryGames { display: grid; grid-template-columns: 1fr 1fr; gap: v.$space-sm v.$space-lg;
+  > div { padding: v.$space-sm 0; border-top: 1px solid v.$border-soft; display: grid; gap: v.$space-xs; }
+  strong { font-size: $share-label-size; color: v.$color-white; }
+  span { font-size: $share-caption-size; color: v.$text-secondary; }
+}
+.squareFooter { margin-top: v.$space-md; padding-top: v.$space-xs; border-top: 1px solid v.$border-soft; font-size: $share-caption-size; line-height: 1.25; color: v.$text-secondary;
+  p + p { margin-top: v.$space-xs; }
+  p strong { color: v.$color-blue-300; }
+}
+.watermark { display: block; margin-top: v.$space-sm; color: v.$color-blue-300; letter-spacing: v.$mobile-letter-spacing-wide; }
+@media (max-width: v.$breakpoint-tablet) {
+  .page { padding: v.$space-xs; }
+  .workspace { grid-template-columns: minmax(0, 1fr); }
+  .panel { padding: v.$space-sm; }
+  .controls { label { width: 100%; } input, select { width: 100%; } }
+  .teamList { max-height: none; }
+}

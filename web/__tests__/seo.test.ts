@@ -12,11 +12,11 @@ describe("public SEO boundaries", () => {
     expect(SITE_URL).not.toContain("undefined");
   });
 
-  it("keeps account, admin, auth, sandbox and draft policy pages out of search", () => {
-    for (const path of ["/auth", "/auth/callback?code=x", "/account/", "/db/player-aliases", "/privacy", "/cssTestingGrounds", "/404", "/underlying-stats/xg/operations"]) {
+  it("keeps account, admin, auth, sandbox, social and draft policy pages out of search", () => {
+    for (const path of ["/auth", "/auth/callback?code=x", "/account/", "/db/player-aliases", "/privacy", "/cssTestingGrounds", "/404", "/underlying-stats/xg/operations", "/social-share", "/social-share/", "/social-share/[format]", "/social-share/game-grid?weekStart=2026-10-05#preview", "/social-share/remaining-week"]) {
       expect(isNoindexPath(path), path).toBe(true);
     }
-    for (const path of ["/", "/blog", "/blog/authors", "/game-grid/7-Day-Forecast", "/stats/player/8478402", "/underlying-stats", "/draft-dashboard"]) {
+    for (const path of ["/", "/blog", "/blog/authors", "/game-grid/7-Day-Forecast", "/stats/player/8478402", "/underlying-stats", "/draft-dashboard", "/social-shareable"]) {
       expect(isNoindexPath(path), path).toBe(false);
     }
   });
@@ -26,7 +26,7 @@ describe("public SEO boundaries", () => {
     const { withDefaultConfig } = await import(new URL("../node_modules/next-sitemap/dist/esm/utils/defaults.js", import.meta.url).href);
     const { UrlSetBuilder } = await import(new URL("../node_modules/next-sitemap/dist/esm/builders/url-set-builder.js", import.meta.url).href);
     const config = withDefaultConfig(sitemapConfig);
-    const paths = ["/", "/blog", "/auth", "/auth/callback", "/db", "/db/player-aliases", "/account", "/privacy", "/cssTestingGrounds", "/game-grid", "/game-grid/[mode]", "/stats/player/[playerId]", "/blog/substack/copied-post", "/server-sitemap.xml"];
+    const paths = ["/", "/blog", "/auth", "/auth/callback", "/db", "/db/player-aliases", "/account", "/privacy", "/cssTestingGrounds", "/game-grid", "/game-grid/[mode]", "/stats/player/[playerId]", "/blog/substack/copied-post", "/server-sitemap.xml", "/social-share", "/social-share/[format]", "/social-share/game-grid", "/social-share/remaining-week"];
     const manifest = {
       build: { pages: Object.fromEntries(paths.map((path) => [path, []])) },
       preRender: { routes: { "/blog/published-post": {} }, notFoundRoutes: [] },
