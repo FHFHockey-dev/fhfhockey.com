@@ -144,6 +144,8 @@ export default function RosterScheduleOptimizer() {
   const [preservation, setPreservation] = useState<{ phase: "idle" | "preparing" | "held" | "testing" | "restoring" | "invalid"; text: string }>({ phase: savedJournal.raw !== null ? "invalid" : "idle", text: savedJournal.raw !== null ? "Saved preservation session found. Normal writers are paused; restore with the original account and context." : "" });
   const preservationRef = useRef({ phase: preservation.phase, backup: savedJournal.value?.backup ?? null as WorkspacePreservation | null,
     expected: savedJournal.value?.expected ?? [] as PreservedKey[], lease: null as { release: () => void } | null, exported: savedJournal.value?.exported ?? false, restored: savedJournal.value?.restored ?? false });
+  const preservationPhaseRef = useRef(preservation.phase);
+  preservationPhaseRef.current = preservation.phase;
   const skipRestoredPersist = useRef<PlanningWorkspace | null>(null);
   const [otherWritersExcluded, setOtherWritersExcluded] = useState(false);
   const pendingRequests = useRef(new Set<Promise<Response>>());
@@ -263,7 +265,12 @@ export default function RosterScheduleOptimizer() {
     if (workspace === skipRestoredPersist.current) { skipRestoredPersist.current = null; return; }
     if (hydrated) void persistLocal(() => workspaceRef.current === workspace ? writeWorkspace(window.localStorage, workspace, history.current) : null);
   }, [hydrated, workspace, persistLocal]);
-  useEffect(() => () => { const held = preservationRef.current; held.phase = "invalid"; held.lease?.release(); held.lease = null; }, []);
+  useEffect(() => {
+    const held = preservationRef.current;
+    // Development effect replay retires this same ref before setting it up again.
+    if (preservationPhaseRef.current === "idle" && savedJournal.raw === null && !held.backup) held.phase = "idle";
+    return () => { held.phase = "invalid"; held.lease?.release(); held.lease = null; };
+  }, [savedJournal]);
   useEffect(() => {
     const changed = (event: StorageEvent) => {
       const held = preservationRef.current;

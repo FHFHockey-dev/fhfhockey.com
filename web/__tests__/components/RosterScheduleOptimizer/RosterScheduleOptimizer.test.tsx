@@ -1,5 +1,6 @@
 import { webcrypto } from "node:crypto";
 import { Blob as NodeBlob } from "node:buffer";
+import { StrictMode } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { BenchDecision, GameForecast, PlanEvaluation, PlanIntent, PlanStep, PlanningData, PlanningPlayer, PlanningResult, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
@@ -238,6 +239,28 @@ describe("provisional similar projected points display", () => {
 });
 
 describe("RosterScheduleOptimizer workspace", () => {
+  it("loads planning data and settles access after development effect replay", async () => {
+    authState.user = { id: "strict-mode-manager" };
+    const requests = vi.fn((url: string) => Promise.resolve({ ok: true, json: async () => ({ success: true,
+      data: url.includes("/data?") ? data : url.endsWith("/access") ? { eligible: true, capabilities: ["rso_sync"] } : null }) }));
+    vi.stubGlobal("fetch", requests);
+    render(<StrictMode><RosterScheduleOptimizer /></StrictMode>);
+    await waitFor(() => expect(requests.mock.calls.some(([url]) => url.includes("/data?"))).toBe(true));
+    await waitFor(() => expect(requests.mock.calls.some(([url]) => url.endsWith("/access"))).toBe(true));
+    await waitFor(() => expect(screen.queryByText("Checking access for provider synchronization…")).toBeNull());
+    expect(screen.queryByText("Preservation has suspended application requests.")).toBeNull();
+  });
+  it("keeps an existing preservation journal held during development effect replay", async () => {
+    const original = JSON.stringify(defaultWorkspace());
+    localStorage.setItem(WORKSPACE_KEY, original);
+    sessionStorage.setItem(WORKSPACE_PRESERVATION_JOURNAL, "unreadable journal");
+    const requests = vi.fn(); vi.stubGlobal("fetch", requests);
+    render(<StrictMode><RosterScheduleOptimizer /></StrictMode>);
+    await screen.findByText(/Saved preservation session found/);
+    expect(requests).not.toHaveBeenCalled();
+    expect(localStorage.getItem(WORKSPACE_KEY)).toBe(original);
+    expect(sessionStorage.getItem(WORKSPACE_PRESERVATION_JOURNAL)).toBe("unreadable journal");
+  });
   const seedFutureDisplayWorkspace = () => {
     vi.stubGlobal("fetch", fetchMock);
     vi.stubGlobal("innerWidth", 1440);
