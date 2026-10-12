@@ -8,6 +8,555 @@ from pathlib import Path
 import pytest
 
 
+def pp_support_fixture(**changes):
+    values = {"row": {"sog_per_60_last5": 12, "toi_seconds_total_last5": 600},
+        "baseline_weight": 0.8, "context_multiplier": 1.1, "prior_minutes": 30,
+        "exposure_complete": True}
+    values.update(changes)
+    return values
+
+
+def test_pp_support_uses_selected_window_and_preserves_context_and_baseline():
+    from modeling.player_forecasts.pp_shot_support import pp_rate_ablation
+    fixture = pp_support_fixture()
+    fixture["row"].update(toi_seconds_total_all=30000, toi_seconds_avg_last5=120,
+                          ev_toi_seconds_total_all=600000)
+    result = pp_rate_ablation(**fixture)
+    assert result["window"] == "last5" and result["exposureMinutes"] == 10
+    assert result["candidateWeight"] == 0.25
+    assert result["baselineRate"] == pytest.approx(12.16)
+    assert result["candidateRate"] == pytest.approx(9.3)
+    fixture["row"]["toi_seconds_avg_last5"] = 999
+    fixture["row"]["ev_toi_seconds_total_all"] = 1
+    assert pp_rate_ablation(**fixture) == result
+
+
+def test_pp_support_matches_all_window_and_canonical_zero_before_legacy():
+    from modeling.player_forecasts.pp_shot_support import pp_rate_ablation
+    result = pp_rate_ablation(**pp_support_fixture(row={"sog_per_60_avg_all": 12,
+        "toi_seconds_total_all": 1800}))
+    assert result["window"] == "all" and result["candidateWeight"] == 0.5
+    zero = pp_rate_ablation(**pp_support_fixture(row={"sog_per_60_last5": 0,
+        "sog_per_60_avg_last5": 12, "toi_seconds_total_last5": 300}))
+    assert zero["rawRate"] == 0 and zero["window"] == "last5"
+    assert zero["candidateRate"] > 0 and zero["fallbackFlag"] is None
+
+
+def test_pp_support_is_cumulative_exposure_not_average_minutes_or_ev_support():
+    from modeling.player_forecasts.pp_shot_support import pp_rate_ablation
+    short = pp_rate_ablation(**pp_support_fixture(row={"sog_per_60_last5": 12,
+        "toi_seconds_total_last5": 120, "toi_seconds_avg_last5": 120}))
+    long = pp_rate_ablation(**pp_support_fixture(row={"sog_per_60_last5": 12,
+        "toi_seconds_total_last5": 600, "toi_seconds_avg_last5": 120}))
+    assert short["baselineRate"] == long["baselineRate"]
+    assert short["candidateWeight"] < long["candidateWeight"]
+    assert short["candidateRate"] < long["candidateRate"]
+
+
+@pytest.mark.parametrize("seconds,complete", [(None, True), (-1, True), (float("nan"), True),
+    (False, True), (600, False)])
+def test_pp_support_missing_or_unverified_exposure_retains_baseline(seconds, complete):
+    from modeling.player_forecasts.pp_shot_support import pp_rate_ablation
+    result = pp_rate_ablation(**pp_support_fixture(row={"sog_per_60_last5": 12,
+        "toi_seconds_total_last5": seconds, "toi_seconds_total_all": 30000}, exposure_complete=complete))
+    assert result["candidateRate"] == result["baselineRate"]
+    assert result["candidateWeight"] is None
+    assert result["fallbackFlag"] == "missing_or_unverified_pp_exposure"
+
+
+def test_pp_support_missing_rate_and_contradictory_zero_have_explicit_fallbacks():
+    from modeling.player_forecasts.pp_shot_support import pp_rate_ablation
+    missing = pp_rate_ablation(**pp_support_fixture(row={"toi_seconds_total_all": 600}))
+    assert missing["fallbackFlag"] == "missing_pp_rate"
+    assert missing["candidateRate"] == missing["baselineRate"]
+    zero = pp_rate_ablation(**pp_support_fixture(row={"sog_per_60_last5": 0,
+        "toi_seconds_total_last5": 0}))
+    assert zero["candidateWeight"] == 0 and zero["candidateRate"] == 8
+    contradiction = pp_rate_ablation(**pp_support_fixture(row={"sog_per_60_last5": 12,
+        "toi_seconds_total_last5": 0}))
+    assert contradiction["candidateRate"] == contradiction["baselineRate"]
+    assert contradiction["fallbackFlag"] == "positive_rate_without_exposure"
+
+
+@pytest.mark.parametrize("changes", [{"prior_minutes": 10}, {"prior_minutes": True},
+    {"baseline_weight": 1.1}, {"baseline_weight": float("nan")}, {"context_multiplier": -1},
+    {"exposure_complete": "true"}, {"row": {"sog_per_60_last5": float("nan")}}])
+def test_pp_support_rejects_invalid_parameters(changes):
+    from modeling.player_forecasts.pp_shot_support import pp_rate_ablation
+    with pytest.raises(ValueError):
+        pp_rate_ablation(**pp_support_fixture(**changes))
+
+
+def test_pp_support_grid_keeps_rate_bounds_and_strengthens_prior_as_kappa_grows():
+    from modeling.player_forecasts.pp_shot_support import PRIOR_MINUTES, pp_rate_ablation
+    results = [pp_rate_ablation(**pp_support_fixture(prior_minutes=k)) for k in PRIOR_MINUTES]
+    assert [r["candidateWeight"] for r in results] == sorted([r["candidateWeight"] for r in results], reverse=True)
+    assert all(2 <= r["candidateRate"] <= 28 for r in results)
+    assert results[0]["candidateRate"] > results[-1]["candidateRate"] > 8
+
+
+def test_pp_support_export_is_deterministic_and_inventory_cannot_qualify_forecasts(tmp_path):
+    from modeling.player_forecasts.pp_shot_support import export_engineering
+    inventory = tmp_path / "inventory.json"
+    inventory.write_text(json.dumps({"predictiveEvidenceQualified": True, "testSlates": 1000}))
+    first, second = tmp_path / "first", tmp_path / "second"
+    report = export_engineering(first, inventory)
+    assert export_engineering(second, inventory) == report
+    assert report["predictiveEvidenceQualified"] is False and report["decision"] == "retain_baseline"
+    assert report["predictiveTrials"] == [] and report["holdoutResults"] is None
+    assert report["selectedPriorMinutes"] is None and report["accuracyImprovement"] is None
+    for file in first.iterdir():
+        assert file.read_bytes() == (second / file.name).read_bytes()
+    protocol = json.loads((first / "protocol.json").read_text())
+    assert protocol["split"]["protectedInclusive"] == ["2026-01-03", "2026-04-16"]
+    assert protocol["split"]["dates"] is None and protocol["primaryLoss"].startswith("mean_squared_error")
+    with pytest.raises(FileExistsError):
+        export_engineering(first)
+    assert json.loads((first / "report.json").read_text()) == report
+
+
+def test_pp_support_export_refuses_baseline_drift_and_repo_output_before_writing(tmp_path, monkeypatch):
+    from modeling.player_forecasts import pp_shot_support as support
+    with pytest.raises(RuntimeError, match="outside"):
+        support.export_engineering(support.repository_root() / "output" / "pp-support")
+    first_dependency = next(iter(support.BASELINE_DEPENDENCIES))
+    monkeypatch.setitem(support.BASELINE_DEPENDENCIES, first_dependency, "0" * 64)
+    output = tmp_path / "drift"
+    with pytest.raises(ValueError, match="dependency changed"):
+        support.export_engineering(output)
+    assert not output.exists()
+
+
+def pp_capture_fixture(tmp_path, monkeypatch):
+    """Fictional producer receipts test mechanics, never forecasting accuracy."""
+    from copy import deepcopy
+    from datetime import datetime, timezone
+    from modeling.player_forecasts import pp_evidence_capture as capture
+    from modeling.player_forecasts.pp_shot_support import PROTOCOL
+
+    clock = [datetime(2026, 10, 11, 19, tzinfo=timezone.utc)]
+    monkeypatch.setattr(capture, "_now", lambda: clock[0])
+    root = tmp_path / "supplied"
+    root.mkdir()
+    files = {}
+
+    def put(name, value, pointer=""):
+        raw = (json.dumps(value, indent=2) + "\n").encode()
+        (root / name).write_bytes(raw)
+        files[name] = {"path": name, "sha256": hashlib.sha256(raw).hexdigest()}
+        return {**files[name], "pointer": pointer}
+
+    def ref(name, pointer=""):
+        return {**files[name], "pointer": pointer}
+
+    def null():
+        return {"value": None, "derivation_ref": None}
+
+    membership = {"canonicalId": 1, "nhlId": 101, "seasonId": 20262027, "teamId": 10,
+        "membershipCreatedAt": ["2026-10-01T00:00:00Z"], "identityUpdatedAt": None, "revision": "roster-original"}
+    context = {"version": "forge-issued-context-v1", "game": {"id": 2026020001, "date": "2026-10-12", "seasonId": 20262027,
+        "startTime": "2026-10-12T00:00:00Z", "homeTeamId": 10, "awayTeamId": 20}, "schedule": [], "roster": [membership],
+        "observedAt": "2026-10-11T17:59:00Z"}
+    rolling = {"player_id": 101, "game_id": 2026020000, "game_date": "2026-10-10", "season": 20262027,
+        "strength_state": "pp", "sog_per_60_last5": 12, "sog_per_60_avg_last5": None, "sog_per_60_all": None,
+        "sog_per_60_avg_all": None, "toi_seconds_total_last5": 600, "toi_seconds_total_all": None}
+    read = {"request": [{"method": "from", "args": ["rolling_player_game_metrics"]},
+        {"method": "select", "args": [",".join(rolling), {"count": "exact"}]}, {"method": "in", "args": ["player_id", [101]]},
+        {"method": "eq", "args": ["strength_state", "pp"]}, {"method": "lt", "args": ["game_date", "2026-10-12"]},
+        {"method": "gt", "args": ["game_date", "2025-10-12"]}, {"method": "order", "args": ["game_date", {"ascending": False}]},
+        {"method": "order", "args": ["player_id", {"ascending": True}]}, {"method": "order", "args": ["game_id", {"ascending": False}]},
+        {"method": "range", "args": [0, 499]}], "result": {"data": [rolling], "count": 1, "error": None}, "receivedAt": "2026-10-11T17:59:00Z"}
+    projection = {"run_id": "original-run", "player_id": 1, "game_id": 2026020001, "team_id": 10, "horizon_games": 1,
+        "proj_shots_pp": 0.5, "proj_toi_pp_seconds": 120}
+    source = {"fixture": "fictional", "game": {"id": 2026020001, "date": "2026-10-12", "type": 2, "homeTeamId": 10, "awayTeamId": 20},
+        "revision": {"id": "original-revision", "game_id": 2026020001, "run_id": "original-run", "input_snapshot_id": "original-snapshot",
+            "slate_date": "2026-10-12", "decision_as_of": "2026-10-11T18:00:00Z", "published_at": "2026-10-11T18:01:00Z",
+            "payload": {"players": [projection], "goalies": [], "codeVersion": "original-code", "modelMode": "baseline"}},
+        "observation": {"id": "original-snapshot", "provider": "forge", "dataset_key": "forge-run-inputs-v1", "entity_key": "original-run",
+            "available_at": "2026-10-11T18:00:00Z", "payload_hash": "a" * 64, "payload": {"version": "forge-inputs-v1",
+                "runId": "original-run", "slateDate": "2026-10-12", "decisionAsOf": "2026-10-11T18:00:00Z",
+                "inputCutoff": "2026-10-11T18:00:00Z", "capturedAt": "2026-10-11T18:00:00Z", "codeVersion": "original-code",
+                "modelMode": "baseline", "horizonGames": 1, "gameIds": [2026020001], "replayClassification": "captured_live",
+                "reads": [read], "outputHash": "b" * 64, "goalieStarts": [], "inputProvenance": {"issuedContexts": [context]}}}}
+    put("original.json", source)
+    protocol_ref = put("protocol.json", PROTOCOL)
+    bundle_ref = put("code.json", {"commit_sha": "c" * 40, "fixture": "fictional"})
+    config_ref = put("config.json", {})
+    proof_ref = put("proof.json", {"fixture": "fictional", "definition": "unit-test receipts only"})
+    receipt = {"source_ref": ref("original.json"), "source_revision": "original", "published_at": None,
+        "received_at": "2026-10-11T17:59:00Z", "available_at": None}
+    game = {"game_id": 2026020001, "slate_date": "2026-10-12", "season_id": 20262027, "game_type": 2, "home_team_id": 10,
+        "away_team_id": 20, "horizon_games": 1, "cutoff_at": "2026-10-11T18:00:00Z", "source_query_cutoff_at": "2026-10-11T18:00:00Z",
+        "maximum_feature_available_at": None, "issued_at": "2026-10-11T18:01:00Z", "scheduled_start_at": "2026-10-12T00:00:00Z",
+        "frozen_at": None, "run_id": "original-run", "revision_id": "original-revision", "input_snapshot_id": "original-snapshot",
+        "input_snapshot_hash": "a" * 64, "output_hash": "b" * 64, "captured_code_version": "original-code", "resolved_code_sha": "c" * 40,
+        "code_bundle_ref": bundle_ref, "nonsecret_config_ref": config_ref, "frozen_board_source_ref": None,
+        "issued_source_ref": ref("original.json"), "issued_context_ref": ref("original.json", "/observation/payload/inputProvenance/issuedContexts/0"),
+        "schedule_receipts": [receipt], "population_policy": {"id": "cutoff-roster", "definition": "all cutoff-known F/D candidates",
+            "declared_at": "2026-10-11T17:00:00Z", "candidate_player_ids": [1], "roster_receipts": [receipt],
+            "completeness": "unknown", "completeness_proof_ref": None}}
+    window = {"membership_rule_ref": proof_ref, "weighting_recipe_ref": proof_ref, "members": [{"game_id": 2026020000,
+        "team_id": 10, "source_ref": ref("original.json", "/observation/payload/reads/0/result/data/0"), "pp_seconds": 600,
+        "pp_shots": 2, "rate_weight": 1, "receipt": receipt}], "cumulative_pp_seconds": 600,
+        "original_rate_denominator_seconds": 600, "coverage": "complete", "completeness_proof_ref": proof_ref}
+    opportunity = {"key": "2026020001:10:1", "game_id": 2026020001, "team_id": 10, "opponent_team_id": 20,
+        "canonical_player_id": 1, "nhl_player_id": 101, "membership_revision": "roster-original",
+        "membership_ref": ref("original.json", "/observation/payload/inputProvenance/issuedContexts/0/roster/0"), "position": "F",
+        "pp_input": {"original_read_index": 0, "original_row_pointer": "/data/0", "supplement_ref": None,
+            "row": {key: rolling[key] for key in capture.RATE_FIELDS + capture.EXPOSURE_FIELDS}, "windows": {"last5": window, "all": None},
+            "baseline_weight": null(), "context": {key: null() for key in ("shot_quality", "on_ice", "team", "rest_schedule")}},
+        "issued_projection_ref": ref("original.json", "/revision/payload/players/0"),
+        "baseline_pp_shots": {"value": 0.5, "derivation_ref": ref("original.json", "/revision/payload/players/0/proj_shots_pp")},
+        "production_conditioning": "conditional_playing", "workload": {"conditional_pp_seconds": {"value": 120,
+            "derivation_ref": ref("original.json", "/revision/payload/players/0/proj_toi_pp_seconds")}, "conditioning": "conditional_playing", "contract_ref": None},
+        "participation": {"probability": null(), "status": "missing", "evidence_refs": [], "contract_ref": None},
+        "integration": {"basis": "unavailable", "contract_ref": None, "joint_scenarios_ref": None, "unconditional_pp_shots": null()},
+        "segments": {"rookie": None, "traded": None, "availability_changed": None, "evidence_refs": []}}
+    coverage = {"games": [{"game_id": 2026020001, "cutoff_candidate_count": 1, "opportunity_count": 1,
+        "issued_pp_count": 1, "qualified_window_count": 0, "unconditional_count": 0, "final_label_count": 0}], "exclusions": [
+            {"opportunity_key": opportunity["key"], "stage": "outcome", "reason": "not settled", "evidence_refs": []}]}
+    development = {"windows": [{"start": "2026-10-12", "end": "2026-10-12", "use": "unknown", "purpose": "original disclosure",
+        "recorded_at": "2026-10-11T17:00:00Z", "evidence_refs": []}], "retrospective_or_prospective": "prospective"}
+
+    def request():
+        def refresh(value):
+            if isinstance(value, dict):
+                if set(value) == {"path", "sha256", "pointer"}:
+                    value["sha256"] = files[value["path"]]["sha256"]
+                else:
+                    for child in value.values():
+                        refresh(child)
+            elif isinstance(value, list):
+                for child in value:
+                    refresh(child)
+        for payload in (game, opportunity, coverage, development):
+            refresh(payload)
+        game_ref = put("games.json", [game])
+        row_ref = put("opportunities.json", [opportunity])
+        coverage_ref = put("coverage.json", coverage)
+        dev_ref = put("development.json", development)
+        value = {"version": capture.REQUEST_VERSION, "packet_id": "fictional-pregame", "scopes": [{"game_id": game["game_id"], "slate_date": game["slate_date"]}],
+            "files": list(files.values()), "protocol_ref": protocol_ref, "games_ref": game_ref, "opportunities_ref": row_ref,
+            "coverage_ref": coverage_ref, "development_use_ref": dev_ref}
+        path = root / "request.json"
+        path.write_text(json.dumps(value))
+        return path
+
+    def seal_request(parent, *, nonparticipant=False, packet_id="fictional-sealed"):
+        clock[0] = datetime(2026, 10, 12, 4, tzinfo=timezone.utc)
+        frozen = deepcopy(source)
+        frozen["frozen"] = {"game_id": game["game_id"], "revision_id": game["revision_id"],
+            "scheduled_start_at": game["scheduled_start_at"], "frozen_at": "2026-10-12T00:01:00Z"}
+        frozen_ref = put("frozen.json", frozen)
+        label = {"opportunity_key": opportunity["key"], "game_id": game["game_id"], "team_id": 10, "canonical_player_id": 1,
+            "nhl_player_id": 101, "target_key": "PP_SHOTS_ON_GOAL", "target_version": "forge-pp-shots-outcome-v1",
+            "definition_ref": proof_ref, "revision_id": "outcome-v1", "supersedes_revision_id": None, "finality": "final",
+            "available_at": "2026-10-12T03:00:00Z", "receipts": [{**receipt, "source_ref": proof_ref, "source_revision": "final",
+                "received_at": "2026-10-12T03:00:00Z"}], "played": not nonparticipant, "pp_seconds": 0 if nonparticipant else 120,
+            "pp_shots": 0 if nonparticipant else 1, "total_shots": 0 if nonparticipant else 3, "coverage": "complete",
+            "completeness_proof_ref": proof_ref, "zero_basis": "certified_nonparticipation" if nonparticipant else None}
+        trace_ref = put("official-label-trace.json", {"fixture": "fictional", "played": label["played"],
+            **{key: label[key] for key in ("pp_seconds", "pp_shots", "total_shots")}})
+        if nonparticipant:
+            label["completeness_proof_ref"] = put("zero-proof.json", {"version": "forge-pp-zero-proof-v1", "opportunity_key": opportunity["key"],
+                "zero_basis": label["zero_basis"], "fields": [{"field": key, "source_ref": ref("official-label-trace.json", f"/{key}")}
+                    for key in ("pp_seconds", "pp_shots", "total_shots")], "evidence_refs": [trace_ref]})
+        outcomes_ref = put("labels-v1.json", [label])
+        final_coverage = deepcopy(coverage)
+        final_coverage["games"][0]["final_label_count"] = 1
+        final_coverage["exclusions"] = []
+        coverage_ref = put("coverage-final.json", final_coverage)
+        new_files = [files[name] for name in ("frozen.json", "labels-v1.json", "coverage-final.json", "official-label-trace.json")]
+        if nonparticipant:
+            new_files.append(files["zero-proof.json"])
+        value = {"version": capture.SEAL_VERSION, "packet_id": packet_id, "parent_manifest_sha256": hashlib.sha256(parent.read_bytes()).hexdigest(),
+            "files": new_files, "frozen_sources": [{"game_id": game["game_id"], "source_ref": frozen_ref}],
+            "outcomes_ref": outcomes_ref, "coverage_ref": coverage_ref}
+        path = root / "seal.json"
+        path.write_text(json.dumps(value))
+        return path, value, label
+
+    return capture, clock, root, source, game, opportunity, coverage, put, ref, request, seal_request
+
+
+def test_pp_capture_records_original_bytes_privately_and_never_qualifies(tmp_path, monkeypatch):
+    capture, _, root, _, _, _, _, _, _, request, _ = pp_capture_fixture(tmp_path, monkeypatch)
+    output = tmp_path / "pregame"
+    request_path = request()
+    original_request = request_path.read_bytes()
+    result = capture.record_pregame(request_path, output)
+    manifest = json.loads((output / "manifest.json").read_text())
+    assert result["decision"] == "retain_baseline" and result["predictive_qualification"] == "pending"
+    assert result["training_run"] is False and result["serving_enabled"] is False
+    assert manifest["outcomes_ref"] is None and manifest["checkpoint_policy"] == "awaiting_frozen_final_pregame"
+    assert (output / "original.json").read_bytes() == (root / "original.json").read_bytes()
+    receipt = json.loads((output / manifest["capture_receipt_ref"]["path"]).read_text())
+    assert (output / receipt["request_ref"]["path"]).read_bytes() == original_request
+    assert output.stat().st_mode & 0o777 == 0o700
+    assert all(path.stat().st_mode & 0o777 == 0o600 for path in output.rglob("*.json"))
+    before = {str(path): path.read_bytes() for path in output.rglob("*.json")}
+    with pytest.raises(FileExistsError):
+        capture.record_pregame(request(), output)
+    assert before == {str(path): path.read_bytes() for path in output.rglob("*.json")}
+
+
+@pytest.mark.parametrize("nonparticipant", [False, True])
+def test_pp_capture_seals_freeze_and_labels_without_rewriting_pregame(tmp_path, monkeypatch, nonparticipant):
+    capture, _, _, _, _, _, _, _, _, request, seal_request = pp_capture_fixture(tmp_path, monkeypatch)
+    draft, sealed = tmp_path / "draft", tmp_path / "sealed"
+    capture.record_pregame(request(), draft)
+    before = {path.relative_to(draft): path.read_bytes() for path in draft.rglob("*.json")}
+    seal, _, _ = seal_request(draft / "manifest.json", nonparticipant=nonparticipant)
+    result = capture.seal_packet(draft / "manifest.json", seal, sealed)
+    manifest = json.loads((sealed / "manifest.json").read_text())
+    assert result["version"] == capture.PACKET_VERSION and result["predictive_qualification"] == "pending"
+    assert manifest["checkpoint_policy"] == "frozen_final_pregame"
+    assert before == {path.relative_to(draft): path.read_bytes() for path in draft.rglob("*.json")}
+    for name, raw in before.items():
+        if str(name) != "manifest.json":
+            assert (sealed / name).read_bytes() == raw
+    assert manifest["opportunities_ref"] == json.loads(before[Path("manifest.json")])["opportunities_ref"]
+    ledger = json.loads((sealed / manifest["coverage_ref"]["path"]).read_text())
+    assert ledger["exclusions"] == json.loads(before[Path("coverage.json")])["exclusions"]
+    receipt = json.loads((sealed / manifest["capture_receipt_ref"]["path"]).read_text())
+    assert (sealed / receipt["parent_manifest_ref"]["path"]).read_bytes() == before[Path("manifest.json")]
+
+
+@pytest.mark.parametrize("case", ["late", "historical", "cutoff", "population", "row", "window", "coverage", "conditioning", "availability", "hash"])
+def test_pp_capture_rejects_inconsistent_prospective_evidence(tmp_path, monkeypatch, case):
+    capture, clock, root, source, game, row, coverage, put, _, request, _ = pp_capture_fixture(tmp_path, monkeypatch)
+    if case == "late":
+        clock[0] = capture._instant(game["scheduled_start_at"])
+    elif case == "historical":
+        source["observation"]["payload"]["replayClassification"] = "historical_reconstruction"
+        put("original.json", source)
+    elif case == "cutoff":
+        source["observation"]["payload"]["reads"][0]["receivedAt"] = "2026-10-11T18:00:01Z"
+        put("original.json", source)
+    elif case == "population":
+        game["population_policy"]["candidate_player_ids"].append(2)
+    elif case == "row":
+        row["pp_input"]["original_row_pointer"] = "/data/1"
+    elif case == "window":
+        row["pp_input"]["windows"]["last5"]["cumulative_pp_seconds"] = 601
+    elif case == "coverage":
+        coverage["games"][0]["issued_pp_count"] = 0
+    elif case == "conditioning":
+        row["integration"]["unconditional_pp_shots"] = row["baseline_pp_shots"].copy()
+    elif case == "availability":
+        game["maximum_feature_available_at"] = "2026-10-11T17:59:00Z"
+    path = request()
+    if case == "hash":
+        (root / "original.json").write_text("{}")
+    with pytest.raises(ValueError):
+        capture.record_pregame(path, tmp_path / "rejected")
+    assert not (tmp_path / "rejected").exists()
+
+
+def test_pp_capture_protects_holdout_before_loading_sources_and_refuses_repo_paths(tmp_path, monkeypatch):
+    capture, _, root, _, game, _, _, _, _, request, _ = pp_capture_fixture(tmp_path, monkeypatch)
+    path = request()
+    (root / "original.json").unlink()
+    value = json.loads(path.read_text())
+    value["scopes"][0]["slate_date"] = "2026-02-01"
+    path.write_text(json.dumps(value))
+    with pytest.raises(ValueError, match="protected"):
+        capture.record_pregame(path, tmp_path / "protected")
+    game["slate_date"] = "2026-02-01"
+    path = request()
+    value = json.loads(path.read_text())
+    value["scopes"][0]["slate_date"] = "2026-10-12"
+    path.write_text(json.dumps(value))
+    with pytest.raises(ValueError, match="protected"):
+        capture.record_pregame(path, tmp_path / "false-header")
+    with pytest.raises(RuntimeError, match="outside"):
+        capture._publish(capture.repository_root() / "research-data", capture._Store(), {})
+
+
+def test_pp_capture_rejects_symlinks_traversal_and_ambiguous_json(tmp_path):
+    from modeling.player_forecasts import pp_evidence_capture as capture
+    source = tmp_path / "source.json"
+    source.write_text("{}")
+    linked = tmp_path / "linked.json"
+    linked.symlink_to(source)
+    with pytest.raises(ValueError, match="symlink"):
+        capture.record_pregame(linked, tmp_path / "packet")
+    for path in ("../secret.json", "/absolute.json", "a/./b.json", "https://example.com"):
+        with pytest.raises(ValueError):
+            capture._relative(path)
+    for raw in (b'{"a":1,"a":2}', b'{"a":NaN}', b'{"a":1e309}'):
+        with pytest.raises(ValueError):
+            capture._json(raw)
+    assert capture._pointer({"a/b": {"~key": [7]}}, "/a~1b/~0key/0") == 7
+    with pytest.raises(ValueError):
+        capture._pointer([7], "/00")
+
+
+@pytest.mark.parametrize("case", ["changed_source", "parent_hash", "zero", "identity", "totals", "missing_certificate"])
+def test_pp_capture_rejects_invalid_freezes_and_outcomes(tmp_path, monkeypatch, case):
+    capture, _, root, _, _, _, _, put, _, request, seal_request = pp_capture_fixture(tmp_path, monkeypatch)
+    draft = tmp_path / "draft"
+    capture.record_pregame(request(), draft)
+    path, value, label = seal_request(draft / "manifest.json", nonparticipant=case == "missing_certificate")
+    if case == "changed_source":
+        frozen = json.loads((root / "frozen.json").read_text())
+        frozen["revision"]["payload"]["players"][0]["proj_shots_pp"] = 9
+        value["frozen_sources"][0]["source_ref"] = put("frozen.json", frozen)
+    elif case == "parent_hash":
+        value["parent_manifest_sha256"] = "0" * 64
+    elif case == "zero":
+        label["pp_shots"] = 0
+    elif case == "identity":
+        label["nhl_player_id"] = 999
+    elif case == "totals":
+        label["pp_shots"] = 4
+    elif case == "missing_certificate":
+        label["zero_basis"] = "observed_zero_pp_exposure"
+    if case not in ("changed_source", "parent_hash"):
+        value["outcomes_ref"] = put("labels-v1.json", [label])
+    entries = {entry["path"]: entry for entry in value["files"]}
+    for reference in (value["frozen_sources"][0]["source_ref"], value["outcomes_ref"], value["coverage_ref"]):
+        entries[reference["path"]] = {key: reference[key] for key in ("path", "sha256")}
+    value["files"] = list(entries.values())
+    path.write_text(json.dumps(value))
+    with pytest.raises(ValueError):
+        capture.seal_packet(draft / "manifest.json", path, tmp_path / "rejected")
+    assert not (tmp_path / "rejected").exists()
+
+
+def test_pp_capture_preserves_missing_inputs_and_forecasts_in_population(tmp_path, monkeypatch):
+    capture, _, _, source, _, row, coverage, put, _, request, _ = pp_capture_fixture(tmp_path, monkeypatch)
+    source["revision"]["payload"]["players"] = []
+    put("original.json", source)
+    row["pp_input"], row["issued_projection_ref"] = None, None
+    row["baseline_pp_shots"] = {"value": None, "derivation_ref": None}
+    row["workload"]["conditional_pp_seconds"] = {"value": None, "derivation_ref": None}
+    coverage["games"][0]["issued_pp_count"] = 0
+    for stage in ("features", "forecast"):
+        coverage["exclusions"].append({"opportunity_key": row["key"], "stage": stage, "reason": "original missing receipt", "evidence_refs": []})
+    output = tmp_path / "missing"
+    capture.record_pregame(request(), output)
+    stored = json.loads((output / "opportunities.json").read_text())
+    assert len(stored) == 1 and stored[0]["pp_input"] is None and stored[0]["baseline_pp_shots"]["value"] is None
+
+
+@pytest.mark.parametrize("case", ["ordering", "range", "out_of_window"])
+def test_pp_capture_rejects_query_selection_changes(tmp_path, monkeypatch, case):
+    capture, _, _, source, _, _, _, put, _, request, _ = pp_capture_fixture(tmp_path, monkeypatch)
+    read = source["observation"]["payload"]["reads"][0]
+    if case == "ordering":
+        next(op for op in read["request"] if op["method"] == "order")["args"][1]["ascending"] = True
+    elif case == "range":
+        next(op for op in read["request"] if op["method"] == "range")["args"][1] = 9
+    else:
+        read["result"]["data"][0]["game_date"] = "2026-10-12"
+    put("original.json", source)
+    with pytest.raises(ValueError, match="query|row outside"):
+        capture.record_pregame(request(), tmp_path / "rejected")
+
+
+def test_pp_capture_label_corrections_preserve_prior_revisions(tmp_path, monkeypatch):
+    capture, _, root, _, _, _, _, put, _, request, seal_request = pp_capture_fixture(tmp_path, monkeypatch)
+    draft, first, corrected = tmp_path / "draft", tmp_path / "first", tmp_path / "corrected"
+    capture.record_pregame(request(), draft)
+    seal, _, _ = seal_request(draft / "manifest.json")
+    capture.seal_packet(draft / "manifest.json", seal, first)
+    before = (first / "labels-v1.json").read_bytes()
+    path, value, label = seal_request(first / "manifest.json", packet_id="fictional-corrected")
+    label.update(revision_id="outcome-v2", supersedes_revision_id="outcome-v1", finality="corrected", pp_shots=2)
+    value["outcomes_ref"] = put("labels-v2.json", [label])
+    value["files"].append({key: value["outcomes_ref"][key] for key in ("path", "sha256")})
+    path.write_text(json.dumps(value))
+    capture.seal_packet(first / "manifest.json", path, corrected)
+    assert (corrected / "labels-v1.json").read_bytes() == before == (first / "labels-v1.json").read_bytes()
+    assert json.loads((corrected / "labels-v2.json").read_text())[0]["supersedes_revision_id"] == "outcome-v1"
+    label.update(supersedes_revision_id=None)
+    value["outcomes_ref"] = put("labels-v2.json", [label])
+    value["files"][-1]["sha256"] = value["outcomes_ref"]["sha256"]
+    path.write_text(json.dumps(value))
+    with pytest.raises(ValueError, match="supersede"):
+        capture.seal_packet(first / "manifest.json", path, tmp_path / "bad-correction")
+
+
+def test_pp_capture_requires_per_field_zero_proof(tmp_path, monkeypatch):
+    capture, _, _, _, _, _, _, put, _, request, seal_request = pp_capture_fixture(tmp_path, monkeypatch)
+    draft = tmp_path / "draft"
+    capture.record_pregame(request(), draft)
+    path, value, label = seal_request(draft / "manifest.json", nonparticipant=True)
+    label["completeness_proof_ref"] = put("incomplete-zero-proof.json", {"version": "forge-pp-zero-proof-v1",
+        "opportunity_key": label["opportunity_key"], "zero_basis": label["zero_basis"], "fields": [], "evidence_refs": [label["definition_ref"]]})
+    value["outcomes_ref"] = put("labels-v1.json", [label])
+    for entry in value["files"]:
+        if entry["path"] == "labels-v1.json":
+            entry["sha256"] = value["outcomes_ref"]["sha256"]
+    value["files"].append({key: label["completeness_proof_ref"][key] for key in ("path", "sha256")})
+    path.write_text(json.dumps(value))
+    with pytest.raises(ValueError, match="cover every"):
+        capture.seal_packet(draft / "manifest.json", path, tmp_path / "rejected")
+
+
+def test_pp_capture_preserves_final_reread_and_first_row_ties(tmp_path, monkeypatch):
+    from copy import deepcopy
+    capture, _, _, source, _, row, _, put, _, request, _ = pp_capture_fixture(tmp_path, monkeypatch)
+    read = source["observation"]["payload"]["reads"][0]
+    second = deepcopy(read["result"]["data"][0])
+    second["game_id"] -= 1
+    read["result"]["data"].append(second)
+    read["result"]["count"] = 2
+    reread = deepcopy(read)
+    source["observation"]["payload"]["reads"].append(reread)
+    row["pp_input"]["original_read_index"] = 1
+    put("original.json", source)
+    capture.record_pregame(request(), tmp_path / "correct-tie")
+    row["pp_input"]["original_row_pointer"] = "/data/1"
+    with pytest.raises(ValueError, match="final selected"):
+        capture.record_pregame(request(), tmp_path / "wrong-tie")
+    row["pp_input"]["original_row_pointer"] = "/data/0"
+    reread["result"]["data"].reverse()
+    put("original.json", source)
+    with pytest.raises(ValueError, match="result order"):
+        capture.record_pregame(request(), tmp_path / "wrong-order")
+
+
+def test_pp_capture_bounds_request_and_generated_receipts_before_output(tmp_path, monkeypatch):
+    capture, _, _, _, _, _, _, _, _, request, _ = pp_capture_fixture(tmp_path, monkeypatch)
+    path = request()
+    monkeypatch.setattr(capture, "MAX_FILE_BYTES", 100)
+    with pytest.raises(ValueError, match="bounded"):
+        capture.record_pregame(path, tmp_path / "large-request")
+    monkeypatch.setattr(capture, "MAX_FILE_BYTES", 64 * 1024 * 1024)
+    monkeypatch.setattr(capture, "MAX_FILES", len(json.loads(path.read_text())["files"]))
+    with pytest.raises(ValueError, match="budget"):
+        capture.record_pregame(path, tmp_path / "generated-overflow")
+    assert not (tmp_path / "large-request").exists() and not (tmp_path / "generated-overflow").exists()
+    store = capture._Store()
+    monkeypatch.setattr(capture, "MAX_PACKET_BYTES", 2)
+    with pytest.raises(ValueError, match="budget"):
+        store.add_raw("oversize", b'{"x":1}')
+
+
+def test_pp_capture_counts_manifest_at_file_limit(tmp_path, monkeypatch):
+    capture, _, _, _, _, _, _, _, _, request, _ = pp_capture_fixture(tmp_path, monkeypatch)
+    output = tmp_path / "recorded"
+    capture.record_pregame(request(), output)
+    manifest = json.loads((output / "manifest.json").read_text())
+    store = capture._Store()
+    store.load(output, manifest["files"], recorder_files=True)
+    monkeypatch.setattr(capture, "MAX_FILES", len(store.raw))
+    with pytest.raises(ValueError, match="complete packet file"):
+        capture._publish(tmp_path / "overflow", store, manifest)
+    assert not (tmp_path / "overflow").exists()
+
+
+def test_pp_capture_nested_source_directories_are_private(tmp_path, monkeypatch):
+    capture, _, root, _, _, _, _, put, _, request, _ = pp_capture_fixture(tmp_path, monkeypatch)
+    (root / "nested" / "receipts").mkdir(parents=True)
+    put("nested/receipts/source.json", {"fixture": "fictional"})
+    output = tmp_path / "nested-packet"
+    capture.record_pregame(request(), output)
+    assert all(path.stat().st_mode & 0o777 == 0o700 for path in output.rglob("*") if path.is_dir())
+
+
 def official_settlement_fixture():
     from modeling.player_forecasts.daily_board_settlement import normalize_settlement
     box = {"id": 1, "gameDate": "2026-10-10", "gameType": 2, "gameState": "OFF", "startTimeUTC": "2026-10-10T23:00:00Z",

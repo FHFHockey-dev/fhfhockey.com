@@ -1,7 +1,9 @@
+import { webcrypto } from "node:crypto";
+import { Blob as NodeBlob } from "node:buffer";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { BenchDecision, GameForecast, PlanEvaluation, PlanIntent, PlanStep, PlanningData, PlanningPlayer, PlanningResult, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
-import { WORKSPACE_KEY, defaultWorkspace } from "lib/rosterScheduleOptimizer/workspace";
+import { WORKSPACE_KEY, WORKSPACE_PRESERVATION_JOURNAL, defaultWorkspace, preservationChecksum, readWorkspaceHistory, writeWorkspace, type WorkspacePreservation } from "lib/rosterScheduleOptimizer/workspace";
 import { planRoster } from "lib/rosterScheduleOptimizer/planning";
 import { resolveContribution } from "lib/player-forecasts/contributions";
 import { forecastFromContributions } from "lib/player-forecasts/resolvedPlanningForecast";
@@ -27,7 +29,7 @@ const benchReceipt: NonNullable<BenchDecision["evidence"]> = { startDate: "2026-
     { date: "2026-10-05", slotId: "UTIL#1", selectedPlayerId: "center", withPlayerId: "kaprizov" }], categories: [],
   sources: [{ playerId: "batherson", kinds: ["blended"], revisionIds: ["private-revision-id"],
     participation: [{ gameId: "game", basis: "appearance", probability: 0.5, confirmed: false }] }] };
-afterEach(() => { cleanup(); window.localStorage.clear(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); fetchMock.mockClear(); authState.user = null; authState.teams = []; planningState.evaluate = null; });
+afterEach(() => { cleanup(); window.localStorage.clear(); window.sessionStorage.clear(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); fetchMock.mockClear(); authState.user = null; authState.teams = []; planningState.evaluate = null; });
 
 describe("active provider refresh scheduling", () => {
   const success = (snapshot: PlanningSnapshot) => ({ ok: true, status: 200, json: async () => ({ success: true, snapshot,
@@ -520,6 +522,47 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect((within(panel).getByRole("checkbox", { name: "Manager confirms league positions" }) as HTMLInputElement).checked).toBe(false);
     expect(stored().intent).toEqual(selectedIntent);
     expect(stored().manualPlayers.some((row: PlanningPlayer) => row.id === other.id)).toBe(false);
+    const excludedChoice = within(panel).getByRole("checkbox", { name: "Exclude from suggestions" });
+    expect((excludedChoice as HTMLInputElement).checked).toBe(true);
+    fireEvent.click(excludedChoice);
+    await waitFor(() => expect(stored().intent.excludedPlayerIds).toEqual([]));
+    expect(stored().intent.steps).toEqual(selectedIntent.steps);
+    expect(stored().intent.protectedPlayerIds).toEqual(selectedIntent.protectedPlayerIds);
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    await waitFor(() => expect(stored().intent).toEqual({ ...selectedIntent, revision: expect.any(Number) }));
+    expect(stored().intent.revision).toBeGreaterThan(selectedIntent.revision);
+    fireEvent.click(screen.getByRole("button", { name: /David Pastrnak.*RW/ }));
+    fireEvent.click(within(panel).getByRole("checkbox", { name: "Exclude from suggestions" }));
+    await waitFor(() => expect(stored().intent.excludedPlayerIds).toEqual([other.id, candidate.id]));
+    expect(stored().intent.steps).toEqual(selectedIntent.steps);
+    expect(stored().intent.protectedPlayerIds).toEqual(selectedIntent.protectedPlayerIds);
+    cleanup();
+    render(<RosterScheduleOptimizer />);
+    fireEvent.click(await screen.findByRole("button", { name: "All players" }));
+    fireEvent.click(await screen.findByRole("button", { name: /David Pastrnak.*RW/ }));
+    const reopenedPanel = screen.getByRole("region", { name: "Candidates and detail" });
+    expect((within(reopenedPanel).getByRole("checkbox", { name: "Exclude from suggestions" }) as HTMLInputElement).checked).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    await waitFor(() => expect(stored().intent).toEqual({ ...selectedIntent, revision: expect.any(Number) }));
+    expect(stored().intent.revision).toBeGreaterThan(selectedIntent.revision);
+  });
+  it("keeps the manager exclusion control read-only for retained connected inputs", async () => {
+    const workspace = defaultWorkspace();
+    workspace.context.provider = "yahoo";
+    workspace.roster = [{ playerId: player.id, position: "bench" }];
+    workspace.manualPlayers = [player];
+    workspace.intent.excludedPlayerIds = [player.id];
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<RosterScheduleOptimizer />);
+    const rosterPanel = await screen.findByRole("region", { name: "Roster and setup" });
+    fireEvent.click(await within(rosterPanel).findByRole("button", { name: /Alpha Center/ }));
+    const detail = screen.getByRole("region", { name: "Player details for Alpha Center" });
+    const choice = within(detail).getByRole("checkbox", { name: "Exclude from suggestions" }) as HTMLInputElement;
+    expect(choice.checked).toBe(true);
+    expect(choice.disabled).toBe(true);
+    fireEvent.click(choice);
+    await waitFor(() => expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent).toEqual(workspace.intent));
   });
   it("preserves API warnings without converting structured errors to object text", () => {
     expect(requestErrorMessage({ code: "authentication_required", message: "Authentication required." }, "Request failed.")).toBe("Authentication required.");
@@ -950,6 +993,42 @@ describe("RosterScheduleOptimizer workspace", () => {
     const saved = JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!);
     expect(saved).toMatchObject({ roster: workspace.roster, intent: workspace.intent, unresolvedNames: workspace.unresolvedNames });
     expect(screen.getByRole("textbox", { name: "Paste roster names" })).toHaveProperty("value", "");
+  });
+
+  it.each([false, true])("resolves explicit unresolved-name choices without clobbering intent or existing inputs (rostered=%s)", async (rostered) => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-11T12:00:00Z"));
+    const reviewed = { ...player, eligiblePositions: ["C", "UTIL"], eligibilityVerified: true, canDrop: false };
+    const other = { ...player, id: "fhfh:2", nhlId: 2, name: "Bravo Center" };
+    const workspace = defaultWorkspace();
+    workspace.roster = rostered ? [{ playerId: player.id, position: "bench" }] : [];
+    workspace.manualPlayers = rostered ? [reviewed] : [];
+    workspace.unresolvedNames = ["center", "Center", "Unmatched Skater"];
+    workspace.intent.protectedPlayerIds = [player.id];
+    workspace.intent.steps = [{ id: "retained-add", type: "add", playerId: other.id, at: `${workspace.context.endDate}T12:00:00Z`, effectiveAt: `${workspace.context.endDate}T12:00:00Z`, conditional: true, dependsOn: [] }];
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"), json: async () => ({ success: true, data: { ...data, players: [player, other] } }) })));
+    const view = render(<RosterScheduleOptimizer />);
+    const unresolved = await screen.findByText("Center", { exact: true });
+    fireEvent.click(within(unresolved).getByRole("button", { name: "Find match" }));
+    const choice = (await screen.findByText(/^Alpha Center · CAR ·/)).closest("li")!;
+    fireEvent.click(within(choice).getByRole("button", { name: "Resolve" }));
+    const stored = () => JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!);
+    await waitFor(() => expect(stored().unresolvedNames).toEqual(["center", "Unmatched Skater"]));
+    expect(stored().roster).toEqual([{ playerId: player.id, position: "bench" }]);
+    expect(stored().manualPlayers).toEqual([rostered ? reviewed : player]);
+    expect(stored().intent).toEqual(workspace.intent);
+    expect(screen.getByText("Center resolved as Alpha Center.").getAttribute("role")).toBe("status");
+    view.unmount();
+    render(<RosterScheduleOptimizer />);
+    await screen.findByRole("button", { name: "Remove Alpha Center" });
+    expect(stored().unresolvedNames).toEqual(["center", "Unmatched Skater"]);
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    await waitFor(() => expect(stored().unresolvedNames).toEqual(workspace.unresolvedNames));
+    expect(stored().roster).toEqual(workspace.roster);
+    expect(stored().manualPlayers).toEqual(workspace.manualPlayers);
+    expect(stored().intent.steps).toEqual(workspace.intent.steps);
+    expect(stored().intent.protectedPlayerIds).toEqual(workspace.intent.protectedPlayerIds);
   });
 
   it.each([
@@ -2260,5 +2339,213 @@ describe("compact RSO schedule", () => {
     render(<CompactSchedule {...input} dates={scheduleWeek(input.date)} today={input.date} selectDate={vi.fn()} selectPlayer={vi.fn()} />);
     expect(screen.getAllByRole("cell", { name: /Confirmed goalie starter/ })).toHaveLength(1);
     expect(screen.getAllByRole("cell", { name: /Projected goalie starter/ })).toHaveLength(1);
+  });
+});
+
+
+describe("owner plan preservation", () => {
+  async function setup(deferSave = false, absent = false, fixtureOptions: { initialProviderAbsent?: boolean; deferProtectedAck?: boolean } = {}) {
+    vi.stubGlobal("crypto", webcrypto); vi.stubGlobal("Blob", NodeBlob);
+    let occupied = false;
+    const locks = { request: (_name: string, _options: unknown, callback: (lock: unknown) => unknown) => {
+      if (occupied) return Promise.resolve(callback(null));
+      occupied = true; return Promise.resolve(callback({ name: "writer" })).finally(() => { occupied = false; });
+    } };
+    Object.defineProperty(navigator, "locks", { configurable: true, value: locks });
+    const candidate = { ...player, id: "candidate", name: "Beta Candidate", availability: "free_agent" as const };
+    const original = defaultWorkspace(new Date("2026-10-11T18:00:00Z"));
+    original.context = { ...original.context, provider: "yahoo", seasonId: 20262027, leagueId: "league", teamId: "team", startDate: "2026-10-12", endDate: "2026-10-18", timeZone: "UTC" };
+    original.roster = [{ playerId: player.id, position: "active" }]; original.manualPlayers = [player, candidate];
+    original.intent.steps = [{ id: "nonzero", type: "add", playerId: candidate.id, at: "2026-10-12T10:00:00Z", effectiveAt: "2026-10-12T10:00:00Z", conditional: true, dependsOn: [] }];
+    const prior = { ...original, intent: { ...original.intent, protectedPlayerIds: [candidate.id] } };
+    writeWorkspace(localStorage, original, [prior]);
+    authState.user = { id: "owner-a" };
+    authState.teams = [{ id: "team", external_league_id: "league", team_name: "Owner Team", provider: "yahoo", team_metadata: { is_owned: true }, external_leagues: { league_name: "Owner League" } }];
+    const originalRow = absent ? null : { id: "remote", user_id: "owner-a", provider: "yahoo", season_id: 20262027, league_id: "league", team_id: "team", start_date: original.context.startDate, end_date: original.context.endDate, workspace: original, snapshot: null, lock_version: 2, updated_at: original.context.asOf };
+    let row = originalRow ? JSON.parse(JSON.stringify(originalRow)) : null;
+    let pinnedRow = row;
+    let checksum: string | null = null; let localHash: string | null = null; let acknowledgedVersion = row?.lock_version ?? null;
+    let delayed: (() => void) | null = null; let exported: NodeBlob | null = null;
+    let delayedAck: (() => void) | null = null; let changedProvider = false; let providerReads = 0; let rejectedLocalAcks = 0;
+    const NativeURL = URL;
+    vi.stubGlobal("URL", class extends NativeURL { static createObjectURL(blob: Blob | MediaSource) { exported = blob as unknown as NodeBlob; return "blob:preservation"; } static revokeObjectURL() {} });
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+    const record = () => row ? { workspace: row.workspace, snapshot: row.snapshot, version: row.lock_version, updatedAt: row.updated_at } : null;
+    const reply = (body: unknown, status = 200) => ({ ok: status === 200, status, json: async () => body });
+    const requests: { url: string; method: string }[] = [];
+    const network = vi.fn(async (url: string, options?: RequestInit) => {
+      requests.push({ url, method: options?.method ?? "GET" }); const parsed = new NativeURL(url, "http://localhost"); const mode = parsed.searchParams.get("preservation");
+      if (url.includes("/data?")) return reply({ success: true, data: { ...data, players: [player, candidate] } });
+      if (url.endsWith("/access")) return reply({ data: { eligible: true, capabilities: ["rso_sync", "rso_account_save", "rso_auto_upkeep"], grantingSources: ["owner_testing"] } });
+      if (url.endsWith("/provider")) {
+        providerReads += 1;
+        if (fixtureOptions.initialProviderAbsent && providerReads === 1) return reply({ success: false, error: "Initial provider unavailable" }, 503);
+        return reply({ success: true, snapshot: { id: changedProvider ? "provider-changed" : "provider-original", context: original.context, players: [player, candidate], roster: changedProvider ? [{ playerId: candidate.id, position: "active" }] : original.roster, rules: changedProvider ? { ...original.rules, rosterSlots: { ...original.rules.rosterSlots, C: 4 } } : original.rules, lockedAssignments: [], realized: {}, opponent: null, games: [], forecasts: [], evidence: {} }, capabilities: { roster: true, availability: true, rules: true, matchup: true, acquisitions: true, limitations: [] } });
+      }
+      if (options?.method === "PUT") {
+        const body = JSON.parse(options.body as string);
+        const commit = () => {
+          if (mode === "restore") row = { ...row, workspace: pinnedRow!.workspace, snapshot: pinnedRow!.snapshot, lock_version: row.lock_version + 1 };
+          else row = { ...row, workspace: body.workspace, snapshot: body.snapshot, lock_version: row.lock_version + 1 };
+          return reply({ data: record(), ...(mode ? { preservation: { principalId: "owner-a", contextKey: JSON.stringify(["yahoo", 20262027, "league", "team", original.context.startDate, original.context.endDate, "UTC"]), receiptId: "receipt", checksum, restored: mode === "restore", lastVersion: row.lock_version } } : {}) });
+        };
+        if (deferSave && !mode) return new Promise(resolve => { delayed = () => resolve(commit()); });
+        return commit();
+      }
+      if (!mode) return reply({ data: record() });
+      if (mode === "read") { pinnedRow = row ? JSON.parse(JSON.stringify(row)) : null; acknowledgedVersion = row?.lock_version ?? null; }
+      if (mode === "seal") { checksum = parsed.searchParams.get("checksum"); localHash = parsed.searchParams.get("localHash"); }
+      if (mode === "ack") {
+        if (fixtureOptions.deferProtectedAck) await new Promise<void>(resolve => { delayedAck = resolve; });
+        acknowledgedVersion = Number(parsed.searchParams.get("version"));
+      }
+      if (mode === "local_ack") {
+        if (acknowledgedVersion !== row?.lock_version) { rejectedLocalAcks += 1; return reply({ error: "A dispatched write lacks its acknowledgement" }, 409); }
+        if (parsed.searchParams.get("previousLocalHash") !== localHash) return reply({ error: "Local conflict" }, 409);
+        localHash = parsed.searchParams.get("localHash");
+      }
+      return reply({ data: record(), preservation: { principalId: "owner-a", contextKey: JSON.stringify(["yahoo", 20262027, "league", "team", original.context.startDate, original.context.endDate, "UTC"]), ownerVerified: true, receiptId: "receipt", row, originalRowHash: await preservationChecksum(pinnedRow), checksum, localHash, lastVersion: row?.lock_version ?? null, acknowledgedVersion, released: mode === "release" } });
+    });
+    vi.stubGlobal("fetch", network);
+    const mounted = render(<RosterScheduleOptimizer />);
+    await waitFor(() => expect((screen.getByRole("button", { name: "Prepare plan backup" }) as HTMLButtonElement).disabled).toBe(false));
+    await waitFor(() => expect(JSON.parse(localStorage.getItem(WORKSPACE_KEY)!).intent.steps).toHaveLength(1));
+    const prepare = async () => { fireEvent.click(screen.getByRole("button", { name: "Prepare plan backup" })); await screen.findByText(/Complete (local )?backup sealed/); };
+    const exportBackup = async () => { fireEvent.click(screen.getByRole("button", { name: "Download complete backup" })); return JSON.parse(await exported!.text()) as WorkspacePreservation; };
+    return { original, mounted, requests, prepare, exportBackup, network, row: () => row, resolveSave: () => delayed!(), changeProvider: () => { changedProvider = true; }, resolveAck: () => { delayedAck!(); }, rejectedLocalAcks: () => rejectedLocalAcks };
+  }
+  afterEach(() => { Reflect.deleteProperty(navigator, "locks"); });
+  it("drains a dispatched account save before capturing the actual remote state", async () => {
+    const fixture = await setup(true);
+    fireEvent.click(screen.getByRole("button", { name: "Save to account" }));
+    await waitFor(() => expect(fixture.requests.some(request => request.method === "PUT")).toBe(true));
+    fireEvent.click(screen.getByRole("button", { name: "Prepare plan backup" }));
+    expect(screen.getByText(/Finishing dispatched requests/)).not.toBeNull();
+    expect(fixture.requests.some(request => request.url.includes("preservation=read"))).toBe(false);
+    fixture.resolveSave(); await screen.findByText(/Complete backup sealed/);
+    const backup = await fixture.exportBackup(); expect(backup.remote.row!.lock_version).toBe(3); expect(backup.history).toHaveLength(1); expect(backup.workspace.intent.steps).toHaveLength(1);
+    fireEvent.click(screen.getByRole("checkbox", { name: "Backup saved and other writers independently excluded" }));
+    fireEvent.click(screen.getByRole("button", { name: "Use backup for approved test" }));
+    await screen.findByText(/Protected planning active/);
+  });
+  it("keeps nonzero intent/Undo, restores after reopen, and verifies original local and remote payloads", async () => {
+    const fixture = await setup(); await fixture.prepare(); const backup = await fixture.exportBackup();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Backup saved and other writers independently excluded" }));
+    fireEvent.click(screen.getByRole("button", { name: "Use backup for approved test" })); await screen.findByText(/Protected planning active/);
+    fireEvent.click(screen.getAllByRole("checkbox", { name: "Protect" })[0]);
+    await waitFor(() => expect(JSON.parse(localStorage.getItem(WORKSPACE_KEY)!).intent.protectedPlayerIds).toContain(player.id));
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    await waitFor(() => expect(JSON.parse(localStorage.getItem(WORKSPACE_KEY)!).intent.protectedPlayerIds).not.toContain(player.id));
+    expect(JSON.parse(localStorage.getItem(WORKSPACE_KEY)!).intent.steps).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Save to account" })); await screen.findByText("Saved to account.");
+    fixture.mounted.unmount(); await Promise.resolve();
+    render(<RosterScheduleOptimizer />);
+    await screen.findByText(/Saved preservation session found/);
+    expect(fixture.requests.filter(request => request.url.endsWith("/provider"))).toHaveLength(1);
+    fireEvent.change(screen.getByLabelText("Restore downloaded backup"), { target: { files: [{ text: async () => JSON.stringify(backup) }] } });
+    await screen.findByText(/Original local key values and absence, plan and Undo restored/);
+    expect(backup.local.map(entry => localStorage.getItem(entry.key))).toEqual(backup.local.map(entry => entry.value));
+    expect(readWorkspaceHistory(localStorage, backup.workspace)).toEqual(backup.history);
+    expect(fixture.row().workspace).toEqual(fixture.original); expect(fixture.row().lock_version).toBe(4);
+  });
+  it.each([false, true])("restores original provider authority including absence without remount (absent=%s)", async initialProviderAbsent => {
+    const fixture = await setup(false, false, { initialProviderAbsent }); await fixture.prepare(); const backup = await fixture.exportBackup();
+    expect(backup.provider!.connected === null).toBe(initialProviderAbsent);
+    fireEvent.click(screen.getByRole("checkbox", { name: "Backup saved and other writers independently excluded" }));
+    fireEvent.click(screen.getByRole("button", { name: "Use backup for approved test" })); await screen.findByText(/Protected planning active/);
+    fixture.changeProvider(); fireEvent.click(screen.getByRole("button", { name: "Refresh provider" }));
+    await waitFor(() => expect((screen.getByLabelText("C") as HTMLInputElement).value).toBe("4"));
+    expect(screen.getAllByRole("checkbox", { name: "Protect" })).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Restore original plan and Undo" }));
+    await screen.findByText(/Original local key values and absence, plan and Undo restored/);
+    expect((screen.getByLabelText("C") as HTMLInputElement).value).toBe(String(fixture.original.rules.rosterSlots.C));
+    const protect = screen.getAllByRole("checkbox", { name: "Protect" });
+    expect(protect[0].closest("label")!.parentElement!.textContent).toContain(player.name);
+    expect(backup.local.map(entry => localStorage.getItem(entry.key))).toEqual(backup.local.map(entry => entry.value));
+    const restored = await fixture.exportBackup(); expect(restored.provider).toEqual(backup.provider);
+  });
+  it("serializes a protected account acknowledgement before persisting and acknowledging a local edit", async () => {
+    const fixture = await setup(false, false, { deferProtectedAck: true }); await fixture.prepare(); const backup = await fixture.exportBackup();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Backup saved and other writers independently excluded" }));
+    fireEvent.click(screen.getByRole("button", { name: "Use backup for approved test" })); await screen.findByText(/Protected planning active/);
+    fireEvent.click(screen.getByRole("button", { name: "Save to account" }));
+    await waitFor(() => expect(fixture.requests.some(request => request.url.includes("preservation=ack"))).toBe(true));
+    const beforeEdit = localStorage.getItem(WORKSPACE_KEY);
+    fireEvent.click(screen.getAllByRole("checkbox", { name: "Protect" })[0]);
+    expect((screen.getAllByRole("checkbox", { name: "Protect" })[0] as HTMLInputElement).checked).toBe(true);
+    expect(localStorage.getItem(WORKSPACE_KEY)).toBe(beforeEdit);
+    expect(fixture.requests.some(request => request.url.includes("preservation=local_ack"))).toBe(false);
+    fixture.resolveAck();
+    await waitFor(() => expect(JSON.parse(localStorage.getItem(WORKSPACE_KEY)!).intent.protectedPlayerIds).toContain(player.id));
+    await waitFor(() => expect(fixture.requests.some(request => request.url.includes("preservation=local_ack"))).toBe(true));
+    expect(fixture.rejectedLocalAcks()).toBe(0);
+    fireEvent.click(screen.getByRole("button", { name: "Restore original plan and Undo" }));
+    await waitFor(() => expect(fixture.requests.filter(request => request.url.includes("preservation=ack"))).toHaveLength(2)); fixture.resolveAck();
+    await screen.findByText(/Original local key values and absence, plan and Undo restored/);
+    expect(backup.local.map(entry => localStorage.getItem(entry.key))).toEqual(backup.local.map(entry => entry.value));
+  });
+  it("rejects a legacy storage writer instead of adopting its fresh values for restore", async () => {
+    const fixture = await setup(); await fixture.prepare();
+    localStorage.setItem(WORKSPACE_KEY, "legacy writer"); window.dispatchEvent(new StorageEvent("storage", { key: WORKSPACE_KEY, newValue: "legacy writer" }));
+    await screen.findByText(/Another storage writer changed/);
+    fireEvent.click(screen.getByRole("button", { name: "Restore original plan and Undo" }));
+    await screen.findByText(/Workspace storage changed in another writer/);
+    expect(localStorage.getItem(WORKSPACE_KEY)).toBe("legacy writer"); expect(fixture.requests.some(request => request.url.includes("preservation=restore"))).toBe(false);
+  });
+  it("keeps rehydration and requests paused when another writer changed storage before reopen", async () => {
+    const fixture = await setup(); await fixture.prepare();
+    fixture.mounted.unmount(); await Promise.resolve();
+    const foreign = JSON.stringify({ ...fixture.original, context: { ...fixture.original.context, teamId: "other-team" } });
+    localStorage.setItem(WORKSPACE_KEY, foreign);
+    const requestCount = fixture.requests.length;
+    render(<RosterScheduleOptimizer />);
+    await screen.findByText(/Workspace storage changed in another writer/);
+    expect(localStorage.getItem(WORKSPACE_KEY)).toBe(foreign);
+    expect(fixture.requests).toHaveLength(requestCount);
+    expect((screen.getByRole("button", { name: "Resume normal planning" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+  it("rejects substituted journal expectations against the server's last-own local hash", async () => {
+    const fixture = await setup(); await fixture.prepare();
+    fixture.mounted.unmount(); await Promise.resolve();
+    const journal = JSON.parse(sessionStorage.getItem(WORKSPACE_PRESERVATION_JOURNAL)!);
+    const foreign = JSON.stringify({ ...fixture.original, unresolvedNames: ["Unowned edit"] });
+    journal.expected.find((entry: { key: string }) => entry.key === WORKSPACE_KEY).value = foreign;
+    localStorage.setItem(WORKSPACE_KEY, foreign);
+    sessionStorage.setItem(WORKSPACE_PRESERVATION_JOURNAL, JSON.stringify(journal));
+    const requestCount = fixture.requests.length;
+    render(<RosterScheduleOptimizer />);
+    await screen.findByText(/Original backup shown/);
+    expect(fixture.requests).toHaveLength(requestCount);
+    fireEvent.click(screen.getByRole("button", { name: "Restore original plan and Undo" }));
+    await screen.findByText(/not bound to the admitted writer's acknowledged state/);
+    expect(localStorage.getItem(WORKSPACE_KEY)).toBe(foreign);
+    expect(fixture.requests.some(request => request.url.includes("preservation=restore"))).toBe(false);
+  });
+  it("rejects an outside journal change before dispatching restoration", async () => {
+    const fixture = await setup(); await fixture.prepare();
+    sessionStorage.setItem(WORKSPACE_PRESERVATION_JOURNAL, "outside journal");
+    const requestCount = fixture.requests.length;
+    fireEvent.click(screen.getByRole("button", { name: "Restore original plan and Undo" }));
+    await screen.findByText(/Preservation journal changed outside this writer/);
+    expect(fixture.requests).toHaveLength(requestCount);
+  });
+  it("holds admission when a dispatched account write has an uncertain outcome", async () => {
+    const fixture = await setup();
+    const network = fixture.network.getMockImplementation()!;
+    fixture.network.mockImplementation((url, options) => options?.method === "PUT" ? Promise.reject(new Error("Connection lost after dispatch")) : network(url, options));
+    fireEvent.click(screen.getByRole("button", { name: "Save to account" }));
+    await screen.findByText(/Connection lost after dispatch/);
+    fireEvent.click(screen.getByRole("button", { name: "Prepare plan backup" }));
+    await screen.findByText(/uncertain server outcome/);
+    expect(fixture.requests.some(request => request.url.includes("preservation=read"))).toBe(false);
+  });
+  it("holds account-save testing for original absence and rejects rehashed backup substitution", async () => {
+    const fixture = await setup(false, true); await fixture.prepare(); const backup = await fixture.exportBackup();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Backup saved and other writers independently excluded" }));
+    expect((screen.getByRole("button", { name: "Use backup for approved test" }) as HTMLButtonElement).disabled).toBe(true);
+    const changed = { ...backup, view: { ...backup.view, tab: "matchup" } }; const { checksum: _checksum, ...payload } = changed; changed.checksum = await preservationChecksum(payload);
+    fireEvent.change(screen.getByLabelText("Restore downloaded backup"), { target: { files: [{ text: async () => JSON.stringify(changed) }] } });
+    await screen.findByText(/original browser journal is required/i);
+    expect(fixture.requests.some(request => request.method === "PUT")).toBe(false);
   });
 });

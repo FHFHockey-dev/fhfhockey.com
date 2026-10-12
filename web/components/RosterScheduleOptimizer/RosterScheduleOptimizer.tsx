@@ -11,7 +11,7 @@ import { acquisitionEffectiveAt } from "lib/rosterScheduleOptimizer/planningTime
 import { reconcileIntent } from "lib/rosterScheduleOptimizer/reconciliation";
 import { supplementProviderRules } from "lib/rosterScheduleOptimizer/providerRules";
 import type { LeagueRules, LockedAssignment, ManagerRuleOverrides, PlanEvaluation, PlanIntent, PlanStep, PlanningAssignment, PlanningData, PlanningGame, PlanningPlayer, PlanningSnapshot, PlanningWorkspace, ProviderCapabilities, RevisionProposal } from "lib/rosterScheduleOptimizer/planningTypes";
-import { defaultWorkspace, readWorkspace, readWorkspaceHistory, resolveImportedNames, retainedScheduleSnapshot, retainProviderInputs, workspaceContextKey, writeWorkspace, WORKSPACE_HISTORY_LIMIT } from "lib/rosterScheduleOptimizer/workspace";
+import { acquirePreservationWriter, assertPreservedKeys, capturePreservation, preservationChecksum, preservationJson, preservationKeys, readPreservedKeys, restorePreservedKeys, validatePreservation, withWorkspaceWriter, WORKSPACE_PRESERVATION_JOURNAL, type PreservedKey, type PreservationProvider, type WorkspacePreservation, defaultWorkspace, readWorkspace, readWorkspaceHistory, resolveImportedNames, retainedScheduleSnapshot, retainProviderInputs, workspaceContextKey, writeWorkspace, WORKSPACE_HISTORY_LIMIT } from "lib/rosterScheduleOptimizer/workspace";
 import supabase from "lib/supabase/client";
 import styles from "./RosterScheduleOptimizer.module.scss";
 import ForecastEvidence, { forecastSummary } from "./ForecastEvidence";
@@ -20,10 +20,10 @@ import CandidateBrowser from "./CandidateBrowser";
 import CategoryGains from "./CategoryGains";
 import CompactSchedule, { defaultScheduleDate } from "./CompactSchedule";
 
-type Access = { eligible: boolean; capabilities: string[]; expiresAt?: string | null };
-type RequestFeedback = { key: string; userId: string | undefined; state: "busy" | "success" | "partial" | "error"; text: string };
+type Access = { eligible: boolean; capabilities: string[]; expiresAt?: string | null; grantingSources?: string[] };
+type RequestFeedback = NonNullable<PreservationProvider["refresh"]>;
 const PROVIDER_REFRESH_INTERVAL = 5 * 60_000;
-type ProviderRefreshSchedule = { key: string; userId: string | undefined; nextAutoAt: number; cooldownUntil: number; delay: number; blocked: boolean };
+type ProviderRefreshSchedule = NonNullable<PreservationProvider["schedule"]>;
 type AccountRecord = { workspace: PlanningWorkspace; snapshot: PlanningSnapshot | null; version: number; updatedAt: string };
 type Tab = "itinerary" | "roster" | "candidates" | "matchup";
 type OwnTeam = { id: string; external_league_id: string; team_name: string; provider: string; team_metadata: unknown; external_leagues?: { league_name: string | null } | null };
@@ -134,6 +134,33 @@ export default function RosterScheduleOptimizer() {
   const [reviewedInputs, setReviewedInputs] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [ownTeams, setOwnTeams] = useState<OwnTeam[]>([]);
+  const [savedJournal] = useState(() => {
+    try { const raw = typeof window === "undefined" ? null : sessionStorage.getItem(WORKSPACE_PRESERVATION_JOURNAL);
+      return { raw, value: raw ? JSON.parse(raw) as { backup: WorkspacePreservation; expected: PreservedKey[]; exported: boolean; restored: boolean } : null };
+    } catch { return { raw: "unreadable", value: null }; }
+  });
+  const journalRaw = useRef(savedJournal.raw);
+  const localWrites = useRef<Promise<void>>(Promise.resolve());
+  const [preservation, setPreservation] = useState<{ phase: "idle" | "preparing" | "held" | "testing" | "restoring" | "invalid"; text: string }>({ phase: savedJournal.raw !== null ? "invalid" : "idle", text: savedJournal.raw !== null ? "Saved preservation session found. Normal writers are paused; restore with the original account and context." : "" });
+  const preservationRef = useRef({ phase: preservation.phase, backup: savedJournal.value?.backup ?? null as WorkspacePreservation | null,
+    expected: savedJournal.value?.expected ?? [] as PreservedKey[], lease: null as { release: () => void } | null, exported: savedJournal.value?.exported ?? false, restored: savedJournal.value?.restored ?? false });
+  const skipRestoredPersist = useRef<PlanningWorkspace | null>(null);
+  const [otherWritersExcluded, setOtherWritersExcluded] = useState(false);
+  const pendingRequests = useRef(new Set<Promise<Response>>());
+  const accountOperations = useRef(new Set<Promise<void>>());
+  const uncertainRequest = useRef(false);
+  const [networkSuspended, setNetworkSuspended] = useState(savedJournal.raw !== null);
+  const planHeld = preservation.phase !== "idle" && preservation.phase !== "testing";
+  const trackedFetch = useCallback((url: string, options?: RequestInit) => {
+    if (preservationRef.current.phase !== "idle" && preservationRef.current.phase !== "testing") return Promise.reject(new Error("Preservation has suspended application requests."));
+    const request = fetch(url, options);
+    pendingRequests.current.add(request);
+    void request.then(() => pendingRequests.current.delete(request), () => {
+      pendingRequests.current.delete(request);
+      if (options?.method === "PUT" || url.endsWith("/access") || url.endsWith("/provider")) uncertainRequest.current = true;
+    });
+    return request;
+  }, []);
   const history = useRef<PlanningWorkspace[]>([]);
   const workspaceElement = useRef<HTMLDivElement>(null);
   const providerAbort = useRef<AbortController | null>(null);
@@ -161,14 +188,99 @@ export default function RosterScheduleOptimizer() {
   };
   const canSync = Boolean(access?.capabilities.includes("rso_sync"));
   const canAutoUpkeep = Boolean(access?.capabilities.includes("rso_auto_upkeep"));
-  const readOnlySaved = viewingSaved || (workspace.context.provider !== "manual" && !canSync && Boolean(account?.snapshot || workspace.roster.length));
+  const readOnlySaved = planHeld || viewingSaved || (workspace.context.provider !== "manual" && !canSync && Boolean(account?.snapshot || workspace.roster.length));
   const readOnlyInert = readOnlySaved ? { inert: "true" as unknown as boolean } : {};
 
-  useEffect(() => { const saved = readWorkspace(window.localStorage); if (saved) { history.current = readWorkspaceHistory(window.localStorage, saved); setWorkspace(saved); } setHydrated(true); }, []);
-  useEffect(() => { if (hydrated) setNotice(writeWorkspace(window.localStorage, workspace, history.current)); }, [hydrated, workspace]);
+  useEffect(() => {
+    if (savedJournal.raw !== null) return;
+    const saved = readWorkspace(window.localStorage);
+    if (saved) { history.current = readWorkspaceHistory(window.localStorage, saved); setWorkspace(saved); }
+    setHydrated(true);
+  }, [savedJournal]);
+  useEffect(() => {
+    if (savedJournal.raw === null || !user?.id) return;
+    let cancelled = false;
+    void (async () => {
+      const journal = savedJournal.value;
+      if (!journal?.backup) throw new Error("The original browser journal is unreadable. Keep the downloaded backup; recovery remains held.");
+      await validatePreservation(journal.backup, user.id, journal.backup.contextKey);
+      if (!Array.isArray(journal.expected) || journal.expected.length !== journal.backup.local.length
+        || journal.expected.some((entry, index) => entry.key !== journal.backup.local[index].key || entry.value !== null && typeof entry.value !== "string")) throw new Error("The original browser journal has an invalid storage scope.");
+      if (sessionStorage.getItem(WORKSPACE_PRESERVATION_JOURNAL) !== savedJournal.raw) throw new Error("Preservation journal changed outside this writer.");
+      assertPreservedKeys(localStorage, journal.expected);
+      if (cancelled) return;
+      // Show the validated original backup while recovery is held; never adopt fresh storage as this writer's state.
+      history.current = journal.backup.history;
+      setWorkspace(journal.backup.workspace);
+      setSelectedDate(journal.backup.view.selectedDate); setSelectedPlayer(journal.backup.view.selectedPlayer); setTab(journal.backup.view.tab as Tab);
+      setHydrated(true);
+      setPreservation({ phase: "invalid", text: "Saved preservation session found. Original backup shown; normal writers are paused. Restore with the original account and context." });
+    })().catch(error => { if (!cancelled) setPreservation({ phase: "invalid", text: message(error) }); });
+    return () => { cancelled = true; };
+  }, [savedJournal, user?.id]);
+  const persistJournal = () => {
+    const held = preservationRef.current;
+    if (!held.backup) throw new Error("The original preservation backup is missing.");
+    if (sessionStorage.getItem(WORKSPACE_PRESERVATION_JOURNAL) !== journalRaw.current) throw new Error("Preservation journal changed outside this writer.");
+    const raw = JSON.stringify({ backup: held.backup, expected: held.expected, exported: held.exported, restored: held.restored });
+    sessionStorage.setItem(WORKSPACE_PRESERVATION_JOURNAL, raw); journalRaw.current = raw;
+  };
+  const persistLocal = useCallback((write: () => string | null | void) => {
+    if (preservationRef.current.phase === "idle" && !navigator.locks) {
+      try { setNotice(write() ?? null); } catch (error) { setNotice(message(error)); }
+      return Promise.resolve();
+    }
+    const operation = localWrites.current.then(async () => {
+      const held = preservationRef.current;
+      if (held.phase !== "idle" && held.phase !== "testing") return;
+      const run = async () => {
+        if (held.phase !== "idle" && held.phase !== "testing") return;
+        const previous = held.expected;
+        let previousHash = "";
+        if (held.phase === "testing") {
+          if (!held.lease || !held.backup || held.backup.principalId !== providerRef.current.userId || held.backup.contextKey !== workspaceContextKey(providerRef.current.context)) throw new Error("Preservation identity changed. Restore before continuing.");
+          assertPreservedKeys(localStorage, previous); previousHash = await preservationChecksum(previous);
+          if (held.phase !== "testing") return;
+        }
+        const error = write();
+        if (held.phase === "testing") {
+          held.expected = readPreservedKeys(localStorage, previous.map(entry => entry.key));
+          try { persistJournal(); } catch (journalError) { restorePreservedKeys(localStorage, previous, held.expected); held.expected = previous; throw journalError; }
+          const nextHash = await preservationChecksum(held.expected);
+          if (nextHash !== previousHash) await preservationRequest("local_ack", held.backup!, { checksum: held.backup!.checksum, previousLocalHash: previousHash, localHash: nextHash });
+        }
+        if (error) throw new Error(error);
+      };
+      if (held.phase === "testing") await run(); else await withWorkspaceWriter(navigator.locks, run);
+    });
+    localWrites.current = operation.catch(error => {
+      setNotice(message(error)); const held = preservationRef.current;
+      if (held.phase !== "idle") { held.phase = "invalid"; setPreservation({ phase: "invalid", text: message(error) }); }
+    });
+    return localWrites.current;
+  }, []);
+  useEffect(() => {
+    if (workspace === skipRestoredPersist.current) { skipRestoredPersist.current = null; return; }
+    if (hydrated) void persistLocal(() => workspaceRef.current === workspace ? writeWorkspace(window.localStorage, workspace, history.current) : null);
+  }, [hydrated, workspace, persistLocal]);
+  useEffect(() => () => { const held = preservationRef.current; held.phase = "invalid"; held.lease?.release(); held.lease = null; }, []);
+  useEffect(() => {
+    const changed = (event: StorageEvent) => {
+      const held = preservationRef.current;
+      if (held.phase !== "idle" && (!event.key || held.expected.some(entry => entry.key === event.key))) {
+        held.phase = "invalid"; setPreservation({ phase: "invalid", text: "Another storage writer changed this workspace. Nothing may be overwritten; keep the backup." });
+      }
+    };
+    window.addEventListener("storage", changed);
+    return () => window.removeEventListener("storage", changed);
+  }, []);
   const edit = useCallback((change: (current: PlanningWorkspace) => PlanningWorkspace) => setWorkspace((current) => {
     if (readOnlySaved) return current;
     let next = change(current);
+    const held = preservationRef.current;
+    if (held.phase === "testing" && workspaceContextKey(next.context) !== held.backup?.contextKey) {
+      held.phase = "invalid"; setPreservation({ phase: "invalid", text: "Context changes are held during preservation. Restore the original first." }); return current;
+    }
     const changedContext = workspaceContextKey(next.context) !== workspaceContextKey(current.context);
     if (changedContext) {
       const saved = readWorkspace(window.localStorage, next.context);
@@ -200,6 +312,12 @@ export default function RosterScheduleOptimizer() {
   };
   const contextKey = `${workspace.context.seasonId}:${workspace.context.startDate}:${workspace.context.endDate}:${workspace.context.timeZone}`;
   const accountKey = workspaceContextKey(workspace.context);
+  useEffect(() => {
+    const held = preservationRef.current;
+    if (held.backup && (held.backup.principalId !== user?.id || held.backup.contextKey !== accountKey)) {
+      held.phase = "invalid"; setPreservation({ phase: "invalid", text: "Account or context changed. Keep the original backup; restoration requires its original principal and context." });
+    }
+  }, [accountKey, user?.id]);
   const refreshFeedback = providerRefresh?.key === accountKey && providerRefresh.userId === user?.id ? providerRefresh : null;
   const refreshUnavailable = viewingSaved ? "Saved inputs are read-only. Continue manually to work with this saved plan."
     : !user?.id ? "Sign in to check access for provider synchronization."
@@ -215,27 +333,28 @@ export default function RosterScheduleOptimizer() {
   useEffect(() => { accountSaveRequest.current = null; setAccountSave(null); return () => { accountSaveRequest.current = null; }; }, [accountKey, user?.id]);
   useEffect(() => { setSelectedPlayer(null); setQuery(""); }, [accountKey, user?.id]);
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || networkSuspended) return;
     const controller = new AbortController(); setLoadingData(true); setData(null);
     const params = new URLSearchParams({ seasonId: String(workspace.context.seasonId), startDate: workspace.context.startDate, endDate: workspace.context.endDate, timeZone: workspace.context.timeZone });
-    fetch(`/api/v1/roster-schedule-optimizer/data?${params}`, { signal: controller.signal })
+    trackedFetch(`/api/v1/roster-schedule-optimizer/data?${params}`, { signal: controller.signal })
       .then(async (response) => { const body = await response.json(); if (!response.ok || !body.success) throw new Error(requestErrorMessage(body.error, "Planning data unavailable.")); return body.data as PlanningData; })
-      .then((next) => { if (controller.signal.aborted) return; const asOf = new Date().toISOString(); setData(next); setLastUpdated(asOf); setWorkspace((current) => current.context.provider === "manual" && !viewingSaved ? { ...current, context: { ...current.context, asOf } } : current); })
+      .then((next) => { if (controller.signal.aborted || preservationRef.current.phase !== "idle") return; const asOf = new Date().toISOString(); setData(next); setLastUpdated(asOf); setWorkspace((current) => current.context.provider === "manual" && !viewingSaved ? { ...current, context: { ...current.context, asOf } } : current); })
       .catch((error) => { if (!controller.signal.aborted) setNotice(message(error)); })
       .finally(() => { if (!controller.signal.aborted) setLoadingData(false); });
     return () => controller.abort();
-  }, [hydrated, contextKey, viewingSaved]);
+  }, [hydrated, contextKey, viewingSaved, networkSuspended, trackedFetch]);
   useEffect(() => {
+    if (networkSuspended) return;
     const controller = new AbortController();
     let requestGeneration = 0;
     setAccess(null); setAccessError(null); setCheckingAccess(true);
     const load = async () => {
-      if (navigator.onLine === false) return;
+      if (navigator.onLine === false || preservationRef.current.phase !== "idle") return;
       const generation = ++requestGeneration;
       const current = () => !controller.signal.aborted && generation === requestGeneration;
       try {
         const headers = await authHeaders(); if (!current()) return;
-        const response = await fetch("/api/v1/roster-schedule-optimizer/access", { signal: controller.signal, headers });
+        const response = await trackedFetch("/api/v1/roster-schedule-optimizer/access", { signal: controller.signal, headers });
         const body = response.ok ? await response.json() : null;
         if (current()) {
           setCheckingAccess(false);
@@ -250,7 +369,7 @@ export default function RosterScheduleOptimizer() {
     window.addEventListener("online", visible);
     const timer = setInterval(visible, 5 * 60_000);
     return () => { controller.abort(); clearInterval(timer); document.removeEventListener("visibilitychange", visible); window.removeEventListener("online", visible); };
-  }, [user?.id]);
+  }, [user?.id, networkSuspended, trackedFetch]);
   useEffect(() => { providerAbort.current?.abort(); setConnected(null); setCapabilities(null); setProposal(null); setAccount(null); setViewingSaved(false); setNotice(current => current === "Saved to account." ? null : current); }, [user?.id]);
   useEffect(() => {
     if (!access?.expiresAt) return;
@@ -270,24 +389,26 @@ export default function RosterScheduleOptimizer() {
     return () => { active = false; };
   }, [user?.id]);
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || networkSuspended) return;
     const controller = new AbortController(); setAccount(null);
     const { provider, seasonId, leagueId, teamId, startDate, endDate } = workspace.context;
     const params = new URLSearchParams({ provider, seasonId: String(seasonId), leagueId, teamId, startDate, endDate });
-    authHeaders().then((headers) => { if (controller.signal.aborted) return null; return fetch(`/api/v1/roster-schedule-optimizer/workspace?${params}`, { signal: controller.signal, headers }); })
+    authHeaders().then((headers) => { if (controller.signal.aborted) return null; return trackedFetch(`/api/v1/roster-schedule-optimizer/workspace?${params}`, { signal: controller.signal, headers }); })
       .then(async (response) => response?.ok ? (await response.json()).data as AccountRecord | null : null)
       .then((saved) => { if (!controller.signal.aborted) setAccount(saved); }).catch(() => undefined);
     return () => controller.abort();
-  }, [hydrated, accountKey, user?.id]);
+  }, [hydrated, accountKey, user?.id, networkSuspended, trackedFetch]);
   const providerRef = useRef({ context: workspace.context, intent: workspace.intent, overrides: workspace.managerRuleOverrides, locks: workspace.lockedAssignments, userId: user?.id });
   providerRef.current = { context: workspace.context, intent: workspace.intent, overrides: workspace.managerRuleOverrides, locks: workspace.lockedAssignments, userId: user?.id };
   const connectedRef = useRef(connected);
   connectedRef.current = connected;
+  const providerAuthorityRef = useRef<PreservationProvider>({ connected, capabilities, proposal, refresh: providerRefresh, schedule: providerSchedule.current, settledRefresh: settledProviderRefresh, lastUpdated });
+  providerAuthorityRef.current = { connected, capabilities, proposal, refresh: providerRefresh, schedule: providerSchedule.current, settledRefresh: settledProviderRefresh, lastUpdated };
   const workspaceRef = useRef(workspace);
   workspaceRef.current = workspace;
   const refreshProvider = useCallback((signal?: AbortSignal): Promise<boolean> => {
     const { context, userId } = providerRef.current;
-    if (viewingSaved || context.provider === "manual" || !canSync || !userId || !context.teamId.trim() || context.teamId === "manual" || signal?.aborted || navigator.onLine === false) return Promise.resolve(false);
+    if (!["idle", "testing"].includes(preservationRef.current.phase) || viewingSaved || context.provider === "manual" || !canSync || !userId || !context.teamId.trim() || context.teamId === "manual" || signal?.aborted || navigator.onLine === false) return Promise.resolve(false);
     const requestKey = workspaceContextKey(context);
     if (providerAbort.current && !providerAbort.current.signal.aborted && providerPending.current?.key === requestKey && providerPending.current.userId === userId) return providerPending.current.promise;
     const schedule = scheduleFor(requestKey, userId);
@@ -302,10 +423,11 @@ export default function RosterScheduleOptimizer() {
     const abort = () => controller.abort();
     signal?.addEventListener("abort", abort, { once: true });
     const currentRequest = () => !controller.signal.aborted && userId === providerRef.current.userId && requestKey === workspaceContextKey(providerRef.current.context);
-    setProviderRefresh({ key: requestKey, userId, state: "busy", text: "Refreshing provider inputs…" });
+    const busy: RequestFeedback = { key: requestKey, userId, state: "busy", text: "Refreshing provider inputs…" };
+    providerAuthorityRef.current.refresh = busy; setProviderRefresh(busy);
     const pending = (async () => { try {
       const headers = await authHeaders(); if (controller.signal.aborted || userId !== providerRef.current.userId) return false;
-      const response = await fetch("/api/v1/roster-schedule-optimizer/provider", { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ provider: context.provider, teamId: context.teamId, startDate: context.startDate, endDate: context.endDate, timeZone: context.timeZone }), signal: controller.signal });
+      const response = await trackedFetch("/api/v1/roster-schedule-optimizer/provider", { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ provider: context.provider, teamId: context.teamId, startDate: context.startDate, endDate: context.endDate, timeZone: context.timeZone }), signal: controller.signal });
       const body = await response.json(); if (!currentRequest()) return false;
       if (typeof body.retryAfterSeconds === "number" && Number.isFinite(body.retryAfterSeconds) && body.retryAfterSeconds >= 0) schedule.cooldownUntil = Math.max(schedule.cooldownUntil, Date.now() + body.retryAfterSeconds * 1000);
       else if (response.status === 429 || body.code === "yahoo_rate_limited") schedule.cooldownUntil = Math.max(schedule.cooldownUntil, Date.now() + PROVIDER_REFRESH_INTERVAL);
@@ -314,6 +436,10 @@ export default function RosterScheduleOptimizer() {
       const current = providerRef.current.context;
       if (controller.signal.aborted || userId !== providerRef.current.userId || requestKey !== workspaceContextKey(current)) return false;
       const next = body.snapshot as PlanningSnapshot;
+      if (preservationRef.current.backup && workspaceContextKey(next.context) !== preservationRef.current.backup.contextKey) {
+        preservationRef.current.phase = "invalid"; setPreservation({ phase: "invalid", text: "Provider context differs from the admitted backup. The original plan was kept." });
+        throw new Error("Provider context differs from the admitted backup.");
+      }
       if (!next?.context) throw new Error("Provider refresh returned no inputs. Try again or continue manually.");
       // The adapter prefers the authoritative league zone; the original-request guard above still includes the client zone.
       if (workspaceContextKey({ ...next.context, timeZone: context.timeZone }) !== requestKey) throw new Error("Provider inputs do not match the selected league, team or timeframe. Review the context and refresh again.");
@@ -322,18 +448,23 @@ export default function RosterScheduleOptimizer() {
       const unchanged = sameContext && JSON.stringify({ ...previous, id: null, context: { ...previous.context, asOf: null } }) === JSON.stringify({ ...next, id: null, context: { ...next.context, asOf: null } });
       const overrides = providerRef.current.overrides ?? {};
       setConnected(next); connectedRef.current = next; setCapabilities(body.capabilities as ProviderCapabilities); setWorkspace((current) => ({ ...retainProviderInputs(current, next), context: next.context }));
-      setProposal(reconcileIntent(supplementProviderRules(next, overrides, providerRef.current.locks).snapshot, providerRef.current.intent, sameContext ? supplementProviderRules(previous, overrides, providerRef.current.locks).snapshot : undefined)); setNotice(null); setLastUpdated(new Date().toISOString());
+      const nextProposal = reconcileIntent(supplementProviderRules(next, overrides, providerRef.current.locks).snapshot, providerRef.current.intent, sameContext ? supplementProviderRules(previous, overrides, providerRef.current.locks).snapshot : undefined);
+      const refreshedAt = new Date().toISOString();
+      setProposal(nextProposal); setNotice(null); setLastUpdated(refreshedAt);
       const complete = !body.code && body.capabilities?.roster !== false && body.capabilities?.availability !== false;
       schedule.key = workspaceContextKey(next.context);
       schedule.delay = complete ? PROVIDER_REFRESH_INTERVAL : Math.min(schedule.delay * 2, 30 * 60_000);
       schedule.nextAutoAt = Math.max(Date.now() + schedule.delay, schedule.cooldownUntil);
-      setProviderRefresh({ key: schedule.key, userId, state: complete ? "success" : "partial", text: complete ? unchanged ? "Provider refresh completed. Inputs are unchanged; selected moves were kept." : "Provider inputs refreshed. Selected moves were kept." : "Provider inputs partly refreshed. Selected moves were kept; some provider facts remain unverified." });
+      const feedback: RequestFeedback = { key: schedule.key, userId, state: complete ? "success" : "partial", text: complete ? unchanged ? "Provider refresh completed. Inputs are unchanged; selected moves were kept." : "Provider inputs refreshed. Selected moves were kept." : "Provider inputs partly refreshed. Selected moves were kept; some provider facts remain unverified." };
+      providerAuthorityRef.current = { ...providerAuthorityRef.current, connected: next, capabilities: body.capabilities, proposal: nextProposal, refresh: feedback, schedule, lastUpdated: refreshedAt };
+      setProviderRefresh(feedback);
       return complete;
     } catch (error) {
       if (currentRequest()) {
         schedule.delay = Math.min(schedule.delay * 2, 30 * 60_000);
         schedule.nextAutoAt = Math.max(Date.now() + schedule.delay, schedule.cooldownUntil);
-        setProviderRefresh({ key: requestKey, userId, state: "error", text: message(error) });
+        const feedback: RequestFeedback = { key: requestKey, userId, state: "error", text: message(error) };
+        providerAuthorityRef.current = { ...providerAuthorityRef.current, refresh: feedback, schedule }; setProviderRefresh(feedback);
       }
       return false;
     }
@@ -341,15 +472,15 @@ export default function RosterScheduleOptimizer() {
       signal?.removeEventListener("abort", abort);
       if (providerAbort.current === controller) {
         providerAbort.current = null; providerPending.current = null;
-        if (currentRequest()) setSettledProviderRefresh(current => current + 1);
+        if (currentRequest()) { providerAuthorityRef.current.settledRefresh += 1; setSettledProviderRefresh(current => current + 1); }
         if (controller.signal.aborted) setProviderRefresh(current => current?.key === requestKey && current.userId === userId ? null : current);
       }
     } })();
     providerPending.current = { key: requestKey, userId, promise: pending };
     return pending;
-  }, [canSync, viewingSaved, scheduleFor]);
+  }, [canSync, viewingSaved, scheduleFor, trackedFetch]);
   useEffect(() => {
-    if (viewingSaved || workspace.context.provider === "manual" || !canSync || !user?.id || !workspace.context.teamId.trim() || workspace.context.teamId === "manual") return;
+    if (networkSuspended || viewingSaved || workspace.context.provider === "manual" || !canSync || !user?.id || !workspace.context.teamId.trim() || workspace.context.teamId === "manual") return;
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | null = null;
     let refreshing = false;
@@ -377,7 +508,7 @@ export default function RosterScheduleOptimizer() {
     document.addEventListener("visibilitychange", availability);
     window.addEventListener("online", availability); window.addEventListener("offline", availability);
     return () => { controller.abort(); providerAbort.current?.abort(); clearTimer(); document.removeEventListener("visibilitychange", availability); window.removeEventListener("online", availability); window.removeEventListener("offline", availability); };
-  }, [accountKey, user?.id, workspace.context.provider, workspace.context.teamId, canSync, canAutoUpkeep, viewingSaved, refreshProvider, scheduleFor, settledProviderRefresh]);
+  }, [accountKey, user?.id, workspace.context.provider, workspace.context.teamId, canSync, canAutoUpkeep, viewingSaved, refreshProvider, scheduleFor, settledProviderRefresh, networkSuspended]);
   useEffect(() => {
     const current = connected?.context;
     const connectedKey = current ? workspaceContextKey(current) : null;
@@ -460,6 +591,7 @@ export default function RosterScheduleOptimizer() {
   const displayContextKey = JSON.stringify([user?.id ?? null, workspaceContextKey(workspace.context)]);
   const displayDateStorageKey = `fhfh:rso:view-date:v1:${encodeURIComponent(displayContextKey)}`;
   useEffect(() => {
+    if (!["idle", "testing"].includes(preservationRef.current.phase)) return;
     let storedDate: string | null = null;
     try { storedDate = localStorage.getItem(displayDateStorageKey); } catch { /* View preferences must not block planning. */ }
     setSelectedDate(current => current?.context === displayContextKey && dates.includes(current.date) ? current
@@ -467,16 +599,151 @@ export default function RosterScheduleOptimizer() {
   }, [displayContextKey, displayDateStorageKey, dates]);
   const focusedDate = selectedDate?.context === displayContextKey && dates.includes(selectedDate.date) ? selectedDate.date : defaultScheduleDate(dates, today);
   const focusDate = (date: string) => {
-    if (!dates.includes(date)) return;
+    if (!dates.includes(date) || !["idle", "testing"].includes(preservationRef.current.phase)) return;
     setSelectedDate({ context: displayContextKey, date });
-    try { localStorage.setItem(displayDateStorageKey, date); } catch { /* Keep the active selection when persistence is unavailable. */ }
+    void persistLocal(() => { localStorage.setItem(displayDateStorageKey, date); });
+  };
+  const preservationRequest = async (mode: string, backup?: WorkspacePreservation, extra: Record<string, string> = {}, body?: unknown) => {
+    const userId = providerRef.current.userId;
+    const context = backup?.workspace.context ?? workspaceRef.current.context;
+    const key = workspaceContextKey(context);
+    if (!userId || key !== workspaceContextKey(providerRef.current.context) || backup && backup.principalId !== userId) throw new Error("Preservation requires the original principal and exact context.");
+    const params = new URLSearchParams({ ...Object.fromEntries(Object.entries(context).map(([name, value]) => [name, String(value)])), preservation: mode, ...extra });
+    if (backup) params.set("receipt", backup.remote.receiptId);
+    const headers = await authHeaders();
+    if (providerRef.current.userId !== userId || workspaceContextKey(providerRef.current.context) !== key) throw new Error("Preservation context changed before dispatch.");
+    const response = await fetch(`/api/v1/roster-schedule-optimizer/workspace?${params}`, { headers: { ...headers, "Content-Type": "application/json" }, ...(body ? { method: "PUT", body: JSON.stringify(body) } : {}) });
+    const result = await response.json();
+    if (providerRef.current.userId !== userId || workspaceContextKey(providerRef.current.context) !== key) throw new Error("Preservation response belongs to a retired context.");
+    if (!response.ok) throw new Error(requestErrorMessage(result.error, "Preservation could not be verified."));
+    if (result.preservation?.principalId !== userId || result.preservation?.contextKey !== key) throw new Error("Authenticated preservation binding does not match.");
+    return result;
+  };
+  const quiescePreservation = async () => {
+    const held = preservationRef.current;
+    held.phase = "preparing"; setPreservation({ phase: "preparing", text: "Finishing dispatched requests before preserving the plan…" });
+    // Aborting a PUT cannot prove that the server stopped. Drain its whole save/acknowledgement operation.
+    await Promise.allSettled([...pendingRequests.current, ...accountOperations.current, ...(providerPending.current ? [providerPending.current.promise] : []), localWrites.current]);
+    if (uncertainRequest.current) throw new Error("A dispatched request has an uncertain server outcome. Preservation cannot be admitted.");
+    setNetworkSuspended(true);
+    providerAbort.current?.abort();
+    if (!held.lease) held.lease = await acquirePreservationWriter(navigator.locks);
+    if (held.backup) {
+      if (sessionStorage.getItem(WORKSPACE_PRESERVATION_JOURNAL) !== journalRaw.current) throw new Error("Preservation journal changed outside this writer.");
+      assertPreservedKeys(localStorage, held.expected);
+    }
+    else held.expected = readPreservedKeys(localStorage, preservationKeys(user!.id, workspaceRef.current.context));
+  };
+  const preservationFailure = (error: unknown) => {
+    preservationRef.current.phase = "invalid";
+    setPreservation({ phase: "invalid", text: message(error) });
+  };
+  const preparePreservation = async () => {
+    try {
+      if (!user?.id || viewingSaved || preservationRef.current.phase !== "idle") return;
+      await quiescePreservation();
+      const result = await preservationRequest("read");
+      if (result.preservation.ownerVerified !== true) throw new Error("Actual server owner verification is missing.");
+      const backup = await capturePreservation(localStorage, user.id, workspaceRef.current, history.current,
+        { selectedDate, selectedPlayer, tab }, { receiptId: result.preservation.receiptId, row: result.preservation.row }, journalRaw.current, providerAuthorityRef.current);
+      const sealed = await preservationRequest("seal", backup, { checksum: backup.checksum, localHash: await preservationChecksum(backup.local) });
+      if (sealed.preservation.checksum !== backup.checksum || sealed.preservation.originalRowHash !== await preservationChecksum(backup.remote.row)) throw new Error("Independent server backup binding does not match.");
+      assertPreservedKeys(localStorage, backup.local);
+      const held = preservationRef.current;
+      held.backup = backup; held.expected = backup.local; held.restored = false; held.phase = "held"; persistJournal();
+      setAccount(result.data as AccountRecord | null);
+      setPreservation({ phase: "held", text: backup.remote.row ? "Complete backup sealed. Download it before any protected planning. Older writers still require independent exclusion." : "Complete local backup sealed. Account saves are held: the original account record is absent and cannot be restored to absence." });
+    } catch (error) { preservationFailure(error); }
+  };
+  const downloadPreservation = () => {
+    const held = preservationRef.current;
+    if (!held.backup || held.backup.principalId !== user?.id || held.backup.contextKey !== accountKey) return;
+    const url = URL.createObjectURL(new Blob([JSON.stringify(held.backup, null, 2)], { type: "application/json" }));
+    const link = document.createElement("a"); link.href = url; link.download = "rso-preservation-backup.json"; link.click(); URL.revokeObjectURL(url);
+    held.exported = true;
+    try { persistJournal(); } catch (error) { preservationFailure(error); return; }
+    setPreservation(current => ({ ...current, text: "Backup download requested. Verify the complete file was saved before starting the approved test." }));
+  };
+  const restorePreservation = async (imported?: WorkspacePreservation) => {
+    try {
+      const backup = imported ?? preservationRef.current.backup;
+      if (!backup || !user?.id) return;
+      await validatePreservation(backup, user.id, accountKey);
+      if (!preservationRef.current.backup || preservationRef.current.backup.checksum !== backup.checksum || !journalRaw.current) throw new Error("The original browser journal is required. A fresh local read cannot authorize restoration.");
+      await quiescePreservation();
+      const held = preservationRef.current;
+      const proof = await preservationRequest("verify", backup);
+      if (proof.preservation.checksum !== backup.checksum || proof.preservation.originalRowHash !== await preservationChecksum(backup.remote.row)
+        || proof.preservation.lastVersion !== proof.preservation.acknowledgedVersion || proof.preservation.localHash !== await preservationChecksum(held.expected)) throw new Error("Backup is not bound to the admitted writer's acknowledged state.");
+      assertPreservedKeys(localStorage, held.expected);
+      held.backup = backup; held.phase = "restoring"; setPreservation({ phase: "restoring", text: "Restoring the original account payload and local Undo state…" });
+      let restoredAccount = proof.data as AccountRecord | null;
+      if (backup.remote.row) {
+        const restored = await preservationRequest("restore", backup, {}, { backup, expectedVersion: proof.preservation.lastVersion });
+        if (!restored.preservation.restored || restored.preservation.checksum !== backup.checksum
+          || preservationJson(restored.data.workspace) !== preservationJson(backup.remote.row.workspace)
+          || preservationJson(restored.data.snapshot) !== preservationJson(backup.remote.row.snapshot)
+          || restored.data.version !== proof.preservation.lastVersion + 1) throw new Error("Remote restoration proof is incomplete. Local state remains held.");
+        await preservationRequest("ack", backup, { version: String(restored.data.version) });
+        restoredAccount = restored.data;
+      } else if (proof.preservation.row !== null) throw new Error("The originally absent account record is no longer absent. Nothing was deleted.");
+      const previousLocalHash = await preservationChecksum(held.expected);
+      restorePreservedKeys(localStorage, backup.local, held.expected);
+      const original = JSON.parse(JSON.stringify(backup.workspace)) as PlanningWorkspace;
+      history.current = JSON.parse(JSON.stringify(backup.history));
+      skipRestoredPersist.current = original; setWorkspace(original);
+      const provider = backup.provider;
+      setConnected(provider?.connected ?? null); connectedRef.current = provider?.connected ?? null;
+      setCapabilities(provider?.capabilities ?? null); setProposal(provider?.proposal ?? null); setProviderRefresh(provider?.refresh ?? null);
+      providerSchedule.current = provider?.schedule ?? null; setSettledProviderRefresh(provider?.settledRefresh ?? 0); setLastUpdated(provider?.lastUpdated ?? null);
+      providerAuthorityRef.current = provider ?? { connected: null, capabilities: null, proposal: null, refresh: null, schedule: null, settledRefresh: 0, lastUpdated: null };
+      setSelectedDate(backup.view.selectedDate); setSelectedPlayer(backup.view.selectedPlayer); setTab(backup.view.tab as Tab); setAccount(restoredAccount); setViewingSaved(false);
+      held.expected = backup.local; held.restored = true; held.phase = "held"; persistJournal();
+      const restoredLocalHash = await preservationChecksum(backup.local);
+      if (restoredLocalHash !== previousLocalHash) await preservationRequest("local_ack", backup, { checksum: backup.checksum, previousLocalHash, localHash: restoredLocalHash });
+      setPreservation({ phase: "held", text: "Original local key values and absence, plan and Undo restored. Remote payload verified; its version/time may have advanced. Preservation remains held for final inspection." });
+    } catch (error) { preservationFailure(error); }
+  };
+  const releasePreservation = async () => {
+    try {
+      const held = preservationRef.current;
+      if (!held.backup || !held.restored) return;
+      assertPreservedKeys(localStorage, held.backup.local);
+      const proof = await preservationRequest("release", held.backup);
+      if (!proof.preservation.released) throw new Error("Remote restoration release was not verified.");
+      assertPreservedKeys(localStorage, held.backup.local);
+      if (sessionStorage.getItem(WORKSPACE_PRESERVATION_JOURNAL) !== journalRaw.current) throw new Error("Preservation journal changed before release.");
+      if (held.backup.session.value === null) sessionStorage.removeItem(WORKSPACE_PRESERVATION_JOURNAL); else sessionStorage.setItem(WORKSPACE_PRESERVATION_JOURNAL, held.backup.session.value);
+      journalRaw.current = held.backup.session.value;
+      held.lease?.release(); held.lease = null; held.backup = null; held.phase = "idle";
+      setPreservation({ phase: "idle", text: "Original plan and Undo restoration verified. Normal planning resumed." }); setNetworkSuspended(false);
+    } catch (error) { preservationFailure(error); }
+  };
+  const startProtectedPlanning = async () => {
+    try {
+      const held = preservationRef.current;
+      if (!held.backup || !held.exported || !otherWritersExcluded || held.restored || !held.backup.remote.row || held.phase !== "held") return;
+      const proof = await preservationRequest("verify", held.backup);
+      if (proof.preservation.checksum !== held.backup.checksum || proof.preservation.lastVersion !== proof.preservation.acknowledgedVersion || proof.preservation.localHash !== await preservationChecksum(held.expected)) throw new Error("The original backup is not admitted for this writer.");
+      assertPreservedKeys(localStorage, held.expected);
+      held.phase = "testing"; setPreservation({ phase: "testing", text: "Protected planning active. Automatic readers are paused; selected changes and account saves remain bound to this backup. Restore before resuming normal use." });
+    } catch (error) { preservationFailure(error); }
   };
   const matches = players.filter((player) => query.trim().length >= 2 && `${player.name} ${player.teamAbbreviation ?? ""}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())).slice(0, 20);
   const rosterIds = useMemo(() => new Set(roster.map((entry) => entry.playerId)), [roster]);
   const selectedManualCandidate = workspace.context.provider === "manual" && !readOnlySaved && selectedPlayer && !rosterIds.has(selectedPlayer) ? players.find((player) => player.id === selectedPlayer) : undefined;
+  const resolvingName = workspace.unresolvedNames.find(name => name === query);
   const assignments = result?.selected.assignments ?? [];
   const nameOf = (id: string) => players.find((player) => player.id === id)?.name ?? id;
-  const addRoster = (player: PlanningPlayer) => { if (rosterIds.has(player.id)) return; edit((current) => ({ ...current, roster: [...current.roster, { playerId: player.id, position: "bench" }], manualPlayers: [...current.manualPlayers.filter((row) => row.id !== player.id), player], unresolvedNames: current.unresolvedNames.filter((name) => name.toLowerCase() !== player.name.toLowerCase()) })); setQuery(""); };
+  const addRoster = (player: PlanningPlayer, unresolvedName?: string) => {
+    if (readOnlySaved || rosterIds.has(player.id) && !unresolvedName) return;
+    edit((current) => { const owned = current.roster.some(entry => entry.playerId === player.id); return { ...current,
+      roster: owned ? current.roster : [...current.roster, { playerId: player.id, position: "bench" as const }],
+      manualPlayers: owned ? current.manualPlayers : [...current.manualPlayers.filter(row => row.id !== player.id), player],
+      unresolvedNames: current.unresolvedNames.filter(name => unresolvedName ? name !== unresolvedName : name.toLowerCase() !== player.name.toLowerCase()) }; });
+    setQuery("");
+    if (unresolvedName) setActionFeedback({ key: accountKey, userId: user?.id, intentRevision: workspace.intent.revision, text: `${unresolvedName} resolved as ${player.name}.` });
+  };
   const importRoster = () => {
     if (readOnlySaved || !paste.trim()) return;
     const resolved = resolveImportedNames(paste, players);
@@ -507,9 +774,11 @@ export default function RosterScheduleOptimizer() {
     }
     editIntent((intent) => ({ ...intent, steps: [...intent.steps, { id: `selected-${Date.now()}`, type: "add", playerId: player.id, at, effectiveAt, conditional: true, dependsOn: [] }] }));
   };
-  const saveAccount = async () => {
+  const saveAccountNow = async () => {
     const userId = user?.id;
-    if (!userId || readOnlySaved || !access?.capabilities.includes("rso_account_save")) return;
+    if (!userId || readOnlySaved || !access?.capabilities.includes("rso_account_save") || !["idle", "testing"].includes(preservationRef.current.phase)) return;
+    const backup = preservationRef.current.backup;
+    if (backup && !backup.remote.row) { setNotice("Account saves are held because the original record was absent."); return; }
     const contextIdentity = workspaceContextKey(workspace.context);
     if (accountSaveRequest.current?.key === contextIdentity && accountSaveRequest.current.userId === userId) return;
     const request = { key: contextIdentity, userId }; accountSaveRequest.current = request;
@@ -519,12 +788,30 @@ export default function RosterScheduleOptimizer() {
       if (snapshot && JSON.stringify(snapshot.context) !== JSON.stringify(workspace.context)) throw new Error("Provider context changed. Refresh this workspace before saving.");
       const headers = await authHeaders();
       if (!sameContext()) return;
-      const response = await fetch("/api/v1/roster-schedule-optimizer/workspace", { method: "PUT", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ workspace, snapshot, expectedVersion: account?.version ?? null }) });
+      const suffix = backup ? `?preservation=write&receipt=${encodeURIComponent(backup.remote.receiptId)}` : "";
+      const response = await trackedFetch(`/api/v1/roster-schedule-optimizer/workspace${suffix}`, { method: "PUT", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ workspace, snapshot, expectedVersion: account?.version ?? null }) });
       const body = await response.json(); if (!sameContext()) return;
       if (response.status === 409) throw new Error("Another device saved this workspace. Your local plan is intact; review the other version before saving again.");
-      if (!response.ok) throw new Error(requestErrorMessage(body.error, "Account save failed.")); setAccount(body.data as AccountRecord); setAccountSave({ ...request, state: "success", text: JSON.stringify(workspaceRef.current) === JSON.stringify(workspace) ? "Saved to account." : "Submitted inputs saved to account. Newer local changes still need saving." });
-    } catch (error) { if (sameContext()) setAccountSave({ ...request, state: "error", text: message(error) }); }
+      if (!response.ok) throw new Error(requestErrorMessage(body.error, "Account save failed."));
+      if (backup) {
+        if (body.preservation?.checksum !== backup.checksum || body.preservation?.receiptId !== backup.remote.receiptId
+          || body.data?.version !== (account?.version ?? 0) + 1) { uncertainRequest.current = true; throw new Error("Protected save acknowledgement does not match the admitted writer."); }
+        await preservationRequest("ack", backup, { version: String(body.data.version) });
+      }
+      setAccount(body.data as AccountRecord); setAccountSave({ ...request, state: "success", text: JSON.stringify(workspaceRef.current) === JSON.stringify(workspace) ? "Saved to account." : "Submitted inputs saved to account. Newer local changes still need saving." });
+    } catch (error) { if (sameContext()) { setAccountSave({ ...request, state: "error", text: message(error) }); if (backup) preservationFailure(error); } }
     finally { if (accountSaveRequest.current === request) accountSaveRequest.current = null; }
+  };
+  const saveAccount = () => {
+    const protectedSave = preservationRef.current.phase === "testing";
+    if (protectedSave && accountOperations.current.size) return Promise.resolve();
+    if (protectedSave) setAccountSave({ key: workspaceContextKey(workspace.context), userId: user?.id, state: "busy", text: "Saving to account…" });
+    // Share the local persistence queue through PUT and acknowledgement; local_ack must not cross an unacknowledged PUT.
+    const operation = protectedSave ? localWrites.current.then(() => saveAccountNow()) : saveAccountNow();
+    if (protectedSave) localWrites.current = operation;
+    accountOperations.current.add(operation);
+    void operation.then(() => accountOperations.current.delete(operation), () => accountOperations.current.delete(operation));
+    return operation;
   };
   const updateRules = (change: (rules: LeagueRules) => LeagueRules) => edit((current) => {
     const base = current.context.provider === "manual" ? current.rules : (connected ? supplementProviderRules(connected, current.managerRuleOverrides ?? {}).snapshot.rules : current.rules);
@@ -563,7 +850,18 @@ export default function RosterScheduleOptimizer() {
     </div>;
 
   return <div ref={workspaceElement} className={styles.workspace}>
-    <header className={styles.topbar}><div><span className={styles.eyebrow}>Tools / In-season planning</span><h1>Roster Schedule Optimizer</h1></div><div className={styles.actions}><button className={styles.mobileSetupToggle} aria-controls="rso-planning-setup" aria-expanded={setupExpanded} onClick={() => setSetupExpanded(value => !value)}>Planning setup · {dateLabel(workspace.context.startDate)} – {dateLabel(workspace.context.endDate)}</button><button onClick={undo} disabled={Boolean(undoUnavailable)} aria-describedby={undoUnavailable ? "rso-undo-reason" : undefined}>Undo</button>{undoUnavailable && <small id="rso-undo-reason">{undoUnavailable}</small>}<button onClick={() => setTab(tab === "matchup" ? "candidates" : "matchup")}>{tab === "matchup" ? "Candidates" : "Matchup"}</button>{account?.snapshot && <button onClick={() => { setWorkspace(account.workspace); setViewingSaved(true); }}>View account save</button>}{access?.capabilities.includes("rso_account_save") && !readOnlySaved && <button className={styles.primaryAction} onClick={() => void saveAccount()} disabled={saveBusy} aria-busy={saveBusy} aria-describedby="rso-account-save-status">Save to account{saveBusy && <span aria-hidden="true"> · Saving…</span>}</button>}<span>{viewingSaved && snapshot ? `Saved evidence ${actionTime(snapshot.context.asOf, snapshot.context.timeZone)}` : lastUpdated ? `Reader checked ${new Date(lastUpdated).toLocaleTimeString()}` : "Data not loaded"}</span></div></header>
+    {(access?.grantingSources?.includes("owner_testing") || preservation.phase !== "idle") && <details className={styles.settings}><summary>Owner plan preservation</summary>
+      <p role={preservation.phase === "invalid" ? "alert" : "status"}>{preservation.text || "Preserve this exact working context before a separately approved test."}</p>
+      <button disabled={!hydrated || preservation.phase !== "idle"} onClick={() => void preparePreservation()}>Prepare plan backup</button>
+      <button disabled={!preservationRef.current.backup || preservationRef.current.backup.principalId !== user?.id} onClick={downloadPreservation}>Download complete backup</button>
+      <label><input type="checkbox" checked={otherWritersExcluded} onChange={event => setOtherWritersExcluded(event.target.checked)} /> Backup saved and other writers independently excluded</label>
+      <button disabled={preservation.phase !== "held" || !preservationRef.current.exported || !otherWritersExcluded || !preservationRef.current.backup?.remote.row || preservationRef.current.restored} onClick={() => void startProtectedPlanning()}>Use backup for approved test</button>
+      <button disabled={!preservationRef.current.backup || ["preparing", "restoring"].includes(preservation.phase)} onClick={() => void restorePreservation()}>Restore original plan and Undo</button>
+      <label>Restore downloaded backup<input type="file" accept="application/json" onChange={event => { const file = event.target.files?.[0]; if (file) void file.text().then(text => restorePreservation(JSON.parse(text) as WorkspacePreservation)).catch(preservationFailure); event.target.value = ""; }} /></label>
+      <button disabled={!preservationRef.current.restored || preservation.phase !== "held"} onClick={() => void releasePreservation()}>Resume normal planning</button>
+      <p>This lock coordinates updated RSO writers. Older tabs need independent exclusion. Backups are bound to the running server receipt; a server restart holds recovery for review. Account saves remain blocked when the original remote record was absent.</p>
+    </details>}
+    <header className={styles.topbar}><div><span className={styles.eyebrow}>Tools / In-season planning</span><h1>Roster Schedule Optimizer</h1></div><div className={styles.actions}><button className={styles.mobileSetupToggle} aria-controls="rso-planning-setup" aria-expanded={setupExpanded} onClick={() => setSetupExpanded(value => !value)}>Planning setup · {dateLabel(workspace.context.startDate)} – {dateLabel(workspace.context.endDate)}</button><button onClick={undo} disabled={Boolean(undoUnavailable)} aria-describedby={undoUnavailable ? "rso-undo-reason" : undefined}>Undo</button>{undoUnavailable && <small id="rso-undo-reason">{undoUnavailable}</small>}<button disabled={planHeld} onClick={() => setTab(tab === "matchup" ? "candidates" : "matchup")}>{tab === "matchup" ? "Candidates" : "Matchup"}</button>{account?.snapshot && <button disabled={planHeld} onClick={() => { setWorkspace(account.workspace); setViewingSaved(true); }}>View account save</button>}{access?.capabilities.includes("rso_account_save") && !readOnlySaved && <button className={styles.primaryAction} onClick={() => void saveAccount()} disabled={saveBusy} aria-busy={saveBusy} aria-describedby="rso-account-save-status">Save to account{saveBusy && <span aria-hidden="true"> · Saving…</span>}</button>}<span>{viewingSaved && snapshot ? `Saved evidence ${actionTime(snapshot.context.asOf, snapshot.context.timeZone)}` : lastUpdated ? `Reader checked ${new Date(lastUpdated).toLocaleTimeString()}` : "Data not loaded"}</span></div></header>
     <fieldset id="rso-planning-setup" className={`${styles.controls} ${setupExpanded ? styles.controlsExpanded : ""}`} aria-label="Planning setup" disabled={readOnlySaved}>
       <label>Source<select value={workspace.context.provider} onChange={(event) => { edit((current) => ({ ...current, context: { ...current.context, provider: event.target.value as PlanningWorkspace["context"]["provider"] } })); setConnected(null); }}><option value="manual">Manual</option><option value="yahoo">Yahoo{!access?.capabilities.includes("rso_sync") ? " saved view" : ""}</option><option value="fantrax">Fantrax{!access?.capabilities.includes("rso_sync") ? " saved view" : ""}</option></select></label>
       <label>Season<input type="number" value={workspace.context.seasonId} onChange={(event) => edit((current) => ({ ...current, context: { ...current.context, seasonId: Number(event.target.value) } }))} /></label>
@@ -592,12 +890,12 @@ export default function RosterScheduleOptimizer() {
     <nav className={styles.mobileTabs} aria-label="Workspace views">{(["itinerary", "roster", "candidates", "matchup"] as Tab[]).map((name) => <button key={name} className={tab === name ? styles.activeTab : ""} onClick={() => setTab(name)} aria-current={tab === name ? "page" : undefined}>{name[0].toUpperCase() + name.slice(1)}</button>)}</nav>
     <div className={styles.panels}>
       <section className={`${styles.panel} ${styles.rosterPanel} ${tab === "roster" ? styles.mobileActive : ""}`} aria-label="Roster and setup"><div className={styles.panelHead}><h2 id="rso-roster-heading" tabIndex={-1}><span className={styles.panelNumber} aria-hidden="true">1</span>Current Roster</h2><span>{roster.length} players</span></div>{desktop && healthStrip}<div id="rso-roster-edit" {...readOnlyInert} className={styles.panelBody}>
-        {workspace.context.provider === "manual" && <><label className={styles.field}>Find a player<input id="rso-roster-input" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Name or team" /></label>{query.length >= 2 && <ul className={styles.searchResults}>{matches.map((player) => <li key={player.id}><span>{player.name} · {player.teamAbbreviation ?? "—"} · {player.eligiblePositions.join("/")}</span><button onClick={() => addRoster(player)} disabled={rosterIds.has(player.id)} aria-describedby={rosterIds.has(player.id) ? `rso-roster-add-${player.id}` : undefined}>Add</button>{rosterIds.has(player.id) && <small id={`rso-roster-add-${player.id}`}>Already in your roster.</small>}</li>)}</ul>}<label className={styles.field}>Paste roster names<textarea value={paste} onChange={(event) => setPaste(event.target.value)} placeholder="One name per line" /></label><button onClick={importRoster} disabled={!paste.trim()} aria-describedby={!paste.trim() ? "rso-paste-reason" : "rso-action-status"}>Review pasted names</button>{!paste.trim() && <small id="rso-paste-reason">Paste at least one roster name to review.</small>}{workspace.unresolvedNames.length > 0 && <div className={styles.unresolved}><strong>Unresolved — excluded from analysis</strong>{workspace.unresolvedNames.map((name) => <div key={name}>{name}<button onClick={() => setQuery(name)}>Find match</button><button onClick={() => edit((current) => ({ ...current, unresolvedNames: current.unresolvedNames.filter((item) => item !== name) }))}>Dismiss</button></div>)}</div>}</>}
+        {workspace.context.provider === "manual" && <><label className={styles.field}>Find a player<input id="rso-roster-input" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Name or team" /></label>{query.length >= 2 && <ul className={styles.searchResults}>{matches.map((player) => <li key={player.id}><span>{player.name} · {player.teamAbbreviation ?? "—"} · {player.eligiblePositions.join("/")}</span><button onClick={() => addRoster(player, resolvingName)} disabled={rosterIds.has(player.id) && !resolvingName} aria-describedby={rosterIds.has(player.id) ? `rso-roster-add-${player.id}` : undefined}>{resolvingName ? "Resolve" : "Add"}</button>{rosterIds.has(player.id) && <small id={`rso-roster-add-${player.id}`}>Already in your roster.</small>}</li>)}</ul>}<label className={styles.field}>Paste roster names<textarea value={paste} onChange={(event) => setPaste(event.target.value)} placeholder="One name per line" /></label><button onClick={importRoster} disabled={!paste.trim()} aria-describedby={!paste.trim() ? "rso-paste-reason" : "rso-action-status"}>Review pasted names</button>{!paste.trim() && <small id="rso-paste-reason">Paste at least one roster name to review.</small>}{workspace.unresolvedNames.length > 0 && <div className={styles.unresolved}><strong>Unresolved — excluded from analysis</strong>{workspace.unresolvedNames.map((name) => <div key={name}>{name}<button onClick={() => setQuery(name)}>Find match</button><button onClick={() => edit((current) => ({ ...current, unresolvedNames: current.unresolvedNames.filter((item) => item !== name) }))}>Dismiss</button></div>)}</div>}</>}
         {roster.map((entry) => { const player = players.find((item) => item.id === entry.playerId); if (!player) return <div key={entry.playerId} className={styles.rosterRow}>Unmatched ID {entry.playerId}</div>; const protectedPlayer = workspace.intent.protectedPlayerIds.includes(player.id); return <div key={player.id} className={styles.rosterRow}><button className={styles.playerButton} onClick={() => selectPlayer(player.id)}>{player.name}<small>{player.teamAbbreviation ?? "—"} · {player.eligiblePositions.join("/")}</small></button>{workspace.context.provider === "manual" ? <select aria-label={`${player.name} roster position`} value={entry.position} onChange={(event) => edit((current) => ({ ...current, roster: current.roster.map((row) => row.playerId === player.id ? { ...row, position: event.target.value as typeof entry.position } : row) }))}><option value="active">Active</option><option value="bench">Bench</option><option value="IR">IR</option><option value="IR+">IR+</option><option value="NA">NA</option></select> : <span>{entry.position}</span>}<span className={styles.currentSlot} title="Selected-day local planning slot; not an imported Yahoo slot">{assignments.find(row => row.date === focusedDate && row.playerId === player.id)?.slotId ? `Local ${assignments.find(row => row.date === focusedDate && row.playerId === player.id)!.slotId}` : entry.position === "active" ? "Slot unknown" : entry.position === "bench" ? "BN" : entry.position}</span><label className={styles.check}><input type="checkbox" checked={protectedPlayer} onChange={() => editIntent((intent) => ({ ...intent, protectedPlayerIds: protectedPlayer ? intent.protectedPlayerIds.filter((id) => id !== player.id) : [...intent.protectedPlayerIds, player.id] }))} />Protect</label>{workspace.context.provider === "manual" && <button aria-label={`Remove ${player.name}`} onClick={() => edit((current) => ({ ...current, roster: current.roster.filter((row) => row.playerId !== player.id) }))}>×</button>}{workspace.context.provider === "manual" && <ManualPlayerInputs player={player} edit={edit} />}</div>; })}
         <details id="rso-rule-settings" className={styles.settings}><summary>League rules and scoring</summary><p>Daily mode and roster slots are proposed defaults for manual planning. Review them against your league. Unknown acquisition, scoring and lock rules keep action and outcome readiness unresolved.</p><p>{inputsReviewed ? "Inputs reviewed for this session. Unknown values still need verification." : "Review league rules, scoring, locked assignments and player availability. Confirm again when these inputs change."} <button disabled={Boolean(confirmUnavailable)} aria-describedby={confirmUnavailable ? "rso-confirm-reason" : undefined} onClick={() => setReviewedInputs(reviewKey)}>Confirm planning inputs</button>{confirmUnavailable && <small id="rso-confirm-reason"> {confirmUnavailable}</small>}</p><div className={styles.settingsGrid}><label>Lineup mode<select value={rules.lineupMode} onChange={(event) => updateRules((rules) => ({ ...rules, lineupMode: event.target.value as LeagueRules["lineupMode"] }))}><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="unsupported">Other / unknown</option></select></label><label>Scoring<select value={rules.scoring.mode} onChange={(event) => updateRules((rules) => ({ ...rules, scoring: { ...rules.scoring, mode: event.target.value as LeagueRules["scoring"]["mode"] } }))}><option value="points">Points</option><option value="categories">Categories</option></select></label><label>Acquisition timing<select value={rules.acquisitionTiming} onChange={(event) => updateRules((rules) => ({ ...rules, acquisitionTiming: event.target.value as LeagueRules["acquisitionTiming"] }))}><option value="unknown">Unknown</option><option value="same_day">Same day</option><option value="next_day">Next day</option></select></label><label>Goalie minimum<input type="number" min="0" value={rules.goalieMinimum.required ?? ""} onChange={(event) => updateRules((rules) => ({ ...rules, goalieMinimum: { ...rules.goalieMinimum, required: event.target.value ? Number(event.target.value) : null } }))} /></label><label>Goalie credited<input type="number" min="0" value={rules.goalieMinimum.credited ?? ""} onChange={(event) => updateRules((rules) => ({ ...rules, goalieMinimum: { ...rules.goalieMinimum, credited: event.target.value ? Number(event.target.value) : null } }))} /></label>{Object.entries(rules.rosterSlots).map(([slot, count]) => <label key={slot}>{slot}<input type="number" min="0" value={count} onChange={(event) => updateRules((rules) => ({ ...rules, rosterSlots: { ...rules.rosterSlots, [slot]: Number(event.target.value) } }))} /></label>)}</div></details>{Object.keys(workspace.managerRuleOverrides ?? {}).length > 0 && workspace.context.provider !== "manual" && <p className={styles.evidence}>Manager rule inputs retained for this league: {JSON.stringify(workspace.managerRuleOverrides)}</p>}<ExtraRules rules={rules} startDate={workspace.context.startDate} endDate={workspace.context.endDate} timeZone={workspace.context.timeZone} updateRules={updateRules} />{workspace.context.provider === "manual" && <ManualLocks workspace={workspace} players={players} edit={edit} />}
       </div></section>
       <section className={`${styles.panel} ${styles.itineraryPanel} ${tab === "itinerary" ? styles.mobileActive : ""}`} aria-label="Itinerary"><div className={styles.panelHead}><h2 id="rso-itinerary-heading" tabIndex={-1}><span className={styles.panelNumber} aria-hidden="true">2</span>Itinerary</h2><span>{planningLoading ? "Evaluating…" : result ? `${rules.scoring.mode === "categories" ? "Category alternatives" : "Best found"} · ${result.search.evaluated} evaluated` : "Awaiting inputs"}</span><div className={styles.viewSwitch} role="group" aria-label="Schedule view"><button aria-pressed={!showLineup} onClick={() => setShowLineup(false)}>Streaming itinerary</button><button aria-pressed={showLineup} aria-label={categoryComparisonAvailable ? "Show category lineup comparison" : result?.selected.recommendation?.eligible ? "Show lineup analysis" : "Show schedule-capacity assignment"} onClick={() => setShowLineup(true)}>{categoryComparisonAvailable ? "Category lineup comparison" : result?.selected.recommendation?.eligible ? "Lineup analysis" : "Schedule-capacity assignment"}</button></div></div><div className={`${styles.panelBody} ${showLineup ? styles.lineupBody : ""}`}>{!showLineup && <div className={styles.dateStrip} role="group" aria-label="Choose a date">{dates.map((date) => <button key={date} className={focusedDate === date ? styles.selectedDate : ""} onClick={() => focusDate(date)}>{dateLabel(date)}</button>)}</div>}{!showLineup && <div className={styles.dateSummary}><strong>{focusedDate ? dateLabel(focusedDate) : "Choose valid dates"}</strong><span>{assignments.filter((assignment) => assignment.date === focusedDate).length} planned starts · {new Set(snapshot?.games.filter((game) => game.date === focusedDate && game.status !== "cancelled" && game.status !== "postponed").map((game) => game.id) ?? []).size} NHL games</span></div>}{!showLineup && <StreamingGrid dates={dates} assignments={assignments} games={snapshot?.games ?? []} players={players} steps={workspace.intent.steps} timeZone={workspace.context.timeZone} />}{showLineup && focusedDate && <CompactSchedule key={contextKey} snapshot={snapshot} roster={roster} rules={rules} players={players} assignments={assignments} intent={workspace.intent} dates={dates} date={focusedDate} today={today} ready={Boolean(result)} selectDate={focusDate} selectPlayer={selectPlayer} benchOpen={benchOpen} onBenchChange={setBenchOpen} />}<details id="rso-plan-details" className={styles.planDetails} open={!showLineup}><summary>Plan details · selected steps, forecasts and bench evidence</summary>{showLineup && <ForecastEvidence forecasts={result?.selected.forecastInputs} scoring={rules.scoring} nameOf={nameOf} timeZone={workspace.context.timeZone} label="Selected lineup" />}<CategoryGains baseline={result?.baseline} plan={result?.selected} scoring={rules.scoring} label="Selected plan" reviewed={actionableRulesReviewed} /><div className={styles.itineraryLegs}><h3>Selected steps</h3>{workspace.intent.steps.length > 0 && <p className={styles.limitation}>{nextSelectedStep && <><strong>Next selected action: {nextSelectedStep.type.toUpperCase()} {nameOf(nextSelectedStep.playerId)}</strong> · {actionTime(nextSelectedStep.at, workspace.context.timeZone)}. </>}{nextSelectedReview}</p>}{workspace.intent.steps.length ? workspace.intent.steps.map((step) => <SelectedStep key={step.id} step={step} name={nameOf(step.playerId)} dropName={step.dropPlayerId ? nameOf(step.dropPlayerId) : null} prerequisites={step.dependsOn.map(id => { const prior = workspace.intent.steps.find(item => item.id === id); return prior ? `${prior.type.toUpperCase()} ${nameOf(prior.playerId)}` : "Unresolved prerequisite"; })} timeZone={workspace.context.timeZone} rules={rules} readOnly={readOnlySaved} continuation={result?.noClaimContinuations?.find((row) => row.claimStepId === step.id)?.evaluation.activeGames} update={(patch) => editIntent((intent) => ({ ...intent, steps: intent.steps.map((item) => item.id === step.id ? { ...item, ...patch } : item) }))} remove={() => editIntent((intent) => ({ ...intent, steps: intent.steps.filter((item) => item.id !== step.id) }))} setNotice={setNotice} />) : <p>No acquisition selected. The no-move lineup is the comparison.</p>}</div>{showLineup && result?.selected.recommendation?.eligible && <p role="status" className={styles.limitation}>{!inputsReviewed ? "Lineup analysis uses proposed or saved inputs. Review rules, locks and player availability before following this assignment." : lineupSuggestionReady ? "Suggested assignment uses reviewed inputs. Forecast and rule limitations still apply." : "Reviewed inputs still have unresolved rule checks. This assignment remains lineup analysis."}</p>}{showLineup && !result?.selected.recommendation?.eligible && <p role="status" className={styles.limitation}>{categoryComparisonAvailable ? "Supported category values describe this lineup. Review gains, losses and coverage risk; category tradeoffs need your choice." : rules.scoring.mode === "categories" ? "This assignment shows legal schedule capacity. Incomplete forecast, matchup or coverage evidence leaves category comparisons unresolved." : "This assignment shows legal schedule capacity. Player-quality start/sit decisions are unresolved where forecasts are missing or incomplete."}</p>}{showLineup && <p className={styles.limitation}>Goalie games are scheduled opportunities, not confirmed starts or a satisfied minimum. Back-to-back assignments require starter evidence.</p>}{showLineup && <div className={styles.lineup}>{dates.map((date) => <div key={date}><h3>{dateLabel(date)}</h3><p>{result ? assignments.filter(row => row.date === date).length : "Unknown"} known active-game assignments · {activeSlotCount} starting slots</p>{assignments.filter((assignment) => assignment.date === date).map((assignment) => <span key={`${assignment.playerId}:${assignment.slotId}`}>{assignment.slotId} · {nameOf(assignment.playerId)}{goalieB2B(assignment.playerId, date, snapshot) && <small className={styles.formChip}> · B2B — verify starter</small>}</span>)}</div>)}</div>}{showLineup && <BenchDecisions decisions={result?.selected.recommendation?.exclusions} nameOf={nameOf} date={focusedDate} />}{result?.selected.limitations.filter(limit => /conditional ability|baseline estimates/i.test(limit)).map(limit => <p key={limit} className={styles.limitation}>{limit}</p>)}{result?.search.limitations.length ? <p className={styles.limitation}>{result.search.limitations.join(" ")}</p> : null}</details></div></section>
-      <section {...readOnlyInert} className={`${styles.panel} ${styles.candidatePanel} ${tab === "matchup" ? styles.desktopHidden : ""} ${tab === "candidates" ? styles.mobileActive : ""}`} aria-label="Candidates and detail"><div className={styles.panelHead}><h2><span className={styles.panelNumber} aria-hidden="true">3</span>Available Players</h2><label>Show<select value={workspace.intent.alternativeCount} onChange={(event) => editIntent((intent) => ({ ...intent, alternativeCount: Number(event.target.value) as PlanIntent["alternativeCount"] }))}><option value="5">5</option><option value="10">10</option><option value="20">20</option></select></label></div><div className={styles.panelBody}>{selectedPlayer && <div id="rso-player-detail" className={styles.detail} role="region" aria-label={`Player details for ${nameOf(selectedPlayer)}`} data-player-id={selectedPlayer} tabIndex={-1}><strong>{nameOf(selectedPlayer)}</strong><span>{players.find((player) => player.id === selectedPlayer)?.availability.replaceAll("_", " ") ?? "Unknown"}</span>{workspace.intent.excludedPlayerIds.includes(selectedPlayer) && <span>Excluded from suggestions</span>}<span>Ownership {number(players.find((player) => player.id === selectedPlayer)?.ownership)}%</span>{players.find((player) => player.id === selectedPlayer)?.form && <span className={styles.formChip}>{players.find((player) => player.id === selectedPlayer)!.form!.label} · {players.find((player) => player.id === selectedPlayer)!.form!.points} points / {players.find((player) => player.id === selectedPlayer)!.form!.games} games · forecast inclusion unknown</span>}{opponentDemandHint(snapshot, players.find((player) => player.id === selectedPlayer)) && <span className={styles.demandHint}>{opponentDemandHint(snapshot, players.find((player) => player.id === selectedPlayer))}</span>}{selectedManualCandidate && <ManualPlayerInputs key={`${user?.id ?? "guest"}:${accountKey}:${selectedManualCandidate.id}`} player={selectedManualCandidate} edit={edit} />}</div>}<p className={styles.limitation}>Availability is unknown until verified by a provider or entered by the manager.</p>{result?.alternatives.slice(0, workspace.intent.alternativeCount).map((alternative, index) => { const first = alternative.steps[0]; const planUnavailable = readOnlySaved ? "Saved inputs are read-only." : !first ? "This plan keeps the roster unchanged; there are no moves to select." : !inputsReviewed ? "Review and confirm planning inputs before selecting this plan." : !scoringEntered ? "Enter league scoring before selecting this plan." : !alternative.legal ? `Plan rule checks failed. ${alternative.limitations.join(" ")}` : !alternative.budgetVerified ? "Acquisition budget is unverified. Review acquisition periods and remaining moves." : null; return <div className={styles.alternative} key={index}><div><strong>{first ? alternative.steps.map((step) => `${step.type.toUpperCase()} ${nameOf(step.playerId)}`).join(" → ") : "Hold roster"}</strong><small>{alternative.objective === "agp" ? "Starts objective" : rules.scoring.mode === "categories" ? "Category outcome analysis" : "Projected outcome objective"} · Gross games {grossAcquisitionGames(alternative.steps, snapshot)} · displaced {result?.baseline.assignments.filter((assignment) => !alternative.assignments.some((next) => next.date === assignment.date && next.playerId === assignment.playerId && next.gameId === assignment.gameId)).length ?? 0} · net active games {alternative.activeGames - (result?.baseline.activeGames ?? 0)} · {alternative.steps.filter((step) => step.type === "add").length} adds</small><small>{rules.scoring.mode === "points" && <>Contribution {alternative.comparisonEligible && result?.baseline.comparisonEligible && alternative.projectedValue != null && result.baseline.projectedValue != null ? number(alternative.projectedValue - result.baseline.projectedValue) : "unavailable"} · </>}{actionableRulesReviewed && alternative.legal && alternative.budgetVerified ? "Rule checks passed" : "Needs review"}</small><CategoryGains baseline={result?.baseline} plan={alternative} scoring={rules.scoring} label={`Alternative ${index + 1}`} reviewed={actionableRulesReviewed} />{planUnavailable && <small id={`rso-plan-reason-${index}`}>{planUnavailable}</small>}</div><button disabled={Boolean(planUnavailable)} aria-describedby={planUnavailable ? `rso-plan-reason-${index}` : "rso-action-status"} onClick={() => { editIntent((intent) => ({ ...intent, steps: alternative.steps })); setActionFeedback({ key: accountKey, userId: user?.id, intentRevision: workspace.intent.revision + 1, text: `Alternative ${index + 1} selected. Confirm roster changes with your provider.` }); }}>Select plan</button></div>; })}{!result?.alternatives.length && <p>Alternatives appear after legal roster and candidate data are available.</p>}{result && <details className={styles.settings} open={!result.alternatives.some(alternative => alternative.steps.length)}><summary>Why add/drop plans may be unavailable</summary>{result.search.limitations.filter(limit => /Add\/drop plans|Safe drop recommendations/.test(limit)).map(limit => <p key={limit}>{limit}</p>)}</details>}<CandidateBrowser key={`${user?.id ?? "guest"}:${accountKey}`} players={players} rosterIds={rosterIds} snapshot={snapshot} intent={workspace.intent} fits={result?.scheduleFits} manual={workspace.context.provider === "manual"} select={selectPlayer} add={chooseCandidate} markAvailable={player => edit(current => ({ ...current, manualPlayers: [...current.manualPlayers.filter(row => row.id !== player.id), { ...player, availability: "manager_available" }] }))} /></div></section>
+      <section {...readOnlyInert} className={`${styles.panel} ${styles.candidatePanel} ${tab === "matchup" ? styles.desktopHidden : ""} ${tab === "candidates" ? styles.mobileActive : ""}`} aria-label="Candidates and detail"><div className={styles.panelHead}><h2><span className={styles.panelNumber} aria-hidden="true">3</span>Available Players</h2><label>Show<select value={workspace.intent.alternativeCount} onChange={(event) => editIntent((intent) => ({ ...intent, alternativeCount: Number(event.target.value) as PlanIntent["alternativeCount"] }))}><option value="5">5</option><option value="10">10</option><option value="20">20</option></select></label></div><div className={styles.panelBody}>{selectedPlayer && <div id="rso-player-detail" className={styles.detail} role="region" aria-label={`Player details for ${nameOf(selectedPlayer)}`} data-player-id={selectedPlayer} tabIndex={-1}><strong>{nameOf(selectedPlayer)}</strong><span>{players.find((player) => player.id === selectedPlayer)?.availability.replaceAll("_", " ") ?? "Unknown"}</span><label className={styles.check}><input type="checkbox" checked={workspace.intent.excludedPlayerIds.includes(selectedPlayer)} disabled={readOnlySaved} title={readOnlySaved ? "Saved inputs are read-only. Continue manually to change exclusions." : undefined} onChange={(event) => { const excluded = event.currentTarget.checked; editIntent((intent) => ({ ...intent, excludedPlayerIds: excluded ? [...intent.excludedPlayerIds.filter(id => id !== selectedPlayer), selectedPlayer] : intent.excludedPlayerIds.filter(id => id !== selectedPlayer) })); }} />Exclude from suggestions</label>{workspace.intent.excludedPlayerIds.includes(selectedPlayer) && <span>Excluded from suggestions</span>}<span>Ownership {number(players.find((player) => player.id === selectedPlayer)?.ownership)}%</span>{players.find((player) => player.id === selectedPlayer)?.form && <span className={styles.formChip}>{players.find((player) => player.id === selectedPlayer)!.form!.label} · {players.find((player) => player.id === selectedPlayer)!.form!.points} points / {players.find((player) => player.id === selectedPlayer)!.form!.games} games · forecast inclusion unknown</span>}{opponentDemandHint(snapshot, players.find((player) => player.id === selectedPlayer)) && <span className={styles.demandHint}>{opponentDemandHint(snapshot, players.find((player) => player.id === selectedPlayer))}</span>}{selectedManualCandidate && <ManualPlayerInputs key={`${user?.id ?? "guest"}:${accountKey}:${selectedManualCandidate.id}`} player={selectedManualCandidate} edit={edit} />}</div>}<p className={styles.limitation}>Availability is unknown until verified by a provider or entered by the manager.</p>{result?.alternatives.slice(0, workspace.intent.alternativeCount).map((alternative, index) => { const first = alternative.steps[0]; const planUnavailable = readOnlySaved ? "Saved inputs are read-only." : !first ? "This plan keeps the roster unchanged; there are no moves to select." : !inputsReviewed ? "Review and confirm planning inputs before selecting this plan." : !scoringEntered ? "Enter league scoring before selecting this plan." : !alternative.legal ? `Plan rule checks failed. ${alternative.limitations.join(" ")}` : !alternative.budgetVerified ? "Acquisition budget is unverified. Review acquisition periods and remaining moves." : null; return <div className={styles.alternative} key={index}><div><strong>{first ? alternative.steps.map((step) => `${step.type.toUpperCase()} ${nameOf(step.playerId)}`).join(" → ") : "Hold roster"}</strong><small>{alternative.objective === "agp" ? "Starts objective" : rules.scoring.mode === "categories" ? "Category outcome analysis" : "Projected outcome objective"} · Gross games {grossAcquisitionGames(alternative.steps, snapshot)} · displaced {result?.baseline.assignments.filter((assignment) => !alternative.assignments.some((next) => next.date === assignment.date && next.playerId === assignment.playerId && next.gameId === assignment.gameId)).length ?? 0} · net active games {alternative.activeGames - (result?.baseline.activeGames ?? 0)} · {alternative.steps.filter((step) => step.type === "add").length} adds</small><small>{rules.scoring.mode === "points" && <>Contribution {alternative.comparisonEligible && result?.baseline.comparisonEligible && alternative.projectedValue != null && result.baseline.projectedValue != null ? number(alternative.projectedValue - result.baseline.projectedValue) : "unavailable"} · </>}{actionableRulesReviewed && alternative.legal && alternative.budgetVerified ? "Rule checks passed" : "Needs review"}</small><CategoryGains baseline={result?.baseline} plan={alternative} scoring={rules.scoring} label={`Alternative ${index + 1}`} reviewed={actionableRulesReviewed} />{planUnavailable && <small id={`rso-plan-reason-${index}`}>{planUnavailable}</small>}</div><button disabled={Boolean(planUnavailable)} aria-describedby={planUnavailable ? `rso-plan-reason-${index}` : "rso-action-status"} onClick={() => { editIntent((intent) => ({ ...intent, steps: alternative.steps })); setActionFeedback({ key: accountKey, userId: user?.id, intentRevision: workspace.intent.revision + 1, text: `Alternative ${index + 1} selected. Confirm roster changes with your provider.` }); }}>Select plan</button></div>; })}{!result?.alternatives.length && <p>Alternatives appear after legal roster and candidate data are available.</p>}{result && <details className={styles.settings} open={!result.alternatives.some(alternative => alternative.steps.length)}><summary>Why add/drop plans may be unavailable</summary>{result.search.limitations.filter(limit => /Add\/drop plans|Safe drop recommendations/.test(limit)).map(limit => <p key={limit}>{limit}</p>)}</details>}<CandidateBrowser key={`${user?.id ?? "guest"}:${accountKey}`} players={players} rosterIds={rosterIds} snapshot={snapshot} intent={workspace.intent} fits={result?.scheduleFits} manual={workspace.context.provider === "manual"} select={selectPlayer} add={chooseCandidate} markAvailable={player => edit(current => ({ ...current, manualPlayers: [...current.manualPlayers.filter(row => row.id !== player.id), { ...player, availability: "manager_available" }] }))} /></div></section>
       <section className={`${styles.panel} ${styles.matchupPanel} ${tab === "matchup" ? `${styles.desktopMatchup} ${styles.mobileActive}` : ""}`} aria-label="Matchup"><div className={styles.panelHead}><h2 id="rso-matchup-heading" tabIndex={-1}>Matchup</h2><span>{rules.scoring.mode}</span></div><div className={styles.panelBody}><p>{snapshot?.opponent ? "Opponent data present. Review category and goalie results below." : "Opponent inputs are missing. Matchup strategy is unavailable; schedule planning remains usable."}</p><div className={styles.compare}><strong>{rules.scoring.mode === "categories" ? "No-move category lineup" : "Optimized no move"} · {result?.baseline.objective === "outcome" ? "Outcome" : "Active games"}</strong><span>{number(result?.baseline.activeGames)} active · {number(result?.baseline.projectedValue)} projected</span><strong>Selected plan</strong><span>{number(result?.selected.activeGames)} active · {number(result?.selected.projectedValue)} projected</span></div>{result?.selected.categoryResults.map((category) => <div key={category.key} className={styles.categoryRow}><strong>{category.key}</strong><span>{number(category.own)} vs {number(category.opponent)}</span><span>{category.result}</span></div>)}<div className={styles.sensitivity}><h3>Plan sensitivity · provisional</h3>{sensitivity?.scenarios.map((scenario) => <div key={scenario.id}><span>{scenario.label}</span><span>{number(scenario.baseline)} → {number(scenario.candidate)} · Δ {number(scenario.difference)}</span></div>)}<p>{sensitivity?.direction === "sensitive" ? "Plan ranking changes across stress scenarios." : sensitivity?.direction === "unavailable" ? categoryComparisonAvailable ? "Overall category sensitivity is withheld; category tradeoffs need your choice." : "Full comparison unavailable with current forecast or opponent coverage." : "Fixed-lineup stress comparison only."} These are not win probabilities.</p></div><ForecastEvidence forecasts={result?.baseline.forecastInputs} scoring={rules.scoring} nameOf={nameOf} timeZone={workspace.context.timeZone} label={rules.scoring.mode === "categories" ? "No-move category lineup" : "Optimized no-move plan"} /><ForecastEvidence forecasts={result?.selected.forecastInputs} scoring={rules.scoring} nameOf={nameOf} timeZone={workspace.context.timeZone} label="Selected lineup" /><ForecastCoverage coverage={result?.selected.recommendation?.coverage} nameOf={nameOf} /><div {...readOnlyInert}><MatchupSetup workspace={workspace} edit={edit} /></div><h3>Goalie evidence</h3><p>Projected and confirmed upcoming starts do not count as credited minimum progress.</p><GoalieEvidence snapshot={snapshot} goalieSplit={workspace.intent.goalieSplit} /><p>Credited: {number(result?.selected.goalie.credited)} · Confirmed upcoming: {number(result?.selected.goalie.confirmed)} · Projected: {number(result?.selected.goalie.projected)}</p>{Object.entries(snapshot?.evidence ?? {}).map(([source, evidence]) => <p key={source} className={styles.evidence}>{source}: {evidence.completeness}{evidence.limitations.length ? ` · ${evidence.limitations.join(" ")}` : ""}</p>)}{result?.selected.limitations.map((limit, index) => <p key={index} className={styles.limitation}>{limit}</p>)}</div></section>
     </div>
   </div>;
