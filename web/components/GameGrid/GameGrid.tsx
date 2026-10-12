@@ -1013,7 +1013,7 @@ function GameGridInternal({
             <div className={styles.scheduleGridContainer}>
               {!selectedScheduleReady ? selectedScheduleStatus : <div className={styles.tableScrollWrapper}>
                 <table
-                  className={`${styles.scheduleGrid} ${styles.mobileCompactTable} ${styles.teamPreviewGrid}`}
+                  className={`${styles.scheduleGrid} ${styles.mobileCompactTable}`}
                 >
                   <colgroup>
                     <col className={styles.gridColFirst} />
@@ -1051,9 +1051,6 @@ function GameGridInternal({
                         <TeamRow
                           key={teamId}
                           teamId={teamId}
-                          expanded={expandedTeamIds.has(teamId)}
-                          onToggle={() => toggleTeamDetails(teamId)}
-                          details={renderTeamDetails(teamId)}
                           rank={rank}
                           extended={mode === "10-Day-Forecast"}
                           excludedDays={excludedDays}

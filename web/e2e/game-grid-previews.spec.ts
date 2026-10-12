@@ -62,29 +62,44 @@ test('24-team keyboard disclosures survive sorting, refresh, mode and orientatio
   await expect(panel(page, 24)).toHaveCount(0);
 });
 
-for (const width of [390, 320]) test(`expanded details reflow and stay keyboard reachable at ${width}px`, async ({ page }, testInfo) => {
+for (const width of [320, 390, 430, 479]) test(`mobile grid fits all summary columns without preview controls at ${width}px`, async ({ page }, testInfo) => {
   await page.setViewportSize({ width, height: 844 });
   await fixture(page);
-  await expect(page.getByRole('button', { name: /Show Fixture Team .* (?:upcoming category forecasts|team preview)/ })).toHaveCount(24);
-  await trigger(page).focus();
-  await trigger(page).press('Enter');
-  await expect(panel(page)).toBeVisible();
-  const beforeSort = await page.locator('tbody tr button[aria-expanded]').evaluateAll((nodes) => nodes.map((node) => node.getAttribute('aria-label')));
+  const grid = page.locator('table').filter({ has: page.getByRole('button', { name: 'Sort by games played', exact: true }) });
+  const teamLinks = grid.locator('tbody tr td:first-child a');
+  await expect(teamLinks).toHaveCount(24);
+  await expect(trigger(page)).toHaveCount(0);
+  await expect(grid.locator('tbody button[aria-expanded]')).toHaveCount(0);
+  await expect(grid.getByText('HQ', { exact: true })).toHaveCount(0);
+  await expect(page.locator('[id^="game-grid-team-details-"]')).toHaveCount(0);
+  const bounds = await grid.evaluate((table) => {
+    const box = table.getBoundingClientRect();
+    const cells = Array.from(table.querySelectorAll('tbody tr:last-child td')).map(cell => {
+      const rect = cell.getBoundingClientRect();
+      return { left: rect.left, right: rect.right };
+    });
+    return { left: box.left, right: box.right, cells, scroll: table.parentElement!.scrollWidth, client: table.parentElement!.clientWidth };
+  });
+  expect(bounds.left).toBeGreaterThanOrEqual(-1);
+  expect(bounds.right).toBeLessThanOrEqual(width + 1);
+  expect(bounds.scroll).toBeLessThanOrEqual(bounds.client + 1);
+  expect(bounds.cells).toHaveLength(11);
+  for (const cell of bounds.cells.slice(-3)) {
+    expect(cell.left).toBeGreaterThanOrEqual(0);
+    expect(cell.right).toBeLessThanOrEqual(width + 1);
+  }
+  const beforeSort = await teamLinks.evaluateAll(links => links.map(link => link.getAttribute('href')));
   await page.getByRole('button', { name: 'Sort by games played', exact: true }).press('Enter');
-  const afterSort = await page.locator('tbody tr button[aria-expanded]').evaluateAll((nodes) => nodes.map((node) => node.getAttribute('aria-label')));
+  const afterSort = await teamLinks.evaluateAll(links => links.map(link => link.getAttribute('href')));
   expect(afterSort).not.toEqual(beforeSort);
-  await expect(trigger(page)).toHaveAttribute('aria-expanded', 'true');
-  await panel(page).scrollIntoViewIfNeeded();
-  await fits(panel(page), width);
-  await panel(page).evaluate((node) => node.scrollIntoView({ block: 'start', inline: 'nearest' }));
-  const triggerBox = await trigger(page).boundingBox();
-  expect(triggerBox!.width).toBeGreaterThanOrEqual(44);
-  expect(triggerBox!.height).toBeGreaterThanOrEqual(44);
-  await page.screenshot({ path: testInfo.outputPath(`narrow-${width}-expanded.png`), fullPage: false });
-  const close = panel(page).getByRole('button', { name: /Close Fixture Team 01 game previews/ });
-  await close.focus();
-  await close.press('Space');
-  await expect(trigger(page)).toBeFocused();
+  await expect(teamLinks.first()).toHaveAttribute('href', /\/stats\/team\/F\d+/);
+  await page.screenshot({ path: testInfo.outputPath(`mobile-${width}-compact.png`), fullPage: false });
+  await page.getByRole('button', { name: '7-Day', exact: true }).click();
+  await expect(page.getByRole('button', { name: '10-Day', exact: true })).toBeVisible();
+  await expect(trigger(page)).toHaveCount(0);
+  await expect(page.locator('[id^="game-grid-team-details-"]')).toHaveCount(0);
+  await page.getByRole('button', { name: '10-Day', exact: true }).click();
+  await expect(teamLinks).toHaveCount(24);
 });
 
 test('qualifying fixture payloads reconcile, preserve zero, and disclose partial, missing, stale and empty states', async ({ page }, testInfo) => {
@@ -223,8 +238,15 @@ test('real reader reaches expandable rows: qualified, partial, stale, legacy, er
   await expect(panel(page).getByText(/In progress/)).toBeVisible();
   await expect(trigger(page)).toHaveAttribute('aria-expanded', 'true');
   await page.setViewportSize({ width: 320, height: 844 });
-  await fits(panel(page), 320);
-  await page.screenshot({ path: testInfo.outputPath('reader-wiring-320.png'), fullPage: true });
+  await expect(panel(page)).toHaveCount(0);
+  await expect(trigger(page)).toHaveCount(0);
+  await page.setViewportSize({ width: 1180, height: 900 });
+  await expect(panel(page)).toBeVisible();
+  await expect(trigger(page)).toHaveAttribute('aria-expanded', 'true');
+  await page.screenshot({ path: testInfo.outputPath('reader-wiring-restored-desktop.png'), fullPage: true });
+  await page.setViewportSize({ width: 320, height: 844 });
+  await expect(panel(page)).toHaveCount(0);
+  await expect(trigger(page)).toHaveCount(0);
   await page.addScriptTag({ content: axe.source });
   const results = await page.evaluate(async () => (window as unknown as { axe: { run: () => Promise<AxeResults> } }).axe.run());
   expect(results.violations.map(({ id, nodes }) => ({ id, targets: nodes.map(({ target }) => target) }))).toEqual([]);
@@ -234,7 +256,7 @@ test('real reader reaches expandable rows: qualified, partial, stale, legacy, er
 });
 
 test('keyboard refresh keeps focus in the open preview during delayed loading, success and failure', async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 844 });
+  await page.setViewportSize({ width: 1180, height: 900 });
   await page.clock.install({ time: new Date('2026-10-07T16:00:00Z') });
   await page.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.fallback() : route.abort());
   let mode = 'error'; let hold = false; let reads = 0; let release: (() => void) | undefined;
