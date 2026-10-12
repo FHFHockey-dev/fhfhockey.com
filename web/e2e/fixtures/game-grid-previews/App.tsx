@@ -27,7 +27,10 @@ function App() {
   const [mode, setMode] = useState<GameGridMode>('7-Day-Forecast');
   const [previewState, setPreviewState] = useState('qualified');
   const details = new URLSearchParams(location.search).has('details');
-  return <main>
+  const stickyHeader = new URLSearchParams(location.search).has('sticky-header');
+  return <>
+    {stickyHeader && <header data-site-header style={{ position: 'sticky', top: 0, zIndex: 1000, height: 'var(--fixture-header-height, 68px)', background: '#141719' }}>Site navbar fixture</header>}
+    <main>
     <p>Isolated synthetic fixtures. The real public-reader consumer uses isolated local HTTP fixtures. No production data is connected.</p>
     {details ? <>
       <h1>Game Grid preview fixture</h1><h2>Upcoming team forecasts</h2>
@@ -46,7 +49,7 @@ function App() {
       <button onClick={() => setFixtureState('empty')}>Empty schedule fixture</button>
       <GameGrid mode={mode} setMode={setMode} />
     </>}
-  </main>;
+  </main></>;
 }
 document.body.style.cssText = 'margin:0;background:#101115;color:#fff;font-family:Arial,sans-serif';
 createRoot(document.getElementById('root')!).render(<App />);

@@ -139,6 +139,7 @@ function Header() {
   return (
     <>
       <header
+        data-site-header
         className={classNames(styles.desktopHeader, {
           [styles.underlyingStats]: isUnderlyingStatsRoute,
         })}
@@ -197,7 +198,7 @@ function Header() {
           )}
         </div>
       </header>
-      <header className={styles.mobileHeader}>
+      <header data-site-header className={styles.mobileHeader}>
         <button
           type="button"
           className={styles.mobileHeaderAction}

@@ -106,6 +106,7 @@ const MASTER_SCORE_COL_BASE_WIDTH = 104;
 
 type StickyHeaderState = {
   active: boolean;
+  top: number;
   left: number;
   width: number;
   scrollLeft: number;
@@ -258,6 +259,7 @@ export default function DesktopMasterTable({
   const [containerWidth, setContainerWidth] = useState(0);
   const [stickyHeader, setStickyHeader] = useState<StickyHeaderState>({
     active: false,
+    top: 0,
     left: 0,
     width: 0,
     scrollLeft: 0,
@@ -842,6 +844,9 @@ export default function DesktopMasterTable({
     if (typeof window === "undefined") return;
 
     let frameId = 0;
+    const siteHeaders = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-site-header]"),
+    );
 
     const updateStickyHeader = () => {
       const scrollEl = scrollRef.current;
@@ -854,12 +859,17 @@ export default function DesktopMasterTable({
       const tableRect = tableEl.getBoundingClientRect();
       const scrollRect = scrollEl.getBoundingClientRect();
       const headerHeight = theadEl.getBoundingClientRect().height;
+      const top = Math.max(
+        0,
+        ...siteHeaders.map((header) => header.getBoundingClientRect().bottom),
+      );
 
       const nextState: StickyHeaderState = {
         active:
           isDesktop &&
-          tableRect.top <= 0 &&
-          tableRect.bottom - headerHeight > 0,
+          tableRect.top <= top &&
+          tableRect.bottom - headerHeight > top,
+        top,
         left: scrollRect.left,
         width: scrollEl.clientWidth,
         scrollLeft: scrollEl.scrollLeft,
@@ -869,6 +879,7 @@ export default function DesktopMasterTable({
       setStickyHeader((prev) => {
         if (
           prev.active === nextState.active &&
+          prev.top === nextState.top &&
           prev.left === nextState.left &&
           prev.width === nextState.width &&
           prev.scrollLeft === nextState.scrollLeft &&
@@ -900,6 +911,7 @@ export default function DesktopMasterTable({
     if (scrollEl) resizeObserver.observe(scrollEl);
     if (tableRef.current) resizeObserver.observe(tableRef.current);
     if (theadRef.current) resizeObserver.observe(theadRef.current);
+    siteHeaders.forEach((header) => resizeObserver.observe(header));
 
     return () => {
       if (frameId) {
@@ -960,6 +972,7 @@ export default function DesktopMasterTable({
         <div
           className={styles.masterStickyHeaderOverlay}
           style={{
+            top: `${stickyHeader.top}px`,
             left: `${stickyHeader.left}px`,
             width: `${stickyHeader.width}px`,
           }}

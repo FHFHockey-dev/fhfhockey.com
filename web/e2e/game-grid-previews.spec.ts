@@ -62,6 +62,41 @@ test('24-team keyboard disclosures survive sorting, refresh, mode and orientatio
   await expect(panel(page, 24)).toHaveCount(0);
 });
 
+test('desktop sticky dates stay below the measured site navbar through resize and height changes', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await fixture(page);
+  await page.goto('/?sticky-header=1');
+  await page.addStyleTag({ content: '#root { padding-bottom: 100vh; }' });
+  const navbar = page.locator('[data-site-header]');
+  const overlay = page.locator('[class*="masterStickyHeaderOverlay"]');
+  const table = page.locator('[class*="masterTableScroll"] table');
+  const header = table.locator('thead');
+  // Activate while the real header is behind the navbar but still above viewport zero.
+  await header.evaluate(node => window.scrollBy(0, node.getBoundingClientRect().top - 58));
+  await expect(overlay).toBeVisible();
+  const aligned = async () => {
+    const bottom = await navbar.evaluate(node => node.getBoundingClientRect().bottom);
+    await expect.poll(() => overlay.evaluate(node => node.getBoundingClientRect().top)).toBeCloseTo(bottom, 0);
+    const cells = await overlay.locator('th').evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().top));
+    expect(cells.every(top => top >= bottom)).toBe(true);
+  };
+  await aligned();
+  // A font/account/header change must update the offset without another scroll.
+  await navbar.evaluate(node => node.style.setProperty('--fixture-header-height', '96px'));
+  await aligned();
+  await page.screenshot({ path: testInfo.outputPath('sticky-header-96px.png'), fullPage: false });
+  await page.setViewportSize({ width: 1040, height: 900 });
+  await navbar.evaluate(node => node.style.setProperty('--fixture-header-height', '56px'));
+  await aligned();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(overlay).toHaveCount(0);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await header.evaluate(node => window.scrollBy(0, node.getBoundingClientRect().top - 20));
+  await aligned();
+  await table.evaluate(node => window.scrollBy(0, node.getBoundingClientRect().bottom - 60));
+  await expect(overlay).toHaveCount(0);
+});
+
 for (const width of [320, 390, 430, 479]) test(`mobile grid fits all summary columns without preview controls at ${width}px`, async ({ page }, testInfo) => {
   await page.setViewportSize({ width, height: 844 });
   await fixture(page);
