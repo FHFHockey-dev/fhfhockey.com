@@ -62,6 +62,7 @@ import releaseHandler from "../../../../../pages/api/v1/db/starter-board-release
 import { projectionInputHash } from "lib/projections/inputCapture";
 import { ForecastScheduleError, type ForecastScheduleRejection } from "lib/player-forecasts/scopeReads";
 import * as tweetProjectionStorage from "lib/sources/tweetProjectionStorage";
+import * as lineProcessor from "lib/lines/processor";
 
 type LineSourceEventFixture = {
   id: string;
@@ -375,6 +376,7 @@ function createSupabaseMocks(eventRows: LineSourceEventFixture[]) {
 
   mocks.from.mockImplementation((tableName: string) => tables[tableName]);
   return {
+    lineSourceEventsQuery,
     eventUpdateMock,
     eventUpdateEqMock,
     lineSourceSnapshotsUpsertMock,
@@ -528,6 +530,49 @@ describe("/api/v1/db/update-line-sources", () => {
         logo: "/teamLogos/UTA.png",
       },
     ]);
+  });
+
+  it("avoids empty-queue roster work while retaining scheduled reconciliation and audit", async () => {
+    createSupabaseMocks([]);
+    const reconcile = vi.spyOn(lineProcessor, "processLineSnapshotEvidence").mockResolvedValue({ enabled: true, claims: 0, reconciled: 2 });
+    try {
+      const res = createMockRes();
+      await handler(createMockReq(), res);
+      expect(res.body.summary.eventsLoaded).toBe(0);
+      expect(mocks.getTeams).not.toHaveBeenCalled();
+      expect(mocks.from).not.toHaveBeenCalledWith("rosters");
+      expect(mocks.from).not.toHaveBeenCalledWith("lineup_player_name_aliases");
+      expect(reconcile).toHaveBeenCalledWith(expect.anything(), [], [8, 14]);
+      expect(mocks.auditInsert).toHaveBeenCalledOnce();
+    } finally { reconcile.mockRestore(); }
+  });
+
+  it("leaves a concurrent arrival pending for the next unchanged scheduler cycle", async () => {
+    const events: LineSourceEventFixture[] = [];
+    const { lineSourceEventsQuery, eventUpdateMock } = createSupabaseMocks(events);
+    lineSourceEventsQuery.limit.mockImplementationOnce(async () => {
+      events.push(buildEvent({ id: "late-event", sourceKey: "gamedaygoalies", sourceAccount: "GameDayGoalies", tweetId: "2047809041154625899", text: "Canadiens Starting Goalie: Jakub Dobes" }));
+      return { data: [], error: null };
+    });
+    const first = createMockRes();
+    await handler(createMockReq(), first);
+    expect(first.body.summary.eventsLoaded).toBe(0);
+    expect(eventUpdateMock).not.toHaveBeenCalled();
+    const next = createMockRes();
+    await handler(createMockReq(), next);
+    expect(next.body.summary.eventsLoaded).toBe(1);
+    expect(eventUpdateMock).toHaveBeenCalled();
+    expect(mocks.auditInsert).toHaveBeenCalledTimes(2);
+  });
+
+  it("audits queue-read failures rather than treating them as empty", async () => {
+    const { lineSourceEventsQuery } = createSupabaseMocks([]);
+    lineSourceEventsQuery.limit.mockResolvedValue({ data: null, error: new Error("queue unavailable") });
+    const res = createMockRes();
+    await handler(createMockReq(), res);
+    expect(res.statusCode).toBe(500);
+    expect(mocks.getTeams).not.toHaveBeenCalled();
+    expect(mocks.auditInsert).toHaveBeenCalledWith(expect.objectContaining({ status: "failure" }));
   });
 
   async function rejectDuringProjection(error: Error) {

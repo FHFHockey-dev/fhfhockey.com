@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  isYahooDraftBackgroundPollingSuspended,
   yahooDraftPollDelaySeconds,
 } from "./pollPolicy";
 
 const NOW = new Date("2026-08-24T12:00:00.000Z");
 
 describe("Yahoo live-draft worker poll policy", () => {
+  it("resumes background polling at August 1 midnight in New York", () => {
+    expect(isYahooDraftBackgroundPollingSuspended(Date.parse("2027-08-01T03:59:59.999Z"))).toBe(true);
+    expect(isYahooDraftBackgroundPollingSuspended(Date.parse("2027-08-01T04:00:00Z"))).toBe(false);
+  });
   it("uses the conservative predraft tiers", () => {
     expect(
       yahooDraftPollDelaySeconds(

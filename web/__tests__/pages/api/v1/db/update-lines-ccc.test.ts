@@ -80,6 +80,8 @@ function createMockRes() {
 }
 
 function createSupabaseMocks(args?: {
+  emptyQueue?: boolean;
+  queueError?: Error;
   includeQuoteEvent?: boolean;
   linesCccUpsertErrors?: Array<Error | null>;
   linesCccUpsertError?: Error;
@@ -252,8 +254,8 @@ function createSupabaseMocks(args?: {
           in: vi.fn(() => query),
           order: vi.fn(() => ({
             limit: vi.fn().mockResolvedValue({
-              data: eventRows,
-              error: null,
+              data: args?.emptyQueue ? [] : eventRows,
+              error: args?.queueError ?? null,
             }),
           })),
         };
@@ -302,6 +304,24 @@ describe("/api/v1/db/update-lines-ccc", () => {
         logo: "/teamLogos/TBL.png",
       },
     ]);
+  });
+
+  it("returns an empty result before loading roster context", async () => {
+    const { eventUpdateMock } = createSupabaseMocks({ emptyQueue: true });
+    const res = createMockRes();
+    await handler(createMockReq(), res);
+    expect(res.body.summary).toMatchObject({ eventsLoaded: 0, rowsUpserted: 0 });
+    expect(mocks.getCurrentSeason).not.toHaveBeenCalled();
+    expect(mocks.getTeams).not.toHaveBeenCalled();
+    expect(eventUpdateMock).not.toHaveBeenCalled();
+  });
+
+  it("reports a failed queue read instead of skipping work", async () => {
+    createSupabaseMocks({ queueError: new Error("queue unavailable") });
+    const res = createMockRes();
+    await handler(createMockReq(), res);
+    expect(res.statusCode).toBe(500);
+    expect(mocks.getCurrentSeason).not.toHaveBeenCalled();
   });
 
   it("upserts parsed rows and marks source events processed or rejected", async () => {

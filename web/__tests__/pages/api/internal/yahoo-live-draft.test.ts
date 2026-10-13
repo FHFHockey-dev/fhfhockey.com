@@ -11,6 +11,8 @@ const request = (authorization = "Bearer test-secret", method = "GET") => ({ met
 describe("Yahoo production scheduler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2027-08-01T04:00:00Z"));
     vi.stubEnv("CRON_SECRET", "test-secret");
     vi.stubEnv("YAHOO_LIVE_DRAFT_ENABLED", "true");
     vi.stubEnv("YAHOO_LIVE_DRAFT_SEASON", "2026");
@@ -42,6 +44,17 @@ describe("Yahoo production scheduler", () => {
     await handler(request() as any, res as any);
     expect(res.json).toHaveBeenLastCalledWith({ disabled: true });
     expect(mocks.run).not.toHaveBeenCalled();
+  });
+  it("suspends off-season polling before configuration, database or provider work", async () => {
+    vi.setSystemTime(new Date("2027-08-01T03:59:59.999Z"));
+    vi.stubEnv("YAHOO_LIVE_DRAFT_SEASON", "");
+    const res = response();
+    await handler(request() as any, res as any);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ suspended: true, resumesAt: "2027-08-01T00:00:00-04:00" });
+    expect(mocks.limit).not.toHaveBeenCalled();
+    expect(mocks.run).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
   });
   it("runs bounded batches across the minute boundary", async () => {
     vi.useFakeTimers();

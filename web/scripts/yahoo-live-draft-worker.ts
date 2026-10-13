@@ -8,6 +8,7 @@ import {
   getYahooRedirectUri,
 } from "lib/integrations/yahoo/config";
 import { runYahooDraftPollCoordinator } from "lib/integrations/yahoo/pollCoordinator";
+import { isYahooDraftBackgroundPollingSuspended, YAHOO_DRAFT_BACKGROUND_RESUMES_AT } from "lib/integrations/yahoo/pollPolicy";
 import { getServiceRoleClient } from "lib/supabase/server";
 
 const once = process.argv.includes("--once");
@@ -38,11 +39,16 @@ async function main() {
     );
     return;
   }
+  if (!once && isYahooDraftBackgroundPollingSuspended()) {
+    process.stdout.write(`${JSON.stringify({ event: "yahoo_live_draft_worker_suspended", resumesAt: YAHOO_DRAFT_BACKGROUND_RESUMES_AT })}\n`);
+    while (!stopping && isYahooDraftBackgroundPollingSuspended()) await wait(60_000);
+    if (stopping) return;
+  }
   validateConfiguration();
   do {
     const startedAt = Date.now();
     try {
-      const result = await runYahooDraftPollCoordinator();
+      const result = await runYahooDraftPollCoordinator(once ? { manual: true } : {});
       process.stdout.write(
         `${JSON.stringify({
           ...result,
