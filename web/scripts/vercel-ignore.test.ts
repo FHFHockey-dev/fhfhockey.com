@@ -40,6 +40,9 @@ function statuses(cwd: string, previous: string) {
 }
 
 describe("Vercel project path filters", () => {
+  it("stays within Vercel's 256-character ignore-command limit", () => {
+    for (const root of roots) expect(commands[root].length).toBeLessThanOrEqual(256);
+  });
   it.each([
     ["AGENTS.md", [0, 0, 0]],
     ["web/pages/example.ts", [1, 0, 0]],
