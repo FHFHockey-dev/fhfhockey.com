@@ -3,6 +3,7 @@ import serviceRoleClient from "lib/supabase/server";
 import { isYahooLiveDraftEnabled } from "lib/integrations/yahoo/liveDraftApi";
 import { getYahooLiveDraftSeasonConfig } from "lib/integrations/yahoo/config";
 import { runYahooDraftPollCoordinator } from "lib/integrations/yahoo/pollCoordinator";
+import { isYahooDraftBackgroundPollingSuspended, YAHOO_DRAFT_BACKGROUND_RESUMES_AT } from "lib/integrations/yahoo/pollPolicy";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader("Cache-Control", "no-store");
@@ -16,6 +17,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ error: "Unauthorized" });
   }
   if (!isYahooLiveDraftEnabled()) return res.status(200).json({ disabled: true });
+  if (isYahooDraftBackgroundPollingSuspended()) {
+    return res.status(200).json({ suspended: true, resumesAt: YAHOO_DRAFT_BACKGROUND_RESUMES_AT });
+  }
 
   try {
     getYahooLiveDraftSeasonConfig();

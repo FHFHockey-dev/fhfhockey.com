@@ -71,7 +71,7 @@ async function fetchPendingIftttEvents(args: {
 
   if (error) throw error;
 
-  return claimTweetEvents(args.supabase, "lines_ccc_ifttt_events", (data ?? []) as LinesCccIftttEventInput[], args.reprocess);
+  return (data ?? []) as LinesCccIftttEventInput[];
 }
 
 function shouldResolveQuotedTweetForCandidate(
@@ -204,6 +204,17 @@ export default withCronJobAudit(
     const reprocess = parseBooleanFlag(req.query.reprocess);
     const requestedTweetId = parseStringQueryValue(req.query.tweetId);
     const requestedDate = parseRequestedDate(req.query.date);
+    const eventRows = await fetchPendingIftttEvents({
+      supabase: req.supabase,
+      limit: batchSize,
+      reprocess,
+      tweetId: requestedTweetId,
+    });
+    if (!eventRows.length) {
+      return res.json({ success: true, route: "/api/v1/db/update-lines-ccc", date: requestedDate,
+        batchSize, summary: { eventsLoaded: 0, eventsProcessed: 0, eventsRejected: 0, rowsUpserted: 0 },
+        message: "No pending source events." });
+    }
     const currentSeason = await getCurrentSeason();
     const teamDirectory = buildTeamDirectory(
       await getTeams(currentSeason.seasonId, { mode: "current-canonical" }),
@@ -239,12 +250,7 @@ export default withCronJobAudit(
       }
     }
     for (const teamId of ambiguousGameTeams) gameIdByTeamId.delete(teamId);
-    const pendingEvents = await fetchPendingIftttEvents({
-      supabase: req.supabase,
-      limit: batchSize,
-      reprocess,
-      tweetId: requestedTweetId,
-    });
+    const pendingEvents = await claimTweetEvents(req.supabase, "lines_ccc_ifttt_events", eventRows, reprocess);
     const discoveredTweets = pendingEvents
       .map((event) => ({
         eventId: event.id,

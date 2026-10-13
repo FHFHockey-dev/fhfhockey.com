@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { deferYahooDraftSessionForAccessCheck, pollYahooDraftSession, pauseYahooDraftSessionForAccessLoss, requireYahooLiveDraftServerAccess, resolveYahooGameContext } = vi.hoisted(() => ({
   deferYahooDraftSessionForAccessCheck: vi.fn(),
@@ -24,8 +24,18 @@ import { runYahooDraftPollCoordinator } from "./pollCoordinator";
 describe("Yahoo live-draft coordinator", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(Date, "now").mockReturnValue(Date.parse("2027-08-01T04:00:00Z"));
     requireYahooLiveDraftServerAccess.mockResolvedValue({});
     resolveYahooGameContext.mockResolvedValue({ gameCode: "nhl", gameKey: "477", season: "2026", targetSeasonId: 20262027 });
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it("suspends background callers without querying sessions or polling providers", async () => {
+    vi.spyOn(Date, "now").mockReturnValue(Date.parse("2027-08-01T03:59:59.999Z"));
+    const client = { from: vi.fn() } as any;
+    await expect(runYahooDraftPollCoordinator({ client })).resolves.toEqual({ attempted: 0, failed: 0, succeeded: 0 });
+    expect(client.from).not.toHaveBeenCalled();
+    expect(pollYahooDraftSession).not.toHaveBeenCalled();
   });
 
   function clientFor(sessions: Array<{ connected_account_id: string; id: string; user_id: string }>) {
@@ -33,6 +43,13 @@ describe("Yahoo live-draft coordinator", () => {
     const builder: any = { in: () => builder, limit: () => Promise.resolve(response), lte: () => builder, order: () => builder, select: () => builder };
     return { from: () => builder } as any;
   }
+
+  it("retains explicitly requested manual one-shot draft polling during the suspension", async () => {
+    vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-13T00:00:00Z"));
+    const client = clientFor([{ connected_account_id: "account", id: "session", user_id: "user" }]);
+    await expect(runYahooDraftPollCoordinator({ client, manual: true })).resolves.toEqual({ attempted: 1, failed: 0, succeeded: 1 });
+    expect(pollYahooDraftSession).toHaveBeenCalledOnce();
+  });
 
   it("processes due sessions with browsers absent and serializes each account", async () => {
     const accountBySession = new Map([

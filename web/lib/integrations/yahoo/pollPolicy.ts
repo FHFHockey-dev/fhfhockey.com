@@ -2,6 +2,13 @@ import type { YahooDraftProviderStatus } from "./liveDraft";
 
 const MAX_FAILURE_DELAY_SECONDS = 60;
 
+// TJ's seasonal pause resumes August 1, 2027 at midnight America/New_York.
+export const YAHOO_DRAFT_BACKGROUND_RESUMES_AT = "2027-08-01T00:00:00-04:00";
+
+export function isYahooDraftBackgroundPollingSuspended(now = Date.now()) {
+  return now < Date.parse(YAHOO_DRAFT_BACKGROUND_RESUMES_AT);
+}
+
 export type YahooDraftPollPolicyInput = {
   burstPollsRemaining?: number;
   consecutiveFailures?: number;

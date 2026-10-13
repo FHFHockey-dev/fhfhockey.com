@@ -1,4 +1,5 @@
 import serviceRoleClient from "lib/supabase/server";
+import { isYahooDraftBackgroundPollingSuspended } from "./pollPolicy";
 
 import { resolveYahooGameContext } from "./gameContext";
 import {
@@ -25,6 +26,7 @@ export type YahooDraftPollCoordinatorResult = {
 };
 
 export type YahooDraftPollCoordinatorOptions = {
+  manual?: boolean;
   client?: YahooLiveDraftClient;
   concurrency?: number;
   fetchImpl?: typeof fetch;
@@ -85,6 +87,9 @@ async function runAccountQueue(args: {
 export async function runYahooDraftPollCoordinator(
   options: YahooDraftPollCoordinatorOptions = {},
 ): Promise<YahooDraftPollCoordinatorResult> {
+  if (!options.manual && isYahooDraftBackgroundPollingSuspended()) {
+    return { attempted: 0, failed: 0, succeeded: 0 };
+  }
   const client =
     options.client ??
     (serviceRoleClient as unknown as YahooLiveDraftClient);

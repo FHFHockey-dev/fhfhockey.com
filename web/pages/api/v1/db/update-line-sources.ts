@@ -113,7 +113,7 @@ async function fetchPendingLineSourceEvents(args: {
 
   if (error) throw error;
 
-  return claimTweetEvents(args.supabase, "line_source_ifttt_events", (data ?? []) as LineSourceIftttEventInput[], args.reprocess);
+  return (data ?? []) as LineSourceIftttEventInput[];
 }
 
 function shouldResolveQuotedTweetForCandidate(source: {
@@ -331,10 +331,19 @@ export default withCronJobAudit(
     const sourceGroup =
       parseStringQueryValue(req.query.sourceGroup) ?? "gdl_suite";
     const sourceKeys = parseOptionalSourceKeys(req.query.sourceKey);
+    const eventRows = await fetchPendingLineSourceEvents({
+      supabase: req.supabase,
+      limit: batchSize,
+      reprocess,
+      tweetId: requestedTweetId,
+      sourceGroup,
+      sourceKeys,
+      currentDateOnly: parseBooleanFlag(req.query.currentDayOnly) ? requestedDate : null,
+    });
     const currentSeason = await getCurrentSeason();
-    const teamDirectory = buildTeamDirectory(
+    const teamDirectory = eventRows.length ? buildTeamDirectory(
       await getTeams(currentSeason.seasonId, { mode: "current-canonical" }),
-    );
+    ) : [];
     const scheduledGames = await fetchScheduledGamesForDate({
       supabase: req.supabase,
       date: requestedDate,
@@ -344,7 +353,8 @@ export default withCronJobAudit(
         scheduledGames.flatMap((game) => [game.homeTeamId, game.awayTeamId]),
       ),
     );
-    let rosterByTeam = applyPlayerNameAliasesToRosterMap({
+    // Empty source queues still run scheduled-game reconciliation below.
+    let rosterByTeam = eventRows.length ? applyPlayerNameAliasesToRosterMap({
       rosterByTeam: await fetchRosterEntriesByTeam({
         supabase: req.supabase,
         teamIds: scheduledTeamIds,
@@ -354,7 +364,7 @@ export default withCronJobAudit(
         supabase: req.supabase,
         teamIds: scheduledTeamIds,
       }),
-    });
+    }) : new Map();
     const gameIdByTeamId = new Map<number, number>();
     const ambiguousGameTeams = new Set<number>();
     for (const game of scheduledGames) {
@@ -364,15 +374,7 @@ export default withCronJobAudit(
       }
     }
     for (const teamId of ambiguousGameTeams) gameIdByTeamId.delete(teamId);
-    const pendingEvents = await fetchPendingLineSourceEvents({
-      supabase: req.supabase,
-      limit: batchSize,
-      reprocess,
-      tweetId: requestedTweetId,
-      sourceGroup,
-      sourceKeys,
-      currentDateOnly: parseBooleanFlag(req.query.currentDayOnly) ? requestedDate : null,
-    });
+    const pendingEvents = await claimTweetEvents(req.supabase, "line_source_ifttt_events", eventRows, reprocess);
     const discoveredTweets = pendingEvents
       .map((event) => ({
         eventId: event.id,
