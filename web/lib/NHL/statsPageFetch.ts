@@ -6,7 +6,7 @@ import {
   fetchAllSupabaseFilterChunks,
   fetchAllSupabasePages
 } from "lib/supabase/pagination";
-import { SkaterStat, GoalieStat } from "./statsPageTypes";
+import { SkaterStat, GoalieStat, StatsProps, SkaterLeaderboards } from "./statsPageTypes";
 
 const GOALIE_TOTALS_SELECT = `
   goalie_id,
@@ -27,18 +27,16 @@ function formatSeasonLabel(seasonId: number | string | null | undefined) {
   return `${season.slice(0, 4)}-${season.slice(6, 8)}`;
 }
 
-export async function fetchStatsData(): Promise<{
-  skaterSeasonLabel: string;
-  goalieSeasonLabel: string;
-  pointsLeaders: SkaterStat[];
-  goalsLeaders: SkaterStat[];
-  pppLeaders: SkaterStat[];
-  bshLeaders: SkaterStat[];
-  goalieLeadersWins: GoalieStat[];
-  goalieLeadersSavePct: GoalieStat[];
-  goalieLeadersGAA: GoalieStat[];
-  goalieLeadersQS: GoalieStat[];
-}> {
+function buildSkaterLeaderboards(skaters: SkaterStat[]): SkaterLeaderboards {
+  return {
+    pointsLeaders: [...skaters].sort((a, b) => b.points - a.points).slice(0, 5),
+    goalsLeaders: [...skaters].sort((a, b) => b.goals - a.goals).slice(0, 5),
+    pppLeaders: [...skaters].sort((a, b) => b.pp_points - a.pp_points).slice(0, 5),
+    bshLeaders: [...skaters].sort((a, b) => b.bsh - a.bsh).slice(0, 5)
+  };
+}
+
+export async function fetchStatsData(): Promise<StatsProps> {
   const currentSeason = await getCurrentSeason();
   const skaterSeasonLabel = formatSeasonLabel(currentSeason.seasonId);
   let goalieSeasonLabel = skaterSeasonLabel;
@@ -80,6 +78,7 @@ export async function fetchStatsData(): Promise<{
       goalsLeaders: [],
       pppLeaders: [],
       bshLeaders: [],
+      skaterLeadersByPosition: {},
       goalieLeadersWins: [],
       goalieLeadersSavePct: [],
       goalieLeadersGAA: [],
@@ -135,16 +134,19 @@ export async function fetchStatsData(): Promise<{
     };
   });
 
-  const pointsLeaders = [...skaters]
-    .sort((a, b) => b.points - a.points)
-    .slice(0, 5);
-  const goalsLeaders = [...skaters]
-    .sort((a, b) => b.goals - a.goals)
-    .slice(0, 5);
-  const pppLeaders = [...skaters]
-    .sort((a, b) => b.pp_points - a.pp_points)
-    .slice(0, 5);
-  const bshLeaders = [...skaters].sort((a, b) => b.bsh - a.bsh).slice(0, 5);
+  const { pointsLeaders, goalsLeaders, pppLeaders, bshLeaders } =
+    buildSkaterLeaderboards(skaters);
+  // Filter the full season dataset before taking each position's top five.
+  // NHL player metadata uses L/R as well as LW/RW for wings.
+  const skaterLeadersByPosition = Object.fromEntries(
+    ["C", "LW", "RW", "D"].map((position) => [
+      position,
+      buildSkaterLeaderboards(skaters.filter((skater) => {
+        const code = skater.position?.trim().toUpperCase();
+        return (code === "L" ? "LW" : code === "R" ? "RW" : code) === position;
+      }))
+    ])
+  );
 
   // --- Fetch Goalie Stats (including games_played) ---
   let goalieData: any[] = [];
@@ -200,6 +202,7 @@ export async function fetchStatsData(): Promise<{
       goalsLeaders,
       pppLeaders,
       bshLeaders,
+      skaterLeadersByPosition,
       goalieLeadersWins: [],
       goalieLeadersSavePct: [],
       goalieLeadersGAA: [],
@@ -311,6 +314,7 @@ export async function fetchStatsData(): Promise<{
     goalsLeaders,
     pppLeaders,
     bshLeaders,
+    skaterLeadersByPosition,
     goalieLeadersWins,
     goalieLeadersSavePct,
     goalieLeadersGAA,

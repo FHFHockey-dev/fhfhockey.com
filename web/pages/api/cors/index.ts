@@ -1,9 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-
-const DEFAULT_HEADERS = {
-  Accept: "application/json",
-  "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)"
-};
+import { fetchNhlProxyText, parseNhlProxyUrl } from "lib/NHL/corsProxy";
 
 function summarizeHtmlError(value: string): string {
   const title = value.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim() ?? null;
@@ -39,25 +35,21 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const url = Array.isArray(req.query.url) ? req.query.url[0] : req.query.url;
-  const method = (req.query.method ?? "GET") as string;
-
-  if (!url) {
+  if (req.method !== "GET") {
+    res.setHeader("Allow", "GET");
+    return res.status(405).json({ success: false, message: "Only GET is supported." });
+  }
+  const target = parseNhlProxyUrl(req.query.url);
+  if (!target || (req.query.method !== undefined && req.query.method !== "GET")) {
     return res.status(400).json({
       success: false,
-      message: "Missing required url query parameter."
+      message: "Only supported NHL HTTPS GET resources are allowed."
     });
   }
 
   try {
-    const target = new URL(url);
-    const upstream = await fetch(target, {
-      method,
-      headers: DEFAULT_HEADERS,
-      cache: "no-store"
-    });
+    const { upstream, bodyText } = await fetchNhlProxyText(target);
     const contentType = upstream.headers.get("content-type") ?? "";
-    const bodyText = await upstream.text();
     const trimmed = bodyText.trim();
     const parsed = tryParseJson(bodyText);
     const looksLikeHtml =
@@ -88,11 +80,10 @@ export default async function handler(
     }
 
     res.status(200).json(parsed);
-  } catch (e: any) {
+  } catch {
     res.status(502).json({
-      url,
       success: false,
-      message: `Error: ${e.message}`,
+      message: "Unable to retrieve NHL data.",
     });
   }
 }

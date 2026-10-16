@@ -353,6 +353,9 @@ export default function PlayerStatsPage({
                       selectedStats={selectedStats}
                       isGoalie={isGoalie}
                       showPlayoffData={showPlayoffData}
+                      seasonId={mostRecentSeason}
+                      timeFrame={timeFrame}
+                      usedGameLogFallback={usedGameLogFallback}
                     />
                   </div>
                   <div className={styles.insightsSection}>

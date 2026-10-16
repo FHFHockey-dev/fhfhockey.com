@@ -12,7 +12,7 @@ vi.mock("lib/player-forecasts/calendarCoverage", async (importOriginal) => ({
   inspectCalendarConsumerCoverage: mocks.consumer,
 }));
 
-import handler from "./forecast-calendar";
+import handler from "../../../../pages/api/internal/forecast-calendar";
 import { ForecastScheduleError } from "lib/player-forecasts/scopeReads";
 
 function response() {

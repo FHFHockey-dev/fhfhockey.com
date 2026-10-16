@@ -2028,7 +2028,8 @@
   text-align: right;
 }
 
-.mobileEmptyState {
+.mobileEmptyState,
+.leaderboardEmptyState {
   margin: 0 v.$mobile-space-xs v.$mobile-space-xs;
   min-height: v.$touch-target-min;
   display: flex;

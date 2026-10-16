@@ -8,7 +8,7 @@ import LeaderboardCategoryGoalie from "components/StatsPage/LeaderboardCategoryG
 import MobileTeamList from "components/StatsPage/MobileTeamList";
 import MobileTabInterface from "components/StatsPage/MobileTabInterface";
 import GoalieShareChart from "components/GoalieShareChart";
-import { StatsProps } from "lib/NHL/statsPageTypes";
+import { StatsProps, SkaterPosition } from "lib/NHL/statsPageTypes";
 import { fetchStatsData } from "lib/NHL/statsPageFetch";
 import PlayerSearchBar from "components/StatsPage/PlayerSearchBar";
 import OptimizedImage from "components/common/OptimizedImage";
@@ -29,6 +29,8 @@ interface TeamListItem {
   name: string;
   abbreviation: string;
 }
+
+type PositionFilter = "all" | SkaterPosition | "G";
 
 interface QuickStat {
   label: string;
@@ -56,14 +58,15 @@ interface ActiveGradient {
 export default function StatsPage({
   skaterSeasonLabel = "Season",
   goalieSeasonLabel = "Season",
-  pointsLeaders,
-  goalsLeaders,
-  pppLeaders,
-  bshLeaders,
-  goalieLeadersWins,
-  goalieLeadersSavePct,
-  goalieLeadersGAA,
-  goalieLeadersQS,
+  pointsLeaders: allPointsLeaders,
+  goalsLeaders: allGoalsLeaders,
+  pppLeaders: allPppLeaders,
+  bshLeaders: allBshLeaders,
+  skaterLeadersByPosition = {},
+  goalieLeadersWins: allGoalieLeadersWins,
+  goalieLeadersSavePct: allGoalieLeadersSavePct,
+  goalieLeadersGAA: allGoalieLeadersGAA,
+  goalieLeadersQS: allGoalieLeadersQS,
   teams = []
 }: StatsProps & { teams: TeamListItem[] }) {
   // Dev logging wrapper (suppressed in production)
@@ -72,7 +75,27 @@ export default function StatsPage({
       console.log(...args);
     }
   };
-  const [selectedFilter, setSelectedFilter] = useState<string>("all");
+  const [selectedFilter, setSelectedFilter] = useState<PositionFilter>("all");
+  const showSkaters = selectedFilter !== "G";
+  const showGoalies = selectedFilter === "all" || selectedFilter === "G";
+  const { pointsLeaders, goalsLeaders, pppLeaders, bshLeaders } =
+    selectedFilter === "all"
+      ? {
+          pointsLeaders: allPointsLeaders,
+          goalsLeaders: allGoalsLeaders,
+          pppLeaders: allPppLeaders,
+          bshLeaders: allBshLeaders
+        }
+      : (selectedFilter !== "G" && skaterLeadersByPosition[selectedFilter]) || {
+          pointsLeaders: [],
+          goalsLeaders: [],
+          pppLeaders: [],
+          bshLeaders: []
+        };
+  const goalieLeadersWins = showGoalies ? allGoalieLeadersWins : [];
+  const goalieLeadersSavePct = showGoalies ? allGoalieLeadersSavePct : [];
+  const goalieLeadersGAA = showGoalies ? allGoalieLeadersGAA : [];
+  const goalieLeadersQS = showGoalies ? allGoalieLeadersQS : [];
   const [activeTeamColors, setActiveTeamColors] = useState<TeamColors | null>(
     null
   );
@@ -169,28 +192,28 @@ export default function StatsPage({
   const quickStats: QuickStat[] = [
     {
       label: "Points Leader",
-      value: pointsLeaders[0]?.points || 0,
-      subtitle: `${pointsLeaders[0]?.fullName || "N/A"}`,
+      value: pointsLeaders[0]?.points ?? "—",
+      subtitle: pointsLeaders[0]?.fullName ?? "No leaders available",
       category: "scoring"
     },
     {
       label: "Goals Leader",
-      value: goalsLeaders[0]?.goals || 0,
-      subtitle: `${goalsLeaders[0]?.fullName || "N/A"}`,
+      value: goalsLeaders[0]?.goals ?? "—",
+      subtitle: goalsLeaders[0]?.fullName ?? "No leaders available",
       category: "scoring"
     },
     {
       label: "Save Percentage",
-      value: goalieLeadersSavePct[0]?.save_pct
+      value: goalieLeadersSavePct[0]?.save_pct != null
         ? goalieLeadersSavePct[0].save_pct.toFixed(3).replace(/^0/, "")
-        : "-.---",
-      subtitle: `${goalieLeadersSavePct[0]?.fullName || "N/A"}`,
+        : "—",
+      subtitle: goalieLeadersSavePct[0]?.fullName ?? "No leaders available",
       category: "goaltending"
     }
   ];
 
   // Accessible filter options definition
-  const filterOptions = useMemo(
+  const filterOptions = useMemo<Array<{ key: PositionFilter; label: string }>>(
     () => [
       { key: "all", label: "All Players" },
       { key: "C", label: "Center" },
@@ -205,6 +228,12 @@ export default function StatsPage({
   const selectedFilterIndex = filterOptions.findIndex(
     (f) => f.key === selectedFilter
   );
+  const selectedFilterLabel = filterOptions[selectedFilterIndex]?.label;
+  const skaterEmptyMessage = showSkaters
+    ? selectedFilter === "all"
+      ? "No skater leaders available for this season."
+      : `No ${selectedFilterLabel?.toLowerCase()} leaders available for this season.`
+    : "Select All Players or a skater position to view skater leaders.";
 
   const onFilterKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (!["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown"].includes(e.key))
@@ -215,6 +244,8 @@ export default function StatsPage({
     const nextIndex =
       (selectedFilterIndex + dir + filterOptions.length) % filterOptions.length;
     setSelectedFilter(filterOptions[nextIndex].key);
+    e.currentTarget
+      .querySelectorAll<HTMLButtonElement>('[role="radio"]')[nextIndex]?.focus();
   };
 
   // Scroll handler for teams grid morphing
@@ -406,22 +437,28 @@ export default function StatsPage({
             <div className={styles.seasonBadge}>{skaterSeasonLabel} Season</div>
           </header>
           <div className={styles.leaderboards}>
-            <LeaderboardCategory
-              title="Points"
-              leaders={pointsLeaders}
-              statKey="points"
-            />
-            <LeaderboardCategory
-              title="Goals"
-              leaders={goalsLeaders}
-              statKey="goals"
-            />
-            <LeaderboardCategory
-              title="Power Play Points"
-              leaders={pppLeaders}
-              statKey="pp_points"
-            />
-            <LeaderboardCategoryBSH title="BSH Index" leaders={bshLeaders} />
+            {pointsLeaders.length === 0 ? (
+              <p className={styles.leaderboardEmptyState}>{skaterEmptyMessage}</p>
+            ) : (
+              <>
+                <LeaderboardCategory
+                  title="Points"
+                  leaders={pointsLeaders}
+                  statKey="points"
+                />
+                <LeaderboardCategory
+                  title="Goals"
+                  leaders={goalsLeaders}
+                  statKey="goals"
+                />
+                <LeaderboardCategory
+                  title="Power Play Points"
+                  leaders={pppLeaders}
+                  statKey="pp_points"
+                />
+                <LeaderboardCategoryBSH title="BSH Index" leaders={bshLeaders} />
+              </>
+            )}
           </div>
         </aside>
 
@@ -431,10 +468,10 @@ export default function StatsPage({
             {/* Hero Section - Clean and Minimal */}
             <section className={styles.heroSection}>
               <div className={styles.heroContent}>
-                <h1 className={styles.heroTitle}>Underlying Stats Hub</h1>
+                <h1 className={styles.heroTitle}>Player &amp; Team Stats</h1>
 
                 <p className={styles.heroSubtitle}>
-                  Advanced hockey statistics and player performance analysis
+                  NHL scoring leaders, goalie statistics, and team performance
                 </p>
                 {/* PlayerSearchBar moved to sticky section above */}
               </div>
@@ -447,7 +484,9 @@ export default function StatsPage({
                   role="list"
                   aria-label="Key metrics"
                 >
-                  {quickStats.map((stat, index) => (
+                  {quickStats.filter((stat) => (
+                    stat.category === "scoring" ? showSkaters : showGoalies
+                  )).map((stat, index) => (
                     <div
                       key={index}
                       role="listitem"
@@ -485,7 +524,7 @@ export default function StatsPage({
             aria-labelledby="position-filter-heading"
           >
             <h2 id="position-filter-heading" className={styles.filterTitle}>
-              Filter by Position
+              Leaderboard Position
             </h2>
             <div
               className={styles.filterButtons}
@@ -493,11 +532,12 @@ export default function StatsPage({
               aria-label="Player position filter"
               onKeyDown={onFilterKeyDown}
             >
-              {filterOptions.map((filter, idx) => {
+              {filterOptions.map((filter) => {
                 const isSelected = selectedFilter === filter.key;
                 return (
                   <button
                     key={filter.key}
+                    type="button"
                     role="radio"
                     aria-checked={isSelected}
                     tabIndex={isSelected ? 0 : -1}
@@ -512,7 +552,7 @@ export default function StatsPage({
               })}
               {/* Live region announcing current filter */}
               <div aria-live="polite" className={styles.visuallyHidden}>
-                Selected filter: {filterOptions[selectedFilterIndex]?.label}
+                Showing {selectedFilterLabel} in key metrics and leaderboards.
               </div>
             </div>
           </section>
@@ -542,32 +582,44 @@ export default function StatsPage({
             <div className={styles.seasonBadge}>{goalieSeasonLabel} Season</div>
           </header>
           <div className={styles.leaderboards}>
-            <LeaderboardCategoryGoalie
-              title="Wins"
-              leaders={goalieLeadersWins}
-              statKey="wins"
-            />
-            <LeaderboardCategoryGoalie
-              title="Save Percentage"
-              leaders={goalieLeadersSavePct}
-              statKey="save_pct"
-            />
-            <LeaderboardCategoryGoalie
-              title="Goals Against Average"
-              leaders={goalieLeadersGAA}
-              statKey="goals_against_avg"
-            />
-            <LeaderboardCategoryGoalie
-              title="Quality Start Percentage"
-              leaders={goalieLeadersQS}
-              statKey="quality_starts_pct"
-            />
+            {!showGoalies ? (
+              <p className={styles.leaderboardEmptyState}>
+                Select All Players or Goalie to view goaltender leaders.
+              </p>
+            ) : (
+              <>
+                <LeaderboardCategoryGoalie
+                  title="Wins"
+                  leaders={goalieLeadersWins}
+                  statKey="wins"
+                />
+                <LeaderboardCategoryGoalie
+                  title="Save Percentage"
+                  leaders={goalieLeadersSavePct}
+                  statKey="save_pct"
+                />
+                <LeaderboardCategoryGoalie
+                  title="Goals Against Average"
+                  leaders={goalieLeadersGAA}
+                  statKey="goals_against_avg"
+                />
+                <LeaderboardCategoryGoalie
+                  title="Quality Start Percentage"
+                  leaders={goalieLeadersQS}
+                  statKey="quality_starts_pct"
+                />
+              </>
+            )}
           </div>
         </aside>
       </div>
 
       {/* Mobile Leaderboard Cards - Appear Below Main Content on Mobile */}
       <MobileTabInterface
+        playerType={
+          selectedFilter === "all" ? "all" : showSkaters ? "skaters" : "goalies"
+        }
+        skaterEmptyMessage={skaterEmptyMessage}
         pointsLeaders={pointsLeaders}
         goalsLeaders={goalsLeaders}
         pppLeaders={pppLeaders}

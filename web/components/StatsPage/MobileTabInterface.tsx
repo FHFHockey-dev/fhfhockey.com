@@ -22,6 +22,8 @@ type MobileLeaderSection = {
 };
 
 type MobileTabInterfaceProps = {
+  playerType?: "all" | MobileTabKey;
+  skaterEmptyMessage?: string;
   pointsLeaders: SkaterStat[];
   goalsLeaders: SkaterStat[];
   pppLeaders: SkaterStat[];
@@ -82,6 +84,8 @@ function mapGoalieRows(
 }
 
 export default function MobileTabInterface({
+  playerType = "all",
+  skaterEmptyMessage = "No leaders available.",
   pointsLeaders,
   goalsLeaders,
   pppLeaders,
@@ -92,6 +96,9 @@ export default function MobileTabInterface({
   goalieLeadersQS
 }: MobileTabInterfaceProps) {
   const [activeTab, setActiveTab] = useState<MobileTabKey>("skaters");
+  const visibleTab = playerType === "all" ? activeTab : playerType;
+  const availableTabs: MobileTabKey[] =
+    playerType === "all" ? ["skaters", "goalies"] : [playerType];
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     "skaters-points": true,
     "goalies-save-pct": true
@@ -209,15 +216,15 @@ export default function MobileTabInterface({
         <div className={styles.mobileTabHeader}>
           <h2 className={styles.mobileCardTitle}>Leaderboards</h2>
           <div className={styles.mobileTabs} role="tablist" aria-label="Leaderboard type">
-            {(["skaters", "goalies"] as MobileTabKey[]).map((tab) => (
+            {availableTabs.map((tab) => (
               <button
                 key={tab}
                 type="button"
                 role="tab"
-                aria-selected={activeTab === tab}
+                aria-selected={visibleTab === tab}
                 aria-controls={`mobile-${tab}-panel`}
                 className={`${styles.mobileTabButton} ${
-                  activeTab === tab ? styles.mobileTabButtonActive : ""
+                  visibleTab === tab ? styles.mobileTabButtonActive : ""
                 }`}
                 onClick={() => setActiveTab(tab)}
               >
@@ -228,11 +235,11 @@ export default function MobileTabInterface({
         </div>
 
         <div
-          id={`mobile-${activeTab}-panel`}
+          id={`mobile-${visibleTab}-panel`}
           role="tabpanel"
           className={styles.mobileTabPanel}
         >
-          {sections[activeTab].map((section) => {
+          {sections[visibleTab].map((section) => {
             const isExpanded = Boolean(expandedSections[section.id]);
             return (
               <article key={section.id} className={styles.mobileLeaderboardCard}>
@@ -268,7 +275,7 @@ export default function MobileTabInterface({
                   </div>
                 ) : isExpanded ? (
                   <div id={`${section.id}-rows`} className={styles.mobileEmptyState}>
-                    No leaders available.
+                    {visibleTab === "skaters" ? skaterEmptyMessage : "No goalie leaders available."}
                   </div>
                 ) : null}
               </article>

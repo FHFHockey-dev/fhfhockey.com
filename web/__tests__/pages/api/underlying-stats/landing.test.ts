@@ -7,18 +7,18 @@ const mocks = vi.hoisted(() => ({
   resolveSnapshot: vi.fn()
 }));
 
-vi.mock("../../../lib/supabase/server", () => ({ default: {} }));
-vi.mock("../../../lib/underlying-stats/availableSnapshotDates", () => ({
+vi.mock("../../../../lib/supabase/server", () => ({ default: {} }));
+vi.mock("../../../../lib/underlying-stats/availableSnapshotDates", () => ({
   fetchDistinctUnderlyingStatsSnapshotDates: mocks.fetchDates
 }));
-vi.mock("../../../lib/underlying-stats/teamLandingRatings", () => ({
+vi.mock("../../../../lib/underlying-stats/teamLandingRatings", () => ({
   resolveUnderlyingStatsLandingSnapshot: mocks.resolveSnapshot
 }));
-vi.mock("../../../lib/underlying-stats/ulsRouteStatus", () => ({
+vi.mock("../../../../lib/underlying-stats/ulsRouteStatus", () => ({
   fetchUlsRouteStatus: mocks.fetchStatus
 }));
 
-import handler from "./landing";
+import handler from "../../../../pages/api/underlying-stats/landing";
 
 const response = () => {
   const res = {

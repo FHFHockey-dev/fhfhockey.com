@@ -40,6 +40,7 @@ function createMockRes() {
 
 describe("/api/v1/db/update-player-trend-metrics", () => {
   beforeEach(() => {
+    vi.stubEnv("CRON_SECRET", "unit-test-cron-secret");
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-03-15T12:00:00.000Z"));
     fetchCurrentSeasonMock.mockResolvedValue({
@@ -58,6 +59,7 @@ describe("/api/v1/db/update-player-trend-metrics", () => {
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     vi.useRealTimers();
     vi.clearAllMocks();
   });
@@ -66,7 +68,7 @@ describe("/api/v1/db/update-player-trend-metrics", () => {
     const res = createMockRes();
 
     await handler(
-      { method: "POST", headers: { host: "localhost" } } as any,
+      { method: "POST", headers: { host: "localhost", authorization: "Bearer unit-test-cron-secret" } } as any,
       res,
     );
 
@@ -91,7 +93,7 @@ describe("/api/v1/db/update-player-trend-metrics", () => {
     const res = createMockRes();
 
     await handler(
-      { method: "GET", headers: { host: "localhost" } } as any,
+      { method: "GET", headers: { host: "localhost", authorization: "Bearer unit-test-cron-secret" } } as any,
       res,
     );
 

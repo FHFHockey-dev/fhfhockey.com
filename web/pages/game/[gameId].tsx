@@ -27,51 +27,89 @@ function formatGoalieSavePct(value) {
 
 export default function Page() {
   const router = useRouter();
-  const { gameId } = router.query;
+  const gameId =
+    typeof router.query.gameId === "string" ? router.query.gameId : undefined;
+  return <GamePage key={gameId} gameId={gameId} />;
+}
+
+type RequestStatus = "loading" | "ready" | "empty" | "error";
+
+function GamePage({ gameId }: { gameId?: string }) {
   const [gameDetails, setGameDetails] = useState(null);
   const [gameLandingDetails, setGameLandingDetails] = useState(null); // Added state for game landing details
+  const [gameDetailsStatus, setGameDetailsStatus] = useState<RequestStatus>("loading");
+  const [gameLandingStatus, setGameLandingStatus] = useState<RequestStatus>("loading");
+  const [retryCount, setRetryCount] = useState(0);
   const [homeTeamStats, setHomeTeamStats] = useState({});
   const [awayTeamStats, setAwayTeamStats] = useState({});
   const [homeTeamPowerPlayStats, setHomeTeamPowerPlayStats] = useState({});
   const [awayTeamPowerPlayStats, setAwayTeamPowerPlayStats] = useState({});
 
   useEffect(() => {
+    if (!gameId) return;
+    let active = true;
+    const isCurrent = () => active;
+    setGameDetailsStatus("loading");
+    setGameLandingStatus("loading");
+
     async function fetchGameDetails() {
-      if (!gameId) return;
       const endpointURL = `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`;
       try {
-        const response = await Fetch(endpointURL).then((res) => res.json());
+        const res = await Fetch(endpointURL);
+        if (!res.ok) throw new Error(`Game details request failed (${res.status})`);
+        const response = await res.json();
+        if (!active) return;
+        if (!response?.homeTeam?.abbrev || !response?.awayTeam?.abbrev) {
+          setGameDetailsStatus("empty");
+          return;
+        }
         const seasonId =
           String(response?.season ?? response?.seasonId ?? "").trim() ||
           deriveSeasonIdFromGameDate(response?.gameDate);
         setGameDetails(response);
-        fetchTeamStats(response.homeTeam.abbrev, "home", seasonId);
-        fetchTeamStats(response.awayTeam.abbrev, "away", seasonId);
-        fetchPowerPlayStats(response.homeTeam.abbrev, "home", seasonId);
-        fetchPowerPlayStats(response.awayTeam.abbrev, "away", seasonId);
+        setGameDetailsStatus("ready");
+        fetchTeamStats(response.homeTeam.abbrev, "home", seasonId, isCurrent);
+        fetchTeamStats(response.awayTeam.abbrev, "away", seasonId, isCurrent);
+        fetchPowerPlayStats(response.homeTeam.abbrev, "home", seasonId, isCurrent);
+        fetchPowerPlayStats(response.awayTeam.abbrev, "away", seasonId, isCurrent);
       } catch (error) {
+        if (!active) return;
+        setGameDetailsStatus("error");
         console.error("Error fetching game details:", error);
       }
     }
 
     async function fetchGameLandingDetails() {
-      if (!gameId) return;
       const landingURL = `https://api-web.nhle.com/v1/gamecenter/${gameId}/landing`;
       try {
-        const landingResponse = await Fetch(landingURL).then((res) =>
-          res.json()
-        );
+        const res = await Fetch(landingURL);
+        if (!res.ok) throw new Error(`Game landing request failed (${res.status})`);
+        const landingResponse = await res.json();
+        if (!active) return;
+        if (
+          typeof landingResponse?.gameState !== "string" ||
+          !landingResponse.gameState.trim()
+        ) {
+          setGameLandingStatus("empty");
+          return;
+        }
         setGameLandingDetails(landingResponse); // Update state with fetched game landing details
+        setGameLandingStatus("ready");
       } catch (error) {
+        if (!active) return;
+        setGameLandingStatus("error");
         console.error("Error fetching game landing details:", error);
       }
     }
 
     fetchGameDetails();
     fetchGameLandingDetails();
-  }, [gameId]);
+    return () => {
+      active = false;
+    };
+  }, [gameId, retryCount]);
 
-  async function fetchTeamStats(teamAbbreviation, teamType, seasonId) {
+  async function fetchTeamStats(teamAbbreviation, teamType, seasonId, isCurrent) {
     const franchiseId = teamsInfo[teamAbbreviation]?.franchiseId;
     if (!franchiseId) return;
 
@@ -79,6 +117,7 @@ export default function Page() {
     const statsURL = `https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=false&sort=[{"property":"points","direction":"DESC"},{"property":"wins","direction":"DESC"},{"property":"teamId","direction":"ASC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=${franchiseId} and gameTypeId=2 and seasonId<=${targetSeasonId} and seasonId>=${targetSeasonId}`;
     try {
       const response = await Fetch(statsURL).then((res) => res.json());
+      if (!isCurrent()) return;
       const statsData = response.data[0] || {}; // Assuming the first object contains the relevant stats
       if (teamType === "home") {
         setHomeTeamStats(statsData);
@@ -86,11 +125,12 @@ export default function Page() {
         setAwayTeamStats(statsData);
       }
     } catch (error) {
+      if (!isCurrent()) return;
       console.error(`Error fetching ${teamType} team stats:`, error);
     }
   }
 
-  async function fetchPowerPlayStats(teamAbbreviation, teamType, seasonId) {
+  async function fetchPowerPlayStats(teamAbbreviation, teamType, seasonId, isCurrent) {
     // Match the teamID from teamsInfo to fetch the correct stats
     const teamId = teamsInfo[teamAbbreviation]?.id;
     if (!teamId) return;
@@ -99,6 +139,7 @@ export default function Page() {
     const powerPlayStatsURL = `https://api.nhle.com/stats/rest/en/team/powerplay?isAggregate=false&isGame=false&sort=[{"property":"powerPlayPct","direction":"DESC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=teamId=${teamId} and gameTypeId=2 and seasonId<=${targetSeasonId} and seasonId>=${targetSeasonId}`;
     try {
       const response = await Fetch(powerPlayStatsURL).then((res) => res.json());
+      if (!isCurrent()) return;
       const powerPlayStats = response.data?.[0];
       if (!powerPlayStats) {
         console.error(`No power play stats found for teamId: ${teamId}`);
@@ -110,6 +151,7 @@ export default function Page() {
         setAwayTeamPowerPlayStats(powerPlayStats);
       }
     } catch (error) {
+      if (!isCurrent()) return;
       console.error(`Error fetching ${teamType} team power play stats:`, error);
     }
   }
@@ -638,12 +680,44 @@ export default function Page() {
     ]
   ); // Recalculate when dependencies change
 
+  const isLoading = gameDetailsStatus === "loading" || gameLandingStatus === "loading";
+  const hasError = gameDetailsStatus === "error" || gameLandingStatus === "error";
+  const hasEmptyResponse = gameDetailsStatus === "empty" || gameLandingStatus === "empty";
+  const requestFeedback = (
+    <>
+      {isLoading ? <p role="status">Loading game details...</p> : null}
+      {hasError ? (
+        <p role="alert">
+          {gameDetails
+            ? "Some game details could not be loaded. Showing available details."
+            : "Game details could not be loaded. Please try again."}
+        </p>
+      ) : !isLoading && hasEmptyResponse ? (
+        <p role="status">
+          {gameDetails
+            ? "Some game details are not available. Showing available details."
+            : "Game details are not available."}
+        </p>
+      ) : null}
+      {hasError || hasEmptyResponse || (isLoading && retryCount > 0) ? (
+        <button
+          type="button"
+          disabled={isLoading}
+          onClick={() => setRetryCount((count) => count + 1)}
+        >
+          {isLoading && retryCount > 0 ? "Retrying..." : "Retry"}
+        </button>
+      ) : null}
+    </>
+  );
+
   if (
     gameLandingDetails?.gameState === "FUT" ||
     gameLandingDetails?.gameState === "PRE"
   ) {
     return (
       <div className={styles["game-page"]} style={themeStyles}>
+        {requestFeedback}
         {gameDetails ? (
           <>
             {renderGameHero()}
@@ -661,9 +735,7 @@ export default function Page() {
               </div>
             </section>
           </>
-        ) : (
-          <p>Loading game details...</p>
-        )}
+        ) : null}
       </div>
     );
   } else if (
@@ -673,6 +745,7 @@ export default function Page() {
   ) {
     return (
       <div className={styles["gameOverPage"]} style={themeStyles}>
+        {requestFeedback}
         {gameDetails ? (
           <>
             {renderGameHero()}
@@ -826,15 +899,17 @@ export default function Page() {
               </div>
             </section>
           </>
-        ) : (
-          <p>Loading game details...</p>
-        )}
+        ) : null}
       </div>
     );
   } else {
     return (
       <div className={styles["game-page"]} style={themeStyles}>
-        <p>Game details are not available.</p>
+        {requestFeedback}
+        {gameDetails ? renderGameHero() : null}
+        {!isLoading && !hasError && !hasEmptyResponse ? (
+          <p>Game details are not available.</p>
+        ) : null}
       </div>
     );
   }

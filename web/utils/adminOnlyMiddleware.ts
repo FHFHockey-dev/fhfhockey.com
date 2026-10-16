@@ -81,7 +81,15 @@ function isLocalHostHeader(hostHeader: string | undefined) {
 }
 
 export function invokedByLocalDev(req: NextApiRequest) {
+  // Host/forwarded headers cannot establish that a caller is local.
+  const remoteAddress = req.socket?.remoteAddress;
+  const isLoopbackPeer =
+    remoteAddress === "127.0.0.1" ||
+    remoteAddress === "::1" ||
+    remoteAddress === "::ffff:127.0.0.1";
   return (
-    process.env.NODE_ENV !== "production" && isLocalHostHeader(req.headers.host)
+    process.env.NODE_ENV === "development" &&
+    isLoopbackPeer &&
+    isLocalHostHeader(req.headers.host)
   );
 }

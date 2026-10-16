@@ -16,9 +16,9 @@ $border-size: 2px;
     position: relative;
     border: none;
     .time {
-      position: absolute;
-      top: 9px;
-      right: 0;
+      display: block;
+      margin-bottom: 8px;
+      text-align: right;
       opacity: 0.4;
       font-size: 0.65rem;
       &:hover {

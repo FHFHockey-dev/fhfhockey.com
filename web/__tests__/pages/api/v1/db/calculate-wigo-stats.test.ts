@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { getCurrentSeasonMock, fromMock } = vi.hoisted(() => ({
   getCurrentSeasonMock: vi.fn(),
@@ -35,7 +35,10 @@ function createMockRes() {
 describe("/api/v1/db/calculate-wigo-stats route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv("CRON_SECRET", "unit-test-cron-secret");
   });
+
+  afterEach(() => vi.unstubAllEnvs());
 
   it("returns a structured dependency error instead of leaking html", async () => {
     getCurrentSeasonMock.mockRejectedValue(
@@ -47,7 +50,7 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
     const req: any = {
       method: "GET",
       query: {},
-      headers: { host: "localhost" }
+      headers: { host: "localhost", authorization: "Bearer unit-test-cron-secret" }
     };
     const res = createMockRes();
 
@@ -123,7 +126,7 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
       return builder;
     });
     const res = createMockRes();
-    await handler({ method: "GET", query: {}, headers: { host: "localhost" } } as any, res);
+    await handler({ method: "GET", query: {}, headers: { host: "localhost", authorization: "Bearer unit-test-cron-secret" } } as any, res);
     expect(res.statusCode).toBe(200);
     const recent = written.wigo_recent[0];
     for (const interval of [5, 10, 20]) {

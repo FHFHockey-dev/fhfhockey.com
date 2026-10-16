@@ -36,12 +36,12 @@ type LandingPageProps = {
   teams: Team[];
   promotions: RowData[];
   demotions: RowData[];
-  lastUpdated: string;
+  pageRefreshedAt: string;
 };
 
 function Lines({
   teams,
-  lastUpdated,
+  pageRefreshedAt,
   promotions,
   demotions,
 }: LandingPageProps) {
@@ -58,7 +58,7 @@ function Lines({
       <Teams teams={teams} />
       <ProjectedLineups />
       <Players
-        lastUpdated={lastUpdated}
+        pageRefreshedAt={pageRefreshedAt}
         promotions={promotions}
         demotions={demotions}
       />
@@ -166,7 +166,7 @@ export const getStaticProps: GetStaticProps = async () => {
       teams,
       promotions,
       demotions,
-      lastUpdated: new Date().toISOString(),
+      pageRefreshedAt: new Date().toISOString(),
     },
     revalidate: 60, // in seconds
   };
@@ -195,11 +195,11 @@ function Teams({ teams }: { teams: Team[] }) {
 function Players({
   promotions,
   demotions,
-  lastUpdated,
+  pageRefreshedAt,
 }: {
   promotions: RowData[];
   demotions: RowData[];
-  lastUpdated: string;
+  pageRefreshedAt: string;
 }) {
   return (
     <section className={styles.players}>
@@ -210,7 +210,7 @@ function Players({
         rel="noopener noreferrer"
       >
         <ClientOnly style={{ display: "inline" }}>
-          Updated: <TimeAgo date={lastUpdated} />
+          Page refreshed: <TimeAgo date={pageRefreshedAt} />
         </ClientOnly>
       </a>
       <div className={styles.tables}>

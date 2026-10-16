@@ -16,6 +16,10 @@ import supabase from "lib/supabase/client";
 import styles from "./ResetPassword.module.scss";
 
 type PageState = "checking" | "ready" | "success" | "error";
+type FormError = {
+  message: string;
+  field?: "password" | "confirmPassword";
+};
 const VALID_OTP_TYPES = new Set(["recovery"]);
 const PASSWORD_UPDATE_TIMEOUT_MS = 15000;
 const SAFE_DOCUMENT_TITLE = "Reset Password | FHFHockey";
@@ -116,6 +120,7 @@ export default function ResetPasswordPage() {
   );
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [formError, setFormError] = useState<FormError | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [callbackNextPath, setCallbackNextPath] = useState<string | null>(null);
 
@@ -285,27 +290,36 @@ export default function ResetPasswordPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (isSubmitting) {
+      return;
+    }
+
     if (password.length < 8) {
-      setPageState("error");
-      setMessage("Use a password with at least 8 characters.");
+      setFormError({
+        message: "Use a password with at least 8 characters.",
+        field: "password"
+      });
       return;
     }
 
     if (password !== confirmPassword) {
-      setPageState("error");
-      setMessage("Your password confirmation does not match.");
+      setFormError({
+        message: "Your password confirmation does not match.",
+        field: "confirmPassword"
+      });
       return;
     }
 
+    setFormError(null);
     setIsSubmitting(true);
-    setPageState("checking");
     setMessage("Updating your password now.");
 
     try {
       await updatePasswordWithRecoverySession(password);
     } catch (error) {
-      setPageState("error");
-      setMessage(error instanceof Error ? error.message : "Failed to update password.");
+      setFormError({
+        message: error instanceof Error ? error.message : "Failed to update password."
+      });
       setIsSubmitting(false);
       return;
     }
@@ -339,19 +353,25 @@ export default function ResetPasswordPage() {
             </p>
 
             <div
+              id="reset-password-message"
+              role={pageState === "error" || formError ? "alert" : "status"}
               className={
-                pageState === "error"
+                pageState === "error" || formError
                   ? styles.errorNote
                   : pageState === "success"
                   ? styles.successNote
                   : styles.processingNote
               }
             >
-              {message}
+              {formError?.message || message}
             </div>
 
             {pageState === "ready" ? (
-              <form className={styles.form} onSubmit={(event) => void handleSubmit(event)}>
+              <form
+                className={styles.form}
+                onSubmit={(event) => void handleSubmit(event)}
+                aria-describedby="reset-password-message"
+              >
                 <label className={styles.field}>
                   <span className={styles.fieldLabel}>New Password</span>
                   <input
@@ -362,6 +382,8 @@ export default function ResetPasswordPage() {
                     autoComplete="new-password"
                     placeholder="Create a new password"
                     disabled={isSubmitting}
+                    aria-invalid={formError?.field === "password"}
+                    aria-describedby={formError?.field === "password" ? "reset-password-message" : undefined}
                   />
                 </label>
 
@@ -375,6 +397,8 @@ export default function ResetPasswordPage() {
                     autoComplete="new-password"
                     placeholder="Confirm your new password"
                     disabled={isSubmitting}
+                    aria-invalid={formError?.field === "confirmPassword"}
+                    aria-describedby={formError?.field === "confirmPassword" ? "reset-password-message" : undefined}
                   />
                 </label>
 

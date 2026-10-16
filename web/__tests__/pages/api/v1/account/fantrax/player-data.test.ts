@@ -16,7 +16,7 @@ vi.mock("lib/integrations/fantrax/client", () => ({
   getFantraxLeagueInfo: mocks.getFantraxLeagueInfo,
 }));
 
-import handler from "./player-data";
+import handler from "../../../../../../pages/api/v1/account/fantrax/player-data";
 
 function response() {
   const res = {

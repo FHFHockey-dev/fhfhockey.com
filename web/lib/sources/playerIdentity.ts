@@ -37,6 +37,8 @@ export function resolvePlayerIdentity(
   teamId?: number | null,
 ): PlayerIdentityResolution {
   const key = normalizeIdentityName(rawName);
+  // Compact single initials belong only to initial matching; keep shared name/alias normalization unchanged.
+  const initialKey = normalizeIdentityName(rawName.replace(/^(\s*\p{L})\.(?!\p{L}\.)(?=\p{L})/u, "$1 "));
   if (!key) return { status: "missing_player", candidates: [] };
   const unique = [...new Map(players.map((player) => [player.playerId, player])).values()];
   for (const basis of ["full_name", "alias", "initial", "surname"] as const) {
@@ -44,7 +46,7 @@ export function resolvePlayerIdentity(
       if (basis === "full_name") return normalizeIdentityName(player.fullName) === key;
       if (basis === "alias") return player.aliases?.some((alias) => normalizeIdentityName(alias) === key);
       if (basis === "surname") return normalizeIdentityName(player.lastName) === key;
-      return normalizeIdentityName(`${player.fullName[0]} ${player.lastName}`) === key;
+      return normalizeIdentityName(`${player.fullName[0]} ${player.lastName}`) === initialKey;
     });
     if (!candidates.length) continue;
     const scoped = teamId == null ? candidates : candidates.filter((player) => player.teamId === teamId);
