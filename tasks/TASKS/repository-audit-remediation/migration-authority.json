@@ -831,6 +831,16 @@
       "migrationClass": "feature",
       "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
       "stateEvidence": "No exact hosted applied-state receipt was inspected during repository reconciliation. Source presence does not establish deployment state."
+    },
+    {
+      "order": 83,
+      "path": "supabase/migrations/20261017183611_native_forecast_catalog_heads.sql",
+      "sha256": "e0776d8c20fce6bbff1f6fc225b1707d4258fb30148feaf31724129b6592772e",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Native FORGE catalog head and service-role CAS selector. Applied 2026-10-17 by explicit user approval as one targeted migration; no head row, selection, scheduler or public activation was created.",
+      "stateEvidence": "Production ledger supabase_migrations.schema_migrations version 20261017183611 name native_forecast_catalog_heads (read back 2026-10-17). Read-only post-apply check: table and RPC present; RLS enabled and forced, 0 policies, 0 rows; only service_role SELECT and EXECUTE; owner postgres (BYPASSRLS), SECURITY DEFINER, search_path=public, pg_temp. Local body equals applied body apart from BEGIN/COMMIT. Body is the reviewed native-catalog-head-review.sql (4149d89d...) plus SET LOCAL timeouts; disposable PostgreSQL 17 harness passed 6 cases (tasks/artifacts/forge-continuation-2026-10-17/catalog-head-migration-pg-result-v1.json)."
     }
   ],
   "sourceExtensionApproval": {

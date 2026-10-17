@@ -20,7 +20,7 @@ import { prepareNativeCadenceOutputs, type NativeOutputPreparationCommand } from
 import { contributionBundleChecksum, contributionBundleCandidateInputHash } from "./contributionStore";
 import { capturePlayerForecastSourceObservation, playerForecastSourcePayloadHash as hash, type PlannedSourceObservation } from "./sourceSnapshot";
 import { publishNativeBaselinePlan, validateNativeBaselinePublication, type NativeBaselinePublicationPlan } from "./nativeBaselinePublication";
-import { nativeCadenceClosureScope, nativeCadenceInputManifest, publishNativeBaselineCadence, publishJournaledNativeBaselineCadence, publishObservedNativeBaselineCadence, observeClosedNativeCadenceSources } from "./nativeBaselineCadence";
+import { bindNativeCadenceMaterialization, nativeCadenceClosureScope, nativeCadenceInputManifest, publishNativeBaselineCadence, publishJournaledNativeBaselineCadence, publishObservedNativeBaselineCadence, observeClosedNativeCadenceSources } from "./nativeBaselineCadence";
 const now = new Date("2026-10-15T12:00:00Z");
 const ids = [1, 2].map(n => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`);
 function materializationFixture(): NativeMaterializationRequest {
@@ -410,6 +410,19 @@ describe("bounded publication coordinator (synthetic only)", () => {
         games, requiredAcquisitionScopes, reviewedPlan };
       return { command, proof, bundle };
     };
+    it("binds an acquired request so its closure matches the cadence scopes prepare and publish require", () => {
+      const original = materializationFixture(), before = hash(original);
+      const games = [{ gameId: 30, startsAt: "2026-10-15T23:00:00Z" }];
+      const bound = bindNativeCadenceMaterialization(original, { runId: ids[1], sourceKey: "native-daily", date: "2026-10-15", seasonId: 20262027, games });
+      expect(hash(original)).toBe(before);
+      const closure = prepareNativeInputMaterialization(bound.request, closedAt).closure.payload as any;
+      expect(closure).toMatchObject({ runId: ids[1], scopeHash: bound.closureScopeHash,
+        acquisitionScopeHash: bound.requiredAcquisitionScopes["native-daily"].scopeHash, inputCutoffAt: bound.requiredAcquisitionScopes["native-daily"].cutoffAt });
+      expect(bound.closureScopeHash).toBe(nativeCadenceClosureScope({ publicationPlan: { seasonId: 20262027 }, requiredAcquisitionScopes: bound.requiredAcquisitionScopes,
+        cadence: { date: "2026-10-15", requiredSources: ["native-daily"], games } } as any));
+      const otherGames = bindNativeCadenceMaterialization(original, { runId: ids[1], sourceKey: "native-daily", date: "2026-10-15", seasonId: 20262027, games: [] });
+      expect(otherGames.closureScopeHash).not.toBe(bound.closureScopeHash);
+    });
     let counter = 100;
     const nextId = () => `00000000-0000-4000-8000-${String(counter++).padStart(12, "0")}`;
     it("reissues identical means after closure with pending reviews, then validates only once reviewed", async () => {
@@ -614,6 +627,21 @@ describe("bounded publication coordinator (synthetic only)", () => {
     const stale = await advanceNativeCatalogHead({ db: db.db, headId: ids[0], expectedRevision: 0, expectedHash: null, observation: { ...observation, id: "00000000-0000-4000-8000-000000000009" }, now, dryRun: false });
     // Same immutable semantic tuple under a fresh UUID is rejected before CAS, so selection stays unacknowledged.
     expect(stale).toMatchObject({ status: "unknown", selectedCatalogUpdated: false }); expect(db.heads[0].revision).toBe(1);
+  });
+  it("admits a selected catalog strictly before its expiry and fails closed exactly at and after it", async () => {
+    const plan = nativeFixture(now.toISOString()), validation = await validateNativeBaselinePublication(plan, now), db = database(plan.rows);
+    const observation = prepareNativeCatalogObservation({ plan, pins: validation.proposedPins, observationId: ids[1], issuedAt: now.toISOString() });
+    await advanceNativeCatalogHead({ db: db.db, headId: ids[0], expectedRevision: 0, expectedHash: null, observation, now, dryRun: false });
+    const expiresAt = Date.parse((observation.payload as any).expiresAt), environment = { PLAYER_FORECAST_NATIVE_CATALOG_HEAD_ID: ids[0] };
+    const at = async (ms: number) => resolveNativeCatalogEnvironment(db.db, plan.seasonId, new Date(ms), environment);
+    expect((await at(expiresAt - 1)).selection?.revision).toBe(1);
+    for (const ms of [expiresAt, expiresAt + 1]) {
+      const resolved = await at(ms);
+      expect(resolved.selection).toBeNull(); expect(resolved.limitation).toBeTruthy();
+      for (const key of NATIVE_CATALOG_PIN_KEYS) expect(resolved.environment[key]).toBe("");
+    }
+    // A clock before issuance never admits a future-issued selection.
+    expect((await at(now.getTime() - 1)).selection).toBeNull();
   });
   it.each(["hash", "season", "missing"])("fails closed for an invalid enabled %s head rather than using stale environment pins", async kind => {
     const plan = nativeFixture(now.toISOString()), validation = await validateNativeBaselinePublication(plan, now), db = database(plan.rows);

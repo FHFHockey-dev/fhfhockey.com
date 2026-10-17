@@ -4,8 +4,8 @@
 -- only this header and the lock/statement timeouts differ. No scheduler or public activation.
 -- Immutable selections live in the existing player_forecast_source_observations.
 BEGIN;
-SET lock_timeout = '5s';
-SET statement_timeout = '30s';
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '30s';
 CREATE TABLE public.native_forecast_catalog_heads (
   id uuid PRIMARY KEY,
   season_id integer NOT NULL,

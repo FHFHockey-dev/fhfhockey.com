@@ -59,6 +59,11 @@ export function nativeInputManifest(items: Array<{ key: string; hash: string; av
 }
 
 /** Pure producer over an explicit acquisition packet. No collection or public-use grant. */
+/** The acquisition identity the closure binds: declared scope (without raw receipts), required parents and policy selection. */
+export function nativeAcquisitionScopeHash(request: Pick<NativeMaterializationRequest, "acquisition" | "requiredParents" | "nativeSelection">) {
+  const { receipts: _receipts, ...scope } = request.acquisition;
+  return hash({ scope, requiredParents: request.requiredParents ?? [], nativeSelection: request.nativeSelection });
+}
 export function prepareNativeInputMaterialization(request: NativeMaterializationRequest, closedAt: string) {
   const clock = timestampMicros(closedAt), cutoff = timestampMicros(request.acquisition.cutoffAt);
   if (!validPlannedObservationId(request.runId) || !/^[a-f0-9]{64}$/.test(request.closureScopeHash)
@@ -245,7 +250,7 @@ export function prepareNativeInputMaterialization(request: NativeMaterialization
     scope, requiredParents: required, nativeSelection: request.nativeSelection,
     additionalHashes: additional.map(value => value.payload_hash),
     existingInputIds: (request.existingInputs ?? []).map(value => value.id),
-    acquisitionScopeHash: hash({ scope, requiredParents: required, nativeSelection: request.nativeSelection }), closedAt, manifest, coverage: assembled.coverage,
+    acquisitionScopeHash: nativeAcquisitionScopeHash(request), closedAt, manifest, coverage: assembled.coverage,
     selectedHistoryCoverage: assembled.selectedHistoryCoverage,
     rows: rows.map(value => ({ id: value.id, hash: value.payload_hash, dataset: value.dataset_key })),
   }, closedAt);
@@ -253,7 +258,7 @@ export function prepareNativeInputMaterialization(request: NativeMaterialization
   report.id = identity(request.runId, "materialization");
   const closure = row("closure", "native-producer-closure-v1", "producer_closure", `${request.date}:${request.sourceKey}`, {
     version: "native-producer-closure-v1", producerVersion: VERSION, status: "closed", scopeHash: request.closureScopeHash,
-    acquisitionScopeHash: hash({ scope, requiredParents: required, nativeSelection: request.nativeSelection }), inputCutoffAt: request.acquisition.cutoffAt,
+    acquisitionScopeHash: nativeAcquisitionScopeHash(request), inputCutoffAt: request.acquisition.cutoffAt,
     inputRevision: manifest.revision, expectedItems: manifest.expectedItems, completedItems: manifest.expectedItems,
     runId: request.runId, closedAt, materializationId: report.id, materializationHash: report.payload_hash,
   }, closedAt);

@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
 import { advanceNativeCatalogHead, prepareNativeCatalogObservation } from "./nativeCatalogHead";
-import { nativeInputManifest, verifyNativeMaterialization } from "./nativeInputMaterialization";
+import { nativeAcquisitionScopeHash, nativeInputManifest, verifyNativeMaterialization, type NativeMaterializationRequest } from "./nativeInputMaterialization";
 import { withinDeadline } from "../rosterScheduleData/planningInputs";
 import { prepareForecastCadence, type ForecastCadenceInput } from "../fantasy-projections/seasonJobs";
 import { capturePlayerForecastSourceObservation, matchesPlannedObservation, SOURCE_OBSERVATION_COLUMNS,
@@ -228,6 +228,17 @@ export function nativeCadenceClosureScope(input: Parameters<typeof publishNative
   return hash({ seasonId: input.publicationPlan.seasonId, date: input.cadence.date,
     requiredSources: input.cadence.requiredSources.slice().sort(), games: input.cadence.games.slice().sort((a, b) => a.gameId - b.gameId),
     requiredAcquisitionScopes: input.requiredAcquisitionScopes ?? {} });
+}
+/** Bind one acquired request to its New York cadence date and games before materialization.
+ * The returned scopes are what prepare/publish later require; nothing is acquired or written. */
+export function bindNativeCadenceMaterialization(request: NativeMaterializationRequest, binding: {
+  runId: string; sourceKey: string; date: string; seasonId: number; games: Array<{ gameId: number; startsAt: string }> }) {
+  const bound: NativeMaterializationRequest = { ...request, runId: binding.runId, sourceKey: binding.sourceKey, date: binding.date };
+  const requiredAcquisitionScopes = { [binding.sourceKey]: { scopeHash: nativeAcquisitionScopeHash(bound), cutoffAt: bound.acquisition.cutoffAt } };
+  bound.closureScopeHash = nativeCadenceClosureScope({ publicationPlan: { version: "native-baseline-publication-plan-v1", seasonId: binding.seasonId, rows: [] },
+    slotKey: "", inputSourceKey: binding.sourceKey, requiredAcquisitionScopes,
+    cadence: { now: new Date(0), date: binding.date, requiredSources: [binding.sourceKey], games: binding.games, sources: [], previous: [] } });
+  return { request: bound, requiredAcquisitionScopes, closureScopeHash: bound.closureScopeHash };
 }
 /** Reproduce the materializer's durable original inputs before accepting closure.
  * Neither manifest identity nor caller counts imply completion. */
