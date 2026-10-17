@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   createClientMock,
@@ -109,8 +109,11 @@ function createMockRes() {
 
 describe("/api/v1/db/update-nst-goalies", () => {
   beforeEach(() => {
+    vi.stubEnv("CRON_SECRET", "unit-test-cron-secret");
     vi.clearAllMocks();
   });
+
+  afterEach(() => vi.unstubAllEnvs());
 
   it("preserves representative playerteams goalie upsert shape through the migrated NST client", async () => {
     fetchCurrentSeasonMock.mockResolvedValue({
@@ -139,7 +142,7 @@ describe("/api/v1/db/update-nst-goalies", () => {
 
     const req: any = {
       method: "GET",
-      headers: { host: "localhost" },
+      headers: { host: "localhost", authorization: "Bearer unit-test-cron-secret" },
       query: {
         startDate: "2025-10-01",
         maxUrls: "1",
@@ -194,7 +197,7 @@ describe("/api/v1/db/update-nst-goalies", () => {
     await handler(
       {
         method: "GET",
-        headers: { host: "localhost" },
+        headers: { host: "localhost", authorization: "Bearer unit-test-cron-secret" },
         query: {
           startDate: "2025-10-01",
           maxUrls: "1",

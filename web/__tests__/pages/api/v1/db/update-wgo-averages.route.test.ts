@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { fromMock } = vi.hoisted(() => ({
   fromMock: vi.fn()
@@ -36,6 +36,7 @@ function createMockRes() {
 describe("/api/v1/db/update-wgo-averages route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv("CRON_SECRET", "unit-test-cron-secret");
     const error = new Error(
       "<!DOCTYPE html><html><body>Error code 522 from supabase.co</body></html>"
     );
@@ -62,11 +63,13 @@ describe("/api/v1/db/update-wgo-averages route", () => {
     fromMock.mockReturnValue(builder);
   });
 
+  afterEach(() => vi.unstubAllEnvs());
+
   it("returns a structured dependency error instead of leaking html", async () => {
     const req: any = {
       method: "GET",
       query: {},
-      headers: { host: "localhost" }
+      headers: { host: "localhost", authorization: "Bearer unit-test-cron-secret" }
     };
     const res = createMockRes();
 
