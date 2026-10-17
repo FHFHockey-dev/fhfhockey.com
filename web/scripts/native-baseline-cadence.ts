@@ -6,6 +6,7 @@ import { resolve } from "node:path";
 import { materializeNativeInputs, prepareNativeInputMaterialization, verifyNativeMaterialization, type NativeMaterializationRequest } from "../lib/player-forecasts/nativeInputMaterialization";
 import { nativeCadenceClosureScope, nativeCadenceInputManifest, nativeCadenceJournalIds, publishObservedNativeBaselineCadence } from "../lib/player-forecasts/nativeBaselineCadence";
 import { prepareNativeCatalogObservation } from "../lib/player-forecasts/nativeCatalogHead";
+import { prepareNativeCadenceOutputs } from "../lib/player-forecasts/nativeCadenceOutputPreparation";
 import { validateNativeBaselinePublication } from "../lib/player-forecasts/nativeBaselinePublication";
 import { matchesPlannedObservation, SOURCE_OBSERVATION_COLUMNS, playerForecastSourcePayloadHash as hash, validPlannedObservationId, type PlannedSourceObservation } from "../lib/player-forecasts/sourceSnapshot";
 import { timestampMicros } from "../lib/projections/evidenceTime";
@@ -208,7 +209,7 @@ export class CadenceTransport {
 }
 
 export async function runNativeCadence(argv: string[]) {
-  const [stage, ...rest] = argv; if (!["materialize", "publish"].includes(stage)) fail("stage_required");
+  const [stage, ...rest] = argv; if (!["materialize", "prepare", "publish"].includes(stage)) fail("stage_required");
   const args = new Map<string, string>();
   for (let i = 0; i < rest.length; i += 2) {
     if (!["--input", "--input-sha256", "--proof", "--proof-sha256", "--out", "--execute-target", "--execute-intent", "--approved-package-hash"].includes(rest[i]) || !rest[i + 1] || args.has(rest[i])) fail("invalid_arguments");
@@ -218,8 +219,20 @@ export async function runNativeCadence(argv: string[]) {
   const execute = args.has("--execute-target");
   if (execute && (args.get("--execute-target") !== ORIGIN || !args.get("--execute-intent")?.trim())
     || !execute && (args.has("--execute-intent") || args.has("--approved-package-hash"))) fail("explicit_execution_target_and_intent_required");
-  const input = boundedFile(args.get("--input")!, args.get("--input-sha256")!, stage === "materialize" ? CADENCE_RUNNER_LIMITS.inputBytes : CADENCE_RUNNER_LIMITS.publishBytes);
-  const now = new Date(); let prepared: ReturnType<typeof prepareNativeInputMaterialization> | undefined, proof: Proof | undefined;
+  const input = boundedFile(args.get("--input")!, args.get("--input-sha256")!, stage === "publish" ? CADENCE_RUNNER_LIMITS.publishBytes : CADENCE_RUNNER_LIMITS.inputBytes);
+  const now = new Date();
+  if (stage === "prepare") {
+    // Offline only: no execution target, network or database client exists for this stage.
+    if (execute || !args.has("--proof") || !args.has("--proof-sha256")) fail("offline_prepare_requires_exact_closed_proof");
+    const closed = boundedFile(args.get("--proof")!, args.get("--proof-sha256")!, CADENCE_RUNNER_LIMITS.inputBytes);
+    const result = await prepareNativeCadenceOutputs(input, closed, now);
+    const output = resolve(args.get("--out")!); mkdirSync(output, { mode: 0o700 });
+    privateWrite(resolve(output, "publication-plan.json"), result.plan);
+    privateWrite(resolve(output, "cadence-command.json"), result.cadenceCommand);
+    const receipt = { stage, ...result.receipt, execute: false, inputSHA256: args.get("--input-sha256"), proofSHA256: args.get("--proof-sha256"),
+      publicEnvironmentActivation: "not_performed", output };
+    privateWrite(resolve(output, "receipt.json"), receipt); return receipt;
+  } let prepared: ReturnType<typeof prepareNativeInputMaterialization> | undefined, proof: Proof | undefined;
   let command: PublishCommand | undefined, selection: PlannedSourceObservation | undefined;
   if (stage === "materialize") prepared = prepareNativeInputMaterialization(input, now.toISOString());
   else {

@@ -15,7 +15,8 @@ import { buildSkaterParticipationReceipt } from "./modeledSkaterParticipation";
 import { buildRosterObservationSkaterParticipationReceipt } from "./modeledSkaterParticipation";
 import { buildSkaterBaselineRates } from "./baselineRates";
 import { baselineAppearanceFromBoxscore } from "./baselineSourceLineage";
-import { buildBaselineContributionBundle } from "./baselineGeneration";
+import { buildBaselineContributionBundle, buildNativeSkaterBaselineSnapshot } from "./baselineGeneration";
+import { prepareNativeCadenceOutputs, type NativeOutputPreparationCommand } from "./nativeCadenceOutputPreparation";
 import { contributionBundleChecksum, contributionBundleCandidateInputHash } from "./contributionStore";
 import { capturePlayerForecastSourceObservation, playerForecastSourcePayloadHash as hash, type PlannedSourceObservation } from "./sourceSnapshot";
 import { publishNativeBaselinePlan, validateNativeBaselinePublication, type NativeBaselinePublicationPlan } from "./nativeBaselinePublication";
@@ -373,6 +374,98 @@ describe("bounded publication coordinator (synthetic only)", () => {
     expect(Buffer.byteLength(JSON.stringify(fits))).toBeGreaterThan(32 * 1024 * 1024);
     expect((await validateNativeBaselinePublication(fits, now)).rows).toBe(6);
     await expect(validateNativeBaselinePublication(plan, now)).rejects.toThrow("byte bound");
+  });
+  describe("offline later-issuance preparation", () => {
+    const closedAt = "2026-10-15T11:30:00.000Z", dueAt = "2026-10-15T12:00:00.000Z", expiresAt = "2026-10-15T18:00:00.000Z";
+    const reviewedAt = "2026-10-15T11:00:00.000Z";
+    const setup = () => {
+      const request = materializationFixture(), first = prepareNativeInputMaterialization(request, closedAt);
+      const requiredAcquisitionScopes = { "native-inputs": { scopeHash: (first.report.payload as any).acquisitionScopeHash, cutoffAt: request.acquisition.cutoffAt } };
+      const games = [{ gameId: 30, startsAt: "2026-10-15T23:00:00Z" }];
+      request.closureScopeHash = nativeCadenceClosureScope({ publicationPlan: { seasonId: 20262027 }, requiredAcquisitionScopes,
+        cadence: { date: request.date, requiredSources: [request.sourceKey], games } } as any);
+      const proof = { status: "closed", ...prepareNativeInputMaterialization(request, closedAt) };
+      const input = proof.rows.find(row => row.entity_kind === "player")!, payload = input.payload as any;
+      const snapshot = buildNativeSkaterBaselineSnapshot({ ...payload, seasonId: 20262027, cutoffAt: payload.capturedAt, sourceWatermark: input.payload_hash });
+      const built = buildBaselineContributionBundle({ seasonId: 20262027, cutoffAt: payload.capturedAt, issuedAt: reviewedAt, expiresAt,
+        scheduleRevision: "schedule", snapshots: [{ snapshot, teamId: payload.teamId, rosterRevision: payload.rosterRevision }] });
+      const planned = [10, 11, 12].map(n => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`);
+      const sources = built.sources.map(source => ({ ...source, released: true }));
+      const { checksum: _old, ...unsigned } = { ...built.manifest, evaluationPolicyId: planned[0], reviewId: planned[1], released: true };
+      const bundle = { manifest: { ...unsigned, checksum: contributionBundleChecksum({ manifest: unsigned, sources }) }, sources };
+      const candidateInputHash = contributionBundleCandidateInputHash(bundle);
+      const policy = { version: "baseline-evaluation-policy-v1", seasonId: 20262027, policyVersion: snapshot.policyVersion, candidateInputHash,
+        status: "owner_approved", allowedPublicUses: ["totals"], prospectiveEvidenceRef: "synthetic-only", ownerApprovalRef: "synthetic-only", approvedAt: payload.capturedAt };
+      const review = { version: "baseline-validation-review-v1", seasonId: 20262027, policyVersion: snapshot.policyVersion, candidateInputHash,
+        policyHash: hash(policy), bundleChecksum: bundle.manifest.checksum, status: "owner_approved", eligible: true,
+        prospectiveEvidenceRef: "synthetic-only", ownerApprovalRef: "synthetic-only", reviewedAt };
+      const row = (id: string, dataset: string, kind: string, body: any, at: string, revision: string | null = null, metadata = {}) => ({ id, provider: "fhfh",
+        dataset_key: dataset, entity_kind: kind, entity_key: "20262027", source_url: null, source_revision_key: revision, observed_at: at, available_at: at,
+        payload_hash: hash(body), payload: body, metadata });
+      const reviewedPlan: NativeBaselinePublicationPlan = { version: "native-baseline-publication-plan-v1", seasonId: 20262027, rows: [input,
+        row(planned[0], policy.version, "baseline_evaluation_policy", policy, payload.capturedAt), row(planned[1], review.version, "baseline_validation_review", review, reviewedAt),
+        row(planned[2], "contribution-bundle-v1", "seasonal_rate_bundle", bundle, reviewedAt, bundle.manifest.checksum, { policyVersion: snapshot.policyVersion, released: true })] };
+      const command: NativeOutputPreparationCommand = { version: "native-output-preparation-v1", slotKey: "morning:2026-10-15", dueAt,
+        materialization: { runId: request.runId, sourceKey: request.sourceKey, date: request.date, closureScopeHash: request.closureScopeHash },
+        games, requiredAcquisitionScopes, reviewedPlan };
+      return { command, proof, bundle };
+    };
+    let counter = 100;
+    const nextId = () => `00000000-0000-4000-8000-${String(counter++).padStart(12, "0")}`;
+    it("reissues identical means after closure with pending reviews, then validates only once reviewed", async () => {
+      const { command, proof, bundle } = setup(), before = hash(command.reviewedPlan);
+      const result = await prepareNativeCadenceOutputs(command, proof, now, nextId);
+      expect(hash(command.reviewedPlan)).toBe(before);
+      expect(result.receipt).toMatchObject({ issuedAt: now.toISOString(), nativeInputs: 1, nativeSources: bundle.sources.length, networkRequests: 0, databaseWrites: 0, headSelection: false });
+      const reissued = result.plan.rows.find(row => row.entity_kind === "seasonal_rate_bundle")!.payload as any;
+      expect(reissued.manifest.issuedAt).toBe(now.toISOString());
+      expect(reissued.sources.map(({ issuedAt: _i, ...rest }: any) => rest)).toEqual(bundle.sources.map(({ issuedAt: _i, ...rest }: any) => rest));
+      const pending = result.plan.rows.find(row => row.entity_kind === "baseline_validation_review")!;
+      expect(pending.payload).toMatchObject({ status: "pending_independent_review", eligible: false });
+      expect(result.cadenceCommand.catalogHead).toBeNull();
+      const catalogHead = { headId: ids[0], observationId: ids[1], expectedRevision: 0, expectedHash: null };
+      await expect(validateCadenceCommand({ ...result.cadenceCommand, catalogHead } as any, proof, now)).rejects.toThrow("admission failed");
+      const approved = { ...(pending.payload as any), status: "owner_approved", eligible: true, ownerApprovalRef: "synthetic-only", reviewedAt: now.toISOString() };
+      Object.assign(pending, { payload: approved, payload_hash: hash(approved) });
+      await expect(validateCadenceCommand({ ...result.cadenceCommand, catalogHead } as any, proof, now)).resolves.toMatchObject({ validation: { rows: result.plan.rows.length } });
+    });
+    it("refuses early, expired, tampered and mismatched-scope preparation", async () => {
+      const early = setup();
+      await expect(prepareNativeCadenceOutputs(early.command, early.proof, new Date("2026-10-15T11:59:59.999Z"))).rejects.toThrow("slot_not_due");
+      const expired = setup();
+      await expect(prepareNativeCadenceOutputs(expired.command, expired.proof, new Date(expiresAt))).rejects.toThrow("original_source_expired");
+      const tampered = setup(), bundleRow = tampered.command.reviewedPlan.rows.find(row => row.entity_kind === "seasonal_rate_bundle")!;
+      const changed = structuredClone(bundleRow.payload as any); changed.sources[0].sourceVersion = "altered";
+      Object.assign(bundleRow, { payload: changed, payload_hash: hash(changed) });
+      await expect(prepareNativeCadenceOutputs(tampered.command, tampered.proof, now)).rejects.toThrow("reproduced_source_changed");
+      const scope = setup(); scope.command.games = [];
+      await expect(prepareNativeCadenceOutputs(scope.command, scope.proof, now)).rejects.toThrow("cadence_closure_scope_mismatch");
+      const open = setup();
+      await expect(prepareNativeCadenceOutputs(open.command, { ...open.proof, status: "unknown" }, now)).rejects.toThrow("closed_materialization_proof_required");
+      const forged = setup();
+      await expect(prepareNativeCadenceOutputs(forged.command, { ...forged.proof, manifest: { ...forged.proof.manifest, expectedItems: 99 } }, now))
+        .rejects.toThrow("materialization_manifest_unbound");
+      const acquisition = setup(); acquisition.command.requiredAcquisitionScopes["native-inputs"].cutoffAt = "2026-10-15T09:59:59Z";
+      await expect(prepareNativeCadenceOutputs(acquisition.command, acquisition.proof, now)).rejects.toThrow("acquisition_scope_mismatch");
+    });
+    it("runs the prepare CLI offline with exact files and refuses an execution target", async () => {
+      const { command, proof } = setup(), directory = mkdtempSync(join(tmpdir(), "native-cadence-prepare-"));
+      const write = (name: string, value: unknown) => { const bytes = JSON.stringify(value), path = join(directory, name); writeFileSync(path, bytes);
+        return [path, createHash("sha256").update(bytes).digest("hex")]; };
+      const [input, inputHash] = write("command.json", command), [proofPath, proofHash] = write("proof.json", proof);
+      const network = vi.spyOn(globalThis, "fetch").mockImplementation(() => { throw new Error("No network"); });
+      vi.useFakeTimers(); vi.setSystemTime(now);
+      try {
+        const args = ["--input", input, "--input-sha256", inputHash, "--proof", proofPath, "--proof-sha256", proofHash];
+        const result = await runNativeCadence(["prepare", ...args, "--out", join(directory, "out")]);
+        expect(result).toMatchObject({ stage: "prepare", status: "outputs_built_pending_independent_review_and_catalog_head", execute: false, networkRequests: 0 });
+        expect(network).not.toHaveBeenCalled();
+        expect(JSON.parse(readFileSync(join(directory, "out/cadence-command.json"), "utf8")).catalogHead).toBeNull();
+        await expect(runNativeCadence(["prepare", ...args, "--out", join(directory, "out")])).rejects.toThrow();
+        await expect(runNativeCadence(["prepare", ...args, "--out", join(directory, "exec"), "--execute-target", "https://fyhftlxokyjtpndbkfse.supabase.co",
+          "--execute-intent", "synthetic"])).rejects.toThrow("offline_prepare");
+      } finally { network.mockRestore(); vi.useRealTimers(); rmSync(directory, { recursive: true, force: true }); }
+    });
   });
   it("refuses an earlier published output plan as post-closure production without modifying its issuance", async () => {
     const materialization = materializationFixture(), prepared = prepareNativeInputMaterialization(materialization, now.toISOString());
