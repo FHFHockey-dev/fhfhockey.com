@@ -57,3 +57,17 @@ it("reports Worker failure or absence without evaluating on the main thread", ()
   expect(unavailable.result.current.error).toContain("unavailable");
   expect(MockWorker.instances).toHaveLength(1);
 });
+it("forwards manager-requested candidates as a distinct calculation without reusing bounded results", () => {
+  vi.stubGlobal("Worker", MockWorker);
+  const { result, rerender, unmount } = renderHook(({ ids }: { ids: string[] }) => useCandidateMetrics(snapshot, intent, ids),
+    { initialProps: { ids: [] as string[] } });
+  act(() => MockWorker.instances[0].finish(1));
+  expect(result.current.metrics?.activePoints).toEqual([["c", 1]]);
+  rerender({ ids: ["z", "c", "z"] });
+  expect(result.current.metrics).toBeUndefined();
+  expect(MockWorker.instances[1].postMessage).toHaveBeenCalledWith({ snapshot,
+    intent: { ...intent, steps: [], revision: 0, alternativeCount: 5 }, options: { requestedPlayerIds: ["c", "z"] } });
+  rerender({ ids: ["c", "z"] });
+  expect(MockWorker.instances).toHaveLength(2);
+  unmount();
+});

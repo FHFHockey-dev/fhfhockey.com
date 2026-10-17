@@ -7,13 +7,13 @@ import styles from "./CandidateCard.module.scss";
 const metric = (value: number | null) => value === null ? "unavailable" : `${value > 0 ? "+" : ""}${Number.isInteger(value) ? value : value.toFixed(1)}`;
 
 export default function CandidateCard({ player, rank, plan, comparison, diagnostic, evaluationState = "completed", snapshot, categories, excluded, details,
-  select, add, selectPlan, canSelectPlan, manual, markAvailable, calendar, upcomingGames, nameOf = id => snapshot?.players?.find(row => row.id === id)?.name ?? id }: {
+  select, add, selectPlan, canSelectPlan, manual, markAvailable, compare, calendar, upcomingGames, nameOf = id => snapshot?.players?.find(row => row.id === id)?.name ?? id }: {
   player: PlanningPlayer; rank: number | null; calendar?: CanonicalSchedule; upcomingGames?: number | null; plan?: CandidatePlan; comparison?: CandidateComparison;
   snapshot: PlanningSnapshot | null; categories: boolean; excluded: boolean; details: (plan: CandidatePlan) => ReactNode;
   diagnostic?: CandidateDiagnostic; evaluationState?: "no_snapshot" | "loading" | "error" | "completed";
   select: (id: string) => void; add: (player: PlanningPlayer) => void;
   selectPlan?: (steps: PlanStep[]) => void; canSelectPlan?: boolean; manual: boolean; markAvailable: (player: PlanningPlayer) => void;
-  nameOf?: (id: string) => string;
+  compare?: (id: string) => void; nameOf?: (id: string) => string;
 }) {
   const drops = plan?.steps.flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : []) ?? [];
   const conditional = plan?.steps.some(step => step.conditional);
@@ -62,7 +62,9 @@ export default function CandidateCard({ player, rank, plan, comparison, diagnost
     {missing && <p className={styles.warning}>Missing comparison evidence; no verified points ranking or drop advice.</p>}
     {plan && !gain && <p className={styles.warning}>No measured net gain in this compared plan.</p>}
     {!plan && <><p className={styles.warning}>{evaluationMessage}</p>
-      {diagnostic && <ul aria-label={`${player.name} evaluation reasons`}>{diagnostic.reasons.map(reason => <li key={reason}>{reason}</li>)}</ul>}</>}
+      {diagnostic && <ul aria-label={`${player.name} evaluation reasons`}>{diagnostic.reasons.map(reason => <li key={reason}>{reason}</li>)}</ul>}
+      {evaluationState === "completed" && diagnostic?.status === "not_selected" && compare
+        && <button className={styles.action} onClick={() => compare(player.id)}>Compare this player</button>}</>}
     {upcomingGames != null && <p className={styles.scheduleLabel}>Upcoming NHL games: {upcomingGames}</p>}
     {dates.length > 0 && <div className={styles.schedule} role="group" aria-label={`${player.name} NHL schedule, not active assignments`}>
       {dates.map(date => {

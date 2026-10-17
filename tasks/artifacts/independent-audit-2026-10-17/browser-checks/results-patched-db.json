@@ -1,0 +1,70 @@
+{
+  "base": "http://127.0.0.1:3107",
+  "startedAt": "2026-10-17T21:41:21.533Z",
+  "checks": [
+    "db"
+  ],
+  "graphqlConfigured": true,
+  "db": {
+    "supabaseCalls": [
+      "GET /rest/v1/users",
+      "GET /rest/v1/users",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/user_settings",
+      "GET /rest/v1/user_profiles",
+      "HEAD /rest/v1/players",
+      "HEAD /rest/v1/games",
+      "HEAD /rest/v1/seasons",
+      "GET /rest/v1/games",
+      "POST /rest/v1/user_profiles",
+      "HEAD /rest/v1/teams",
+      "POST /rest/v1/user_settings"
+    ],
+    "localApiCalls": [
+      "GET /api/v1/season"
+    ],
+    "console": [
+      "warning: ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??rule",
+      "warning: ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??rule",
+      "warning: Image with src \"http://127.0.0.1:3107/_next/static/media/FHFHonly.f13408af.png\" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: \"auto\"' or 'height: \"auto\"' to maintain the aspect ratio.",
+      "error: `legacyBehavior` is deprecated and will be removed in a future release. A codemod is available to upgrade your components:\n\nnpx @next/codemod@latest new-link .\n\nLearn more: https://nextjs.org/docs/app/building-your-application/upgrading/codemods#remove-a-tags-from-link-components",
+      "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    "pageErrors": [],
+    "requests": {
+      "GET local": 29,
+      "GET fonts.googleapis.com": 9,
+      "GET img.buymeacoffee.com": 1,
+      "GET fonts.gstatic.com": 4,
+      "GET cdn.vercel-insights.com": 1,
+      "GET va.vercel-scripts.com": 1,
+      "GET fyhftlxokyjtpndbkfse.supabase.co": 7,
+      "HEAD fyhftlxokyjtpndbkfse.supabase.co": 4,
+      "POST fyhftlxokyjtpndbkfse.supabase.co": 2
+    },
+    "nonGetRequests": [
+      "POST fyhftlxokyjtpndbkfse.supabase.co/rest/v1/user_profiles",
+      "POST fyhftlxokyjtpndbkfse.supabase.co/rest/v1/user_settings"
+    ],
+    "failed": [],
+    "status": 200,
+    "adminViewShown": true,
+    "cancelEnabled": true,
+    "snackbarShown": true,
+    "snackbarBox": {
+      "x": 40,
+      "y": 838,
+      "width": 215,
+      "height": 36
+    },
+    "viewport": {
+      "width": 1280,
+      "height": 900
+    },
+    "anchorBottomLeft": true,
+    "ok": true
+  },
+  "finishedAt": "2026-10-17T21:41:23.685Z"
+}

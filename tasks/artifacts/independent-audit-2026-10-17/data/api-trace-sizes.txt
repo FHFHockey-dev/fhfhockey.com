@@ -1,0 +1,17 @@
+traces: 437 median MB: 6.9
+   40.1 MB  1375 files  api/internal/sync-yahoo-players-to-sheet                googleapis 32MB, next 1MB, google-auth-library 0MB
+   21.8 MB  3729 files  index                                                   next 2MB, react-dom 2MB, date-fns 1MB
+   18.6 MB  2559 files  blog/[slug]                                             next 2MB, react-dom 2MB, undici 1MB
+   18.3 MB  2339 files  blog/substack/[slug]                                    next 2MB, react-dom 2MB, undici 1MB
+   18.3 MB  2339 files  blog                                                    next 2MB, react-dom 2MB, undici 1MB
+   18.0 MB  2207 files  api/v1/db/run-rolling-forge-pipeline                    next 2MB, react-dom 2MB, date-fns 1MB
+   17.4 MB  2877 files  wigoCharts                                              next 2MB, react-dom 2MB, date-fns 1MB
+   17.1 MB  2689 files  drm                                                     date-fns 2MB, next 2MB, react-dom 2MB
+   16.3 MB  2105 files  projections                                             next 2MB, react-dom 2MB, caniuse-lite 1MB
+   16.0 MB  2068 files  charts                                                  next 2MB, react-dom 2MB, caniuse-lite 1MB
+   16.0 MB  1798 files  draft-dashboard                                         next 2MB, react-dom 2MB, caniuse-lite 1MB
+   15.8 MB  2399 files  roster-schedule-optimizer                               next 2MB, react-dom 2MB, date-fns 1MB
+   15.8 MB  2224 files  trends                                                  next 2MB, react-dom 2MB, caniuse-lite 1MB
+   15.5 MB  2817 files  stats/team/[teamAbbreviation]                           next 2MB, react-dom 2MB, caniuse-lite 1MB
+   15.2 MB  2256 files  start-chart                                             next 2MB, react-dom 2MB, caniuse-lite 1MB
+routes tracing tasks/docs/output files: [('api/v1/db/cron-report', 1)]

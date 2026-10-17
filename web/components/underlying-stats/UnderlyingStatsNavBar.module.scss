@@ -115,3 +115,98 @@
     }
   }
 }
+
+// Landing-page destination cards: icon, label, one-line description.
+.detailed {
+  gap: v.$space-md;
+  padding-bottom: 0;
+
+  .navButton {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    justify-content: stretch;
+    gap: v.$space-md;
+    min-height: 88px;
+    padding: v.$space-md;
+    border: v.$border-subtle;
+    border-radius: v.$radius-panel;
+    background: v.$background-dark;
+    color: v.$text-primary;
+    font-family: v.$font-family-primary, sans-serif;
+    letter-spacing: 0;
+    text-align: left;
+    text-transform: none;
+    white-space: normal;
+
+    &:hover:not(.active) {
+      border-color: rgba(v.$color-brand-yellow, 0.6);
+      background: rgba(v.$color-brand-yellow, 0.05);
+      box-shadow: none;
+    }
+  }
+
+  .navIcon svg {
+    display: block;
+    width: 40px;
+    height: 40px;
+    fill: none;
+    stroke: v.$color-brand-yellow;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .navCopy {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .navLabel {
+    color: v.$color-white;
+    font-size: v.$font-size-sm;
+    font-weight: 700;
+  }
+
+  .navDescription {
+    color: v.$text-secondary;
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+
+  .navChevron {
+    color: v.$color-brand-yellow;
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+}
+
+@media (max-width: v.$breakpoint-tablet) {
+  .detailed {
+    gap: v.$space-sm;
+
+    .navButton {
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: v.$space-sm;
+      min-height: 64px;
+      padding: v.$space-sm v.$space-md;
+    }
+
+    .navIcon svg {
+      width: 28px;
+      height: 28px;
+    }
+
+    .navDescription,
+    .navChevron {
+      display: none;
+    }
+  }
+}
+
+@media (min-width: calc(v.$breakpoint-tablet + 1px)) and (max-width: 1100px) {
+  .detailed {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

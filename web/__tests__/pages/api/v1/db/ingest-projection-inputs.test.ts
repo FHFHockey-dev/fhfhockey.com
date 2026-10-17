@@ -16,6 +16,7 @@ const {
   fetchShiftRowsMock,
   hasCompleteStoredPbpGameMock,
   isCompleteFinalPbpPayloadMock,
+  persistCapturedGameNormalizationMock,
   persistProjectionGameInputsMock,
   readProjectionInputManifestMock,
   readOldestProjectionPipelineBacklogMock,
@@ -33,6 +34,7 @@ const {
   fetchShiftRowsMock: vi.fn(),
   hasCompleteStoredPbpGameMock: vi.fn(),
   isCompleteFinalPbpPayloadMock: vi.fn(),
+  persistCapturedGameNormalizationMock: vi.fn(),
   persistProjectionGameInputsMock: vi.fn(),
   readProjectionInputManifestMock: vi.fn(),
   readOldestProjectionPipelineBacklogMock: vi.fn(),
@@ -42,6 +44,7 @@ const {
     pbpEventIds: new Map<number, number[]>(),
     shiftComplete: new Set<number>(),
     storedShiftRows: new Map<number, any[]>(),
+    normalizationStatus: new Map<number, string>(),
   },
 }));
 
@@ -76,6 +79,10 @@ vi.mock("lib/projections/ingest/shifts", () => ({
 
 vi.mock("lib/projections/ingest/rawSnapshotPersistence", () => ({
   captureProjectionRawSourceSnapshots: captureProjectionRawSourceSnapshotsMock,
+}));
+
+vi.mock("lib/supabase/Upserts/nhlRawGamecenter.mjs", () => ({
+  persistCapturedGameNormalization: persistCapturedGameNormalizationMock,
 }));
 
 vi.mock("lib/projections/ingest/projectionInputPersistence", () => ({
@@ -295,6 +302,22 @@ vi.mock("lib/supabase/server", () => ({
         return query;
       }
 
+      if (table === "nhl_api_game_normalization_status") {
+        let gameId = -1;
+        const query: any = {
+          select: vi.fn(() => query),
+          eq: vi.fn((_column: string, value: number) => {
+            gameId = value;
+            return query;
+          }),
+          maybeSingle: vi.fn(async () => ({
+            data: { status: state.normalizationStatus.get(gameId) ?? "complete" },
+            error: null,
+          })),
+        };
+        return query;
+      }
+
       return { insert: auditInsertMock };
     }),
   },
@@ -338,6 +361,8 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
     state.pbpEventIds.clear();
     state.shiftComplete.clear();
     state.storedShiftRows.clear();
+    state.normalizationStatus.clear();
+    persistCapturedGameNormalizationMock.mockResolvedValue({ idempotent: false });
     readOldestProjectionPipelineBacklogMock.mockResolvedValue(null);
     buildProjectionPipelineOperationKeyMock.mockImplementation(
       ({ startDate, endDate, force }: any) =>
@@ -770,6 +795,76 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
       expectedCurrentInputFingerprint: null,
     });
     expect(persistProjectionGameInputsMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("completes a stale Gamecenter normalization from the captured payloads", async () => {
+    state.normalizationStatus.set(101, "stale");
+    const req: any = {
+      method: "POST",
+      query: { startDate: "2026-03-20", endDate: "2026-03-20", maxGames: "2" },
+      body: {},
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.body).toMatchObject({ success: true, gamesProcessed: 2 });
+    expect(persistCapturedGameNormalizationMock).toHaveBeenCalledTimes(1);
+    const rows = sourceShiftRows(101);
+    expect(persistCapturedGameNormalizationMock).toHaveBeenCalledWith(
+      expect.anything(),
+      {
+        gameId: 101,
+        seasonId: 20252026,
+        gameDate: "2026-03-20",
+        pbp: pbpPayload(101),
+        pbpPayloadHash: "c".repeat(64),
+        shiftPayload: { total: rows.length, data: rows, source: "json-api" },
+        shiftPayloadHash: "d".repeat(64),
+      },
+    );
+  });
+
+  it("does not re-normalize a game whose Gamecenter normalization is complete", async () => {
+    const req: any = {
+      method: "POST",
+      query: { startDate: "2026-03-20", endDate: "2026-03-20", maxGames: "1" },
+      body: {},
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.body).toMatchObject({ success: true, gamesProcessed: 1 });
+    expect(persistCapturedGameNormalizationMock).not.toHaveBeenCalled();
+  });
+
+  it("holds the game cursor when Gamecenter normalization fails", async () => {
+    state.normalizationStatus.set(101, "stale");
+    persistCapturedGameNormalizationMock.mockRejectedValueOnce(
+      new Error("NHL_NORMALIZATION_SCOPE_BUSY"),
+    );
+    const req: any = {
+      method: "POST",
+      query: { startDate: "2026-03-20", endDate: "2026-03-20", maxGames: "1" },
+      body: {},
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.body).toMatchObject({
+      success: false,
+      gamesProcessed: 0,
+      nextGameId: 101,
+      errors: [
+        expect.objectContaining({
+          gameId: 101,
+          stage: "normalize_gamecenter",
+          message: "NHL_NORMALIZATION_SCOPE_BUSY",
+        }),
+      ],
+    });
   });
 
   it("fails closed before normalized persistence when raw snapshot capture fails", async () => {

@@ -6,8 +6,10 @@ const GAME_EXPECTATIONS_VERSION: GameExpectationsResponse["version"] = "forge-ga
 
 export const GAME_EXPECTATION_VIEW_VERSION = "forge-game-expectations-view-v2" as const;
 // Bound the complete envelope below the hosted payload ceiling; never omit rows.
+// Catalogs grow with covered player-games × targets (one participation revision
+// per game), so they share the player-game bound and the byte envelope binds first.
 export const GAME_EXPECTATION_VIEW_LIMITS = Object.freeze({ bytes: 4_000_000, players: 2048,
-  playerGames: 50000, catalogEntries: 10000 });
+  playerGames: 50000, catalogEntries: 50000 });
 export class GameExpectationViewLimitError extends Error {
   constructor() { super("This forecast window is too large to display. Choose a shorter window."); }
 }

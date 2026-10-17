@@ -98,10 +98,19 @@ describe("operational route authorization contracts", () => {
       insert: mocks.auditInsert,
     }));
     mocks.createClientWithToken.mockReset().mockReturnValue({
-      auth: { getUser: vi.fn().mockResolvedValue({ error: null }) },
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "verified-admin-id" } },
+          error: null,
+        }),
+      },
       from: vi.fn(() => ({
         select: vi.fn(() => ({
-          maybeSingle: vi.fn().mockResolvedValue({ data: { role: "admin" } }),
+          eq: vi.fn(() => ({
+            maybeSingle: vi
+              .fn()
+              .mockResolvedValue({ data: { role: "admin" } }),
+          })),
         })),
       })),
     });

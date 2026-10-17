@@ -1484,4 +1484,155 @@ ${JSON.stringify(jobs)}
     expect(resendSendMock.mock.calls[0][0].subject).toContain("incomplete telemetry");
   });
 
+  // 2026-10-17 regression: pg_cron job 234 (21:15 UTC) was intentionally
+  // disabled, and the Vercel 13:00 UTC report warned that it was missing.
+  const reportInventory = (reportJobActive: boolean) => "```json\n" + JSON.stringify([
+    { jobid: 234, jobname: "daily-cron-report", schedule: "15 21 * * *", active: reportJobActive, method: "GET", route: "/api/v1/db/cron-report" },
+    { jobid: 326, jobname: "rebuild-sustainability-baselines", schedule: "40 10 * * *", active: true, method: "GET", route: "/api/v1/db/sustainability/rebuild-baselines" },
+    { jobid: 327, jobname: "update-predictions-sko", schedule: "45 10 * * *", active: true, method: "GET", route: "/api/v1/ml/update-predictions-sko" },
+  ]) + "\n```";
+  const baselineTimeoutAudit = {
+    job_name: "/api/v1/db/sustainability/rebuild-baselines", run_time: "2026-10-17T10:41:10.103Z", status: "failure", rows_affected: 400,
+    details: { method: "GET", url: "/api/v1/db/sustainability/rebuild-baselines", statusCode: 500, rowsUpserted: 400,
+      timing: { startedAt: "2026-10-17T10:40:00.864Z", endedAt: "2026-10-17T10:41:10.085Z", durationMs: 69221, timer: "01:09", source: "audit" },
+      response: JSON.stringify({ success: false, message: "Supabase query error on table=player_totals_unified select=* range=0-999: canceling statement due to statement timeout",
+        snapshot_date: "2026-10-17", processed: 400, rowsUpserted: 400, partialWrite: true }) },
+  };
+
+  it.each([false, true])("excludes a disabled schedule and still reports an active missing job (job 234 active: %s)", async (reportJobActive) => {
+    vi.setSystemTime(new Date("2026-10-17T13:00:30.000Z"));
+    readFileMock.mockResolvedValue(reportInventory(reportJobActive));
+    cronJobReportSelectMock.mockResolvedValue({ data: [{ jobid: 326, jobname: "rebuild-sustainability-baselines", scheduled_time: "2026-10-17T10:40:00.137Z",
+      end_time: "2026-10-17T10:40:00.150Z", status: "succeeded", return_message: "1 row",
+      sql_text: "select net.http_get(url:='https://fhfhockey.com/api/v1/db/sustainability/rebuild-baselines');" }], error: null });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [baselineTimeoutAudit,
+      // Yesterday's Vercel report self-audit is an unscheduled success, not an alert.
+      { job_name: "daily-cron-report", run_time: "2026-10-16T13:01:10.000Z", status: "success",
+        details: { method: "GET", url: "/api/v1/db/cron-report", statusCode: 200, durationMs: 40_000 } },
+    ], error: null });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    const audits = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits;
+    const missing = reportJobActive ? 2 : 1;
+    expect(res.body.counts).toMatchObject({ scheduledJobs: reportJobActive ? 3 : 2, jobsFailingLast: 1, jobsMissingLast: missing });
+    expect(audits.some((row: any) => row.jobName === "daily-cron-report" && row.observationKind === "scheduled")).toBe(reportJobActive);
+    expect(audits.find((row: any) => row.jobName === "update-predictions-sko").missingObservationWarnings)
+      .toContain("No cron or audit observation matched this scheduled slot.");
+    const baseline = audits.find((row: any) => row.jobName === "rebuild-sustainability-baselines");
+    expect(baseline).toMatchObject({ status: "failure", durationMs: 69221 });
+    expect(baseline.reason).toContain("canceling statement due to statement timeout");
+    expect(resendSendMock.mock.calls[0][0].subject).toBe(`❌ Daily Cron Report — 1 failing, ${missing} missing`);
+  });
+
+  it("computes UTC daily slots across midnight and the report hour regardless of process timezone", async () => {
+    vi.stubEnv("TZ", "America/New_York");
+    try {
+      vi.setSystemTime(new Date("2026-10-17T13:00:30.000Z"));
+      const jobs = [
+        { jobname: "evening-utc", schedule: "30 23 * * *", route: "/api/evening", ranAt: "2026-10-16T23:30:04.000Z" },
+        { jobname: "after-midnight-utc", schedule: "5 0 * * *", route: "/api/midnight", ranAt: "2026-10-17T00:05:03.000Z" },
+        // Today's 13:05 slot has not happened, so yesterday's slot is required.
+        { jobname: "after-report-hour", schedule: "5 13 * * *", route: "/api/after", ranAt: "2026-10-16T13:05:02.000Z" },
+        // Yesterday's 12:55 receipt is outside the window and cannot fill today's slot.
+        { jobname: "before-report-hour", schedule: "55 12 * * *", route: "/api/before", ranAt: "2026-10-16T12:55:01.000Z" },
+      ];
+      readFileMock.mockResolvedValue("```json\n" + JSON.stringify(jobs.map(({ ranAt: _ranAt, ...job }) => ({ ...job, active: true, method: "GET" }))) + "\n```");
+      cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+      cronJobAuditSelectMock.mockResolvedValue({ data: jobs.map((job) => ({ job_name: job.jobname, run_time: job.ranAt, status: "success",
+        details: { method: "GET", url: job.route, statusCode: 200, durationMs: 1000, response: { success: true, rowsUpserted: 5 } } })), error: null });
+      const res = createMockRes();
+      await handler({ method: "GET" } as any, res);
+      expect(new Date().getHours()).toBe(9);
+      expect(res.body.counts).toMatchObject({ scheduledJobs: 4, jobsOkLast: 3, jobsMissingLast: 1, unscheduledRuns: 0 });
+      const audits = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits;
+      expect(audits.find((row: any) => row.jobName === "before-report-hour").missingObservationWarnings)
+        .toContain("No cron or audit observation matched this scheduled slot.");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("deduplicates identical inventory rows and keeps same-name schedules distinct", async () => {
+    const dup = { jobid: 900, jobname: "dup-job", schedule: "0 8 * * *", active: true, method: "GET", route: "/api/dup" };
+    const split = [9, 11].map((hour) => ({ jobid: 900 + hour, jobname: "split-job", schedule: `0 ${hour} * * *`, active: true, method: "GET", route: "/api/split" }));
+    readFileMock.mockResolvedValue("```json\n" + JSON.stringify([dup, { ...dup }, ...split]) + "\n```");
+    cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+    const audit = (jobName: string, runTime: string, route: string, failed = false) => ({ job_name: jobName, run_time: runTime, status: failed ? "failure" : "success",
+      details: { method: "GET", url: route, statusCode: failed ? 500 : 200, durationMs: 1000, ...(failed ? { error: "11:00 slot failed" } : { response: { success: true, rowsUpserted: 1 } }) } });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [
+      audit("dup-job", "2026-03-20T08:00:20.000Z", "/api/dup"),
+      audit("split-job", "2026-03-20T09:00:20.000Z", "/api/split"),
+      audit("split-job", "2026-03-20T11:00:15.000Z", "/api/split", true),
+    ], error: null });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(res.body.counts).toMatchObject({ scheduledJobs: 3, jobsOkLast: 2, jobsFailingLast: 1, unscheduledRuns: 0 });
+    const audits = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits;
+    expect(audits.filter((row: any) => row.jobName === "dup-job")).toHaveLength(1);
+    expect(audits.find((row: any) => row.jobName === "split-job [GET 09:00 UTC]").status).toBe("success");
+    expect(audits.find((row: any) => row.jobName === "split-job [GET 11:00 UTC]")).toMatchObject({ status: "failure", reason: "11:00 slot failed" });
+  });
+
+  it.each([
+    ["rejected", () => resendSendMock.mockResolvedValue({ data: null, error: { message: "rate limited" } }), "Audit email failed: rate limited"],
+    ["thrown", () => resendSendMock.mockRejectedValue(new Error("socket hang up")), "Audit email exception: socket hang up"],
+  ])("reports a generated briefing with %s email transport as a transport failure", async (_kind, arrange, expected) => {
+    arrange();
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(cronAuditEmailMock).toHaveBeenCalledTimes(1);
+    expect(resendSendMock).toHaveBeenCalledTimes(1);
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toMatchObject({ message: "One or more operations failed.", auditEmailResult: { success: false } });
+    expect(res.body.errors).toContain(expected);
+    expect(res.body.code).toBeUndefined();
+  });
+
+  it("fails report generation before rendering or any transport attempt", async () => {
+    readFileMock.mockRejectedValue(new Error("ENOENT"));
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(res.body.code).toBe("CRON_SCHEDULE_INVENTORY_UNAVAILABLE");
+    expect(cronAuditEmailMock).not.toHaveBeenCalled();
+    expect(resendSendMock).not.toHaveBeenCalled();
+  });
+
+  it("bounds long plain-text diagnostics while keeping the leading cause", async () => {
+    const cause = "canceling statement due to statement timeout";
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{ job_name: "run-forge-projection-v2", run_time: "2026-03-20T12:00:01.000Z", status: "failure",
+      details: { method: "POST", url: "/api/v1/db/run-projection-v2", statusCode: 500, error: `${cause}; ${"detail ".repeat(120)}` } }], error: null });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    const row = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits.find((row: any) => row.jobName === "run-forge-projection-v2");
+    expect(row.status).toBe("failure");
+    expect(row.reason.startsWith(cause)).toBe(true);
+    expect(row.reason.length).toBeLessThanOrEqual(300);
+    expect(row.reason.endsWith("…")).toBe(true);
+  });
+
+  it("keeps skipped and failed sustainability receipts distinct from success", async () => {
+    vi.setSystemTime(new Date("2026-10-17T13:00:30.000Z"));
+    readFileMock.mockResolvedValue(reportInventory(false));
+    cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [
+      baselineTimeoutAudit,
+      { job_name: "/api/v1/ml/update-predictions-sko", run_time: "2026-10-17T10:45:30.000Z", status: "success",
+        details: { method: "GET", url: "/api/v1/ml/update-predictions-sko", statusCode: 200, durationMs: 30_000, response: { success: true, rowsUpserted: 812 } } },
+      // Vercel score offsets are unscheduled here; 2026-10-17 offset 250 skipped after offset 0.
+      { job_name: "/api/v1/sustainability/rebuild-score", run_time: "2026-10-17T11:06:54.480Z", status: "success",
+        details: { method: "GET", url: "/api/v1/sustainability/rebuild-score?season=current&limit=250&offset=250", statusCode: 200, durationMs: 900,
+          response: { success: true, skipped: true, reason: "source_already_processed", snapshot_date: "2026-10-17" } } },
+    ], error: null });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(res.body.counts).toMatchObject({ scheduledJobs: 2, jobsOkLast: 1, jobsFailingLast: 1, jobsMissingLast: 0, auditFailures: 1 });
+    const audits = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits;
+    const score = audits.find((row: any) => row.route?.includes("rebuild-score"));
+    expect(score).toMatchObject({ status: "unknown", lastKnownSuccessDisplay: null });
+    expect(score.missingObservationWarnings).toContain(
+      "Operation was skipped or produced no output; successful HTTP execution does not establish data refresh."
+    );
+    expect(resendSendMock.mock.calls[0][0].subject).not.toContain("✅");
+  });
+
 });

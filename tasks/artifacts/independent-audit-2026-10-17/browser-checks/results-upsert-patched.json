@@ -1,0 +1,147 @@
+{
+  "base": "http://127.0.0.1:3107",
+  "startedAt": "2026-10-17T21:47:34.059Z",
+  "checks": [
+    "upsert"
+  ],
+  "graphqlConfigured": true,
+  "upsert": {
+    "supabaseCalls": [
+      "GET /rest/v1/users",
+      "GET /rest/v1/yahoo_names",
+      "GET /rest/v1/yahoo_names",
+      "GET /rest/v1/users",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/user_settings",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/yahoo_players_with_normalized_history",
+      "GET /rest/v1/yahoo_players_with_normalized_history",
+      "POST /rest/v1/user_profiles",
+      "POST /rest/v1/user_settings",
+      "GET /rest/v1/users",
+      "GET /rest/v1/yahoo_names",
+      "GET /rest/v1/yahoo_names",
+      "GET /rest/v1/users",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/user_settings",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/yahoo_players_with_normalized_history",
+      "GET /rest/v1/yahoo_players_with_normalized_history",
+      "POST /rest/v1/user_profiles",
+      "POST /rest/v1/user_settings"
+    ],
+    "localApiCalls": [
+      "GET /api/v1/homepage/visitors",
+      "GET /api/v1/games",
+      "GET /api/v1/games",
+      "GET /api/v1/transactions/ownership-trends",
+      "GET /api/v1/season",
+      "GET /api/v1/transactions/ownership-trends"
+    ],
+    "console": [
+      "warning: Image with src \"http://127.0.0.1:3107/_next/static/media/FHFHonly.f13408af.png\" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: \"auto\"' or 'height: \"auto\"' to maintain the aspect ratio.",
+      "error: `legacyBehavior` is deprecated and will be removed in a future release. A codemod is available to upgrade your components:\n\nnpx @next/codemod@latest new-link .\n\nLearn more: https://nextjs.org/docs/app/building-your-application/upgrading/codemods#remove-a-tags-from-link-components",
+      "warning: Image with src \"http://127.0.0.1:3107/_next/static/media/FHFHonly.f13408af.png\" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: \"auto\"' or 'height: \"auto\"' to maintain the aspect ratio.",
+      "error: Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "error: Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "error: Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "error: Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "error: Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "error: /api/v1/season TypeError: Failed to fetch",
+      "error: useCurrentSeason failed to load season TypeError: Failed to fetch",
+      "warning: Image with src \"http://127.0.0.1:3107/_next/static/media/FHFHonly.f13408af.png\" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: \"auto\"' or 'height: \"auto\"' to maintain the aspect ratio.",
+      "error: `legacyBehavior` is deprecated and will be removed in a future release. A codemod is available to upgrade your components:\n\nnpx @next/codemod@latest new-link .\n\nLearn more: https://nextjs.org/docs/app/building-your-application/upgrading/codemods#remove-a-tags-from-link-components"
+    ],
+    "pageErrors": [],
+    "requests": {
+      "GET local": 56,
+      "GET fonts.googleapis.com": 27,
+      "GET img.buymeacoffee.com": 3,
+      "GET fonts.gstatic.com": 16,
+      "GET cdn.vercel-insights.com": 3,
+      "GET va.vercel-scripts.com": 3,
+      "GET fyhftlxokyjtpndbkfse.supabase.co": 20,
+      "POST fyhftlxokyjtpndbkfse.supabase.co": 4,
+      "GET assets.nhle.com": 34
+    },
+    "nonGetRequests": [
+      "POST fyhftlxokyjtpndbkfse.supabase.co/rest/v1/user_profiles",
+      "POST fyhftlxokyjtpndbkfse.supabase.co/rest/v1/user_settings",
+      "POST fyhftlxokyjtpndbkfse.supabase.co/rest/v1/user_profiles",
+      "POST fyhftlxokyjtpndbkfse.supabase.co/rest/v1/user_settings"
+    ],
+    "failed": [
+      "GET /logos/nhl/svg/DET_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/SJS_light.svg net::ERR_ABORTED",
+      "GET /api/v1/transactions/ownership-trends net::ERR_ABORTED",
+      "GET /logos/nhl/svg/BUF_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/PIT_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/BOS_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/PHI_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/VGK_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/WSH_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/CGY_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/MIN_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/STL_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/SEA_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/NJD_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/NHL_light.svg net::ERR_ABORTED",
+      "GET /v1/speed-insights/script.debug.js net::ERR_ABORTED",
+      "GET /logos/nhl/svg/NSH_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/CAR_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/COL_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/OTT_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/TOR_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/NYR_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/ANA_light.svg net::ERR_ABORTED",
+      "GET /v1/script.debug.js net::ERR_ABORTED",
+      "GET /logos/nhl/svg/CBJ_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/FLA_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/NYI_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/MTL_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/TBL_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/WSH_secondary_light.svg net::ERR_ABORTED",
+      "GET /api/v1/homepage/visitors net::ERR_ABORTED",
+      "GET /logos/nhl/svg/EDM_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/UTA_light.svg net::ERR_ABORTED",
+      "GET /api/v1/season net::ERR_ABORTED",
+      "GET /api/v1/transactions/ownership-trends net::ERR_ABORTED",
+      "GET /logos/nhl/svg/LAK_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/WPG_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/VAN_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/DAL_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/CHI_light.svg net::ERR_ABORTED"
+    ],
+    "httpErrors": [
+      "503 /api/v1/homepage/visitors",
+      "503 /api/v1/games",
+      "503 /api/v1/games",
+      "503 /api/v1/transactions/ownership-trends",
+      "503 /api/v1/transactions/ownership-trends"
+    ],
+    "servedAppHasNotistack": false,
+    "timeline": [
+      {
+        "ms": 21,
+        "path": "/db/upsert-projections",
+        "toastVisible": false
+      },
+      {
+        "ms": 232,
+        "path": "/db/upsert-projections",
+        "toastVisible": true
+      },
+      {
+        "ms": 335,
+        "path": "/auth",
+        "toastVisible": false
+      }
+    ],
+    "finalPath": "/auth",
+    "toastVisibleAfterRedirect": false,
+    "ok": true
+  },
+  "finishedAt": "2026-10-17T21:47:46.964Z"
+}

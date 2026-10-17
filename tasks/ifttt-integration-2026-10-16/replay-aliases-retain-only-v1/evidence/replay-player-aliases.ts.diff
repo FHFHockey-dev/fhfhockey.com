@@ -1,0 +1,20 @@
+--- a/web/pages/api/v1/db/replay-player-aliases.ts
++++ b/web/pages/api/v1/db/replay-player-aliases.ts
+@@ -6,6 +6,7 @@
+ import { resolvePlayerIdentity, rosterSeasonForDate } from "lib/sources/playerIdentity";
+ import { easternReportDate } from "lib/sources/projectedLineups";
+ import { tweetPublicationFromUrl } from "lib/sources/linesCccIngestion";
++import { iftttIntakePilotConfigured } from "lib/sources/iftttIntakePolicy";
+ 
+ export default adminOnly(async (req, res) => {
+   if (req.method !== "POST" && req.method !== "GET") return res.status(405).end();
+@@ -35,7 +36,8 @@
+         if (!published) { consumed++; continue; }
+         const date = easternReportDate(published);
+         const isCurrent = date === easternReportDate(new Date().toISOString());
+-        if (isCurrent && currentCalls >= 2) break;
++        // A configured IFTTT pilot is retain-only: current-day rows and the job wait until it ends.
++        if (isCurrent && (currentCalls >= 2 || iftttIntakePilotConfigured())) break;
+         consumed++;
+         const seasonId = rosterSeasonForDate(date);
+         if (!rosterCache.has(seasonId)) rosterCache.set(seasonId, applyPlayerNameAliasesToRosterMap({

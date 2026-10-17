@@ -16,6 +16,7 @@ Owner: task `01a14299-0127-7424-85aa-42578c6740ef`, canonical `octoberBranch`.
 - [x] Implement/test those corrections, automated dated identity/source hints, broader legacy inventory and pre-enrichment shared raw intake/time/count bounds; retain unknown-data holds.
 - [x] Complete review v3: R1–R7 accepted within tested scope; fix R8 partial schedule cache, R9 retained quote-ID consistency and the midnight fixture. See `next-increment/IMPLEMENTATION-V4.md`.
 - [x] Obtain independent v4 acceptance of the 41-file source/test/SQL candidate for the local held/shadow slice. R1–R9 closed; all pins match after review. See `review-v4/REVIEW.md`.
+- [x] 2026-10-17: independently accept the RPC deadline/reconciliation increment (SQL8). Fix R21 so the minute scheduler cannot process pilot-retained rows; the fix was independently accepted. R22 (alias-replay cron) is fixed with option (b) and independently accepted. Current status, ready-vs-blocked list and the ordered approval checklist: `rollout-approval-2026-10-17/ROLLOUT-APPROVAL.md`.
 - [ ] Separately reconcile genuine deployed identity/history/fencing and authentic intake evidence, complete broader acceptance, obtain explicit rollout approvals and evaluate genuine future data. No operational completion is claimed.
 
 The CLI generated `20261016024711_tweet_claim_registry.sql` in the authoritative root migration tree; it is staged under this task's `migrations/` directory until reviewed. The active migration authority registry belongs to the FORGE/RSO coordinator and is unchanged.

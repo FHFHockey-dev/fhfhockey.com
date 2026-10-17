@@ -1,0 +1,98 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:85217) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > does not fall back to the lossy upsert after an uncertain receipt RPC
+Line source IFTTT tweet ingest failed: {"code":"IFTTT_OUTCOME_UNKNOWN","message":"IFTTT retention outcome is unknown; read-only reconciliation is required"}
+
+stderr | lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > preserves pending work when production has no trusted processor origin
+Line source IFTTT processor follow-up failed: { success: [33mfalse[39m, status: [1mnull[22m, error: [32m'Processor request failed'[39m }
+
+ ✓ lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > retains a same-post variant with the explicit flag and does not request another processing action 4ms
+ ✓ lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > does not fall back to the lossy upsert after an uncertain receipt RPC 1ms
+ ✓ lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > rejects missing post IDs without a legacy write in controlled intake 0ms
+ ✓ lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > processes automatically with capture enabled, respects explicit deferral, and never trusts Host 2ms
+ ✓ lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > preserves pending work when production has no trusted processor origin 1ms
+ ✓ lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > keeps evening news on the Eastern slate at 2026-01-01T02:00:00Z 1ms
+ ✓ lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > keeps evening news on the Eastern slate at 2026-07-01T02:00:00Z 1ms
+ × lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > keeps a controlled pilot retain-only: scheduled capture retries request no processor 12ms
+   → expected 503 to be 200 // Object.is equality
+ × lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > keeps a stop-only pilot retain-only: scheduled capture retries request no processor 2ms
+   → expected 503 to be 200 // Object.is equality
+ × lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > runs bounded source retries independently of computation enabled=false 1005ms
+   → expected "spy" to be called 6 times, but got 0 times
+stderr | lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > keeps the raw event stored and retryable when process=true follow-up fails
+Line source IFTTT processor follow-up failed: { success: [33mfalse[39m, status: [33m503[39m, error: [32m'Processor request failed'[39m }
+
+ × lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > runs bounded source retries independently of computation enabled=true 1003ms
+   → expected "spy" to be called 6 times, but got 0 times
+ ✓ lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > routes a GameDayGoalies event into the generic queue with source metadata 5ms
+ ✓ lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > dedupes by source key and tweet id so separate sources can store the same tweet id 3ms
+ ✓ lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > keeps the raw event stored and retryable when process=true follow-up fails 2ms
+(node:85223) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-scheduler-retain-only-v1/mutation/mutants/guard-inverted/iftttIntakePolicy.test.ts > explicit IFTTT intake contract > normalizes exact handles and rejects duplicate normalized routes 5ms
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-scheduler-retain-only-v1/mutation/mutants/guard-inverted/iftttIntakePolicy.test.ts > explicit IFTTT intake contract > rejects incomplete or widening policy {"maxAttempts":0} 0ms
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-scheduler-retain-only-v1/mutation/mutants/guard-inverted/iftttIntakePolicy.test.ts > explicit IFTTT intake contract > rejects incomplete or widening policy {"maxReceipts":0} 0ms
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-scheduler-retain-only-v1/mutation/mutants/guard-inverted/iftttIntakePolicy.test.ts > explicit IFTTT intake contract > rejects incomplete or widening policy {"maxAttempts":1.5} 0ms
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-scheduler-retain-only-v1/mutation/mutants/guard-inverted/iftttIntakePolicy.test.ts > explicit IFTTT intake contract > rejects incomplete or widening policy {"maxReceipts":9007199254740992} 0ms
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-scheduler-retain-only-v1/mutation/mutants/guard-inverted/iftttIntakePolicy.test.ts > explicit IFTTT intake contract > rejects incomplete or widening policy {"startsAt":"2026-10-16T12:00:00"} 0ms
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-scheduler-retain-only-v1/mutation/mutants/guard-inverted/iftttIntakePolicy.test.ts > explicit IFTTT intake contract > rejects incomplete or widening policy {"endsAt":"2026-10-16T12:00:00Z"} 0ms
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-scheduler-retain-only-v1/mutation/mutants/guard-inverted/iftttIntakePolicy.test.ts > explicit IFTTT intake contract > rejects incomplete or widening policy {"endsAt":"2026-02-30T13:00:00Z"} 0ms
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-scheduler-retain-only-v1/mutation/mutants/guard-inverted/iftttIntakePolicy.test.ts > explicit IFTTT intake contract > rejects incomplete or widening policy {"scopes":[]} 0ms
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-scheduler-retain-only-v1/mutation/mutants/guard-inverted/iftttIntakePolicy.test.ts > explicit IFTTT intake contract > rejects incomplete or widening policy {"scopes":[{"table":"line_source_ifttt_events","sourceGroup":"fixture","sourceKey":"*","sourceAccount":"reporter"}]} 0ms
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-scheduler-retain-only-v1/mutation/mutants/guard-inverted/iftttIntakePolicy.test.ts > explicit IFTTT intake contract > rejects incomplete or widening policy {"scopes":[{"table":"line_source_ifttt_events","sourceGroup":"fixture","sourceKey":"fixture-reporter","sourceAccount":"reporter","extra":true}]} 0ms
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-scheduler-retain-only-v1/mutation/mutants/guard-inverted/iftttIntakePolicy.test.ts > explicit IFTTT intake contract > rejects incomplete or widening policy {"extra":true} 0ms
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-scheduler-retain-only-v1/mutation/mutants/guard-inverted/iftttIntakePolicy.test.ts > explicit IFTTT intake contract > preserves legacy default-off only when pilot configuration is absent 0ms
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-scheduler-retain-only-v1/mutation/mutants/guard-inverted/iftttIntakePolicy.test.ts > explicit IFTTT intake contract > fails closed for missing-policy 0ms
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-scheduler-retain-only-v1/mutation/mutants/guard-inverted/iftttIntakePolicy.test.ts > explicit IFTTT intake contract > fails closed for flag-off 0ms
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-scheduler-retain-only-v1/mutation/mutants/guard-inverted/iftttIntakePolicy.test.ts > explicit IFTTT intake contract > fails closed for stop 0ms
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-scheduler-retain-only-v1/mutation/mutants/guard-inverted/iftttIntakePolicy.test.ts > explicit IFTTT intake contract > fails closed for bad-stop 0ms
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-scheduler-retain-only-v1/mutation/mutants/guard-inverted/iftttIntakePolicy.test.ts > explicit IFTTT intake contract > fails closed for live-mode 0ms
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-scheduler-retain-only-v1/mutation/mutants/guard-inverted/iftttIntakePolicy.test.ts > explicit IFTTT intake contract > fails closed for interpretation-off 0ms
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-scheduler-retain-only-v1/mutation/mutants/guard-inverted/iftttIntakePolicy.test.ts > explicit IFTTT intake contract > fails closed for outside-scope 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > keeps a controlled pilot retain-only: scheduled capture retries request no processor
+ FAIL  lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > keeps a stop-only pilot retain-only: scheduled capture retries request no processor
+AssertionError: expected 503 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 503[39m
+
+ ❯ lib/sources/lineSourceIftttReceiver.test.ts:180:28
+    178|     const res = createMockRes();
+    179|     await scheduler(createMockReq({ method: "GET", headers: { authoriz…
+    180|     expect(res.statusCode).toBe(200); expect((res.body as any).capture…
+       |                            ^
+    181|     expect(request).not.toHaveBeenCalled(); expect(rpcMock).not.toHave…
+    182|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > runs bounded source retries independently of computation enabled=false
+ FAIL  lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > runs bounded source retries independently of computation enabled=true
+AssertionError: expected "spy" to be called 6 times, but got 0 times
+ ❯ lib/sources/lineSourceIftttReceiver.test.ts:196:23
+    194|     const pending = scheduler(createMockReq({ method: "GET", headers: …
+    195|     await vi.waitFor(() => {
+    196|       expect(request).toHaveBeenCalledTimes(6);
+       |                       ^
+    197|       if (compute) expect(dispatchMock).toHaveBeenCalledOnce();
+    198|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  4 failed | 30 passed (34)
+   Start at  16:17:03
+   Duration  2.65s (transform 57ms, setup 11ms, collect 70ms, tests 2.05s, environment 277ms, prepare 59ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/review-scheduler-retain-only-v1/evidence/mutation/guard-inverted.json
+exit 1

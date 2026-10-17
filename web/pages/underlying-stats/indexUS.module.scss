@@ -588,114 +588,6 @@
   order: 3;
 }
 
-.sectionHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: v.$space-md;
-}
-
-.sectionKicker {
-  margin: 0 0 v.$space-xxs;
-  color: v.$color-brand-yellow;
-  font-family: v.$font-family-accent, sans-serif;
-  font-size: v.$font-size-xs;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.sectionTitle {
-  margin: 0;
-  color: v.$color-white;
-  font-family: v.$font-family-accent, sans-serif;
-  font-size: clamp(1rem, 2vw, 1.2rem);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.sectionDescription {
-  margin: v.$space-xs 0 0;
-  color: v.$text-secondary;
-  font-size: v.$font-size-sm;
-  line-height: 1.55;
-  max-width: 58ch;
-}
-
-.tableHelp {
-  margin-top: v.$space-sm;
-  max-width: 56ch;
-}
-
-.tableHelpSummary {
-  display: inline-flex;
-  align-items: center;
-  min-height: 30px;
-  padding: 0 v.$space-sm;
-  border: 1px solid rgba(v.$color-brand-yellow, 0.32);
-  border-radius: v.$border-radius-sm;
-  background: rgba(v.$color-brand-yellow, 0.08);
-  color: v.$color-brand-yellow;
-  cursor: pointer;
-  font-family: v.$font-family-accent, sans-serif;
-  font-size: v.$font-size-xs;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  list-style: none;
-  text-transform: uppercase;
-
-  &::-webkit-details-marker {
-    display: none;
-  }
-}
-
-.tableHelpContent {
-  margin-top: v.$space-sm;
-  padding: v.$space-sm v.$space-md;
-  border: 1px solid v.$border-soft;
-  border-radius: v.$border-radius-md;
-  background: rgba(v.$color-white, 0.02);
-  display: grid;
-  gap: v.$space-xs;
-  color: v.$text-secondary;
-  font-size: v.$font-size-xs;
-  line-height: 1.55;
-
-  p {
-    margin: 0;
-  }
-
-  strong {
-    color: v.$color-white;
-    font-weight: 600;
-  }
-}
-
-.sectionMeta {
-  display: inline-flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: v.$space-xs;
-  color: v.$text-secondary;
-  font-size: v.$font-size-xs;
-  letter-spacing: 0.04em;
-
-  span {
-    @include p.panel-shell($padding: 0 v.$space-sm, $variant: flat);
-    min-height: 30px;
-    display: inline-flex;
-    align-items: center;
-    white-space: nowrap;
-  }
-}
-
-.sectionTools {
-  display: grid;
-  gap: v.$space-sm;
-  justify-items: flex-end;
-}
-
 .modeToggle {
   display: inline-flex;
   align-items: center;
@@ -1596,16 +1488,6 @@
   .summaryGrid {
     grid-template-columns: 1fr;
   }
-
-  .sectionHeader {
-    align-items: flex-start;
-  }
-
-  .sectionTools,
-  .sectionMeta {
-    justify-content: flex-start;
-    justify-items: flex-start;
-  }
 }
 
 @media (max-width: v.$breakpoint-tablet) {
@@ -1671,73 +1553,18 @@
   padding: v.$space-md v.$space-lg v.$space-xl;
 }
 
+// The table sits directly inside the dashboard's Team Rankings workspace card.
 .tableSection {
-  @include p.panel-shell(
-    $padding: v.$space-md,
-    $variant: soft,
-    $overflow: visible
-  );
+  display: grid;
   width: 100%;
+  min-width: 0;
   margin: 0;
-  gap: v.$space-md;
+  padding: 0;
+  gap: v.$space-sm;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
   order: initial;
-}
-
-.sectionHeader {
-  align-items: flex-start;
-}
-
-.sectionKicker {
-  color: v.$primary-color;
-}
-
-.sectionTitle {
-  display: flex;
-  align-items: center;
-  gap: v.$space-xs;
-}
-
-.sectionInfo {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border: 1px solid rgba(v.$primary-color, 0.55);
-  border-radius: 50%;
-  color: v.$primary-color;
-  font-family: v.$font-family-primary, sans-serif;
-  font-size: 0.65rem;
-  font-weight: 700;
-  line-height: 1;
-
-  &:focus-visible {
-    outline: none;
-    box-shadow: v.$focus-ring;
-  }
-}
-
-.tableHelpSummary {
-  border-color: rgba(v.$primary-color, 0.36);
-  background: rgba(v.$primary-color, 0.08);
-  color: v.$primary-color;
-  font-family: v.$font-family-primary, sans-serif;
-  letter-spacing: 0;
-  text-transform: none;
-
-  &:focus-visible {
-    outline: none;
-    box-shadow: v.$focus-ring;
-  }
-}
-
-.sectionMeta {
-  font-family: v.$font-family-numbers, monospace;
-
-  span {
-    min-height: 28px;
-    border-radius: v.$radius-control;
-  }
 }
 
 .modeToggle {
@@ -1758,7 +1585,7 @@
 
   &:hover,
   &:focus-visible {
-    color: v.$primary-color;
+    color: v.$color-brand-yellow;
   }
 
   &:focus-visible {
@@ -1768,8 +1595,23 @@
 
 .modeButtonActive {
   border-color: transparent;
-  background: v.$primary-color;
-  color: v.$color-white;
+  background: v.$color-brand-yellow;
+  color: v.$background-dark;
+
+  &:hover,
+  &:focus-visible {
+    color: v.$background-dark;
+  }
+}
+
+.trendCell {
+  white-space: nowrap;
+}
+
+.trendMove {
+  font-family: v.$font-family-numbers, monospace;
+  font-size: 0.8125rem;
+  font-weight: 600;
 }
 
 .loadingBanner,
@@ -1928,34 +1770,12 @@
 .tablePreviewFooter {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: v.$space-md;
   padding-top: v.$space-sm;
   color: v.$text-secondary;
   font-family: v.$font-family-numbers, monospace;
   font-size: 0.68rem;
-}
-
-.viewAllButton {
-  min-height: v.$control-height-md;
-  padding: 0 v.$space-md;
-  border: 1px solid rgba(v.$primary-color, 0.55);
-  border-radius: v.$radius-control;
-  background: rgba(v.$primary-color, 0.08);
-  color: v.$primary-color;
-  cursor: pointer;
-  font-family: v.$font-family-primary, sans-serif;
-  font-size: v.$font-size-sm;
-  font-weight: 700;
-
-  &:hover {
-    background: rgba(v.$primary-color, 0.14);
-  }
-
-  &:focus-visible {
-    outline: none;
-    box-shadow: v.$focus-ring;
-  }
 }
 
 .pageFooterMeta {
@@ -1973,32 +1793,29 @@
     padding: v.$space-md;
   }
 
-  .sectionHeader {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .sectionTools,
-  .sectionMeta {
-    justify-items: stretch;
-  }
-
   .modeToggle {
-    display: grid;
+    display: inline-grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    width: 100%;
   }
 
   .modeButton {
     min-height: v.$touch-target-min;
   }
 
-  .sectionMeta {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
 
-    span {
-      justify-content: center;
+@media (max-width: v.$breakpoint-tablet) {
+  // Mobile rows show the abbreviation; the full name stays in the pin label.
+  .table .teamMeta,
+  .table .scheduleTexture {
+    display: none;
+  }
+
+  .tablePreviewFooter {
+    justify-content: center;
+
+    > span:first-child {
+      display: none;
     }
   }
 }
@@ -2008,23 +1825,10 @@
     padding: v.$space-sm;
   }
 
-  .tableSection {
-    padding: v.$space-sm;
-  }
-
-  .sectionDescription {
-    font-size: v.$mobile-font-size-sm;
-  }
-
-  .tablePreviewFooter,
   .pageFooterMeta {
     align-items: flex-start;
     flex-direction: column;
     gap: v.$space-xs;
   }
 
-  .viewAllButton {
-    min-height: v.$touch-target-min;
-    width: 100%;
-  }
 }

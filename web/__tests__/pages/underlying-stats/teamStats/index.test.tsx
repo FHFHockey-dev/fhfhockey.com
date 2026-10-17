@@ -77,7 +77,12 @@ function expectLastTeamLandingFetch(path: string) {
 }
 
 describe("TeamUnderlyingStatsLandingRoute", () => {
+  let teamCoverage: { completedGames: number; summarizedGames: number } | null = null;
+  let returnNoRows = false;
+
   beforeEach(() => {
+    teamCoverage = null;
+    returnNoRows = false;
     routerMock.isReady = true;
     routerMock.pathname = "/underlying-stats/teamStats";
     routerMock.query = {};
@@ -119,7 +124,8 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
           ok: true,
           json: async () => ({
             family,
-            rows: [
+            coverage: teamCoverage,
+            rows: returnNoRows ? [] : [
               {
                 rowKey: `landing:team:${family}:1`,
                 rank: 1,
@@ -179,6 +185,27 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
     });
 
     expect(getTeamLandingFetchCalls()).toHaveLength(0);
+  });
+
+  it("labels partial and missing season coverage instead of reporting no matches", async () => {
+    routerMock.query = createCanonicalQuery();
+    teamCoverage = { completedGames: 120, summarizedGames: 65 };
+    const { unmount } = render(<TeamUnderlyingStatsLandingRoute />);
+
+    expect(
+      await screen.findByText(/team data covers 65 of\s+120 completed games/)
+    ).toBeTruthy();
+    unmount();
+
+    teamCoverage = { completedGames: 120, summarizedGames: 0 };
+    returnNoRows = true;
+    const second = render(<TeamUnderlyingStatsLandingRoute />);
+
+    expect(
+      await screen.findByText(/0 of 120 completed games have been processed/)
+    ).toBeTruthy();
+    expect(screen.queryByText("No team results matched the current team filters.")).toBeNull();
+    second.unmount();
   });
 
   it("loads the default team landing API and renders returned rows", async () => {

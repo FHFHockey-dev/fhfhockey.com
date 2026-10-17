@@ -51,7 +51,11 @@ export default function CandidateBrowser({ searchQuery, changeSearch, calendar, 
   const showMore = () => setExpansion({ count: intent.alternativeCount, query, extra: extra + intent.alternativeCount });
   const [sort, setSort] = useState<"points" | "schedule">("points");
   const categories = snapshot?.rules?.scoring.mode === "categories";
-  const { metrics, loading, error } = useCandidateMetrics(snapshot, intent);
+  // Manager-requested comparisons belong to the snapshot they were requested on.
+  const [requested, setRequested] = useState<{ snapshotId: string | null; ids: string[] }>({ snapshotId: null, ids: [] });
+  const requestedIds = requested.snapshotId === (snapshot?.id ?? null) ? requested.ids : [];
+  const compare = (id: string) => setRequested({ snapshotId: snapshot?.id ?? null, ids: [...new Set([...requestedIds, id])] });
+  const { metrics, loading, error } = useCandidateMetrics(snapshot, intent, requestedIds);
   // Discovery uses this render's clock; saved planning cutoffs remain immutable.
   const discoveryAsOf = Date.now();
   const candidates = useMemo(() => {
@@ -119,7 +123,7 @@ export default function CandidateBrowser({ searchQuery, changeSearch, calendar, 
     player={player} rank={ranked ? index + 1 : null} calendar={calendar} upcomingGames={upcomingGames} plan={plan} comparison={comparison} snapshot={snapshot} categories={categories}
     diagnostic={diagnostic} evaluationState={loading ? "loading" : error ? "error" : !snapshot ? "no_snapshot" : "completed"}
     excluded={intent.excludedPlayerIds.includes(player.id)} details={planDetail} nameOf={nameOf}
-    select={select} add={add} selectPlan={selectPlan} canSelectPlan={canSelectPlan} manual={manual} markAvailable={markAvailable} />;
+    select={select} add={add} selectPlan={selectPlan} canSelectPlan={canSelectPlan} manual={manual} markAvailable={markAvailable} compare={compare} />;
   const lists = (rows: Candidate[]) => {
     const pointsFirst = !categories && sort === "points";
     const forecasted = pointsFirst ? rows.filter(item => item.activePoints !== null).sort((a, b) => compareCandidateFits(a, b, "points")) : [];
@@ -158,7 +162,7 @@ export default function CandidateBrowser({ searchQuery, changeSearch, calendar, 
     </div><p className={styles.limitation}>{`${filtered.length} matching candidate${filtered.length === 1 ? "" : "s"} from ${candidates.length} in the discovery pool.`}</p>
       <p className={styles.limitation}>{bothKnown} both known · {eligibilityOnly} eligibility only · {availabilityOnly} availability only · {neitherKnown} neither known.</p>
       <p className={styles.limitation}>Known eligibility and availability are player facts. Legal plans also require verified schedule, timing, move budget, locks and roster capacity; waivers require clearance.</p>
-      {metrics?.search && <p className={styles.limitation}>Bounded search selected {metrics.search.candidates} of {metrics.search.eligibleCandidates} candidates passing player checks, up to {metrics.search.maxCandidates}. Filters and Show more adjust the displayed list. The search keeps its candidate selection.</p>}
+      {metrics?.search && <p className={styles.limitation}>Bounded search selected {metrics.search.candidates} of {metrics.search.eligibleCandidates} candidates passing player checks, up to {metrics.search.maxCandidates}. Filters and Show more adjust the displayed list. The search keeps its candidate selection; Compare this player evaluates one outside it on request.</p>}
     </details>      <InfoTooltip label="About best-fit comparisons">
         <p>{categories ? "Category leagues: sort by net legal active games. Review category gains on the selected plan and alternatives; no points blend is inferred."
           : "Best Fit Available compares complete timed plans against the optimized original roster. Net AGP and points are separate; choose the ordering and review tradeoffs."}</p>

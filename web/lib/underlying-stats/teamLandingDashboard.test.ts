@@ -128,18 +128,10 @@ describe("buildUnderlyingStatsLandingDashboard", () => {
     expect(dashboard.quadrant.points).toHaveLength(4);
     expect(dashboard.risers.some((item) => item.teamAbbr === "CAR")).toBe(true);
     expect(dashboard.fallers.some((item) => item.teamAbbr === "PIT")).toBe(true);
-    expect(
-      dashboard.sustainability.buyLow.some((item) => item.teamAbbr === "PIT")
-    ).toBe(true);
-    expect(
-      dashboard.sustainability.heatCheck.some((item) => item.teamAbbr === "EDM")
-    ).toBe(true);
-    expect(dashboard.context[0]?.teamAbbr).toBe("LAK");
-    expect(
-      dashboard.inefficiency.undervalued.some((item) => item.teamAbbr === "PIT")
-    ).toBe(true);
-    expect(
-      dashboard.inefficiency.overvalued.some((item) => item.teamAbbr === "EDM")
-    ).toBe(true);
+    const summaryFor = (teamAbbr: string) =>
+      dashboard.quadrant.points.find((point) => point.teamAbbr === teamAbbr)?.summary;
+    expect(summaryFor("PIT")).toContain("Could Rebound");
+    expect(summaryFor("EDM")).toContain("Needs A Heat Check");
+    expect(Object.keys(dashboard).sort()).toEqual(["fallers", "quadrant", "risers"]);
   });
 });

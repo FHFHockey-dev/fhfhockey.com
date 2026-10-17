@@ -40,9 +40,13 @@ describe("complete acquisition card presentation", () => {
   ] as const)("explains %s without an invented score or automatic selection", (status, message) => {
     const diagnostic: CandidateDiagnostic = { playerId: player.id, status, stopReason: "exhausted", generated: 3, skipped: 1,
       evaluated: 2, illegal: 2, unverifiedBudget: 0, retained: 0, reasons: ["Drop conflicts with locked assignment for drop."] };
-    const selectPlan = vi.fn(), add = vi.fn();
-    render(<CandidateCard {...props} rank={null} plan={undefined} diagnostic={diagnostic} selectPlan={selectPlan} add={add} />);
+    const selectPlan = vi.fn(), add = vi.fn(), compare = vi.fn();
+    render(<CandidateCard {...props} rank={null} plan={undefined} diagnostic={diagnostic} selectPlan={selectPlan} add={add} compare={compare} />);
     expect(screen.getByText(message)).toBeTruthy();
+    // Only a player outside the bounded set offers an on-demand comparison.
+    const request = screen.queryByRole("button", { name: "Compare this player" });
+    expect(Boolean(request)).toBe(status === "not_selected");
+    if (request) { fireEvent.click(request); expect(compare).toHaveBeenCalledExactlyOnceWith(player.id); }
     expect(screen.getByText(diagnostic.reasons[0])).toBeTruthy();
     expect(screen.getByText(/Generated 3 options/)).toBeTruthy();
     expect(screen.queryAllByLabelText(/^Result /)).toHaveLength(0);

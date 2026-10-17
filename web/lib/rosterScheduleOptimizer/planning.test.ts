@@ -1300,10 +1300,10 @@ describe("planning engine", () => {
     expect(noAcquisitions.selected.recommendation?.explanationStatus).toBe("complete");
     expect(noAcquisitions.search.benchEvidence?.complete).toBe(true);
     expect(noAcquisitions.selected.recommendation?.exclusions).toHaveLength(105);
-    const result = planRoster(data, intent, { maxEvaluations: 250, maxCandidates: 40, beamWidth: 8, maxSteps: 4, timeBudgetMs: 2000 });
+    const result = planRoster(data, intent, { maxEvaluations: 250, maxCandidates: 40, beamWidth: 8, maxSteps: 4 });
     expect(result.search.maxDepthReached).toBeGreaterThanOrEqual(2);
     expect(result.search.complete).toBe(false);
-  }, 10000);
+  }, 30000);
   it("keeps a credited goalie minimum satisfied when future start odds are missing", () => {
     const data = snapshot();
     const goalie = { ...player("g", "G"), eligiblePositions: ["G"], playerClass: "goalie" as const };

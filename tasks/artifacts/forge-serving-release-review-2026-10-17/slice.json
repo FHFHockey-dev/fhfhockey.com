@@ -1,0 +1,2188 @@
+{
+ "generatedAt": "2026-10-17T22:47:17Z",
+ "previousGeneratedAt": "2026-10-17T21:50:17Z",
+ "production": "457435eb3010c5b3dd92d2e1a46d9c75d851780a",
+ "head": "ceceb407a29b45f2e5b0c090ecfcff0c27e15d4c",
+ "note": "blob = git hash-object of working-tree bytes; sha256 of the same bytes. Candidate = production + runtimeSlice + scheduleWriters + testSupport + candidateTests.. Candidate = production + runtimeSlice + scheduleWriters + testSupport + candidateTests.",
+ "runtimeSlice": [
+  {
+   "path": "web/components/RosterScheduleOptimizer/AcquisitionPeriodTimes.tsx",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "98ff53eea55d247d86de140cc71a96576b34f668",
+   "sha256": "ba4a9703f5f94f56e25197f5c97699c0500d2b5534a34bcd113ef0c627f4193b",
+   "bytes": 3224,
+   "productionBlob": null,
+   "headBlob": "98ff53eea55d247d86de140cc71a96576b34f668",
+   "ledgerEvidence": "E1",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [
+    "rso-intraday-periods ACCEPT"
+   ],
+   "ownerPins": [
+    "tasks/artifacts/checkpoint-production-release-2026-10-16/source-pin-capture-v1.json",
+    "tasks/artifacts/rso-release-coordination-2026-10-16/checkpoint.json",
+    "tasks/artifacts/rso-release-coordination-2026-10-16/current-observed.sha256"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx"
+   ]
+  },
+  {
+   "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx",
+   "status": "M",
+   "worktree": "uncommitted",
+   "blob": "39b5ec90e33d15c9eb361ecbeb68380c7e565ebb",
+   "sha256": "97e5916c669d655afa88ba6feff50a64341f7154af264676490ca2be05af1d96",
+   "bytes": 19265,
+   "productionBlob": "be15f11d12491036119013d71ada3d692658f406",
+   "headBlob": "e8da39f16a6e2d8fe1bd07cd47e814aa987fe753",
+   "ledgerEvidence": "E1",
+   "ledgerBlobMatchesCurrent": false,
+   "acceptedReceipts": [
+    "rso-candidate-pool ACCEPT"
+   ],
+   "ownerPins": [
+    "tasks/artifacts/checkpoint-production-release-2026-10-16/source-pin-capture-v1.json",
+    "tasks/artifacts/rso-candidate-pool-2026-10-16/receipt.json",
+    "tasks/artifacts/rso-intraday-periods-2026-10-16/intake.json",
+    "tasks/artifacts/rso-intraday-periods-2026-10-16/receipt.json",
+    "tasks/artifacts/rso-release-coordination-2026-10-16/checkpoint.json",
+    "tasks/artifacts/rso-release-coordination-2026-10-16/current-observed.sha256"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx"
+   ]
+  },
+  {
+   "path": "web/components/RosterScheduleOptimizer/CandidateCard.module.scss",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "87d1b6d6f69ffaac00b0e880dba05deffc6c9985",
+   "sha256": "1d0c78953194940853b7356634e427699f6d397bd9f2a362e88b053d8ef923b1",
+   "bytes": 3584,
+   "productionBlob": null,
+   "headBlob": "87d1b6d6f69ffaac00b0e880dba05deffc6c9985",
+   "ledgerEvidence": "E1",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [
+    "rso-mockup-match bounded ACCEPT"
+   ],
+   "ownerPins": [
+    "tasks/artifacts/release-candidate-review-2026-10-15/older-rso-cohort-observation.json",
+    "tasks/artifacts/rso-functional-checkpoint-2026-10-13/release-candidate.sha256",
+    "tasks/artifacts/rso-functional-checkpoint-2026-10-13/release-package/receipt.json",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/cohort-shell/owner-freeze.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/cohort-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/compiler-correction/previous-candidate.sha256"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/CandidateCard.tsx"
+   ]
+  },
+  {
+   "path": "web/components/RosterScheduleOptimizer/CandidateCard.tsx",
+   "status": "A",
+   "worktree": "uncommitted",
+   "blob": "482f43e916ffdaf3a832b95004a3921d62bacd61",
+   "sha256": "26748a79cb6e4a5009a602dc323f368423065c38bcb5b6f07947319922067476",
+   "bytes": 10358,
+   "productionBlob": null,
+   "headBlob": "b3eaa290a3298b153418c7e7fb9fe7573711fc81",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": false,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/forge-rso-completion-2026-10-15/read-receipt.md"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/CandidateBrowser.tsx"
+   ]
+  },
+  {
+   "path": "web/components/RosterScheduleOptimizer/CategoryGains.tsx",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "fa135d1a49f35f47426649725bdc785eac69ca57",
+   "sha256": "045576ab1e07d945df4a8cc396bf90d195f63a8e1788b592efa989cec26236ff",
+   "bytes": 5108,
+   "productionBlob": "11f386cc0d601fd2f64af15f9b1e24fc76761734",
+   "headBlob": "fa135d1a49f35f47426649725bdc785eac69ca57",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/checkpoint-production-release-2026-10-16/source-pin-capture-v1.json",
+    "tasks/artifacts/forge-rso-completion-2026-10-15/checkpoint-source-pins.json",
+    "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/final-hashes.json"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx"
+   ]
+  },
+  {
+   "path": "web/components/RosterScheduleOptimizer/CompactSchedule.tsx",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "eb5a98a664af2e2e4d7d18be3650b081e98454fb",
+   "sha256": "5afb93882b1647951a2fc2e3778fc9cd7baad24943271e82b049bb8053e9cd97",
+   "bytes": 30981,
+   "productionBlob": "dafe21bef7aade7f6be1f15e37b007f9d335d086",
+   "headBlob": "eb5a98a664af2e2e4d7d18be3650b081e98454fb",
+   "ledgerEvidence": "E1",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [
+    "rso-mockup-match bounded ACCEPT",
+    "rso-partial-discovery ACCEPT"
+   ],
+   "ownerPins": [
+    "tasks/artifacts/release-candidate-review-2026-10-15/older-rso-cohort-observation.json",
+    "tasks/artifacts/rso-functional-checkpoint-2026-10-13/release-candidate.sha256",
+    "tasks/artifacts/rso-functional-checkpoint-2026-10-13/release-package/receipt.json",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/cohort-shell/owner-freeze.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/cohort-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/compiler-correction/previous-candidate.sha256"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx"
+   ]
+  },
+  {
+   "path": "web/components/RosterScheduleOptimizer/InfoTooltip.module.scss",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "010a088ba5d2126c21be1b3ebc8c0dfc87145d37",
+   "sha256": "ed103a66cd13c204fe6b70c4bb05d08fa2d205de84cfc134f5666f89e4d2d9a0",
+   "bytes": 1104,
+   "productionBlob": null,
+   "headBlob": "010a088ba5d2126c21be1b3ebc8c0dfc87145d37",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/rso-mockup-match-2026-10-14/baseline-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/cohort-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/final-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/interaction-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/iteration-1/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/iteration-2/source-inputs.sha256"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/InfoTooltip.tsx"
+   ]
+  },
+  {
+   "path": "web/components/RosterScheduleOptimizer/InfoTooltip.tsx",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "472492107ba0dd03f63b715b2058cb20d53a85c0",
+   "sha256": "edbf37198e95677235f360e4f6e99e17bd820b0532c7964c8213ff36d681cce7",
+   "bytes": 3232,
+   "productionBlob": null,
+   "headBlob": "472492107ba0dd03f63b715b2058cb20d53a85c0",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/rso-mockup-match-2026-10-14/baseline-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/cohort-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/final-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/interaction-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/iteration-1/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/iteration-2/source-inputs.sha256"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+    "components/RosterScheduleOptimizer/CandidateBrowser.tsx",
+    "components/RosterScheduleOptimizer/CompactSchedule.tsx",
+    "components/RosterScheduleOptimizer/TeamScheduleContext.tsx"
+   ]
+  },
+  {
+   "path": "web/components/RosterScheduleOptimizer/RosterContribution.tsx",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "4011ba2014932861ab3a72ff1118fd549eaef2be",
+   "sha256": "b217dc9f03df5862241150f4a9c01f5b6b6045acb3ac2e92f37815a8a6db828b",
+   "bytes": 3580,
+   "productionBlob": null,
+   "headBlob": "4011ba2014932861ab3a72ff1118fd549eaef2be",
+   "ledgerEvidence": "E1",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [
+    "rso-mockup-match bounded ACCEPT",
+    "rso-partial-discovery ACCEPT"
+   ],
+   "ownerPins": [
+    "tasks/artifacts/release-candidate-review-2026-10-15/older-rso-cohort-observation.json",
+    "tasks/artifacts/rso-functional-checkpoint-2026-10-13/release-candidate.sha256",
+    "tasks/artifacts/rso-functional-checkpoint-2026-10-13/release-package/receipt.json",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/baseline-shell/owner-freeze.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/baseline-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/cohort-shell/owner-freeze.sha256"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+    "components/RosterScheduleOptimizer/RosterPlayerRow.tsx"
+   ]
+  },
+  {
+   "path": "web/components/RosterScheduleOptimizer/RosterPlayerRow.tsx",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "03ba4b80c049e481a1c8e239ce98bfb625708534",
+   "sha256": "17a63315cdbf2f82059517c0f0e84caedd87fea62aabcd89b34c573259249790",
+   "bytes": 2798,
+   "productionBlob": null,
+   "headBlob": "03ba4b80c049e481a1c8e239ce98bfb625708534",
+   "ledgerEvidence": "E1",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [
+    "rso-mockup-match bounded ACCEPT"
+   ],
+   "ownerPins": [
+    "tasks/artifacts/release-candidate-review-2026-10-15/older-rso-cohort-observation.json",
+    "tasks/artifacts/rso-functional-checkpoint-2026-10-13/release-candidate.sha256",
+    "tasks/artifacts/rso-functional-checkpoint-2026-10-13/release-package/receipt.json",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/cohort-shell/owner-freeze.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/cohort-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/compiler-correction/previous-candidate.sha256"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx"
+   ]
+  },
+  {
+   "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "21cc9532d30a47f8e27ec7a08d15ffa5eee44a43",
+   "sha256": "975438c669762c4819430455c564e878b5069bfb679ea4695c9a21338f71a353",
+   "bytes": 42254,
+   "productionBlob": "46e0cedc0cc036d5fd65914d0f693be3878a0eea",
+   "headBlob": "21cc9532d30a47f8e27ec7a08d15ffa5eee44a43",
+   "ledgerEvidence": "E1",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [
+    "rso-mockup-match bounded ACCEPT"
+   ],
+   "ownerPins": [
+    "tasks/artifacts/release-candidate-review-2026-10-15/older-rso-cohort-observation.json",
+    "tasks/artifacts/rso-functional-checkpoint-2026-10-13/release-candidate.sha256",
+    "tasks/artifacts/rso-functional-checkpoint-2026-10-13/release-package/receipt.json",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/cohort-shell/owner-freeze.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/cohort-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/compiler-correction/previous-candidate.sha256"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+    "components/RosterScheduleOptimizer/CandidateBrowser.tsx",
+    "components/RosterScheduleOptimizer/AcquisitionPeriodTimes.tsx",
+    "components/RosterScheduleOptimizer/CategoryGains.tsx",
+    "components/RosterScheduleOptimizer/CompactSchedule.tsx",
+    "components/RosterScheduleOptimizer/RosterContribution.tsx",
+    "components/RosterScheduleOptimizer/RosterPlayerRow.tsx"
+   ]
+  },
+  {
+   "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "4cb8c50f528d003ea8eeacc79388f444837a105b",
+   "sha256": "38106572657bc6b180d1be4e94f2ce96c45e5a2f4795f201c70fd460dde31a4f",
+   "bytes": 165565,
+   "productionBlob": "d3c5178a48d09ebd49b3457358b25c9d7b9adf4b",
+   "headBlob": "4cb8c50f528d003ea8eeacc79388f444837a105b",
+   "ledgerEvidence": "E6",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [],
+   "importedByInSlice": [
+    "seed"
+   ]
+  },
+  {
+   "path": "web/components/RosterScheduleOptimizer/TeamScheduleContext.module.scss",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "47201e68809270d078faddc716d239d683770d73",
+   "sha256": "ce76ae849c331ad48f89386f433b6ca1eb88a51f289ee105bc25f26f5ed4f5a9",
+   "bytes": 3137,
+   "productionBlob": null,
+   "headBlob": "47201e68809270d078faddc716d239d683770d73",
+   "ledgerEvidence": "E1",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [
+    "rso-mockup-match bounded ACCEPT"
+   ],
+   "ownerPins": [
+    "tasks/artifacts/release-candidate-review-2026-10-15/older-rso-cohort-observation.json",
+    "tasks/artifacts/rso-functional-checkpoint-2026-10-13/release-candidate.sha256",
+    "tasks/artifacts/rso-functional-checkpoint-2026-10-13/release-package/receipt.json",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/cohort-shell/owner-freeze.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/cohort-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/compiler-correction/previous-candidate.sha256"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/TeamScheduleContext.tsx"
+   ]
+  },
+  {
+   "path": "web/components/RosterScheduleOptimizer/TeamScheduleContext.tsx",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "d3d10bdf68e5ee739056d7bd7a585dcfc44d03b0",
+   "sha256": "677a53f151c6d1c156b21bcd2775d4461a46e49db68c47e14500636e4bbcd231",
+   "bytes": 5872,
+   "productionBlob": null,
+   "headBlob": "d3d10bdf68e5ee739056d7bd7a585dcfc44d03b0",
+   "ledgerEvidence": "E6",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx"
+   ]
+  },
+  {
+   "path": "web/components/RosterScheduleOptimizer/canonicalSchedule.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "3cb062f05de99fe149dd27b8ded334dd1c9a40a1",
+   "sha256": "9d39752f8cf62e8aaa4d0f525e3f37a678be686d4e2ef22c9efbb82738f039d8",
+   "bytes": 13432,
+   "productionBlob": null,
+   "headBlob": "3cb062f05de99fe149dd27b8ded334dd1c9a40a1",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/forge-rso-completion-2026-10-15/read-receipt.md"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+    "components/RosterScheduleOptimizer/CandidateBrowser.tsx",
+    "components/RosterScheduleOptimizer/TeamScheduleContext.tsx",
+    "components/RosterScheduleOptimizer/CandidateCard.tsx"
+   ]
+  },
+  {
+   "path": "web/hooks/candidateMetrics.worker.ts",
+   "status": "M",
+   "worktree": "uncommitted",
+   "blob": "2b1709c344b2dce7bdc1caa793b8021c9d8e6a24",
+   "sha256": "6bd2629ad5c6dd9650d058bb69436a90a1507c503f2243b1dc5cf217b3f267e8",
+   "bytes": 619,
+   "productionBlob": "8fd7450f8f51725ab46a01de32f7cdcb85e891c5",
+   "headBlob": "cb950cb0ee020c4023e9bcfa758d93f433689ea2",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": false,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/rso-mockup-match-2026-10-14/baseline-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/cohort-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/final-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/interaction-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/iteration-1/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/iteration-2/source-inputs.sha256"
+   ],
+   "importedByInSlice": [
+    "hooks/useCandidateMetrics.ts"
+   ]
+  },
+  {
+   "path": "web/hooks/useCandidateMetrics.ts",
+   "status": "M",
+   "worktree": "uncommitted",
+   "blob": "e6a2bbc75830b8709e8aab495b5832751a4e7317",
+   "sha256": "10e129a291310bf5db09d272f3bc5154747aab8510c43f20a64d870602408ab5",
+   "bytes": 2528,
+   "productionBlob": "e7a42de7bef6862a8ed7e05c2cb54b9ee7926e08",
+   "headBlob": "ea5a90a5780c40760991fbf5cb648c7a5978944c",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": false,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/rso-candidate-pool-2026-10-16/intake.json",
+    "tasks/artifacts/rso-candidate-pool-2026-10-16/receipt.json",
+    "tasks/artifacts/rso-input-trace-2026-10-15/unchanged-application-inputs.json",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/baseline-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/cohort-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/final-shell/source-inputs.sha256"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/CandidateBrowser.tsx"
+   ]
+  },
+  {
+   "path": "web/hooks/useYahooEligibility.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "9592c12dbb87e236e610a2da190948bd6532aeb3",
+   "sha256": "5a8ff56cd3cf1896a0e7ed2d23f0eb103169d7362ed8aa17f7baaf430831cca0",
+   "bytes": 3947,
+   "productionBlob": null,
+   "headBlob": "9592c12dbb87e236e610a2da190948bd6532aeb3",
+   "ledgerEvidence": "E1",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [
+    "rso-candidate-admission ACCEPT"
+   ],
+   "ownerPins": [
+    "tasks/artifacts/rso-input-trace-2026-10-15/emitted-source-inspection.json",
+    "tasks/artifacts/rso-input-trace-2026-10-15/independent-review.md",
+    "tasks/artifacts/rso-input-trace-2026-10-15/unchanged-application-inputs.json"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx"
+   ]
+  },
+  {
+   "path": "web/lib/in-season/workspaceSchema.ts",
+   "status": "M",
+   "worktree": "uncommitted",
+   "blob": "ef9a566903a48ff83f8e9388e33022535596f5db",
+   "sha256": "6fd84b6384e997aef35404e2581c435404fd3b98a4af16cef6975268304d366f",
+   "bytes": 16582,
+   "productionBlob": "9ea4178523714e78e42c8d51344f9b033e972860",
+   "headBlob": "ecee6875c118e5dc33ee4358960357dbb28dd684",
+   "ledgerEvidence": "E1",
+   "ledgerBlobMatchesCurrent": false,
+   "acceptedReceipts": [
+    "rso-intraday-periods ACCEPT"
+   ],
+   "ownerPins": [
+    "tasks/artifacts/checkpoint-production-release-2026-10-16/source-pin-capture-v1.json",
+    "tasks/artifacts/rso-release-coordination-2026-10-16/checkpoint.json",
+    "tasks/artifacts/rso-release-coordination-2026-10-16/current-observed.sha256"
+   ],
+   "importedByInSlice": [
+    "pages/api/v1/roster-schedule-optimizer/workspace.ts",
+    "lib/rosterScheduleOptimizer/workspace.ts"
+   ],
+   "previousSha256": "ba918a4f55c1bcded16b4645c33f90d4c552c319fc9f8c40368bf14d77f1b546",
+   "changedBy": "W1: contributionSource accepts catalogExpiresAt (instant, optional); other sessions' uncommitted edits preserved"
+  },
+  {
+   "path": "web/lib/player-forecasts/baselineGeneration.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "565ad6a2e42acdf5d209099603030b51530144ec",
+   "sha256": "d70d75a099c7c025dff485f3b6d3bdaf9253f1c5ce7ec9ff6ff9a9b39f89c849",
+   "bytes": 17044,
+   "productionBlob": "487029b456125b7690f3ebf66b778a178f69c55f",
+   "headBlob": "565ad6a2e42acdf5d209099603030b51530144ec",
+   "ledgerEvidence": "E6",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [],
+   "importedByInSlice": [
+    "lib/player-forecasts/nativeContributionAdmission.ts"
+   ]
+  },
+  {
+   "path": "web/lib/player-forecasts/baselineRates.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "9a115358a266eef0b22af033c87afd8bc3778c60",
+   "sha256": "47e440853fc1eb63ab5d580541f8386b8527e7e140a2852a84f36bd9cf39f6dc",
+   "bytes": 17088,
+   "productionBlob": "abb99b5551817977fa4e365cb27080c56fe87727",
+   "headBlob": "9a115358a266eef0b22af033c87afd8bc3778c60",
+   "ledgerEvidence": "E6",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [],
+   "importedByInSlice": [
+    "lib/player-forecasts/nativeContributionAdmission.ts",
+    "lib/player-forecasts/baselineGeneration.ts",
+    "lib/player-forecasts/nativePowerPlayPoints.ts"
+   ]
+  },
+  {
+   "path": "web/lib/player-forecasts/contributionStore.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "8ab7ac7776e083fbe30f9100477841b848b764ac",
+   "sha256": "39129a51cf6d14a2ccae2dbc4d00b89b85cca51fb06972a9153ff5a620b65985",
+   "bytes": 21506,
+   "productionBlob": "9109c18d2635cc0005a01ceaa4962e640eafd267",
+   "headBlob": "8ab7ac7776e083fbe30f9100477841b848b764ac",
+   "ledgerEvidence": "E6",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [],
+   "importedByInSlice": [
+    "lib/player-forecasts/nativeContributionAdmission.ts",
+    "lib/player-forecasts/baselineGeneration.ts",
+    "lib/player-forecasts/goalieBaselineRates.ts",
+    "lib/player-forecasts/currentSeasonSogContribution.ts"
+   ]
+  },
+  {
+   "path": "web/lib/player-forecasts/contributions.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "ab48ca96751bfdf74e7a6242891855773d0c98da",
+   "sha256": "1f08b1c5ca9ea296826d899f7e57c02f2262c4c4102c11ba925a64f7e703bae6",
+   "bytes": 22784,
+   "productionBlob": "d85ebf4c355c780c828c4f77407ee510d9095d44",
+   "headBlob": "ab48ca96751bfdf74e7a6242891855773d0c98da",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/forge-rso-completion-2026-10-15/read-receipt.md",
+    "tasks/ifttt-integration-2026-10-16/dependency-compatibility-increment/ACCEPTED-V1.md",
+    "tasks/ifttt-integration-2026-10-16/dependency-compatibility-increment/PROVENANCE-ADDENDUM.md",
+    "tasks/ifttt-integration-2026-10-16/dependency-compatibility-increment/captured-contributions-provenance.diff",
+    "tasks/ifttt-integration-2026-10-16/dependency-compatibility-increment/checkpoint-artifacts-sha256.json",
+    "tasks/ifttt-integration-2026-10-16/dependency-compatibility-increment/compatibility-source-sha256.json"
+   ],
+   "importedByInSlice": [
+    "pages/api/v1/start-chart.ts",
+    "lib/projections/consumerRevisionAdmission.ts",
+    "lib/rosterScheduleOptimizer/planningTypes.ts",
+    "lib/rosterScheduleData/planningDataTransport.ts",
+    "lib/rosterScheduleData/planning.ts",
+    "lib/player-forecasts/planningContributions.ts",
+    "lib/rosterScheduleOptimizer/planning.ts",
+    "lib/player-forecasts/gameExpectations.ts",
+    "lib/player-forecasts/nativeContributionAdmission.ts",
+    "lib/player-forecasts/modeledGoalieParticipationStore.ts",
+    "lib/player-forecasts/modeledSkaterParticipationStore.ts",
+    "lib/player-forecasts/resolvedPlanningForecast.ts",
+    "lib/player-forecasts/contributionStore.ts",
+    "lib/player-forecasts/baselineGeneration.ts",
+    "lib/player-forecasts/goalieBaselineRates.ts",
+    "lib/player-forecasts/currentSeasonSogContribution.ts",
+    "lib/player-forecasts/modeledGoalieParticipation.ts",
+    "lib/player-forecasts/modeledSkaterParticipation.ts",
+    "lib/player-forecasts/targetRosterObservation.ts"
+   ]
+  },
+  {
+   "path": "web/lib/player-forecasts/currentSeasonSogBaseline.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "2cc53e1d3681a303b5e3658db0508a271defb356",
+   "sha256": "9d62bc660a4f5443c7493da10b8017518c94e5413d51cd1c4179c735aba55673",
+   "bytes": 14220,
+   "productionBlob": null,
+   "headBlob": "2cc53e1d3681a303b5e3658db0508a271defb356",
+   "ledgerEvidence": "E5",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [],
+   "importedByInSlice": [
+    "lib/player-forecasts/currentSeasonSogContribution.ts"
+   ]
+  },
+  {
+   "path": "web/lib/player-forecasts/currentSeasonSogContribution.ts",
+   "status": "A",
+   "worktree": "uncommitted",
+   "blob": "61cc9debdae4136df9813d2b108eaa953c7b9b93",
+   "sha256": "f5dc3e77654e8fed9ae0d063c9553b48285919bb41599226a152b28d0d4aedc7",
+   "bytes": 6467,
+   "productionBlob": null,
+   "headBlob": "4bb96c24dca39b9a9064554566be715d5268fc11",
+   "ledgerEvidence": "E5",
+   "ledgerBlobMatchesCurrent": false,
+   "acceptedReceipts": [],
+   "ownerPins": [],
+   "importedByInSlice": [
+    "lib/player-forecasts/nativeContributionAdmission.ts"
+   ]
+  },
+  {
+   "path": "web/lib/player-forecasts/gameExpectationReader.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "c31004d7f5a57766b25908703284fc5cea2924bf",
+   "sha256": "f872ed9bffdab3009833b1b22cf3749dd2df5628c5d1280dce00f932c731962b",
+   "bytes": 2246,
+   "productionBlob": null,
+   "headBlob": "c31004d7f5a57766b25908703284fc5cea2924bf",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/readback/pins.json"
+   ],
+   "importedByInSlice": [
+    "pages/api/v1/forge/forecasts.ts",
+    "pages/api/v1/start-chart.ts"
+   ]
+  },
+  {
+   "path": "web/lib/player-forecasts/gameExpectationView.ts",
+   "status": "A",
+   "worktree": "uncommitted",
+   "blob": "b56036cb8a26db1cb0e07b61566a3783bad7eea6",
+   "sha256": "204e4aa33ab5df3ca5b31a7e5565f49e72f28e789295fc0185f3ddabf71351c1",
+   "bytes": 15890,
+   "productionBlob": null,
+   "headBlob": "9fd51af1206dadce76dfec964ee2811a18c21286",
+   "ledgerEvidence": "E6",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [],
+   "importedByInSlice": [
+    "pages/api/v1/forge/forecasts.ts"
+   ],
+   "previousSha256": "0ddb55e2722867ac71cddd8d03d2b52a60852393b8230b826b79ce2bf63a7610",
+   "changedBy": "N2: catalog cap 10,000 -> 50,000 (player-game bound)"
+  },
+  {
+   "path": "web/lib/player-forecasts/gameExpectations.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "0c4c68094deb47f18b76a9614b49ee4f487044e9",
+   "sha256": "6e3995d94f1898322ad14ef74d4cae805dffcae2780c90ffe448543354b59c2c",
+   "bytes": 17562,
+   "productionBlob": null,
+   "headBlob": "0c4c68094deb47f18b76a9614b49ee4f487044e9",
+   "ledgerEvidence": "E6",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [],
+   "importedByInSlice": [
+    "lib/player-forecasts/gameExpectationView.ts",
+    "lib/player-forecasts/gameExpectationReader.ts",
+    "lib/rosterScheduleOptimizer/planningTypes.ts",
+    "lib/projections/startChartContract.ts"
+   ]
+  },
+  {
+   "path": "web/lib/player-forecasts/goalieBaselineInputCapture.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "3ebf28d72743bcf256b2a64ca0f3492e55a0a6c2",
+   "sha256": "8d4361eac8e424c54fb24a66d4f7692882bdaf93da9421624537245725ae154c",
+   "bytes": 17890,
+   "productionBlob": "f63ed704722192a939316dbf84bca75bd3d86167",
+   "headBlob": "3ebf28d72743bcf256b2a64ca0f3492e55a0a6c2",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/forge-current-season-sog-admission-2026-10-15/scoped-typecheck-inputs.json",
+    "tasks/artifacts/forge-current-season-sog-admission-2026-10-15/type-fixture-correction/failed-typecheck-inputs.json"
+   ],
+   "importedByInSlice": [
+    "lib/player-forecasts/goalieBaselineRates.ts"
+   ]
+  },
+  {
+   "path": "web/lib/player-forecasts/goalieBaselineRates.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "19d6df67d3d974ba9d464f03c4327acf12c191d4",
+   "sha256": "9151ca9ee7d47465814b7ae41be29c19e684337f256038cfcd17839883f35c47",
+   "bytes": 29525,
+   "productionBlob": "a79ae5745382f9f55411bf35646b4c4bd3273477",
+   "headBlob": "19d6df67d3d974ba9d464f03c4327acf12c191d4",
+   "ledgerEvidence": "E6",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [],
+   "importedByInSlice": [
+    "lib/player-forecasts/nativeContributionAdmission.ts",
+    "lib/player-forecasts/goalieBaselineInputCapture.ts",
+    "lib/player-forecasts/nativeGoalieOutcomes.ts"
+   ]
+  },
+  {
+   "path": "web/lib/player-forecasts/modeledGoalieParticipation.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "fa662ad96eec8ff9b8f74418ff30fc791e5da9f9",
+   "sha256": "3b6fb3222837a652d2edbaab1baa606aa2a3b7f1cd6cf0187b3750e27048f2a4",
+   "bytes": 17591,
+   "productionBlob": null,
+   "headBlob": "fa662ad96eec8ff9b8f74418ff30fc791e5da9f9",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/roster-observation/final-hashes.json",
+    "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/roster-observation/root-integration-pins.json",
+    "tasks/ifttt-integration-2026-10-16/durable-occurrence-increment/TYPECHECK-COORDINATION.md"
+   ],
+   "importedByInSlice": [
+    "lib/player-forecasts/modeledGoalieParticipationStore.ts"
+   ]
+  },
+  {
+   "path": "web/lib/player-forecasts/modeledGoalieParticipationStore.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "2b7a3b811d519b45f90676a49efc8e26dfb940cd",
+   "sha256": "37f94d22a8a0971ce81423f8826da4a5b35570e26fb928093dcf0e21006ca11e",
+   "bytes": 11696,
+   "productionBlob": null,
+   "headBlob": "2b7a3b811d519b45f90676a49efc8e26dfb940cd",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/roster-observation/final-hashes.json"
+   ],
+   "importedByInSlice": [
+    "lib/rosterScheduleData/planning.ts"
+   ]
+  },
+  {
+   "path": "web/lib/player-forecasts/modeledSkaterParticipation.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "17feca7da105a43e2e4f734270fd92c110c87c7c",
+   "sha256": "c06406adfbdb7ccfc6e7c5367079a8bf25cfe2308d57b26a0fdcc21ee5a2298d",
+   "bytes": 17776,
+   "productionBlob": null,
+   "headBlob": "17feca7da105a43e2e4f734270fd92c110c87c7c",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/roster-observation/final-hashes.json",
+    "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/roster-observation/root-integration-pins.json",
+    "tasks/ifttt-integration-2026-10-16/durable-occurrence-increment/TYPECHECK-COORDINATION.md"
+   ],
+   "importedByInSlice": [
+    "lib/player-forecasts/modeledSkaterParticipationStore.ts",
+    "lib/player-forecasts/modeledGoalieParticipation.ts",
+    "lib/player-forecasts/targetRosterObservation.ts"
+   ]
+  },
+  {
+   "path": "web/lib/player-forecasts/modeledSkaterParticipationStore.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "379f5c10e20e806968ce1ad55afeaad52783c272",
+   "sha256": "0e1363974e01b38cc8b9e5bf0318ff9daac9c3ffc356287be72e7ef1dc209e6e",
+   "bytes": 9901,
+   "productionBlob": null,
+   "headBlob": "379f5c10e20e806968ce1ad55afeaad52783c272",
+   "ledgerEvidence": "E6",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [],
+   "importedByInSlice": [
+    "lib/rosterScheduleData/planning.ts"
+   ]
+  },
+  {
+   "path": "web/lib/player-forecasts/nativeCatalogHead.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "e4bcbbd9db78835aac91ac0d8ceaafc90b4b0b7f",
+   "sha256": "9f1696d991959cabcf63b3b7a6e6073f384a14b435937dbb1abc822ef1cd4a17",
+   "bytes": 13926,
+   "productionBlob": null,
+   "headBlob": "e4bcbbd9db78835aac91ac0d8ceaafc90b4b0b7f",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/forge-rso-completion-2026-10-15/read-receipt.md"
+   ],
+   "importedByInSlice": [
+    "lib/rosterScheduleData/planning.ts"
+   ]
+  },
+  {
+   "path": "web/lib/player-forecasts/nativeContributionAdmission.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "dc8569fab5c5c06dc0826d129b8ea61588e58aa5",
+   "sha256": "533dedd6625688fbd93b1fdf0f97e0378cb28a2b0c94d2dd306e913c7c1d3f63",
+   "bytes": 8816,
+   "productionBlob": null,
+   "headBlob": "dc8569fab5c5c06dc0826d129b8ea61588e58aa5",
+   "ledgerEvidence": "E6",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [],
+   "importedByInSlice": [
+    "lib/rosterScheduleData/planning.ts"
+   ]
+  },
+  {
+   "path": "web/lib/player-forecasts/nativeGoalieOutcomes.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "dfafb89667d836b90a6523b55f861b049b9ca4b7",
+   "sha256": "4ec9fa3356113480e243e55826d7e7c563edbf15684f1d9d8bd02153b3c175fb",
+   "bytes": 16535,
+   "productionBlob": null,
+   "headBlob": "dfafb89667d836b90a6523b55f861b049b9ca4b7",
+   "ledgerEvidence": "E6",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [],
+   "importedByInSlice": [
+    "lib/player-forecasts/goalieBaselineRates.ts",
+    "lib/player-forecasts/goalieBaselineInputCapture.ts"
+   ]
+  },
+  {
+   "path": "web/lib/player-forecasts/nativePowerPlayPoints.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "b8ad5e16e2d1431540c89345adc07701c88bc605",
+   "sha256": "7079c0dd49a44267fec9593803ef5884af49abab02760bb754f8b9a66c388e8b",
+   "bytes": 8030,
+   "productionBlob": null,
+   "headBlob": "b8ad5e16e2d1431540c89345adc07701c88bc605",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/checkpoint-production-release-2026-10-16/source-pin-capture-v1.json",
+    "tasks/artifacts/forge-rso-completion-2026-10-15/checkpoint-source-pins.json"
+   ],
+   "importedByInSlice": [
+    "lib/player-forecasts/baselineGeneration.ts"
+   ]
+  },
+  {
+   "path": "web/lib/player-forecasts/planningContributions.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "348b9eca7f895726731e892d085e308206219321",
+   "sha256": "93aea19b144c60576089b210fee3792e84792b6020750f97a00fef7a2eb464e1",
+   "bytes": 18315,
+   "productionBlob": "4ad140d75e0b7fa400b6cacebc112f706973d22f",
+   "headBlob": "348b9eca7f895726731e892d085e308206219321",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/roster-observation/root-integration-pins.json"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+    "lib/rosterScheduleOptimizer/planning.ts",
+    "components/RosterScheduleOptimizer/CompactSchedule.tsx",
+    "lib/player-forecasts/gameExpectations.ts"
+   ]
+  },
+  {
+   "path": "web/lib/player-forecasts/resolvedPlanningForecast.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "89350de2d0a56b5b4bfa7ffc1dfcdca59530ddb8",
+   "sha256": "2070019c4ea4d9c8cda19b11da5050b2da845825732eacde30b02da1e46ef745",
+   "bytes": 16856,
+   "productionBlob": "59065ec1fd142a396b0222fcadc3b069ea8055e8",
+   "headBlob": "89350de2d0a56b5b4bfa7ffc1dfcdca59530ddb8",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/forge-rso-completion-2026-10-15/read-receipt.md"
+   ],
+   "importedByInSlice": [
+    "lib/player-forecasts/planningContributions.ts"
+   ]
+  },
+  {
+   "path": "web/lib/player-forecasts/sourceSnapshot.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "0d319794a2f977a3364795910bfcc427140274d0",
+   "sha256": "7ec78dcefc5dd0d64de52ae6e03172594cf2c8c9232b1d20a0c34e8833de1c82",
+   "bytes": 4315,
+   "productionBlob": "ff09dd123c1370366b4dde0cc8634755c8786626",
+   "headBlob": "0d319794a2f977a3364795910bfcc427140274d0",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/ifttt-integration-2026-10-16/dependency-compatibility-increment/checkpoint-artifacts-sha256.json",
+    "tasks/ifttt-integration-2026-10-16/dependency-compatibility-increment/compatibility-source-sha256.json",
+    "tasks/ifttt-integration-2026-10-16/dependency-compatibility-increment/correction-v2/integrity.json",
+    "tasks/ifttt-integration-2026-10-16/dependency-compatibility-increment/read-only-dependencies.json",
+    "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v1/evidence/before-review-integrity.json",
+    "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v1/owned-source-v1-sha256.json"
+   ],
+   "importedByInSlice": [
+    "lib/rosterScheduleData/planningInputs.ts",
+    "lib/rosterScheduleData/planning.ts",
+    "lib/projections/issuedContext.ts",
+    "lib/player-forecasts/nativeCatalogHead.ts",
+    "lib/player-forecasts/nativeContributionAdmission.ts",
+    "lib/player-forecasts/modeledGoalieParticipationStore.ts",
+    "lib/player-forecasts/modeledSkaterParticipationStore.ts",
+    "lib/player-forecasts/contributionStore.ts",
+    "lib/player-forecasts/baselineRates.ts",
+    "lib/player-forecasts/baselineGeneration.ts",
+    "lib/player-forecasts/goalieBaselineRates.ts",
+    "lib/player-forecasts/currentSeasonSogContribution.ts",
+    "lib/player-forecasts/modeledGoalieParticipation.ts",
+    "lib/player-forecasts/modeledSkaterParticipation.ts",
+    "lib/player-forecasts/nativePowerPlayPoints.ts",
+    "lib/player-forecasts/goalieBaselineInputCapture.ts",
+    "lib/player-forecasts/nativeGoalieOutcomes.ts",
+    "lib/player-forecasts/currentSeasonSogBaseline.ts"
+   ]
+  },
+  {
+   "path": "web/lib/player-forecasts/targetRosterObservation.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "c47269517f6d7236f85f445dbc8558939f13df9c",
+   "sha256": "d77157d4e3915efd4f539669d0ff8cf12494a5aad057579b7eb37ecb30ae6ee6",
+   "bytes": 5311,
+   "productionBlob": null,
+   "headBlob": "c47269517f6d7236f85f445dbc8558939f13df9c",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/roster-observation/planning-loader/final-hashes.json",
+    "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/roster-observation/root-integration-pins.json"
+   ],
+   "importedByInSlice": [
+    "lib/player-forecasts/modeledGoalieParticipation.ts",
+    "lib/player-forecasts/modeledSkaterParticipation.ts"
+   ]
+  },
+  {
+   "path": "web/lib/projections/calibrationEligibility.ts",
+   "status": "M",
+   "worktree": "uncommitted",
+   "blob": "188021e5f0b798fd02151cbbe90c7254a7236d2c",
+   "sha256": "9b93cc5cf9a80b0c695bd54f6bd6a6e232bd90170b8efdedd1e7106e3aa6e852",
+   "bytes": 2372,
+   "productionBlob": "33560d57096be3e57ee632d6ed92413fc4e32a11",
+   "headBlob": "9285d2818eba84e96d4d1e081292f48b1152554a",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/forge-native-input-separation-2026-10-13/evidence.json",
+    "tasks/artifacts/forge-native-input-separation-2026-10-13/explicit-run-admission/receipt.json",
+    "tasks/artifacts/forge-native-input-separation-2026-10-13/native-run-admission/receipt.json",
+    "tasks/artifacts/rso-consumer-checkpoint-2026-10-13/forge-preserved.sha256"
+   ],
+   "importedByInSlice": [
+    "pages/api/v1/start-chart.ts",
+    "lib/projections/consumerRevisionAdmission.ts"
+   ],
+   "previousSha256": "65749b0a1e4fe8c1c7fa70b7c199767d4ec50a6ea53ec0430b6b94bb81f5acd7",
+   "changedBy": "B1: exclusion label is opt-in"
+  },
+  {
+   "path": "web/lib/projections/consumerRevisionAdmission.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "1bd59c48887f7e37a2f596be80c67b03aadfd89d",
+   "sha256": "303a0c9896f6277e8ad8f5f018a7220a61d92e586f4e0610506e782e00ea3f4a",
+   "bytes": 18269,
+   "productionBlob": "aa78b39b271b26d6675c457724dae0bde87b4866",
+   "headBlob": "1bd59c48887f7e37a2f596be80c67b03aadfd89d",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/rso-consumer-checkpoint-2026-10-13/reviewed-owned.sha256"
+   ],
+   "importedByInSlice": [
+    "pages/api/v1/start-chart.ts",
+    "lib/rosterScheduleData/planning.ts"
+   ]
+  },
+  {
+   "path": "web/lib/projections/gameRevisions.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "5ed1227d0249030c2800118ea0f7c146bed12f22",
+   "sha256": "2b16ffb05973d007798e46329720579bf12b25c409daaf750d2cca8cf0841e95",
+   "bytes": 10870,
+   "productionBlob": "8f2576795f9cf1ab5c653a822f0530192cccd389",
+   "headBlob": "5ed1227d0249030c2800118ea0f7c146bed12f22",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/forge-native-input-separation-2026-10-13/evidence.json",
+    "tasks/artifacts/forge-native-input-separation-2026-10-13/explicit-run-admission/receipt.json",
+    "tasks/artifacts/forge-native-input-separation-2026-10-13/native-run-admission/receipt.json",
+    "tasks/artifacts/rso-consumer-checkpoint-2026-10-13/forge-preserved.sha256"
+   ],
+   "importedByInSlice": [
+    "pages/api/v1/start-chart.ts",
+    "lib/projections/consumerRevisionAdmission.ts",
+    "lib/rosterScheduleData/planning.ts"
+   ]
+  },
+  {
+   "path": "web/lib/projections/issuedContext.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "23030433e9aa1ccff3d8fcd3505ddbee49719ab6",
+   "sha256": "8d2aeb9d1c01f9513ee18a6301ef17dbfa49ea2100c321939de7d35f9ebabb9d",
+   "bytes": 11570,
+   "productionBlob": "768087c8f48df5195fcbadfea9822d54a7f0d702",
+   "headBlob": "23030433e9aa1ccff3d8fcd3505ddbee49719ab6",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/ifttt-integration-2026-10-16/consumer-binding-increment/checkpoint-artifacts-sha256.json",
+    "tasks/ifttt-integration-2026-10-16/consumer-binding-increment/correction-v2/development-pin-25-test.json",
+    "tasks/ifttt-integration-2026-10-16/consumer-binding-increment/evidence/opaque-only-source-manifest.json",
+    "tasks/ifttt-integration-2026-10-16/consumer-binding-increment/owned-source-v1-sha256.json",
+    "tasks/ifttt-integration-2026-10-16/consumer-binding-increment/owned-source-v2-sha256.json",
+    "tasks/ifttt-integration-2026-10-16/consumer-binding-increment/read-only-dependencies.json"
+   ],
+   "importedByInSlice": [
+    "lib/projections/consumerRevisionAdmission.ts",
+    "lib/projections/gameRevisions.ts"
+   ]
+  },
+  {
+   "path": "web/lib/projections/startChartContract.ts",
+   "status": "M",
+   "worktree": "uncommitted",
+   "blob": "d9dc8f3b8b20ab1d25a06d79b06175ae4833dd0e",
+   "sha256": "000706e29df7140ac1f00f93f403a1f1e163d442adff7b917e457966c72e414d",
+   "bytes": 42959,
+   "productionBlob": "1b63ba345f5b04112a8982c0078903583ff47506",
+   "headBlob": "47bf2a6b8a3dc35d810ab9298a43ecfbbf22f2b5",
+   "ledgerEvidence": "E6",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [],
+   "importedByInSlice": [
+    "pages/api/v1/start-chart.ts",
+    "pages/start-chart.tsx"
+   ],
+   "previousSha256": "82d9937255c50224127e590ba29d093002128ed8eeeca24fc0852cb0c382b0ec",
+   "changedBy": "N1: board omits per-target participation input/evidence proofs"
+  },
+  {
+   "path": "web/lib/rosterScheduleData/normalize.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "a1bb78e19abbdd73da78153fb7af7814abd1c143",
+   "sha256": "bf6a30c1ea38903f11b66643721915543af73f61d28a8b6e3b48e8869489c4a6",
+   "bytes": 7007,
+   "productionBlob": "6be25d2ce4844b1046a6c7e559d62262bdf4737a",
+   "headBlob": "a1bb78e19abbdd73da78153fb7af7814abd1c143",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/checkpoint-production-release-2026-10-16/source-pin-capture-v1.json",
+    "tasks/artifacts/forge-rso-completion-2026-10-15/checkpoint-source-pins.json",
+    "tasks/artifacts/forge-rso-completion-2026-10-15/schedule/source-pins.json",
+    "tasks/artifacts/schedule-refresh-recurring-2026-10-15/CAPTURE-HANDOFF.json",
+    "tasks/artifacts/schedule-refresh-recurring-2026-10-15/RELEASE-CHECKPOINT.json",
+    "tasks/ifttt-integration-2026-10-16/consumer-binding-increment/checkpoint-artifacts-sha256.json"
+   ],
+   "importedByInSlice": [
+    "lib/rosterScheduleData/planningInputs.ts"
+   ]
+  },
+  {
+   "path": "web/lib/rosterScheduleData/planning.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "cc76828c0eef7bba2ae82718da89f6fab76c765d",
+   "sha256": "c91ec8dfa117499be943bb923086514dae16ffc3f7504fbfc2c8b4633d284388",
+   "bytes": 22115,
+   "productionBlob": "13751739b501819ddb73b734854a73e717b9f1fe",
+   "headBlob": "cc76828c0eef7bba2ae82718da89f6fab76c765d",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/forge-rso-completion-2026-10-15/read-receipt.md"
+   ],
+   "importedByInSlice": [
+    "pages/api/v1/roster-schedule-optimizer/data.ts",
+    "lib/player-forecasts/gameExpectationReader.ts"
+   ]
+  },
+  {
+   "path": "web/lib/rosterScheduleData/planningDataTransport.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "1d4abac7400b89ea0ff651c7ef482a26a3a85f4e",
+   "sha256": "1191818b7d1b3e6972faaa8e88eb4f06e052f869339f027bb2620c9326b93650",
+   "bytes": 10169,
+   "productionBlob": null,
+   "headBlob": "1d4abac7400b89ea0ff651c7ef482a26a3a85f4e",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/forge-rso-completion-2026-10-15/read-receipt.md"
+   ],
+   "importedByInSlice": [
+    "pages/api/v1/roster-schedule-optimizer/data.ts",
+    "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx"
+   ]
+  },
+  {
+   "path": "web/lib/rosterScheduleData/planningInputs.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "d0e81b2bcc225fbab460c8ed136f815eb340e1e8",
+   "sha256": "0a7e6ba064567c7c825ff38bb50190c6d58ca8613ae1a4231b853114e2a0c1b4",
+   "bytes": 13125,
+   "productionBlob": "df55b85097df0c8cbc6ffc84b016649c060bd47f",
+   "headBlob": "d0e81b2bcc225fbab460c8ed136f815eb340e1e8",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/writer-reference-hints.json",
+    "tasks/ifttt-integration-2026-10-16/review-full52-reconciliation-v1/owner-artifact-snapshot/tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/writer-reference-hints.json",
+    "tasks/ifttt-integration-2026-10-16/review-full52-reconciliation-v1/writer-reference-hints.json"
+   ],
+   "importedByInSlice": [
+    "pages/api/v1/start-chart.ts",
+    "lib/projections/consumerRevisionAdmission.ts",
+    "lib/rosterScheduleData/planning.ts",
+    "lib/rosterScheduleOptimizer/yahooEligibilityCache.ts",
+    "lib/player-forecasts/nativeCatalogHead.ts"
+   ]
+  },
+  {
+   "path": "web/lib/rosterScheduleData/types.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "9f42b55254d715c45d6ee5435ab61b59963aa920",
+   "sha256": "7ee4dcccf5eef024aaafc0fe32ddc477c65c7bee9df22d6197f12c3ae7f5e2f3",
+   "bytes": 1893,
+   "productionBlob": "c3c3fd9dd3bbcdf4988cb1dce47af72266260814",
+   "headBlob": "9f42b55254d715c45d6ee5435ab61b59963aa920",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/checkpoint-production-release-2026-10-16/source-pin-capture-v1.json",
+    "tasks/artifacts/forge-rso-completion-2026-10-15/checkpoint-source-pins.json",
+    "tasks/artifacts/forge-rso-completion-2026-10-15/schedule/source-pins.json",
+    "tasks/artifacts/schedule-refresh-recurring-2026-10-15/CAPTURE-HANDOFF.json",
+    "tasks/artifacts/schedule-refresh-recurring-2026-10-15/RELEASE-CHECKPOINT.json"
+   ],
+   "importedByInSlice": [
+    "lib/rosterScheduleData/normalize.ts"
+   ]
+  },
+  {
+   "path": "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.ts",
+   "status": "A",
+   "worktree": "uncommitted",
+   "blob": "bac1159a3bb8140c46cb80b7275866f7ab07ee34",
+   "sha256": "b0e06a29c30fd8cb5cc5f951ef3f83a58415ed57dc4a81758b2658c630e127d1",
+   "bytes": 15587,
+   "productionBlob": null,
+   "headBlob": "132652021b44d8228f3ae0e9cc9b57f8438d7f37",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": false,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/forge-rso-completion-2026-10-15/read-receipt.md"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/CandidateBrowser.tsx",
+    "hooks/useCandidateMetrics.ts",
+    "components/RosterScheduleOptimizer/CandidateCard.tsx",
+    "hooks/candidateMetrics.worker.ts"
+   ]
+  },
+  {
+   "path": "web/lib/rosterScheduleOptimizer/contributionLedger.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "3f46f39e440dba6abca18beb5a50cdf99dce9540",
+   "sha256": "27c3a2242e1781a878a4c90963bc4b7c248a88e692e8eaed64061598ca42e6a5",
+   "bytes": 6738,
+   "productionBlob": null,
+   "headBlob": "3f46f39e440dba6abca18beb5a50cdf99dce9540",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/rso-mockup-match-2026-10-14/baseline-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/cohort-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/final-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/interaction-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/iteration-1/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/iteration-2/source-inputs.sha256"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+    "components/RosterScheduleOptimizer/CompactSchedule.tsx",
+    "components/RosterScheduleOptimizer/RosterContribution.tsx",
+    "components/RosterScheduleOptimizer/RosterPlayerRow.tsx",
+    "lib/rosterScheduleOptimizer/candidatePlanMetrics.ts"
+   ]
+  },
+  {
+   "path": "web/lib/rosterScheduleOptimizer/periodBoundaries.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "2d711664dc98332535ec189fefc4d91a5f97f63d",
+   "sha256": "0e777c8af2b61ebe68b00818ccb89627dd25a79aa6aa93da3c100dada2ba9bbc",
+   "bytes": 2331,
+   "productionBlob": null,
+   "headBlob": "2d711664dc98332535ec189fefc4d91a5f97f63d",
+   "ledgerEvidence": "E1",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [
+    "rso-intraday-periods ACCEPT"
+   ],
+   "ownerPins": [
+    "tasks/artifacts/checkpoint-production-release-2026-10-16/source-pin-capture-v1.json",
+    "tasks/artifacts/rso-release-coordination-2026-10-16/checkpoint.json",
+    "tasks/artifacts/rso-release-coordination-2026-10-16/current-observed.sha256"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/AcquisitionPeriodTimes.tsx"
+   ]
+  },
+  {
+   "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "c0aba8f5a025c5bb2dd4b06840112f6f82f1ab86",
+   "sha256": "706af5ea9559866c3971a5677baffd41abcab29833a70a3cae605e2c918a140d",
+   "bytes": 98946,
+   "productionBlob": "b3a6c0ef5d8632e2cd8b7337c292c53e2922ed40",
+   "headBlob": "c0aba8f5a025c5bb2dd4b06840112f6f82f1ab86",
+   "ledgerEvidence": "E6",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+    "lib/rosterScheduleOptimizer/contributionLedger.ts",
+    "components/RosterScheduleOptimizer/CompactSchedule.tsx",
+    "lib/rosterScheduleOptimizer/candidatePlanMetrics.ts"
+   ]
+  },
+  {
+   "path": "web/lib/rosterScheduleOptimizer/planningTimeline.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "a5398a8c6f2aa3fdb017af25231befcd8fea7e86",
+   "sha256": "e61be30023f555e7196e0f9e3e63cce8e1bca0a0c026cf445bef7d81d4b0532e",
+   "bytes": 11886,
+   "productionBlob": "2ae5035dd18309e2cbf6f101b23f76d3720ed1b7",
+   "headBlob": "a5398a8c6f2aa3fdb017af25231befcd8fea7e86",
+   "ledgerEvidence": "E1",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [
+    "rso-functional-checkpoint accepted-local-functional-slice",
+    "rso-mockup-match bounded ACCEPT"
+   ],
+   "ownerPins": [
+    "tasks/artifacts/release-candidate-review-2026-10-15/older-rso-cohort-observation.json",
+    "tasks/artifacts/rso-functional-checkpoint-2026-10-13/accepted-review.json",
+    "tasks/artifacts/rso-functional-checkpoint-2026-10-13/handoff.json",
+    "tasks/artifacts/rso-functional-checkpoint-2026-10-13/release-candidate.sha256",
+    "tasks/artifacts/rso-functional-checkpoint-2026-10-13/release-package/receipt.json",
+    "tasks/artifacts/rso-intraday-periods-2026-10-16/intake.json"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+    "lib/rosterScheduleOptimizer/planning.ts",
+    "lib/rosterScheduleOptimizer/contributionLedger.ts",
+    "components/RosterScheduleOptimizer/CompactSchedule.tsx"
+   ]
+  },
+  {
+   "path": "web/lib/rosterScheduleOptimizer/planningTypes.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "d9a95c2e581a2574b105522487bd03323c0bae15",
+   "sha256": "b372bf556d1bcb90be6bbca1abe3df21aa2f2995e50bd95ca510502c8bee2b8a",
+   "bytes": 14326,
+   "productionBlob": "644d57d0c3d5e7910166b71a3faba912028364e2",
+   "headBlob": "d9a95c2e581a2574b105522487bd03323c0bae15",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/forge-rso-completion-2026-10-15/read-receipt.md"
+   ],
+   "importedByInSlice": [
+    "pages/api/v1/start-chart.ts",
+    "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+    "lib/rosterScheduleData/planningInputs.ts",
+    "lib/projections/consumerRevisionAdmission.ts",
+    "lib/rosterScheduleData/planningDataTransport.ts",
+    "lib/rosterScheduleData/planning.ts",
+    "lib/rosterScheduleOptimizer/yahooEligibility.ts",
+    "lib/player-forecasts/planningContributions.ts",
+    "lib/rosterScheduleOptimizer/planning.ts",
+    "lib/rosterScheduleOptimizer/contributionLedger.ts",
+    "lib/rosterScheduleOptimizer/planningTimeline.ts",
+    "lib/rosterScheduleOptimizer/reconciliation.ts",
+    "lib/rosterScheduleOptimizer/providerRules.ts",
+    "lib/rosterScheduleOptimizer/refreshForecastInputs.ts",
+    "lib/rosterScheduleOptimizer/workspace.ts",
+    "components/RosterScheduleOptimizer/CandidateBrowser.tsx",
+    "components/RosterScheduleOptimizer/AcquisitionPeriodTimes.tsx",
+    "components/RosterScheduleOptimizer/CategoryGains.tsx",
+    "components/RosterScheduleOptimizer/CompactSchedule.tsx",
+    "components/RosterScheduleOptimizer/RosterPlayerRow.tsx",
+    "lib/in-season/workspaceSchema.ts",
+    "lib/player-forecasts/gameExpectations.ts",
+    "lib/player-forecasts/resolvedPlanningForecast.ts",
+    "hooks/useCandidateMetrics.ts",
+    "lib/rosterScheduleOptimizer/candidatePlanMetrics.ts",
+    "components/RosterScheduleOptimizer/CandidateCard.tsx",
+    "hooks/candidateMetrics.worker.ts"
+   ]
+  },
+  {
+   "path": "web/lib/rosterScheduleOptimizer/providerRules.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "8cba4db703570ee7d3d0b5af688b213f0bc7fcab",
+   "sha256": "c78853d6e8b7a5ebbe134610e3818c8e697635ce1d63de6819df13a9f4d6e26b",
+   "bytes": 8198,
+   "productionBlob": "f6b21083d6086ae4788fca18f14b930f96a86b40",
+   "headBlob": "8cba4db703570ee7d3d0b5af688b213f0bc7fcab",
+   "ledgerEvidence": "E1",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [
+    "rso-weekly-rule-supplement v3 ACCEPT"
+   ],
+   "ownerPins": [
+    "tasks/artifacts/rso-intraday-periods-2026-10-16/intake.json",
+    "tasks/artifacts/rso-intraday-periods-2026-10-16/receipt.json",
+    "tasks/artifacts/rso-weekly-rule-supplement-2026-10-15/FINAL-STATUS.md",
+    "tasks/artifacts/rso-weekly-rule-supplement-2026-10-15/receipt.json"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx"
+   ]
+  },
+  {
+   "path": "web/lib/rosterScheduleOptimizer/reconciliation.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "dfbff3e1ccb375e55e66a64fd0898002dba3ba68",
+   "sha256": "f43c7f84cd408d95c7cc89fad545f05c41c8f69beae03f13f1188e2ed50ab69d",
+   "bytes": 6645,
+   "productionBlob": "ea88bb075927d23d6b474a8f0e1514e8d13a341d",
+   "headBlob": "dfbff3e1ccb375e55e66a64fd0898002dba3ba68",
+   "ledgerEvidence": "E1",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [
+    "rso-functional-checkpoint accepted-local-functional-slice",
+    "rso-mockup-match bounded ACCEPT"
+   ],
+   "ownerPins": [
+    "tasks/artifacts/release-candidate-review-2026-10-15/older-rso-cohort-observation.json",
+    "tasks/artifacts/rso-functional-checkpoint-2026-10-13/accepted-review.json",
+    "tasks/artifacts/rso-functional-checkpoint-2026-10-13/handoff.json",
+    "tasks/artifacts/rso-functional-checkpoint-2026-10-13/release-candidate.sha256",
+    "tasks/artifacts/rso-functional-checkpoint-2026-10-13/release-package/receipt.json",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/cohort-shell/functional-accepted-review.json"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx"
+   ]
+  },
+  {
+   "path": "web/lib/rosterScheduleOptimizer/refreshForecastInputs.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "39d6fd786dd316b67ccdf14e4dc0c18a900e7300",
+   "sha256": "a77283cfdced008068f95cebb0dcc40315c70595cd28f8e55a0577d06384a594",
+   "bytes": 2215,
+   "productionBlob": null,
+   "headBlob": "39d6fd786dd316b67ccdf14e4dc0c18a900e7300",
+   "ledgerEvidence": "E1",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [
+    "rso-participation-transport ACCEPT"
+   ],
+   "ownerPins": [
+    "tasks/artifacts/forge-modeled-participation-2026-10-15/compiler-cohort.sha256",
+    "tasks/artifacts/rso-participation-transport-2026-10-15/receipt.json"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx"
+   ]
+  },
+  {
+   "path": "web/lib/rosterScheduleOptimizer/workspace.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "9ceb2c397e1ffe4a318db1eac4f1a1cb9ee45b22",
+   "sha256": "8a82c0f7c21f031402e0a3d6a480de12a8e780a9fe2f5097236bce64e00fcb3f",
+   "bytes": 21941,
+   "productionBlob": "829e1f4fc310ae9c4d2fc99d9f6f185647b0069a",
+   "headBlob": "9ceb2c397e1ffe4a318db1eac4f1a1cb9ee45b22",
+   "ledgerEvidence": "E1",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [
+    "rso-participation-transport ACCEPT"
+   ],
+   "ownerPins": [
+    "tasks/artifacts/forge-modeled-participation-2026-10-15/compiler-cohort.sha256",
+    "tasks/artifacts/rso-input-trace-2026-10-15/unchanged-application-inputs.json",
+    "tasks/artifacts/rso-intraday-periods-2026-10-16/intake.json",
+    "tasks/artifacts/rso-intraday-periods-2026-10-16/receipt.json",
+    "tasks/artifacts/rso-participation-transport-2026-10-15/receipt.json",
+    "tasks/artifacts/schedule-refresh-recurring-2026-10-15/RELEASE-CHECKPOINT.json"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+    "pages/api/v1/roster-schedule-optimizer/workspace.ts"
+   ]
+  },
+  {
+   "path": "web/lib/rosterScheduleOptimizer/yahooEligibility.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "14bc0a332e010d26fb3fda2c0113b0e57026a5ae",
+   "sha256": "11c94952da445a9143cfa82eba94db80040bf690fdecd79d9c5c7f45d803690f",
+   "bytes": 2610,
+   "productionBlob": null,
+   "headBlob": "14bc0a332e010d26fb3fda2c0113b0e57026a5ae",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/rso-input-trace-2026-10-15/unchanged-application-inputs.json",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/baseline-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/cohort-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/final-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/interaction-shell/source-inputs.sha256",
+    "tasks/artifacts/rso-mockup-match-2026-10-14/iteration-1/source-inputs.sha256"
+   ],
+   "importedByInSlice": [
+    "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+    "hooks/useYahooEligibility.ts",
+    "lib/rosterScheduleOptimizer/yahooEligibilityCache.ts"
+   ]
+  },
+  {
+   "path": "web/lib/rosterScheduleOptimizer/yahooEligibilityCache.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "1a20763f3b664608ba7e7e849de7acdad610ec0e",
+   "sha256": "f34826b36757033c8d1ada6bf2b7ed8c0d52d980e0fc1e30f268767fb273abf8",
+   "bytes": 6153,
+   "productionBlob": null,
+   "headBlob": "1a20763f3b664608ba7e7e849de7acdad610ec0e",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/rso-input-trace-2026-10-15/unchanged-application-inputs.json",
+    "tasks/artifacts/rso-visual-redesign-2026-10-13/review-corrections/combined-rso.sha256"
+   ],
+   "importedByInSlice": [
+    "pages/api/v1/roster-schedule-optimizer/eligibility.ts"
+   ]
+  },
+  {
+   "path": "web/pages/api/v1/forge/forecasts.ts",
+   "status": "A",
+   "worktree": "uncommitted",
+   "blob": "06e3faa9ea47164d1b705f9f574935659602397d",
+   "sha256": "e79d44e3d01c411583b0a013fa24d02f5101f71779bad18b75cca5979b31f657",
+   "bytes": 2497,
+   "productionBlob": null,
+   "headBlob": "acb2e66eec02696adc40bb705fb10804c4976ae9",
+   "ledgerEvidence": "E6",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [],
+   "importedByInSlice": [
+    "seed"
+   ],
+   "previousSha256": "44904ec95c1a36c8a4a18ebb31c54c53eb4e7c920243627bd711504cdfc03138",
+   "changedBy": "N3: s-maxage <= 15 s and <= earliest expiry; no-store on errors"
+  },
+  {
+   "path": "web/pages/api/v1/roster-schedule-optimizer/data.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "6a331fa45b347e999de486874be25804fdd09920",
+   "sha256": "dbad098b221e710638b4cbb5ac7a467eec92ceef61a437c33fe523becab3ec2d",
+   "bytes": 1378,
+   "productionBlob": "34262199954b7bb1296defaedbff5e707f2d1794",
+   "headBlob": "6a331fa45b347e999de486874be25804fdd09920",
+   "ledgerEvidence": "E6",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [],
+   "importedByInSlice": [
+    "seed"
+   ]
+  },
+  {
+   "path": "web/pages/api/v1/roster-schedule-optimizer/eligibility.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "d84ac03d5840c7cee1547df2a6d0cf021ca42b71",
+   "sha256": "f5447e4c9de58133127e0811d63a56d3078ed3e2bccab3645bf3758ffd55ffc5",
+   "bytes": 1312,
+   "productionBlob": null,
+   "headBlob": "d84ac03d5840c7cee1547df2a6d0cf021ca42b71",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/rso-input-trace-2026-10-15/unchanged-application-inputs.json",
+    "tasks/artifacts/rso-visual-redesign-2026-10-13/compiler-fixture-repair/combined-rso.sha256",
+    "tasks/artifacts/rso-visual-redesign-2026-10-13/compiler-fixture-repair/pre-repair-combined-rso.sha256",
+    "tasks/artifacts/rso-visual-redesign-2026-10-13/review-corrections/combined-rso.sha256",
+    "tasks/artifacts/rso-visual-redesign-2026-10-13/review-corrections/pre-correction-combined-rso.sha256"
+   ],
+   "importedByInSlice": [
+    "seed"
+   ]
+  },
+  {
+   "path": "web/pages/api/v1/roster-schedule-optimizer/workspace.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "e643d024fcd0fbb11bc862ca8afd72b138d50a3e",
+   "sha256": "65a709a8f54af63ecdb1d9a521f5ebc621aaf7579a2e8272a808a845c83b1087",
+   "bytes": 13559,
+   "productionBlob": "2f64c78b4168e174401f312fa26ea2973a675139",
+   "headBlob": "e643d024fcd0fbb11bc862ca8afd72b138d50a3e",
+   "ledgerEvidence": "E5",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [],
+   "importedByInSlice": [
+    "seed"
+   ]
+  },
+  {
+   "path": "web/pages/api/v1/start-chart.ts",
+   "status": "M",
+   "worktree": "uncommitted",
+   "blob": "da71eecb1da1e22f15ad869e3181bb422b9fc26f",
+   "sha256": "e85c8b870005d5db4e73551b3d10e815a3caedbdfb3d78a8db2be849c1ff0250",
+   "bytes": 84225,
+   "productionBlob": "3889215e27ac768b249b0346db0310365522aaf4",
+   "headBlob": "b88c5565450aced8aa1c56304661126c6bfbd214",
+   "ledgerEvidence": "E4",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [
+    "tasks/artifacts/checkpoint-production-release-2026-10-16/additional-pin-capture.json",
+    "tasks/artifacts/schedule-refresh-recurring-2026-10-15/RELEASE-CHECKPOINT.json",
+    "tasks/artifacts/schedule-refresh-recurring-2026-10-15/rejected-v1/source-bindings.json",
+    "tasks/artifacts/schedule-refresh-recurring-2026-10-15/source-bindings.json",
+    "tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/writer-reference-hints.json",
+    "tasks/ifttt-integration-2026-10-16/review-full52-reconciliation-v1/owner-artifact-snapshot/tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/writer-reference-hints.json"
+   ],
+   "importedByInSlice": [
+    "seed"
+   ],
+   "previousSha256": "29a743a0a9b5f9f623f851697a8cfcbc6552091f43478c85d6798cf022465890",
+   "changedBy": "N1: 4,000,000-byte bound, typed 503 start_chart_too_large"
+  },
+  {
+   "path": "web/pages/start-chart.tsx",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "438a3064ea34c01c3fa5245f0883518f68442553",
+   "sha256": "aefcecfc76da56c6624ea9aeffc3c0896851e38d40ba5c248b6de9e624f90010",
+   "bytes": 82791,
+   "productionBlob": "5eb086b3e97bd3d1ec2853de291d8044e4264d3f",
+   "headBlob": "438a3064ea34c01c3fa5245f0883518f68442553",
+   "ledgerEvidence": "E6",
+   "ledgerBlobMatchesCurrent": true,
+   "acceptedReceipts": [],
+   "ownerPins": [],
+   "importedByInSlice": [
+    "seed"
+   ]
+  }
+ ],
+ "scheduleWriters": [
+  {
+   "path": "web/lib/rosterScheduleData/source.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "9f7bab6dc5b58ed6a6809fee8a06de8bac3a4b48",
+   "sha256": "770c0dd5820aaf745441e4b5b10bc5d73d727e3d14d0fc3617ab369bbac9b92e",
+   "bytes": 7223,
+   "productionBlob": "a7543f164c1e928725348f666b4180d0290235c4",
+   "headBlob": "9f7bab6dc5b58ed6a6809fee8a06de8bac3a4b48",
+   "note": "B2: bounded fetch stamps nhl-source-days-v1 witnesses; throws on conflicting source-day coverage"
+  },
+  {
+   "path": "web/pages/api/v1/db/update-roster-optimizer-schedule.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "3968b43d0004e6562401a27be616f2740c3f8de6",
+   "sha256": "ff6dcdf25e0d7f9d8534088affa713f17d712c447969d2bb8299d21a08296859",
+   "bytes": 20256,
+   "productionBlob": "1a68e62a65726e1dba8c9e6ad8ea22cdf12045ee",
+   "headBlob": "3968b43d0004e6562401a27be616f2740c3f8de6",
+   "note": "B2: passes the witness into rows (+1 line)"
+  }
+ ],
+ "testSupport": [
+  {
+   "path": "web/scripts/preview-native-baseline.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "fc5bec46f70974ce56f82d1b03fab7843b3aa9e6",
+   "sha256": "8c095fc0b6a66ae8f6b07175ea624969821b89c041b843318bee447507a8e14b",
+   "bytes": 16345,
+   "productionBlob": null,
+   "headBlob": "fc5bec46f70974ce56f82d1b03fab7843b3aa9e6",
+   "note": "Inert test support for gameExpectations.test.ts: route-free CLI behind require.main; no pages/ importer. Monday-frozen bytes, not edited"
+  },
+  {
+   "path": "web/lib/player-forecasts/seasonGameContributions.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "c95793aa81a23e1ff96303451e2b0c07b5d1b54b",
+   "sha256": "7c02a55a175f1223ccbcbae7aefc8b06bc331d7a176518a8dc83b53e03c39224",
+   "bytes": 7457,
+   "productionBlob": null,
+   "headBlob": "c95793aa81a23e1ff96303451e2b0c07b5d1b54b",
+   "note": "Inert test support (imported only by preview-native-baseline.ts); no pages/ importer. Monday-frozen bytes, not edited"
+  }
+ ],
+ "candidateTests": [
+  {
+   "path": "web/__tests__/components/RosterScheduleOptimizer/AcquisitionRules.integration.test.tsx",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "57d2629a052a72fca06acd4b52bcda1eb06c6b9c",
+   "sha256": "5fbe032b27cbe9b9b18f6800f3007da9c4980b0732de1b1cb628020066daef74",
+   "bytes": 14914,
+   "productionBlob": null,
+   "headBlob": "57d2629a052a72fca06acd4b52bcda1eb06c6b9c"
+  },
+  {
+   "path": "web/__tests__/components/RosterScheduleOptimizer/CategoryGains.test.tsx",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "f1ef2858d59662e9706fb0cdbfe24ebe7fe28052",
+   "sha256": "04169540ae805565621f51a98c919ccb01a9488fdb6ecc00a6c6a6584e283613",
+   "bytes": 11930,
+   "productionBlob": "2dea68111434b9a0002e21d8dd7682ca53997816",
+   "headBlob": "f1ef2858d59662e9706fb0cdbfe24ebe7fe28052"
+  },
+  {
+   "path": "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "7184f322933b68d8c9ab19abd428823c2b330966",
+   "sha256": "9611962e9df1c984bd21dc942067f9439a178b51397fdf41318fbdd72ace57e6",
+   "bytes": 265887,
+   "productionBlob": "e412e4951f806d8e7837144da2472b1c7772eac3",
+   "headBlob": "7184f322933b68d8c9ab19abd428823c2b330966"
+  },
+  {
+   "path": "web/__tests__/pages/api/v1/forge/forecasts.test.ts",
+   "status": "A",
+   "worktree": "uncommitted",
+   "blob": "264d866947eddd31b2b1d291f690f16ec42d6fc0",
+   "sha256": "99f4f2b33cce045d904a0645a6a07803e62409a231268718d98d5d20fad7d8e2",
+   "bytes": 4871,
+   "productionBlob": null,
+   "headBlob": "f5a9d73c0cce616faf006fb2d9b2a6ebd504d0b7"
+  },
+  {
+   "path": "web/__tests__/pages/api/v1/roster-schedule-optimizer/eligibility.test.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "c8defba5693b3183eb319e431bf21b856a52f6f3",
+   "sha256": "831cba10bb7ca674a9d1d12b20fedd9895a31ed424a8495e59640a5b454bcab9",
+   "bytes": 1841,
+   "productionBlob": null,
+   "headBlob": "c8defba5693b3183eb319e431bf21b856a52f6f3"
+  },
+  {
+   "path": "web/__tests__/pages/api/v1/start-chart.test.ts",
+   "status": "M",
+   "worktree": "uncommitted",
+   "blob": "2fbbb40e00eec60fc328253af48fe76402075e5d",
+   "sha256": "3e39b8770fa05fb05489edf0c7a7321aa134406686ab1b7bcab23b73c80dee35",
+   "bytes": 109669,
+   "productionBlob": "b11be4d218890f86e19d604a8d645758af446cfe",
+   "headBlob": "49dc6a0dba31f81513284305da0328a4faa536d3"
+  },
+  {
+   "path": "web/__tests__/fixtures/consumerGameRevision.ts",
+   "status": "M",
+   "worktree": "uncommitted",
+   "blob": "73eae7848ef0d0ab38cc79aa61bb11f38ef8fab5",
+   "sha256": "50497085e083073ce21696c3dcddb511cc72085cefce4e2028619ed4d090a68d",
+   "bytes": 5784,
+   "productionBlob": "9dd03806cbf014bfc109a98ef1a1f082eb7877ff",
+   "headBlob": "69ad5e9e4e5aa0f15269586bc1d72a43103d4df2"
+  },
+  {
+   "path": "web/__tests__/pages/start-chart.test.tsx",
+   "status": "M",
+   "worktree": "uncommitted",
+   "blob": "5770084c75fe2122893f868aafde6f60e856049b",
+   "sha256": "412da731e88cdaf8587f7e93725ff13d2d58f740fe501a9c6f15be66e020e246",
+   "bytes": 81707,
+   "productionBlob": "5f8519b4fab643afeae1f3cc967acbc6b04eebcd",
+   "headBlob": "5b455201ed03189116cad8d750179eb51ae51f15"
+  },
+  {
+   "path": "web/components/RosterScheduleOptimizer/AcquisitionPeriodTimes.test.tsx",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "724a44dbabfc77cccbf73f66b5560223d3e2683b",
+   "sha256": "06498058e4ae0d2094b751172d6e2601cc67d0425c76a0db22f85dfaa1fd862c",
+   "bytes": 3800,
+   "productionBlob": null,
+   "headBlob": "724a44dbabfc77cccbf73f66b5560223d3e2683b"
+  },
+  {
+   "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.integration.test.tsx",
+   "status": "A",
+   "worktree": "uncommitted",
+   "blob": "13044757d0c4dddd34960513f7a5f241e8cbeeb0",
+   "sha256": "688c21c5ea4903f5d7c463e448d7bdad205837eada350918ab54287ec5d08805",
+   "bytes": 9409,
+   "productionBlob": null,
+   "headBlob": "d06f184b9c0f9b498148328c874d5dfc57da83dd"
+  },
+  {
+   "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "968aabbad148e65ab067bd32a62c13c514d82fc4",
+   "sha256": "8000c9329446d17a5cfd203ef12625467dc84c4c54be94fa0e4da25ccb985cb4",
+   "bytes": 25205,
+   "productionBlob": null,
+   "headBlob": "968aabbad148e65ab067bd32a62c13c514d82fc4"
+  },
+  {
+   "path": "web/components/RosterScheduleOptimizer/CandidateCard.test.tsx",
+   "status": "A",
+   "worktree": "uncommitted",
+   "blob": "5c882ce4bf2b696fde3a849ad7f6f40852ca1efb",
+   "sha256": "c6155a201233734dd4d7e2d18f2033e1e37220f01f69771f8b639eba3febbe37",
+   "bytes": 7141,
+   "productionBlob": null,
+   "headBlob": "f651a27076dd9822aa9f501ad7ebb6ad31ceef8b"
+  },
+  {
+   "path": "web/components/RosterScheduleOptimizer/InfoTooltip.test.tsx",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "893ef1b553bf3d74d413ec312ddcf754c5474ca7",
+   "sha256": "c8853db8c8d8a55312d6b4db2f486f2212c8e95a1d4e214be14eaa64f3db6a4a",
+   "bytes": 2129,
+   "productionBlob": null,
+   "headBlob": "893ef1b553bf3d74d413ec312ddcf754c5474ca7"
+  },
+  {
+   "path": "web/components/RosterScheduleOptimizer/TeamScheduleContext.test.tsx",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "76cf153b9f103b0638e814e694a2a4332ce4775a",
+   "sha256": "847f44e361d3cde9f949a5cf6a5e8cec7afa30ec8694cf4b394630ce73d820cc",
+   "bytes": 5808,
+   "productionBlob": null,
+   "headBlob": "76cf153b9f103b0638e814e694a2a4332ce4775a"
+  },
+  {
+   "path": "web/components/RosterScheduleOptimizer/canonicalSchedule.test.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "3e066cf70d8634722444482ed83622b5a4b6351f",
+   "sha256": "ddcd565d4a79308d42ad41a49bb1004355eda7b43442e5df53e2166808e84d85",
+   "bytes": 10717,
+   "productionBlob": null,
+   "headBlob": "3e066cf70d8634722444482ed83622b5a4b6351f"
+  },
+  {
+   "path": "web/hooks/useCandidateMetrics.test.tsx",
+   "status": "M",
+   "worktree": "uncommitted",
+   "blob": "0abba76c3c710bd71f32d6a1d9ae10192e5da5eb",
+   "sha256": "0e4d9224ea74b10795fc503ab2974e134cbf10b526cf78f7fd3a6b3440619450",
+   "bytes": 4101,
+   "productionBlob": "8dd24ef97460ca1ce56cd08f92bd1f8da986d407",
+   "headBlob": "9e89de9ab57b98f1a77f7c0f535c77bd5e35473b"
+  },
+  {
+   "path": "web/hooks/useYahooEligibility.test.tsx",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "d8eb52eae4974b49f891e4f22101f089e6df2185",
+   "sha256": "2e5653b677953dfe411f714ca5aad7aee1209a68145bbe38c3d8e332124821a2",
+   "bytes": 7725,
+   "productionBlob": null,
+   "headBlob": "d8eb52eae4974b49f891e4f22101f089e6df2185"
+  },
+  {
+   "path": "web/lib/in-season/workspaceRoutes.test.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "4b2592fca702c866669c61c6724463a957e05f52",
+   "sha256": "a681f2d35420c8dfe52d27c2a1fc7ee405efbf5411ab393e4ba84b473c3ffbee",
+   "bytes": 19034,
+   "productionBlob": "a943bd1d1d254271bcdf826de401292a173d9868",
+   "headBlob": "4b2592fca702c866669c61c6724463a957e05f52"
+  },
+  {
+   "path": "web/lib/in-season/workspaceSchema.test.ts",
+   "status": "M",
+   "worktree": "uncommitted",
+   "blob": "c0a9e8dc24ef10904b614ba47bbc3a5401de853b",
+   "sha256": "8f06bb48353683297ec7077bc3185ba38e0f4408e81f192a26134fa89e4772dc",
+   "bytes": 25306,
+   "productionBlob": "9077219ee46c436336d5ed42efeb822742e9e363",
+   "headBlob": "bbdebc26e2c6a187238550879ca8d5893d21626b"
+  },
+  {
+   "path": "web/lib/player-forecasts/contributionStore.test.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "91e8b6f9df9fa8df0b7eec67d0792b12d089c9f4",
+   "sha256": "03e02846766bac48e6c0b0a06da9a13ec77a32090f3c62399121c406f26dce02",
+   "bytes": 24366,
+   "productionBlob": "912a5f73709f9d71bfe62b9daa364fc4ca0dd91d",
+   "headBlob": "91e8b6f9df9fa8df0b7eec67d0792b12d089c9f4"
+  },
+  {
+   "path": "web/lib/player-forecasts/contributions.test.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "5c473f48a223fff2afda34eca6fbed6f180b7304",
+   "sha256": "c3adbe3919567572071644db289afdc93cb07ac95cf1d60949ff22c41d94ebf6",
+   "bytes": 96399,
+   "productionBlob": "a8a790d46369a9ef005edc89bc76ed75fe1635ee",
+   "headBlob": "5c473f48a223fff2afda34eca6fbed6f180b7304"
+  },
+  {
+   "path": "web/lib/player-forecasts/currentSeasonSogBaseline.test.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "14e781f4bfdb8081ff77ebe99bb50f46dc999e67",
+   "sha256": "2c805cc599b1ad452139fca05dba9db7d6b15afac07cd7129ad3beca94fa7746",
+   "bytes": 15632,
+   "productionBlob": null,
+   "headBlob": "14e781f4bfdb8081ff77ebe99bb50f46dc999e67"
+  },
+  {
+   "path": "web/lib/player-forecasts/currentSeasonSogContribution.test.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "77d8c527b90ac8f2b7c4707105f0e0bae1ac8863",
+   "sha256": "9f1909b98bee1186b83c2595e3b4081a3e60254ae690ad2d43e00b31f2d5ae23",
+   "bytes": 20030,
+   "productionBlob": null,
+   "headBlob": "77d8c527b90ac8f2b7c4707105f0e0bae1ac8863"
+  },
+  {
+   "path": "web/lib/player-forecasts/goalieBaseline.test.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "0f7bc4ed24d10c8e5d2e55f2dd9830d9e9351f6f",
+   "sha256": "7602bee9c5f4c02e0cdd9968010be25a51e8327ebc31a70e25ab984947d82008",
+   "bytes": 63545,
+   "productionBlob": "29012d0b775222ea0bf297e74e85fde648b8f311",
+   "headBlob": "0f7bc4ed24d10c8e5d2e55f2dd9830d9e9351f6f"
+  },
+  {
+   "path": "web/lib/player-forecasts/modeledGoalieParticipation.test.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "bb556b31c4cc24194fc89c729dc45a9dfafa8f38",
+   "sha256": "1ce8c72a4f59968144f32bb3141423d05b346d3936e05ed71fa5344ab79ceb97",
+   "bytes": 23493,
+   "productionBlob": null,
+   "headBlob": "bb556b31c4cc24194fc89c729dc45a9dfafa8f38"
+  },
+  {
+   "path": "web/lib/player-forecasts/modeledSkaterParticipation.test.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "f52d2281b1b001d82eb6da756d1dae06ebb38764",
+   "sha256": "af1385a3f73f95c8bc0e9f757d9a0b1a033cac5dad022ded42452c990390e5fa",
+   "bytes": 21585,
+   "productionBlob": null,
+   "headBlob": "f52d2281b1b001d82eb6da756d1dae06ebb38764"
+  },
+  {
+   "path": "web/lib/player-forecasts/modeledSkaterParticipationStore.test.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "ef97fca042879f57e409cc6a819b6d2338678d30",
+   "sha256": "bdede9ffc8d9228f64bb6a30e4009a1cc8cb6ba656a3689f8a3e90438cdb3689",
+   "bytes": 11463,
+   "productionBlob": null,
+   "headBlob": "ef97fca042879f57e409cc6a819b6d2338678d30"
+  },
+  {
+   "path": "web/lib/player-forecasts/nativeContributionAdmission.test.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "ddfaaa2d826765aec7e20a66be21227d77efbcd7",
+   "sha256": "953447e8120e971d442896969a07306781a483be28792a47b33a4cd2cb2ca682",
+   "bytes": 23048,
+   "productionBlob": null,
+   "headBlob": "ddfaaa2d826765aec7e20a66be21227d77efbcd7"
+  },
+  {
+   "path": "web/lib/player-forecasts/nativeGoalieOutcomes.test.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "3b2bf169feee391babaf9bd355cb551999530287",
+   "sha256": "ea024e2b2360bfdfbe6aaf993bf9c8d293019d66047378af860558b033c6e575",
+   "bytes": 20499,
+   "productionBlob": null,
+   "headBlob": "3b2bf169feee391babaf9bd355cb551999530287"
+  },
+  {
+   "path": "web/lib/player-forecasts/nativePowerPlayPoints.test.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "0c00f6c052eeb79b10ea14416a22d39fbbb93a18",
+   "sha256": "be4763029f0f77d54331499b6513cef97925958972ca9b2c2dbde830f3ec1bc5",
+   "bytes": 10210,
+   "productionBlob": null,
+   "headBlob": "0c00f6c052eeb79b10ea14416a22d39fbbb93a18"
+  },
+  {
+   "path": "web/lib/player-forecasts/planningContributions.test.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "3872c70b5e5381e272cee30da2e2a91678b79f22",
+   "sha256": "02e66b1acbbba2afc9b21779e074c3768d220337af6b0e1033ceeb703427ed31",
+   "bytes": 61762,
+   "productionBlob": "4c08eb91ed24b73b9c960c0bb7f392ffdf240970",
+   "headBlob": "3872c70b5e5381e272cee30da2e2a91678b79f22"
+  },
+  {
+   "path": "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts",
+   "status": "A",
+   "worktree": "uncommitted",
+   "blob": "3e01abb9ffc5f97eead96089efc91946a434ffd4",
+   "sha256": "9182e1d7f20f4c4428951312819f2bc457172baecf0e210b4dd9aaa633daa39f",
+   "bytes": 30971,
+   "productionBlob": null,
+   "headBlob": "bdbec1f31b33a46fec2a0b7bb8cdc253a594661c"
+  },
+  {
+   "path": "web/lib/rosterScheduleOptimizer/contributionLedger.test.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "fac47c34c29c288d944fd538aeb93116b2083443",
+   "sha256": "64461f061b5d26a0c278f71f0a49a5d854de7c8673a2c592141f53daf51c3250",
+   "bytes": 9479,
+   "productionBlob": null,
+   "headBlob": "fac47c34c29c288d944fd538aeb93116b2083443"
+  },
+  {
+   "path": "web/lib/rosterScheduleOptimizer/periodBoundaries.test.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "fa913b3182d839d87b91a8ffdbe905bfc382c9d5",
+   "sha256": "a2e4ed8f4eab1fe63fb21030d2c8ec45657a0fdcd9808ce291edb530f1d9bffc",
+   "bytes": 2340,
+   "productionBlob": null,
+   "headBlob": "fa913b3182d839d87b91a8ffdbe905bfc382c9d5"
+  },
+  {
+   "path": "web/lib/rosterScheduleOptimizer/planning.test.ts",
+   "status": "M",
+   "worktree": "uncommitted",
+   "blob": "965f91fa5d584fc907228461f00e566400b3c99e",
+   "sha256": "8b9256530df8dd1bf202af24d5a20b5d6059a80c367cfc10c2d9485f8f4dfdaf",
+   "bytes": 121837,
+   "productionBlob": "52f407d9dfc5fd3083fd985adda9469c7049f1d1",
+   "headBlob": "c0302e1a6e7128310f5c95fee0c9a605d0eec66e"
+  },
+  {
+   "path": "web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts",
+   "status": "M",
+   "worktree": "uncommitted",
+   "blob": "7b5b2794dbdd60870f349ada53094ea9d51c0c00",
+   "sha256": "acb325f8d7d6b80d8db5b7e565468d1c44df3d69ca9b1747ebbbb42eda1758d2",
+   "bytes": 26460,
+   "productionBlob": "ca3f70888674c52754993d42ef9061345c912bef",
+   "headBlob": "c8aa9bc68870d00b40e0e1f1cbb8bb48e1f0772a"
+  },
+  {
+   "path": "web/lib/rosterScheduleOptimizer/providerRules.test.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "149eeb9825bc23ce645672b8bf2bf6855462aa1d",
+   "sha256": "e386b3fa4063086d4ea378582e4b78d2c94b8c6f768dc092549abc4939d720ef",
+   "bytes": 15353,
+   "productionBlob": "e987bdbffb3d474794afeba3476a7df59bb8eb0a",
+   "headBlob": "149eeb9825bc23ce645672b8bf2bf6855462aa1d"
+  },
+  {
+   "path": "web/lib/rosterScheduleOptimizer/reconciliation.test.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "ab277ea73a209dc2e1e02899b8f6cd2df7df3b5a",
+   "sha256": "7a83a334e68ca83b4b24b0fb8adab2d8a7f9cfbfb4e3f7a7b0a3fa5981784ec5",
+   "bytes": 7327,
+   "productionBlob": "63997ac2509720ee72d9790c08cc79b944807a8e",
+   "headBlob": "ab277ea73a209dc2e1e02899b8f6cd2df7df3b5a"
+  },
+  {
+   "path": "web/lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "940ddc93415860c44e940280d48e76b5c2e5db6a",
+   "sha256": "2ee6ec70b8b1441b9de23ae33aa0ed142afae414912e892eed6bae964fffe47d",
+   "bytes": 12964,
+   "productionBlob": null,
+   "headBlob": "940ddc93415860c44e940280d48e76b5c2e5db6a"
+  },
+  {
+   "path": "web/lib/rosterScheduleOptimizer/workspace.test.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "86c0e39705f12d1002825fe3cfc01a31b22242a5",
+   "sha256": "4c5666efe9b30203ded0f4d20aa64eeb479a9af28acffa703ab541e41bbe6810",
+   "bytes": 21447,
+   "productionBlob": "2b9fbfa31080883457d1103770a779909d5265ed",
+   "headBlob": "86c0e39705f12d1002825fe3cfc01a31b22242a5"
+  },
+  {
+   "path": "web/lib/rosterScheduleOptimizer/yahooEligibilityCache.test.ts",
+   "status": "A",
+   "worktree": "committed",
+   "blob": "397e1265b42c5c0fd353e7486923c0889a1a9d0d",
+   "sha256": "71c6468fc5ba72e1bbeff04447303f0ff6c11a681ab2abc8f013ab2efad8ca46",
+   "bytes": 7655,
+   "productionBlob": null,
+   "headBlob": "397e1265b42c5c0fd353e7486923c0889a1a9d0d"
+  },
+  {
+   "path": "web/lib/projections/run-forge-projections.local-attempt.test.ts",
+   "status": "M",
+   "worktree": "uncommitted",
+   "blob": "73dc32104760415980131dce3a262685ec91b970",
+   "sha256": "dcd916dc3a7be134cfcbeea1987da0fd6826c6c729d3e0a474a3317ed3fca1b8",
+   "bytes": 17393,
+   "productionBlob": "8c68f74954d8051861dd0b0190789cfdf2f2e1d8",
+   "headBlob": "c348b1ea5952fb7a3da8a433fda43efce831e087"
+  },
+  {
+   "path": "web/lib/rosterScheduleData/planning.test.ts",
+   "status": "M",
+   "worktree": "uncommitted",
+   "blob": "7ce06c2f319e420e33a132f6789b5977e6e42028",
+   "sha256": "a44b313f8556faccd8cc46639b37cb49c24eaf4482bb19ca8345451c37254d2a",
+   "bytes": 81624,
+   "productionBlob": "c9c7401d065c200c6b56eb8d3479df8c367ad41a",
+   "headBlob": "b30fff1cada03b5ee64f1b3bc8e4139e020ed82f"
+  },
+  {
+   "path": "web/lib/player-forecasts/gameExpectations.test.ts",
+   "status": "A",
+   "worktree": "uncommitted",
+   "blob": "e04a20d481c5c342a32077c46add8c1c0ed15a37",
+   "sha256": "2ab6fdc5de9304e9393131f604de55fa1809c29383005164bee7205ece7713be",
+   "bytes": 36892,
+   "productionBlob": null,
+   "headBlob": "31111f69732a9663dd8b799fcb08a67683af085a"
+  },
+  {
+   "path": "web/lib/player-forecasts/nativeCatalogHead.test.ts",
+   "status": "A",
+   "worktree": "uncommitted",
+   "blob": "27c8b20e1a5455da276af88884bce1d0322dbd2a",
+   "sha256": "cc331086ef4583f8a07793394211f76a5682ff1cab908c2f56dcb6a054e79461",
+   "bytes": 4921,
+   "productionBlob": null,
+   "headBlob": null
+  },
+  {
+   "path": "web/lib/projections/apiHelpers.test.ts",
+   "status": "M",
+   "worktree": "uncommitted",
+   "blob": "42c5022240164b23d816c07bf3271382ef267000",
+   "sha256": "5f012e0ee196bffe373976864b2ed865ca1b23206e2f40756a754607515cae25",
+   "bytes": 3883,
+   "productionBlob": "91559110c246e736514ef9daa15d09221c6c297f",
+   "headBlob": "3ee68afaa2da3d916a0b027453a54eb023d30f6d"
+  },
+  {
+   "path": "web/lib/projections/runProjectionV2.test.ts",
+   "status": "M",
+   "worktree": "uncommitted",
+   "blob": "e620ef943eef45024b583ae8a1bcbce296694025",
+   "sha256": "49bbf954506624ca5e8c5adbd57800609d4c1468dfd0785fac2a51beb8ebc428",
+   "bytes": 69274,
+   "productionBlob": "0b0ab2ea0b649490c7a7b2c1cfc8e2244c1a5db3",
+   "headBlob": "78a26d39af84ca816ec6ab25d112ab5b23303b70"
+  },
+  {
+   "path": "web/lib/rosterScheduleData/source.test.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "50af94783ece69506e2bbb1a14e7c8fdcfeb6858",
+   "sha256": "5823209501809d6e8fceec53344848e9e2a42fbf240d6389a5ffc1e443b5ebfe",
+   "bytes": 8401,
+   "productionBlob": "b2ea77e23edf45eb0435cc0f480415ac15d30442",
+   "headBlob": "50af94783ece69506e2bbb1a14e7c8fdcfeb6858"
+  },
+  {
+   "path": "web/__tests__/pages/api/v1/db/update-roster-optimizer-schedule.test.ts",
+   "status": "M",
+   "worktree": "committed",
+   "blob": "501c00e10964f5bd91459b1c5c7488b437687be3",
+   "sha256": "0ed33ebfb86ea21f7e8a32fd4e565dc1a0db4a113f5632a24e851fb3ded05ba3",
+   "bytes": 27036,
+   "productionBlob": "bbdd5049ab0fa4c0f25329199e6b78aadedd8b76",
+   "headBlob": "501c00e10964f5bd91459b1c5c7488b437687be3"
+  }
+ ],
+ "excludedFromCandidate": [
+  {
+   "path": "web/lib/projections/nativeInputEligibility.test.ts",
+   "reason": "Asserts the octoberBranch stage files; ships with the projection stages, not this slice"
+  },
+  {
+   "path": "web/lib/player-forecasts/nativeBaselinePublication.test.ts",
+   "reason": "Imports six publisher modules; its catalog-head expiry boundary now also lives in nativeCatalogHead.test.ts"
+  },
+  {
+   "path": "web/lib/projections/apiHelpers.runAdmission.test.ts",
+   "reason": "Branch-only: tests octoberBranch apiHelpers.ts (out of slice); moved out of apiHelpers.test.ts"
+  },
+  {
+   "path": "web/lib/projections/runProjectionV2.alignedConversion.test.ts",
+   "reason": "Branch-only: tests octoberBranch calculators/rollingPlayerCountSupport (out of slice); moved out of runProjectionV2.test.ts"
+  },
+  {
+   "path": "web/__tests__/pages/api/v1/projections/explicitRunAdmission.test.ts",
+   "reason": "Branch-only: tests octoberBranch projection routes (out of slice)"
+  }
+ ],
+ "branchOnlyRuntime": [
+  {
+   "path": "web/lib/projections/run-forge-projections.ts",
+   "status": "M",
+   "worktree": "uncommitted",
+   "blob": "976cd66857e44cbf23f62953cd16d452824c754d",
+   "sha256": "bcfec8a325b249ea08dc84e3496c7b1b86e7aa9c2dcd3fb701e5dd18cd9f32a1",
+   "bytes": 44925,
+   "productionBlob": "5a4a1007686cda6bcceb1c772dc48d62857621aa",
+   "headBlob": "5a4a1007686cda6bcceb1c772dc48d62857621aa",
+   "note": "B1: the native pipeline opts into the exclusion label. Stays at production bytes in the release, so production runs carry no label"
+  }
+ ]
+}

@@ -1,0 +1,155 @@
+[
+ {
+  "label": "policy only",
+  "status": 200,
+  "body": {
+   "mode": "capture-only",
+   "dispatched": 0,
+   "failed": 0,
+   "results": [],
+   "capture": {
+    "attempted": 0,
+    "failed": 0,
+    "results": [],
+    "skipped": "controlled_intake"
+   }
+  },
+  "processorRequests": 0
+ },
+ {
+  "label": "empty policy only",
+  "status": 200,
+  "body": {
+   "mode": "capture-only",
+   "dispatched": 0,
+   "failed": 0,
+   "results": [],
+   "capture": {
+    "attempted": 0,
+    "failed": 0,
+    "results": [],
+    "skipped": "controlled_intake"
+   }
+  },
+  "processorRequests": 0
+ },
+ {
+  "label": "flag \"TRUE\" only",
+  "status": 200,
+  "body": {
+   "mode": "capture-only",
+   "dispatched": 0,
+   "failed": 0,
+   "results": [],
+   "capture": {
+    "attempted": 0,
+    "failed": 0,
+    "results": [],
+    "skipped": "controlled_intake"
+   }
+  },
+  "processorRequests": 0
+ },
+ {
+  "label": "empty flag only",
+  "status": 200,
+  "body": {
+   "mode": "capture-only",
+   "dispatched": 0,
+   "failed": 0,
+   "results": [],
+   "capture": {
+    "attempted": 0,
+    "failed": 0,
+    "results": [],
+    "skipped": "controlled_intake"
+   }
+  },
+  "processorRequests": 0
+ },
+ {
+  "label": "misspelled stop only",
+  "status": 200,
+  "body": {
+   "mode": "capture-only",
+   "dispatched": 0,
+   "failed": 0,
+   "results": [],
+   "capture": {
+    "attempted": 0,
+    "failed": 0,
+    "results": [],
+    "skipped": "controlled_intake"
+   }
+  },
+  "processorRequests": 0
+ },
+ {
+  "label": "empty stop only",
+  "status": 200,
+  "body": {
+   "mode": "capture-only",
+   "dispatched": 0,
+   "failed": 0,
+   "results": [],
+   "capture": {
+    "attempted": 0,
+    "failed": 0,
+    "results": [],
+    "skipped": "controlled_intake"
+   }
+  },
+  "processorRequests": 0
+ },
+ {
+  "label": "full pilot with stop \"false\"",
+  "status": 200,
+  "body": {
+   "mode": "capture-only",
+   "dispatched": 0,
+   "failed": 0,
+   "results": [],
+   "capture": {
+    "attempted": 0,
+    "failed": 0,
+    "results": [],
+    "skipped": "controlled_intake"
+   }
+  },
+  "processorRequests": 0
+ },
+ {
+  "label": "full pilot, capture via legacy START_CHART_GAME_REVISIONS",
+  "status": 200,
+  "body": {
+   "mode": "capture-only",
+   "dispatched": 0,
+   "failed": 0,
+   "results": [],
+   "capture": {
+    "attempted": 0,
+    "failed": 0,
+    "results": [],
+    "skipped": "controlled_intake"
+   }
+  },
+  "processorRequests": 0
+ },
+ {
+  "label": "full pilot with compute on",
+  "status": 200,
+  "body": {
+   "mode": "compute",
+   "dispatched": 2,
+   "failed": 0,
+   "results": [],
+   "capture": {
+    "attempted": 0,
+    "failed": 0,
+    "results": [],
+    "skipped": "controlled_intake"
+   }
+  },
+  "processorRequests": 0
+ }
+]

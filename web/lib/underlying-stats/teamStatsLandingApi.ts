@@ -133,6 +133,14 @@ export type TeamStatsLandingApiResponse = {
   pagination: TeamStatsLandingPaginationMeta;
   placeholder: boolean;
   generatedAt: string;
+  // Single-season requests only: completed games versus games with stored
+  // team summaries, so missing source coverage is not shown as "no matches".
+  coverage?: TeamStatsLandingCoverage | null;
+};
+
+export type TeamStatsLandingCoverage = {
+  completedGames: number;
+  summarizedGames: number;
 };
 
 export type TeamStatsLandingApiError = {

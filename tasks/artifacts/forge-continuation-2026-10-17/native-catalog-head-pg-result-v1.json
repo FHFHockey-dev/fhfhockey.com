@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "cases": [
+    "initial service-role CAS and exact returned revision",
+    "revision and previous-hash conflicts leave head unchanged",
+    "matching revision and previous hash advance exactly once",
+    "wrong season, expired selection, wrong kind, missing/null expiry and missing/null season rejected",
+    "two concurrent initial callers have exactly one winner",
+    "anonymous/authenticated lack read/execute and service role cannot directly update heads"
+  ],
+  "failure": null,
+  "sqlPath": "/Users/tim/Code/fhfhockey.com/supabase/migrations/20261017175221_native_forecast_catalog_heads.sql",
+  "sqlSHA256": "ca0b5bcd641c442c18ca0d58f7a766e697072d2d424f89261320c161132a87ca",
+  "transport": "new disposable synthetic PostgreSQL17 Unix socket; TCP disabled",
+  "ownedClusterStoppedAndRemoved": true,
+  "existingInstancesTouched": false,
+  "hostedRequests": 0,
+  "schemaAppliedToHosted": false
+}

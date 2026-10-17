@@ -1,5 +1,7 @@
 import supabase from "lib/supabase/server";
 import { resolveNullableCompatibilityValue } from "lib/rollingPlayerMetricCompatibility";
+// The skater and goalie stages disable external fantasy inputs at every season-bootstrap
+// call (nativeInputEligibility.test.ts), so this pipeline may claim the exclusion label.
 import { buildForgeInputProvenance } from "lib/projections/calibrationEligibility";
 import { fetchRecentTeamLineCombinations } from "lib/projections/queries/line-combo-queries";
 import { hasCompleteStoredPbpGame } from "lib/projections/pbpCompletenessServer";
@@ -477,7 +479,7 @@ export async function runProjectionV2ForDate(
       modelMode: resolveSkaterRolloutConfig().mode,
       modelEnvironment: projectionModelEnvironment(),
       seasonBootstrapApplied: seasonBootstrap,
-      inputProvenance: { ...buildForgeInputProvenance(), capturedReads: capturedReadReceipt(capture.reads),
+      inputProvenance: { ...buildForgeInputProvenance({ externalFantasyInputsExcluded: true }), capturedReads: capturedReadReceipt(capture.reads),
         ...(issuedContexts ? { issuedContexts, issuedTargets: capturedIssuedTargets(issuedContexts, capture.writes) } : {}) },
       dailyBoardEvidence: capture.writes.filter((ops) => ops[0]?.args[0] === "forge_runs")
         .map((ops) => (ops.find((op) => op.method === "update")?.args[0] as any)?.metrics?.daily_board_evidence)
@@ -545,7 +547,7 @@ export async function captureForgeReconstruction(args: {
     decisionAsOf: capture.reads.reduce((latest, read) => read.receivedAt > latest ? read.receivedAt : latest, args.inputCutoff),
     inputCutoff: args.inputCutoff, capturedAt: new Date().toISOString(), codeVersion: args.codeVersion,
     modelMode: resolveSkaterRolloutConfig().mode, modelEnvironment: projectionModelEnvironment(),
-    inputProvenance: buildForgeInputProvenance(), deterministicSeed: 0, horizonGames: 1, gameIds: [args.gameId],
+    inputProvenance: buildForgeInputProvenance({ externalFantasyInputsExcluded: true }), deterministicSeed: 0, horizonGames: 1, gameIds: [args.gameId],
     replayClassification: "historical_reconstruction", reads: capture.reads,
     ...(args.controlledNews ? { controlledScenario: { classification: "controlled_news_fixture" as const, fixtureHash: projectionInputHash(args.controlledNews) } } : {}),
     outputHash: projectionWritesHash(capture.writes), goalieStarts: capturedGoalieStarts(capture.reads, capture.writes),
@@ -595,7 +597,7 @@ async function runProjectionCalculations(asOfDate: string, opts: RunProjectionOp
   const metrics: Record<string, any> = {
     as_of_date: asOfDate,
     horizon_games: clampHorizonGames(opts?.horizonGames ?? 1),
-    input_provenance: buildForgeInputProvenance(),
+    input_provenance: buildForgeInputProvenance({ externalFantasyInputsExcluded: true }),
     decision_as_of: opts?.decisionAsOf,
     board_lease: opts?.boardLease ?? null,
     analytics_sidecar: {

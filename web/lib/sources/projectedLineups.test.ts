@@ -134,6 +134,25 @@ describe("projected unit publishing", () => {
     const downstream = await fetchLineCombinationSourceRowsForDate({ supabase: database.db, date: "2026-10-04" });
     expect(downstream.some((row) => row.capture_key === parent.capture_key)).toBe(false);
   });
+  it("preserves inherited goalie names without assigning injured players to goalie slots", async () => {
+    enableLivePublishing();
+    const fixture = liveProjectionFixture("injury");
+    // Synthetic role fields; these names do not assert a current roster or starter.
+    Object.assign(fixture.source, { goalies: ["Fixture Goalie One", "Fixture Goalie Two"], injuries: ["Fixture Skater"] });
+    const injury = { ...fixture.source.metadata.interpretation.events[0], playerId: 9001, playerName: "Fixture Skater" };
+    fixture.source.metadata.interpretation.events = [injury];
+    const database = projectionDatabase([fixture]);
+    await persistTweetProjectionReports(database.db, [fixture.source]);
+    const retained = database.tables.get("line_source_snapshots")!.get(`${projectionReportFromSource(fixture.source)!.key}:injury`);
+    expect(retained).toMatchObject({
+      classification: "injury", goalie_1_name: "Fixture Goalie One", goalie_2_name: "Fixture Goalie Two",
+      goalie_1_player_id: null, goalie_2_player_id: null,
+      injured_player_names: ["Fixture Skater"], injured_player_ids: [null],
+    });
+    expect(retained.metadata.interpretation.events).toEqual([injury]);
+    expect(database.calls).not.toContain("rpc:capture_starter_board_goalies");
+    expect([...database.children.values()].some((row) => row.unit_type === "goalie_order" && row.player_id === 9001)).toBe(false);
+  });
   it.each(["direct","quoted"])("independent: rejects mismatched retained %s original identity", async (kind) => {
     enableLivePublishing();const fixture=liveProjectionFixture("goalie");
     if(kind==="quoted") {

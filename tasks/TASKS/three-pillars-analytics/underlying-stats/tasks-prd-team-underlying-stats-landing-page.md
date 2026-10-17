@@ -40,6 +40,8 @@
 - Treat `Team` and `Opponent` as one aggregate-query surface for v1: `againstTeamId` alone means league-wide results against that opponent, while `teamId + againstTeamId` means the selected team's aggregate against that opponent. Do not introduce a separate matchup or detail experience.
 - Use the repo’s current test stack for targeted verification. Prefer `npx vitest run [optional/path/to/test/file]`.
 
+> **Freshness note (2026-10-17).** Until this date no scheduled job wrote `team_underlying_stats_summary`; the catch-up and backfill routes below were admin-only and manual, so team summaries stopped at 2026-04-07. The daily `update-player-underlying-stats` job now rebuilds team summaries for the same games (effective once released), and a bounded catch-up filled 2025-26 through 2026-04-16 and the 65 fully normalized 2026-27 games.
+
 ## Tasks
 
 - [x] 1.0 Reset the incorrect first pass and lock the v1 assumptions before implementation starts

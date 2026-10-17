@@ -1,0 +1,114 @@
+{
+ "summary": {
+  "paths": 454,
+  "deploymentIds": 42,
+  "shas": 40,
+  "pathsMissing": 15,
+  "migrations": 2,
+  "shasMissing": 2
+ },
+ "broken": [
+  {
+   "kind": "path_missing",
+   "row": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md::C0140",
+   "line": 709,
+   "token": "web/lib/supabase/Upserts/yahooAuth/token.json"
+  },
+  {
+   "kind": "path_missing",
+   "row": "tasks/TASKS/forge-projections/dashboard-health/tasks-forge-dashboard-component-remediation.md::C0044",
+   "line": 1906,
+   "token": "web/components/forge-dashboard/TopMoversCard.tsx"
+  },
+  {
+   "kind": "path_missing",
+   "row": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md::C0002",
+   "line": 2047,
+   "token": "web/pages/api/v1/db/update-start-chart-projections.ts"
+  },
+  {
+   "kind": "path_missing",
+   "row": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md::C0003",
+   "line": 2048,
+   "token": "web/pages/api/v1/db/update-start-chart-projections.ts"
+  },
+  {
+   "kind": "path_missing",
+   "row": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md::C0008",
+   "line": 2053,
+   "token": "web/pages/api/v1/db/update-goalie-projections.ts"
+  },
+  {
+   "kind": "path_missing",
+   "row": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md::C0010",
+   "line": 2055,
+   "token": "web/lib/projections/runProjectionV2.ts"
+  },
+  {
+   "kind": "path_missing",
+   "row": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md::C0021",
+   "line": 2066,
+   "token": "web/lib/projections/runProjectionV2.ts"
+  },
+  {
+   "kind": "path_missing",
+   "row": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md::C0036",
+   "line": 2081,
+   "token": "web/lib/projections/runProjectionV2.ts"
+  },
+  {
+   "kind": "path_missing",
+   "row": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md::C0039",
+   "line": 2084,
+   "token": "web/pages/api/v1/db/update-goalie-projections.ts"
+  },
+  {
+   "kind": "path_missing",
+   "row": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md::C0042",
+   "line": 2087,
+   "token": "web/pages/api/v1/db/update-start-chart-projections.ts"
+  },
+  {
+   "kind": "path_missing",
+   "row": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md::C0045",
+   "line": 2090,
+   "token": "web/pages/api/v1/db/update-wgo-ly.ts"
+  },
+  {
+   "kind": "path_missing",
+   "row": "tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md::C0004",
+   "line": 2535,
+   "token": "web/lib/projections/runProjectionV2.ts"
+  },
+  {
+   "kind": "path_missing",
+   "row": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md::C0028",
+   "line": 3867,
+   "token": "web/pages/api/v1/db/update-start-chart-projections.ts"
+  },
+  {
+   "kind": "path_missing",
+   "row": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md::C0038",
+   "line": 3877,
+   "token": "web/pages/api/v1/db/update-goalie-projections.ts"
+  },
+  {
+   "kind": "path_missing",
+   "row": "tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-team-underlying-stats-landing-page.md::C0002",
+   "line": 4167,
+   "token": "migrations/20260408_create_team_underlying_stats_tables.sql"
+  },
+  {
+   "kind": "sha_missing",
+   "row": "tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md::C0036",
+   "line": 5036,
+   "token": "357d69c78"
+  },
+  {
+   "kind": "sha_missing",
+   "row": "tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md::C0037",
+   "line": 5037,
+   "token": "92cfab267"
+  }
+ ]
+}

@@ -1,0 +1,348 @@
+{
+ "roles": {
+  "anon": {
+   "config": null,
+   "bypassrls": false
+  },
+  "service_role": {
+   "config": null,
+   "bypassrls": true
+  },
+  "authenticated": {
+   "config": null,
+   "bypassrls": false
+  },
+  "authenticator": {
+   "config": [
+    "statement_timeout=8s"
+   ],
+   "bypassrls": false
+  }
+ },
+ "counts": {
+  "ifttt_intake_policies": null,
+  "ifttt_intake_receipts": null,
+  "ifttt_raw_receipt_variants": null
+ },
+ "server": {
+  "version": "17.11 (Homebrew)",
+  "timeZone": "America/New_York",
+  "currentUser": "service_role"
+ },
+ "functions": [],
+ "relations": {
+  "lines_ccc_ifttt_events": {
+   "acl": [
+    [
+     "rb",
+     "INSERT"
+    ],
+    [
+     "rb",
+     "SELECT"
+    ],
+    [
+     "rb",
+     "UPDATE"
+    ],
+    [
+     "rb",
+     "DELETE"
+    ],
+    [
+     "rb",
+     "TRUNCATE"
+    ],
+    [
+     "rb",
+     "REFERENCES"
+    ],
+    [
+     "rb",
+     "TRIGGER"
+    ],
+    [
+     "rb",
+     "MAINTAIN"
+    ],
+    [
+     "service_role",
+     "INSERT"
+    ],
+    [
+     "service_role",
+     "SELECT"
+    ],
+    [
+     "service_role",
+     "UPDATE"
+    ],
+    [
+     "service_role",
+     "DELETE"
+    ],
+    [
+     "service_role",
+     "TRUNCATE"
+    ],
+    [
+     "service_role",
+     "REFERENCES"
+    ],
+    [
+     "service_role",
+     "TRIGGER"
+    ],
+    [
+     "service_role",
+     "MAINTAIN"
+    ]
+   ],
+   "rls": true,
+   "owner": "rb",
+   "columns": [
+    [
+     "id",
+     "uuid",
+     true
+    ],
+    [
+     "source",
+     "text",
+     true
+    ],
+    [
+     "source_account",
+     "text",
+     true
+    ],
+    [
+     "username",
+     "text",
+     false
+    ],
+    [
+     "text",
+     "text",
+     false
+    ],
+    [
+     "link_to_tweet",
+     "text",
+     false
+    ],
+    [
+     "tweet_id",
+     "text",
+     false
+    ],
+    [
+     "tweet_embed_code",
+     "text",
+     false
+    ],
+    [
+     "tweet_created_at",
+     "timestamp with time zone",
+     false
+    ],
+    [
+     "created_at_label",
+     "text",
+     false
+    ],
+    [
+     "processing_status",
+     "text",
+     true
+    ],
+    [
+     "raw_payload",
+     "jsonb",
+     true
+    ],
+    [
+     "received_at",
+     "timestamp with time zone",
+     true
+    ],
+    [
+     "updated_at",
+     "timestamp with time zone",
+     true
+    ]
+   ],
+   "indexes": [
+    "CREATE UNIQUE INDEX lines_ccc_ifttt_events_tweet_id_unique_idx ON public.lines_ccc_ifttt_events USING btree (tweet_id)",
+    "CREATE UNIQUE INDEX lines_ccc_ifttt_events_pkey ON public.lines_ccc_ifttt_events USING btree (id)"
+   ],
+   "forceRls": false,
+   "policies": 0,
+   "triggers": []
+  },
+  "line_source_ifttt_events": {
+   "acl": [
+    [
+     "rb",
+     "INSERT"
+    ],
+    [
+     "rb",
+     "SELECT"
+    ],
+    [
+     "rb",
+     "UPDATE"
+    ],
+    [
+     "rb",
+     "DELETE"
+    ],
+    [
+     "rb",
+     "TRUNCATE"
+    ],
+    [
+     "rb",
+     "REFERENCES"
+    ],
+    [
+     "rb",
+     "TRIGGER"
+    ],
+    [
+     "rb",
+     "MAINTAIN"
+    ],
+    [
+     "service_role",
+     "INSERT"
+    ],
+    [
+     "service_role",
+     "SELECT"
+    ],
+    [
+     "service_role",
+     "UPDATE"
+    ],
+    [
+     "service_role",
+     "DELETE"
+    ],
+    [
+     "service_role",
+     "TRUNCATE"
+    ],
+    [
+     "service_role",
+     "REFERENCES"
+    ],
+    [
+     "service_role",
+     "TRIGGER"
+    ],
+    [
+     "service_role",
+     "MAINTAIN"
+    ]
+   ],
+   "rls": true,
+   "owner": "rb",
+   "columns": [
+    [
+     "id",
+     "uuid",
+     true
+    ],
+    [
+     "source",
+     "text",
+     true
+    ],
+    [
+     "source_group",
+     "text",
+     true
+    ],
+    [
+     "source_key",
+     "text",
+     true
+    ],
+    [
+     "source_account",
+     "text",
+     true
+    ],
+    [
+     "username",
+     "text",
+     false
+    ],
+    [
+     "text",
+     "text",
+     false
+    ],
+    [
+     "link_to_tweet",
+     "text",
+     false
+    ],
+    [
+     "tweet_id",
+     "text",
+     false
+    ],
+    [
+     "tweet_embed_code",
+     "text",
+     false
+    ],
+    [
+     "tweet_created_at",
+     "timestamp with time zone",
+     false
+    ],
+    [
+     "created_at_label",
+     "text",
+     false
+    ],
+    [
+     "processing_status",
+     "text",
+     true
+    ],
+    [
+     "raw_payload",
+     "jsonb",
+     true
+    ],
+    [
+     "received_at",
+     "timestamp with time zone",
+     true
+    ],
+    [
+     "updated_at",
+     "timestamp with time zone",
+     true
+    ]
+   ],
+   "indexes": [
+    "CREATE UNIQUE INDEX line_source_ifttt_events_source_tweet_unique_idx ON public.line_source_ifttt_events USING btree (source_key, tweet_id)",
+    "CREATE UNIQUE INDEX line_source_ifttt_events_pkey ON public.line_source_ifttt_events USING btree (id)"
+   ],
+   "forceRls": false,
+   "policies": 0,
+   "triggers": []
+  }
+ },
+ "missingRelations": [
+  "ifttt_intake_policies",
+  "ifttt_intake_receipts",
+  "ifttt_raw_receipt_variants"
+ ]
+}

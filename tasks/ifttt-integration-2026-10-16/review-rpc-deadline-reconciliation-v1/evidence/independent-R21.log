@@ -1,0 +1,12 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-rpc-deadline-reconciliation-v1/independent-scheduler-retain-only.test.ts (2 tests) 13ms
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  15:57:44
+   Duration  633ms (transform 285ms, setup 18ms, collect 477ms, tests 13ms, environment 0ms, prepare 32ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/review-rpc-deadline-reconciliation-v1/evidence/independent-R21-results.json
+exit 0

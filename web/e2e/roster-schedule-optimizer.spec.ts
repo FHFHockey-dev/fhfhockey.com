@@ -440,7 +440,7 @@ test("provider refresh proposes repairs while keeping a selected move", async ({
       rules: { lineupMode: "daily", rosterSlots: { C: 1, BN: 1 }, acquisitionTiming: "same_day", acquisitionCost: null, periods: [], lineupPeriods: [], scoring: { mode: "points", weights: {}, categories: [] }, goalieMinimum: { required: null, credited: null, counts: "unknown", penalty: "unknown" }, unsupported: [] },
       lockedAssignments: [], realized: {}, opponent: null, evidence: {},
     };
-    await route.fulfill({ json: { success: true, snapshot, capabilities: { roster: true, availability: true, rules: true, matchup: false, acquisitions: false, limitations: ["League time zone supplied by the manager; Yahoo did not verify it.", "Available-player discovery did not reach the end of the provider list."] } } });
+    await route.fulfill({ json: { success: true, snapshot, capabilities: { roster: true, availability: true, rules: true, matchup: false, acquisitions: false, limitations: ["Available-player discovery did not reach the end of the provider list."] } } });
   });
   await page.goto("/roster-schedule-optimizer");
   await openPlanDetails(page);
@@ -449,7 +449,7 @@ test("provider refresh proposes repairs while keeping a selected move", async ({
   await expect(health.getByRole("list")).toBeHidden();
   await health.locator("summary").focus();
   await page.keyboard.press("Enter");
-  await expect(health.getByRole("list")).toContainText("Yahoo did not verify it");
+  await expect(health.getByRole("list")).toContainText("Yahoo does not report a league time zone");
   await page.keyboard.press("Enter");
   await page.getByText("League rules and scoring", { exact: true }).click();
   const confirm = page.locator("#rso-rule-settings").getByText("Confirm planning inputs", { exact: true });

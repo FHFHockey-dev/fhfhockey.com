@@ -24,6 +24,14 @@
 -- is partial; this inventory correction does not establish complete ownership
 -- coverage or change the live schedule. Older SQL snippets remain historical.
 
+-- 2026-10-17 read-only reconciliation: job 234 daily-cron-report (21:15 UTC)
+-- was intentionally disabled at TJ's request; cron.job reads back
+-- active=false and its last run was 2026-10-15 21:15 UTC. The Vercel cron
+-- `0 13 * * *` /api/v1/db/cron-report (web/vercel.json) is the sole daily
+-- report, so job 234 is no longer an expected run. Live active jobs 394, 396
+-- and 397 (player-forecasts) remain absent from this inventory; that gap is
+-- tracked in tasks/artifacts/ops-health-2026-10-17/ and is not changed here.
+
 # ALL CRON JOBS:
 ```json
 [
@@ -452,6 +460,14 @@
     "route": "/api/v1/db/update-wgo-averages"
   },
   {
+    "jobid": 374,
+    "jobname": "daily-refresh-player-totals-unified-matview",
+    "schedule": "38 10 * * *",
+    "run_time_utc": "10:38 UTC",
+    "active": true,
+    "method": "SQL"
+  },
+  {
     "jobid": 326,
     "jobname": "rebuild-sustainability-baselines",
     "schedule": "40 10 * * *",
@@ -460,14 +476,6 @@
     "method": "GET",
     "route": "/api/v1/db/sustainability/rebuild-baselines",
     "auth": "Supabase Vault cron_secret"
-  },
-  {
-    "jobid": 374,
-    "jobname": "daily-refresh-player-totals-unified-matview",
-    "schedule": "41 10 * * *",
-    "run_time_utc": "10:41 UTC",
-    "active": true,
-    "method": "SQL"
   },
   {
     "jobid": 376,
@@ -613,7 +621,7 @@
     "jobname": "daily-cron-report",
     "schedule": "15 21 * * *",
     "run_time_utc": "21:15 UTC",
-    "active": true,
+    "active": false,
     "method": "GET",
     "route": "/api/v1/db/cron-report"
   },
@@ -750,8 +758,8 @@ protected routes.
 -- - 10:25 UTC / 05:25 EST: update-rolling-games-recent (inactive legacy route)
 -- - 10:30 UTC / 05:30 EST: update-sko-stats-full-season
 -- - 10:35 UTC / 05:35 EST: update-wgo-averages
+-- - 10:38 UTC / 05:38 EST: daily-refresh-player-totals-unified-matview (CONCURRENTLY; moved from 10:41 on 2026-10-17, ops plan P-B)
 -- - 10:40 UTC / 05:40 EST: rebuild-sustainability-baselines
--- - 10:41 UTC / 05:41 EST: daily-refresh-player-totals-unified-matview
 -- - 10:42 UTC / 05:42 EST: rebuild-sustainability-priors
 -- - 10:43 UTC / 05:43 EST: rebuild-sustainability-window-z
 -- - 10:44 UTC / 05:44 EST: rebuild-sustainability-score
@@ -769,12 +777,12 @@ protected routes.
 -- - 17:34 UTC / 12:34 EST: game-predictions-ingest-espn-odds-h0-h1
 -- - 20:51 UTC / 15:51 EST: update-pbp
 -- - 21:10 UTC / 16:10 EST: game-predictions-ingest-espn-odds-utc-spillover
--- - 21:15 UTC / 16:15 EST: daily-cron-report
+-- - 21:15 UTC / 16:15 EST: daily-cron-report (job 234, inactive; last run 2026-10-15)
 --
 -- Schedule floor
--- - Daily report should run after the final scheduled data job.
+-- - The daily report covers the trailing 24 hours, so evening jobs are reported the next morning.
 -- - Current intended final data job: 21:10 UTC / 16:10 EST game-predictions-ingest-espn-odds-utc-spillover.
--- - Current intended report job: 21:15 UTC / 16:15 EST daily-cron-report.
+-- - Current intended report job: 13:00 UTC Vercel cron /api/v1/db/cron-report (web/vercel.json); pg_cron job 234 is inactive.
 -- - Direct NST cron starts require at least 10 minutes of separation. The active
 --   schedule currently provides a minimum of 15 minutes (08:30 -> 08:45 UTC).
 --
@@ -2309,6 +2317,7 @@ curl -i -sS -m 180 \
 -- |||||||||||||||||||||||||||||||||  16:15 EST  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
+-- Historical: job 234 is inactive; the Vercel 13:00 UTC cron is the daily report.
 -- SELECT cron.schedule(
 --     'daily-cron-report',
 --     '15 21 * * *', -- 21:15 UTC

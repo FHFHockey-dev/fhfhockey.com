@@ -1,0 +1,25 @@
+--- before/web/lib/sources/iftttIntakePolicy.ts
++++ web/lib/sources/iftttIntakePolicy.ts
+@@ -55,13 +55,21 @@
+   return result;
+ }
+ 
++/** Any pilot flag, policy or stop is present; only a fully absent/off pilot keeps legacy behavior. */
++export function iftttIntakePilotConfigured() {
++  const flag = process.env.IFTTT_RECEIPT_VARIANTS_ENABLED;
++  const stop = process.env.IFTTT_INTAKE_STOP;
++  return !((flag === undefined || flag === "false") && process.env.IFTTT_INTAKE_POLICY === undefined
++    && (stop === undefined || stop === "false"));
++}
++
+ /** Presence of pilot configuration keeps a disabled/misconfigured pilot closed. */
+ export function iftttIntakeConfiguration(scope: IftttIntakeScope):
+   { controlled: false } | { controlled: true; policy: IftttIntakePolicy; scope: IftttIntakeScope } {
+   const flag = process.env.IFTTT_RECEIPT_VARIANTS_ENABLED;
+   const raw = process.env.IFTTT_INTAKE_POLICY;
+   const stop = process.env.IFTTT_INTAKE_STOP;
+-  if ((flag === undefined || flag === "false") && raw === undefined && (stop === undefined || stop === "false")) return { controlled: false };
++  if (!iftttIntakePilotConfigured()) return { controlled: false };
+   if (flag !== "true" || stop !== undefined && stop !== "false"
+     || raw === undefined || process.env.TWEET_CLAIMS_MODE !== "shadow"
+     || process.env.TWEET_PIPELINE_INTERPRETATION_ENABLED !== "true") {

@@ -1,0 +1,38 @@
+[
+ {
+  "label": "active pilot",
+  "pilotConfigured": true,
+  "response": {
+   "status": 200,
+   "body": {
+    "success": true,
+    "resolved": 0,
+    "attribution": {
+     "resolved": 0,
+     "skipped": true
+    },
+    "digest": null
+   }
+  },
+  "processorRequests": [],
+  "meaning": "update-line-sources with tweetId and no evaluation cohort selects by tweet_id with no processing_status filter (update-line-sources.ts:99-112) and has no pilot check; this route is not covered by the R21 guard."
+ },
+ {
+  "label": "env-stopped pilot",
+  "pilotConfigured": true,
+  "response": {
+   "status": 200,
+   "body": {
+    "success": true,
+    "resolved": 0,
+    "attribution": {
+     "resolved": 0,
+     "skipped": true
+    },
+    "digest": null
+   }
+  },
+  "processorRequests": [],
+  "meaning": "update-line-sources with tweetId and no evaluation cohort selects by tweet_id with no processing_status filter (update-line-sources.ts:99-112) and has no pilot check; this route is not covered by the R21 guard."
+ }
+]

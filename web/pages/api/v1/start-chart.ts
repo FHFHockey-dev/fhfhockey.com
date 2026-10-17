@@ -197,6 +197,8 @@ type ForgeRunWithProjectionsRow = ForgeRunRow & {
 };
 
 const RESPONSE_TTL_MS = 15_000;
+// Same envelope bound as the FORGE view and RSO transport, below the hosted response ceiling.
+export const START_CHART_RESPONSE_MAX_BYTES = 4_000_000;
 const MAX_RESPONSE_CACHE_ENTRIES = 64;
 const YAHOO_RPC_MISSING_RETRY_MS = 5 * 60_000;
 const YAHOO_HISTORY_PAGE_SIZE = 1000;
@@ -1132,8 +1134,14 @@ export default async function handler(
     // the shared cache and POST responses cannot be stored by a CDN.
     const expiry = Date.parse(payload.gameExpectations?.expiresAt ?? "");
     const maxAge = Number.isFinite(expiry) ? Math.max(0, Math.min(15, Math.floor((expiry - Date.now()) / 1000))) : 15;
+    const body = scoring ? scoreStartChartPayload(payload, scoring) : payload;
+    if (Buffer.byteLength(JSON.stringify(body)) > START_CHART_RESPONSE_MAX_BYTES) {
+      res.setHeader("Cache-Control", "no-store");
+      return res.status(503).json({ error: { code: "start_chart_too_large",
+        message: "This Start Chart slate is too large to display. Try again later." } });
+    }
     res.setHeader("Cache-Control", scoring ? "private, no-store" : `s-maxage=${maxAge}, stale-while-revalidate=0`);
-    return res.status(200).json(scoring ? scoreStartChartPayload(payload, scoring) : payload);
+    return res.status(200).json(body);
   };
 
   const parsedRequest = parseStartChartRequest(req.query, easternDate());

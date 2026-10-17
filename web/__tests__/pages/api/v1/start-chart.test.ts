@@ -674,6 +674,19 @@ describe("/api/v1/start-chart", () => {
     expect(JSON.stringify(fixture.response)).toBe(original);
   });
 
+  it("returns a typed uncached 503 rather than an oversized board", async () => {
+    const fixture = dailyExpectationFixture();
+    vi.resetModules();
+    const route = await import("../../../../pages/api/v1/start-chart");
+    fixture.response.players[0].name = "x".repeat(route.START_CHART_RESPONSE_MAX_BYTES);
+    loadGameExpectationsMock.mockResolvedValue(fixture.response);
+    const res = createMockRes();
+    await route.default({ method: "GET", query: { date: fixture.scope.startDate, forecast_source: "game_expectations" } } as any, res);
+    expect(res.statusCode).toBe(503);
+    expect(res.headers["Cache-Control"]).toBe("no-store");
+    expect(res.body).toEqual({ error: { code: "start_chart_too_large", message: expect.any(String) } });
+  });
+
   it("keeps missing heads unavailable while custom league scoring uses supported conditional categories", async () => {
     const fixture = dailyExpectationFixture();
     fixture.response.players[0].games[0].targets.PP_POINTS.conditional = null;
@@ -1421,7 +1434,8 @@ describe("/api/v1/start-chart", () => {
       rules: { lineupMode: "daily", rosterSlots: { C: 1, BN: 1 }, acquisitionTiming: "same_day", acquisitionCost: 1,
         periods: [], scoring: { mode: "points", weights: { GOALS: 1 }, categories: [] },
         goalieMinimum: { required: null, credited: null, counts: "unknown", penalty: "none" }, unsupported: [] },
-      lockedAssignments: [], realized: {}, opponent: null, evidence: {},
+      lockedAssignments: [], realized: {}, opponent: null, evidence: { schedule: { source: "synthetic complete schedule",
+        asOf: fixture.now.toISOString(), seasonId: fixture.seasonId, completeness: "complete", limitations: [] } },
     };
     const selectedIntent: PlanIntent = { revision: 3, steps: [], protectedPlayerIds: [], excludedPlayerIds: [],
       goalieCoverage: "accept_risk", goalieWindow: "any", goalieSplit: "mon_thu", alternativeCount: 5 };

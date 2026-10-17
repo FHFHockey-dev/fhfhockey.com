@@ -71,6 +71,7 @@ import {
 import {
   buildRelationshipRosterPositionMap,
   resolveRelationshipPlayerPosition,
+  selectRelationshipYahooPosition,
   type RelationshipRosterPosition,
   type ResolvedRelationshipPlayerPosition,
 } from "lib/projections/relationshipPlayerPosition";
@@ -118,6 +119,7 @@ interface Shift {
 }
 
 interface PlayerPosition {
+  player_key: string;
   full_name: string;
   display_position: string | null;
   primary_position: string | null;
@@ -739,10 +741,13 @@ async function upsertShiftChartData(
   for (const [playerId, shifts] of shiftsByPlayer.entries()) {
     const firstShift = shifts[0];
     const playerName = `${firstShift.firstName} ${firstShift.lastName}`;
-    const matchedPosition = playerPositions.find(
+    // Names are not unique (e.g. two "Elias Pettersson"s on one team), so a
+    // same-name collision uses the roster position rather than a guess.
+    const nameMatches = playerPositions.filter(
       (position) => position.full_name === playerName,
     );
-    if (!matchedPosition) unmatchedNamesSet.add(playerName);
+    if (nameMatches.length === 0) unmatchedNamesSet.add(playerName);
+    const matchedPosition = selectRelationshipYahooPosition(nameMatches);
     if (
       firstShift.teamId !== gameInfo.homeTeam.id &&
       firstShift.teamId !== gameInfo.awayTeam.id

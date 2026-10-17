@@ -1,0 +1,46 @@
+# rerun-live — 2026-10-17 17:33:34 EDT (cwd web/)
+$ TESTS=/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/review-replay-aliases-retain-only-v1/reproduction/rerun-live.test.ts npx vitest --run --config /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/review-replay-aliases-retain-only-v1/harness/vitest.review.config.mjs --reporter=verbose
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ × ../tasks/ifttt-integration-2026-10-16/review-replay-aliases-retain-only-v1/reproduction/rerun-live.test.ts > item 5: replay-player-aliases cron under pilot configuration > active pilot: still requests a current-day reprocess=true processor run 13ms
+   → expected [] to deeply equal [ { …(3) } ]
+ × ../tasks/ifttt-integration-2026-10-16/review-replay-aliases-retain-only-v1/reproduction/rerun-live.test.ts > item 5: replay-player-aliases cron under pilot configuration > env-stopped pilot: still requests a current-day reprocess=true processor run 1ms
+   → expected [] to deeply equal [ { …(3) } ]
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/review-replay-aliases-retain-only-v1/reproduction/rerun-live.test.ts > item 5: replay-player-aliases cron under pilot configuration > active pilot: still requests a current-day reprocess=true processor run
+ FAIL  ../tasks/ifttt-integration-2026-10-16/review-replay-aliases-retain-only-v1/reproduction/rerun-live.test.ts > item 5: replay-player-aliases cron under pilot configuration > env-stopped pilot: still requests a current-day reprocess=true processor run
+AssertionError: expected [] to deeply equal [ { …(3) } ]
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- [[39m
+[32m-   {[39m
+[32m-     "method": "POST",[39m
+[32m-     "params": {[39m
+[32m-       "date": "2026-10-17",[39m
+[32m-       "limit": "1",[39m
+[32m-       "reprocess": "true",[39m
+[32m-       "sourceKey": "gamedaygoalies",[39m
+[32m-       "tweetId": "1979000000000000001",[39m
+[32m-     },[39m
+[32m-     "path": "/api/v1/db/update-line-sources",[39m
+[32m-   },[39m
+[32m- ][39m
+[31m+ [][39m
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-replay-aliases-retain-only-v1/reproduction/rerun-live.test.ts:53:53
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+   Start at  17:33:35
+   Duration  166ms (transform 32ms, setup 6ms, collect 33ms, tests 15ms, environment 0ms, prepare 30ms)
+
+exit 1

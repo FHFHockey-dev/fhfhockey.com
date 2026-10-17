@@ -265,11 +265,18 @@ SELECT cron.schedule(
 
     expect(
       inventory.jobs.filter((job) => job.provider === "pg_cron"),
-    ).toHaveLength(56);
+    ).toHaveLength(55);
     expect(
       inventory.jobs.filter((job) => job.provider === "vercel"),
     ).toHaveLength(27);
-    expect(inventory.jobs).toHaveLength(83);
+    expect(inventory.jobs).toHaveLength(82);
+    // pg_cron job 234 was intentionally disabled; the Vercel 13:00 UTC cron
+    // is the sole daily report.
+    expect(
+      inventory.jobs.filter((job) => job.routePath === "/api/v1/db/cron-report"),
+    ).toEqual([
+      expect.objectContaining({ provider: "vercel", normalizedCronExpression: "0 13 * * *" }),
+    ]);
     expect(inventory.jobs).toContainEqual(
       expect.objectContaining({
         provider: "vercel",

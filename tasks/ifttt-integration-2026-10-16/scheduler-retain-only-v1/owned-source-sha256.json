@@ -1,0 +1,24 @@
+{
+ "increment": "scheduler-retain-only-v1",
+ "gitHead": "ceceb407a29b45f2e5b0c090ecfcff0c27e15d4c",
+ "changed": {
+  "web/lib/sources/iftttIntakePolicy.ts": {
+   "before": "34a5f689e660561c6b1774c14be1bef01134b513fd9ae1102e8a4ecc0e8e7a2f",
+   "after": "6badd4c0c4d87eb110a8cb0b3dedefb10fa8b49f9936491eb8f2ce2e8e59d619"
+  },
+  "web/lib/sources/lineSourceIftttReceiver.ts": {
+   "before": "ac22d9f98acc78c2995ff3109c90ced1e86bbd184dc045ce89751fa58f06a8ed",
+   "after": "5fb55c31fe8a72e29b18718d345fca30b5acc87c97dffeff5c0dfd750ae687d7"
+  },
+  "web/lib/sources/lineSourceIftttReceiver.test.ts": {
+   "before": "946537b9373560eb82da7959325e062472a6390ce1937c98745d140ebb721bd2",
+   "after": "bbe8d7150bd7c022148877fdc7edc39ae67c45d18e75a57546cf9910e6917306"
+  }
+ },
+ "unchangedDeadlineIncrement": {
+  "web/lib/sources/iftttRpcDeadline.ts": "cd7543d277bfc0463f0679d7d34e18368dbe9411821d365dfe5f0cf0ee77bc1b",
+  "web/lib/sources/iftttReceiptRetention.ts": "ce8e0634151ae54fee10c36b34cf5953e3698bf56a2ca922495b59d0addd605b",
+  "web/pages/api/internal/starter-board.ts": "cdde6033236cd64505cbbe9320541610f9ceeb6609874defd0eaaba355d4d4c6"
+ },
+ "sql": "none changed; SQL6/SQL7/SQL8 selections unchanged"
+}

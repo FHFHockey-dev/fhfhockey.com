@@ -19,7 +19,9 @@ export type CandidateDiagnostic = {
   generated: number; skipped: number; evaluated: number; illegal: number; unverifiedBudget: number; retained: number;
   reasons: string[];
 };
-export type CandidatePlanOptions = { maxCandidates?: number; maxEvaluations?: number; maxProposalsPerCandidate?: number };
+export type CandidatePlanOptions = { maxCandidates?: number; maxEvaluations?: number; maxProposalsPerCandidate?: number;
+  /** Manager-requested comparisons lead the bounded set; checks and caps are unchanged. */
+  requestedPlayerIds?: string[] };
 
 const number = (value: number | null) => value ?? -Infinity;
 const dropped = (plan: CandidatePlan) => plan.steps.some(step => step.dropPlayerId);
@@ -81,7 +83,9 @@ export function candidatePlanMetrics(snapshot: PlanningSnapshot, intent: PlanInt
     }
     return gameCount(b.teamAbbreviation) - gameCount(a.teamAbbreviation) || a.id.localeCompare(b.id);
   });
-  const selected = eligible.slice(0, maxCandidates);
+  const requested = new Set(options.requestedPlayerIds ?? []);
+  const selected = [...eligible.filter(player => requested.has(player.id)),
+    ...eligible.filter(player => !requested.has(player.id))].slice(0, maxCandidates);
   const diagnostics: CandidateDiagnostic[] = inputs.map(({ player, reasons }) => ({ playerId: player.id,
     status: reasons.length ? "filtered" : "not_selected", stopReason: reasons.length ? "filtered" : "candidate_limit",
     generated: 0, skipped: 0, evaluated: 0, illegal: 0, unverifiedBudget: 0, retained: 0,

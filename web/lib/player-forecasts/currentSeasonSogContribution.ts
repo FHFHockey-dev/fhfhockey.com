@@ -73,7 +73,10 @@ export function admitsCurrentSeasonSogContribution(source: ContributionSource, r
       || hash(row.payload) !== row.payload_hash || clock(row.available_at) !== clock(row.payload?.binding?.observedAt)) return false;
     const derived = buildCurrentSeasonSogContribution(row.payload, source.issuedAt, now);
     const candidate = { ...source, released: false };
+    // Release permissions and catalog validity are stamped by bundle admission;
+    // the resolver enforces catalogExpiresAt separately.
     delete candidate.allowedUses;
+    delete candidate.catalogExpiresAt;
     return hash(candidate) === hash(derived);
   } catch { return false; }
 }

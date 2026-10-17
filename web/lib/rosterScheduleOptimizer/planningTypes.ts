@@ -330,6 +330,8 @@ export type ForecastManifest = {
 export type ManagerRuleOverrides = Omit<Partial<LeagueRules>, "scoring" | "goalieMinimum"> & {
   scoring?: Partial<LeagueRules["scoring"]>;
   goalieMinimum?: Partial<LeagueRules["goalieMinimum"]>;
+  /** League time zone the manager confirmed; Yahoo does not report one. */
+  timeZone?: string;
 };
 export type PlanningWorkspace = {
   version: 1;

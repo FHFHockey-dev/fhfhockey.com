@@ -1,0 +1,51 @@
+{
+  "archive_name": "IFTTT-additive-research-fixtures-2026-10-17.zip",
+  "archive_size_bytes": 79543,
+  "archive_sha256": "0ceaf0cbb5a372b3e75e8e900ef3451eedab854ed6403f54b82374a9df5bd82f",
+  "library_file_id": "libfile_a27f822597e4819180bde3fe3570e3b2",
+  "backing_file_id": "file_0000000030a881f69a1dd4ae973bc81f",
+  "status": "curated_provisional_research_not_semantic_acceptance",
+  "files": [
+    {
+      "archive_path": "fixtures/semantic-family-cases.json",
+      "repository_path": "web/lib/sources/fixtures/iftttSemanticResearch/semantic-family-cases.json",
+      "source_sha256": "65d6ad77527b4ea17a7ce0aaf51e6c64213acda1b05b1afec3d9503c0939a223",
+      "installed_sha256": "65d6ad77527b4ea17a7ce0aaf51e6c64213acda1b05b1afec3d9503c0939a223",
+      "transformation": "byte-identical"
+    },
+    {
+      "archive_path": "CURATION-RECEIPT.json",
+      "repository_path": "tasks/ifttt-integration-2026-10-16/research-fixtures-2026-10-17/CURATION-RECEIPT.json",
+      "source_sha256": "a70989c2aa14156164a19e7f0ce5797eeef3eebe1b514a7649adb078b1ffb6b8",
+      "installed_sha256": "a70989c2aa14156164a19e7f0ce5797eeef3eebe1b514a7649adb078b1ffb6b8",
+      "transformation": "byte-identical"
+    },
+    {
+      "archive_path": "research/CLAIM-RULE-CONTRACT.md",
+      "repository_path": "tasks/ifttt-integration-2026-10-16/research-fixtures-2026-10-17/CLAIM-RULE-CONTRACT.md",
+      "source_sha256": "41331fbf0a42c5c12516fdcf6889c2fec01fbed3cc1f7408438cf38de54ca128",
+      "installed_sha256": "b7493cdf943c1201d040d2e129d301fb1b153d0eec716a103f7cd38ab08290d2",
+      "transformation": "Removed two absolute cloud workspace prefixes; retained artifact-relative paths and historical limitations."
+    },
+    {
+      "archive_path": "research/IFTTT-REASONING-AUDIT.md",
+      "repository_path": "tasks/ifttt-integration-2026-10-16/research-fixtures-2026-10-17/IFTTT-REASONING-AUDIT.md",
+      "source_sha256": "99b0907e113de35bb39a8d7bf8f2c57a8ace6dd534a44bc25a84649b880fb160",
+      "installed_sha256": "99b0907e113de35bb39a8d7bf8f2c57a8ace6dd534a44bc25a84649b880fb160",
+      "transformation": "byte-identical"
+    },
+    {
+      "archive_path": "research/OCT16-ORIGINAL-PACK-INDEPENDENT-REVIEW.md",
+      "repository_path": "tasks/ifttt-integration-2026-10-16/research-fixtures-2026-10-17/OCT16-ORIGINAL-PACK-INDEPENDENT-REVIEW.md",
+      "source_sha256": "e3fc8715ad61f6f5d95f2640c2e5bca0521fe8890e907a99fff92c2b3544228a",
+      "installed_sha256": "e3fc8715ad61f6f5d95f2640c2e5bca0521fe8890e907a99fff92c2b3544228a",
+      "transformation": "byte-identical"
+    }
+  ],
+  "not_imported": {
+    "compare-only/": "Reference patches compared locally; bulk patch includes historical raw audit content and is excluded. Only the narrow goalie-field correction is adapted.",
+    "README.md": "Transfer guidance summarized in INTEGRATION-STATUS.md.",
+    "INTEGRATION-INVENTORY.md": "Historical inventory is not current local status; reconciliation recorded in INTEGRATION-STATUS.md.",
+    "SHA256SUMS": "Verified outside the repository; selected file hashes recorded here."
+  }
+}

@@ -1,0 +1,66 @@
+
+> web@0.1.0 test
+> vitest --run __tests__/pages/api/cors.test.ts lib/NHL/corsProxy.test.ts lib/cors-fetch.test.ts components/ShiftChart/useGameGrid.test.tsx components/LinemateMatrix/index.test.tsx components/HomePage/useHomepageGames.test.tsx __tests__/utils/adminOnlyMiddleware.test.ts __tests__/pages/api/v1/db/projection-materialization-auth.test.ts __tests__/pages/api/v1/db/operational-route-auth.test.ts __tests__/pages/api/v1/db/cron-auth-boundaries.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:71090) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/api/cors.test.ts (68 tests) 24ms
+ ✓ lib/NHL/corsProxy.test.ts (62 tests) 58ms
+(node:71088) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:71083) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:71082) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:71084) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:71087) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:71086) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:71085) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:71089) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/cors-fetch.test.ts (2 tests) 18ms
+ ✓ __tests__/pages/api/v1/db/projection-materialization-auth.test.ts (6 tests) 3ms
+ ✓ __tests__/utils/adminOnlyMiddleware.test.ts (48 tests) 8ms
+ ✓ __tests__/pages/api/v1/db/operational-route-auth.test.ts (66 tests) 10ms
+ ✓ components/HomePage/useHomepageGames.test.tsx (1 test) 62ms
+stdout | __tests__/pages/api/v1/db/cron-auth-boundaries.test.ts > season and WGO cron authorization boundaries > fails closed and redacts missing global Yahoo configuration across every active route
+Starting update-yahoo-players handler.
+
+ ✓ components/LinemateMatrix/index.test.tsx (9 tests) 80ms
+stderr | __tests__/pages/api/v1/db/cron-auth-boundaries.test.ts > season and WGO cron authorization boundaries > fails closed and redacts missing global Yahoo configuration across every active route
+Yahoo player update failed.
+
+ ✓ components/ShiftChart/useGameGrid.test.tsx (5 tests) 276ms
+stderr | __tests__/pages/api/v1/db/cron-auth-boundaries.test.ts > season and WGO cron authorization boundaries > fails closed and redacts missing global Yahoo configuration across every active route
+Yahoo matchup week update failed.
+
+stderr | __tests__/pages/api/v1/db/cron-auth-boundaries.test.ts > season and WGO cron authorization boundaries > allows the exact configured cron bearer into both route handlers
+Error in handler: Error: Missing or invalid required parameters. Valid combinations: 'action=all', 'action=fullRefresh' (optional '&season=YYYYYYYY'), 'date=YYYY-MM-DD', or 'playerId=<id>&date=YYYY-MM-DD'.
+    at handler [90m(/Users/tim/Code/fhfhockey.com/web/[39mpages/api/v1/db/update-wgo-goalies.ts:1563:13[90m)[39m
+    at Object.handler [90m(/Users/tim/Code/fhfhockey.com/web/[39mutils/adminOnlyMiddleware.ts:57:11[90m)[39m
+    at [90m/Users/tim/Code/fhfhockey.com/web/[39m__tests__/pages/api/v1/db/cron-auth-boundaries.test.ts:299:19
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at [90mfile:///Users/tim/Code/fhfhockey.com/web/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:752:20
+
+stderr | __tests__/pages/api/v1/db/cron-auth-boundaries.test.ts > season and WGO cron authorization boundaries > allows an authenticated admin into both route handlers
+Error in handler: Error: Missing or invalid required parameters. Valid combinations: 'action=all', 'action=fullRefresh' (optional '&season=YYYYYYYY'), 'date=YYYY-MM-DD', or 'playerId=<id>&date=YYYY-MM-DD'.
+    at handler [90m(/Users/tim/Code/fhfhockey.com/web/[39mpages/api/v1/db/update-wgo-goalies.ts:1563:13[90m)[39m
+    at Object.handler [90m(/Users/tim/Code/fhfhockey.com/web/[39mutils/adminOnlyMiddleware.ts:57:11[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at [90m/Users/tim/Code/fhfhockey.com/web/[39m__tests__/pages/api/v1/db/cron-auth-boundaries.test.ts:319:7
+    at [90mfile:///Users/tim/Code/fhfhockey.com/web/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:752:20
+
+ ✓ __tests__/pages/api/v1/db/cron-auth-boundaries.test.ts (7 tests) 305ms
+
+ Test Files  10 passed (10)
+      Tests  274 passed (274)
+   Start at  15:56:04
+   Duration  1.31s (transform 518ms, setup 34ms, collect 1.57s, tests 844ms, environment 2.76s, prepare 695ms)
+

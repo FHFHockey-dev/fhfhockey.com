@@ -1,6 +1,10 @@
 // @vitest-environment node
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import ts from "typescript";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { guardedForgeFetch, type RequestCounts } from "../../scripts/run-forge-local";
+import { evaluateForgeCalibrationEligibility, FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "./calibrationEligibility";
 import { projectionWritesHash, type ForgeInputSnapshot } from "./gameRevisions";
 import { projectionInputHash } from "./inputCapture";
 
@@ -177,7 +181,34 @@ async function run(local: boolean, backend: ReturnType<typeof fixture>, guarded 
     ...(local ? { localAttempt: { operationId, expectedRevisionId: null, leaseMs: 150000 } } : {}) });
 }
 
+/** True only when every season-bootstrap call in the stage passes a literal `false` external-fantasy flag. */
+function stageDisablesExternalFantasyInputs(file: string) {
+  const source = ts.createSourceFile(file, readFileSync(path.resolve(process.cwd(), "lib/projections", file), "utf8"),
+    ts.ScriptTarget.Latest, true);
+  const flags: ts.SyntaxKind[] = [];
+  const visit = (node: ts.Node): void => {
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === "loadSeasonBootstrap") {
+      flags.push(node.arguments[4]?.kind ?? ts.SyntaxKind.Unknown);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return flags.length > 0 && flags.every(kind => kind === ts.SyntaxKind.FalseKeyword);
+}
+
 describe("actual FORGE producer through fenced local transport", () => {
+  it("claims external fantasy exclusion only when both stages disable external fantasy inputs", async () => {
+    // On a master candidate the production stages still blend external fantasy priors, so the
+    // unchanged production pipeline must label neither its run nor its captured snapshot.
+    const excluded = ["stages/skater-stage.ts", "stages/goalie-stage.ts"].every(stageDisablesExternalFantasyInputs);
+    const backend = fixture();
+    await run(true, backend);
+    const label = excluded ? FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT : undefined;
+    expect(backend.tables.forge_runs[0].metrics.input_provenance.external_fantasy_input_contract).toBe(label);
+    expect(backend.snapshot!.inputProvenance!.external_fantasy_input_contract).toBe(label);
+    expect(evaluateForgeCalibrationEligibility(backend.tables.forge_runs[0].metrics).eligible).toBe(excluded);
+  });
+
   it("publishes both clubs with real persistence and captured output hash while explicitly omitting optional analytics", async () => {
     const backend = fixture();
     const result = await run(true, backend);

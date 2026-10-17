@@ -991,6 +991,37 @@ async function captureRawSnapshotWithBusyRetry(supabase, row, budget) {
   }
 }
 
+/**
+ * Normalize payloads whose raw snapshots are already the current heads. Every
+ * raw writer that can advance a head must call this, or the trigger-staled
+ * normalization is never completed for that game.
+ */
+export async function persistCapturedGameNormalization(supabase, args) {
+  const normalizedScope = buildNormalizedGameScope({
+    gameId: args.gameId,
+    seasonId: args.seasonId,
+    gameDate: args.gameDate,
+    pbpPayloadHash: args.pbpPayloadHash,
+    shiftPayloadHash: args.shiftPayloadHash,
+    rosterRows: normalizeRosterSpots(args.pbp, args.pbpPayloadHash),
+    eventRows: normalizePbpEvents(args.pbp, args.pbpPayloadHash),
+    shiftRows: normalizeShiftRows(
+      args.pbp,
+      args.shiftPayload,
+      args.shiftPayloadHash,
+    ),
+  });
+  const expectedCurrentManifest = await readNormalizedGameManifest(
+    supabase,
+    args.gameId,
+  );
+  return persistNormalizedGameScope(
+    supabase,
+    normalizedScope,
+    expectedCurrentManifest,
+  );
+}
+
 export async function ingestNhlApiRawGame(supabase, gameId, options = {}) {
   const retries = options.retries ?? DEFAULT_GAME_INGEST_RETRIES;
   const delayMs = options.retryDelayMs ?? DEFAULT_RETRY_DELAY_MS;
@@ -1048,38 +1079,17 @@ export async function ingestNhlApiRawGame(supabase, gameId, options = {}) {
     fetched_at: fetched.fetchedAt,
   }, budget);
 
-  const rosterRows = normalizeRosterSpots(
-    fetched.payloads.playByPlay,
-    fetched.hashes.playByPlay,
-  );
-  const eventRows = normalizePbpEvents(
-    fetched.payloads.playByPlay,
-    fetched.hashes.playByPlay,
-  );
-  const shiftRows = normalizeShiftRows(
-    fetched.payloads.playByPlay,
-    fetched.payloads.shiftcharts,
-    fetched.hashes.shiftcharts,
-  );
-
-  const normalizedScope = buildNormalizedGameScope({
-    gameId,
-    seasonId: fetched.seasonId,
-    gameDate: fetched.gameDate,
-    pbpPayloadHash: fetched.hashes.playByPlay,
-    shiftPayloadHash: fetched.hashes.shiftcharts,
-    rosterRows,
-    eventRows,
-    shiftRows,
-  });
-  const expectedCurrentManifest = await readNormalizedGameManifest(
+  const normalizationReceipt = await persistCapturedGameNormalization(
     supabase,
-    gameId,
-  );
-  const normalizationReceipt = await persistNormalizedGameScope(
-    supabase,
-    normalizedScope,
-    expectedCurrentManifest,
+    {
+      gameId,
+      seasonId: fetched.seasonId,
+      gameDate: fetched.gameDate,
+      pbp: fetched.payloads.playByPlay,
+      pbpPayloadHash: fetched.hashes.playByPlay,
+      shiftPayload: fetched.payloads.shiftcharts,
+      shiftPayloadHash: fetched.hashes.shiftcharts,
+    },
   );
 
   return {

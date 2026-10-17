@@ -1,0 +1,26 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:74263) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:74262) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/sources/iftttIntakePolicy.test.ts (20 tests) 9ms
+stderr | lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > does not fall back to the lossy upsert after an uncertain receipt RPC
+Line source IFTTT tweet ingest failed: {"code":"IFTTT_OUTCOME_UNKNOWN","message":"IFTTT retention outcome is unknown; read-only reconciliation is required"}
+
+stderr | lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > preserves pending work when production has no trusted processor origin
+Line source IFTTT processor follow-up failed: { success: [33mfalse[39m, status: [1mnull[22m, error: [32m'Processor request failed'[39m }
+
+stderr | lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > keeps the raw event stored and retryable when process=true follow-up fails
+Line source IFTTT processor follow-up failed: { success: [33mfalse[39m, status: [33m503[39m, error: [32m'Processor request failed'[39m }
+
+ ✓ lib/sources/lineSourceIftttReceiver.test.ts (14 tests) 84ms
+
+ Test Files  2 passed (2)
+      Tests  34 passed (34)
+   Start at  15:59:11
+   Duration  560ms (transform 73ms, setup 6ms, collect 118ms, tests 93ms, environment 367ms, prepare 74ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/scheduler-retain-only-v1/evidence/nearest-results.json
+exit 0

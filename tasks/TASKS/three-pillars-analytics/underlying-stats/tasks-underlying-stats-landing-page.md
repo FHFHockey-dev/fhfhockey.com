@@ -1,3 +1,5 @@
+> **Superseded hierarchy (2026-10-17).** This list records the original dashboard-first landing page. The simplified layout in `tasks/tasks-underlying-stats-lineupexperts-alignment.md` and the approved desktop/mobile mockup replace it. The What Looks Real, Under the Radar, Schedule Texture, utility, and standalone readiness panels were removed deliberately; do not restore them from this list.
+
 ## Relevant Files
 
 - `web/pages/underlying-stats/index.tsx` - Main dashboard page with the quadrant map, risers/fallers, trust/context/inefficiency modules, and the lower-page supporting table.

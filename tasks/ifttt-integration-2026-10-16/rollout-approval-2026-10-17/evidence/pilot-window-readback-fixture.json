@@ -1,0 +1,57 @@
+{
+ "retainStatuses": [
+  "retained",
+  "retained",
+  "retained"
+ ],
+ "readback": {
+  "policy": {
+   "id": "synthetic-window-probe",
+   "endsAt": "2026-10-17T20:08:13Z",
+   "scopes": [
+    {
+     "table": "line_source_ifttt_events",
+     "sourceKey": "gamedaygoalies",
+     "sourceGroup": "gdl_suite",
+     "sourceAccount": "gamedaygoalies"
+    }
+   ],
+   "attempts": 3,
+   "startsAt": "2026-10-17T20:06:15Z",
+   "stoppedAt": null,
+   "stopReason": null,
+   "maxAttempts": 6,
+   "maxReceipts": 3
+  },
+  "admitted": 2,
+  "carriers": [
+   {
+    "table": "line_source_ifttt_events",
+    "status": "pending",
+    "tweetId": "8100",
+    "postedAt": "2026-10-17T22:00:00+00:00",
+    "receipts": [
+     {
+      "receiptId": "097a04da-45be-455a-991e-f0006d68991e",
+      "admittedAt": "2026-10-17T20:06:16.810717+00:00",
+      "classification": "canonical"
+     },
+     {
+      "receiptId": "298eb716-b138-4a5e-9d7c-81d6d4dacbc4",
+      "admittedAt": "2026-10-17T20:06:16.829301+00:00",
+      "classification": "same_post_variant"
+     }
+    ],
+    "sourceKey": "gamedaygoalies",
+    "receivedAt": "2026-10-17T20:06:16.806888+00:00"
+   }
+  ],
+  "byClassification": {
+   "canonical": 1,
+   "same_post_variant": 1
+  },
+  "nonPendingCarriers": 0,
+  "admittedOutsideWindow": 0,
+  "receiptsWithoutCarrier": 0
+ }
+}

@@ -3,7 +3,6 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
 
-import OwnershipSparkline from "../TransactionTrends/OwnershipSparkline";
 import OptimizedImage from "../common/OptimizedImage";
 import { computeTeamPowerScore } from "../../lib/dashboard/teamContext";
 import { getLocalTeamLogoPath } from "../../lib/images";
@@ -33,6 +32,7 @@ type UnderlyingStatsDashboardProps = {
   onTeamPin: (teamAbbr: string) => void;
   onTeamPreview: (teamAbbr: string | null) => void;
   pinnedTeamAbbr: string | null;
+  rankingsActions?: ReactNode;
   ratings: UnderlyingStatsLandingRating[];
   routeStatus: UlsRouteStatus | null;
   selectedDate: string;
@@ -52,18 +52,9 @@ const formatDateLabel = (isoDate: string): string => {
 const formatSigned = (value: number): string =>
   `${value > 0 ? "+" : ""}${value.toFixed(1)}`;
 
-const formatSos = (value: number | null): string =>
-  typeof value === "number" && Number.isFinite(value)
-    ? `${(value * 100).toFixed(1)}%`
-    : "—";
-
-const formatRank = (value: number | null): string =>
-  typeof value === "number" && Number.isFinite(value) ? `${value}` : "—";
-
-const formatPct = (value: number | null): string =>
-  typeof value === "number" && Number.isFinite(value)
-    ? `${value.toFixed(1)}%`
-    : "—";
+// League-average ratings sit at 100; map roughly 70-130 onto the bar.
+const ratingBarWidth = (value: number): string =>
+  `${Math.min(100, Math.max(4, ((value - 70) / 60) * 100)).toFixed(0)}%`;
 
 const getTeamName = (teamAbbr: string): string =>
   teamsInfo[teamAbbr as keyof typeof teamsInfo]?.name ?? teamAbbr;
@@ -97,6 +88,7 @@ export default function UnderlyingStatsDashboard({
   onTeamPin,
   onTeamPreview,
   pinnedTeamAbbr,
+  rankingsActions,
   ratings,
   routeStatus,
   selectedDate,
@@ -221,19 +213,24 @@ export default function UnderlyingStatsDashboard({
     );
   };
 
+  const isLatestSnapshotToday =
+    latestSnapshotDate === format(new Date(), "yyyy-MM-dd");
+  const showFullRankings = () => {
+    setActiveWorkspace("rankings");
+    rankingsTabRef.current?.focus();
+    rankingsTabRef.current?.scrollIntoView?.({ block: "start", behavior: "smooth" });
+  };
+
   return (
     <>
       <header className={styles.commandPlane}>
         <div className={styles.commandTopline}>
           <div className={styles.commandCopy}>
-            <p className={styles.eyebrow}>Team intelligence</p>
-            <h1 className={styles.pageTitle}>Underlying Stats Dashboard</h1>
+            <h1 className={styles.pageTitle}>Underlying Stats</h1>
             <p className={styles.pageDescription}>
-              Compare NHL team strength and explore the process behind each rating.
+              Dig beneath the scores. Explore the process, sustainability, and
+              schedule context driving NHL team performance.
             </p>
-            <span className={styles.lensBadge}>
-              Primary lens: <strong>Team diagnosis</strong>
-            </span>
           </div>
 
           <div className={styles.commandMeta} aria-label="Snapshot metadata">
@@ -253,55 +250,47 @@ export default function UnderlyingStatsDashboard({
               </select>
             </label>
             <div className={styles.metaItem}>
-              <span>Latest snapshot</span>
-              <strong>
-                {latestSnapshotDate
-                  ? formatDateLabel(latestSnapshotDate)
-                  : "Unavailable"}
-              </strong>
-            </div>
-            <div className={styles.metaItem}>
               <span>Teams</span>
-              <strong>{ratings.length || "—"}</strong>
+              <strong>{ratings.length ? `${ratings.length} NHL Teams` : "—"}</strong>
             </div>
             <div className={styles.metaItem} data-freshness={freshness}>
-              <span>Freshness</span>
+              <span>Data freshness</span>
               <strong>
-                {freshnessLabel[freshness]}
                 <i aria-hidden="true" />
+                {freshnessLabel[freshness]}
               </strong>
+              <small>
+                {latestSnapshotDate
+                  ? isLatestSnapshotToday
+                    ? "Updated today"
+                    : `Latest ${formatDateLabel(latestSnapshotDate)}`
+                  : "No snapshot yet"}
+              </small>
             </div>
-          </div>
-        </div>
-
-        <div className={styles.commandNavRow}>
-          <details className={styles.readinessDisclosure}>
-            <summary>Data readiness</summary>
-            <div className={styles.readinessContent}>
-              <UlsStatusPanel status={routeStatus} variant="landing" />
-            </div>
-          </details>
-          <details className={styles.aboutDisclosure}>
-            <summary>About this dashboard</summary>
-            <div className={styles.aboutContent}>
-              <p>
-                Use this page to diagnose current team quality, the process
-                supporting it, and where results may be running ahead of or
-                behind the underlying profile.
-              </p>
-              <p>
-                Use Trends for movement, Splits for matchup context, Starter
-                Board for start decisions, and Lines for deployment.
-              </p>
-              <div className={styles.aboutLinks}>
-                {UNDERLYING_STATS_SURFACE_LINKS.map((link) => (
-                  <Link key={link.href} href={link.href}>
-                    {link.label}
-                  </Link>
-                ))}
+            <details className={styles.aboutDisclosure}>
+              <summary>About this dashboard</summary>
+              <div className={styles.aboutContent}>
+                <p>
+                  Use this page to diagnose current team quality, the process
+                  supporting it, and where results may be running ahead of or
+                  behind the underlying profile.
+                </p>
+                <p>
+                  Use Trends for movement, Splits for matchup context, Starter
+                  Board for start decisions, and Lines for deployment.
+                </p>
+                <div className={styles.aboutLinks}>
+                  {UNDERLYING_STATS_SURFACE_LINKS.map((link) => (
+                    <Link key={link.href} href={link.href}>
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+                <h2 className={styles.aboutHeading}>Data readiness</h2>
+                <UlsStatusPanel status={routeStatus} variant="landing" />
               </div>
-            </div>
-          </details>
+            </details>
+          </div>
         </div>
 
         {isLoading ? (
@@ -315,13 +304,23 @@ export default function UnderlyingStatsDashboard({
         ) : null}
       </header>
 
-      <UnderlyingStatsNavBar pinnedTeamId={pinnedTeamId} />
+      <UnderlyingStatsNavBar pinnedTeamId={pinnedTeamId} showDetails />
 
       <UnderlyingStatsDashboardCard
         className={styles.powerLeadersPanel}
         title="Power leaders"
         info="Power Score blends offense, defense, pace, and a small special-teams adjustment."
-        description="The top three teams in the selected live snapshot."
+        description="The top three teams by our Power Score."
+        actions={
+          <button
+            type="button"
+            className={styles.viewRankingsButton}
+            onClick={showFullRankings}
+          >
+            <span className={styles.viewRankingsLong}>View full rankings</span>
+            <span className={styles.viewRankingsShort}>View all</span>
+          </button>
+        }
       >
         <div className={styles.powerLeadersRail}>
           {topTeams.length ? (
@@ -330,8 +329,8 @@ export default function UnderlyingStatsDashboard({
                 key={team.teamAbbr}
                 type="button"
                 className={`${styles.powerLeader} ${
-                  index === 0 ? styles.powerLeaderFirst : ""
-                } ${activeTeamAbbr === team.teamAbbr ? styles.itemActive : ""}`}
+                  activeTeamAbbr === team.teamAbbr ? styles.itemActive : ""
+                }`}
                 aria-label={`Pin ${getTeamName(team.teamAbbr)}`}
                 aria-pressed={pinnedTeamAbbr === team.teamAbbr}
                 onClick={() => onTeamPin(team.teamAbbr)}
@@ -340,71 +339,36 @@ export default function UnderlyingStatsDashboard({
                 onMouseEnter={() => onTeamPreview(team.teamAbbr)}
                 onMouseLeave={() => onTeamPreview(null)}
               >
-                <span className={styles.rankWatermark}>{index + 1}</span>
                 <span className={styles.leaderTopline}>
+                  <span className={styles.rankBadge}>{index + 1}</span>
                   <span className={styles.leaderIdentity}>
                     <TeamLogo teamAbbr={team.teamAbbr} size={48} />
                     <span>
-                      <strong>{team.teamAbbr}</strong>
+                      <strong className={styles.leaderAbbr}>{team.teamAbbr}</strong>
                       <small>{getTeamName(team.teamAbbr)}</small>
                     </span>
                   </span>
                   <span className={styles.leaderPower}>
                     {computeTeamPowerScore(team).toFixed(1)}
-                    <small>Power</small>
+                    <small>Power Score</small>
                   </span>
                 </span>
-                <span className={styles.leaderCoreMetrics}>
-                  <span>
-                    <small>Off</small>
+                <span className={styles.leaderDetails}>
+                  <span className={styles.leaderStat}>
+                    <small>Offense</small>
                     <strong>{team.offRating.toFixed(0)}</strong>
+                    <i style={{ width: ratingBarWidth(team.offRating) }} aria-hidden="true" />
                   </span>
-                  <span>
-                    <small>Def</small>
+                  <span className={styles.leaderStat}>
+                    <small>Defense</small>
                     <strong>{team.defRating.toFixed(0)}</strong>
+                    <i style={{ width: ratingBarWidth(team.defRating) }} aria-hidden="true" />
                   </span>
-                  <span className={styles.leaderTrend}>
-                    <small>Trend</small>
-                    <OwnershipSparkline
-                      points={team.trendSeries ?? []}
-                      variant={team.trend10 >= 0 ? "rise" : "fall"}
-                      width={104}
-                      height={24}
-                      baseline
-                      svgClassName={styles.sparkline}
-                      pathClassName={styles.sparklinePath}
-                      baselineClassName={styles.sparklineBaseline}
-                      emptyClassName={styles.sparklineEmpty}
-                    />
+                  <span className={styles.leaderWhy}>
+                    <small>Why they&apos;re here</small>
+                    <span>{team.narrative[0] ?? "No rating note for this snapshot yet."}</span>
                   </span>
                 </span>
-                <span className={styles.leaderContextMetrics}>
-                  <span>
-                    <small>Future SoS</small>
-                    <strong>
-                      {formatRank(team.sosFutureRank)} · {formatSos(team.sosFuture)}
-                    </strong>
-                  </span>
-                  <span>
-                    <small>PP</small>
-                    <strong>
-                      {formatRank(team.ppRank)} · {formatPct(team.ppPct)}
-                    </strong>
-                  </span>
-                  <span>
-                    <small>PK</small>
-                    <strong>
-                      {formatRank(team.pkRank)} · {formatPct(team.pkPct)}
-                    </strong>
-                  </span>
-                </span>
-                {team.narrative.length ? (
-                  <span className={styles.leaderNarrative}>
-                    {team.narrative.slice(0, 2).map((bullet) => (
-                      <span key={`${team.teamAbbr}-${bullet}`}>• {bullet}</span>
-                    ))}
-                  </span>
-                ) : null}
               </button>
             ))
           ) : (
@@ -413,34 +377,40 @@ export default function UnderlyingStatsDashboard({
         </div>
       </UnderlyingStatsDashboardCard>
 
-      <div className={styles.workspaceTabs} role="tablist" aria-label="Primary analytics views">
-        <button
-          ref={rankingsTabRef}
-          id="rankings-tab"
-          type="button"
-          role="tab"
-          aria-controls="rankings-panel"
-          aria-selected={activeWorkspace === "rankings"}
-          tabIndex={activeWorkspace === "rankings" ? 0 : -1}
-          onClick={() => setActiveWorkspace("rankings")}
-          onKeyDown={handleWorkspaceKeyDown}
-        >
-          Team Rankings
-        </button>
-        <button
-          ref={chartTabRef}
-          id="chart-tab"
-          type="button"
-          role="tab"
-          aria-controls="chart-panel"
-          aria-selected={activeWorkspace === "chart"}
-          tabIndex={activeWorkspace === "chart" ? 0 : -1}
-          onClick={() => setActiveWorkspace("chart")}
-          onKeyDown={handleWorkspaceKeyDown}
-        >
-          Chart
-        </button>
-      </div>
+      <section className={styles.workspace} aria-label="Team rankings and chart">
+        <div className={styles.workspaceBar}>
+          <div className={styles.workspaceTabs} role="tablist" aria-label="Primary analytics views">
+            <button
+              ref={rankingsTabRef}
+              id="rankings-tab"
+              type="button"
+              role="tab"
+              aria-controls="rankings-panel"
+              aria-selected={activeWorkspace === "rankings"}
+              tabIndex={activeWorkspace === "rankings" ? 0 : -1}
+              onClick={() => setActiveWorkspace("rankings")}
+              onKeyDown={handleWorkspaceKeyDown}
+            >
+              Team Rankings
+            </button>
+            <button
+              ref={chartTabRef}
+              id="chart-tab"
+              type="button"
+              role="tab"
+              aria-controls="chart-panel"
+              aria-selected={activeWorkspace === "chart"}
+              tabIndex={activeWorkspace === "chart" ? 0 : -1}
+              onClick={() => setActiveWorkspace("chart")}
+              onKeyDown={handleWorkspaceKeyDown}
+            >
+              Chart
+            </button>
+          </div>
+          {activeWorkspace === "rankings" && rankingsActions ? (
+            <div className={styles.workspaceActions}>{rankingsActions}</div>
+          ) : null}
+        </div>
       <div id="rankings-panel" role="tabpanel" aria-labelledby="rankings-tab" hidden={activeWorkspace !== "rankings"}>
         {children}
       </div>
@@ -523,6 +493,7 @@ export default function UnderlyingStatsDashboard({
 
         ) : null}
       </div>
+      </section>
     </>
   );
 }

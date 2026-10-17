@@ -1,0 +1,65 @@
+{
+  "baseline_head": "ceceb407a29b45f2e5b0c090ecfcff0c27e15d4c",
+  "final_head": "ceceb407a29b45f2e5b0c090ecfcff0c27e15d4c",
+  "baseline_dirty_file_count": 501,
+  "unchanged_baseline_dirty_file_count": 498,
+  "concurrent_changes_outside_this_task": [
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+    "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+    "web/lib/integrations/yahoo/rosterPlanning.ts"
+  ],
+  "tracked_files_modified_by_this_task": [
+    "web/lib/sources/tweetProjectionStorage.ts",
+    "web/lib/sources/projectedLineups.test.ts"
+  ],
+  "protected_paths": [
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/README.md",
+      "before_sha256": "177da5b44e0558b609464ffff32cb96e044a72e999193ee694088e8bc9f317c9",
+      "after_sha256": "177da5b44e0558b609464ffff32cb96e044a72e999193ee694088e8bc9f317c9",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/sources/iftttIntakePolicy.ts",
+      "before_sha256": "6badd4c0c4d87eb110a8cb0b3dedefb10fa8b49f9936491eb8f2ce2e8e59d619",
+      "after_sha256": "6badd4c0c4d87eb110a8cb0b3dedefb10fa8b49f9936491eb8f2ce2e8e59d619",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/sources/lineSourceIftttReceiver.ts",
+      "before_sha256": "5fb55c31fe8a72e29b18718d345fca30b5acc87c97dffeff5c0dfd750ae687d7",
+      "after_sha256": "5fb55c31fe8a72e29b18718d345fca30b5acc87c97dffeff5c0dfd750ae687d7",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/sources/lineSourceIftttReceiver.test.ts",
+      "before_sha256": "bbe8d7150bd7c022148877fdc7edc39ae67c45d18e75a57546cf9910e6917306",
+      "after_sha256": "bbe8d7150bd7c022148877fdc7edc39ae67c45d18e75a57546cf9910e6917306",
+      "unchanged": true
+    },
+    {
+      "path": "web/pages/api/v1/db/replay-player-aliases.ts",
+      "before_sha256": "874a307c6a46190fcaa93474ed68ec7061d305516753068bd4ec9676846c58ab",
+      "after_sha256": "874a307c6a46190fcaa93474ed68ec7061d305516753068bd4ec9676846c58ab",
+      "unchanged": true
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/replay-player-aliases.test.ts",
+      "before_sha256": "80eaf4fdb617c5d6b6aa462c127949b2fb3297bbc95e80c8d787663e3ecc33a0",
+      "after_sha256": "80eaf4fdb617c5d6b6aa462c127949b2fb3297bbc95e80c8d787663e3ecc33a0",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/sources/tweetSourceClaimRegistry.ts",
+      "before_sha256": "03f58f5793b5083dd48935ab525f869205e338798b45d768c9008c0b55004468",
+      "after_sha256": "03f58f5793b5083dd48935ab525f869205e338798b45d768c9008c0b55004468",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/sources/tweetClaimReducerAdapter.ts",
+      "before_sha256": "78a0e2cce23be93a07f781477657dad6bfa1cd74dfb6a73ffe68a082724b2332",
+      "after_sha256": "78a0e2cce23be93a07f781477657dad6bfa1cd74dfb6a73ffe68a082724b2332",
+      "unchanged": true
+    }
+  ]
+}

@@ -594,40 +594,34 @@ Important operational fact:
 - some finished NHL games expose valid PBP but empty JSON shiftcharts
 - the HTML TOI report fallback is required for reliable season coverage
 
-## Supported Day-One Filter Surface
+## Supported Filter Surface
 
-### Supported Strengths
+Updated 2026-10-17. The original day-one surface rejected several strengths and score states with `400`. That restriction no longer applies: `playerStatsLandingServer.ts` and `teamStatsSummaryRefresh.ts` now accept and materialize every combination below (see `tasks/artifacts/goalie-stats-shared-pipeline-extension-1-6.md`).
+
+### Strengths
 
 - `allStrengths`
 - `evenStrength`
 - `fiveOnFive`
 - `powerPlay`
 - `penaltyKill`
-
-### Unsupported Strengths
-
-These currently fail closed with route-level `400` responses:
-
 - `fiveOnFourPP`
 - `fourOnFivePK`
 - `threeOnThree`
 - `withEmptyNet`
 - `againstEmptyNet`
 
-### Supported Score State
+### Score States
 
 - `allScores`
-
-### Unsupported Score States
-
-These currently fail closed with route-level `400` responses:
-
 - `tied`
 - `leading`
 - `trailing`
 - `withinOne`
 - `upOne`
 - `downOne`
+
+Accepted filters do not prove that every slice is populated. Team summaries hold 70 slices (10 strengths × 7 score states) per team per game; check `team_underlying_stats_summary` coverage before treating an empty slice as a real zero.
 
 ### Season Type
 
@@ -951,7 +945,7 @@ Coverage/refresh:
 ## Change Safety Rules
 
 - keep landing and detail on one shared contract
-- do not widen unsupported strengths or score states silently
+- do not add new strengths or score states without updating both summary builders and this list
 - do not replace canonical native derivations with legacy NST shortcuts
 - do not invent TOI or on-ice attribution from PBP-only data
 - if new columns are added, update:

@@ -23,6 +23,8 @@ import { acceptedNewsSupersedes, loadAcceptedForecastNews } from "lib/projection
 import { timestampMicros } from "lib/projections/evidenceTime";
 
 import { ROSTER_CONTINUATION_ASSUMPTION } from "lib/player-forecasts/targetRosterObservation";
+import { fetchBoundedNhlSchedule } from "./source";
+import { normalizeNhlGameToTeamRows } from "./normalize";
 
 vi.mock("lib/supabase/server", () => ({ default: {} }));
 
@@ -394,6 +396,26 @@ describe("public RSO data boundary", () => {
     side.fetched_at = away.fetched_at = "2026-10-10T11:00:00Z";
     expect((await read()).evidence.schedule.completeness).toBe("complete");
     tables.roster_optimizer_team_games = [];
+    expect((await read()).evidence.schedule.completeness).toBe("partial");
+  });
+
+  it("certifies the horizon from rows the bounded schedule writer stamps, not from unstamped rows", async () => {
+    const nhlGame = { id: 2026020001, season: 20262027, gameType: 2, gameDate: "2026-10-10", startTimeUTC: "2026-10-10T23:00:00Z",
+      gameState: "FUT", gameScheduleState: "OK", homeTeam: { id: 1, abbrev: "TOR" }, awayTeam: { id: 2, abbrev: "MTL" } };
+    const page = { gameWeek: ["2026-10-09", "2026-10-10", "2026-10-11", "2026-10-12"]
+      .map(date => ({ date, games: date === nhlGame.gameDate ? [nhlGame] : [] })) };
+    const source = await fetchBoundedNhlSchedule({ startDate: "2026-10-09", endDate: "2026-10-12",
+      readSchedulePage: async () => page as never });
+    const written = source.games.flatMap(entry => normalizeNhlGameToTeamRows({ ...entry, fetchedAt: "2026-10-10T09:00:00Z",
+      gameKey: "477", yahooSeason: "2026", mapping: { status: "unmapped", reason: "no_week" } }))
+      .map((row, index) => ({ ...row, id: index + 1 }));
+    const { db, tables } = formDb([], []);
+    const read = () => loadPlanningData(db as never, { ...publicQuery, timeZone: "UTC" }, publicOptions);
+    tables.roster_optimizer_team_games = written;
+    expect((await read()).evidence.schedule.completeness).toBe("complete");
+    // The production writer bytes persist the same rows without the witness.
+    tables.roster_optimizer_team_games = written.map(({ source_metadata: { scheduleCoverage: _witness, ...metadata }, ...row }) =>
+      ({ ...row, source_metadata: metadata }));
     expect((await read()).evidence.schedule.completeness).toBe("partial");
   });
 

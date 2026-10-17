@@ -665,10 +665,11 @@ describe("StartChartPage", () => {
     const receipt = swrState.data.players[0].gameExpectation.targets.GOALS.participation;
     expect(receipt.probability).toBe(totals ? probability : null);
     if (recognized) expect(receipt.model).toEqual({ version, event: "positive_minutes",
-      probabilityStatus: "uncalibrated_model", calibration: "unavailable", inputHash: model.inputHash,
-      evidenceHashes: model.evidenceHashes, limitations: model.limitations, sampleSize: totals ? 20 : null });
+      probabilityStatus: "uncalibrated_model", calibration: "unavailable",
+      limitations: model.limitations, sampleSize: totals ? 20 : null });
     else expect(receipt.model).toBeUndefined();
-    expect(JSON.stringify(receipt)).not.toMatch(/numerator|denominator|selectedGameIds|historyIDs|PRIVATE_HISTORY_SENTINEL/);
+    // Like the FORGE view, the board omits the per-target input and evidence proofs.
+    expect(JSON.stringify(receipt)).not.toMatch(/numerator|denominator|selectedGameIds|historyIDs|PRIVATE_HISTORY_SENTINEL|inputHash|evidenceHashes/);
     expect(JSON.stringify(input)).toBe(original);
     render(<StartChartPage />);
     if (recognized) {

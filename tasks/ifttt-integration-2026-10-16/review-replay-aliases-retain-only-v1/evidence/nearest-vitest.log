@@ -1,0 +1,14 @@
+# cwd web/ — 2026-10-17 17:28:30 EDT
+$ npx vitest --run __tests__/pages/api/v1/db/replay-player-aliases.test.ts __tests__/pages/api/v1/db/player-name-aliases.test.ts
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ __tests__/pages/api/v1/db/player-name-aliases.test.ts (44 tests) 22ms
+ ✓ __tests__/pages/api/v1/db/replay-player-aliases.test.ts (3 tests) 15ms
+
+ Test Files  2 passed (2)
+      Tests  47 passed (47)
+   Start at  17:28:31
+   Duration  481ms (transform 171ms, setup 3ms, collect 340ms, tests 37ms, environment 0ms, prepare 80ms)
+
+vitest exit 0

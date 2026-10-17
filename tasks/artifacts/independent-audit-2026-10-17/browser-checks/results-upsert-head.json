@@ -1,0 +1,123 @@
+{
+  "base": "http://127.0.0.1:3107",
+  "startedAt": "2026-10-17T21:47:49.777Z",
+  "checks": [
+    "upsert"
+  ],
+  "graphqlConfigured": true,
+  "upsert": {
+    "supabaseCalls": [
+      "GET /rest/v1/users",
+      "GET /rest/v1/yahoo_names",
+      "GET /rest/v1/yahoo_names",
+      "GET /rest/v1/users",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/user_settings",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/yahoo_players_with_normalized_history",
+      "GET /rest/v1/yahoo_players_with_normalized_history",
+      "POST /rest/v1/user_profiles",
+      "POST /rest/v1/user_settings",
+      "GET /rest/v1/yahoo_names",
+      "GET /rest/v1/yahoo_names",
+      "GET /rest/v1/yahoo_players_with_normalized_history",
+      "GET /rest/v1/yahoo_players_with_normalized_history",
+      "GET /rest/v1/nhl_standings_details",
+      "GET /rest/v1/wgo_team_stats",
+      "GET /rest/v1/users",
+      "GET /rest/v1/users",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/user_settings",
+      "GET /rest/v1/user_profiles",
+      "POST /rest/v1/user_profiles",
+      "POST /rest/v1/user_settings",
+      "GET /rest/v1/users",
+      "GET /rest/v1/yahoo_names",
+      "GET /rest/v1/yahoo_names",
+      "GET /rest/v1/users",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/user_settings",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/yahoo_players_with_normalized_history",
+      "GET /rest/v1/yahoo_players_with_normalized_history",
+      "POST /rest/v1/user_profiles",
+      "POST /rest/v1/user_settings"
+    ],
+    "localApiCalls": [
+      "GET /api/v1/homepage/visitors",
+      "GET /api/v1/games",
+      "GET /api/v1/games",
+      "GET /api/v1/transactions/ownership-trends",
+      "GET /api/v1/season",
+      "GET /api/v1/transactions/ownership-trends"
+    ],
+    "console": [
+      "warning: Image with src \"http://127.0.0.1:3107/_next/static/media/FHFHonly.f13408af.png\" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: \"auto\"' or 'height: \"auto\"' to maintain the aspect ratio.",
+      "error: `legacyBehavior` is deprecated and will be removed in a future release. A codemod is available to upgrade your components:\n\nnpx @next/codemod@latest new-link .\n\nLearn more: https://nextjs.org/docs/app/building-your-application/upgrading/codemods#remove-a-tags-from-link-components",
+      "warning: Image with src \"http://127.0.0.1:3107/_next/static/media/FHFHonly.f13408af.png\" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: \"auto\"' or 'height: \"auto\"' to maintain the aspect ratio.",
+      "error: Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "error: Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "error: Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "error: Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "error: Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "warning: Image with src \"http://127.0.0.1:3107/_next/static/media/FHFHonly.f13408af.png\" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: \"auto\"' or 'height: \"auto\"' to maintain the aspect ratio.",
+      "error: `legacyBehavior` is deprecated and will be removed in a future release. A codemod is available to upgrade your components:\n\nnpx @next/codemod@latest new-link .\n\nLearn more: https://nextjs.org/docs/app/building-your-application/upgrading/codemods#remove-a-tags-from-link-components"
+    ],
+    "pageErrors": [],
+    "requests": {
+      "GET local": 65,
+      "GET fonts.googleapis.com": 27,
+      "GET img.buymeacoffee.com": 3,
+      "GET fonts.gstatic.com": 16,
+      "GET cdn.vercel-insights.com": 3,
+      "GET va.vercel-scripts.com": 3,
+      "GET fyhftlxokyjtpndbkfse.supabase.co": 32,
+      "POST fyhftlxokyjtpndbkfse.supabase.co": 6,
+      "GET assets.nhle.com": 44
+    },
+    "nonGetRequests": [
+      "POST fyhftlxokyjtpndbkfse.supabase.co/rest/v1/user_profiles",
+      "POST fyhftlxokyjtpndbkfse.supabase.co/rest/v1/user_settings",
+      "POST fyhftlxokyjtpndbkfse.supabase.co/rest/v1/user_profiles",
+      "POST fyhftlxokyjtpndbkfse.supabase.co/rest/v1/user_settings",
+      "POST fyhftlxokyjtpndbkfse.supabase.co/rest/v1/user_profiles",
+      "POST fyhftlxokyjtpndbkfse.supabase.co/rest/v1/user_settings"
+    ],
+    "failed": [
+      "GET /logos/nhl/svg/NYR_light.svg net::ERR_ABORTED",
+      "GET /logos/nhl/svg/VAN_light.svg net::ERR_ABORTED"
+    ],
+    "httpErrors": [
+      "503 /api/v1/homepage/visitors",
+      "503 /api/v1/games",
+      "503 /api/v1/games",
+      "503 /api/v1/transactions/ownership-trends",
+      "503 /api/v1/transactions/ownership-trends"
+    ],
+    "servedAppHasNotistack": true,
+    "timeline": [
+      {
+        "ms": 12,
+        "path": "/db/upsert-projections",
+        "toastVisible": false
+      },
+      {
+        "ms": 321,
+        "path": "/auth",
+        "toastVisible": true
+      },
+      {
+        "ms": 6480,
+        "path": "/auth",
+        "toastVisible": false
+      }
+    ],
+    "finalPath": "/auth",
+    "toastVisibleAfterRedirect": true,
+    "ok": true
+  },
+  "finishedAt": "2026-10-17T21:48:02.915Z"
+}

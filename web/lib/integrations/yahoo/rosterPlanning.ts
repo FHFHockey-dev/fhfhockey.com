@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadPlanningData, parsePlanningDataQuery } from "lib/rosterScheduleData/planning";
 import { expandActiveSlots } from "lib/rosterScheduleOptimizer/slots";
 import { normalizeEligibility } from "lib/rosterScheduleOptimizer/eligibility";
+import { nextLocalMidnight, zonedMidnight } from "lib/rosterScheduleOptimizer/planningDates";
 import type { AcquisitionEvidence, LeagueRules, PlanningData, PlanningSnapshot, ProviderCapabilities, RosterEntry, ScoringCategory, StatLine } from "lib/rosterScheduleOptimizer/planningTypes";
 import { assertYahooLeagueGameContext, resolveYahooGameContext } from "./gameContext";
 import { parseYahooBoardSettings, YAHOO_STAT_KEY_BY_ID, YahooLiveDraftError } from "./liveDraft";
@@ -80,7 +81,7 @@ function providerFresh(result: YahooProviderJsonResult, now: Date) {
 }
 
 /** Official team.roster_adds is a weekly counter, separate from season moves.
- * NHL max_weekly_adds encoding is not verified: retain presence/value, not a limit. */
+ * A positive max_weekly_adds is the weekly add limit; zero or absent stays unknown, never unlimited. */
 export function yahooPlanningAcquisitions(args: {
   settings: YahooProviderJsonResult; league: YahooProviderJsonResult | null; team: YahooProviderJsonResult | null;
   weeks: PlanningData["matchupWeeks"]; gameKey: string; leagueKey: string; teamKey: string;
@@ -110,19 +111,22 @@ export function yahooPlanningAcquisitions(args: {
   const scope = league.league_key === args.leagueKey && team.team_key === args.teamKey && yes(team.is_owned_by_current_login);
   const counterValid = fresh && scope && counter.coverage_type === "week" && week !== null && week === coverageWeek && containsHorizon;
   const used = counterValid ? integer(counter.value) : null;
+  const limit = positive(settings.max_weekly_adds);
+  const remaining = used !== null && limit !== null && used <= limit ? limit - used : null;
   if (!fresh) limitations.push("Yahoo weekly acquisition counter or league freshness is unverified.");
   if (!scope) limitations.push("Yahoo weekly acquisition counter ownership or league scope is unverified.");
   if (counter.coverage_type !== "week" || week === null || week !== coverageWeek) limitations.push("Yahoo acquisition counter does not match the league's current week.");
   if (!containsHorizon) limitations.push("Selected dates are not contained in one verified current Yahoo game week; its counter cannot describe this horizon.");
   if (used === null) limitations.push("Weekly acquisitions used are unknown; season moves and transaction logs are not substitutes.");
-  limitations.push("Yahoo NHL weekly-limit encoding and exact reset time are unverified. Remaining allowance is unknown; zero is not assumed to mean unlimited.");
+  if (limit === null) limitations.push("Yahoo did not report a positive weekly add limit. Remaining allowance is unknown; zero is not assumed to mean unlimited.");
+  else if (used !== null && used > limit) limitations.push("Yahoo weekly adds used exceed the reported weekly limit; remaining allowance is unknown.");
   return { source: "Yahoo team roster_adds and league current_week", fetchedAt: args.now.toISOString(),
     asOf: args.team?.transport.responseDate ?? null,
     counter: { present: Object.prototype.hasOwnProperty.call(team, "roster_adds"), coverageType: text(counter.coverage_type),
       coverageWeek, reportedValue: scalar(counter.value), used },
-    limit: { present: Object.prototype.hasOwnProperty.call(settings, "max_weekly_adds"), reportedValue: scalar(settings.max_weekly_adds), verified: false },
+    limit: { present: Object.prototype.hasOwnProperty.call(settings, "max_weekly_adds"), reportedValue: scalar(settings.max_weekly_adds), verified: limit !== null },
     period: { week, startDate: datesValid ? period!.startDate : null, endDate: datesValid ? period!.endDate : null, containsHorizon },
-    remaining: null, limitations };
+    remaining, limitations };
 }
 
 /** Retry one timed-out required read; rate limits and access errors are never retried. */
@@ -192,7 +196,8 @@ export async function loadYahooPlanningSnapshot(args: {
   const limitations: string[] = [];
   limitations.push(...acquisitionEvidence.limitations);
   if (!fresh) limitations.push("Yahoo roster/settings freshness could not be verified; affected lock and availability claims remain unknown.");
-  if (!providerTimeZone) limitations.push(args.timeZone ? "League time zone supplied by the manager; Yahoo did not verify it." : "League time zone is unknown; UTC is a display fallback and timing requires verification.");
+  // Yahoo league settings carry no time zone; the client reviews a supplied zone with the manager.
+  if (!providerTimeZone && !args.timeZone) limitations.push("League time zone is unknown; UTC is a display fallback and timing requires verification.");
   const mapping: Row[] = [];
   for (let offset = 0; ; offset += 1000) {
     const page = await db.from("yahoo_nhl_player_map_read").select("nhl_player_id,yahoo_player_id")
@@ -251,6 +256,13 @@ export async function loadYahooPlanningSnapshot(args: {
   if (mode === "weekly") unsupported.push("Supply verified weekly lineup windows; the roster response alone does not establish their exact locks.");
   if (ownRows.length !== roster.length) unsupported.push("Resolve missing roster identities before accepting a complete plan.");
   if (!roster.length) unsupported.push("The connected roster is empty; review the team selection or import the roster manually.");
+  // The remaining weekly allowance applies only inside the verified current Yahoo week that
+  // contains the whole horizon. Planned actions are at or after now and within those dates, so
+  // league-local midnight boundaries stand in for Yahoo's unreported reset instant.
+  const { remaining, period: week } = acquisitionEvidence;
+  const periods: LeagueRules["periods"] = remaining !== null && week.week !== null && week.startDate && week.endDate && week.containsHorizon
+    ? [{ id: `yahoo-week-${week.week}`, start: zonedMidnight(week.startDate, timeZone), end: nextLocalMidnight(week.endDate, timeZone),
+      remaining, source: "provider", ...(timeZone === "UTC" || timeZone.includes("/") ? { timeZone } : {}) }] : [];
   const reserveSlots = Object.fromEntries(Object.entries(settings.excludedInjurySlots ?? {})
     .filter(([slot]) => ["IR", "IR+", "NA"].includes(slot.trim().toUpperCase())));
   const rules: LeagueRules = {
@@ -258,10 +270,12 @@ export async function loadYahooPlanningSnapshot(args: {
     lineupMode: mode, rosterSlots: { ...settings.rosterConfig, ...reserveSlots },
     // A lineup deadline does not establish when a transaction becomes effective.
     acquisitionTiming: "unknown",
-    acquisitionCost: null, periods: [], scoring: { mode: settings.leagueType, weights: { ...settings.scoringCategories }, categories: yahooPlanningCategories(Object.keys(settings.categoryWeights)) },
+    acquisitionCost: periods.length ? 1 : null, periods, scoring: { mode: settings.leagueType, weights: { ...settings.scoringCategories }, categories: yahooPlanningCategories(Object.keys(settings.categoryWeights)) },
     goalieMinimum: { required: settings.minimumGoalieStarts, credited: null, counts: "unknown", penalty: "unknown" }, unsupported,
   };
-  limitations.push("Verify remaining acquisitions, reset periods, counting rules and goalie minimum progress; these are not inferred from season transaction totals.");
+  const unverifiedRules = [...(periods.length ? [] : ["remaining acquisitions, reset periods and counting rules"]),
+    ...(rules.goalieMinimum.required === 0 ? [] : ["goalie minimum progress"])];
+  if (unverifiedRules.length) limitations.push(`Verify ${unverifiedRules.join(" and ")}; these are not inferred from season transaction totals.`);
   const slots = expandActiveSlots(rules.rosterSlots).activeSlots;
   const usedSlots = new Set<string>();
   const lockedAssignments: PlanningSnapshot["lockedAssignments"] = [];
@@ -281,30 +295,38 @@ export async function loadYahooPlanningSnapshot(args: {
   const candidates = new Map<string, Row>();
   const availabilityStarted = Date.now();
   let repeatedPageIdentity = false;
-  // Read all pages within a disclosed bound, independent of forecast availability.
-  for (let start = 0; start <= 2000; start += 25) {
+  // Read all pages within a disclosed bound, independent of forecast availability. The first
+  // page is read alone to surface limits or scope problems; later pages are fetched three at a
+  // time but accepted strictly in order, so a failure or the end of the list stops at that page.
+  read: for (let start = 0; start <= 2000;) {
     if ((retryAfterSeconds ?? 0) > 0 || refreshError?.code === "yahoo_rate_limited" || refreshError?.code === "yahoo_reauth_required" || refreshError?.code === "yahoo_access_denied") { availabilityStop = "provider backoff or access restriction"; break; }
     if (Date.now() - availabilityStarted >= 8000) { availabilityStop = "time budget"; limitations.push("Availability discovery reached its time budget; remaining players are unknown."); break; }
-    let pageFailure = "request failure";
-    try {
-      pagesAttempted++;
-      const result = await fetchYahooPlanningResource({ ...provider, resource: { type: "available_page", start } });
-      pagesChecked++;
-      const pageFresh = providerFresh(result, now), pageScoped = text(yahooValue(result.payload, "league_key")) === league.external_league_key;
-      if (!pageFresh || !pageScoped) {
-        pageFailure = pageScoped ? "unverified freshness" : pageFresh ? "league scope mismatch" : "unverified scope and freshness";
-        throw new Error("Unverified availability scope/freshness");
-      }
-      pageFailure = "invalid player collection";
-      const rows = yahooPlanningPlayers(result.payload);
-      if (rows.length > 25) throw new Error("Incomplete availability page");
-      pagesAccepted++; rowsAccepted += rows.length;
-      for (const row of rows) {
-        if (candidates.has(row.player_key)) { repeatedRows++; repeatedPageIdentity = true; candidates.set(row.player_key, { ...row, ownership: null }); limitations.push("Availability pages changed while reading; repeated identities remain unknown."); }
-        else candidates.set(row.player_key, row);
-      }
-      if (rows.length < 25) { availabilityComplete = !repeatedPageIdentity; availabilityStop = repeatedPageIdentity ? "end of list with repeated identities" : "end of list"; break; }
-    } catch (error) { availabilityStop = pageFailure; optionalFailure(error); limitations.push("Availability coverage is partial; unverified players remain unknown."); break; }
+    const batch = (start ? [start, start + 25, start + 50] : [0]).filter(page => page <= 2000);
+    pagesAttempted += batch.length;
+    const settled = await Promise.allSettled(batch.map(page => fetchYahooPlanningResource({ ...provider, resource: { type: "available_page", start: page } })));
+    pagesChecked += settled.filter(outcome => outcome.status === "fulfilled").length;
+    start = batch[batch.length - 1] + 25;
+    for (const outcome of settled) {
+      let pageFailure = "request failure";
+      try {
+        if (outcome.status === "rejected") throw outcome.reason;
+        const result = outcome.value;
+        const pageFresh = providerFresh(result, now), pageScoped = text(yahooValue(result.payload, "league_key")) === league.external_league_key;
+        if (!pageFresh || !pageScoped) {
+          pageFailure = pageScoped ? "unverified freshness" : pageFresh ? "league scope mismatch" : "unverified scope and freshness";
+          throw new Error("Unverified availability scope/freshness");
+        }
+        pageFailure = "invalid player collection";
+        const rows = yahooPlanningPlayers(result.payload);
+        if (rows.length > 25) throw new Error("Incomplete availability page");
+        pagesAccepted++; rowsAccepted += rows.length;
+        for (const row of rows) {
+          if (candidates.has(row.player_key)) { repeatedRows++; repeatedPageIdentity = true; candidates.set(row.player_key, { ...row, ownership: null }); limitations.push("Availability pages changed while reading; repeated identities remain unknown."); }
+          else candidates.set(row.player_key, row);
+        }
+        if (rows.length < 25) { availabilityComplete = !repeatedPageIdentity; availabilityStop = repeatedPageIdentity ? "end of list with repeated identities" : "end of list"; break read; }
+      } catch (error) { availabilityStop = pageFailure; optionalFailure(error); limitations.push("Availability coverage is partial; unverified players remain unknown."); break read; }
+    }
   }
   const availabilityElapsed = Math.max(0, Date.now() - availabilityStarted);
   if (!availabilityComplete) limitations.push("Available-player discovery did not reach the end of the provider list.");
@@ -337,7 +359,7 @@ export async function loadYahooPlanningSnapshot(args: {
     else neitherKnown++;
   }
   const discoverySummary = [
-    `Yahoo availability read: ${pagesAttempted} pages attempted, ${pagesChecked} returned, ${pagesAccepted} accepted; ${rowsAccepted} accepted rows, ${candidates.size} unique, ${repeatedRows} repeats. ${availabilityElapsed} ms elapsed; 8000 ms between-page budget. Stopped: ${availabilityStop}.`,
+    `Yahoo availability read: ${pagesAttempted} pages attempted, ${pagesChecked} returned, ${pagesAccepted} accepted; ${rowsAccepted} accepted rows, ${candidates.size} unique, ${repeatedRows} repeats. ${availabilityElapsed} ms elapsed; 8000 ms budget checked between page batches. Stopped: ${availabilityStop}.`,
     `Yahoo availability matches: ${catalogMatches} unique catalog matches, ${candidates.size - catalogMatches} unmatched; ${rosteredMatches} rostered/excluded, ${catalogMatches - rosteredMatches} candidate matches.`,
     `Yahoo provider catalog before search: ${bothKnown + eligibilityOnly + availabilityOnly + neitherKnown} candidates; ${bothKnown} both known, ${eligibilityOnly} eligibility only, ${availabilityOnly} availability only, ${neitherKnown} neither known. Eligibility means usable verified positions; availability means free agent or waivers. Discovery ${availabilityComplete ? "complete" : "partial"}; unseen players remain unknown.`,
   ];
@@ -371,6 +393,6 @@ export async function loadYahooPlanningSnapshot(args: {
       availability: { source: `Yahoo league ownership (${pagesChecked} pages)`, asOf: now.toISOString(), seasonId: query.seasonId, completeness: availabilityComplete ? "complete" : "partial", limitations: availabilityComplete ? [] : ["Only individually verified availability may be actionable."] },
     },
   };
-  return { snapshot, capabilities: { roster: fresh && ownRows.length === roster.length && roster.length > 0, availability: availabilityComplete, rules: false, matchup: opponent !== null, acquisitions: false, limitations: [...limitations, ...discoverySummary] },
+  return { snapshot, capabilities: { roster: fresh && ownRows.length === roster.length && roster.length > 0, availability: availabilityComplete, rules: false, matchup: opponent !== null, acquisitions: periods.length > 0, limitations: [...limitations, ...discoverySummary] },
     ...(refreshError ? { code: refreshError.code, retryAfterSeconds } : {}) };
 }

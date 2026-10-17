@@ -1,0 +1,47 @@
+{
+ "control-after": {
+  "description": "Live route bytes, unchanged (harness control)",
+  "expectation": "survive",
+  "sha256": "874a307c6a46190fcaa93474ed68ec7061d305516753068bd4ec9676846c58ab"
+ },
+ "before-head": {
+  "description": "Owner before/ copy = git HEAD:replay-player-aliases.ts",
+  "expectation": "killed",
+  "sha256": "98261dff05413949eb8ee379ee01ee98a80c5e0e477f805ced020ef146ceb87e"
+ },
+ "guard-removed": {
+  "description": "Condition reverted to `isCurrent && currentCalls >= 2` (import kept)",
+  "expectation": "killed",
+  "sha256": "81a289e093e93fb12eb8bd73fc9c56dda3b9a8e5de5be1458ecc2841f6801fd0"
+ },
+ "guard-after-consumed": {
+  "description": "Pilot stop moved to just after `consumed++`",
+  "expectation": "killed",
+  "sha256": "298277b92de8a2e3bf5e0395345fec54f129aa4381b5131442aa69200cbe7719"
+ },
+ "guard-all-rows": {
+  "description": "Pilot stop applied to historical rows too",
+  "expectation": "killed",
+  "sha256": "5b920b17aea102943d7066e789bcad346133005c6b6555313cce3c717c29b209"
+ },
+ "guard-inverted": {
+  "description": "Pilot condition negated",
+  "expectation": "killed",
+  "sha256": "61fa4efc84607d75fa9243633ccbe1ee885e1063958806bb4ff034aa61cd8778"
+ },
+ "guard-flag-only": {
+  "description": "Pilot test narrowed to IFTTT_RECEIPT_VARIANTS_ENABLED === 'true' (misses a stopped pilot)",
+  "expectation": "killed",
+  "sha256": "76cc18c512c29affe1553c71f2010d4f8a58ee7ef88a100f7f7ace1acb15b436"
+ },
+ "guard-skip-fetch-only": {
+  "description": "Row consumed and resolved; only the processor POST is skipped under pilot",
+  "expectation": "killed",
+  "sha256": "0e08fb0202fdcf49c06ef4a23af6182e052bda0e5f12cefc29e6aae81f6db4fd"
+ },
+ "guard-continue": {
+  "description": "Current-day row skipped with `continue` instead of `break` (cursor can pass it)",
+  "expectation": "see note",
+  "sha256": "ed6b1262ed5a2f5c0741a4c6b3877994ef127a0c06a6d6f80a74122ca791fec3"
+ }
+}

@@ -519,7 +519,8 @@ export function parseYahooBoardSettings(payload: unknown) {
   return { ...adaptRosterConfig(payload), ...adaptScoring(payload),
     weeklyDeadline: toText(findFirstScalar(payload, ["weekly_deadline"])),
     rosterType: toText(findFirstScalar(payload, ["roster_type"])),
-    minimumGoalieStarts: toInteger(findFirstScalar(payload, ["min_goalie_appearances"])),
+    // NHL leagues report the weekly goalie minimum as min_games_played; counting and penalty are not reported.
+    minimumGoalieStarts: toInteger(findFirstScalar(payload, ["min_games_played"])),
   };
 }
 

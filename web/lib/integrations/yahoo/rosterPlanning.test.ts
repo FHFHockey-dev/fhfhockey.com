@@ -54,12 +54,13 @@ describe("Yahoo planning parsers", () => {
       weeks: [{ gameKey: "453", week: 1, startDate: "2026-09-29", endDate: "2026-10-04" }],
       gameKey: "453", leagueKey: "453.l.1", teamKey: "453.l.1.t.1", startDate: "2026-10-01", endDate: "2026-10-03" };
   }
-  it("retains scoped weekly usage, source and dates separately from unverified NHL limits", () => {
+  it("derives remaining weekly adds from a positive limit and the scoped weekly counter, not season moves", () => {
     const args = acquisitionInputs(), evidence = yahooPlanningAcquisitions(args);
     expect(evidence.counter).toEqual({ present: true, coverageType: "week", coverageWeek: 1, reportedValue: "3", used: 3 });
     expect(evidence.period).toEqual({ week: 1, startDate: "2026-09-29", endDate: "2026-10-04", containsHorizon: true });
-    expect(evidence.limit).toEqual({ present: true, reportedValue: "5", verified: false });
-    expect(evidence.remaining).toBeNull();
+    expect(evidence.limit).toEqual({ present: true, reportedValue: "5", verified: true });
+    expect(evidence.remaining).toBe(2);
+    expect(evidence.limitations).toEqual([]);
     expect(evidence.asOf).toBe(args.now.toISOString());
     expect(evidence.fetchedAt).toBe(args.now.toISOString());
     expect(evidence.source).toContain("roster_adds");
@@ -77,6 +78,16 @@ describe("Yahoo planning parsers", () => {
     expect(evidence.limit).toEqual({ present: value !== undefined, reportedValue: value ?? null, verified: false });
     expect(evidence.remaining).toBeNull();
     expect(evidence.counter.used).toBe(3);
+    expect(evidence.limitations).toContain("Yahoo did not report a positive weekly add limit. Remaining allowance is unknown; zero is not assumed to mean unlimited.");
+  });
+  it("keeps remaining unknown when weekly usage exceeds the limit or the counter is unverified", () => {
+    const args = acquisitionInputs();
+    args.settings = args.response({ settings: { max_weekly_adds: "2" } });
+    expect(yahooPlanningAcquisitions(args)).toMatchObject({ remaining: null, limit: { verified: true },
+      limitations: ["Yahoo weekly adds used exceed the reported weekly limit; remaining allowance is unknown."] });
+    args.settings = args.response({ settings: { max_weekly_adds: "5" } });
+    expect(yahooPlanningAcquisitions({ ...args, endDate: "2026-10-05" }).remaining).toBeNull();
+    expect(yahooPlanningAcquisitions({ ...args, league: null }).remaining).toBeNull();
   });
   it("rejects stale, absent, wrong-scope and non-week counters without using season moves", () => {
     const args = acquisitionInputs();
@@ -194,7 +205,7 @@ describe("Yahoo snapshot evidence", () => {
       const result = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-03", now });
       expect(result.capabilities.availability).toBe(false);
       expect(result.snapshot.evidence.availability?.completeness).toBe("partial");
-      expect(starts).toEqual(stopsAfterFirstPage ? [0] : [0, 25]);
+      expect(starts).toEqual(stopsAfterFirstPage ? [0] : [0, 25, 50, 75]);
       const candidate = result.snapshot.players.find(player => player.id === "canonical-2")!;
       const unresolved = ["unmapped", "ambiguous", "foreign-game"].includes(mode);
       expect(candidate.eligibilityVerified).toBe(!unresolved && mode !== "availability-only");
@@ -217,7 +228,7 @@ describe("Yahoo snapshot evidence", () => {
       const availabilityOnly = ["availability-only", "class-mismatch"].includes(mode) ? 1 : 0;
       const stop = stopsAfterFirstPage ? "time budget" : repeated ? "end of list with repeated identities"
         : mode === "failed-next-page" ? "request failure" : mode === "stale-next-page" ? "unverified freshness" : "league scope mismatch";
-      expect(result.capabilities.limitations).toContain(`Yahoo availability read: ${starts.length} pages attempted, ${mode === "failed-next-page" ? 1 : starts.length} returned, ${repeated ? 2 : 1} accepted; ${repeated ? 26 : 25} accepted rows, 25 unique, ${repeated ? 1 : 0} repeats. ${elapsed} ms elapsed; 8000 ms between-page budget. Stopped: ${stop}.`);
+      expect(result.capabilities.limitations).toContain(`Yahoo availability read: ${starts.length} pages attempted, ${mode === "failed-next-page" ? 1 : starts.length} returned, ${repeated ? 2 : 1} accepted; ${repeated ? 26 : 25} accepted rows, 25 unique, ${repeated ? 1 : 0} repeats. ${elapsed} ms elapsed; 8000 ms budget checked between page batches. Stopped: ${stop}.`);
       expect(result.capabilities.limitations).toContain(`Yahoo availability matches: ${matches} unique catalog matches, ${25 - matches} unmatched; 0 rostered/excluded, ${matches} candidate matches.`);
       expect(result.capabilities.limitations).toContain(`Yahoo provider catalog before search: 3 candidates; ${both} both known, ${eligibilityOnly} eligibility only, ${availabilityOnly} availability only, ${3 - both - eligibilityOnly - availabilityOnly} neither known. Eligibility means usable verified positions; availability means free agent or waivers. Discovery partial; unseen players remain unknown.`);
       expect(JSON.stringify(result.snapshot)).not.toContain("Yahoo availability read:");
@@ -356,6 +367,21 @@ describe("Yahoo snapshot evidence", () => {
     expect(counted.snapshot.rules.periods).toEqual([]);
     expect(counted.capabilities.acquisitions).toBe(false);
     expect(mocks.planningResource).toHaveBeenCalledWith(expect.objectContaining({ resource: { type: "team", teamKey: "453.l.1.t.1" } }));
+    expect(counted.capabilities.limitations).toContain("Verify remaining acquisitions, reset periods and counting rules and goalie minimum progress; these are not inferred from season transaction totals.");
+    expect(counted.capabilities.limitations.some(item => /time zone/i.test(item))).toBe(false);
+    mocks.draftResource.mockResolvedValue({ payload: { league_key: "453.l.1", draft_status: "postdraft", max_weekly_adds: "4" }, transport });
+    const limited = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-03", timeZone: "America/New_York", now });
+    expect(limited.snapshot.acquisitionEvidence).toMatchObject({ remaining: 4, limit: { verified: true } });
+    expect(limited.snapshot.rules).toMatchObject({ acquisitionCost: 1, periods: [{ id: "yahoo-week-1", start: "2026-09-29T04:00:00.000Z",
+      end: "2026-10-05T04:00:00.000Z", remaining: 4, source: "provider", timeZone: "America/New_York" }] });
+    expect(limited.capabilities.acquisitions).toBe(true);
+    expect(limited.capabilities.limitations).toContain("Verify goalie minimum progress; these are not inferred from season transaction totals.");
+    expect(limited.capabilities.limitations.some(item => /weekly add limit|remaining acquisitions|time zone/i.test(item))).toBe(false);
+    const beyondWeek = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-07", timeZone: "America/New_York", now });
+    expect(beyondWeek.snapshot.rules).toMatchObject({ acquisitionCost: null, periods: [] });
+    mocks.draftResource.mockResolvedValue({ payload: { league_key: "453.l.1", draft_status: "postdraft" }, transport });
+    const unknownZone = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-03", now });
+    expect(unknownZone.capabilities.limitations).toContain("League time zone is unknown; UTC is a display fallback and timing requires verification.");
 
     mocks.draftResource.mockResolvedValue({ payload: { league_key: "453.l.1", time_zone: "America/New_York", draft_status: "postdraft" }, transport });
     const normalized = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a",
@@ -390,7 +416,7 @@ describe("Yahoo snapshot evidence", () => {
         expect(partial.snapshot.evidence.availability?.completeness, mode).toBe(mode === "ownership-only" ? "complete" : "partial");
         expect(partial.snapshot.players.find(row => row.id === "candidate")?.availability, mode).toBe(mode === "bounded" ? "free_agent" : "unknown");
         if (mode === "repeated") {
-          expect(starts).toEqual([0, 25]);
+          expect(starts).toEqual([0, 25, 50, 75]);
           expect(partial.capabilities.limitations.join(" ")).toContain("repeated identities remain unknown");
         }
         if (mode === "deadline") {

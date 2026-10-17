@@ -1,0 +1,68 @@
+# Pin verification — 2026-10-17 17:28:16 EDT
+git HEAD: ceceb407a29b45f2e5b0c090ecfcff0c27e15d4c
+gitHead pin: ceceb407a29b45f2e5b0c090ecfcff0c27e15d4c MATCH
+MATCH  live after  web/pages/api/v1/db/replay-player-aliases.ts
+       expected 874a307c6a46190fcaa93474ed68ec7061d305516753068bd4ec9676846c58ab
+       actual   874a307c6a46190fcaa93474ed68ec7061d305516753068bd4ec9676846c58ab
+MATCH  before-copy tasks/ifttt-integration-2026-10-16/replay-aliases-retain-only-v1/before/replay-player-aliases.ts
+       expected 98261dff05413949eb8ee379ee01ee98a80c5e0e477f805ced020ef146ceb87e
+       actual   98261dff05413949eb8ee379ee01ee98a80c5e0e477f805ced020ef146ceb87e
+MATCH  git show HEAD:web/pages/api/v1/db/replay-player-aliases.ts
+       expected 98261dff05413949eb8ee379ee01ee98a80c5e0e477f805ced020ef146ceb87e
+       actual   98261dff05413949eb8ee379ee01ee98a80c5e0e477f805ced020ef146ceb87e
+       byte-identical before-copy vs HEAD: True
+MATCH  live after  web/__tests__/pages/api/v1/db/replay-player-aliases.test.ts
+       expected 80eaf4fdb617c5d6b6aa462c127949b2fb3297bbc95e80c8d787663e3ecc33a0
+       actual   80eaf4fdb617c5d6b6aa462c127949b2fb3297bbc95e80c8d787663e3ecc33a0
+       before=null; tracked in git: False (expected False for a new file)
+MATCH  uncommittedDependency web/lib/sources/iftttIntakePolicy.ts
+       expected 6badd4c0c4d87eb110a8cb0b3dedefb10fa8b49f9936491eb8f2ce2e8e59d619
+       actual   6badd4c0c4d87eb110a8cb0b3dedefb10fa8b49f9936491eb8f2ce2e8e59d619
+R21 manifest entry for iftttIntakePolicy.ts: 
+    {'before': '34a5f689e660561c6b1774c14be1bef01134b513fd9ae1102e8a4ecc0e8e7a2f', 'after': '6badd4c0c4d87eb110a8cb0b3dedefb10fa8b49f9936491eb8f2ce2e8e59d619'}
+MATCH  unchangedContext web/pages/api/v1/db/update-line-sources.ts
+       expected 3730aa17e7140b10815bf9d044acc502cbb616de720c12c95a091f06e051890e
+       actual   3730aa17e7140b10815bf9d044acc502cbb616de720c12c95a091f06e051890e
+       equals HEAD: True
+MATCH  unchangedContext web/pages/api/v1/db/update-lines-ccc.ts
+       expected a7777315823ff655e2625faa531cf39ca23bdf0c544f5b1ba7d8a4715d850084
+       actual   a7777315823ff655e2625faa531cf39ca23bdf0c544f5b1ba7d8a4715d850084
+       equals HEAD: True
+MATCH  unchangedContext web/pages/api/v1/db/player-name-aliases.ts
+       expected 213418f118652764b07c81a4cf3e1e9bfe446aba696a0c90d7fd0a2b5d23f5b1
+       actual   213418f118652764b07c81a4cf3e1e9bfe446aba696a0c90d7fd0a2b5d23f5b1
+       equals HEAD: True
+MATCH  unchangedContext web/__tests__/pages/api/v1/db/player-name-aliases.test.ts
+       expected a7edd922b0388f5204b3ad3d06ae900a58cb6ddea5d038a2dde9eb0ca6322117
+       actual   a7edd922b0388f5204b3ad3d06ae900a58cb6ddea5d038a2dde9eb0ca6322117
+       equals HEAD: True
+MATCH  unchangedContext web/vercel.json
+       expected 57a9c5f6ec90097e9a8f669bd7287fbf5366718407fc8a447c1d4c035efef782
+       actual   57a9c5f6ec90097e9a8f669bd7287fbf5366718407fc8a447c1d4c035efef782
+       equals HEAD: True
+artifact manifest: listed-not-present [] present-not-listed []
+MATCH  artifact CHECKPOINT.md
+       expected 85da4b774412e4685a6c5ce7bce193128162e6e321924da6ac431e2795be4b00
+       actual   85da4b774412e4685a6c5ce7bce193128162e6e321924da6ac431e2795be4b00
+MATCH  artifact before/replay-player-aliases.ts
+       expected 98261dff05413949eb8ee379ee01ee98a80c5e0e477f805ced020ef146ceb87e
+       actual   98261dff05413949eb8ee379ee01ee98a80c5e0e477f805ced020ef146ceb87e
+MATCH  artifact evidence/before-bytes-run.log
+       expected 270dfd1c81dfcf6c9624397e721b1fe0725dea3d05638ee8b6acac4df6d340f3
+       actual   270dfd1c81dfcf6c9624397e721b1fe0725dea3d05638ee8b6acac4df6d340f3
+MATCH  artifact evidence/lint.log
+       expected a6b49f7a0b519016701eccb4efc2de2d77010ed919b35fdad1e3abacbe9dcfd8
+       actual   a6b49f7a0b519016701eccb4efc2de2d77010ed919b35fdad1e3abacbe9dcfd8
+MATCH  artifact evidence/nearest.log
+       expected fa43ac29daf1275901ba2e2cc3c5c1c86ce6d14b02bf86f04097c2033e7d2a75
+       actual   fa43ac29daf1275901ba2e2cc3c5c1c86ce6d14b02bf86f04097c2033e7d2a75
+MATCH  artifact evidence/replay-player-aliases.test.ts.diff
+       expected 888291b0ce020a72b0f7c259fbba2512c4a4d5d434f4f38a10414d65b5c0c266
+       actual   888291b0ce020a72b0f7c259fbba2512c4a4d5d434f4f38a10414d65b5c0c266
+MATCH  artifact evidence/replay-player-aliases.ts.diff
+       expected 677fed2e07f442369449e5af7f22c6073946e6cadc467844f60215348a8ff0c1
+       actual   677fed2e07f442369449e5af7f22c6073946e6cadc467844f60215348a8ff0c1
+MATCH  artifact owned-source-sha256.json
+       expected 0f92a9718528fa8fb2c7bbefc70ef582464b536fca211bcb3b41f207eb586cfe
+       actual   0f92a9718528fa8fb2c7bbefc70ef582464b536fca211bcb3b41f207eb586cfe
+OVERALL ALL PINS MATCH

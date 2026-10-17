@@ -1,0 +1,2387 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:69311) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ __tests__/pages/api/cors.test.ts (68 tests | 16 failed) 32ms
+   ✓ NHL proxy boundary > rejects the unauthenticated arbitrary-method loopback reproduction before transport 1ms
+   ✓ NHL proxy boundary > denies HTTP POST 1ms
+   ✓ NHL proxy boundary > denies HTTP DELETE 0ms
+   ✓ NHL proxy boundary > denies HTTP PUT 0ms
+   ✓ NHL proxy boundary > denies HTTP PATCH 0ms
+   ✓ NHL proxy boundary > denies HTTP HEAD 0ms
+   ✓ NHL proxy boundary > denies HTTP OPTIONS 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":""} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":["https://api-web.nhle.com/v1/gamecenter/2026010054/boxscore","https://api-web.nhle.com/v1/gamecenter/2026010054/boxscore"]} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api-web.nhle.com/v1/gamecenter/2026010054/boxscore","method":"DELETE"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api-web.nhle.com/v1/gamecenter/2026010054/boxscore","method":["GET"]} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://169.254.169.254/latest/meta-data"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://10.1.2.3/v1/schedule/now"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://[::1]/v1/schedule/now"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://2130706433/v1/schedule/now"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://0x7f000001/v1/schedule/now"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"http://api-web.nhle.com/v1/gamecenter/2026010054/boxscore"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"file://api-web.nhle.com/v1/gamecenter/2026010054/boxscore"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api-web.nhle.com.attacker.invalid/v1/gamecenter/2026010054/boxscore"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api-web.nhle.com@127.0.0.1/v1/gamecenter/2026010054/boxscore"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://user:pass@api-web.nhle.com/v1/gamecenter/2026010054/boxscore"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api-web.nhle.com:8443/v1/gamecenter/2026010054/boxscore"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api-web.nhle.com:443/v1/gamecenter/2026010054/boxscore"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api-web.nhle.com./v1/gamecenter/2026010054/boxscore"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://%61pi-web.nhle.com/v1/gamecenter/2026010054/boxscore"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api-web.nhle.com\\v1/gamecenter/2026010054/boxscore"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api-web.nhle.com/v1/gamecenter/2026010054/boxscore#fragment"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api-web.nhle.com/v1/gamecenter/2026010054/boxscore#"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api-web.nhle.com/v1/gamecenter/2026010054/boxscore\n"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":" https://api-web.nhle.com/v1/gamecenter/2026010054/boxscore"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api-web.nhle.com/unapproved/../v1/gamecenter/2026010054/boxscore"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api-web.nhle.com/unapproved/%2e%2e/v1/gamecenter/2026010054/boxscore"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api-web.nhle.com/%76%31/gamecenter/2026010054/boxscore"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api-web.nhle.com/v1/arbitrary-path"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api-web.nhle.com/v1/gamecenter/2026010054/boxscore?url=http://127.0.0.1"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api.nhle.com/stats/rest/en/skater/unapproved"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api.nhle.com/stats/rest/en/season?redirect=https://attacker.invalid"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api.nhle.com/stats/rest/en/season?limit=1&limit=2"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api.nhle.com/stats/rest/en/season?limit=-1"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api.nhle.com/stats/rest/en/season?limit=101"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api.nhle.com/stats/rest/en/season?start=-1"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api.nhle.com/stats/rest/en/season?isGame=1"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api.nhle.com/stats/rest/en/season?sort=%00"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=1 or 1=1"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=2026010054&limit=100"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api.nhle.com/stats/rest/en/season?sort=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"} 0ms
+   ✓ NHL proxy boundary > rejects unsupported URL/query before transport: {"url":"https://api-web.nhle.com/v1/gamecenter/2026010054/boxscore?aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"} 0ms
+   × NHL proxy boundary > relays supported NHL caller resource: https://api-web.nhle.com/v1/gamecenter/2026010054/boxscore 12ms
+     → expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api-web.nhle.com/v1/gamecenter/2026010054/boxscore",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   × NHL proxy boundary > relays supported NHL caller resource: https://api-web.nhle.com/v1/gamecenter/2026010054/landing 1ms
+     → expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api-web.nhle.com/v1/gamecenter/2026010054/landing",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   × NHL proxy boundary > relays supported NHL caller resource: https://api-web.nhle.com/v1/gamecenter/2026010054/play-by-play 1ms
+     → expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api-web.nhle.com/v1/gamecenter/2026010054/play-by-play",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   × NHL proxy boundary > relays supported NHL caller resource: https://api-web.nhle.com/v1/schedule/2026-10-15 1ms
+     → expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api-web.nhle.com/v1/schedule/2026-10-15",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   × NHL proxy boundary > relays supported NHL caller resource: https://api-web.nhle.com/v1/standings/2026-10-15 1ms
+     → expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api-web.nhle.com/v1/standings/2026-10-15",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   × NHL proxy boundary > relays supported NHL caller resource: https://api-web.nhle.com/v1/standings/now 1ms
+     → expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api-web.nhle.com/v1/standings/now",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   × NHL proxy boundary > relays supported NHL caller resource: https://api-web.nhle.com/v1/score/2026-10-15 1ms
+     → expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api-web.nhle.com/v1/score/2026-10-15",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   × NHL proxy boundary > relays supported NHL caller resource: https://api-web.nhle.com/v1/club-schedule-season/FLA/20262027 1ms
+     → expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api-web.nhle.com/v1/club-schedule-season/FLA/20262027",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   × NHL proxy boundary > relays supported NHL caller resource: https://api.nhle.com/stats/rest/en/season?sort=[{"property":"id","direction":"DESC"}] 1ms
+     → expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api.nhle.com/stats/rest/en/season?sort=[{%22property%22:%22id%22,%22direction%22:%22DESC%22}]",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   × NHL proxy boundary > relays supported NHL caller resource: https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=2026010054 1ms
+     → expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=2026010054",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   × NHL proxy boundary > relays supported NHL caller resource: https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=false&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=1 and gameTypeId=2 and seasonId<=20262027 and seasonId>=20262027 1ms
+     → expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=false&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=franchiseId=1%20and%20gameTypeId=2%20and%20seasonId%3C=20262027%20and%20seasonId%3E=20262027",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   × NHL proxy boundary > relays supported NHL caller resource: https://api.nhle.com/stats/rest/en/team/powerplay?isAggregate=false&isGame=false&start=0&limit=50&cayenneExp=teamId=1 and gameTypeId=2 1ms
+     → expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api.nhle.com/stats/rest/en/team/powerplay?isAggregate=false&isGame=false&start=0&limit=50&cayenneExp=teamId=1%20and%20gameTypeId=2",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   × NHL proxy boundary > relays supported NHL caller resource: https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=false&isGame=true&start=100&limit=100&cayenneExp=gameDate%3C=%222026-10-15%2023:59:59%22%20and%20gameTypeId=2 1ms
+     → expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=false&isGame=true&start=100&limit=100&cayenneExp=gameDate%3C=%222026-10-15%2023:59:59%22%20and%20gameTypeId=2",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   × NHL proxy boundary > relays supported NHL caller resource: https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=true&isGame=true&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=1 and gameDate<='2026-10-15' and gameDate>='2026-10-01' and gameTypeId=2 1ms
+     → expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=true&isGame=true&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=franchiseId=1%20and%20gameDate%3C=%272026-10-15%27%20and%20gameDate%3E=%272026-10-01%27%20and%20gameTypeId=2",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   ✓ NHL proxy boundary > accepts the explicit GET compatibility parameter 0ms
+   ✓ NHL proxy boundary > keeps upstream HTML diagnostics bounded 1ms
+   ✓ NHL proxy boundary > rejects successful non-JSON bodies 0ms
+   ✓ NHL proxy boundary > does not expose raw network failure details 0ms
+   × NHL proxy boundary > relays a now resource through one approved dated redirect 1ms
+     → expected 502 to be 200 // Object.is equality
+   × NHL proxy boundary > hides a redirect to an unapproved destination behind the fixed transport error 1ms
+     → expected { success: false, …(4) } to deeply equal { success: false, …(1) }
+(node:69311) PromiseRejectionHandledWarning: Promise rejection was handled asynchronously (rejection id: 20)
+ ❯ lib/NHL/corsProxy.test.ts (62 tests | 20 failed) 56ms
+   ✓ NHL socket address boundary > passes the checked public IPv4 address to the socket lookup without a second resolution 5ms
+   ✓ NHL socket address boundary > denies DNS answer 0.0.0.0 before any connection 1ms
+   ✓ NHL socket address boundary > denies DNS answer 0.1.2.3 before any connection 0ms
+   ✓ NHL socket address boundary > denies DNS answer 10.0.0.1 before any connection 0ms
+   ✓ NHL socket address boundary > denies DNS answer 100.64.0.1 before any connection 0ms
+   ✓ NHL socket address boundary > denies DNS answer 100.127.255.254 before any connection 0ms
+   ✓ NHL socket address boundary > denies DNS answer 127.0.0.1 before any connection 0ms
+   ✓ NHL socket address boundary > denies DNS answer 127.255.255.254 before any connection 0ms
+   ✓ NHL socket address boundary > denies DNS answer 169.254.169.254 before any connection 1ms
+   ✓ NHL socket address boundary > denies DNS answer 172.16.0.1 before any connection 1ms
+   ✓ NHL socket address boundary > denies DNS answer 172.31.255.254 before any connection 0ms
+   ✓ NHL socket address boundary > denies DNS answer 192.0.0.8 before any connection 0ms
+   ✓ NHL socket address boundary > denies DNS answer 192.0.2.1 before any connection 0ms
+   ✓ NHL socket address boundary > denies DNS answer 192.88.99.1 before any connection 0ms
+   ✓ NHL socket address boundary > denies DNS answer 192.168.1.1 before any connection 0ms
+   ✓ NHL socket address boundary > denies DNS answer 198.18.0.1 before any connection 0ms
+   ✓ NHL socket address boundary > denies DNS answer 198.19.255.254 before any connection 0ms
+   ✓ NHL socket address boundary > denies DNS answer 198.51.100.1 before any connection 0ms
+   ✓ NHL socket address boundary > denies DNS answer 203.0.113.1 before any connection 0ms
+   ✓ NHL socket address boundary > denies DNS answer 224.0.0.1 before any connection 0ms
+   ✓ NHL socket address boundary > denies DNS answer 239.255.255.254 before any connection 0ms
+   ✓ NHL socket address boundary > denies DNS answer 240.0.0.1 before any connection 0ms
+   ✓ NHL socket address boundary > denies DNS answer 255.255.255.255 before any connection 0ms
+   ✓ NHL socket address boundary > denies DNS answer 2130706433 before any connection 2ms
+   ✓ NHL socket address boundary > denies DNS answer 0x7f000001 before any connection 1ms
+   ✓ NHL socket address boundary > denies DNS answer not-an-address before any connection 0ms
+   ✓ NHL socket address boundary > fails closed for IPv6 answer ::1 0ms
+   ✓ NHL socket address boundary > fails closed for IPv6 answer ::ffff:127.0.0.1 0ms
+   ✓ NHL socket address boundary > fails closed for IPv6 answer fc00::1 0ms
+   ✓ NHL socket address boundary > fails closed for IPv6 answer fe80::1 0ms
+   ✓ NHL socket address boundary > fails closed for IPv6 answer 2001:4860:4860::8888 0ms
+   ✓ NHL socket address boundary > rejects a mixed public/private DNS result, private answer first=false 0ms
+   ✓ NHL socket address boundary > rejects a mixed public/private DNS result, private answer first=true 0ms
+   ✓ NHL socket address boundary > rejects empty answers and DNS failures 0ms
+   ✓ NHL socket address boundary > denies unexpected socket hostnames without resolving 0ms
+   ✓ NHL socket address boundary > rejects unsupported direct helper destinations before transport 0ms
+   × NHL HTTP client limits with synthetic streams > rejects HTTP 301 to an unapproved destination without a second request 5ms
+     → expected [Function] to throw error including 'Unsupported NHL redirect' but got 'uri requested responds with a redirec…'
+   × NHL HTTP client limits with synthetic streams > rejects HTTP 302 to an unapproved destination without a second request 1ms
+     → expected [Function] to throw error including 'Unsupported NHL redirect' but got 'uri requested responds with a redirec…'
+   × NHL HTTP client limits with synthetic streams > rejects HTTP 303 to an unapproved destination without a second request 1ms
+     → expected [Function] to throw error including 'Unsupported NHL redirect' but got 'uri requested responds with a redirec…'
+   × NHL HTTP client limits with synthetic streams > rejects HTTP 307 to an unapproved destination without a second request 1ms
+     → expected [Function] to throw error including 'Unsupported NHL redirect' but got 'uri requested responds with a redirec…'
+   × NHL HTTP client limits with synthetic streams > rejects HTTP 308 to an unapproved destination without a second request 1ms
+     → expected [Function] to throw error including 'Unsupported NHL redirect' but got 'uri requested responds with a redirec…'
+   × NHL HTTP client limits with synthetic streams > refuses a redirect to https://169.254.169.254/latest/meta-data 1ms
+     → expected [Function] to throw error including 'Unsupported NHL redirect' but got 'uri requested responds with a redirec…'
+   × NHL HTTP client limits with synthetic streams > refuses a redirect to http://api-web.nhle.com/v1/standings/2026-10-17 0ms
+     → expected [Function] to throw error including 'Unsupported NHL redirect' but got 'uri requested responds with a redirec…'
+   × NHL HTTP client limits with synthetic streams > refuses a redirect to https://api-web.nhle.com:8443/v1/standings/2026-10-17 0ms
+     → expected [Function] to throw error including 'Unsupported NHL redirect' but got 'uri requested responds with a redirec…'
+   × NHL HTTP client limits with synthetic streams > refuses a redirect to https://api-web.nhle.com.attacker.invalid/v1/standings/2026-10-17 1ms
+     → expected [Function] to throw error including 'Unsupported NHL redirect' but got 'uri requested responds with a redirec…'
+   × NHL HTTP client limits with synthetic streams > refuses a redirect to https://user@api-web.nhle.com/v1/standings/2026-10-17 1ms
+     → expected [Function] to throw error including 'Unsupported NHL redirect' but got 'uri requested responds with a redirec…'
+   × NHL HTTP client limits with synthetic streams > refuses a redirect to /v1/arbitrary-path 1ms
+     → expected [Function] to throw error including 'Unsupported NHL redirect' but got 'uri requested responds with a redirec…'
+   × NHL HTTP client limits with synthetic streams > refuses a redirect to /v1/standings/2026-10-17#fragment 0ms
+     → expected [Function] to throw error including 'Unsupported NHL redirect' but got 'uri requested responds with a redirec…'
+   × NHL HTTP client limits with synthetic streams > refuses a redirect to https://[::1]/v1/standings/2026-10-17 0ms
+     → expected [Function] to throw error including 'Unsupported NHL redirect' but got 'uri requested responds with a redirec…'
+   × NHL HTTP client limits with synthetic streams > refuses a redirect to http://[invalid 1ms
+     → expected [Function] to throw error including 'Unsupported NHL redirect' but got 'uri requested responds with an invali…'
+   × NHL HTTP client limits with synthetic streams > refuses a redirect without a Location header 1ms
+     → expected [Function] to throw error including 'Unsupported NHL redirect' but got 'uri requested responds with a redirec…'
+   × NHL HTTP client limits with synthetic streams > follows one now-to-dated redirect to /v1/standings/2026-10-17 through a fresh checked lookup 1ms
+     → uri requested responds with a redirect, redirect mode is set to error: https://api-web.nhle.com/v1/standings/now
+   × NHL HTTP client limits with synthetic streams > follows one now-to-dated redirect to https://api-web.nhle.com/v1/standings/2026-10-17 through a fresh checked lookup 0ms
+     → uri requested responds with a redirect, redirect mode is set to error: https://api-web.nhle.com/v1/standings/now
+   × NHL HTTP client limits with synthetic streams > refuses a second redirect even between approved resources 1ms
+     → expected [Function] to throw error including 'Unsupported NHL redirect' but got 'uri requested responds with a redirec…'
+   × NHL HTTP client limits with synthetic streams > re-checks DNS on the redirect hop and rejects a private answer 1ms
+     → expected [Function] to throw error including 'NHL address unavailable' but got 'uri requested responds with a redirec…'
+   × NHL HTTP client limits with synthetic streams > applies one deadline across a stalled redirect hop 5ms
+     → expected FetchError{ …(3) } to match object { name: 'AbortError' }
+(2 matching properties omitted from actual)
+   ✓ NHL HTTP client limits with synthetic streams > enforces the decoded-body limit with compression=false 1ms
+   ✓ NHL HTTP client limits with synthetic streams > enforces the decoded-body limit with compression=true 12ms
+   ✓ NHL HTTP client limits with synthetic streams > aborts stalled dns within the total 10-second deadline 1ms
+   ✓ NHL HTTP client limits with synthetic streams > aborts stalled headers within the total 10-second deadline 1ms
+   ✓ NHL HTTP client limits with synthetic streams > aborts stalled body within the total 10-second deadline 1ms
+   ✓ NHL HTTP client limits with synthetic streams > clears the deadline on success 1ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 36 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/NHL/corsProxy.test.ts > NHL HTTP client limits with synthetic streams > rejects HTTP 301 to an unapproved destination without a second request
+ FAIL  lib/NHL/corsProxy.test.ts > NHL HTTP client limits with synthetic streams > rejects HTTP 302 to an unapproved destination without a second request
+ FAIL  lib/NHL/corsProxy.test.ts > NHL HTTP client limits with synthetic streams > rejects HTTP 303 to an unapproved destination without a second request
+ FAIL  lib/NHL/corsProxy.test.ts > NHL HTTP client limits with synthetic streams > rejects HTTP 307 to an unapproved destination without a second request
+ FAIL  lib/NHL/corsProxy.test.ts > NHL HTTP client limits with synthetic streams > rejects HTTP 308 to an unapproved destination without a second request
+AssertionError: expected [Function] to throw error including 'Unsupported NHL redirect' but got 'uri requested responds with a redirec…'
+
+Expected: [32m"Unsupported NHL redirect"[39m
+Received: [31m"uri requested responds with a redirect, redirect mode is set to error: https://api-web.nhle.com/v1/gamecenter/2026010054/boxscore"[39m
+
+ ❯ lib/NHL/corsProxy.test.ts:148:5
+    146|   it.each([301, 302, 303, 307, 308])("rejects HTTP %s to an unapproved…
+    147|     redirects = [redirectTo("http://169.254.169.254/synthetic", status…
+    148|     await expect(fetchNhlProxyText(TARGET)).rejects.toThrow("Unsupport…
+       |     ^
+    149|     expect(transport).toHaveBeenCalledTimes(1);
+    150|     expect(httpTransport).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/36]⎯
+
+ FAIL  lib/NHL/corsProxy.test.ts > NHL HTTP client limits with synthetic streams > refuses a redirect to https://169.254.169.254/latest/meta-data
+ FAIL  lib/NHL/corsProxy.test.ts > NHL HTTP client limits with synthetic streams > refuses a redirect to http://api-web.nhle.com/v1/standings/2026-10-17
+ FAIL  lib/NHL/corsProxy.test.ts > NHL HTTP client limits with synthetic streams > refuses a redirect to https://api-web.nhle.com:8443/v1/standings/2026-10-17
+ FAIL  lib/NHL/corsProxy.test.ts > NHL HTTP client limits with synthetic streams > refuses a redirect to https://api-web.nhle.com.attacker.invalid/v1/standings/2026-10-17
+ FAIL  lib/NHL/corsProxy.test.ts > NHL HTTP client limits with synthetic streams > refuses a redirect to https://user@api-web.nhle.com/v1/standings/2026-10-17
+ FAIL  lib/NHL/corsProxy.test.ts > NHL HTTP client limits with synthetic streams > refuses a redirect to /v1/arbitrary-path
+ FAIL  lib/NHL/corsProxy.test.ts > NHL HTTP client limits with synthetic streams > refuses a redirect to /v1/standings/2026-10-17#fragment
+ FAIL  lib/NHL/corsProxy.test.ts > NHL HTTP client limits with synthetic streams > refuses a redirect to https://[::1]/v1/standings/2026-10-17
+AssertionError: expected [Function] to throw error including 'Unsupported NHL redirect' but got 'uri requested responds with a redirec…'
+
+Expected: [32m"Unsupported NHL redirect"[39m
+Received: [31m"uri requested responds with a redirect, redirect mode is set to error: https://api-web.nhle.com/v1/gamecenter/2026010054/boxscore"[39m
+
+ ❯ lib/NHL/corsProxy.test.ts:166:5
+    164|   ])("refuses a redirect to %s", async (location) => {
+    165|     redirects = [redirectTo(location)];
+    166|     await expect(fetchNhlProxyText(TARGET)).rejects.toThrow("Unsupport…
+       |     ^
+    167|     expect(transport).toHaveBeenCalledTimes(1);
+    168|     expect(httpTransport).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/36]⎯
+
+ FAIL  lib/NHL/corsProxy.test.ts > NHL HTTP client limits with synthetic streams > refuses a redirect to http://[invalid
+AssertionError: expected [Function] to throw error including 'Unsupported NHL redirect' but got 'uri requested responds with an invali…'
+
+Expected: [32m"Unsupported NHL redirect"[39m
+Received: [31m"uri requested responds with an invalid redirect URL: http://[invalid"[39m
+
+ ❯ lib/NHL/corsProxy.test.ts:166:5
+    164|   ])("refuses a redirect to %s", async (location) => {
+    165|     redirects = [redirectTo(location)];
+    166|     await expect(fetchNhlProxyText(TARGET)).rejects.toThrow("Unsupport…
+       |     ^
+    167|     expect(transport).toHaveBeenCalledTimes(1);
+    168|     expect(httpTransport).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/36]⎯
+
+ FAIL  lib/NHL/corsProxy.test.ts > NHL HTTP client limits with synthetic streams > refuses a redirect without a Location header
+AssertionError: expected [Function] to throw error including 'Unsupported NHL redirect' but got 'uri requested responds with a redirec…'
+
+Expected: [32m"Unsupported NHL redirect"[39m
+Received: [31m"uri requested responds with a redirect, redirect mode is set to error: https://api-web.nhle.com/v1/gamecenter/2026010054/boxscore"[39m
+
+ ❯ lib/NHL/corsProxy.test.ts:173:5
+    171|   it("refuses a redirect without a Location header", async () => {
+    172|     redirects = [{ statusCode: 302, headers: {}, body: Buffer.from("")…
+    173|     await expect(fetchNhlProxyText(TARGET)).rejects.toThrow("Unsupport…
+       |     ^
+    174|     expect(transport).toHaveBeenCalledTimes(1);
+    175|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/36]⎯
+
+ FAIL  lib/NHL/corsProxy.test.ts > NHL HTTP client limits with synthetic streams > follows one now-to-dated redirect to /v1/standings/2026-10-17 through a fresh checked lookup
+ FAIL  lib/NHL/corsProxy.test.ts > NHL HTTP client limits with synthetic streams > follows one now-to-dated redirect to https://api-web.nhle.com/v1/standings/2026-10-17 through a fresh checked lookup
+FetchError: uri requested responds with a redirect, redirect mode is set to error: https://api-web.nhle.com/v1/standings/now
+ ❯ PassThrough.<anonymous> node_modules/node-fetch/lib/index.js:1567:14
+ ❯ lib/NHL/corsProxy.test.ts:62:13
+     60|         const res = Object.assign(new PassThrough(), { statusCode: cur…
+     61|         streams.push(res);
+     62|         req.emit("response", res);
+       |             ^
+     63|         if (current.stall !== "body") res.end(current.body);
+     64|       });
+ ❯ lib/NHL/corsProxy.ts:77:5
+ ❯ lib/NHL/corsProxy.test.ts:44:34
+ ❯ lookupNhlAddress lib/NHL/corsProxy.ts:70:3
+ ❯ lib/NHL/corsProxy.test.ts:56:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/36]⎯
+
+ FAIL  lib/NHL/corsProxy.test.ts > NHL HTTP client limits with synthetic streams > refuses a second redirect even between approved resources
+AssertionError: expected [Function] to throw error including 'Unsupported NHL redirect' but got 'uri requested responds with a redirec…'
+
+Expected: [32m"Unsupported NHL redirect"[39m
+Received: [31m"uri requested responds with a redirect, redirect mode is set to error: https://api-web.nhle.com/v1/gamecenter/2026010054/boxscore"[39m
+
+ ❯ lib/NHL/corsProxy.test.ts:200:5
+    198|       redirectTo("/v1/standings/2026-10-16")
+    199|     ];
+    200|     await expect(fetchNhlProxyText(TARGET)).rejects.toThrow("Unsupport…
+       |     ^
+    201|     expect(transport).toHaveBeenCalledTimes(2);
+    202|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/36]⎯
+
+ FAIL  lib/NHL/corsProxy.test.ts > NHL HTTP client limits with synthetic streams > re-checks DNS on the redirect hop and rejects a private answer
+AssertionError: expected [Function] to throw error including 'NHL address unavailable' but got 'uri requested responds with a redirec…'
+
+Expected: [32m"[7mNHL address unavailabl[27me"[39m
+Received: [31m"[7muri requested responds with a redirect, redirect mode is set to error: https://api-web.nhle.com/v1/gamecenter/2026010054/boxscor[27me"[39m
+
+ ❯ lib/NHL/corsProxy.test.ts:212:5
+    210|     addresses = [{ address: "169.254.169.254", family: 4 }];
+    211|     redirects = [redirectTo("/v1/standings/2026-10-17")];
+    212|     await expect(fetchNhlProxyText(TARGET)).rejects.toThrow("NHL addre…
+       |     ^
+    213|     expect(connectedAddresses).toEqual([PUBLIC_ADDRESS]);
+    214|     expect(destroyAgent).toHaveBeenCalledTimes(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/36]⎯
+
+ FAIL  lib/NHL/corsProxy.test.ts > NHL HTTP client limits with synthetic streams > applies one deadline across a stalled redirect hop
+AssertionError: expected FetchError{ …(3) } to match object { name: 'AbortError' }
+(2 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- Object {[39m
+[32m-   "name": "AbortError",[39m
+[32m- }[39m
+[31m+ [FetchError: uri requested responds with a redirect, redirect mode is set to error: https://api-web.nhle.com/v1/gamecenter/2026010054/boxscore][39m
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/36]⎯
+
+ FAIL  __tests__/pages/api/cors.test.ts > NHL proxy boundary > relays supported NHL caller resource: https://api-web.nhle.com/v1/gamecenter/2026010054/boxscore
+AssertionError: expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api-web.nhle.com/v1/gamecenter/2026010054/boxscore",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+ ❯ __tests__/pages/api/cors.test.ts:111:23
+    109|     expect(res.statusCode).toBe(200);
+    110|     expect(res.body).toEqual(payload);
+    111|     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(new URL(url), ex…
+       |                       ^
+    112|       method: "GET", redirect: "manual", size: 4 * 1024 * 1024,
+    113|       headers: { Accept: "application/json", "User-Agent": "fhfhockey/…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/36]⎯
+
+ FAIL  __tests__/pages/api/cors.test.ts > NHL proxy boundary > relays supported NHL caller resource: https://api-web.nhle.com/v1/gamecenter/2026010054/landing
+AssertionError: expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api-web.nhle.com/v1/gamecenter/2026010054/landing",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+ ❯ __tests__/pages/api/cors.test.ts:111:23
+    109|     expect(res.statusCode).toBe(200);
+    110|     expect(res.body).toEqual(payload);
+    111|     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(new URL(url), ex…
+       |                       ^
+    112|       method: "GET", redirect: "manual", size: 4 * 1024 * 1024,
+    113|       headers: { Accept: "application/json", "User-Agent": "fhfhockey/…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/36]⎯
+
+ FAIL  __tests__/pages/api/cors.test.ts > NHL proxy boundary > relays supported NHL caller resource: https://api-web.nhle.com/v1/gamecenter/2026010054/play-by-play
+AssertionError: expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api-web.nhle.com/v1/gamecenter/2026010054/play-by-play",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+ ❯ __tests__/pages/api/cors.test.ts:111:23
+    109|     expect(res.statusCode).toBe(200);
+    110|     expect(res.body).toEqual(payload);
+    111|     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(new URL(url), ex…
+       |                       ^
+    112|       method: "GET", redirect: "manual", size: 4 * 1024 * 1024,
+    113|       headers: { Accept: "application/json", "User-Agent": "fhfhockey/…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/36]⎯
+
+ FAIL  __tests__/pages/api/cors.test.ts > NHL proxy boundary > relays supported NHL caller resource: https://api-web.nhle.com/v1/schedule/2026-10-15
+AssertionError: expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api-web.nhle.com/v1/schedule/2026-10-15",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+ ❯ __tests__/pages/api/cors.test.ts:111:23
+    109|     expect(res.statusCode).toBe(200);
+    110|     expect(res.body).toEqual(payload);
+    111|     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(new URL(url), ex…
+       |                       ^
+    112|       method: "GET", redirect: "manual", size: 4 * 1024 * 1024,
+    113|       headers: { Accept: "application/json", "User-Agent": "fhfhockey/…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/36]⎯
+
+ FAIL  __tests__/pages/api/cors.test.ts > NHL proxy boundary > relays supported NHL caller resource: https://api-web.nhle.com/v1/standings/2026-10-15
+AssertionError: expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api-web.nhle.com/v1/standings/2026-10-15",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+ ❯ __tests__/pages/api/cors.test.ts:111:23
+    109|     expect(res.statusCode).toBe(200);
+    110|     expect(res.body).toEqual(payload);
+    111|     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(new URL(url), ex…
+       |                       ^
+    112|       method: "GET", redirect: "manual", size: 4 * 1024 * 1024,
+    113|       headers: { Accept: "application/json", "User-Agent": "fhfhockey/…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/36]⎯
+
+ FAIL  __tests__/pages/api/cors.test.ts > NHL proxy boundary > relays supported NHL caller resource: https://api-web.nhle.com/v1/standings/now
+AssertionError: expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api-web.nhle.com/v1/standings/now",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+ ❯ __tests__/pages/api/cors.test.ts:111:23
+    109|     expect(res.statusCode).toBe(200);
+    110|     expect(res.body).toEqual(payload);
+    111|     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(new URL(url), ex…
+       |                       ^
+    112|       method: "GET", redirect: "manual", size: 4 * 1024 * 1024,
+    113|       headers: { Accept: "application/json", "User-Agent": "fhfhockey/…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/36]⎯
+
+ FAIL  __tests__/pages/api/cors.test.ts > NHL proxy boundary > relays supported NHL caller resource: https://api-web.nhle.com/v1/score/2026-10-15
+AssertionError: expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api-web.nhle.com/v1/score/2026-10-15",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+ ❯ __tests__/pages/api/cors.test.ts:111:23
+    109|     expect(res.statusCode).toBe(200);
+    110|     expect(res.body).toEqual(payload);
+    111|     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(new URL(url), ex…
+       |                       ^
+    112|       method: "GET", redirect: "manual", size: 4 * 1024 * 1024,
+    113|       headers: { Accept: "application/json", "User-Agent": "fhfhockey/…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/36]⎯
+
+ FAIL  __tests__/pages/api/cors.test.ts > NHL proxy boundary > relays supported NHL caller resource: https://api-web.nhle.com/v1/club-schedule-season/FLA/20262027
+AssertionError: expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api-web.nhle.com/v1/club-schedule-season/FLA/20262027",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+ ❯ __tests__/pages/api/cors.test.ts:111:23
+    109|     expect(res.statusCode).toBe(200);
+    110|     expect(res.body).toEqual(payload);
+    111|     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(new URL(url), ex…
+       |                       ^
+    112|       method: "GET", redirect: "manual", size: 4 * 1024 * 1024,
+    113|       headers: { Accept: "application/json", "User-Agent": "fhfhockey/…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/36]⎯
+
+ FAIL  __tests__/pages/api/cors.test.ts > NHL proxy boundary > relays supported NHL caller resource: https://api.nhle.com/stats/rest/en/season?sort=[{"property":"id","direction":"DESC"}]
+AssertionError: expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api.nhle.com/stats/rest/en/season?sort=[{%22property%22:%22id%22,%22direction%22:%22DESC%22}]",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+ ❯ __tests__/pages/api/cors.test.ts:111:23
+    109|     expect(res.statusCode).toBe(200);
+    110|     expect(res.body).toEqual(payload);
+    111|     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(new URL(url), ex…
+       |                       ^
+    112|       method: "GET", redirect: "manual", size: 4 * 1024 * 1024,
+    113|       headers: { Accept: "application/json", "User-Agent": "fhfhockey/…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/36]⎯
+
+ FAIL  __tests__/pages/api/cors.test.ts > NHL proxy boundary > relays supported NHL caller resource: https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=2026010054
+AssertionError: expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=2026010054",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+ ❯ __tests__/pages/api/cors.test.ts:111:23
+    109|     expect(res.statusCode).toBe(200);
+    110|     expect(res.body).toEqual(payload);
+    111|     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(new URL(url), ex…
+       |                       ^
+    112|       method: "GET", redirect: "manual", size: 4 * 1024 * 1024,
+    113|       headers: { Accept: "application/json", "User-Agent": "fhfhockey/…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/36]⎯
+
+ FAIL  __tests__/pages/api/cors.test.ts > NHL proxy boundary > relays supported NHL caller resource: https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=false&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=1 and gameTypeId=2 and seasonId<=20262027 and seasonId>=20262027
+AssertionError: expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=false&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=franchiseId=1%20and%20gameTypeId=2%20and%20seasonId%3C=20262027%20and%20seasonId%3E=20262027",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+ ❯ __tests__/pages/api/cors.test.ts:111:23
+    109|     expect(res.statusCode).toBe(200);
+    110|     expect(res.body).toEqual(payload);
+    111|     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(new URL(url), ex…
+       |                       ^
+    112|       method: "GET", redirect: "manual", size: 4 * 1024 * 1024,
+    113|       headers: { Accept: "application/json", "User-Agent": "fhfhockey/…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/36]⎯
+
+ FAIL  __tests__/pages/api/cors.test.ts > NHL proxy boundary > relays supported NHL caller resource: https://api.nhle.com/stats/rest/en/team/powerplay?isAggregate=false&isGame=false&start=0&limit=50&cayenneExp=teamId=1 and gameTypeId=2
+AssertionError: expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api.nhle.com/stats/rest/en/team/powerplay?isAggregate=false&isGame=false&start=0&limit=50&cayenneExp=teamId=1%20and%20gameTypeId=2",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+ ❯ __tests__/pages/api/cors.test.ts:111:23
+    109|     expect(res.statusCode).toBe(200);
+    110|     expect(res.body).toEqual(payload);
+    111|     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(new URL(url), ex…
+       |                       ^
+    112|       method: "GET", redirect: "manual", size: 4 * 1024 * 1024,
+    113|       headers: { Accept: "application/json", "User-Agent": "fhfhockey/…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/36]⎯
+
+ FAIL  __tests__/pages/api/cors.test.ts > NHL proxy boundary > relays supported NHL caller resource: https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=false&isGame=true&start=100&limit=100&cayenneExp=gameDate%3C=%222026-10-15%2023:59:59%22%20and%20gameTypeId=2
+AssertionError: expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=false&isGame=true&start=100&limit=100&cayenneExp=gameDate%3C=%222026-10-15%2023:59:59%22%20and%20gameTypeId=2",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+ ❯ __tests__/pages/api/cors.test.ts:111:23
+    109|     expect(res.statusCode).toBe(200);
+    110|     expect(res.body).toEqual(payload);
+    111|     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(new URL(url), ex…
+       |                       ^
+    112|       method: "GET", redirect: "manual", size: 4 * 1024 * 1024,
+    113|       headers: { Accept: "application/json", "User-Agent": "fhfhockey/…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/36]⎯
+
+ FAIL  __tests__/pages/api/cors.test.ts > NHL proxy boundary > relays supported NHL caller resource: https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=true&isGame=true&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=1 and gameDate<='2026-10-15' and gameDate>='2026-10-01' and gameTypeId=2
+AssertionError: expected "spy" to be called once with arguments: [ …(2) ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    "https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=true&isGame=true&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=franchiseId=1%20and%20gameDate%3C=%272026-10-15%27%20and%20gameDate%3E=%272026-10-01%27%20and%20gameTypeId=2",[22m
+[32m-   ObjectContaining {[90m
+[31m+   {[90m
+[31m+     "agent": Agent {[90m
+[31m+       "_events": {[90m
+[31m+         "free": [Function anonymous],[90m
+[31m+         "newListener": [Function maybeEnableKeylog],[90m
+[31m+       },[90m
+[31m+       "_eventsCount": 2,[90m
+[31m+       "_maxListeners": undefined,[90m
+[31m+       "_sessionCache": {[90m
+[31m+         "list": [],[90m
+[31m+         "map": {},[90m
+[31m+       },[90m
+[31m+       "defaultPort": 443,[90m
+[31m+       "freeSockets": {},[90m
+[31m+       "keepAlive": false,[90m
+[31m+       "keepAliveMsecs": 1000,[90m
+[31m+       "maxCachedSessions": 100,[90m
+[31m+       "maxFreeSockets": 256,[90m
+[31m+       "maxSockets": Infinity,[90m
+[31m+       "maxTotalSockets": Infinity,[90m
+[31m+       "options": {[90m
+[31m+         "family": 4,[90m
+[31m+         "lookup": [Function lookupNhlAddress],[90m
+[31m+         "noDelay": true,[90m
+[31m+         "path": null,[90m
+[31m+       },[90m
+[31m+       "protocol": "https:",[90m
+[31m+       "requests": {},[90m
+[31m+       "scheduling": "lifo",[90m
+[31m+       "sockets": {},[90m
+[31m+       "totalSocketCount": 0,[90m
+[31m+       Symbol(shapeMode): false,[90m
+[31m+       Symbol(kCapture): false,[90m
+[31m+     },[90m
+[2m      "headers": {[22m
+[2m        "Accept": "application/json",[22m
+[2m        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",[22m
+[2m      },[22m
+[2m      "method": "GET",[22m
+[32m-     "redirect": "manual",[90m
+[31m+     "redirect": "error",[90m
+[31m+     "signal": AbortSignal {[90m
+[31m+       Symbol(kEvents): Map {},[90m
+[31m+       Symbol(events.maxEventTargetListeners): 10,[90m
+[31m+       Symbol(events.maxEventTargetListenersWarned): false,[90m
+[31m+       Symbol(kHandlers): Map {},[90m
+[31m+       Symbol(kAborted): false,[90m
+[31m+       Symbol(kReason): undefined,[90m
+[31m+       Symbol(kComposite): false,[90m
+[31m+     },[90m
+[2m      "size": 4194304,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+ ❯ __tests__/pages/api/cors.test.ts:111:23
+    109|     expect(res.statusCode).toBe(200);
+    110|     expect(res.body).toEqual(payload);
+    111|     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(new URL(url), ex…
+       |                       ^
+    112|       method: "GET", redirect: "manual", size: 4 * 1024 * 1024,
+    113|       headers: { Accept: "application/json", "User-Agent": "fhfhockey/…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/36]⎯
+
+ FAIL  __tests__/pages/api/cors.test.ts > NHL proxy boundary > relays a now resource through one approved dated redirect
+AssertionError: expected 502 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 502[39m
+
+ ❯ __tests__/pages/api/cors.test.ts:152:28
+    150|       .mockResolvedValueOnce(new Response(JSON.stringify({ standings: …
+    151|     const res = await request({ url: "https://api-web.nhle.com/v1/stan…
+    152|     expect(res.statusCode).toBe(200);
+       |                            ^
+    153|     expect(res.body).toEqual({ standings: [] });
+    154|     expect(fetchMock).toHaveBeenCalledTimes(2);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/36]⎯
+
+ FAIL  __tests__/pages/api/cors.test.ts > NHL proxy boundary > hides a redirect to an unapproved destination behind the fixed transport error
+AssertionError: expected { success: false, …(4) } to deeply equal { success: false, …(1) }
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "message": "Unable to retrieve NHL data.",[39m
+[31m+   "detail": "",[39m
+[31m+   "message": "Upstream request failed with status 302.",[39m
+[2m    "success": false,[22m
+[31m+   "upstreamStatus": 302,[39m
+[31m+   "url": "https://api-web.nhle.com/v1/gamecenter/2026010054/boxscore",[39m
+[2m  }[22m
+
+ ❯ __tests__/pages/api/cors.test.ts:162:22
+    160|     const res = await request({ url: GAME_URL });
+    161|     expect(res.statusCode).toBe(502);
+    162|     expect(res.body).toEqual({ success: false, message: "Unable to ret…
+       |                      ^
+    163|     expect(fetchMock).toHaveBeenCalledTimes(1);
+    164|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/36]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+AssertionError: expected FetchError{ …(3) } to match object { name: 'AbortError' }
+(2 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- {[39m
+[32m-   "name": "AbortError",[39m
+[31m+ FetchError {[39m
+[31m+   "message": "uri requested responds with a redirect, redirect mode is set to error: https://api-web.nhle.com/v1/gamecenter/2026010054/boxscore",[39m
+[31m+   "type": "no-redirect",[39m
+[2m  }[22m
+
+ ❯ _Assertion.<anonymous> node_modules/vitest/node_modules/@vitest/expect/dist/index.js:1155:10
+ ❯ _Assertion.<anonymous> node_modules/vitest/node_modules/@vitest/expect/dist/index.js:1029:14
+ ❯ _Assertion.methodWrapper node_modules/chai/index.js:1686:25
+ ❯ node_modules/vitest/node_modules/@vitest/expect/dist/index.js:1639:20
+ ❯ processTicksAndRejections node:internal/process/task_queues:105:5
+
+This error originated in "lib/NHL/corsProxy.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "applies one deadline across a stalled redirect hop". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  2 failed (2)
+      Tests  36 failed | 94 passed (130)
+     Errors  1 error
+   Start at  15:54:50
+   Duration  330ms (transform 54ms, setup 13ms, collect 89ms, tests 89ms, environment 0ms, prepare 80ms)
+

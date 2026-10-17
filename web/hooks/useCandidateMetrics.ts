@@ -3,10 +3,10 @@ import type { candidatePlanMetrics } from "lib/rosterScheduleOptimizer/candidate
 import type { PlanIntent, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 
 type Metrics = ReturnType<typeof candidatePlanMetrics>;
-export function useCandidateMetrics(snapshot: PlanningSnapshot | null, intent: PlanIntent) {
+export function useCandidateMetrics(snapshot: PlanningSnapshot | null, intent: PlanIntent, requestedPlayerIds: string[] = []) {
   // Compare with the original roster, independently of selected transactions and display count.
   const key = JSON.stringify([intent.excludedPlayerIds, intent.protectedPlayerIds,
-    intent.goalieCoverage, intent.goalieWindow, intent.goalieSplit]);
+    intent.goalieCoverage, intent.goalieWindow, intent.goalieSplit, [...new Set(requestedPlayerIds)].sort()]);
   const calculationIntent = useMemo<PlanIntent>(() => {
     const [excludedPlayerIds, protectedPlayerIds, goalieCoverage, goalieWindow, goalieSplit] = JSON.parse(key);
     return { excludedPlayerIds, protectedPlayerIds, goalieCoverage, goalieWindow, goalieSplit, steps: [], revision: 0, alternativeCount: 5 };
@@ -28,7 +28,9 @@ export function useCandidateMetrics(snapshot: PlanningSnapshot | null, intent: P
         if (!cancelled) setState({ snapshot, key, ...event.data });
       };
       worker.onerror = fail;
-      worker.postMessage({ snapshot, intent: calculationIntent });
+      const requested: string[] = JSON.parse(key)[5];
+      worker.postMessage(requested.length ? { snapshot, intent: calculationIntent, options: { requestedPlayerIds: requested } }
+        : { snapshot, intent: calculationIntent });
     } catch { fail(); }
     return () => { cancelled = true; worker?.terminate(); };
   }, [snapshot, key, calculationIntent]);

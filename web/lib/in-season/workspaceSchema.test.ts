@@ -144,6 +144,21 @@ describe("saved in-season workspace validation", () => {
     expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...enriched,
       forecasts: [{ ...enriched.forecasts[0], revisionId: "a".repeat(4097) }] }, expectedVersion: null }).success).toBe(false);
   });
+  it("round-trips a native catalog baseline source carrying its admitted catalog expiry", () => {
+    // contributionStore stamps catalogExpiresAt on every source served from a pinned catalog.
+    const source = { kind: "baseline", sourceId: "native-rate", policyVersion: "native-baseline-v1", released: true,
+      allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: true },
+      playerId: 7, nhlPlayerId: 77, seasonId: 20262027, teamId: 6, gameId: 31, scheduledAt: "2026-10-05T23:00:00Z",
+      targetKey: "GOALS", unit: "count", basis: "per_appearance", mean: 0.5, participationIntegrated: false,
+      cutoffAt: context.asOf, issuedAt: context.asOf, expiresAt: "2026-10-05T22:00:00Z", catalogExpiresAt: "2026-10-05T21:59:59.999Z",
+      sourceWatermark: "native-capture", scheduleRevision: "schedule-a", rosterRevision: "roster-a" };
+    const parsed = saveWorkspaceSchema.parse({ workspace, snapshot: { ...snapshot, baselineSources: [source] }, expectedVersion: null });
+    expect(parsed.snapshot?.baselineSources).toEqual([source]);
+    for (const catalogExpiresAt of ["not-a-time", "2026-10-05", 1_760_000_000_000, null]) {
+      expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...snapshot, baselineSources: [{ ...source, catalogExpiresAt }] },
+        expectedVersion: null }).success).toBe(false);
+    }
+  });
   it.each([
     { numerator: 3 }, { numerator: NaN }, { denominator: Infinity }, { denominator: 0 }, { denominator: 21 },
     { numerator: 0.5 }, { inputHash: "bad" }, { evidenceHashes: ["bad"] },
@@ -155,6 +170,29 @@ describe("saved in-season workspace validation", () => {
       revisionId: "synthetic-participation", released: true, issuedAt: context.asOf, cutoffAt: context.asOf,
       expiresAt: "2026-10-08T00:00:00Z", model: { ...modeledMetadata, ...invalid } };
     expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...snapshot, participationSources: [receipt] }, expectedVersion: null }).success).toBe(false);
+  });
+  it("round-trips a resolved goalie forecast carrying modeled start metadata", () => {
+    const startModel = { ...modeledMetadata, version: "goalie-roster-observation-start-frequency-v1", event: "official_starter",
+      numerator: 3, denominator: 4, selectedGameIds: [101, 102, 103, 104] };
+    const start = { playerId: 30, nhlPlayerId: 8480030, seasonId: 20262027, gameId: 31, teamId: 6,
+      scheduledAt: "2026-10-05T23:00:00Z", scheduleRevision: "schedule-a", rosterRevision: "roster-a", basis: "start",
+      probability: 0.75, revisionId: "goalie-start", released: true,
+      allowedUses: { assignment: false, totals: true, comparison: false, conditionalTieBreak: false },
+      issuedAt: context.asOf, cutoffAt: context.asOf, expiresAt: "2026-10-05T22:00:00Z", model: startModel };
+    const goalieSnapshot = { ...snapshot, players: [{ id: "fhfh:30", nhlId: 8480030, name: "Test Goalie", teamAbbreviation: "CAR",
+      eligiblePositions: ["G"], playerClass: "goalie", availability: "rostered", ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] }],
+      forecasts: [{ playerId: "fhfh:30", gameId: "31", stats: { SAVES_GOALIE: null }, conditioning: "unconditional",
+        startProbability: 0.75, startParticipation: start, appearanceProbability: null,
+        powerPlayRole: { value: null, status: "not_applicable", reason: "not_applicable", source: null },
+        confirmedStart: false, revisionId: "goalie-rates", issuedAt: context.asOf, modelVersion: null, limitations: [] }],
+      participationSources: [start] };
+    const parsed = saveWorkspaceSchema.parse({ workspace, snapshot: goalieSnapshot, expectedVersion: null });
+    expect(parsed.snapshot?.forecasts[0].startParticipation).toEqual(start);
+    expect(parsed.snapshot?.participationSources).toEqual([start]);
+    expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...goalieSnapshot, forecasts: [{ ...goalieSnapshot.forecasts[0],
+      startParticipation: { ...start, model: { ...startModel, event: "confirmed_starter" } } }] }, expectedVersion: null }).success).toBe(false);
+    expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...goalieSnapshot, forecasts: [{ ...goalieSnapshot.forecasts[0],
+      startParticipation: { ...start, privatePayload: "secret" } }] }, expectedVersion: null }).success).toBe(false);
   });
   it("preserves explicit empty participation catalogs and nullable manifest checksums", () => {
     const parsed = saveWorkspaceSchema.parse({ workspace, snapshot: { ...snapshot, participationSources: [], forecastManifest: {

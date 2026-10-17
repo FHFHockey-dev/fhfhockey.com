@@ -3287,6 +3287,10 @@ describe("stored Yahoo eligibility while provider verification is pending", () =
     fireEvent.click(within(health).getByText("Data health").closest("summary")!);
     expect(health.open).toBe(true);
     for (const line of discoverySummary) expect(within(health).getByText(line)).toBeTruthy();
+    // Yahoo reports no league time zone; the manager's confirmation clears the item without another provider read.
+    expect(within(health).getByText(/Yahoo does not report a league time zone/)).toBeTruthy();
+    fireEvent.click(screen.getByLabelText("Matches my league's day boundary"));
+    expect(within(health).queryByText(/Yahoo does not report a league time zone/)).toBeNull();
     expect(fetch.mock.calls).toHaveLength(requestsBeforeOpening);
     expect(fetch.mock.calls.filter(([url]) => url.endsWith("/provider"))).toHaveLength(1);
     expect(fetch.mock.calls.some(([, init]: any[]) => init?.method === "PUT")).toBe(false);

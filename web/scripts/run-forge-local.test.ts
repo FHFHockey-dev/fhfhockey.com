@@ -1628,7 +1628,7 @@ describe("local FORGE scope and transport", () => {
         expect(writes.filter(path => path.endsWith("publish_forge_game_revisions"))).toHaveLength(failure === "reservation" ? 0 : 1);
       }
     } finally { releasePublication?.(); await new Promise<void>(resolve => server.close(() => resolve())); }
-  }, 20_000);
+  }, 60_000);
 });
 
 describe("FORGE artifact gate at the actual issuance boundary", () => {

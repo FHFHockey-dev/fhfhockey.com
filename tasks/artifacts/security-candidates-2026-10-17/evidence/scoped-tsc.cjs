@@ -1,0 +1,10 @@
+const ts = require(require.resolve("typescript", { paths: [process.cwd()] }));
+const cfgPath = ts.findConfigFile(process.cwd(), ts.sys.fileExists, "tsconfig.json");
+const cfg = ts.readConfigFile(cfgPath, ts.sys.readFile);
+const parsed = ts.parseJsonConfigFileContent(cfg.config, ts.sys, process.cwd());
+const roots = process.argv.slice(2);
+const program = ts.createProgram(roots, { ...parsed.options, noEmit: true, incremental: false });
+const diags = ts.getPreEmitDiagnostics(program);
+for (const d of diags) console.log(ts.formatDiagnostic(d, { getCanonicalFileName: f => f, getCurrentDirectory: () => process.cwd(), getNewLine: () => "\n" }).trim());
+console.log(JSON.stringify({ typescript: ts.version, roots, sourceFiles: program.getSourceFiles().length, diagnostics: diags.length }));
+process.exit(diags.length ? 1 : 0);

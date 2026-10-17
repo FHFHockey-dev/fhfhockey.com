@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { createDefaultTeamLandingFilterState } from "./teamStatsFilters";
 import {
+  applyOfficialRowOverrides,
   parseTeamLandingApiRequest,
   queryTeamStatsLanding,
 } from "./teamStatsQueries";
@@ -549,5 +550,49 @@ describe("teamStatsQueries", () => {
       wins: 1,
       rowWins: 1,
     });
+  });
+});
+
+describe("applyOfficialRowOverrides", () => {
+  const row = {
+    teamId: 8,
+    gamesPlayed: 3,
+    toiSeconds: 10800,
+    toiPerGameSeconds: 3600,
+    wins: 1,
+    losses: 1,
+    otl: 1,
+    gf: 7,
+    ga: 11,
+    sf: 80,
+    sa: 90,
+  } as never;
+  const official = (gamesPlayed: number) => ({
+    seasonSummaryByTeamId: new Map([
+      [8, { teamId: 8, gamesPlayed, wins: 3, losses: 3, otLosses: 1, points: 7, goalsFor: 20, goalsAgainst: 25 }],
+    ]),
+    fiveOnFiveByTeamId: new Map([[8, { teamId: 8, gamesPlayed, satFor: 400, satAgainst: 380 }]]),
+    shotTypeByTeamId: new Map(),
+  }) as never;
+  const stateFor = (strength: string) => {
+    const state = createDefaultTeamLandingFilterState();
+    return { ...state, primary: { ...state.primary, strength } } as never;
+  };
+
+  it.each(["allStrengths", "fiveOnFive"])(
+    "keeps native %s values when official totals cover more games",
+    (strength) => {
+      const result = applyOfficialRowOverrides({ row, state: stateFor(strength), official: official(7) });
+      expect(result).toEqual(row);
+    }
+  );
+
+  it("applies official all-strength totals when game coverage matches", () => {
+    const result = applyOfficialRowOverrides({
+      row,
+      state: stateFor("allStrengths"),
+      official: official(3),
+    });
+    expect(result).toMatchObject({ gamesPlayed: 3, wins: 3, gf: 20, ga: 25 });
   });
 });

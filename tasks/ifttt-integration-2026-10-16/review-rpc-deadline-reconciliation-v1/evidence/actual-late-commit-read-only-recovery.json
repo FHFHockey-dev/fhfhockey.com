@@ -1,0 +1,286 @@
+{
+  "firstResponse": {
+    "success": false,
+    "error": "IFTTT retention outcome is unknown; read-only reconciliation is required",
+    "outcome": "unknown"
+  },
+  "readbackBeforeRecovery": {
+    "data": {
+      "raw": [
+        {
+          "body": {
+            "id": "a8743033-f085-45a2-9e34-2a0b9afd16f7",
+            "text": "Player will not play tonight.",
+            "source": "ifttt",
+            "tweet_id": "6100",
+            "username": "Reporter",
+            "source_key": "fixture-reporter",
+            "updated_at": "2026-10-17T15:51:20.533-04:00",
+            "raw_payload": {
+              "text": "Player will not play tonight.",
+              "username": "Reporter",
+              "created_at": "2026-10-16T12:00:00Z",
+              "link_to_tweet": "https://x.com/Reporter/status/6100",
+              "source_account": "Reporter"
+            },
+            "received_at": "2026-10-17T15:51:20.544589-04:00",
+            "source_group": "fixture",
+            "link_to_tweet": "https://x.com/Reporter/status/6100",
+            "source_account": "Reporter",
+            "created_at_label": "2026-10-16T12:00:00Z",
+            "tweet_created_at": "2026-10-16T08:00:00-04:00",
+            "tweet_embed_code": null,
+            "processing_status": "pending"
+          }
+        }
+      ],
+      "ccc": [],
+      "archive": [
+        {
+          "body": {
+            "event_id": "a8743033-f085-45a2-9e34-2a0b9afd16f7",
+            "input_row": {
+              "text": "Player will not play tonight.",
+              "source": "ifttt",
+              "tweet_id": "6100",
+              "username": "Reporter",
+              "source_key": "fixture-reporter",
+              "raw_payload": {
+                "text": "Player will not play tonight.",
+                "username": "Reporter",
+                "created_at": "2026-10-16T12:00:00Z",
+                "link_to_tweet": "https://x.com/Reporter/status/6100",
+                "source_account": "Reporter"
+              },
+              "source_group": "fixture",
+              "link_to_tweet": "https://x.com/Reporter/status/6100",
+              "source_account": "Reporter",
+              "created_at_label": "2026-10-16T12:00:00Z",
+              "tweet_created_at": "2026-10-16T08:00:00-04:00",
+              "tweet_embed_code": null
+            },
+            "input_hash": "c87677fbea40432bacff940be90b193f1f0feb198a4d70a03c7b7d454230adfc",
+            "receipt_id": "119f868a-3716-43b6-bb03-acc4adb4622b",
+            "baseline_id": null,
+            "event_table": "line_source_ifttt_events",
+            "received_at": "2026-10-17T15:51:20.544589-04:00",
+            "retained_at": "2026-10-17T15:51:20.545151-04:00",
+            "classification": "canonical"
+          }
+        }
+      ]
+    },
+    "policy": [
+      {
+        "body": {
+          "attempts": 1,
+          "contract": {
+            "id": "synthetic-local-policy",
+            "endsAt": "2026-10-17T19:52:20.414Z",
+            "scopes": [
+              {
+                "table": "line_source_ifttt_events",
+                "sourceKey": "fixture-reporter",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              },
+              {
+                "table": "line_source_ifttt_events",
+                "sourceKey": "source-a",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              },
+              {
+                "table": "line_source_ifttt_events",
+                "sourceKey": "source-b",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              },
+              {
+                "table": "lines_ccc_ifttt_events",
+                "sourceKey": "fixture-reporter",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              },
+              {
+                "table": "lines_ccc_ifttt_events",
+                "sourceKey": "source-a",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              },
+              {
+                "table": "lines_ccc_ifttt_events",
+                "sourceKey": "source-b",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              }
+            ],
+            "version": "ifttt-intake-v1",
+            "startsAt": "2026-10-17T19:51:20.514Z",
+            "maxAttempts": 1000,
+            "maxReceipts": 1000
+          },
+          "policy_id": "synthetic-local-policy",
+          "created_at": "2026-10-17T15:51:20.425557-04:00",
+          "stopped_at": null,
+          "stop_reason": null
+        }
+      }
+    ],
+    "maps": [
+      {
+        "body": {
+          "policy_id": "synthetic-local-policy",
+          "receipt_id": "119f868a-3716-43b6-bb03-acc4adb4622b",
+          "admitted_at": "2026-10-17T15:51:20.57674-04:00"
+        }
+      }
+    ]
+  },
+  "recovered": {
+    "id": "119f868a-3716-43b6-bb03-acc4adb4622b",
+    "classification": "canonical",
+    "outcome": "duplicate",
+    "requiresReview": false,
+    "reconciled": true
+  },
+  "after": {
+    "data": {
+      "raw": [
+        {
+          "body": {
+            "id": "a8743033-f085-45a2-9e34-2a0b9afd16f7",
+            "text": "Player will not play tonight.",
+            "source": "ifttt",
+            "tweet_id": "6100",
+            "username": "Reporter",
+            "source_key": "fixture-reporter",
+            "updated_at": "2026-10-17T15:51:20.533-04:00",
+            "raw_payload": {
+              "text": "Player will not play tonight.",
+              "username": "Reporter",
+              "created_at": "2026-10-16T12:00:00Z",
+              "link_to_tweet": "https://x.com/Reporter/status/6100",
+              "source_account": "Reporter"
+            },
+            "received_at": "2026-10-17T15:51:20.544589-04:00",
+            "source_group": "fixture",
+            "link_to_tweet": "https://x.com/Reporter/status/6100",
+            "source_account": "Reporter",
+            "created_at_label": "2026-10-16T12:00:00Z",
+            "tweet_created_at": "2026-10-16T08:00:00-04:00",
+            "tweet_embed_code": null,
+            "processing_status": "pending"
+          }
+        }
+      ],
+      "ccc": [],
+      "archive": [
+        {
+          "body": {
+            "event_id": "a8743033-f085-45a2-9e34-2a0b9afd16f7",
+            "input_row": {
+              "text": "Player will not play tonight.",
+              "source": "ifttt",
+              "tweet_id": "6100",
+              "username": "Reporter",
+              "source_key": "fixture-reporter",
+              "raw_payload": {
+                "text": "Player will not play tonight.",
+                "username": "Reporter",
+                "created_at": "2026-10-16T12:00:00Z",
+                "link_to_tweet": "https://x.com/Reporter/status/6100",
+                "source_account": "Reporter"
+              },
+              "source_group": "fixture",
+              "link_to_tweet": "https://x.com/Reporter/status/6100",
+              "source_account": "Reporter",
+              "created_at_label": "2026-10-16T12:00:00Z",
+              "tweet_created_at": "2026-10-16T08:00:00-04:00",
+              "tweet_embed_code": null
+            },
+            "input_hash": "c87677fbea40432bacff940be90b193f1f0feb198a4d70a03c7b7d454230adfc",
+            "receipt_id": "119f868a-3716-43b6-bb03-acc4adb4622b",
+            "baseline_id": null,
+            "event_table": "line_source_ifttt_events",
+            "received_at": "2026-10-17T15:51:20.544589-04:00",
+            "retained_at": "2026-10-17T15:51:20.545151-04:00",
+            "classification": "canonical"
+          }
+        }
+      ]
+    },
+    "policy": [
+      {
+        "body": {
+          "attempts": 1,
+          "contract": {
+            "id": "synthetic-local-policy",
+            "endsAt": "2026-10-17T19:52:20.414Z",
+            "scopes": [
+              {
+                "table": "line_source_ifttt_events",
+                "sourceKey": "fixture-reporter",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              },
+              {
+                "table": "line_source_ifttt_events",
+                "sourceKey": "source-a",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              },
+              {
+                "table": "line_source_ifttt_events",
+                "sourceKey": "source-b",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              },
+              {
+                "table": "lines_ccc_ifttt_events",
+                "sourceKey": "fixture-reporter",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              },
+              {
+                "table": "lines_ccc_ifttt_events",
+                "sourceKey": "source-a",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              },
+              {
+                "table": "lines_ccc_ifttt_events",
+                "sourceKey": "source-b",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              }
+            ],
+            "version": "ifttt-intake-v1",
+            "startsAt": "2026-10-17T19:51:20.514Z",
+            "maxAttempts": 1000,
+            "maxReceipts": 1000
+          },
+          "policy_id": "synthetic-local-policy",
+          "created_at": "2026-10-17T15:51:20.425557-04:00",
+          "stopped_at": null,
+          "stop_reason": null
+        }
+      }
+    ],
+    "maps": [
+      {
+        "body": {
+          "policy_id": "synthetic-local-policy",
+          "receipt_id": "119f868a-3716-43b6-bb03-acc4adb4622b",
+          "admitted_at": "2026-10-17T15:51:20.57674-04:00"
+        }
+      }
+    ]
+  },
+  "calls": [
+    "retain_bounded_ifttt_raw_receipt",
+    "reconcile_ifttt_raw_receipt",
+    "reconcile_ifttt_raw_receipt"
+  ],
+  "scope": "Fake client timer with observed actual PG in-flight lock; fixture transport intentionally ignores abort. Original DB transaction later committed; no write retry."
+}

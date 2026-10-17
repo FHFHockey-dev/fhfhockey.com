@@ -41,7 +41,9 @@ vi.mock("lib/supabase", () => ({
     },
     from: vi.fn(() => ({
       select: vi.fn(() => ({
-        maybeSingle: authMaybeSingleMock,
+        eq: vi.fn(() => ({
+          maybeSingle: authMaybeSingleMock,
+        })),
       })),
     })),
   })),
@@ -310,7 +312,10 @@ describe("season and WGO cron authorization boundaries", () => {
   });
 
   it("allows an authenticated admin into both route handlers", async () => {
-    authGetUserMock.mockResolvedValue({ error: null });
+    authGetUserMock.mockResolvedValue({
+      data: { user: { id: "admin-user-id" } },
+      error: null,
+    });
     authMaybeSingleMock.mockResolvedValue({ data: { role: "admin" } });
 
     for (const route of protectedRoutes) {

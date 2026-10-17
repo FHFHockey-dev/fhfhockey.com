@@ -1,0 +1,39 @@
+# mutation: per-mutant results (vitest JSON reports in evidence/mutation/)
+
+control-after            SURVIVED 0/3 failed  sha256 874a307c6a46190f  — Live route bytes, unchanged (harness control)
+before-head              KILLED   2/3 failed  sha256 98261dff05413949  — Owner before/ copy = git HEAD:replay-player-aliases.ts
+    x keeps an active pilot retain-only: history still resolves, the current-day row and job wai
+        AssertionError: expected "spy" to not be called at all, but actually been called 1 times
+    x keeps a stopped pilot retain-only: history still resolves, the current-day row and job wai
+        AssertionError: expected "spy" to not be called at all, but actually been called 1 times
+guard-removed            KILLED   2/3 failed  sha256 81a289e093e93fb1  — Condition reverted to `isCurrent && currentCalls >= 2` (import kept)
+    x keeps an active pilot retain-only: history still resolves, the current-day row and job wai
+        AssertionError: expected "spy" to not be called at all, but actually been called 1 times
+    x keeps a stopped pilot retain-only: history still resolves, the current-day row and job wai
+        AssertionError: expected "spy" to not be called at all, but actually been called 1 times
+guard-after-consumed     KILLED   2/3 failed  sha256 298277b92de8a2e3  — Pilot stop moved to just after `consumed++`
+    x keeps an active pilot retain-only: history still resolves, the current-day row and job wai
+        AssertionError: expected { status: 'complete', …(4) } to match object { status: 'pending', …(2) }
+    x keeps a stopped pilot retain-only: history still resolves, the current-day row and job wai
+        AssertionError: expected { status: 'complete', …(4) } to match object { status: 'pending', …(2) }
+guard-all-rows           KILLED   2/3 failed  sha256 5b920b17aea10294  — Pilot stop applied to historical rows too
+    x keeps an active pilot retain-only: history still resolves, the current-day row and job wai
+        AssertionError: expected { success: true, resolved: +0, …(2) } to match object { success: true, resolved: 1 }
+    x keeps a stopped pilot retain-only: history still resolves, the current-day row and job wai
+        AssertionError: expected { success: true, resolved: +0, …(2) } to match object { success: true, resolved: 1 }
+guard-inverted           KILLED   3/3 failed  sha256 61fa4efc84607d75  — Pilot condition negated
+    x resolves history and replays a current-day name through the processor without pilot config
+        AssertionError: expected { success: true, resolved: 1, …(2) } to match object { success: true, resolved: 2 }
+    x keeps an active pilot retain-only: history still resolves, the current-day row and job wai
+        AssertionError: expected "spy" to not be called at all, but actually been called 1 times
+    x keeps a stopped pilot retain-only: history still resolves, the current-day row and job wai
+        AssertionError: expected "spy" to not be called at all, but actually been called 1 times
+guard-flag-only          KILLED   1/3 failed  sha256 76cc18c512c29aff  — Pilot test narrowed to IFTTT_RECEIPT_VARIANTS_ENABLED === 'true' (misses a stopped pilot)
+    x keeps a stopped pilot retain-only: history still resolves, the current-day row and job wai
+        AssertionError: expected "spy" to not be called at all, but actually been called 1 times
+guard-skip-fetch-only    KILLED   2/3 failed  sha256 0e08fb0202fdcf49  — Row consumed and resolved; only the processor POST is skipped under pilot
+    x keeps an active pilot retain-only: history still resolves, the current-day row and job wai
+        AssertionError: expected { success: true, resolved: 2, …(2) } to match object { success: true, resolved: 1 }
+    x keeps a stopped pilot retain-only: history still resolves, the current-day row and job wai
+        AssertionError: expected { success: true, resolved: 2, …(2) } to match object { success: true, resolved: 1 }
+guard-continue           SURVIVED 0/3 failed  sha256 ed6b1262ed5a2f5c  — Current-day row skipped with `continue` instead of `break` (cursor can pass it)

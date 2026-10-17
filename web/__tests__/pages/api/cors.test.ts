@@ -109,7 +109,7 @@ describe("NHL proxy boundary", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual(payload);
     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(new URL(url), expect.objectContaining({
-      method: "GET", redirect: "error", size: 4 * 1024 * 1024,
+      method: "GET", redirect: "manual", size: 4 * 1024 * 1024,
       headers: { Accept: "application/json", "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)" }
     }));
   });
@@ -141,5 +141,25 @@ describe("NHL proxy boundary", () => {
     const res = await request({ url: GAME_URL });
     expect(res.statusCode).toBe(502);
     expect(res.body).toEqual({ success: false, message: "Unable to retrieve NHL data." });
+  });
+
+  it("relays a now resource through one approved dated redirect", async () => {
+    const dated = "https://api-web.nhle.com/v1/standings/2026-10-17";
+    fetchMock
+      .mockResolvedValueOnce(new Response(null, { status: 307, headers: { location: dated } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ standings: [] })));
+    const res = await request({ url: "https://api-web.nhle.com/v1/standings/now" });
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ standings: [] });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenLastCalledWith(new URL(dated), expect.objectContaining({ redirect: "manual" }));
+  });
+
+  it("hides a redirect to an unapproved destination behind the fixed transport error", async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 302, headers: { location: "http://127.0.0.1:7777/synthetic" } }));
+    const res = await request({ url: GAME_URL });
+    expect(res.statusCode).toBe(502);
+    expect(res.body).toEqual({ success: false, message: "Unable to retrieve NHL data." });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

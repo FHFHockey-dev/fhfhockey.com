@@ -1,17 +1,15 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/_app.tsx
 
 import Head from "next/head";
+import dynamic from "next/dynamic";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { AppProps } from "next/app";
-import { ApolloProvider } from "@apollo/client";
-import { SnackbarProvider } from "notistack";
 import AuthProvider from "contexts/AuthProviderContext/index";
 import { DefaultSeo } from "next-seo";
 import SEO from "next-seo.config";
 import { canonicalUrl, isNoindexPath } from "lib/seo";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import client from "../lib/apollo-client";
 import Layout from "../components/Layout";
 import "../styles/globals.css";
 import "../styles/vars.scss";
@@ -21,8 +19,14 @@ import "components/TeamLandingPage/teamLandingPage.scss";
 
 const queryClient = new QueryClient();
 
+// notistack (and the MUI it pulls in) loads only on routes that show snackbars:
+// the /db admin pages and /auth, where /db's access-denied notice lands.
+const SnackbarProvider = dynamic(() =>
+  import("notistack").then((mod) => mod.SnackbarProvider)
+);
+const SNACKBAR_ROUTE = /^\/(db(\/|$)|auth$)/;
+
 function MyApp({ Component, pageProps, router }: AppProps) {
-  const hasGql = Boolean(process.env.NEXT_PUBLIC_SANITY_GRAPHQL_URI);
   const noindex = isNoindexPath(router.pathname);
   const canonical = noindex ? undefined : canonicalUrl(router.asPath);
 
@@ -65,7 +69,15 @@ function MyApp({ Component, pageProps, router }: AppProps) {
       </Head>
       <DefaultSeo {...SEO} canonical={canonical} openGraph={{ ...SEO.openGraph, url: canonical }} />
       <QueryClientProvider client={queryClient}>
-        <Component {...pageProps} />
+        {/* Wrapping only the page slot keeps the provider mounted across
+            /db -> /auth redirects without remounting the shared layout. */}
+        {SNACKBAR_ROUTE.test(router.pathname) ? (
+          <SnackbarProvider maxSnack={3} autoHideDuration={6000}>
+            <Component {...pageProps} />
+          </SnackbarProvider>
+        ) : (
+          <Component {...pageProps} />
+        )}
       </QueryClientProvider>
       {noindex && (
         <Head>
@@ -76,19 +88,14 @@ function MyApp({ Component, pageProps, router }: AppProps) {
     </Layout>
   );
 
-  const AppTree = (
-    <SnackbarProvider maxSnack={3} autoHideDuration={6000}>
+  // Apollo is provided by its only consumer (blog comments), so it stays out
+  // of the shared app chunk.
+  return (
+    <>
       <AuthProvider>{AppContent}</AuthProvider>
       <Analytics />
       <SpeedInsights />
-    </SnackbarProvider>
-  );
-
-  // Only wrap with ApolloProvider if configured
-  return hasGql ? (
-    <ApolloProvider client={client}>{AppTree}</ApolloProvider>
-  ) : (
-    AppTree
+    </>
   );
 }
 

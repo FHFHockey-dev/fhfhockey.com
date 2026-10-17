@@ -1,0 +1,31 @@
+(Use `node --trace-deprecation ...` to show where the warning was created)
+{
+  "node": "v22.11.0",
+  "blocked": {
+    "message": "request to https://api-web.nhle.com/v1/standings/now failed, reason: NHL address unavailable",
+    "type": "system"
+  },
+  "blockedLookupCalls": [
+    {
+      "hostname": "api-web.nhle.com",
+      "options": {
+        "all": true,
+        "family": 4
+      }
+    }
+  ],
+  "pinned": {
+    "message": "request to https://api-web.nhle.com/v1/standings/now failed, reason: connect ECONNREFUSED 127.0.0.1:443",
+    "type": "system",
+    "code": "ECONNREFUSED"
+  },
+  "pinnedLookupCalls": [
+    {
+      "hostname": "api-web.nhle.com",
+      "options": {
+        "all": true,
+        "family": 4
+      }
+    }
+  ]
+}

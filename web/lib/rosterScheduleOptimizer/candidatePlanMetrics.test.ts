@@ -143,6 +143,21 @@ describe("complete timed candidate metrics", () => {
     expect(result.diagnostics.filter(row => row.stopReason === "candidate_limit")).toHaveLength(1);
   });
 
+  it("evaluates a requested player outside the bounded set without bypassing checks or the cap", () => {
+    const data = auditSearchFixture(41);
+    const bounded = candidateMetrics(data, defaultIntent());
+    const outside = bounded.diagnostics.filter(row => row.stopReason === "candidate_limit");
+    expect(outside).toMatchObject([{ playerId: "140", status: "not_selected", evaluated: 0 }]);
+    const requested = candidateMetrics(data, defaultIntent(), { requestedPlayerIds: ["140", "1"] });
+    expect(requested.search).toMatchObject({ candidates: 40, eligibleCandidates: 41, maxCandidates: 40 });
+    expect(requested.candidates[0].playerId).toBe("140");
+    expect(candidatePlanForSort(requested.candidates[0].plans, "points")).toMatchObject({
+      netPoints: exhaustiveSingleSwap(data, "140")!.netPoints, steps: [{ dropPlayerId: "3" }] });
+    // An owned player stays filtered; another tied player leaves the bounded set instead.
+    expect(requested.diagnostics.find(row => row.playerId === "1")).toMatchObject({ status: "filtered", evaluated: 0 });
+    expect(requested.diagnostics.filter(row => row.stopReason === "candidate_limit").map(row => row.playerId)).toEqual(["139"]);
+  });
+
   it("matches independent exhaustive legal assignments with dual positions and a negative-value bench option", () => {
     const data = auditSearchFixture(1);
     data.players[0].eligiblePositions = ["C", "LW"];

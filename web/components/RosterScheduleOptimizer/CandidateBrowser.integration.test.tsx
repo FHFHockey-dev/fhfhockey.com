@@ -1,11 +1,11 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { candidatePlanMetrics } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
+import { candidatePlanMetrics, type CandidatePlanOptions } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
 import type { PlanIntent, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 import { defaultWorkspace } from "lib/rosterScheduleOptimizer/workspace";
 import CandidateBrowser from "./CandidateBrowser";
 
-type Packet = { snapshot: PlanningSnapshot; intent: PlanIntent };
+type Packet = { snapshot: PlanningSnapshot; intent: PlanIntent; options?: CandidatePlanOptions };
 // Exercise the real hook/message/solver/UI path in isolation; browser Worker packaging is outside this test.
 class LocalCandidateWorker {
   static instances: LocalCandidateWorker[] = [];
@@ -16,7 +16,7 @@ class LocalCandidateWorker {
     const copied = structuredClone(packet);
     queueMicrotask(() => {
       if (this.stopped) return;
-      try { this.onmessage?.({ data: { metrics: candidatePlanMetrics(copied.snapshot, copied.intent) } }); }
+      try { this.onmessage?.({ data: { metrics: candidatePlanMetrics(copied.snapshot, copied.intent, copied.options) } }); }
       catch { this.onmessage?.({ data: { error: "Candidate comparisons could not complete." } }); }
     });
   });
@@ -82,6 +82,12 @@ it("carries the652known197unknown pool through the worker and keeps browsing sep
   expect(LocalCandidateWorker.instances).toHaveLength(1);
   expect(LocalCandidateWorker.instances[0].postMessage).toHaveBeenCalledTimes(1);
   expect(LocalCandidateWorker.instances[0].postMessage.mock.calls[0][0].snapshot.players).toHaveLength(851);
+  fireEvent.click(screen.getByRole("button", { name: "Compare this player" }));
+  await screen.findByText("No timed acquisition option could be generated from the current inputs.");
+  expect(LocalCandidateWorker.instances).toHaveLength(2);
+  expect(LocalCandidateWorker.instances[1].postMessage.mock.calls[0][0].options).toEqual({ requestedPlayerIds: ["known-651"] });
+  expect(screen.queryByText("This player is outside the bounded candidate evaluation set.")).toBeNull();
+  expect(screen.getByText(/Bounded search selected 40 of 652 candidates passing player checks/)).toBeTruthy();
   expect(props.add).not.toHaveBeenCalled(); expect(props.selectPlan).not.toHaveBeenCalled();
   expect(JSON.stringify({ snapshot: props.snapshot, intent: props.intent })).toBe(before);
   expectNoExternalInteractions();

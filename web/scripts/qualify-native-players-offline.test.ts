@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
@@ -28,7 +28,9 @@ function updateRows(inputs: OfflinePlayerInputs, table: string, rows: any[]) {
   inputs.tables[table].receipt.rowCount = rows.length;
   inputs.tables[table].receipt.rowsHash = projectionInputHash(rows);
 }
-afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+// Admission is evaluated at receipt creation; keep it before the fixture game (2026-10-12T23:00Z) starts.
+beforeEach(() => { vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-10-10T00:00:00.000Z") }); });
+afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
 describe("offline current native player qualification", () => {
   it("reproduces current native calculations with genuine admission and zero live client/transport/writes", async () => {

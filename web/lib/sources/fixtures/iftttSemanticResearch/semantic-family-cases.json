@@ -1,0 +1,1515 @@
+{
+  "format": "ifttt-curated-semantic-research-v1",
+  "status": "provisional_offline_specification_not_executed",
+  "provenance": {
+    "derived_from": "IFTTT-cloud-semantic-fixtures-2026-10-16.zip",
+    "source_archive_sha256": "6b1fcfcb46c7492de9ef8aa6f0c6b4bef6880f8433659077eb64e710da10be46",
+    "source_fixtures_sha256": "54714208d8aa5ca290d128838cb4b50000b3f3e7e9c7ecaaf6f3b8ab3525de2b",
+    "source_evidence_sha256": "203bbc3b6898cc36dbb47da83a0b71f934957c01cbe7d516e49f458e5cb16683",
+    "transformation": "Selected unchanged cases and exact source text variants; excluded production/export record IDs, raw records, table names, transport timestamps, source-record index, occurrence aliases, and top-level attribution URLs. Research group/variant IDs are local labels, not production keys. Relations asserting retained-source metadata require original untracked evidence; this derivative alone does not prove them.",
+    "ground_truth": false,
+    "application_execution": "not_run",
+    "dispatch_enabled": false,
+    "production_wiring": false
+  },
+  "label_provenance": {
+    "author_kind": "assistant_contextual_reasoning",
+    "status": "provisional",
+    "human_adjudication": "not_completed",
+    "independent_ground_truth": null,
+    "prior_annotations_exposed": true,
+    "holdout": false
+  },
+  "source_policy": {
+    "excluded_reporting_sources": [
+      "GDL",
+      "GDG",
+      "GDNNHL",
+      "CCC",
+      "GameDayLines",
+      "GameDayGoalies",
+      "GameDayNewsNHL",
+      "CcCMiddleton"
+    ],
+    "placeholder_sources": [
+      "SOURCE_ACCOUNT",
+      "i",
+      "tweet_projection"
+    ],
+    "preserve_transport_metadata": true,
+    "rt_prefix_is_not_authentication": true
+  },
+  "cases": [
+    {
+      "case_id": "NX001",
+      "title": "Negated exclusion leaves Saturday availability unresolved",
+      "families": [
+        "negation",
+        "unresolved_vs_reported_out",
+        "timing"
+      ],
+      "variant_ids": [
+        "G004606.V001"
+      ],
+      "expected_claims": [
+        {
+          "subject_as_written": "Jonas Siegenthaler",
+          "canonical_player_id": null,
+          "predicate": "availability",
+          "value": "not_ruled_out",
+          "assertion_mode": "negated_exclusion",
+          "scope_as_written": "Saturday’s game against Vancouver",
+          "effective_game_id": null,
+          "speaker_as_attributed": "Sheldon Keefe",
+          "evidence": {
+            "variant_id": "G004606.V001",
+            "text": "Jonas Siegenthaler is not ruled out for Saturday’s game against Vancouver.",
+            "start_codepoint": 53,
+            "end_codepoint": 127,
+            "start_utf16": 53,
+            "end_utf16": 127
+          }
+        },
+        {
+          "subject_as_written": "Jonas Siegenthaler",
+          "canonical_player_id": null,
+          "predicate": "skating_plan",
+          "value": "tentative_attempt",
+          "assertion_mode": "projected",
+          "scope_as_written": "tomorrow",
+          "effective_game_id": null,
+          "speaker_as_attributed": "Sheldon Keefe",
+          "evidence": {
+            "variant_id": "G004606.V001",
+            "text": "I think he's going to try and skate tomorrow and see how that goes, and then make a decision from there.",
+            "start_codepoint": 164,
+            "end_codepoint": 268,
+            "start_utf16": 164,
+            "end_utf16": 268
+          }
+        }
+      ],
+      "forbidden_promotions": [
+        "confirmed_out",
+        "confirmed_in",
+        "completed_skate",
+        "game_binding_from_receipt_date"
+      ],
+      "expected_relations": [],
+      "rationale": "The negation governs ruled out. A future skating attempt and later decision are distinct from clearance.",
+      "execution_status": "not_run_against_implementation",
+      "independent_ground_truth": null,
+      "human_adjudication": "not_completed",
+      "expected_effects": {
+        "actual_dispatch_count": 0,
+        "production_applicability": "historical_discovery_fixture_only",
+        "requires_fresh_snapshot_adapter": true
+      }
+    },
+    {
+      "case_id": "NX002",
+      "title": "One post separates tomorrow exclusion, Saturday possibility and another injury",
+      "families": [
+        "negation",
+        "timing",
+        "claim_local_modality"
+      ],
+      "variant_ids": [
+        "G002913.V001"
+      ],
+      "expected_claims": [
+        {
+          "subject_as_written": "Larkin",
+          "canonical_player_id": null,
+          "predicate": "availability",
+          "value": "reported_out",
+          "assertion_mode": "asserted",
+          "scope_as_written": "tomorrow",
+          "effective_game_id": null,
+          "speaker_as_attributed": "McLellan",
+          "evidence": {
+            "variant_id": "G002913.V001",
+            "text": "Larkin progressing from upper body injury. Won’t play tomorrow",
+            "start_codepoint": 40,
+            "end_codepoint": 102,
+            "start_utf16": 40,
+            "end_utf16": 102
+          }
+        },
+        {
+          "subject_as_written": "Larkin",
+          "canonical_player_id": null,
+          "predicate": "availability",
+          "value": "not_ruled_out",
+          "assertion_mode": "negated_exclusion",
+          "scope_as_written": "preseason finale Saturday",
+          "effective_game_id": null,
+          "speaker_as_attributed": "McLellan",
+          "evidence": {
+            "variant_id": "G002913.V001",
+            "text": "but didn’t rule out preseason finale Saturday.",
+            "start_codepoint": 103,
+            "end_codepoint": 149,
+            "start_utf16": 103,
+            "end_utf16": 149
+          }
+        },
+        {
+          "subject_as_written": "Carter Bear",
+          "canonical_player_id": null,
+          "predicate": "availability",
+          "value": "reported_out",
+          "assertion_mode": "asserted",
+          "scope_as_written": "7-10 days",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G002913.V001",
+            "text": "Carter Bear out 7-10 days with an upper body injury.",
+            "start_codepoint": 150,
+            "end_codepoint": 202,
+            "start_utf16": 150,
+            "end_utf16": 202
+          }
+        }
+      ],
+      "forbidden_promotions": [
+        "saturday_confirmed_out",
+        "saturday_confirmed_in",
+        "bear_duration_applied_to_larkin",
+        "duration_started_at_replay_time"
+      ],
+      "expected_relations": [],
+      "rationale": "Preserve three propositions and their local scopes. Do not let the second negation invert the first exclusion.",
+      "execution_status": "not_run_against_implementation",
+      "independent_ground_truth": null,
+      "human_adjudication": "not_completed",
+      "expected_effects": {
+        "actual_dispatch_count": 0,
+        "production_applicability": "historical_discovery_fixture_only",
+        "requires_fresh_snapshot_adapter": true
+      }
+    },
+    {
+      "case_id": "NX003",
+      "title": "Tonight OUT does not decide season opener",
+      "families": [
+        "timing",
+        "unresolved_vs_reported_out"
+      ],
+      "variant_ids": [
+        "G003182.V001"
+      ],
+      "expected_claims": [
+        {
+          "subject_as_written": "Dylan Larkin",
+          "canonical_player_id": null,
+          "predicate": "availability",
+          "value": "reported_out",
+          "assertion_mode": "asserted",
+          "scope_as_written": "tonight",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G003182.V001",
+            "text": "Dylan Larkin will not play tonight;",
+            "start_codepoint": 18,
+            "end_codepoint": 53,
+            "start_utf16": 18,
+            "end_utf16": 53
+          }
+        },
+        {
+          "subject_as_written": "Dylan Larkin",
+          "canonical_player_id": null,
+          "predicate": "availability",
+          "value": "unknown",
+          "assertion_mode": "unknown",
+          "scope_as_written": "Friday’s regular season opener",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G003182.V001",
+            "text": "his status for Friday’s regular season opener has yet to be determined.",
+            "start_codepoint": 54,
+            "end_codepoint": 125,
+            "start_utf16": 54,
+            "end_utf16": 125
+          }
+        }
+      ],
+      "forbidden_promotions": [
+        "opener_confirmed_out",
+        "opener_confirmed_in",
+        "tonight_rebased_to_processing_date"
+      ],
+      "expected_relations": [],
+      "rationale": "Reported certainty applies only to tonight. Friday remains expressly undetermined.",
+      "execution_status": "not_run_against_implementation",
+      "independent_ground_truth": null,
+      "human_adjudication": "not_completed",
+      "expected_effects": {
+        "actual_dispatch_count": 0,
+        "production_applicability": "historical_discovery_fixture_only",
+        "requires_fresh_snapshot_adapter": true
+      }
+    },
+    {
+      "case_id": "NX004",
+      "title": "Historical injury denial is neither new injury nor current clearance",
+      "families": [
+        "negation",
+        "historical_scope"
+      ],
+      "variant_ids": [
+        "G000363.V002"
+      ],
+      "expected_claims": [
+        {
+          "subject_as_written": "Mikko Rantanen",
+          "canonical_player_id": null,
+          "predicate": "injury",
+          "value": "denied",
+          "assertion_mode": "negated",
+          "scope_as_written": "the playoffs",
+          "effective_game_id": null,
+          "speaker_as_attributed": "Glen Gulutzan",
+          "evidence": {
+            "variant_id": "G000363.V002",
+            "text": "Mikko Rantanen was not injured in the playoffs",
+            "start_codepoint": 19,
+            "end_codepoint": 65,
+            "start_utf16": 19,
+            "end_utf16": 65
+          }
+        },
+        {
+          "subject_as_written": "Mikko Rantanen",
+          "canonical_player_id": null,
+          "predicate": "performance_recovery",
+          "value": "difficulty_regaining_full_speed",
+          "assertion_mode": "historical",
+          "scope_as_written": "after the Olympics",
+          "effective_game_id": null,
+          "speaker_as_attributed": "Glen Gulutzan",
+          "evidence": {
+            "variant_id": "G000363.V002",
+            "text": "it was hard for him to get back to full speed after the Olympics.",
+            "start_codepoint": 75,
+            "end_codepoint": 140,
+            "start_utf16": 75,
+            "end_utf16": 140
+          }
+        }
+      ],
+      "forbidden_promotions": [
+        "new_injury",
+        "current_confirmed_out",
+        "current_confirmed_in",
+        "full_speed_difficulty_as_injury_diagnosis"
+      ],
+      "expected_relations": [],
+      "rationale": "The explicit denial belongs to historical playoffs; the contrast describes recovery of speed, not a new diagnosis.",
+      "execution_status": "not_run_against_implementation",
+      "independent_ground_truth": null,
+      "human_adjudication": "not_completed",
+      "expected_effects": {
+        "actual_dispatch_count": 0,
+        "production_applicability": "historical_discovery_fixture_only",
+        "requires_fresh_snapshot_adapter": true
+      }
+    },
+    {
+      "case_id": "NX005",
+      "title": "Conditional replacement cannot clear either player",
+      "families": [
+        "conditional",
+        "unresolved_vs_reported_out"
+      ],
+      "variant_ids": [
+        "G000222.V002"
+      ],
+      "expected_claims": [
+        {
+          "subject_as_written": "Logan Stanley",
+          "canonical_player_id": null,
+          "predicate": "availability",
+          "value": "game_time_decision",
+          "assertion_mode": "asserted_uncertainty",
+          "scope_as_written": "referenced game unresolved",
+          "effective_game_id": null,
+          "speaker_as_attributed": "Lindy Ruff",
+          "evidence": {
+            "variant_id": "G000222.V002",
+            "text": "Logan Stanley is a game-time decision, Lindy Ruff said.",
+            "start_codepoint": 0,
+            "end_codepoint": 55,
+            "start_utf16": 0,
+            "end_utf16": 55
+          }
+        },
+        {
+          "subject_as_written": "Michael Kesselring",
+          "canonical_player_id": null,
+          "predicate": "availability",
+          "value": "plays_if_stanley_cannot",
+          "assertion_mode": "conditional",
+          "scope_as_written": "referenced game unresolved",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G000222.V002",
+            "text": "If he can’t go, Michael Kesselring will play.",
+            "start_codepoint": 56,
+            "end_codepoint": 101,
+            "start_utf16": 56,
+            "end_utf16": 101
+          }
+        }
+      ],
+      "forbidden_promotions": [
+        "stanley_confirmed_out",
+        "kesselring_unconditional_in",
+        "two_independent_unconditional_statuses"
+      ],
+      "expected_relations": [],
+      "rationale": "The antecedent is Stanley. Preserve the condition with Kesselring’s proposed replacement claim.",
+      "execution_status": "not_run_against_implementation",
+      "independent_ground_truth": null,
+      "human_adjudication": "not_completed",
+      "expected_effects": {
+        "actual_dispatch_count": 0,
+        "production_applicability": "historical_discovery_fixture_only",
+        "requires_fresh_snapshot_adapter": true
+      }
+    },
+    {
+      "case_id": "NX006",
+      "title": "Reported confirmed OUT in Game 2 coexists with Game 3 uncertainty",
+      "families": [
+        "unresolved_vs_reported_out",
+        "timing"
+      ],
+      "variant_ids": [
+        "G000378.V002"
+      ],
+      "expected_claims": [
+        {
+          "subject_as_written": "Owen Tippett",
+          "canonical_player_id": null,
+          "predicate": "availability",
+          "value": "reported_out",
+          "assertion_mode": "asserted",
+          "scope_as_written": "Game 2",
+          "effective_game_id": null,
+          "speaker_as_attributed": "Rick Tocchet",
+          "evidence": {
+            "variant_id": "G000378.V002",
+            "text": "Rick Tocchet confirms Owen Tippett is out again in Game 2.",
+            "start_codepoint": 0,
+            "end_codepoint": 58,
+            "start_utf16": 0,
+            "end_utf16": 58
+          }
+        },
+        {
+          "subject_as_written": "Owen Tippett",
+          "canonical_player_id": null,
+          "predicate": "availability",
+          "value": "game_time_decision",
+          "assertion_mode": "asserted_uncertainty",
+          "scope_as_written": "Game 3",
+          "effective_game_id": null,
+          "speaker_as_attributed": "Rick Tocchet",
+          "evidence": {
+            "variant_id": "G000378.V002",
+            "text": "Says he's a \"possibility\" for Game 3. Will be a game-time decision.",
+            "start_codepoint": 59,
+            "end_codepoint": 126,
+            "start_utf16": 59,
+            "end_utf16": 126
+          }
+        }
+      ],
+      "forbidden_promotions": [
+        "game2_uncertainty_from_later_clause",
+        "game3_confirmed_out",
+        "game3_confirmed_in",
+        "independently_verified_real_world_out"
+      ],
+      "expected_relations": [],
+      "rationale": "The source reports confirmation for Game 2. This is a text-level assertion, not independent factual verification or a bound product update.",
+      "execution_status": "not_run_against_implementation",
+      "independent_ground_truth": null,
+      "human_adjudication": "not_completed",
+      "expected_effects": {
+        "actual_dispatch_count": 0,
+        "production_applicability": "historical_discovery_fixture_only",
+        "requires_fresh_snapshot_adapter": true
+      }
+    },
+    {
+      "case_id": "NX007",
+      "title": "Game exclusion and training-camp absence stay separate",
+      "families": [
+        "scope",
+        "negation",
+        "multiple_subjects"
+      ],
+      "variant_ids": [
+        "G002782.V001"
+      ],
+      "expected_claims": [
+        {
+          "subject_as_written": "Ville Koivunen",
+          "canonical_player_id": null,
+          "predicate": "availability",
+          "value": "reported_out",
+          "assertion_mode": "asserted",
+          "scope_as_written": "tonight’s game",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G002782.V001",
+            "text": "Forward Ville Koivunen (upper-body) will not play in tonight’s game and is day-to-day.",
+            "start_codepoint": 16,
+            "end_codepoint": 102,
+            "start_utf16": 16,
+            "end_utf16": 102
+          }
+        },
+        {
+          "subject_as_written": "Carter Sanderson",
+          "canonical_player_id": null,
+          "predicate": "roster",
+          "value": "added_to_game_roster",
+          "assertion_mode": "asserted",
+          "scope_as_written": "tonight’s game",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G002782.V001",
+            "text": "Carter Sanderson has been added to tonight’s game roster.",
+            "start_codepoint": 103,
+            "end_codepoint": 160,
+            "start_utf16": 103,
+            "end_utf16": 160
+          }
+        },
+        {
+          "subject_as_written": "Justin Brazeau",
+          "canonical_player_id": null,
+          "predicate": "attendance",
+          "value": "absent",
+          "assertion_mode": "asserted",
+          "scope_as_written": "training camp today",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G002782.V001",
+            "text": "Forwards Justin Brazeau (lower-body) and Ben Kindel (lower-body) will not participate in training camp today and are day-to-day.",
+            "start_codepoint": 163,
+            "end_codepoint": 291,
+            "start_utf16": 163,
+            "end_utf16": 291
+          }
+        },
+        {
+          "subject_as_written": "Ben Kindel",
+          "canonical_player_id": null,
+          "predicate": "attendance",
+          "value": "absent",
+          "assertion_mode": "asserted",
+          "scope_as_written": "training camp today",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G002782.V001",
+            "text": "Forwards Justin Brazeau (lower-body) and Ben Kindel (lower-body) will not participate in training camp today and are day-to-day.",
+            "start_codepoint": 163,
+            "end_codepoint": 291,
+            "start_utf16": 163,
+            "end_utf16": 291
+          }
+        }
+      ],
+      "forbidden_promotions": [
+        "brazeau_confirmed_game_out",
+        "kindel_confirmed_game_out",
+        "sanderson_confirmed_dressed",
+        "shared_clause_drops_one_subject"
+      ],
+      "expected_relations": [],
+      "rationale": "Three distinct predicates govern four named subjects. A camp absence is not a game absence, and roster addition is not confirmed participation.",
+      "execution_status": "not_run_against_implementation",
+      "independent_ground_truth": null,
+      "human_adjudication": "not_completed",
+      "expected_effects": {
+        "actual_dispatch_count": 0,
+        "production_applicability": "historical_discovery_fixture_only",
+        "requires_fresh_snapshot_adapter": true
+      }
+    },
+    {
+      "case_id": "NX008",
+      "title": "Forward and defense extras cannot spill into goalies",
+      "families": [
+        "extras_vs_goalies",
+        "practice_scope"
+      ],
+      "variant_ids": [
+        "G003357.V001"
+      ],
+      "expected_claims": [
+        {
+          "subject_as_written": "Miroshnichenko",
+          "canonical_player_id": null,
+          "predicate": "practice_role",
+          "value": "extra_forward",
+          "assertion_mode": "observed",
+          "scope_as_written": "practice at Navy",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G003357.V001",
+            "text": "Extras: Miroshnichenko and Frank",
+            "start_codepoint": 171,
+            "end_codepoint": 203,
+            "start_utf16": 171,
+            "end_utf16": 203
+          }
+        },
+        {
+          "subject_as_written": "Frank",
+          "canonical_player_id": null,
+          "predicate": "practice_role",
+          "value": "extra_forward",
+          "assertion_mode": "observed",
+          "scope_as_written": "practice at Navy",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G003357.V001",
+            "text": "Extras: Miroshnichenko and Frank",
+            "start_codepoint": 171,
+            "end_codepoint": 203,
+            "start_utf16": 171,
+            "end_utf16": 203
+          }
+        },
+        {
+          "subject_as_written": "McIlrath",
+          "canonical_player_id": null,
+          "predicate": "practice_role",
+          "value": "extra_defense",
+          "assertion_mode": "observed",
+          "scope_as_written": "practice at Navy",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G003357.V001",
+            "text": "Extra: McIlrath",
+            "start_codepoint": 256,
+            "end_codepoint": 271,
+            "start_utf16": 256,
+            "end_utf16": 271
+          }
+        },
+        {
+          "subject_as_written": "Thompson",
+          "canonical_player_id": null,
+          "predicate": "listed_role",
+          "value": "goalie_list",
+          "assertion_mode": "observed",
+          "scope_as_written": "practice at Navy",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G003357.V001",
+            "text": "Thompson\nLindgren",
+            "start_codepoint": 273,
+            "end_codepoint": 290,
+            "start_utf16": 273,
+            "end_utf16": 290
+          }
+        },
+        {
+          "subject_as_written": "Lindgren",
+          "canonical_player_id": null,
+          "predicate": "listed_role",
+          "value": "goalie_list",
+          "assertion_mode": "observed",
+          "scope_as_written": "practice at Navy",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G003357.V001",
+            "text": "Thompson\nLindgren",
+            "start_codepoint": 273,
+            "end_codepoint": 290,
+            "start_utf16": 273,
+            "end_utf16": 290
+          }
+        }
+      ],
+      "forbidden_promotions": [
+        "extra_as_goalie",
+        "extras_as_new_defense_pair",
+        "list_order_confirms_starter",
+        "practice_extra_confirms_game_scratch"
+      ],
+      "expected_relations": [],
+      "rationale": "Section boundaries and explicit Extra labels separate forwards, defense and the two listed goalies. Names remain unresolved without a scoped roster.",
+      "execution_status": "not_run_against_implementation",
+      "independent_ground_truth": null,
+      "human_adjudication": "not_completed",
+      "expected_effects": {
+        "actual_dispatch_count": 0,
+        "production_applicability": "historical_discovery_fixture_only",
+        "requires_fresh_snapshot_adapter": true
+      }
+    },
+    {
+      "case_id": "NX009",
+      "title": "Starter crease remains observation while extras stay skaters",
+      "families": [
+        "extras_vs_goalies",
+        "observed_vs_confirmed"
+      ],
+      "variant_ids": [
+        "G003572.V001"
+      ],
+      "expected_claims": [
+        {
+          "subject_as_written": "MacLean",
+          "canonical_player_id": null,
+          "predicate": "practice_role",
+          "value": "extra_forward",
+          "assertion_mode": "observed",
+          "scope_as_written": "morning skate before tonight’s opener at Toronto",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G003572.V001",
+            "text": "Extra: MacLean",
+            "start_codepoint": 177,
+            "end_codepoint": 191,
+            "start_utf16": 177,
+            "end_utf16": 191
+          }
+        },
+        {
+          "subject_as_written": "Mayfield",
+          "canonical_player_id": null,
+          "predicate": "practice_role",
+          "value": "extra_defense",
+          "assertion_mode": "observed",
+          "scope_as_written": "morning skate before tonight’s opener at Toronto",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G003572.V001",
+            "text": "Extras: Mayfield, Kessel",
+            "start_codepoint": 240,
+            "end_codepoint": 264,
+            "start_utf16": 240,
+            "end_utf16": 264
+          }
+        },
+        {
+          "subject_as_written": "Kessel",
+          "canonical_player_id": null,
+          "predicate": "practice_role",
+          "value": "extra_defense",
+          "assertion_mode": "observed",
+          "scope_as_written": "morning skate before tonight’s opener at Toronto",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G003572.V001",
+            "text": "Extras: Mayfield, Kessel",
+            "start_codepoint": 240,
+            "end_codepoint": 264,
+            "start_utf16": 240,
+            "end_utf16": 264
+          }
+        },
+        {
+          "subject_as_written": "Sorokin",
+          "canonical_player_id": null,
+          "predicate": "goalie_observation",
+          "value": "starters_net",
+          "assertion_mode": "observed",
+          "scope_as_written": "morning skate before tonight’s opener at Toronto",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G003572.V001",
+            "text": "Sorokin (starter’s net)",
+            "start_codepoint": 265,
+            "end_codepoint": 288,
+            "start_utf16": 265,
+            "end_utf16": 288
+          }
+        },
+        {
+          "subject_as_written": "Varlamov",
+          "canonical_player_id": null,
+          "predicate": "listed_role",
+          "value": "goalie_list",
+          "assertion_mode": "observed",
+          "scope_as_written": "morning skate before tonight’s opener at Toronto",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G003572.V001",
+            "text": "Varlamov",
+            "start_codepoint": 289,
+            "end_codepoint": 297,
+            "start_utf16": 289,
+            "end_utf16": 297
+          }
+        }
+      ],
+      "forbidden_promotions": [
+        "extras_as_goalies",
+        "starters_net_as_explicit_start_confirmation",
+        "varlamov_as_extra_defense"
+      ],
+      "expected_relations": [],
+      "rationale": "The goalie observation is useful but does not contain an explicit will-start statement. Do not let the final Extras label govern subsequent goalie lines.",
+      "execution_status": "not_run_against_implementation",
+      "independent_ground_truth": null,
+      "human_adjudication": "not_completed",
+      "expected_effects": {
+        "actual_dispatch_count": 0,
+        "production_applicability": "historical_discovery_fixture_only",
+        "requires_fresh_snapshot_adapter": true
+      }
+    },
+    {
+      "case_id": "NX010",
+      "title": "Doubtful skater and undecided goalie have separate certainty",
+      "families": [
+        "unresolved_vs_reported_out",
+        "negation",
+        "extras_vs_goalies"
+      ],
+      "variant_ids": [
+        "G003582.V001"
+      ],
+      "expected_claims": [
+        {
+          "subject_as_written": "Matt Duchene",
+          "canonical_player_id": null,
+          "predicate": "availability",
+          "value": "doubtful",
+          "assertion_mode": "projected",
+          "scope_as_written": "Friday",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G003582.V001",
+            "text": "Matt Duchene is doubtful to play on Friday with a lower-body injury.",
+            "start_codepoint": 18,
+            "end_codepoint": 86,
+            "start_utf16": 18,
+            "end_utf16": 86
+          }
+        },
+        {
+          "subject_as_written": "team goalie slot",
+          "canonical_player_id": null,
+          "predicate": "goalie_selection",
+          "value": "unknown",
+          "assertion_mode": "unknown",
+          "scope_as_written": "referenced game unresolved",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G003582.V001",
+            "text": "Goalie hasn't been chosen yet",
+            "start_codepoint": 208,
+            "end_codepoint": 237,
+            "start_utf16": 208,
+            "end_utf16": 237
+          }
+        },
+        {
+          "subject_as_written": "Oettinger",
+          "canonical_player_id": null,
+          "predicate": "practice_participation",
+          "value": "full",
+          "assertion_mode": "observed",
+          "scope_as_written": "recent practice",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G003582.V001",
+            "text": "Oettinger has been practicing fully.",
+            "start_codepoint": 243,
+            "end_codepoint": 279,
+            "start_utf16": 243,
+            "end_utf16": 279
+          }
+        }
+      ],
+      "forbidden_promotions": [
+        "duchene_confirmed_out",
+        "oettinger_confirmed_start",
+        "duchene_as_goalie",
+        "11f7d_as_final_lineup"
+      ],
+      "expected_relations": [],
+      "rationale": "Doubtful does not become OUT; full practice does not resolve the explicitly unchosen starter.",
+      "execution_status": "not_run_against_implementation",
+      "independent_ground_truth": null,
+      "human_adjudication": "not_completed",
+      "expected_effects": {
+        "actual_dispatch_count": 0,
+        "production_applicability": "historical_discovery_fixture_only",
+        "requires_fresh_snapshot_adapter": true
+      }
+    },
+    {
+      "case_id": "NX011",
+      "title": "Quote and different reporter post preserve distinct source claims",
+      "families": [
+        "source_attribution",
+        "independent_posts",
+        "unresolved_vs_reported_out"
+      ],
+      "variant_ids": [
+        "G000956.V001",
+        "G000956.V002",
+        "G000947.V002"
+      ],
+      "expected_claims": [
+        {
+          "subject_as_written": "Stone",
+          "canonical_player_id": null,
+          "predicate": "availability",
+          "value": "reported_out",
+          "assertion_mode": "asserted",
+          "scope_as_written": "unresolved quote event",
+          "effective_game_id": null,
+          "speaker_as_attributed": "Torts",
+          "evidence": {
+            "variant_id": "G000956.V002",
+            "text": "Stone is NOT playing, per Torts.",
+            "start_codepoint": 0,
+            "end_codepoint": 32,
+            "start_utf16": 0,
+            "end_utf16": 32
+          }
+        },
+        {
+          "subject_as_written": "Mark Stone",
+          "canonical_player_id": null,
+          "predicate": "availability",
+          "value": "reported_out",
+          "assertion_mode": "asserted",
+          "scope_as_written": "tonight",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G000947.V002",
+            "text": "Mark Stone is not playing tonight.",
+            "start_codepoint": 0,
+            "end_codepoint": 34,
+            "start_utf16": 0,
+            "end_utf16": 34
+          }
+        }
+      ],
+      "forbidden_promotions": [
+        "ccc_as_reporting_origin",
+        "wrapper_caption_as_full_status_assertion",
+        "different_posts_collapsed_as_edit",
+        "two_posts_as_two_independent_information_sources",
+        "cross_post_event_binding_without_evidence"
+      ],
+      "expected_relations": [
+        {
+          "kind": "distinct_reporter_posts",
+          "group_ids": [
+            "G000956",
+            "G000947"
+          ],
+          "expected": "retain_separate_occurrences",
+          "epistemic_independence": "not_established",
+          "event_equivalence": "not_established"
+        }
+      ],
+      "rationale": "The quote has h_kirk6 metadata and the other post has JesseGranger_ source URL metadata. Preserve separate posts; a shared news source or event is not independently verified.",
+      "execution_status": "not_run_against_implementation",
+      "independent_ground_truth": null,
+      "human_adjudication": "not_completed",
+      "expected_effects": {
+        "actual_dispatch_count": 0,
+        "production_applicability": "historical_discovery_fixture_only",
+        "requires_fresh_snapshot_adapter": true
+      }
+    },
+    {
+      "case_id": "NX012",
+      "title": "Identical relays do not become independent confirmation votes",
+      "families": [
+        "source_attribution",
+        "relay_identity",
+        "timing"
+      ],
+      "variant_ids": [
+        "G004138.V001",
+        "G004139.V001"
+      ],
+      "expected_claims": [
+        {
+          "subject_as_written": "Marchand",
+          "canonical_player_id": null,
+          "predicate": "availability",
+          "value": "reported_in",
+          "assertion_mode": "asserted",
+          "scope_as_written": "tonight",
+          "effective_game_id": null,
+          "speaker_as_attributed": "Maurice",
+          "evidence": {
+            "variant_id": "G004138.V001",
+            "text": "Marchand is playing tonight, per Maurice.",
+            "start_codepoint": 17,
+            "end_codepoint": 58,
+            "start_utf16": 17,
+            "end_utf16": 58
+          }
+        },
+        {
+          "subject_as_written": "Forsling",
+          "canonical_player_id": null,
+          "predicate": "availability",
+          "value": "game_time_decision",
+          "assertion_mode": "asserted_uncertainty",
+          "scope_as_written": "referenced game unresolved",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G004138.V001",
+            "text": "Forsling is a game-time decision.",
+            "start_codepoint": 60,
+            "end_codepoint": 93,
+            "start_utf16": 60,
+            "end_utf16": 93
+          }
+        },
+        {
+          "subject_as_written": "Markstrom",
+          "canonical_player_id": null,
+          "predicate": "goalie_start",
+          "value": "reported_start",
+          "assertion_mode": "asserted",
+          "scope_as_written": "referenced game unresolved",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G004138.V001",
+            "text": "Markstrom in net.",
+            "start_codepoint": 95,
+            "end_codepoint": 112,
+            "start_utf16": 95,
+            "end_utf16": 112
+          }
+        }
+      ],
+      "forbidden_promotions": [
+        "gdg_as_reporting_origin",
+        "gdnhl_as_reporting_origin",
+        "two_verified_originals_from_two_relays",
+        "dedup_from_text_alone",
+        "arrival_refreshes_effective_time"
+      ],
+      "expected_relations": [
+        {
+          "kind": "identical_text_different_relay_ids",
+          "group_ids": [
+            "G004138",
+            "G004139"
+          ],
+          "expected": "retain_both_and_hold_origin_resolution",
+          "verified_original_id": null,
+          "independent_vote_count": null
+        }
+      ],
+      "rationale": "The same JamesonCoop-attributed bytes occur under different relay IDs. Preserve both rows and hold canonical-origin deduplication until lineage is proven. The earlier received relay has the later stored post time.",
+      "execution_status": "not_run_against_implementation",
+      "independent_ground_truth": null,
+      "human_adjudication": "not_completed",
+      "expected_effects": {
+        "actual_dispatch_count": 0,
+        "production_applicability": "historical_discovery_fixture_only",
+        "requires_fresh_snapshot_adapter": true
+      }
+    },
+    {
+      "case_id": "NX013",
+      "title": "One retained post has wrapper and enriched views, not proven edit history",
+      "families": [
+        "same_post_representations",
+        "timing"
+      ],
+      "variant_ids": [
+        "G003182.V001",
+        "G003182.V002"
+      ],
+      "expected_claims": [],
+      "forbidden_promotions": [
+        "enriched_view_as_independent_post",
+        "rt_prefix_removal_as_reporter_correction",
+        "updated_at_as_platform_edit_time",
+        "representation_refreshes_acceptance_clock"
+      ],
+      "expected_relations": [
+        {
+          "kind": "same_retained_relay_two_text_views",
+          "group_ids": [
+            "G003182"
+          ],
+          "variant_ids": [
+            "G003182.V001",
+            "G003182.V002"
+          ],
+          "expected": "retain_one_provisional_source_with_distinct_evidence_views",
+          "platform_edit_history": "not_available",
+          "alignment": "exact_prefix_removal"
+        }
+      ],
+      "rationale": "The same retained relay ID appears in raw and enriched slots; the exact difference is only the RT prefix. This is a representation pair, not an authenticated platform edit.",
+      "execution_status": "not_run_against_implementation",
+      "independent_ground_truth": null,
+      "human_adjudication": "not_completed",
+      "expected_effects": {
+        "actual_dispatch_count": 0,
+        "production_applicability": "historical_discovery_fixture_only",
+        "requires_fresh_snapshot_adapter": true
+      }
+    },
+    {
+      "case_id": "NX014",
+      "title": "Explicit correction preserves hedge and unresolved target",
+      "families": [
+        "correction",
+        "same_post_vs_new_claim"
+      ],
+      "variant_ids": [
+        "G004160.V001"
+      ],
+      "expected_claims": [
+        {
+          "subject_as_written": "Ville Ottavainen",
+          "canonical_player_id": null,
+          "predicate": "lineup_role",
+          "value": "third_pair_candidate",
+          "assertion_mode": "projected",
+          "scope_as_written": "referenced game unresolved",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G004160.V001",
+            "text": "We *believe* Ville Ottavainen is in on the third pair.",
+            "start_codepoint": 36,
+            "end_codepoint": 90,
+            "start_utf16": 36,
+            "end_utf16": 90
+          }
+        },
+        {
+          "subject_as_written": "Mahura",
+          "canonical_player_id": null,
+          "predicate": "prior_listing",
+          "value": "reported_mistake",
+          "assertion_mode": "correction",
+          "scope_as_written": "prior report not identified",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G004160.V001",
+            "text": "Had Mahura there by mistake.",
+            "start_codepoint": 91,
+            "end_codepoint": 119,
+            "start_utf16": 91,
+            "end_utf16": 119
+          }
+        },
+        {
+          "subject_as_written": "Ville Ottavainen",
+          "canonical_player_id": null,
+          "predicate": "season_debut",
+          "value": "conditional",
+          "assertion_mode": "conditional",
+          "scope_as_written": "referenced game unresolved",
+          "effective_game_id": null,
+          "speaker_as_attributed": null,
+          "evidence": {
+            "variant_id": "G004160.V001",
+            "text": "If that's right, will be his season debut.",
+            "start_codepoint": 120,
+            "end_codepoint": 162,
+            "start_utf16": 120,
+            "end_utf16": 162
+          }
+        }
+      ],
+      "forbidden_promotions": [
+        "correction_removes_hedge",
+        "new_claim_as_confirmed_debut",
+        "invented_target_original_id",
+        "automatic_prior_effect_reversal"
+      ],
+      "expected_relations": [],
+      "rationale": "Correction is explicit but the earlier source is not supplied here. Preserve the relation as unresolved; certainty is not implied by the word correction.",
+      "execution_status": "not_run_against_implementation",
+      "independent_ground_truth": null,
+      "human_adjudication": "not_completed",
+      "expected_effects": {
+        "actual_dispatch_count": 0,
+        "production_applicability": "historical_discovery_fixture_only",
+        "requires_fresh_snapshot_adapter": true
+      }
+    },
+    {
+      "case_id": "NX015",
+      "title": "Different counterfactual prognoses are not confirmed present-day OUT",
+      "families": [
+        "disputed_vs_confirmed_out",
+        "historical_scope",
+        "independent_claims"
+      ],
+      "variant_ids": [
+        "G000350.V002",
+        "G000377.V002"
+      ],
+      "expected_claims": [
+        {
+          "subject_as_written": "Roope Hintz",
+          "canonical_player_id": null,
+          "predicate": "counterfactual_return",
+          "value": "possible_by_second_or_third_game",
+          "assertion_mode": "counterfactual",
+          "scope_as_written": "second round, retrospective",
+          "effective_game_id": null,
+          "speaker_as_attributed": "Roope Hintz",
+          "evidence": {
+            "variant_id": "G000350.V002",
+            "text": "He thinks he would have been back by the second or third game of the second round.",
+            "start_codepoint": 114,
+            "end_codepoint": 196,
+            "start_utf16": 114,
+            "end_utf16": 196
+          }
+        },
+        {
+          "subject_as_written": "Roope Hintz",
+          "canonical_player_id": null,
+          "predicate": "counterfactual_participation",
+          "value": "would_not_play_early",
+          "assertion_mode": "counterfactual",
+          "scope_as_written": "early in Round 2, retrospective",
+          "effective_game_id": null,
+          "speaker_as_attributed": "Glen Gulutzan",
+          "evidence": {
+            "variant_id": "G000377.V002",
+            "text": "Glen Gulutzan said Roope Hintz would not have been a player early in Round 2.",
+            "start_codepoint": 0,
+            "end_codepoint": 77,
+            "start_utf16": 0,
+            "end_utf16": 77
+          }
+        }
+      ],
+      "forbidden_promotions": [
+        "historical_counterfactual_as_current_out",
+        "latest_post_silently_wins",
+        "two_posts_same_reporter_as_independent_confirmation",
+        "early_round_exactly_equated_to_game2",
+        "true_same_game_in_out_dispute_claimed"
+      ],
+      "expected_relations": [
+        {
+          "kind": "divergent_counterfactual_prognoses",
+          "group_ids": [
+            "G000350",
+            "G000377"
+          ],
+          "expected": "retain_both_unresolved",
+          "strict_contradiction": "not_established",
+          "current_availability": "unknown"
+        }
+      ],
+      "rationale": "Both posts are attributed to Lassimak but relay different speakers. Preserve the divergent prognosis without pretending the vague early-round interval proves a fully bound logical contradiction. Contrast with NX006’s explicit reported game OUT.",
+      "execution_status": "not_run_against_implementation",
+      "independent_ground_truth": null,
+      "human_adjudication": "not_completed",
+      "expected_effects": {
+        "actual_dispatch_count": 0,
+        "production_applicability": "historical_discovery_fixture_only",
+        "requires_fresh_snapshot_adapter": true
+      }
+    }
+  ],
+  "text_variants": [
+    {
+      "variant_id": "G000222.V001",
+      "text": "RT @engelheather: Logan Stanley is a game-time decision, Lindy Ruff said. If he can’t go, Michael Kesselring will play.",
+      "sha256_utf8": "824b83618c1d7d9a0bda0b3b284df6f12ce6f9d8777ae7a127a95fed54a3a310",
+      "character_count": 119
+    },
+    {
+      "variant_id": "G000222.V002",
+      "text": "Logan Stanley is a game-time decision, Lindy Ruff said. If he can’t go, Michael Kesselring will play.",
+      "sha256_utf8": "f2fa410f6f25687e8a6e82541e371bdbe774ce097506356e8e88c5a3dc56e529",
+      "character_count": 101
+    },
+    {
+      "variant_id": "G000350.V001",
+      "text": "RT @Lassimak: Roope Hintz said he tore his hamstring in two spots. He was getting close to returning and then he re-injured it. He thinks h…",
+      "sha256_utf8": "e7114c8c995a9eed633e1b91e99dd0514ffc7fcc052cf635438b9778cde7526f",
+      "character_count": 140
+    },
+    {
+      "variant_id": "G000350.V002",
+      "text": "Roope Hintz said he tore his hamstring in two spots. He was getting close to returning and then he re-injured it. He thinks he would have been back by the second or third game of the second round.",
+      "sha256_utf8": "873a6204a28786dfa7ff36589aeb23a2c63fb4a0ab6aaa69758a069a6e173e20",
+      "character_count": 196
+    },
+    {
+      "variant_id": "G000363.V001",
+      "text": "RT @Lassimak: Glen Gulutzan says Mikko Rantanen was not injured in the playoffs but that it was hard for him to get back to full speed afte…",
+      "sha256_utf8": "baea05b70649534a898ddafff54d6cb9d3f0f915a018bee97e109b9f8b8e00a4",
+      "character_count": 140
+    },
+    {
+      "variant_id": "G000363.V002",
+      "text": "Glen Gulutzan says Mikko Rantanen was not injured in the playoffs but that it was hard for him to get back to full speed after the Olympics.",
+      "sha256_utf8": "f46596c6ff1e9422709fadaa3663f8eff4c6f869d182a0a51e744f69f74ff9b3",
+      "character_count": 140
+    },
+    {
+      "variant_id": "G000377.V001",
+      "text": "RT @Lassimak: Glen Gulutzan said Roope Hintz would not have been a player early in Round 2.",
+      "sha256_utf8": "2b68f6a5316035c440945254978347a19a5d0eb6b37ddf2dc8f3e71b1613b11f",
+      "character_count": 91
+    },
+    {
+      "variant_id": "G000377.V002",
+      "text": "Glen Gulutzan said Roope Hintz would not have been a player early in Round 2.",
+      "sha256_utf8": "66c6403dce84e4975ae67896986c197886eb828f6c03a72655a7cc514bbdd958",
+      "character_count": 77
+    },
+    {
+      "variant_id": "G000378.V001",
+      "text": "RT @charlieo_conn: Rick Tocchet confirms Owen Tippett is out again in Game 2. Says he's a \"possibility\" for Game 3. Will be a game-time dec…",
+      "sha256_utf8": "037a84acf67b0e4a78d4b4501986d5c188ca85b6f09f4980794b4ed57dd7bcdd",
+      "character_count": 140
+    },
+    {
+      "variant_id": "G000378.V002",
+      "text": "Rick Tocchet confirms Owen Tippett is out again in Game 2. Says he's a \"possibility\" for Game 3. Will be a game-time decision.",
+      "sha256_utf8": "a771592bf9cc2e45250cedaf76c4c227a0c55206efe3e37dac6df11208cb92e2",
+      "character_count": 126
+    },
+    {
+      "variant_id": "G000947.V001",
+      "text": "RT @JesseGranger_: Mark Stone is not playing tonight.\n\nKaedan Korczak will take Ben Hutton’s spot in the lineup.",
+      "sha256_utf8": "b885ee5b27525cedd60d244587985b6008ed5041afad91e0eb1789d837d4d348",
+      "character_count": 112
+    },
+    {
+      "variant_id": "G000947.V002",
+      "text": "Mark Stone is not playing tonight.\nKaedan Korczak will take Ben Hutton’s spot in the lineup.",
+      "sha256_utf8": "49b51a50754c86f5dd345af8778efc918e79b6d3cded53e13df97ee1f783ede6",
+      "character_count": 92
+    },
+    {
+      "variant_id": "G000956.V001",
+      "text": "Golden Knights lineup update https://t.co/iDoM4n1uFv",
+      "sha256_utf8": "3f74078029a7ddf887f401240b8140f2ee46a1856a6619cf2f801b044966b73b",
+      "character_count": 52
+    },
+    {
+      "variant_id": "G000956.V002",
+      "text": "Stone is NOT playing, per Torts.",
+      "sha256_utf8": "d4797e9f10c915106d9fdab4d2e0059460f55510ec6bb46203e6fa148bbf8f18",
+      "character_count": 32
+    },
+    {
+      "variant_id": "G000956.V003",
+      "text": "Wrapper text\nGolden Knights lineup update https://t.co/iDoM4n1uFv\n\nQuoted text\nStone is NOT playing, per Torts.",
+      "sha256_utf8": "ad7e58b75d3a3e281bea5781c6b2302bebd27dfa93b1deda69dd69da5639cbe4",
+      "character_count": 111
+    },
+    {
+      "variant_id": "G002782.V001",
+      "text": "RT @PenguinsPR: Forward Ville Koivunen (upper-body) will not play in tonight’s game and is day-to-day. Carter Sanderson has been added to tonight’s game roster. \n\nForwards Justin Brazeau (lower-body) and Ben Kindel (lower-body) will not participate in training camp today and are day-to-day. https://t.co/3tFXHBAhYx",
+      "sha256_utf8": "e884e9a843023fc7429ac2a7e5d2641761a06a8951258d991354339010c6ba67",
+      "character_count": 315
+    },
+    {
+      "variant_id": "G002782.V002",
+      "text": "Ville Koivunen (upper-body) will not play in tonight’s game and is day-to-day.",
+      "sha256_utf8": "a63668140d226c97347f5ca25d4e3791d7cab8f33295456d3c10baecc5ebf870",
+      "character_count": 78
+    },
+    {
+      "variant_id": "G002913.V001",
+      "text": "RT @AnsarKhanMLive: #RedWings McLellan: Larkin progressing from upper body injury. Won’t play tomorrow but didn’t rule out preseason finale Saturday. Carter Bear out 7-10 days with an upper body injury.",
+      "sha256_utf8": "25ecf4fae30d0a47159c341c51eae32195cb23b915d100e9644bae385b61fec9",
+      "character_count": 202
+    },
+    {
+      "variant_id": "G003182.V001",
+      "text": "RT @mwhitaker_89: Dylan Larkin will not play tonight; his status for Friday’s regular season opener has yet to be determined. #LGRW #RedWings",
+      "sha256_utf8": "03690a707fd0778a1a638152b3c88976640fca9bcdcdfcf3e6343d4f1e023b48",
+      "character_count": 141
+    },
+    {
+      "variant_id": "G003182.V002",
+      "text": "Dylan Larkin will not play tonight; his status for Friday’s regular season opener has yet to be determined. #LGRW #RedWings",
+      "sha256_utf8": "b8ffc65e8bb9895e5655351ac185699868202728bf7f21aa3761b791005985bc",
+      "character_count": 123
+    },
+    {
+      "variant_id": "G003357.V001",
+      "text": "RT @Tarik_ElBashir: Practice lines and pairs here at Navy look familiar:\n\nTuch-Dubois-Wilson\nOvechkin-Strome-Leonard\nA. Protas-I. Protas-Kyrou\nJenner-Sourdif-Beauvillier \nExtras: Miroshnichenko and Frank\n\nChychrun-Roy\nFehervary-Liljegren\nHutson-Desharnais\nExtra: McIlrath\n\nThompson\nLindgren",
+      "sha256_utf8": "ed40699a148a29398da3bba01091cf893de238f2b3a83e4858e205c6d7ae00de",
+      "character_count": 290
+    },
+    {
+      "variant_id": "G003572.V001",
+      "text": "RT @AGrossNewsday: #Isles at morning skate for tonight’s season opener at Toronto\nHolmstrom-Horvat-Palmieri\nMaccelli-Ritchie-Schenn\nEklund-Pageau-Heineman\nPalat-Cizikas-Duclair\nExtra: MacLean\nPelech-Schaefer\nRomanov-Pulock\nStanley-DeAngelo\nExtras: Mayfield, Kessel\nSorokin (starter’s net)\nVarlamov",
+      "sha256_utf8": "a10a54711ca93295c969329961348e8a06e6b65fe20ae287046c24a872e7a945",
+      "character_count": 297
+    },
+    {
+      "variant_id": "G003582.V001",
+      "text": "RT @RobertTiffin: Matt Duchene is doubtful to play on Friday with a lower-body injury. Gulutzan said Duchene had a setback when practicing in Traverse City earlier this week, so they may have to go 11F/7D. \n\nGoalie hasn't been chosen yet, but Oettinger has been practicing fully.",
+      "sha256_utf8": "cf3e25f04c440f65dec1f5962e5785f6c70de9b46a20547ea7afe982bfb3b486",
+      "character_count": 279
+    },
+    {
+      "variant_id": "G003582.V002",
+      "text": "Duchene had a setback when practicing in Traverse City earlier this week, so they may have to go 11F/7D. \n\nGoalie hasn't been chosen yet, but",
+      "sha256_utf8": "c9ad4b2150bdb324dd3254dcf93218228b9cd60726efb9e5ee29251dbed33cb2",
+      "character_count": 141
+    },
+    {
+      "variant_id": "G003582.V003",
+      "text": "Matt Duchene is doubtful to play on Friday with a lower-body injury. Gulutzan said",
+      "sha256_utf8": "2d1702e796385a5fecd15a52bd6fdc91498cf319b85b08599cfb1fa07d0cc92d",
+      "character_count": 82
+    },
+    {
+      "variant_id": "G004138.V001",
+      "text": "RT @JamesonCoop: Marchand is playing tonight, per Maurice.\n\nForsling is a game-time decision.\n\nMarkstrom in net.",
+      "sha256_utf8": "a66fc19bcc3b0b1259f8816ce9d33183e66b370c94fccf5c2ec5d9daa73fb19a",
+      "character_count": 112
+    },
+    {
+      "variant_id": "G004139.V001",
+      "text": "RT @JamesonCoop: Marchand is playing tonight, per Maurice.\n\nForsling is a game-time decision.\n\nMarkstrom in net.",
+      "sha256_utf8": "a66fc19bcc3b0b1259f8816ce9d33183e66b370c94fccf5c2ec5d9daa73fb19a",
+      "character_count": 112
+    },
+    {
+      "variant_id": "G004160.V001",
+      "text": "RT @sound_hockey: One correction... We *believe* Ville Ottavainen is in on the third pair. Had Mahura there by mistake. If that's right, will be his season debut. #SeaKraken https://t.co/W6CKQ8I7BC https://t.co/leCIPRdUQ0",
+      "sha256_utf8": "6189b35f08b01cdaa7b85cbebd476d496c29814dd1af81d896181d17bfd7883a",
+      "character_count": 221
+    },
+    {
+      "variant_id": "G004606.V001",
+      "text": "RT @InStilettos_NHL: Per #NJDevils HC Sheldon Keefe, Jonas Siegenthaler is not ruled out for Saturday’s game against Vancouver. \n\n“He's feeling a lot better today. I think he's going to try and skate tomorrow and see how that goes, and then make a decision from there.”",
+      "sha256_utf8": "dbdc00e34b9b714c3d5c0e9f0120043040a8fabf2adad9a113b23e53b1761541",
+      "character_count": 269
+    }
+  ],
+  "families": {
+    "claim_local_modality": [
+      "NX002"
+    ],
+    "conditional": [
+      "NX005"
+    ],
+    "correction": [
+      "NX014"
+    ],
+    "disputed_vs_confirmed_out": [
+      "NX015"
+    ],
+    "extras_vs_goalies": [
+      "NX008",
+      "NX009",
+      "NX010"
+    ],
+    "historical_scope": [
+      "NX004",
+      "NX015"
+    ],
+    "independent_claims": [
+      "NX015"
+    ],
+    "independent_posts": [
+      "NX011"
+    ],
+    "multiple_subjects": [
+      "NX007"
+    ],
+    "negation": [
+      "NX001",
+      "NX002",
+      "NX004",
+      "NX007",
+      "NX010"
+    ],
+    "observed_vs_confirmed": [
+      "NX009"
+    ],
+    "practice_scope": [
+      "NX008"
+    ],
+    "relay_identity": [
+      "NX012"
+    ],
+    "same_post_representations": [
+      "NX013"
+    ],
+    "same_post_vs_new_claim": [
+      "NX014"
+    ],
+    "scope": [
+      "NX007"
+    ],
+    "source_attribution": [
+      "NX011",
+      "NX012"
+    ],
+    "timing": [
+      "NX001",
+      "NX002",
+      "NX003",
+      "NX006",
+      "NX012",
+      "NX013"
+    ],
+    "unresolved_vs_reported_out": [
+      "NX001",
+      "NX003",
+      "NX005",
+      "NX006",
+      "NX010",
+      "NX011"
+    ]
+  },
+  "known_gaps": [
+    "No independently authenticated platform edit history is available; NX013 covers representation variants only.",
+    "No fully bound independent-source same-game IN versus OUT dispute is established in this pack; NX015 preserves divergent retrospective prognoses without inventing contradiction.",
+    "No canonical roster, game ID, final outcome, durable effect receipt, or current Mac implementation is supplied."
+  ]
+}

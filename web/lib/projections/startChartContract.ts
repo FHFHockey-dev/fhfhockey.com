@@ -88,14 +88,21 @@ export type StartChartPlayerContext = {
   flags: string[];
 };
 
+type GameExpectationParticipation = NonNullable<GameExpectationTarget["participation"]>;
+/** As in the FORGE view, boards keep model labels but omit the per-target input and evidence proofs. */
+export type StartChartParticipation = Omit<GameExpectationParticipation, "model"> & {
+  model?: Omit<NonNullable<GameExpectationParticipation["model"]>, "inputHash" | "evidenceHashes">;
+};
+export type StartChartTarget = Omit<GameExpectationTarget, "participation"> & { participation: StartChartParticipation | null };
+
 export type StartChartPlayer = {
   gameExpectation?: {
     playerId: string; scheduleRevision: string; rosterRevision: string | null;
     appearanceProbability: number | null; startProbability: number | null;
     powerPlayRole: GameExpectationPowerPlayRole;
-    startParticipation?: GameExpectationTarget["participation"];
+    startParticipation?: StartChartParticipation | null;
     limitations: string[];
-    targets: Record<string, GameExpectationTarget>;
+    targets: Record<string, StartChartTarget>;
   };
   forecast?: BoardForecast | null;
   boardScore?: { points: number | null; categoryValue: number | null; sortValue: number | null; basis: string; missingCategories: string[]; change?: number | null; comparisonAllowed?: boolean };
@@ -211,7 +218,7 @@ const finiteOrNull = (value: unknown): number | null => {
 const stringOrNull = (value: unknown): string | null =>
   typeof value === "string" && value.trim() ? value : null;
 
-function normalizeParticipationModel(value: unknown, totalsAllowed: boolean): NonNullable<GameExpectationTarget["participation"]>["model"] {
+function normalizeParticipationModel(value: unknown, totalsAllowed: boolean): StartChartParticipation["model"] {
   const model = asRecord(value);
   const start = model.version === "goalie-frozen-window-start-frequency-v1"
     || model.version === "goalie-roster-observation-start-frequency-v1";
@@ -225,8 +232,7 @@ function normalizeParticipationModel(value: unknown, totalsAllowed: boolean): No
   const strings = (value: unknown): string[] => Array.isArray(value)
     ? value.filter((item): item is string => typeof item === "string") : [];
   return { version: model.version, event: model.event,
-    probabilityStatus: "uncalibrated_model", calibration: "unavailable", inputHash: model.inputHash,
-    evidenceHashes: strings(model.evidenceHashes), limitations: strings(model.limitations),
+    probabilityStatus: "uncalibrated_model", calibration: "unavailable", limitations: strings(model.limitations),
     sampleSize: totalsAllowed && Number.isSafeInteger(model.sampleSize) && model.sampleSize > 0 ? model.sampleSize : null };
 }
 
@@ -237,7 +243,7 @@ function normalizeGameExpectation(value: unknown): StartChartPlayer["gameExpecta
     ? value.filter((item): item is string => typeof item === "string") : [];
   const rawStart = asRecord(row.startParticipation), startModel = normalizeParticipationModel(rawStart.model, true);
   const startProbability = finiteOrNull(rawStart.probability);
-  const startParticipation: GameExpectationTarget["participation"] = startModel?.event === "official_starter"
+  const startParticipation: StartChartParticipation | null = startModel?.event === "official_starter"
     && rawStart.basis === "start" && stringOrNull(rawStart.revisionId) && startProbability != null
     && startProbability >= 0 && startProbability <= 1 && startProbability === finiteOrNull(row.startProbability)
     && [rawStart.cutoffAt, rawStart.issuedAt, rawStart.expiresAt].every(value => typeof value === "string" && Number.isFinite(Date.parse(value)))
@@ -285,7 +291,7 @@ function normalizeGameExpectation(value: unknown): StartChartPlayer["gameExpecta
               issuedAt: String(target.participation.issuedAt ?? ""), expiresAt: String(target.participation.expiresAt ?? "") } : null,
         participationRevisionId: stringOrNull(target.participationRevisionId), reasons: strings(target.reasons),
         limitations: strings(target.limitations),
-      } satisfies GameExpectationTarget];
+      } satisfies StartChartTarget];
     })),
   };
 }

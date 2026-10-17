@@ -1,0 +1,19 @@
+# Live and owner files after this review — 2026-10-17 17:37:06 EDT
+MATCH   web/pages/api/v1/db/replay-player-aliases.ts
+MATCH   web/__tests__/pages/api/v1/db/replay-player-aliases.test.ts
+MATCH   web/lib/sources/iftttIntakePolicy.ts
+MATCH   web/pages/api/v1/db/update-line-sources.ts
+MATCH   web/pages/api/v1/db/update-lines-ccc.ts
+MATCH   web/pages/api/v1/db/player-name-aliases.ts
+MATCH   web/__tests__/pages/api/v1/db/player-name-aliases.test.ts
+MATCH   web/vercel.json
+MATCH   tasks/ifttt-integration-2026-10-16/replay-aliases-retain-only-v1/CHECKPOINT.md
+MATCH   tasks/ifttt-integration-2026-10-16/replay-aliases-retain-only-v1/before/replay-player-aliases.ts
+MATCH   tasks/ifttt-integration-2026-10-16/replay-aliases-retain-only-v1/evidence/before-bytes-run.log
+MATCH   tasks/ifttt-integration-2026-10-16/replay-aliases-retain-only-v1/evidence/lint.log
+MATCH   tasks/ifttt-integration-2026-10-16/replay-aliases-retain-only-v1/evidence/nearest.log
+MATCH   tasks/ifttt-integration-2026-10-16/replay-aliases-retain-only-v1/evidence/replay-player-aliases.test.ts.diff
+MATCH   tasks/ifttt-integration-2026-10-16/replay-aliases-retain-only-v1/evidence/replay-player-aliases.ts.diff
+MATCH   tasks/ifttt-integration-2026-10-16/replay-aliases-retain-only-v1/owned-source-sha256.json
+OVERALL UNCHANGED
+git HEAD: ceceb407a29b45f2e5b0c090ecfcff0c27e15d4c  branch: octoberBranch

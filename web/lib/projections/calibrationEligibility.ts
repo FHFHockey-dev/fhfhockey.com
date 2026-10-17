@@ -18,10 +18,13 @@ function asRecord(value: unknown): Record<string, unknown> | null {
     : null;
 }
 
-export function buildForgeInputProvenance() {
+/** The exclusion label is opt-in: only a pipeline whose stages disable external fantasy inputs may claim it. */
+export function buildForgeInputProvenance(options: { externalFantasyInputsExcluded?: true } = {}) {
   return {
     rolling_player_history_contract: FORGE_ROLLING_HISTORY_INPUT_CONTRACT,
-    external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT,
+    ...(options.externalFantasyInputsExcluded === true
+      ? { external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT }
+      : {}),
   } as const;
 }
 

@@ -5,11 +5,13 @@ const {
   ingestNhlApiRawGamesBestEffortMock,
   refreshPlayerUnderlyingSummarySnapshotsForGameIdsMock,
   resolvePlayerStatsIncrementalSelectionMock,
+  refreshTeamUnderlyingSummaryRowsForGameIdsMock,
 } = vi.hoisted(() => ({
   resolveRequestedGameIdsMock: vi.fn(),
   ingestNhlApiRawGamesBestEffortMock: vi.fn(),
   refreshPlayerUnderlyingSummarySnapshotsForGameIdsMock: vi.fn(),
   resolvePlayerStatsIncrementalSelectionMock: vi.fn(),
+  refreshTeamUnderlyingSummaryRowsForGameIdsMock: vi.fn(),
 }));
 
 vi.mock("lib/cron/withCronJobAudit", () => ({
@@ -41,6 +43,11 @@ vi.mock("lib/underlying-stats/playerStatsSummaryRefresh", async (importOriginal)
 vi.mock("lib/underlying-stats/playerStatsRefreshWindow", () => ({
   resolvePlayerStatsIncrementalSelection:
     resolvePlayerStatsIncrementalSelectionMock,
+}));
+
+vi.mock("lib/underlying-stats/teamStatsSummaryRefresh", () => ({
+  refreshTeamUnderlyingSummaryRowsForGameIds:
+    refreshTeamUnderlyingSummaryRowsForGameIdsMock,
 }));
 
 import handler from "../../../../../pages/api/v1/db/update-player-underlying-stats";
@@ -110,6 +117,34 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
       latestCoveredDate: "2026-04-04",
       gameIds: [2025021184, 2025021196],
     });
+    refreshTeamUnderlyingSummaryRowsForGameIdsMock.mockResolvedValue({
+      rowsUpserted: 0,
+      gameIdsProcessed: [],
+    });
+  });
+
+  it("rebuilds team summaries for the same successfully ingested games", async () => {
+    refreshTeamUnderlyingSummaryRowsForGameIdsMock.mockResolvedValue({
+      rowsUpserted: 140,
+      gameIdsProcessed: [2025020955],
+    });
+    const { req, res } = createMockApiContext({ query: { gameId: "2025020955" } });
+
+    await handler(req as never, res as never);
+
+    expect(refreshTeamUnderlyingSummaryRowsForGameIdsMock).toHaveBeenCalledWith({
+      gameIds: [2025020955],
+      seasonId: 20252026,
+      requestedGameType: 2,
+      shouldWarmLandingCache: true,
+      supabase: {},
+    });
+    expect(res.body).toMatchObject({
+      success: true,
+      summaryRowsUpserted: 1,
+      teamSummaryRowsUpserted: 140,
+      rowsUpserted: 1281,
+    });
   });
 
   it.each([2026020033, 2026020030, 2026020023, 2026020025, 2026020029])(
@@ -133,6 +168,7 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
 
       expect(ingestNhlApiRawGamesBestEffortMock).toHaveBeenCalledWith({}, [gameId]);
       expect(refreshPlayerUnderlyingSummarySnapshotsForGameIdsMock).not.toHaveBeenCalled();
+      expect(refreshTeamUnderlyingSummaryRowsForGameIdsMock).not.toHaveBeenCalled();
       expect(res.statusCode).toBe(502);
       expect(res.body).toEqual({
         success: false,
@@ -266,6 +302,7 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
       gameIds: [2025020955],
       rawRowsUpserted: 1140,
       summaryRowsUpserted: 1,
+      teamSummaryRowsUpserted: 0,
       rowsUpserted: 1141,
       warmedLandingCache: true,
       results: [
@@ -279,7 +316,7 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
         },
       ],
       message:
-        "Player underlying stats ingest completed. Raw NHL gamecenter payloads were refreshed first, then per-game player underlying summaries were rebuilt.",
+        "Player underlying stats ingest completed. Raw NHL gamecenter payloads were refreshed first, then per-game player and team underlying summaries were rebuilt.",
     });
   });
 
@@ -347,6 +384,7 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
       gameIds: [],
       rawRowsUpserted: 0,
       summaryRowsUpserted: 0,
+      teamSummaryRowsUpserted: 0,
       rowsUpserted: 0,
       warmedLandingCache: false,
       results: [],
@@ -412,6 +450,7 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
       gameIds: [2025021184, 2025021196],
       rawRowsUpserted: 1880,
       summaryRowsUpserted: 2,
+      teamSummaryRowsUpserted: 0,
       rowsUpserted: 1882,
       warmedLandingCache: true,
       results: [
@@ -425,7 +464,7 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
         },
       ],
       message:
-        "Player underlying stats ingest completed. Raw NHL gamecenter payloads were refreshed first, then per-game player underlying summaries were rebuilt.",
+        "Player underlying stats ingest completed. Raw NHL gamecenter payloads were refreshed first, then per-game player and team underlying summaries were rebuilt.",
     });
   });
 
@@ -535,6 +574,7 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
       gameIds: [2025021184, 2025021196, 2025021197],
       rawRowsUpserted: 450,
       summaryRowsUpserted: 3,
+      teamSummaryRowsUpserted: 0,
       rowsUpserted: 453,
       warmedLandingCache: true,
       results: [
@@ -564,7 +604,7 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
         },
       ],
       message:
-        "Player underlying stats ingest completed. Raw NHL gamecenter payloads were refreshed first, then per-game player underlying summaries were rebuilt.",
+        "Player underlying stats ingest completed. Raw NHL gamecenter payloads were refreshed first, then per-game player and team underlying summaries were rebuilt.",
     });
   });
 
@@ -635,6 +675,7 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
       gameIds: [2025021184, 2025021196],
       rawRowsUpserted: 60,
       summaryRowsUpserted: 1,
+      teamSummaryRowsUpserted: 0,
       rowsUpserted: 61,
       warmedLandingCache: false,
       results: [

@@ -92,6 +92,8 @@ function qualityFixture(source: "detailed" | "baseline" | "blended", profile: "p
     issuedRevisionIds: snapshot.forecasts.map(row => row.revisionId), baselineChecksum: source === "detailed" ? null : "rate-snapshot",
     requiredOpportunities: 4, forecastedOpportunities: 4, exclusionCounts: {} };
   snapshot.realized = {};
+  snapshot.evidence = { schedule: { source: "synthetic complete schedule", asOf: snapshot.context.asOf,
+    seasonId: snapshot.context.seasonId, completeness: "complete", limitations: [] } };
   if (profile !== "points") {
     snapshot.rules.scoring = { mode: "categories", weights: {}, categories: goalie ? [
       { key: "SAVE_PERCENTAGE", direction: "higher", numerator: "SAVES_GOALIE", denominator: "SHOTS_AGAINST_GOALIE" },

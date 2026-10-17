@@ -46,11 +46,13 @@ const contributionSource = z.object({ kind: z.enum(["detailed", "baseline"]), so
   seasonId, teamId: positiveInteger, gameId: positiveInteger.optional(), scheduledAt: instant.optional(), targetKey: id,
   unit: z.enum(["count", "minutes"]), basis: z.enum(["per_appearance", "per_start", "per_team_game", "unconditional_game"]),
   mean: z.number().finite(), participationIntegrated: z.boolean(), cutoffAt: instant,
-  issuedAt: instant, expiresAt: instant, sourceWatermark: id, scheduleRevision: id,
+  issuedAt: instant, expiresAt: instant, catalogExpiresAt: instant.optional(), sourceWatermark: id, scheduleRevision: id,
   rosterRevision: id, legacyAvailabilityAdjustment: z.boolean().optional(), limitations: stringArray.optional() }).strict();
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
-const participationModel = z.object({ version: z.literal("skater-participation-frequency-v1"),
-  event: z.literal("positive_minutes"), probabilityStatus: z.literal("uncalibrated_model"),
+const participationModel = z.object({ version: z.enum(["skater-participation-frequency-v1", "goalie-appearance-frequency-v1",
+  "skater-frozen-window-appearance-frequency-v1", "goalie-frozen-window-appearance-frequency-v1", "goalie-frozen-window-start-frequency-v1",
+  "skater-roster-observation-appearance-frequency-v1", "goalie-roster-observation-appearance-frequency-v1", "goalie-roster-observation-start-frequency-v1"]),
+  event: z.enum(["positive_minutes", "official_starter"]), probabilityStatus: z.literal("uncalibrated_model"),
   calibration: z.literal("unavailable"), inputHash: hash, evidenceHashes: z.array(hash).max(1000),
   numerator: z.number().int().min(0).max(20), denominator: z.number().int().min(1).max(20),
   selectedGameIds: z.array(positiveInteger).max(20).refine(ids => new Set(ids).size === ids.length, "Duplicate selected participation game."),
@@ -84,6 +86,11 @@ const forecast = z.object({ playerId: id, gameId: id, stats: statLine,
   sourceKind: z.enum(["detailed", "baseline", "blended"]).optional(),
   conditionalStats: statLine.optional(), tieBreakStats: statLine.optional(),
   appearanceProbability: z.number().finite().min(0).max(1).nullable().optional(),
+  powerPlayRole: z.discriminatedUnion("status", [
+    z.object({ value: z.null(), source: z.null(), status: z.literal("unavailable"), reason: z.literal("current_role_evidence_unavailable") }).strict(),
+    z.object({ value: z.null(), source: z.null(), status: z.literal("not_applicable"), reason: z.literal("not_applicable") }).strict(),
+  ]).optional(),
+  startParticipation: contributionParticipation.optional(),
   contributions: z.record(z.string().min(1).max(50), resolvedContribution).optional(),
   cutoffAt: instant.optional(), expiresAt: instant.optional(),
   conditioning: z.literal("unconditional"), startProbability: z.number().finite().min(0).max(1).nullable(),
@@ -116,6 +123,7 @@ const rules = z.object({
 const managerRuleOverrides = rules.partial().extend({
   scoring: rules.shape.scoring.partial().optional(),
   goalieMinimum: goalieMinimum.partial().refine(goaliePeriodOrdered, "Goalie minimum period ends before it starts.").optional(),
+  timeZone: timeZone.optional(),
 });
 const opponent = z.object({ roster: z.array(rosterEntry), realized: statLine, remaining: statLine.nullable() }).strict().nullable();
 const step = z.object({ id, type: z.enum(["add", "drop", "reserve"]), playerId: id, dropPlayerId: id.optional(), reservePosition: z.enum(["IR", "IR+", "NA"]).optional(), at: instant, effectiveAt: instant, conditional: z.boolean(), waiverSpend: z.number().finite().nonnegative().nullable().optional(), dependsOn: stringArray }).strict();

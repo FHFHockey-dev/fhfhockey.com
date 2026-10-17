@@ -244,10 +244,11 @@ export async function persistTweetProjectionReports(supabase: any, sources: Pars
         return [{ ...base, capture_key: `${report.key}:${kind}`, source_group: "tweet_projection", source_key: "validated_events", source_account: null,
           observed_at: report.receivedAt, tweet_posted_at: report.publishedAt,
           source_url: report.originalUrl, classification: kind === "goalie" ? "goalie_start" : "injury",
-          goalie_1_player_id: kind === "goalie" ? typedEvents[0]?.playerId ?? null : null,
-          goalie_1_name: kind === "goalie" ? typedEvents[0]?.playerName ?? null : null,
-          goalie_2_player_id: kind === "goalie" ? typedEvents[1]?.playerId ?? null : null,
-          goalie_2_name: kind === "goalie" ? typedEvents[1]?.playerName ?? null : null,
+          // Injury events keep the source's goalie fields; only goalie claims may replace them.
+          ...(kind === "goalie" ? {
+            goalie_1_player_id: typedEvents[0]?.playerId ?? null, goalie_1_name: typedEvents[0]?.playerName ?? null,
+            goalie_2_player_id: typedEvents[1]?.playerId ?? null, goalie_2_name: typedEvents[1]?.playerName ?? null,
+          } : {}),
           metadata: { projectionReports: [report], interpretation: { ...report.interpretation, units: [], events: typedEvents } },
         } as ForecastLineSourceRow];
       });

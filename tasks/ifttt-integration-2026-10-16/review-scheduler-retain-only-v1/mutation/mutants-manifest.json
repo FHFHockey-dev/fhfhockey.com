@@ -1,0 +1,82 @@
+{
+ "control": {
+  "expect": "34/34 pass",
+  "policy": "6badd4c0c4d87eb110a8cb0b3dedefb10fa8b49f9936491eb8f2ce2e8e59d619",
+  "receiver": "5fb55c31fe8a72e29b18718d345fca30b5acc87c97dffeff5c0dfd750ae687d7",
+  "copies": {
+   "iftttReceiptRetention.ts": "ce8e0634151ae54fee10c36b34cf5953e3698bf56a2ca922495b59d0addd605b",
+   "iftttRpcDeadline.ts": "cd7543d277bfc0463f0679d7d34e18368dbe9411821d365dfe5f0cf0ee77bc1b",
+   "iftttIntakePolicy.test.ts": "bd92a3d26daf737b803e67c9f077953afcfbee635a8c0a3a75bf21f52cae2266"
+  }
+ },
+ "before": {
+  "expect": "both new scheduler cases fail",
+  "policy": "34a5f689e660561c6b1774c14be1bef01134b513fd9ae1102e8a4ecc0e8e7a2f",
+  "receiver": "ac22d9f98acc78c2995ff3109c90ced1e86bbd184dc045ce89751fa58f06a8ed",
+  "copies": {
+   "iftttReceiptRetention.ts": "ce8e0634151ae54fee10c36b34cf5953e3698bf56a2ca922495b59d0addd605b",
+   "iftttRpcDeadline.ts": "cd7543d277bfc0463f0679d7d34e18368dbe9411821d365dfe5f0cf0ee77bc1b",
+   "iftttIntakePolicy.test.ts": "bd92a3d26daf737b803e67c9f077953afcfbee635a8c0a3a75bf21f52cae2266"
+  }
+ },
+ "no-guard": {
+  "expect": "both new scheduler cases fail",
+  "policy": "6badd4c0c4d87eb110a8cb0b3dedefb10fa8b49f9936491eb8f2ce2e8e59d619",
+  "receiver": "93dd5ef935dd74eb5d3dcc67ff1364cb458338804affecdf5a3df23de32af7d4",
+  "copies": {
+   "iftttReceiptRetention.ts": "ce8e0634151ae54fee10c36b34cf5953e3698bf56a2ca922495b59d0addd605b",
+   "iftttRpcDeadline.ts": "cd7543d277bfc0463f0679d7d34e18368dbe9411821d365dfe5f0cf0ee77bc1b",
+   "iftttIntakePolicy.test.ts": "bd92a3d26daf737b803e67c9f077953afcfbee635a8c0a3a75bf21f52cae2266"
+  }
+ },
+ "guard-flag-true-only": {
+  "expect": "stop-only case fails",
+  "policy": "6badd4c0c4d87eb110a8cb0b3dedefb10fa8b49f9936491eb8f2ce2e8e59d619",
+  "receiver": "19855d36ccf4da4b6872aecb62e587617379e536fb0719dfcb366473df3843c0",
+  "copies": {
+   "iftttReceiptRetention.ts": "ce8e0634151ae54fee10c36b34cf5953e3698bf56a2ca922495b59d0addd605b",
+   "iftttRpcDeadline.ts": "cd7543d277bfc0463f0679d7d34e18368dbe9411821d365dfe5f0cf0ee77bc1b",
+   "iftttIntakePolicy.test.ts": "bd92a3d26daf737b803e67c9f077953afcfbee635a8c0a3a75bf21f52cae2266"
+  }
+ },
+ "predicate-ignores-stop": {
+  "expect": "stop-only case fails",
+  "policy": "082daf7762c3f6cf93e2970da4226ff39c476610c1b65b4144c138fe5db72de1",
+  "receiver": "5fb55c31fe8a72e29b18718d345fca30b5acc87c97dffeff5c0dfd750ae687d7",
+  "copies": {
+   "iftttReceiptRetention.ts": "ce8e0634151ae54fee10c36b34cf5953e3698bf56a2ca922495b59d0addd605b",
+   "iftttRpcDeadline.ts": "cd7543d277bfc0463f0679d7d34e18368dbe9411821d365dfe5f0cf0ee77bc1b",
+   "iftttIntakePolicy.test.ts": "bd92a3d26daf737b803e67c9f077953afcfbee635a8c0a3a75bf21f52cae2266"
+  }
+ },
+ "predicate-ignores-policy": {
+  "expect": "not caught by the new scheduler cases; caught by the policy legacy-default case",
+  "policy": "8cf712171a2855fbdc54c9f0cf4fc1642608faab7c1018148d1b49ad42135503",
+  "receiver": "5fb55c31fe8a72e29b18718d345fca30b5acc87c97dffeff5c0dfd750ae687d7",
+  "copies": {
+   "iftttReceiptRetention.ts": "ce8e0634151ae54fee10c36b34cf5953e3698bf56a2ca922495b59d0addd605b",
+   "iftttRpcDeadline.ts": "cd7543d277bfc0463f0679d7d34e18368dbe9411821d365dfe5f0cf0ee77bc1b",
+   "iftttIntakePolicy.test.ts": "bd92a3d26daf737b803e67c9f077953afcfbee635a8c0a3a75bf21f52cae2266"
+  }
+ },
+ "guard-inverted": {
+  "expect": "new cases and both 6-request cases fail",
+  "policy": "6badd4c0c4d87eb110a8cb0b3dedefb10fa8b49f9936491eb8f2ce2e8e59d619",
+  "receiver": "6b3b5c3e90e2f7063c2a8458133a203277c76a392af522f990e3d249afa251f3",
+  "copies": {
+   "iftttReceiptRetention.ts": "ce8e0634151ae54fee10c36b34cf5953e3698bf56a2ca922495b59d0addd605b",
+   "iftttRpcDeadline.ts": "cd7543d277bfc0463f0679d7d34e18368dbe9411821d365dfe5f0cf0ee77bc1b",
+   "iftttIntakePolicy.test.ts": "bd92a3d26daf737b803e67c9f077953afcfbee635a8c0a3a75bf21f52cae2266"
+  }
+ },
+ "no-skipped-marker": {
+  "expect": "both new scheduler cases fail on the response contract",
+  "policy": "6badd4c0c4d87eb110a8cb0b3dedefb10fa8b49f9936491eb8f2ce2e8e59d619",
+  "receiver": "dfcfbee57f1213cb35d91d0dd2af7d49dedd4ef6c865148ec43fb5e2b1c78ab9",
+  "copies": {
+   "iftttReceiptRetention.ts": "ce8e0634151ae54fee10c36b34cf5953e3698bf56a2ca922495b59d0addd605b",
+   "iftttRpcDeadline.ts": "cd7543d277bfc0463f0679d7d34e18368dbe9411821d365dfe5f0cf0ee77bc1b",
+   "iftttIntakePolicy.test.ts": "bd92a3d26daf737b803e67c9f077953afcfbee635a8c0a3a75bf21f52cae2266"
+  }
+ }
+}

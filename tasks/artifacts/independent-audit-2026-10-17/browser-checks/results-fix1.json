@@ -1,0 +1,159 @@
+{
+  "base": "http://127.0.0.1:3107",
+  "startedAt": "2026-10-17T21:53:33.689Z",
+  "checks": [
+    "upsert",
+    "db"
+  ],
+  "graphqlConfigured": true,
+  "upsert": {
+    "supabaseCalls": [
+      "GET /rest/v1/users",
+      "GET /rest/v1/yahoo_names",
+      "GET /rest/v1/yahoo_names",
+      "GET /rest/v1/users",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/user_settings",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/yahoo_players_with_normalized_history",
+      "GET /rest/v1/yahoo_players_with_normalized_history",
+      "POST /rest/v1/user_profiles",
+      "POST /rest/v1/user_settings",
+      "GET /rest/v1/users",
+      "GET /rest/v1/users",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/user_settings",
+      "GET /rest/v1/user_profiles",
+      "POST /rest/v1/user_profiles",
+      "POST /rest/v1/user_settings",
+      "GET /rest/v1/users",
+      "GET /rest/v1/yahoo_names",
+      "GET /rest/v1/yahoo_names",
+      "GET /rest/v1/users",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/user_settings",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/yahoo_players_with_normalized_history",
+      "GET /rest/v1/yahoo_players_with_normalized_history",
+      "POST /rest/v1/user_profiles",
+      "POST /rest/v1/user_settings"
+    ],
+    "localApiCalls": [],
+    "console": [
+      "warning: Image with src \"http://127.0.0.1:3107/_next/static/media/FHFHonly.f13408af.png\" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: \"auto\"' or 'height: \"auto\"' to maintain the aspect ratio.",
+      "error: `legacyBehavior` is deprecated and will be removed in a future release. A codemod is available to upgrade your components:\n\nnpx @next/codemod@latest new-link .\n\nLearn more: https://nextjs.org/docs/app/building-your-application/upgrading/codemods#remove-a-tags-from-link-components",
+      "warning: Image with src \"http://127.0.0.1:3107/_next/static/media/FHFHonly.f13408af.png\" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: \"auto\"' or 'height: \"auto\"' to maintain the aspect ratio.",
+      "warning: Image with src \"http://127.0.0.1:3107/_next/static/media/FHFHonly.f13408af.png\" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: \"auto\"' or 'height: \"auto\"' to maintain the aspect ratio.",
+      "error: `legacyBehavior` is deprecated and will be removed in a future release. A codemod is available to upgrade your components:\n\nnpx @next/codemod@latest new-link .\n\nLearn more: https://nextjs.org/docs/app/building-your-application/upgrading/codemods#remove-a-tags-from-link-components"
+    ],
+    "pageErrors": [],
+    "requests": {
+      "GET local": 57,
+      "GET fonts.googleapis.com": 27,
+      "GET img.buymeacoffee.com": 3,
+      "GET fonts.gstatic.com": 16,
+      "GET cdn.vercel-insights.com": 3,
+      "GET fyhftlxokyjtpndbkfse.supabase.co": 26,
+      "POST fyhftlxokyjtpndbkfse.supabase.co": 6,
+      "GET va.vercel-scripts.com": 3
+    },
+    "nonGetRequests": [
+      "POST fyhftlxokyjtpndbkfse.supabase.co/rest/v1/user_profiles",
+      "POST fyhftlxokyjtpndbkfse.supabase.co/rest/v1/user_settings",
+      "POST fyhftlxokyjtpndbkfse.supabase.co/rest/v1/user_profiles",
+      "POST fyhftlxokyjtpndbkfse.supabase.co/rest/v1/user_settings",
+      "POST fyhftlxokyjtpndbkfse.supabase.co/rest/v1/user_profiles",
+      "POST fyhftlxokyjtpndbkfse.supabase.co/rest/v1/user_settings"
+    ],
+    "failed": [],
+    "httpErrors": [],
+    "servedAppHasNotistack": true,
+    "timeline": [
+      {
+        "ms": 15,
+        "path": "/db/upsert-projections",
+        "toastVisible": false
+      },
+      {
+        "ms": 249,
+        "path": "/auth",
+        "toastVisible": true
+      },
+      {
+        "ms": 6391,
+        "path": "/auth",
+        "toastVisible": false
+      }
+    ],
+    "finalPath": "/auth",
+    "toastVisibleAfterRedirect": true,
+    "ok": true
+  },
+  "db": {
+    "supabaseCalls": [
+      "GET /rest/v1/users",
+      "GET /rest/v1/users",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/user_profiles",
+      "GET /rest/v1/user_settings",
+      "GET /rest/v1/user_profiles",
+      "HEAD /rest/v1/players",
+      "HEAD /rest/v1/games",
+      "POST /rest/v1/user_profiles",
+      "HEAD /rest/v1/seasons",
+      "GET /rest/v1/games",
+      "POST /rest/v1/user_settings",
+      "HEAD /rest/v1/teams"
+    ],
+    "localApiCalls": [
+      "GET /api/v1/season"
+    ],
+    "console": [
+      "warning: Image with src \"http://127.0.0.1:3107/_next/static/media/FHFHonly.f13408af.png\" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: \"auto\"' or 'height: \"auto\"' to maintain the aspect ratio.",
+      "error: `legacyBehavior` is deprecated and will be removed in a future release. A codemod is available to upgrade your components:\n\nnpx @next/codemod@latest new-link .\n\nLearn more: https://nextjs.org/docs/app/building-your-application/upgrading/codemods#remove-a-tags-from-link-components",
+      "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    "pageErrors": [],
+    "requests": {
+      "GET local": 32,
+      "GET fonts.googleapis.com": 9,
+      "GET img.buymeacoffee.com": 1,
+      "GET fonts.gstatic.com": 4,
+      "GET cdn.vercel-insights.com": 1,
+      "GET va.vercel-scripts.com": 1,
+      "GET fyhftlxokyjtpndbkfse.supabase.co": 7,
+      "HEAD fyhftlxokyjtpndbkfse.supabase.co": 4,
+      "POST fyhftlxokyjtpndbkfse.supabase.co": 2
+    },
+    "nonGetRequests": [
+      "POST fyhftlxokyjtpndbkfse.supabase.co/rest/v1/user_profiles",
+      "POST fyhftlxokyjtpndbkfse.supabase.co/rest/v1/user_settings"
+    ],
+    "failed": [],
+    "httpErrors": [
+      "404 /pictures/fhfPlaceholder.png",
+      "404 /pictures/csvImportIcon.png"
+    ],
+    "status": 200,
+    "adminViewShown": true,
+    "cancelEnabled": true,
+    "snackbarShown": true,
+    "snackbarBox": {
+      "x": 40,
+      "y": 838,
+      "width": 215,
+      "height": 36
+    },
+    "viewport": {
+      "width": 1280,
+      "height": 900
+    },
+    "anchorBottomLeft": true,
+    "ok": true
+  },
+  "finishedAt": "2026-10-17T21:53:47.780Z"
+}

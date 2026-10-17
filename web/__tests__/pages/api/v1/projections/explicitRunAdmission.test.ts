@@ -33,7 +33,7 @@ describe.each([
 ])("explicit run admission: $name", ({ name, handler, table, idFilter, column }) => {
   beforeEach(() => {
     db.from.mockReset(); db.latest.mockReset(); db.latest.mockResolvedValue("latest-run");
-    db.run = { metrics: { input_provenance: buildForgeInputProvenance() } };
+    db.run = { metrics: { input_provenance: buildForgeInputProvenance({ externalFantasyInputsExcluded: true }) } };
     db.runError = null; db.rowError = null; db.rows = [{ fixture: "native-projection" }]; db.operations = [];
     db.from.mockImplementation((source: string) => {
       if (source !== "forge_runs" && source !== table) throw new Error(`Unexpected offline read: ${source}`);
@@ -81,7 +81,7 @@ describe.each([
     expect(absent.statusCode).toBe(404);
     expect(db.from.mock.calls).toEqual([["forge_runs"]]);
     expect(db.latest).not.toHaveBeenCalled();
-    db.run = { metrics: { input_provenance: buildForgeInputProvenance() } }; db.rows = [];
+    db.run = { metrics: { input_provenance: buildForgeInputProvenance({ externalFantasyInputsExcluded: true }) } }; db.rows = [];
     const empty = response();
     await handler({ method: "GET", query: { date, runId } } as any, empty);
     expect(empty.statusCode).toBe(200);

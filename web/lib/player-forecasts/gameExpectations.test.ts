@@ -433,4 +433,15 @@ describe("bounded browser expectation delivery", () => {
     raw.players = Array.from({ length: GAME_EXPECTATION_VIEW_LIMITS.players + 1 }, () => raw.players[0]);
     expect(() => buildGameExpectationView(raw)).toThrow(GameExpectationViewLimitError);
   });
+  it("keeps catalog capacity above the v1 per-game participation scale", () => {
+    // v1 is about 1,050 covered player-games × 9 skater targets, each with its own revision.
+    const raw = buildGameExpectations(fixture(), scope, now), [game] = raw.players[0].games;
+    raw.players[0].games = Array.from({ length: 1400 }, (_, index) => ({ ...game, gameId: String(10000 + index), targets: Object.fromEntries(
+      Object.entries(game.targets).map(([key, target]) => [key, { ...target, participationRevisionId: `participation-${index}-${key}` }])) }));
+    raw.players[0].scheduledOpportunities = raw.players[0].games.length;
+    const view = buildGameExpectationView(raw);
+    expect(view.catalogs.revisions.length).toBeGreaterThan(10000);
+    expect(view.catalogs.revisions.length).toBeLessThanOrEqual(GAME_EXPECTATION_VIEW_LIMITS.catalogEntries);
+    expect(decodeGameExpectationView(JSON.parse(JSON.stringify(view)))).toEqual(raw);
+  });
 });

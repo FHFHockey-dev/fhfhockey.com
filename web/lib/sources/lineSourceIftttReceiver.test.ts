@@ -166,6 +166,21 @@ describe("createLineSourceIftttReceiver", () => {
     });
   });
 
+  it.each([["a controlled pilot", enableIntake], ["a stop-only pilot", () => vi.stubEnv("IFTTT_INTAKE_STOP", "true")]] as const)(
+    "keeps %s retain-only: scheduled capture retries request no processor", async (_label, configure) => {
+    configure();
+    vi.stubEnv("STARTER_BOARD_CAPTURE_ENABLED", "true");
+    vi.stubEnv("STARTER_BOARD_COMPUTE_ENABLED", "false");
+    vi.stubEnv("STARTER_BOARD_SCHEDULER_ENABLED", "true");
+    vi.stubEnv("STARTER_BOARD_WORKER_ORIGIN", "https://trusted.example");
+    vi.stubEnv("CRON_SECRET", "scheduler-test");
+    const request = vi.fn(); vi.stubGlobal("fetch", request);
+    const res = createMockRes();
+    await scheduler(createMockReq({ method: "GET", headers: { authorization: "Bearer scheduler-test" } }), res);
+    expect(res.statusCode).toBe(200); expect((res.body as any).capture).toMatchObject({ attempted: 0, skipped: "controlled_intake" });
+    expect(request).not.toHaveBeenCalled(); expect(rpcMock).not.toHaveBeenCalled(); expect(dispatchMock).not.toHaveBeenCalled();
+  });
+
   it.each([false, true])("runs bounded source retries independently of computation enabled=%s", async (compute) => {
     vi.stubEnv("STARTER_BOARD_CAPTURE_ENABLED", "true");
     vi.stubEnv("STARTER_BOARD_COMPUTE_ENABLED", String(compute));

@@ -40,6 +40,7 @@ export function consumerGameRevisionFixture() {
     team_abbreviation: teamId === 8 ? "MTL" : "TOR", opponent_abbreviation: teamId === 8 ? "TOR" : "MTL",
     home_away: teamId === 8 ? "away" : "home", game_status: "FUT", schedule_status: "OK",
     fetched_at: "2026-02-07T11:00:00Z", source_updated_at: null, is_countable: true,
+    source_metadata: { scheduleCoverage: { version: "nhl-source-days-v1", date, gameIds: [gameId], emptyDates: [] } },
   }));
   const game = { id: gameId, date, seasonId, startTime, homeTeamId: 10, awayTeamId: 8 };
   const issued: ForgeIssuedContextV1 = {
