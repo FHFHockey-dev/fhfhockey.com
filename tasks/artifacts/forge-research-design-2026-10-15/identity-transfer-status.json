@@ -1,0 +1,16 @@
+{
+  "status": "blocked_cloud_path_not_local",
+  "library_file_id": "libfile_25810906e36c819180a6a94e6b629b9c",
+  "file_id": "file_0000000051a8824380efad7ed9e209dd",
+  "version": 0,
+  "reported_bytes": 53535,
+  "transfer_id": "materialize-1",
+  "cloud_workspace_path": "/workspace/scratch/28bd2529354b/fhfh-identity-read-results-2026-10-15.zip",
+  "download_url_returned": false,
+  "local_path_exists": false,
+  "expected_sha256": "8e1c0ae10c0ef50251bd3b93ad443e1663adcd63e198219a55b574643357c47d",
+  "actual_hash_verified": false,
+  "prepare_calls": 1,
+  "retries": 0,
+  "identity_rows_opened": false
+}

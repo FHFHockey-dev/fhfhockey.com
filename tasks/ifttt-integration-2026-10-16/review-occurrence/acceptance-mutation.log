@@ -1,0 +1,53 @@
+REVIEW_MUTATION {"caseId":"CR019","rowId":"tweet-source-claim-v1:interpretation:74d69dd74e0fd5452b150fae3908c35d12a30dbe7a842c1c4b757b7cbdbfbc4f","row":{"evidenceVersionId":"tweet-source-claim-v1:evidence:88304e4ddb83d0d96030ccf8bf46af3c854b0592613239872c6e8586061596f6","interpretation":{"assertionStrength":"asserted","fact":{"kind":"availability","status":"out"},"parserVersion":"REVIEW_DELIBERATE_OLD_ROW_REWRITE","polarity":"positive","resolverVersion":"fixture-prebound-v1","scope":{"date":"2026-10-15","gameId":900012,"kind":"game","teamId":12},"subject":{"playerId":8473533,"teamId":12},"validation":{"reason":"reporting_origin_unresolved","status":"pending"}},"interpretationVersionId":"tweet-source-claim-v1:interpretation:74d69dd74e0fd5452b150fae3908c35d12a30dbe7a842c1c4b757b7cbdbfbc4f","semanticFingerprint":"tweet-source-claim-v1:meaning:c8c32b468ceaef96445ce8af6e1c83a49b5d340f6bd3244ca10be2f7df041eac","sourceClaimId":"dsl-retained:offline-fixture:retained:9900000000000000002:occurrence:1","times":{"effectiveAt":"2026-10-15T23:00:00Z","interpretedAt":"2026-10-15T12:02:00Z","originalPublishedAt":"2026-10-15T12:00:00Z","receivedAt":"2026-10-15T12:01:00Z","validUntil":"2026-10-16T04:00:00Z","wrapperPublishedAt":null}}}
+{
+  "counts": {
+    "passed": 41,
+    "failed": 2,
+    "deferred_persistence": 9
+  },
+  "assertionsChecked": 196,
+  "failedCases": [
+    {
+      "id": "CR011",
+      "failed": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CR051",
+      "failed": [
+        {
+          "index": 1,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "effectId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            "tweet-source-claim-v1:effect:6866cd289bf92ee06135297023944d40aee3ec651eb08f4165b0d0bc7dff1084",
+            null
+          ]
+        }
+      ]
+    }
+  ]
+}

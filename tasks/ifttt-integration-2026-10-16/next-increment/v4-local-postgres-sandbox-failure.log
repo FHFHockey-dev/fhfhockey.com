@@ -1,0 +1,67 @@
+
+> web@0.1.0 test
+> vitest --run lib/sources/tweetClaimRegistry.test.ts lib/sources/tweetClaimQualificationStorage.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ❯ lib/sources/tweetClaimRegistry.test.ts (17 tests | 15 skipped) 1214ms
+   ✓ claim rollout defaults > does not query a sink or claim work when delivery is disabled 1ms
+   ✓ claim rollout defaults > keeps fixture publication, receipt and game on one Eastern day at midnight boundaries 4ms
+   ↓ disposable Postgres claim integration and fault recovery > wires the actual projection-storage hook to durable evidence and held proposals, without legacy publication
+   ↓ disposable Postgres claim integration and fault recovery > rolls back observations, aliases, state and outbox together on a mid-transaction failure
+   ↓ disposable Postgres claim integration and fault recovery > recovers a committed write whose acknowledgement was lost, preserving first admission and one outbox row
+   ↓ disposable Postgres claim integration and fault recovery > serializes competing processors; differing starters block the proposal instead of dispatching a correction
+   ↓ disposable Postgres claim integration and fault recovery > never resends after an uncertain successful sink write; reconciliation supplies the durable receipt
+   ↓ disposable Postgres claim integration and fault recovery > reconciles an expired worker lease and fences its late acknowledgement
+   ↓ disposable Postgres claim integration and fault recovery > does not duplicate a sink write after delivery-state acknowledgement loss
+   ↓ disposable Postgres claim integration and fault recovery > permits a bounded retry only after the sink proves that no effect was applied
+   ↓ disposable Postgres claim integration and fault recovery > stops a repeatedly rejected send after three attempts
+   ↓ disposable Postgres claim integration and fault recovery > bounds deterministic retry and uncertain reconciliation separately
+   ↓ disposable Postgres claim integration and fault recovery > enforces service-role-only RPCs and append-only observations
+   ↓ disposable Postgres claim integration and fault recovery > rejects same-ID changed payloads in both the adapter boundary and the SQL transaction
+   ↓ disposable Postgres claim integration and fault recovery > retains provisional and verified provenance without mutating earlier evidence
+   ↓ disposable Postgres claim integration and fault recovery > retains a verified cross-root relay alias with one held proposal and unchanged parent evidence
+   ↓ disposable Postgres claim integration and fault recovery > rejects retrospective cohort registration and changed frozen parser versions
+ ❯ lib/sources/tweetClaimQualificationStorage.test.ts (14 tests | 14 skipped) 1211ms
+   ↓ durable qualified IFTTT scope integration > atomically converges provisional/verified and cross-root receipts with one held action, including commit ack loss
+   ↓ durable qualified IFTTT scope integration > retains exact partial legacy effects and suppresses new reservations without replaying them
+   ↓ durable qualified IFTTT scope integration > preserves retained r3 occurrence allocations and first planning cutoff through the real RPC
+   ↓ durable qualified IFTTT scope integration > rejects same-ID changed raw payload and alias membership on the real integrated storage path
+   ↓ durable qualified IFTTT scope integration > recovers shadow raw-status acknowledgement loss after evidence committed without another action
+   ↓ durable qualified IFTTT scope integration > rolls back raw and qualification versions together when a later qualification write fails
+   ↓ durable qualified IFTTT scope integration > does not misclassify a failed refresh of already retained evidence as commit acknowledgement loss
+   ↓ durable qualified IFTTT scope integration > serializes finite evaluation budgets and stops on clock expiry without failing raw retention
+   ↓ durable qualified IFTTT scope integration > rejects the reviewer's invalid prospective clocks at the SQL boundary without retaining a sample
+   ↓ durable qualified IFTTT scope integration > uses dated source hints through the actual hook while preserving complete-schedule ambiguity
+   ↓ durable qualified IFTTT scope integration > blocks both game scopes on global material rebind in both arrival orders and under contention
+   ↓ durable qualified IFTTT scope integration > uses the newest incomplete audit as unknown through the real SQL evidence reader
+   ↓ durable qualified IFTTT scope integration > durably retains a canonical alignment exception instead of dropping its immutable observation
+   ↓ durable qualified IFTTT scope integration > bounds all raw pilot intake across both handlers and stops before more enrichment after expiry
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/sources/tweetClaimQualificationStorage.test.ts > durable qualified IFTTT scope integration
+Error: Command failed: /opt/homebrew/opt/postgresql@17/bin/initdb -D /var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-ifttt-qualified-pg-inC8g4/data --no-locale --encoding=UTF8 --auth-local=trust --auth-host=reject -U ifttt_test
+2026-10-15 23:06:51.200 CDT [95241] FATAL:  could not create shared memory segment: Operation not permitted
+2026-10-15 23:06:51.200 CDT [95241] DETAIL:  Failed system call was shmget(key=205049564, size=56, 03600).
+child process exited with exit code 1
+initdb: removing data directory "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-ifttt-qualified-pg-inC8g4/data"
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  lib/sources/tweetClaimRegistry.test.ts > disposable Postgres claim integration and fault recovery
+Error: Command failed: /opt/homebrew/opt/postgresql@17/bin/initdb -D /var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-ifttt-pg-Cm6MSD/data --no-locale --encoding=UTF8 --auth-local=trust --auth-host=reject -U ifttt_test
+2026-10-15 23:06:51.196 CDT [95240] FATAL:  could not create shared memory segment: Operation not permitted
+2026-10-15 23:06:51.196 CDT [95240] DETAIL:  Failed system call was shmget(key=205049591, size=56, 03600).
+child process exited with exit code 1
+initdb: removing data directory "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-ifttt-pg-Cm6MSD/data"
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  2 passed | 29 skipped (31)
+   Start at  23:06:49
+   Duration  2.12s (transform 382ms, setup 18ms, collect 1.11s, tests 2.43s, environment 1ms, prepare 130ms)
+

@@ -1,0 +1,42 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts -t atomically captures --config ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/vitest.config.mjs
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts (15 tests | 1 failed | 14 skipped) 806ms
+   ↓ forecast consumer default > does no work unless explicitly enabled
+   ↓ real forecast capture, queue and retained action binding > CR042 original clocks recover the real retained binding and proof without a new identity or expired dispatch
+   ↓ real forecast capture, queue and retained action binding > CR043 original clocks keep actual partial consumer history unknown without a send or new identity
+   ↓ real forecast capture, queue and retained action binding > CR044 original clocks adopt verified real native capture and queue receipts then suppress replay after caller loss
+   × real forecast capture, queue and retained action binding > atomically captures actual native snapshot, assignments, both queue scopes, news trigger and receipt 114ms
+     → syntax error at end of input
+   ↓ real forecast capture, queue and retained action binding > recovers exact receipt after actual consumer commit acknowledgement loss
+   ↓ real forecast capture, queue and retained action binding > retains receipt and suppresses replay after outbox settlement reply is lost
+   ↓ real forecast capture, queue and retained action binding > rolls back snapshot, assignments, first queue and news trigger when the second queue fails
+   ↓ real forecast capture, queue and retained action binding > rejects same-action changed parent/assignments and incomplete delivered adoption without adding bindings
+   ↓ real forecast capture, queue and retained action binding > serializes two actual consumer workers
+   ↓ real forecast capture, queue and retained action binding > fences stale apply ownership before any native side effect
+   ↓ real forecast capture, queue and retained action binding > leaves uncertain acknowledgement/readback failure recoverable without another native application
+   ↓ real forecast capture, queue and retained action binding > rejects forged native receipts and immutable receipt/binding changes; denies public RPC access
+   ↓ real forecast capture, queue and retained action binding > holds unknown coverage and changed retained payload without invoking consumers
+   ↓ real forecast capture, queue and retained action binding > retains real r3 effect and transition IDs separately from the delivery carrier key
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts > real forecast capture, queue and retained action binding > atomically captures actual native snapshot, assignments, both queue scopes, news trigger and receipt
+error: syntax error at end of input
+ ❯ node_modules/pg/lib/client.js:545:17
+ ❯ sql ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts:32:106
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts:126:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 skipped (15)
+   Start at  01:38:31
+   Duration  1.29s (transform 180ms, setup 17ms, collect 293ms, tests 806ms, environment 0ms, prepare 36ms)
+

@@ -1,0 +1,51 @@
+{
+  "createdAt": "2026-10-16T00:29:54.495544+00:00",
+  "status": "frozen_pending_independent_review",
+  "scope": "One RSO application file plus one new focused integration test; prior dirty source preserved by intake-relative patch.",
+  "manifest": {
+    "file": "candidate.sha256",
+    "sha256": "d6287c2f2308181f2c3527ceacbd6d58e8092276d4ac2179397ff5cf406ddcaf"
+  },
+  "patch": {
+    "file": "change.patch",
+    "sha256": "b7f328ad2d406734103c9d1a514a744e2b895a188a625ba910f6edbafa110e53"
+  },
+  "demonstratedDefect": "Existing League settings entry opened timing, but acquisition cost/period controls remained in a separate closed disclosure; both new integration variants failed.",
+  "redTests": {
+    "file": "red-tests.log",
+    "failures": 2,
+    "sha256": "959f200630175c5c3810a2158ac6593de40b8a7ce7ed9e6cf56cf93bed3a5f60"
+  },
+  "finalTests": {
+    "file": "final-tests.log",
+    "exitCode": 0,
+    "passed": 10,
+    "skipped": 191,
+    "integrationCases": 2,
+    "nearbyRuleCases": 8,
+    "sha256": "8ae977ea9c55becb64d5be551a558923a424ed02b7a274f9c14a439b54d7a678"
+  },
+  "lint": {
+    "exitCode": 0,
+    "errors": 0,
+    "inheritedWarnings": 3,
+    "file": "final-lint.log",
+    "sha256": "65e30339da9362757c4738f79810c299f78560036879fa6f7506bbc47e700018",
+    "warningLogExactlyMatchesPriorIntake": "../rso-candidate-admission-2026-10-15/lint.log"
+  },
+  "boundInputs": 17,
+  "inputDrift": false,
+  "originalTimingCostPeriodMarkupAndHandlersUnchanged": true,
+  "nearestExistingMainTestUnchanged": true,
+  "verificationScope": "Real main, hooks, cloned worker transport invoking actual solvers, in-memory jsdom workspace; native browser Worker packaging not exercised. All HTTP mocked.",
+  "compilerBuild": "not run; aggregate compiler coordinator retained",
+  "actualExternalRequests": 0,
+  "actualDatabaseWrites": 0,
+  "ownerBrowserStorageAccountActions": 0,
+  "remaining": [
+    "Independent exact frozen review",
+    "Actual TJ source/provider/cache diagnostic",
+    "Actual owner acquisition rule values; none inferred",
+    "Live ownership/schedule/forecast/provider-account acceptance and release authorization"
+  ]
+}

@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run lib/sources/tweetClaimRegistry.test.ts lib/sources/tweetClaimQualificationStorage.test.ts --config ../tasks/ifttt-integration-2026-10-16/review-v2/vitest.review.config.mjs --reporter=default --reporter=json --outputFile=../tasks/ifttt-integration-2026-10-16/review-v2/postgres-results.json
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ lib/sources/tweetClaimQualificationStorage.test.ts (8 tests) 1191ms
+ ✓ lib/sources/tweetClaimRegistry.test.ts (16 tests) 1625ms
+
+ Test Files  2 passed (2)
+      Tests  24 passed (24)
+   Start at  22:41:28
+   Duration  2.18s (transform 207ms, setup 31ms, collect 584ms, tests 2.82s, environment 0ms, prepare 94ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/review-v2/postgres-results.json

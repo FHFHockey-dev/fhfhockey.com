@@ -1,0 +1,49 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+stderr | ../tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v1/receiver-storage.test.ts > variant-aware receiver with actual raw/archive RPC storage > retains a changed body at the same key as immutable held evidence and preserves the canonical row
+Line source IFTTT tweet ingest failed: {"code":"","message":"Error: Independent IFTTT review forbids external network I/O","details":"Error: Independent IFTTT review forbids external network I/O\n    at blocked (/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/review/deny-network.ts:3:31)\n    at fetch (file:///Users/tim/Code/fhfhockey.com/web/node_modules/@supabase/supabase-js/src/lib/fetch.ts:7:42)\n    at file:///Users/tim/Code/fhfhockey.com/web/node_modules/@supabase/supabase-js/src/lib/fetch.ts:34:12\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at retainIftttRawReceipt (/Users/tim/Code/fhfhockey.com/web/lib/sources/iftttReceiptRetention.ts:10:18)\n    at handler (/Users/tim/Code/fhfhockey.com/web/lib/sources/lineSourceIftttReceiver:225:19)\n    at /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v1/receiver-storage.test.ts:95:3\n    at file:///Users/tim/Code/fhfhockey.com/web/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20","hint":""}
+
+stderr | ../tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v1/receiver-storage.test.ts > variant-aware receiver with actual raw/archive RPC storage > retains a changed body at the same key as immutable held evidence and preserves the canonical row
+Line source IFTTT tweet ingest failed: {"code":"","message":"Error: Independent IFTTT review forbids external network I/O","details":"Error: Independent IFTTT review forbids external network I/O\n    at blocked (/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/review/deny-network.ts:3:31)\n    at fetch (file:///Users/tim/Code/fhfhockey.com/web/node_modules/@supabase/supabase-js/src/lib/fetch.ts:7:42)\n    at file:///Users/tim/Code/fhfhockey.com/web/node_modules/@supabase/supabase-js/src/lib/fetch.ts:34:12\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at retainIftttRawReceipt (/Users/tim/Code/fhfhockey.com/web/lib/sources/iftttReceiptRetention.ts:10:18)\n    at handler (/Users/tim/Code/fhfhockey.com/web/lib/sources/lineSourceIftttReceiver:225:19)\n    at /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v1/receiver-storage.test.ts:95:135\n    at file:///Users/tim/Code/fhfhockey.com/web/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20","hint":""}
+
+ ↓ ../tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v1/receiver-storage.test.ts > variant-aware receiver with actual raw/archive RPC storage > does not send success before the raw write settles and preserves the exact original body
+ ↓ ../tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v1/receiver-storage.test.ts > variant-aware receiver with actual raw/archive RPC storage > storage rejection returns500 and retains no raw row
+ ↓ ../tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v1/receiver-storage.test.ts > variant-aware receiver with actual raw/archive RPC storage > line_source_ifttt_events committed storage reply loss returns500; exact-key retry preserves one immutable retained row
+ ↓ ../tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v1/receiver-storage.test.ts > variant-aware receiver with actual raw/archive RPC storage > lines_ccc_ifttt_events committed storage reply loss returns500; exact-key retry preserves one immutable retained row
+ ↓ ../tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v1/receiver-storage.test.ts > variant-aware receiver with actual raw/archive RPC storage > HTTP response loss after a successful write leaves one raw row for a safe same-key retry
+ ↓ ../tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v1/receiver-storage.test.ts > variant-aware receiver with actual raw/archive RPC storage > line_source_ifttt_events concurrent duplicate delivery stores one row and both local handlers return200
+ ↓ ../tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v1/receiver-storage.test.ts > variant-aware receiver with actual raw/archive RPC storage > lines_ccc_ifttt_events concurrent duplicate delivery stores one row and both local handlers return200
+ ↓ ../tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v1/receiver-storage.test.ts > variant-aware receiver with actual raw/archive RPC storage > a processed raw receipt retried at the same key preserves status, payload and first receipt clock
+ ↓ ../tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v1/receiver-storage.test.ts > variant-aware receiver with actual raw/archive RPC storage > separate configured generic source keys can retain the same post independently
+ × ../tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v1/receiver-storage.test.ts > variant-aware receiver with actual raw/archive RPC storage > retains a changed body at the same key as immutable held evidence and preserves the canonical row 40ms
+   → expected 500 to be 200 // Object.is equality
+ ↓ ../tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v1/receiver-storage.test.ts > variant-aware receiver with actual raw/archive RPC storage > missing post identity preserves separate text-only receipts rather than deduplicating by text
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v1/receiver-storage.test.ts > variant-aware receiver with actual raw/archive RPC storage > retains a changed body at the same key as immutable held evidence and preserves the canonical row
+AssertionError: expected 500 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 500
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v1/receiver-storage.test.ts:97:26
+     95|   await handler()(req(),response());const first=await rows();const cha…
+     96|   const after=await rows(),receipts=await sql("select to_jsonb(r) body…
+     97|   expect(res.statusCode).toBe(200);expect(after).toEqual(first);expect…
+       |                          ^
+     98|   expect(receipts[0].body.input_row.raw_payload).toEqual(body);expect(…
+     99|   expect(receipts[1].body).toMatchObject({classification:'same_post_va…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 skipped (11)
+   Start at  03:25:28
+   Duration  970ms (transform 53ms, setup 16ms, collect 92ms, tests 741ms, environment 0ms, prepare 33ms)
+

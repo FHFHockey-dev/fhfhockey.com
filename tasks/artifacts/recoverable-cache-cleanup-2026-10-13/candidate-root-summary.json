@@ -1,0 +1,75 @@
+[
+  {
+    "root": "web/.next-playwright",
+    "file_count": 1473,
+    "apparent_bytes": 1232798677,
+    "allocated_bytes_unique_inodes": 1235697664,
+    "protected_names": [],
+    "symlinks": []
+  },
+  {
+    "root": "web/.next-player-forecasts",
+    "file_count": 163,
+    "apparent_bytes": 1084513582,
+    "allocated_bytes_unique_inodes": 1084907520,
+    "protected_names": [],
+    "symlinks": []
+  },
+  {
+    "root": "web/.next-codex-verify",
+    "file_count": 43,
+    "apparent_bytes": 71214451,
+    "allocated_bytes_unique_inodes": 71331840,
+    "protected_names": [],
+    "symlinks": []
+  },
+  {
+    "root": "web/.next-codex-verify-2",
+    "file_count": 43,
+    "apparent_bytes": 71952710,
+    "allocated_bytes_unique_inodes": 72065024,
+    "protected_names": [],
+    "symlinks": []
+  },
+  {
+    "root": "web/.next-codex-auth-verify",
+    "file_count": 62,
+    "apparent_bytes": 76712991,
+    "allocated_bytes_unique_inodes": 76861440,
+    "protected_names": [],
+    "symlinks": []
+  },
+  {
+    "root": ".next",
+    "file_count": 1,
+    "apparent_bytes": 137,
+    "allocated_bytes_unique_inodes": 4096,
+    "protected_names": [],
+    "symlinks": []
+  },
+  {
+    "root": ".npm-cache/_cacache",
+    "file_count": 1488,
+    "apparent_bytes": 204966505,
+    "allocated_bytes_unique_inodes": 208719872,
+    "protected_names": [],
+    "symlinks": []
+  },
+  {
+    "root": ".pnpm-store",
+    "file_count": 64576,
+    "apparent_bytes": 976679789,
+    "allocated_bytes_unique_inodes": 1164701696,
+    "protected_names": [],
+    "symlinks": [
+      {
+        "path": ".pnpm-store/v11/projects/5762db468c4b6c79b3f3c400f94101bb",
+        "target": "../../../web"
+      },
+      {
+        "path": ".pnpm-store/v11/projects/8cd69c1fe19f9ea3d753cbd4e1505b1e",
+        "target": "../../../web/.next-codex-reconcile/web"
+      }
+    ]
+  }
+]

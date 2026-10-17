@@ -1,0 +1,61 @@
+{
+  "completedAt": "2026-10-15T22:33:31.008802+00:00",
+  "state": "frozen_pending_independent_review",
+  "scope": "Four owned RSO paths only; intake-relative patch preserves prior dirty contents.",
+  "sourceManifest": {
+    "path": "tasks/artifacts/rso-candidate-admission-2026-10-15/candidate.sha256",
+    "sha256": "4f39e2e08f5eb677a15b2bd34e484e40cb153f016e4fcd0b39f22f8b88f0f71b"
+  },
+  "patch": {
+    "path": "tasks/artifacts/rso-candidate-admission-2026-10-15/change.patch",
+    "sha256": "b3d0e790f77d571beeb27b5f20b44f365feab99d3ecf494a16e5b74817f6ea2e"
+  },
+  "verification": {
+    "red": "Two demonstrable pre-correction failures; red-observation.json records exact commands and author observations from tool output.",
+    "finalTests": {
+      "exitCode": 0,
+      "passed": 12,
+      "skipped": 196,
+      "log": "final-tests.log",
+      "sha256": "4bccc9d1748cd8405e9e29daca2032e768aa401633a51a40ea4611d301143576"
+    },
+    "lint": {
+      "exitCode": 0,
+      "errors": 0,
+      "warnings": 3,
+      "log": "lint.log",
+      "sha256": "65e30339da9362757c4738f79810c299f78560036879fa6f7506bbc47e700018",
+      "inheritedWarningsConfirmedAgainstIntake": true,
+      "intakeLog": "lint-before.log"
+    },
+    "boundInputs": 15,
+    "inputDrift": false,
+    "inputBefore": "verification-inputs-before.json",
+    "inputAfter": "verification-inputs-after.json",
+    "compiler": "not run; aggregate compiler ownership retained by coordinator",
+    "build": "not run"
+  },
+  "runtimeBounds": {
+    "canonicalIdsPerScope": 240,
+    "rosterPriority": true,
+    "sequentialPublicCacheRequestsPerScope": 4,
+    "idsPerRequest": 60,
+    "existingBackendQueriesPerRequestMaximum": 5,
+    "existingBackendDeadlineMsPerRequest": 8000,
+    "actualExternalRequests": 0
+  },
+  "remaining": [
+    "Independent exact-patch review",
+    "Actual owner context and current source-cycle cache admission unobserved",
+    "Verified league availability and acquisition rules/budget/reset periods",
+    "Fresh complete planning schedule evidence",
+    "Real provider/account acceptance A1-A11 and release authorization"
+  ],
+  "actionsExcluded": [
+    "owner browser/storage/account access",
+    "live/provider/production requests",
+    "database writes",
+    "model/pilot execution",
+    "push/deploy/activation"
+  ]
+}

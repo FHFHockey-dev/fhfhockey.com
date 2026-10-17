@@ -1,5 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+const { admission } = vi.hoisted(() => ({ admission: vi.fn(async (_url, control, start) => {
+  if (control.attemptsStarted >= control.maxAttempts) throw new Error("test attempt cap");
+  control.attemptsStarted++;
+  return start();
+}) }));
+vi.mock("./requestBudget", async (importOriginal) => ({
+  ...await importOriginal<typeof import("./requestBudget")>(),
+  withNstRequestBudget: admission
+}));
+
 import {
   buildNstRequestUrlFromAbsoluteUrl,
   buildNstRequestUrl,
@@ -26,8 +36,27 @@ import {
 
 describe("nst client", () => {
   afterEach(() => {
+    admission.mockClear();
+    vi.useRealTimers();
     vi.unstubAllEnvs();
     vi.restoreAllMocks();
+  });
+
+  it("aborts a stalled response body within the request timeout", async () => {
+    vi.useFakeTimers();
+    vi.stubEnv("NST_KEY", "body-timeout-key");
+    const fetchMock = vi.fn(async (_url, init: RequestInit) => new Response(new ReadableStream({
+      start(controller) {
+        init.signal!.addEventListener("abort", () => controller.error(new Error("body aborted")));
+      }
+    })));
+    vi.stubGlobal("fetch", fetchMock);
+    const pending = fetchNstTextByUrl(`${NST_BASE_URL}/playerteams.php?body-timeout=1`, { retries: 0, timeoutMs: 50 })
+      .catch((error) => error);
+    await vi.runAllTimersAsync();
+    expect(await pending).toBeInstanceOf(Error);
+    expect(fetchMock.mock.calls[0][1].signal!.aborted).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("builds NST urls on the data subdomain", () => {
@@ -190,6 +219,9 @@ describe("nst client", () => {
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(admission).toHaveBeenCalledTimes(2);
+    expect(admission.mock.calls[0][1]).toBe(admission.mock.calls[1][1]);
+    expect(admission.mock.calls[1][1].attemptsStarted).toBe(2);
     expect(result.text).toBe("<html>ok</html>");
     expect(result.response.status).toBe(200);
     expect(result.redactedUrl).toContain("key=%5BREDACTED%5D");

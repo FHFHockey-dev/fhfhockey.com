@@ -724,13 +724,117 @@
     },
     {
       "order": 72,
+      "path": "supabase/migrations/20260919005608_tweet_pipeline_reports_and_review.sql",
+      "sha256": "114e48167426f464f20116c51b017f07fb721797118a5ff28412ed7d4f6abd27",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
+      "stateEvidence": "No exact hosted applied-state receipt was inspected during repository reconciliation. Source presence does not establish deployment state."
+    },
+    {
+      "order": 73,
+      "path": "supabase/migrations/20260919005622_nhl_draft_identity_ingestion.sql",
+      "sha256": "06545c5cb77cfc67c3936a60a0edf46fa1acaa621bc843c242ed4307f983003e",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
+      "stateEvidence": "No exact hosted applied-state receipt was inspected during repository reconciliation. Source presence does not establish deployment state."
+    },
+    {
+      "order": 74,
+      "path": "supabase/migrations/20260919005852_nhl_prospect_verification_actor.sql",
+      "sha256": "e9fcea6cc6bb9bca54f7fe58ac330051d11aa8097ce2a0d11dba38946cfaa77f",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
+      "stateEvidence": "No exact hosted applied-state receipt was inspected during repository reconciliation. Source presence does not establish deployment state."
+    },
+    {
+      "order": 75,
+      "path": "supabase/migrations/20260923184653_fantrax_live_draft_sessions.sql",
+      "sha256": "32f6db7ea409d0fd18084b54684d315d25288f27506dfb04aa92aa1d420dbad3",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
+      "stateEvidence": "No exact hosted applied-state receipt was inspected during repository reconciliation. Source presence does not establish deployment state."
+    },
+    {
+      "order": 76,
+      "path": "supabase/migrations/20260927104934_in_season_access_workspace.sql",
+      "sha256": "c905c8fc37a3c5da2260acf6293efbce9dc670f1debe195d074ac49426f201fa",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
+      "stateEvidence": "No exact hosted applied-state receipt was inspected during repository reconciliation. Source presence does not establish deployment state."
+    },
+    {
+      "order": 77,
       "path": "supabase/migrations/20261002021651_forge_local_execution_fence.sql",
-      "sha256": "753c59c1232987796fd56edd86b23d31a8f14f3db3a3765c0ccb8eb955e76341",
+      "sha256": "ce793d99684a59d4ee06190dc1bb8327d3e99dc4180a33ba8995bb28769c5d56",
       "sourceStatus": "source-authorized",
       "deploymentState": "pending",
       "migrationClass": "feature",
       "rolloutGate": "FE-05f local attempt/recovery contract only; hosted apply, horizon generation and serving retain the existing scope, capacity and release gates. No hosted migration command was run.",
-      "stateEvidence": "tasks/tasks-prd-roster-schedule-optimizer.md#shared-forecasting-implementation--full-plan-re-audit-october-1-2026; isolated PostgreSQL 17.11 tests and local CLI tests verify source semantics; no hosted ledger/apply receipt."
+      "stateEvidence": "tasks/tasks-prd-roster-schedule-optimizer.md#shared-forecasting-implementation--full-plan-re-audit-october-1-2026; isolated PostgreSQL 17.11 tests and local CLI tests verify source semantics; no hosted ledger/apply receipt. Source checksum reconciled to the retained 3311967f1 candidate during 2026-10-12 repository consolidation; hosted application remains pending."
+    },
+    {
+      "order": 78,
+      "path": "supabase/migrations/20261002134400_game_line_snapshots.sql",
+      "sha256": "041a78fd056c53f1624706f18a9f239f05b460456ba0da2fd3f7c4323fd0866a",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
+      "stateEvidence": "No exact hosted applied-state receipt was inspected during repository reconciliation. Source presence does not establish deployment state."
+    },
+    {
+      "order": 79,
+      "path": "supabase/migrations/20261002140500_resolve_goalie_unified_game_team.sql",
+      "sha256": "a7beadc4c08f93dbcc4240f67be9c8d54f1cbcc5e37242230a5be6884fdbc872",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
+      "stateEvidence": "No exact hosted applied-state receipt was inspected during repository reconciliation. Source presence does not establish deployment state."
+    },
+    {
+      "order": 80,
+      "path": "supabase/migrations/20261004181455_forge_public_revision_reader.sql",
+      "sha256": "dbf2f1cc43adbf79a497e81ae7bff0ef2d2b8d194dc63451b78aa28571edf46a",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
+      "stateEvidence": "No exact hosted applied-state receipt was inspected during repository reconciliation. Source presence does not establish deployment state."
+    },
+    {
+      "order": 81,
+      "path": "supabase/migrations/20261011115124_preserve_projection_raw_shift_occurrences.sql",
+      "sha256": "5a04e00d6141697a9408165f8451385543fcbba16f258df225cc9c9aa946ebad",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
+      "stateEvidence": "No exact hosted applied-state receipt was inspected during repository reconciliation. Source presence does not establish deployment state."
+    },
+    {
+      "order": 82,
+      "path": "supabase/migrations/20261011160000_preserve_nst_pk_fractional_start_rates.sql",
+      "sha256": "57b812b94b41b352a4c709c89622fe9b43480c6e0b9dd2699006d1f14f0140b2",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
+      "stateEvidence": "No exact hosted applied-state receipt was inspected during repository reconciliation. Source presence does not establish deployment state."
     }
-  ]
+  ],
+  "sourceExtensionApproval": {
+    "date": "2026-10-12",
+    "receipt": "TJ approved reconciliation and pushing existing unreleased repository work at 16:21 UTC. This extends source inventory only, not permission to apply migrations."
+  }
 }

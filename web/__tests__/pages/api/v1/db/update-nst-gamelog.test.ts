@@ -1,4 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const { db, fetchNstTextByUrlMock, fetchCurrentSeasonMock } = vi.hoisted(() => {
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
@@ -12,7 +15,9 @@ const { db, fetchNstTextByUrlMock, fetchCurrentSeasonMock } = vi.hoisted(() => {
       audits: [] as any[],
       auditReadError: false,
       auditWriteFailure: "",
-      auditWriteCalls: 0
+      auditWriteCalls: 0,
+      upsertPlan: [] as Array<{ result?: any; reject?: string; commit?: boolean }>,
+      upsertCalls: [] as Array<{ table: string; rows: any[] }>
     },
     fetchNstTextByUrlMock: vi.fn(),
     fetchCurrentSeasonMock: vi.fn()
@@ -74,12 +79,18 @@ vi.mock("@supabase/supabase-js", () => ({
           return Promise.resolve({ error: null });
         },
         upsert(rows: any[]) {
-          const stored = db.tables[table] ?? [];
-          for (const row of rows) {
-            const index = stored.findIndex((existing) => existing.player_id === row.player_id && existing.date_scraped === row.date_scraped);
-            if (index < 0) stored.push({ ...row }); else stored[index] = { ...row };
+          db.upsertCalls.push({ table, rows });
+          const plan = db.upsertPlan.shift();
+          if (!plan || plan.commit || plan.result?.error === null) {
+            const stored = db.tables[table] ?? [];
+            for (const row of rows) {
+              const index = stored.findIndex((existing) => existing.player_id === row.player_id && existing.date_scraped === row.date_scraped);
+              if (index < 0) stored.push({ ...row }); else stored[index] = { ...row };
+            }
+            db.tables[table] = stored;
           }
-          db.tables[table] = stored;
+          if (plan?.reject) return Promise.reject(new Error(plan.reject));
+          if (plan) return Promise.resolve(plan.result);
           return Promise.resolve({ error: null, count: rows.length });
         },
         then(resolve: (value: unknown) => unknown) { return Promise.resolve(result()).then(resolve); }
@@ -91,6 +102,7 @@ vi.mock("@supabase/supabase-js", () => ({
 
 import retainedNst from "../../../../fixtures/nst/oct1-identity-source.json";
 import handler from "../../../../../pages/api/v1/db/update-nst-gamelog";
+import { createNstFileBudgetStore, NstExecutionLimitError, withNstRequestBudget } from "../../../../../lib/nst/requestBudget";
 import { NstResponseError } from "lib/nst/client";
 import { fromZonedTime } from "date-fns-tz";
 import {
@@ -377,6 +389,8 @@ describe("update-nst-gamelog automatic season cursor", () => {
     db.auditReadError = false;
     db.auditWriteFailure = "";
     db.auditWriteCalls = 0;
+    db.upsertPlan = [];
+    db.upsertCalls = [];
     fetchCurrentSeasonMock.mockReset().mockResolvedValue({
       id: 20262027, startDate: "2026-09-29", regularSeasonEndDate: "2027-04-17", endDate: "2027-06-25"
     });
@@ -400,12 +414,139 @@ describe("update-nst-gamelog automatic season cursor", () => {
       body: method === "POST" ? query : {}, headers: {} } as any, res as any);
     await vi.runAllTimersAsync();
     await pending;
+    // The network mock has no elapsed time; preserve distinct audit timestamps.
+    await vi.advanceTimersByTimeAsync(1);
     return res;
   }
 
   function fetchedDates() {
     return fetchNstTextByUrlMock.mock.calls.map(([url]) => new URL(url).searchParams.get("fd"));
   }
+
+  function supplyThreePlayerRows() {
+    db.tables.players = Array.from({ length: 3 }, (_, i) => ({ id: i + 1, fullName: `Test Player ${i}`, position: "C" }));
+    fetchNstTextByUrlMock.mockResolvedValue({ response: { status: 200 }, text:
+      `<table><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>TOI</th></tr></thead><tbody>${
+        db.tables.players.map((player) => `<tr><td>${player.fullName}</td><td>BOS</td><td>C</td><td>10:00</td></tr>`).join("")
+      }</tbody></table>` });
+  }
+
+  it.each(["timeout", "lost_ack", "malformed_ack", "null_ack"])(
+    "stops after ambiguous %s batch acknowledgement without replaying rows or the source", async (failure) => {
+      supplyThreePlayerRows();
+      db.upsertPlan = [failure === "lost_ack" ? { reject: "transport lost", commit: true }
+        : { result: failure === "timeout" ? { error: { message: "AbortError: timed out", code: "" }, count: null }
+          : failure === "null_ack" ? null : {}, commit: true },
+        { result: { error: null, count: 1 } }, { result: { error: { code: "23514", message: "row rejected" } } }];
+      const res = await run({ dates: "2026-10-03", datasetType: "fiveOnFiveCounts" });
+      expect(res.statusCode).toBe(500);
+      expect(res.body.writePersistence).toBe("not_confirmed");
+      expect(res.body.confirmedRowsAffected).toBe(0);
+      expect(res.body.error).toContain("Do not automatically rerun");
+      expect(db.upsertCalls).toHaveLength(1);
+      expect(db.tables.nst_gamelog_5v5_counts).toHaveLength(3);
+      expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(1);
+      expect(db.audits[0].rows_affected).toBe(0);
+      expect(db.audits[0].details.writePersistence).toBe("not_confirmed");
+    }
+  );
+
+  it("preserves confirmed rows from an earlier source and definitive row fallback before rejection", async () => {
+    supplyThreePlayerRows();
+    db.upsertPlan = [{ result: { error: null, count: 3 } },
+      { result: { error: { code: "23514", message: "batch constraint rejected" } } },
+      { result: { error: null, count: 1 } },
+      { result: { error: { code: "23514", message: "row constraint rejected" } } }];
+    const res = await run({ dates: "2026-10-02,2026-10-03", datasetType: "fiveOnFiveCounts" });
+    expect(res.statusCode).toBe(500);
+    expect(res.body.writePersistence).toBe("rejected");
+    expect(res.body.confirmedRowsAffected).toBe(4);
+    expect(db.upsertCalls).toHaveLength(4);
+    expect(db.tables.nst_gamelog_5v5_counts).toHaveLength(4);
+    expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(2);
+    expect(db.audits[0].rows_affected).toBe(4);
+    expect(db.audits[0].details.sourceItem.date).toBe("2026-10-03");
+  });
+
+  it("preserves confirmed partial rows when a subsequent row loses its commit acknowledgement", async () => {
+    supplyThreePlayerRows();
+    db.upsertPlan = [{ result: { error: { code: "23514", message: "batch rejected" } } },
+      { result: { error: null, count: 1 } }, { reject: "row acknowledgement lost", commit: true }];
+    const res = await run({ dates: "2026-10-03", datasetType: "fiveOnFiveCounts" });
+    expect(res.statusCode).toBe(500);
+    expect(res.body.writePersistence).toBe("not_confirmed");
+    expect(res.body.confirmedRowsAffected).toBe(1);
+    expect(db.upsertCalls).toHaveLength(3);
+    expect(db.tables.nst_gamelog_5v5_counts).toHaveLength(2);
+    expect(db.audits[0].rows_affected).toBe(1);
+    expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps separate status diagnostics at least 21 seconds apart without granting burst admission", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "nst-diagnostic-test-"));
+    const starts: number[] = [];
+    const store = createNstFileBudgetStore(directory);
+    try {
+      fetchNstTextByUrlMock.mockImplementation((url, options) => withNstRequestBudget(url, options.requestControl, async () => {
+        starts.push(Date.now());
+        return { text: "<table></table>", response: { status: 200 } };
+      }, store));
+      await run({ action: "nstStatus", date: "2026-10-03" });
+      await run({ action: "nstStatus", date: "2026-10-03", bypassLocalWait: "yes" });
+      expect(starts[1] - starts[0]).toBe(21_000);
+      for (const [, options] of fetchNstTextByUrlMock.mock.calls) {
+        expect(options.retries).toBe(0);
+        expect(options.requestControl.minIntervalMs).toBe(21_000);
+        expect(options.requestControl.maxAttempts).toBe(1);
+      }
+      expect(db.upsertCalls).toHaveLength(0);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("caps actual network attempts across both initial and failed-item retry passes", async () => {
+    fetchNstTextByUrlMock.mockImplementation(async (_url, options) => {
+      options.requestControl.attemptsStarted++;
+      throw new Error("temporary provider failure");
+    });
+    const res = await run({ dates: "2026-10-03", datasetType: "fiveOnFiveCounts", maxRequests: "2" });
+    expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(2);
+    expect(fetchNstTextByUrlMock.mock.calls[0][1].requestControl).toBe(fetchNstTextByUrlMock.mock.calls[1][1].requestControl);
+    expect(res.body.success).toBe(false);
+    expect(res.body.nstProgress.networkAttempts).toBe(2);
+    expect(res.body.nstProgress.stoppedEarly).toBe(true);
+  });
+
+  it("defers remaining source items when the network budget is exhausted", async () => {
+    fetchNstTextByUrlMock.mockImplementation(async (_url, options) => {
+      options.requestControl.attemptsStarted++;
+      return { text: "<body>No skaters found</body>", response: { status: 200 } };
+    });
+    const res = await run({ dates: "2026-10-03", datasetGroup: "fiveOnFive", maxRequests: "2" }, "POST");
+    expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(2);
+    expect(res.body.nstProgress.deferredUrls).toBe(2);
+    expect(res.body.nstProgress.stoppedEarly).toBe(true);
+    expect(res.body.nstProgress.networkAttempts).toBe(2);
+  });
+
+  it("does not retry an admission deadline failure or report completion", async () => {
+    fetchNstTextByUrlMock.mockRejectedValue(new NstExecutionLimitError("NST run deadline reached."));
+    const res = await run({ dates: "2026-10-03", datasetType: "fiveOnFiveCounts" });
+    expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(1);
+    expect(res.body.success).toBe(false);
+    expect(res.body.nstProgress.stoppedEarly).toBe(true);
+    expect(res.body.nstProgress.deferredUrls).toBe(1);
+  });
+
+  it.each([["maxRequests", "41"], ["maxRequests", "0"], ["maxRuntimeMs", "220001"], ["maxRuntimeMs", "no"]])(
+    "rejects invalid execution bounds before touching data: %s=%s", async (name, value) => {
+      const res = await run({ [name]: value });
+      expect(res.statusCode).toBe(500);
+      expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
+      expect(db.queries).toHaveLength(0);
+    }
+  );
 
   it("starts the default scheduled run in the current season when every cursor is historical", async () => {
     db.tables.nst_gamelog_as_counts = [{ date_scraped: "2026-04-02" }];
@@ -479,8 +620,10 @@ describe("update-nst-gamelog automatic season cursor", () => {
     for (const table of ["counts", "rates", "counts_oi", "rates_oi"]) {
       db.tables[`nst_gamelog_5v5_${table}`] = [{ date_scraped: table === "rates_oi" ? "2026-10-02" : "2026-10-03" }];
     }
-    await run({ datasetGroup: "fiveOnFive" });
-    expect(new Set(fetchedDates())).toEqual(new Set(["2026-09-29", "2026-10-02", "2026-10-03"]));
+    const res = await run({ datasetGroup: "fiveOnFive" });
+    expect(new Set(fetchedDates())).toEqual(new Set(["2026-09-29", "2026-10-02"]));
+    expect(res.body.nstProgress.stoppedEarly).toBe(true);
+    expect(fetchNstTextByUrlMock.mock.calls[0][1].requestControl.minIntervalMs).toBe(21_000);
   });
 
   it("starts an empty current-season dataset at the season boundary, excluding future rows", async () => {

@@ -1,0 +1,11 @@
+
+> web@0.1.0 test
+> vitest --run __tests__/pages/api/v1/db/update-line-sources.test.ts __tests__/pages/api/v1/db/update-lines-ccc.test.ts lib/sources/tweetClaimExtraction.test.ts lib/sources/tweetSourceDirectory.test.ts lib/newsFeed.test.ts lib/lines/service.test.ts components/NewsFeed/NewsCard.test.tsx --config ../tasks/ifttt-integration-2026-10-16/review/vitest.review.config.mjs --reporter=json --outputFile=../tasks/ifttt-integration-2026-10-16/review/focused-results.json
+
+(node:73674) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:73676) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:73675) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/review/focused-results.json

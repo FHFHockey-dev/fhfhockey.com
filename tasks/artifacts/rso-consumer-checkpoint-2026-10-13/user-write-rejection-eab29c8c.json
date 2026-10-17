@@ -1,0 +1,8 @@
+{
+  "provenance": "user Sentinel_c6bc734ec1ac81919ff5f77cb876803a via Scout",
+  "httpStatus": 409,
+  "approvedScopeHash": "eab29c8c1413bc553908a01f0f5e6d760565ee58675d336931f7420b174e8b7c",
+  "writeOutcome": "not_attempted",
+  "errorCode": "REFRESH_SOURCE_CHANGED",
+  "audit": "persisted"
+}

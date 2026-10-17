@@ -1,0 +1,369 @@
+--- tasks/artifacts/forge-rso-completion-2026-10-15/consumer/frozen-start/before/modeledGoalieParticipation.ts	2026-10-15 23:50:34
++++ web/lib/player-forecasts/modeledGoalieParticipation.ts	2026-10-15 23:52:12
+@@ -76,10 +76,10 @@
+ }
+ 
+ /** Call only after exact bundle release admission, never as automatic publication. */
+-export function goalieParticipationFromReceipt(receipt: GoalieParticipationReceipt | FrozenWindowGoalieParticipationReceipt,
++export function goalieParticipationFromReceipt(receipt: GoalieParticipationReceipt | FrozenWindowGoalieParticipationReceipt | FrozenWindowGoalieStartReceipt,
+   allowedUses: NonNullable<ContributionParticipation["allowedUses"]>): ContributionParticipation | null {
+   if (receipt.probability === null) return null;
+-  return { ...receipt.scope, basis: "appearance", probability: receipt.probability,
++  return { ...receipt.scope, basis: receipt.event === "official_starter" ? "start" : "appearance", probability: receipt.probability,
+     revisionId: `participation:${playerForecastSourcePayloadHash(receipt)}`, released: true, allowedUses: { ...allowedUses },
+     cutoffAt: receipt.cutoffAt, issuedAt: receipt.issuedAt, expiresAt: receipt.expiresAt,
+     model: { version: receipt.methodVersion, event: receipt.event, probabilityStatus: receipt.probabilityStatus,
+@@ -109,3 +109,61 @@
+       "Goalie positive minutes include relief; an eligible nonstarter remains an opportunity, never an inferred nonappearance.",
+       "This is an appearance probability only; no start probability or confirmed lineup is supplied."] };
+ }
++
++
++export const FROZEN_WINDOW_GOALIE_START_METHOD = "goalie-frozen-window-start-frequency-v1" as const;
++export type FrozenWindowGoalieStartInput = Omit<FrozenWindowGoalieParticipationInput, "version" | "history"> & {
++  version: "goalie-frozen-window-start-input-v1";
++  history: Omit<FrozenWindowGoalieParticipationInput["history"], "games"> & {
++    /** Actual appearance labels remain separate. Starter flags are never converted into TOI labels. */
++    games: Array<FrozenWindowGoalieParticipationInput["history"]["games"][number] & {
++      officialStarter: boolean | null; starterEvidence: ParticipationEvidence | null;
++    }>;
++  };
++};
++export type FrozenWindowGoalieStartReceipt = Omit<FrozenWindowGoalieParticipationReceipt, "version" | "methodVersion" | "event"> & {
++  version: "modeled-goalie-frozen-window-start-v1";
++  methodVersion: typeof FROZEN_WINDOW_GOALIE_START_METHOD; event: "official_starter";
++};
++
++/** Distinct empirical starter event over the same validated eligible opportunities.
++ * Requires real resolved appearance labels too; no fake TOI adapter is used. */
++export function buildFrozenWindowGoalieStartReceipt(input: FrozenWindowGoalieStartInput,
++  issuance: { issuedAt: string; expiresAt: string }): FrozenWindowGoalieStartReceipt {
++  if (input?.version !== "goalie-frozen-window-start-input-v1" || input.playerClass !== "goalie") {
++    throw new Error("Invalid frozen-window goalie start input.");
++  }
++  const receipt = buildFrozenWindowGoalieParticipationReceipt({ ...input, version: "goalie-frozen-window-participation-input-v1" },
++    { issuedAt: issuance.issuedAt, expiresAt: issuance.expiresAt });
++  const identities = new Map<string, string>();
++  const evidence = [input.scheduleEvidence, input.rosterEvidence, input.history.scheduleEvidence,
++    ...(input.targetEligibility?.evidence ? [input.targetEligibility.evidence] : []),
++    ...input.history.games.flatMap(game => [game.eligibility?.evidence, game.outcomeEvidence, game.starterEvidence].filter((row): row is ParticipationEvidence => !!row))];
++  for (const row of evidence) {
++    if (!row || typeof row.id !== "string" || !row.id.trim() || !/^[a-f0-9]{64}$/.test(row.hash)
++      || !Number.isFinite(time(row.availableAt)) || !Number.isFinite(time(row.capturedAt))
++      || time(row.availableAt) > time(input.cutoffAt) || time(row.capturedAt) > time(input.cutoffAt)
++      || identities.has(row.id) && identities.get(row.id) !== row.hash) throw new Error("Invalid or conflicting start-label evidence.");
++    identities.set(row.id, row.hash);
++  }
++  for (const game of input.history.games) {
++    if (game.officialStarter != null && typeof game.officialStarter !== "boolean") throw new Error("Invalid explicit starter label.");
++    if (game.starterEvidence && (time(game.starterEvidence.availableAt) < time(game.scheduledAt)
++      || time(game.starterEvidence.capturedAt) < time(game.scheduledAt))) throw new Error("Historical starter evidence predates its game.");
++  }
++  const selected = input.history.games.filter(game => receipt.selectedGameIds.includes(game.gameId));
++  const reasons = [...receipt.reasons];
++  if (selected.some(game => game.officialStarter == null || !game.starterEvidence)) reasons.push("unresolved_official_starter_label");
++  const numerator = selected.filter(game => game.officialStarter === true).length;
++  return { ...receipt, version: "modeled-goalie-frozen-window-start-v1", methodVersion: FROZEN_WINDOW_GOALIE_START_METHOD,
++    event: "official_starter", inputHash: playerForecastSourcePayloadHash(input),
++    evidenceHashes: [...new Set([...receipt.evidenceHashes, ...evidence.map(row => row.hash)])].sort(),
++    numerator, probability: reasons.length ? null : numerator / receipt.denominator, reasons: [...new Set(reasons)],
++    limitations: ["Experimental frozen Sep29–Oct12 America/New_York eligible-opportunity official starter frequency; calibration unavailable.",
++      "Uses original explicit boolean starter labels over the same independently complete dated-eligibility frame, including nonstarts.",
++      "Additional real appearance evidence is required by the reused frame validator; unknown appearance or starter labels withhold this estimate.",
++      "A nonstart can be a positive-minute relief appearance; this start model never changes appearance-conditioned W, SV, GA, SA, minutes or SO means.",
++      "Original source clocks remain unchanged; no omitted later game, missing row or bench status becomes a negative.",
++      "Assumes fresh cutoff eligibility continues; no injury, role, opponent or future roster-change adjustment.",
++      "Finite endpoint frequencies zero and one are uncalibrated model estimates, not confirmed starts or credited minimum progress."] };
++}
+--- tasks/artifacts/forge-rso-completion-2026-10-15/consumer/frozen-start/before/modeledGoalieParticipationStore.ts	2026-10-15 23:50:34
++++ web/lib/player-forecasts/modeledGoalieParticipationStore.ts	2026-10-15 23:50:52
+@@ -2,12 +2,14 @@
+ import type { ContributionAllowedUses, ContributionParticipation } from "./contributions";
+ import { buildGoalieParticipationReceipt, goalieParticipationFromReceipt,
+   type GoalieParticipationInput, type GoalieParticipationReceipt, buildFrozenWindowGoalieParticipationReceipt,
+-  type FrozenWindowGoalieParticipationInput, type FrozenWindowGoalieParticipationReceipt } from "./modeledGoalieParticipation";
++  type FrozenWindowGoalieParticipationInput, type FrozenWindowGoalieParticipationReceipt, buildFrozenWindowGoalieStartReceipt,
++  type FrozenWindowGoalieStartInput, type FrozenWindowGoalieStartReceipt } from "./modeledGoalieParticipation";
+ import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
+ import { timestampMicros } from "../projections/evidenceTime";
+ 
+ export const GOALIE_PARTICIPATION_DATASET = "goalie-participation-bundle-v1";
+ export const FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASET = "goalie-frozen-window-participation-bundle-v1";
++export const FROZEN_WINDOW_GOALIE_START_DATASET = "goalie-frozen-window-start-bundle-v1";
+ export type GoalieParticipationBundle = {
+   version: typeof GOALIE_PARTICIPATION_DATASET; seasonId: number; issuedAt: string; expiresAt: string;
+   released: boolean; allowedUses: ContributionAllowedUses;
+@@ -19,6 +21,10 @@
+   version: typeof FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASET;
+   entries: Array<{ input: FrozenWindowGoalieParticipationInput; receipt: FrozenWindowGoalieParticipationReceipt }>;
+ };
++export type FrozenWindowGoalieStartBundle = Omit<GoalieParticipationBundle, "version" | "entries"> & {
++  version: typeof FROZEN_WINDOW_GOALIE_START_DATASET;
++  entries: Array<{ input: FrozenWindowGoalieStartInput; receipt: FrozenWindowGoalieStartReceipt }>;
++};
+ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+ const HASH = /^[0-9a-f]{64}$/;
+ const nonempty = (value: unknown) => typeof value === "string" && value.trim().length > 0;
+@@ -28,12 +34,15 @@
+  * Reproduction authenticates arithmetic, not source truth: publication review must
+  * establish genuine complete eligibility/label inputs before allowlisting bytes. */
+ async function loadGoalieParticipation(db: SupabaseClient<any>, seasonId: number, now: Date,
+-  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal }, frozen: boolean): Promise<{
++  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal }, mode: "current" | "frozen_appearance" | "frozen_start"): Promise<{
+     sources: ContributionParticipation[]; checksum: string | null; limitations: string[];
+   }> {
+-  const dataset = frozen ? FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASET : GOALIE_PARTICIPATION_DATASET;
++  const frozen = mode !== "current";
++  const dataset = mode === "frozen_start" ? FROZEN_WINDOW_GOALIE_START_DATASET
++    : frozen ? FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASET : GOALIE_PARTICIPATION_DATASET;
+   const empty = (reason: string) => ({ sources: [], checksum: null, limitations: [reason] });
+-  const releases = (options.environment ?? process.env)[frozen ? "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_PARTICIPATION_RELEASES" : "PLAYER_FORECAST_GOALIE_PARTICIPATION_RELEASES"]
++  const releases = (options.environment ?? process.env)[mode === "frozen_start" ? "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_START_RELEASES"
++    : frozen ? "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_PARTICIPATION_RELEASES" : "PLAYER_FORECAST_GOALIE_PARTICIPATION_RELEASES"]
+     ?.split(",").map(value => value.trim()).filter(Boolean) ?? [];
+   if (!releases.length) return empty("modeled_participation_serving_disabled");
+   const pins = releases.map(value => value.split(":"));
+@@ -51,7 +60,7 @@
+   let bytes = 0, entries = 0;
+   try {
+     for (const row of data) {
+-      const pin = pins.find(value => value[0] === row.id), payload = row.payload as GoalieParticipationBundle | FrozenWindowGoalieParticipationBundle;
++      const pin = pins.find(value => value[0] === row.id), payload = row.payload as GoalieParticipationBundle | FrozenWindowGoalieParticipationBundle | FrozenWindowGoalieStartBundle;
+       bytes += Buffer.byteLength(JSON.stringify(payload), "utf8");
+       const uses = payload?.allowedUses;
+       if (!pin || seen.has(`release:${row.id}`) || bytes > 8 * 1024 * 1024 || row.provider !== "fhfh"
+@@ -72,7 +81,8 @@
+         if (sources.length >= 500 || entry.input.scope.seasonId !== seasonId
+           || entry.receipt.issuedAt !== payload.issuedAt || entry.receipt.expiresAt !== payload.expiresAt) return empty("invalid_participation_release");
+         const clocks = { issuedAt: payload.issuedAt, expiresAt: payload.expiresAt };
+-        const rebuilt = frozen ? buildFrozenWindowGoalieParticipationReceipt(entry.input as FrozenWindowGoalieParticipationInput, clocks)
++        const rebuilt = mode === "frozen_start" ? buildFrozenWindowGoalieStartReceipt(entry.input as FrozenWindowGoalieStartInput, clocks)
++          : frozen ? buildFrozenWindowGoalieParticipationReceipt(entry.input as FrozenWindowGoalieParticipationInput, clocks)
+           : buildGoalieParticipationReceipt(entry.input as GoalieParticipationInput, clocks);
+         if (playerForecastSourcePayloadHash(rebuilt) !== playerForecastSourcePayloadHash(entry.receipt)) return empty("participation_receipt_mismatch");
+         const key = `${rebuilt.scope.playerId}:${rebuilt.scope.gameId}`;
+@@ -84,18 +94,26 @@
+     }
+   } catch { return empty("invalid_participation_release"); }
+   return { sources, checksum: playerForecastSourcePayloadHash(pins.slice().sort((a, b) => a[0].localeCompare(b[0]))),
+-    limitations: [frozen ? "Experimental frozen-window goalie appearance frequency; calibration unavailable; source completeness is owner-reviewed."
++    limitations: [mode === "frozen_start" ? "Experimental frozen-window goalie official starter frequency; calibration unavailable; source completeness is owner-reviewed."
++      : frozen ? "Experimental frozen-window goalie appearance frequency; calibration unavailable; source completeness is owner-reviewed."
+       : "Experimental modeled goalie participation; calibration unavailable; source completeness is owner-reviewed."] };
+ }
+ 
+ 
+ export function loadModeledGoalieParticipation(db: SupabaseClient<any>, seasonId: number, now: Date,
+   options: { environment?: Record<string, string | undefined>; signal?: AbortSignal } = {}) {
+-  return loadGoalieParticipation(db, seasonId, now, options, false);
++  return loadGoalieParticipation(db, seasonId, now, options, "current");
+ }
+ 
+ /** Separate exact-hash allowlist; disabled by default, never inherits v1 approval. */
+ export function loadFrozenWindowGoalieParticipation(db: SupabaseClient<any>, seasonId: number, now: Date,
+   options: { environment?: Record<string, string | undefined>; signal?: AbortSignal } = {}) {
+-  return loadGoalieParticipation(db, seasonId, now, options, true);
++  return loadGoalieParticipation(db, seasonId, now, options, "frozen_appearance");
+ }
++
++
++/** Distinct event and allowlist; appearance approval never grants start-model use. */
++export function loadFrozenWindowGoalieStarts(db: SupabaseClient<any>, seasonId: number, now: Date,
++  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal } = {}) {
++  return loadGoalieParticipation(db, seasonId, now, options, "frozen_start");
++}
+--- tasks/artifacts/forge-rso-completion-2026-10-15/consumer/frozen-start/before/modeledGoalieParticipation.test.ts	2026-10-15 23:50:34
++++ web/lib/player-forecasts/modeledGoalieParticipation.test.ts	2026-10-15 23:51:53
+@@ -1,7 +1,7 @@
+ // @vitest-environment node
+ import { describe, expect, it, vi } from "vitest";
+-import { buildGoalieParticipationReceipt, type GoalieParticipationInput, buildFrozenWindowGoalieParticipationReceipt, type FrozenWindowGoalieParticipationInput } from "./modeledGoalieParticipation";
+-import { loadModeledGoalieParticipation, GOALIE_PARTICIPATION_DATASET, type GoalieParticipationBundle, loadFrozenWindowGoalieParticipation, FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASET, type FrozenWindowGoalieParticipationBundle } from "./modeledGoalieParticipationStore";
++import { buildGoalieParticipationReceipt, type GoalieParticipationInput, buildFrozenWindowGoalieParticipationReceipt, type FrozenWindowGoalieParticipationInput, buildFrozenWindowGoalieStartReceipt, type FrozenWindowGoalieStartInput, goalieParticipationFromReceipt } from "./modeledGoalieParticipation";
++import { loadModeledGoalieParticipation, GOALIE_PARTICIPATION_DATASET, type GoalieParticipationBundle, loadFrozenWindowGoalieParticipation, FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASET, type FrozenWindowGoalieParticipationBundle, loadFrozenWindowGoalieStarts, FROZEN_WINDOW_GOALIE_START_DATASET, type FrozenWindowGoalieStartBundle } from "./modeledGoalieParticipationStore";
+ import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
+ 
+ const id = "11111111-1111-4111-8111-111111111111", now = new Date("2026-10-15T12:00:00Z");
+@@ -176,3 +176,63 @@
+       { environment: { PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_PARTICIPATION_RELEASES: `${row.id}:${row.payload_hash}` } })).sources).toEqual([]);
+   });
+ });
++
++
++function frozenStartFixture(): FrozenWindowGoalieStartInput {
++  const input = frozenGoalieFixture();
++  return { ...input, version: "goalie-frozen-window-start-input-v1", history: { ...input.history,
++    games: input.history.games.map((game, index) => ({ ...game, officialStarter: index === 0,
++      starterEvidence: { ...game.outcomeEvidence!, id: `explicit-starter-${game.gameId}`, hash: String(index + 1).repeat(64) } })) } };
++}
++describe("separate frozen official starter frequency", () => {
++  it("uses explicit starter labels without converting a relief appearance into zero TOI", () => {
++    const input = frozenStartFixture(), clocks = fixture().payload;
++    input.history.games[1].positiveMinutes = true; input.history.games[1].resolution = "positive_toi";
++    const before = structuredClone(input), receipt = buildFrozenWindowGoalieStartReceipt(input, clocks);
++    expect(receipt).toMatchObject({ probability: 0.5, numerator: 1, denominator: 2, event: "official_starter",
++      methodVersion: "goalie-frozen-window-start-frequency-v1", inputHash: playerForecastSourcePayloadHash(input) });
++    expect(buildFrozenWindowGoalieParticipationReceipt({ ...input, version: "goalie-frozen-window-participation-input-v1" }, clocks).probability).toBe(1);
++    const uses = { assignment: true, totals: true, comparison: true, conditionalTieBreak: false };
++    expect(goalieParticipationFromReceipt(receipt, uses)).toMatchObject({ basis: "start", model: { event: "official_starter" } });
++    expect(input).toEqual(before);
++  });
++  it.each([0, 1])("labels endpoint %s as an uncalibrated estimate", value => {
++    const input = frozenStartFixture(); input.history.games.forEach(game => { game.officialStarter = !!value; });
++    const receipt = buildFrozenWindowGoalieStartReceipt(input, fixture().payload);
++    expect(receipt.probability).toBe(value);
++    expect(receipt.limitations.join(" ")).toContain("not confirmed starts");
++  });
++  it.each(["starter flag", "starter evidence", "appearance label", "target ineligible", "frame"])("withholds %s without shrinking the denominator", kind => {
++    const input = frozenStartFixture();
++    if (kind === "starter flag") input.history.games[1].officialStarter = null;
++    if (kind === "starter evidence") input.history.games[1].starterEvidence = null;
++    if (kind === "appearance label") input.history.games[1].positiveMinutes = null;
++    if (kind === "target ineligible") input.targetEligibility!.eligible = false;
++    if (kind === "frame") input.history.complete = false;
++    expect(buildFrozenWindowGoalieStartReceipt(input, fixture().payload)).toMatchObject({ probability: null, denominator: 2 });
++  });
++  it.each(["future", "pregame", "conflicting identity"])("rejects %s starter evidence", kind => {
++    const input = frozenStartFixture(), evidence = input.history.games[1].starterEvidence!;
++    if (kind === "future") evidence.availableAt = "2026-10-15T10:00:00.000001Z";
++    if (kind === "pregame") evidence.capturedAt = "2026-10-10T23:59:59.999999Z";
++    if (kind === "conflicting identity") evidence.id = input.rosterEvidence.id;
++    expect(() => buildFrozenWindowGoalieStartReceipt(input, fixture().payload)).toThrow();
++  });
++  it("requires a separate exact start allowlist and preserves event-specific uses and original expiry", async () => {
++    const old = fixture(), input = frozenStartFixture();
++    const payload: FrozenWindowGoalieStartBundle = { ...old.payload, version: FROZEN_WINDOW_GOALIE_START_DATASET,
++      entries: [{ input, receipt: buildFrozenWindowGoalieStartReceipt(input, old.payload) }] };
++    const row = { ...old, dataset_key: payload.version, payload, payload_hash: playerForecastSourcePayloadHash(payload) };
++    const database = db([row]);
++    expect((await loadFrozenWindowGoalieStarts(database as never, 20262027, now,
++      { environment: { PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_PARTICIPATION_RELEASES: `${row.id}:${row.payload_hash}` } })).sources).toEqual([]);
++    expect(database.from).not.toHaveBeenCalled();
++    const options = { environment: { PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_START_RELEASES: `${row.id}:${row.payload_hash}` } };
++    expect((await loadFrozenWindowGoalieStarts(database as never, 20262027, now, options)).sources[0])
++      .toMatchObject({ probability: 0.5, basis: "start", expiresAt: row.payload.expiresAt, model: { event: "official_starter" } });
++    row.payload.entries[0].receipt.numerator = 2;
++    row.payload_hash = playerForecastSourcePayloadHash(row.payload);
++    expect((await loadFrozenWindowGoalieStarts(db([row]) as never, 20262027, now,
++      { environment: { PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_START_RELEASES: `${row.id}:${row.payload_hash}` } })).sources).toEqual([]);
++  });
++});
+--- tasks/artifacts/forge-rso-completion-2026-10-15/consumer/frozen-start/before/nativeGoalieOutcomes.ts	2026-10-15 23:50:34
++++ web/lib/player-forecasts/nativeGoalieOutcomes.ts	2026-10-15 23:50:34
+@@ -1,4 +1,6 @@
+ import { createHash } from "node:crypto";
++import { finalBoxscoreForGame, parseTimeOnIceSeconds, rawPlayerForOutput } from "./settlement";
++import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
+ import { timestampMicros } from "../projections/evidenceTime";
+ import { baselineGoalieComponents, verifyBaselineBoxscoreReceipt, type BaselineBoxscoreReceipt } from "./baselineSourceLineage";
+ import type { GoalieAppearanceInput } from "./goalieBaselineRates";
+@@ -125,3 +127,44 @@
+     sourceReceipt: { id: `http:${receipt.bodySha256}`, url: receipt.url, fetchedAt: receipt.capturedAt, bodySha256: receipt.bodySha256 },
+     conditioning: "positive_minute_historical_appearance", released: false, forecastIssued: false };
+ }
++
++
++export type NativeGoalieStarterInput = {
++  nhlPlayerId: number; teamId: number; cutoffAt: string;
++  boxscore: Pick<BaselineBoxscoreReceipt, "rawRow" | "game" | "contentHash">;
++};
++
++/** Original explicit starter flag; zero-minute listed nonstarters are valid labels.
++ * Missing players/flags are unknown, never a negative inferred from bench status. */
++export function deriveNativeGoalieStarterLabel(input: NativeGoalieStarterInput) {
++  const { rawRow: raw, game, contentHash } = input.boxscore;
++  const cutoff = timestampMicros(input.cutoffAt), fetched = timestampMicros(raw?.fetched_at),
++    start = timestampMicros(game?.startTime);
++  const original = raw && game && finalBoxscoreForGame(raw, game);
++  const sourceIdValid = id(raw?.id) || /^[a-f0-9]{64}$/.test(raw?.payload_hash) && raw?.id === `http:${raw.payload_hash}`;
++  if (!id(input.nhlPlayerId) || !id(input.teamId) || !sourceIdValid || raw.endpoint !== "boxscore"
++    || !original || !/^[a-f0-9]{64}$/.test(contentHash) || contentHash !== playerForecastSourcePayloadHash(raw.payload)
++    || cutoff === null || fetched === null || start === null || fetched < start || fetched > cutoff
++    || timestampMicros(raw.payload.startTimeUTC) !== start || raw.payload.gameDate !== game.date
++    || raw.payload.gameType !== 2 || game.type !== 2) throw new Error("Invalid original goalie starter source identity, hash or clock.");
++  const own = rawPlayerForOutput({ player_id: input.nhlPlayerId, team_id: input.teamId }, original);
++  if (!own) throw new Error("Invalid or conflicting goalie starter player/team identities.");
++  let reason: string | null = own.goalie ? null : "missing_explicit_goalie_row";
++  for (const side of ["homeTeam", "awayTeam"] as const) {
++    const goalies = raw.payload.playerByGameStats[side].goalies;
++    if (goalies.length > 20 || goalies.some((row: any) => row.position !== "G" || typeof row.starter !== "boolean"
++      || parseTimeOnIceSeconds(row.toi) === null)) reason = "missing_or_ambiguous_starter_flags";
++    else if (goalies.filter((row: any) => row.starter === true).length !== 1) reason = "conflicting_starter_flags";
++  }
++  const officialStarter = reason ? null : own.goalie!.starter as boolean;
++  return { version: "native-goalie-starter-label-v1" as const,
++    gameId: Number(game.id), seasonId: Number(game.seasonId), teamId: input.teamId, nhlPlayerId: input.nhlPlayerId,
++    officialStarter, reason, cutoffAt: input.cutoffAt,
++    // Retain actual original transport/source clock; repackaging is not new availability.
++    availableAt: raw.fetched_at as string,
++    evidence: { id: `boxscore:${raw.id}`, hash: contentHash, availableAt: raw.fetched_at as string, capturedAt: raw.fetched_at as string },
++    sourceReceipt: { rawRowId: raw.id, providerPayloadHash: raw.payload_hash as string, contentHash, fetchedAt: raw.fetched_at as string },
++    forecastIssued: false as const, released: false as const,
++    limitations: ["Official original starter flag only; false does not establish nonappearance or zero minutes.",
++      "Historical starter labels are not a future probability, confirmation, or credited goalie-minimum progress."] };
++}
+--- tasks/artifacts/forge-rso-completion-2026-10-15/consumer/frozen-start/before/nativeGoalieOutcomes.test.ts	2026-10-15 23:50:34
++++ web/lib/player-forecasts/nativeGoalieOutcomes.test.ts	2026-10-15 23:51:53
+@@ -2,8 +2,10 @@
+ import { createHash } from "node:crypto";
+ import { describe, expect, it } from "vitest";
+ import { baselineAppearanceFromBoxscore } from "./baselineSourceLineage";
+-import { deriveNativeGoalieOutcomes, deriveNativeGoalieShutoutCredit, nativeGoalieSummaryUrl, type NativeGoalieShutoutSummary, type NativeGoalieOutcomeInput } from "./nativeGoalieOutcomes";
++import { deriveNativeGoalieOutcomes, deriveNativeGoalieStarterLabel, deriveNativeGoalieShutoutCredit, nativeGoalieSummaryUrl, type NativeGoalieShutoutSummary, type NativeGoalieOutcomeInput } from "./nativeGoalieOutcomes";
+ 
++import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
++
+ const cutoffAt = "2026-10-13T12:00:00.000002Z";
+ const goalie = (playerId: number, starter: boolean, ga: number, decision?: string) => ({
+   playerId, position: "G", starter, toi: starter ? "60:00" : "00:00",
+@@ -184,3 +186,50 @@
+     expect(() => deriveNativeGoalieOutcomes(input)).toThrow(/retained boxscore content/);
+   });
+ });
++
++
++describe("original explicit goalie starter labels", () => {
++  function starterInput(nhlPlayerId = 77) {
++    const input = fixture(), { rawRow, game, contentHash } = input.appearance.finalBoxscore as any;
++    return { nhlPlayerId, teamId: 15, cutoffAt: input.cutoffAt, boxscore: { rawRow, game, contentHash } };
++  }
++  it("retains original transport clocks and explicit false for a listed zero-minute nonstarter", () => {
++    const input = starterInput(78), before = structuredClone(input);
++    const label = deriveNativeGoalieStarterLabel(input);
++    expect(label).toMatchObject({ officialStarter: false, reason: null, released: false, forecastIssued: false,
++      availableAt: input.boxscore.rawRow.fetched_at,
++      evidence: { availableAt: input.boxscore.rawRow.fetched_at, capturedAt: input.boxscore.rawRow.fetched_at, hash: input.boxscore.contentHash } });
++    expect(label.availableAt).not.toBe(input.cutoffAt);
++    expect(input).toEqual(before);
++    expect(deriveNativeGoalieStarterLabel(starterInput()).officialStarter).toBe(true);
++  });
++  it("keeps a relief appearance a nonstart and permits an explicit zero-minute starter flag without inferring credit", () => {
++    const input = starterInput(78), rows = input.boxscore.rawRow.payload.playerByGameStats.homeTeam.goalies;
++    rows[1].toi = "10:00";
++    rows[0].toi = "00:00";
++    input.boxscore.contentHash = playerForecastSourcePayloadHash(input.boxscore.rawRow.payload);
++    expect(deriveNativeGoalieStarterLabel(input).officialStarter).toBe(false);
++    expect(deriveNativeGoalieStarterLabel({ ...input, nhlPlayerId: 77 }).officialStarter).toBe(true);
++  });
++  it.each(["missing row", "missing flag", "multiple starters", "missing opposite flag"])("retains %s as unknown", kind => {
++    const input = starterInput();
++    if (kind === "missing row") input.nhlPlayerId = 999;
++    if (kind === "missing flag") delete input.boxscore.rawRow.payload.playerByGameStats.homeTeam.goalies[0].starter;
++    if (kind === "multiple starters") input.boxscore.rawRow.payload.playerByGameStats.homeTeam.goalies[1].starter = true;
++    if (kind === "missing opposite flag") delete input.boxscore.rawRow.payload.playerByGameStats.awayTeam.goalies[1].starter;
++    input.boxscore.contentHash = playerForecastSourcePayloadHash(input.boxscore.rawRow.payload);
++    expect(deriveNativeGoalieStarterLabel(input).officialStarter).toBeNull();
++  });
++  it.each(["hash", "future capture", "game identity", "team identity", "duplicate player"])("rejects %s original source", kind => {
++    const input = starterInput();
++    if (kind === "hash") input.boxscore.contentHash = "0".repeat(64);
++    if (kind === "future capture") input.cutoffAt = "2026-10-13T11:58:59.999999Z";
++    if (kind === "game identity") input.boxscore.game.id++;
++    if (kind === "team identity") input.teamId = 999;
++    if (kind === "duplicate player") {
++      input.boxscore.rawRow.payload.playerByGameStats.awayTeam.goalies[0].playerId = 77;
++      input.boxscore.contentHash = playerForecastSourcePayloadHash(input.boxscore.rawRow.payload);
++    }
++    expect(() => deriveNativeGoalieStarterLabel(input)).toThrow();
++  });
++});

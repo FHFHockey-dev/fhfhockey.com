@@ -1,0 +1,434 @@
+
+> web@0.1.0 test
+> vitest --run components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts -t shows652knownand197unknownof849|admits the known652of849 --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:31121) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx (19 tests | 1 failed | 18 skipped) 52ms
+   ↓ starts with individual cards and respects the selected result count when filtering and expanding
+   ↓ shares one display budget across 6 supported and unavailable points candidates
+   ↓ shares one display budget across 3 supported and unavailable points candidates
+   × shows652knownand197unknownof849 and puts known inputs first without hiding unknown players 52ms
+     → Unable to find a label with the text of: Candidate input coverage
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<section[39m
+      [33maria-busy[39m=[32m"false"[39m
+      [33maria-label[39m=[32m"Candidate browser"[39m
+    [36m>[39m
+      [36m<h3>[39m
+        [0mPlayer discovery[0m
+      [36m</h3>[39m
+      [36m<p[39m
+        [33mrole[39m=[32m"status"[39m
+      [36m>[39m
+        [0mNo evaluated fit ranking is available. This is a player discovery list; its order is not a projection or roster-fit score.[0m
+      [36m</p>[39m
+      [36m<ul[39m
+        [33maria-label[39m=[32m"Missing comparison inputs"[39m
+      [36m>[39m
+        [36m<li>[39m
+          [0mPlanning schedule coverage is incomplete or unknown; team schedule counts do not establish net active games.[0m
+        [36m</li>[39m
+        [36m<li>[39m
+          [0mSupply valid league scoring weights for net points. Points also require complete qualified game forecasts for the original roster and candidate plan.[0m
+        [36m</li>[39m
+        [36m<li>[39m
+          [0mAcquisition inputs need review: effective timing, cost per add, remaining moves and reset periods.[0m
+        [36m</li>[39m
+        [36m<li>[39m
+          [0m197 matching candidate(s) lack usable verified league eligibility.[0m
+        [36m</li>[39m
+        [36m<li>[39m
+          [0m197 matching candidate(s) have unknown league availability.[0m
+        [36m</li>[39m
+      [36m</ul>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_candidateToolbar_52fb3c"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Candidate views"[39m
+          [33mclass[39m=[32m"_candidateViews_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"false"[39m
+          [36m>[39m
+            [0mBy Team[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"true"[39m
+          [36m>[39m
+            [0mAll players[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_candidateSort_52fb3c"[39m
+        [36m>[39m
+          [0mSort[0m
+          [36m<select>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"points"[39m
+            [36m>[39m
+              [0mNet points first[0m
+            [36m</option>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"schedule"[39m
+            [36m>[39m
+              [0mNet AGP first[0m
+            [36m</option>[39m
+          [36m</select>[39m
+        [36m</label>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_candidateTools_52fb3c"[39m
+      [36m>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_candidateFilterDetails_52fb3c"[39m
+        [36m>[39m
+          [36m<summary>[39m
+            [0mFind & filter[0m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_candidateFilters_52fb3c"[39m
+          [36m>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"_field_52fb3c"[39m
+            [36m>[39m
+              [0mFind candidate[0m
+              [36m<input[39m
+                [33mid[39m=[32m"rso-candidate-search"[39m
+                [33mtype[39m=[32m"search"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+            [36m</label>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"_field_52fb3c"[39m
+            [36m>[39m
+              [0mTeam[0m
+              [36m<select>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m""[39m
+                [36m>[39m
+                  [0mAll teams[0m
+                [36m</option>[39m
+                [36m<option>[39m
+                  [0mAAA[0m
+                [36m</option>[39m
+                [36m<option>[39m
+                  [0mZZZ[0m
+                [36m</option>[39m
+              [36m</select>[39m
+            [36m</label>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"_field_52fb3c"[39m
+            [36m>[39m
+              [0mPosition[0m
+              [36m<select>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m""[39m
+                [36m>[39m
+                  [0mAll positions[0m
+                [36m</option>[39m
+                [36m<option>[39m
+                  [0mC[0m
+                [36m</option>[39m
+              [36m</select>[39m
+            [36m</label>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+        [0m      [0m
+        [36m<button[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33maria-label[39m=[32m"About best-fit comparisons"[39m
+          [33mclass[39m=[32m"_trigger_f948f4"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+          [36m>[39m
+            [0mⓘ[0m
+          [36m</span>[39m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<details[39m
+        [33mclass[39m=[32m"_unrankedDisclosure_52fb3c"[39m
+        [33mopen[39m=[32m""[39m
+      [36m>[39m
+        [36m<summary>[39m
+          [36m<h4>[39m
+            [0mUnranked players[0m
+          [36m</h4>[39m
+          [36m<span>[39m
+            [0m · Team schedule only[0m
+          [36m</span>[39m
+        [36m</summary>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"_limitation_52fb3c"[39m
+        [36m>[39m
+          [0mUpcoming NHL games first; this is team schedule context, not net roster fit or player participation. Unknown teams follow.[0m
+          [0m Net comparisons require verified schedule, eligibility, availability and acquisition rules; changing the sort does not supply missing evidence.[0m
+        [36m</p>[39m
+      [36m</details>[39m
+      [36m<article[39m
+        [33maria-label[39m=[32m"Alpha Unverified 000 compared acquisition"[39m
+        [33mclass[39m=[32m"_card_9c2f1f"[39m
+        [33mdata-rso-candidate-id[39m=[32m"unknown-0"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_top_9c2f1f"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_heading_9c2f1f"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_moves_9c2f1f"[39m
+            [36m>[39m
+              [36m<div>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"_add_9c2f1f"[39m
+                [36m>[39m
+                  [0mADD[0m
+                [36m</span>[39m
+                [36m<button[39m
+                  [33maria-label[39m=[32m"Alpha Unverified 000, AAA, C"[39m
+                [36m>[39m
+                  [0mAlpha Unverified 000[0m
+                [36m</button>[39m
+                [36m<s...
+   ↓ leaves unavailable comparisons unranked and names alphabetical browsing for either selected net sort
+   ↓ labels evaluated fit results and preserves points ordering ahead of discovery names
+   ↓ labels evaluated fit results and preserves schedule ordering ahead of discovery names
+   ↓ connects actual candidate states while distinguishing display-only players from the worker snapshot
+   ↓ shares command-bar search with candidate filtering and resets the display budget without changing intent
+   ↓ orders unranked discovery by verified upcoming team games without inventing net gains or availability
+   ↓ uses current discovery time for LIVE at 2026-10-13T21:50:00Z independent of saved cutoff 2026-10-13T21:00:00Z
+   ↓ uses current discovery time for LIVE at 2026-10-13T22:30:00Z independent of saved cutoff 2026-10-13T21:00:00Z
+   ↓ uses current discovery time for CRIT at 2026-10-13T21:50:00Z independent of saved cutoff 2026-10-13T21:00:00Z
+   ↓ uses current discovery time for FUT at 2026-10-13T21:50:00Z independent of saved cutoff 2026-10-13T21:00:00Z
+   ↓ uses current discovery time for FUT at 2026-10-13T22:30:00Z independent of saved cutoff 2026-10-13T21:00:00Z
+   ↓ uses current discovery time for FUT at 2026-10-13T22:30:00Z independent of saved cutoff 2026-10-13T23:00:00Z
+   ↓ uses current discovery time for PRE at 2026-10-13T22:30:00Z independent of saved cutoff 2026-10-13T21:00:00Z
+   ↓ reclassifies elapsed starts on a later render without replacing saved planning inputs
+   ↓ withholds upcoming totals when canonical game state is missing rather than inventing a future game
+(node:31140) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts (36 tests | 34 skipped) 51ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx > shows652knownand197unknownof849 and puts known inputs first without hiding unknown players
+TestingLibraryElementError: Unable to find a label with the text of: Candidate input coverage
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<section[39m
+      [33maria-busy[39m=[32m"false"[39m
+      [33maria-label[39m=[32m"Candidate browser"[39m
+    [36m>[39m
+      [36m<h3>[39m
+        [0mPlayer discovery[0m
+      [36m</h3>[39m
+      [36m<p[39m
+        [33mrole[39m=[32m"status"[39m
+      [36m>[39m
+        [0mNo evaluated fit ranking is available. This is a player discovery list; its order is not a projection or roster-fit score.[0m
+      [36m</p>[39m
+      [36m<ul[39m
+        [33maria-label[39m=[32m"Missing comparison inputs"[39m
+      [36m>[39m
+        [36m<li>[39m
+          [0mPlanning schedule coverage is incomplete or unknown; team schedule counts do not establish net active games.[0m
+        [36m</li>[39m
+        [36m<li>[39m
+          [0mSupply valid league scoring weights for net points. Points also require complete qualified game forecasts for the original roster and candidate plan.[0m
+        [36m</li>[39m
+        [36m<li>[39m
+          [0mAcquisition inputs need review: effective timing, cost per add, remaining moves and reset periods.[0m
+        [36m</li>[39m
+        [36m<li>[39m
+          [0m197 matching candidate(s) lack usable verified league eligibility.[0m
+        [36m</li>[39m
+        [36m<li>[39m
+          [0m197 matching candidate(s) have unknown league availability.[0m
+        [36m</li>[39m
+      [36m</ul>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_candidateToolbar_52fb3c"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Candidate views"[39m
+          [33mclass[39m=[32m"_candidateViews_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"false"[39m
+          [36m>[39m
+            [0mBy Team[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"true"[39m
+          [36m>[39m
+            [0mAll players[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_candidateSort_52fb3c"[39m
+        [36m>[39m
+          [0mSort[0m
+          [36m<select>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"points"[39m
+            [36m>[39m
+              [0mNet points first[0m
+            [36m</option>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"schedule"[39m
+            [36m>[39m
+              [0mNet AGP first[0m
+            [36m</option>[39m
+          [36m</select>[39m
+        [36m</label>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_candidateTools_52fb3c"[39m
+      [36m>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_candidateFilterDetails_52fb3c"[39m
+        [36m>[39m
+          [36m<summary>[39m
+            [0mFind & filter[0m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_candidateFilters_52fb3c"[39m
+          [36m>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"_field_52fb3c"[39m
+            [36m>[39m
+              [0mFind candidate[0m
+              [36m<input[39m
+                [33mid[39m=[32m"rso-candidate-search"[39m
+                [33mtype[39m=[32m"search"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+            [36m</label>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"_field_52fb3c"[39m
+            [36m>[39m
+              [0mTeam[0m
+              [36m<select>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m""[39m
+                [36m>[39m
+                  [0mAll teams[0m
+                [36m</option>[39m
+                [36m<option>[39m
+                  [0mAAA[0m
+                [36m</option>[39m
+                [36m<option>[39m
+                  [0mZZZ[0m
+                [36m</option>[39m
+              [36m</select>[39m
+            [36m</label>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"_field_52fb3c"[39m
+            [36m>[39m
+              [0mPosition[0m
+              [36m<select>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m""[39m
+                [36m>[39m
+                  [0mAll positions[0m
+                [36m</option>[39m
+                [36m<option>[39m
+                  [0mC[0m
+                [36m</option>[39m
+              [36m</select>[39m
+            [36m</label>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+        [0m      [0m
+        [36m<button[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33maria-label[39m=[32m"About best-fit comparisons"[39m
+          [33mclass[39m=[32m"_trigger_f948f4"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+          [36m>[39m
+            [0mⓘ[0m
+          [36m</span>[39m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<details[39m
+        [33mclass[39m=[32m"_unrankedDisclosure_52fb3c"[39m
+        [33mopen[39m=[32m""[39m
+      [36m>[39m
+        [36m<summary>[39m
+          [36m<h4>[39m
+            [0mUnranked players[0m
+          [36m</h4>[39m
+          [36m<span>[39m
+            [0m · Team schedule only[0m
+          [36m</span>[39m
+        [36m</summary>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"_limitation_52fb3c"[39m
+        [36m>[39m
+          [0mUpcoming NHL games first; this is team schedule context, not net roster fit or player participation. Unknown teams follow.[0m
+          [0m Net comparisons require verified schedule, eligibility, availability and acquisition rules; changing the sort does not supply missing evidence.[0m
+        [36m</p>[39m
+      [36m</details>[39m
+      [36m<article[39m
+        [33maria-label[39m=[32m"Alpha Unverified 000 compared acquisition"[39m
+        [33mclass[39m=[32m"_card_9c2f1f"[39m
+        [33mdata-rso-candidate-id[39m=[32m"unknown-0"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_top_9c2f1f"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_heading_9c2f1f"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_moves_9c2f1f"[39m
+            [36m>[39m
+              [36m<div>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"_add_9c2f1f"[39m
+                [36m>[39m
+                  [0mADD[0m
+                [36m</span>[39m
+                [36m<button[39m
+                  [33maria-label[39m=[32m"Alpha Unverified 000, AAA, C"[39m
+                [36m>[39m
+                  [0mAlpha Unverified 000[0m
+                [36m</button>[39m
+                [36m<s...
+ ❯ Object.getElementError node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getAllByLabelText node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/queries/label-text.js:111:38
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx:109:17
+    107|   const before = JSON.stringify({ snapshot: props.snapshot, intent: pr…
+    108|   render(<CandidateBrowser {...props} calendar={calendar} />);
+    109|   expect(screen.getByLabelText("Candidate input coverage").textContent…
+       |                 ^
+    110|   expect(screen.getAllByRole("article").map(row => row.getAttribute("d…
+    111|   expect(screen.getByText("197 matching candidate(s) lack usable verif…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 2 passed | 52 skipped (55)
+   Start at  20:32:59
+   Duration  1.30s (transform 274ms, setup 4ms, collect 465ms, tests 103ms, environment 448ms, prepare 69ms)
+

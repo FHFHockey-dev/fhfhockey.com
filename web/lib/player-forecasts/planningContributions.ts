@@ -1,5 +1,5 @@
-import { calendarLeadDay, forecastCalendarPolicy, validForecastCalendarPolicy, resolveContribution, type ContributionGame, type ContributionParticipation, type ContributionSource } from "./contributions";
-import { forecastFromContributions, revalidateResolvedForecast } from "./resolvedPlanningForecast";
+import { calendarLeadDay, catalogParticipation, forecastCalendarPolicy, validForecastCalendarPolicy, resolveContribution, type ContributionGame, type ContributionParticipation, type ContributionSource } from "./contributions";
+import { applyModeledStartMetadata, forecastFromContributions, revalidateResolvedForecast } from "./resolvedPlanningForecast";
 import type { ContributionPlanningSnapshot, ForecastExclusionReason, GameForecast, PlanningSnapshot, StatLine } from "../rosterScheduleOptimizer/planningTypes";
 
 function issuedGame(forecast: GameForecast | undefined, snapshot: ContributionPlanningSnapshot): ContributionGame | null {
@@ -56,6 +56,11 @@ export function resolvePlanningContributions(snapshot: ContributionPlanningSnaps
     // Resolved rates must be rebuilt from their retained inputs below. Raw rows
     // require the issued contract regardless of whether a rate catalog exists.
     if (forecast.contributions) return forecast;
+    // Independent metadata is admitted only while reconstructing contributions;
+    // a raw detailed row cannot carry an unchecked modeled receipt through it.
+    if (forecast.startParticipation !== undefined) forecast = { ...forecast, startParticipation: undefined };
+    if (forecast.conditioning !== "unconditional") return reject(forecast, "unsupported_conditioning",
+      "Raw detailed forecasts require unconditional contributions before reconstruction.");
     if (forecast.sourceKind !== "detailed" || !issuedGame(forecast, snapshot)
       || !forecast.revisionId?.trim() || !forecast.modelVersion?.trim()) {
       return reject(forecast, "identity_conflict");
@@ -83,6 +88,9 @@ export function resolvePlanningContributions(snapshot: ContributionPlanningSnaps
   // assigning slots. A benched teammate is still part of the same start event.
   const goalieMass = new Map<string, number>(), invalidGoalieGroups = new Set<string>();
   for (const forecast of snapshot.forecasts) {
+    // Independent start metadata has its own whole-team check and does not
+    // invalidate appearance-conditioned means when its marginals conflict.
+    if (forecast.contributions && forecast.startParticipation?.model?.event === "official_starter") continue;
     const player = playerById.get(forecast.playerId);
     if (player?.playerClass !== "goalie" || !player.nhlTeamId) continue;
     const key = `${forecast.gameId}:${player.nhlTeamId}`;
@@ -121,7 +129,7 @@ export function resolvePlanningContributions(snapshot: ContributionPlanningSnaps
       }
       return forecast;
     });
-    return { ...snapshot, forecasts, forecastInputExclusions: exclusions };
+    return applyModeledStartMetadata({ ...snapshot, forecasts, forecastInputExclusions: exclusions });
   }
   const forecasts = new Map(snapshot.forecasts.map(row => [`${row.playerId}:${row.gameId}`, row]));
   const sources = new Map<string, ContributionSource[]>();
@@ -206,6 +214,14 @@ export function resolvePlanningContributions(snapshot: ContributionPlanningSnaps
             probability: effectiveStartProbability,
             revisionId: `${original.revisionId}:start`, cutoffAt: original.cutoffAt!, expiresAt: original.expiresAt! };
         }
+        if (!participation) {
+          const candidate = catalogParticipation(snapshot.participationSources, identity);
+          if (candidate?.model && (player.playerClass === "goalie"
+            ? ["goalie-appearance-frequency-v1", "goalie-frozen-window-appearance-frequency-v1", "goalie-roster-observation-appearance-frequency-v1"]
+            : ["skater-participation-frequency-v1", "skater-frozen-window-appearance-frequency-v1", "skater-roster-observation-appearance-frequency-v1"]).includes(candidate.model.version)
+            && (!snapshot.forecastManifest?.participationRevisionIds
+            || snapshot.forecastManifest.participationRevisionIds.includes(candidate.revisionId))) participation = candidate;
+        }
         const resolved = resolveContribution({ game: identity, targetKey, now: snapshot.context.asOf,
           calendarPolicy, detailed, baseline, participation });
         contributions[targetKey] = resolved;
@@ -227,5 +243,6 @@ export function resolvePlanningContributions(snapshot: ContributionPlanningSnaps
       }, contributions, player.playerClass === "goalie"));
     }
   }
-  return { ...snapshot, baselineSources: undefined, forecasts: [...forecasts.values()] };
+  const resolved = applyModeledStartMetadata({ ...snapshot, forecasts: [...forecasts.values()] });
+  return { ...resolved, baselineSources: undefined, participationSources: undefined };
 }

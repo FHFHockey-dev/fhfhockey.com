@@ -1,0 +1,60 @@
+{
+  "sourceManifest": "tasks/ifttt-integration-2026-10-16/occurrence-increment/owned-source-v2-sha256.json",
+  "sourceManifestSha256": "b113230355acae6cbc3c1c75bad94d6d56afa9d65b6061effed651d79c90789a",
+  "checks": [
+    {
+      "command": "npm test -- lib/sources/tweetClaimOccurrenceIdentity.test.ts",
+      "cwd": "web",
+      "status": "passed",
+      "tests": 15,
+      "toolChunk": "5531fb"
+    },
+    {
+      "command": "vitest --run --config ../tasks/ifttt-integration-2026-10-16/occurrence-increment/vitest.config.mjs ../tasks/ifttt-integration-2026-10-16/occurrence-increment/immutable-registry-audit.test.ts",
+      "status": "passed",
+      "tests": 16,
+      "log": "immutable-audit-v2.log"
+    },
+    {
+      "command": "unchanged review-occurrence/independent-regressions.test.ts with reviewer config",
+      "status": "passed",
+      "tests": 6,
+      "log": "reviewer-regressions-v2.log"
+    },
+    {
+      "command": "targeted strict tsc of occurrence module and immutable audit",
+      "status": "passed",
+      "scope": "not aggregate",
+      "log": "targeted-typecheck-v2.log"
+    },
+    {
+      "command": "scoped eslint of occurrence source/test",
+      "status": "passed",
+      "log": "eslint-v2.log"
+    },
+    {
+      "command": "run-acceptance.ts --occurrence-identity-candidate",
+      "status": "failed as disclosed",
+      "casesPassed": 41,
+      "assertionsPassed": 194,
+      "assertionsTotal": 196,
+      "failedCases": [
+        "CR011",
+        "CR051"
+      ],
+      "persistenceDeferred": 9,
+      "log": "acceptance-v2.log"
+    },
+    {
+      "command": "run-acceptance.ts --occurrence-identity-candidate --mutation-control",
+      "status": "expected rejection",
+      "CR019ReplacementCount": 1,
+      "CR019Assertion2": "failed",
+      "log": "negative-control-v2.log"
+    }
+  ],
+  "setupFailure": "Initial task audit config assumed base.test.include was iterable; corrected to explicit include before successful run. No application test ran in that failed startup.",
+  "processesActive": false,
+  "aggregateCompilerOrBuildStarted": false,
+  "databaseOrNetworkUsed": false
+}

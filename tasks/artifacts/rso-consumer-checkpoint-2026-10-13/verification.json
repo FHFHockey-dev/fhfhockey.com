@@ -1,0 +1,17 @@
+{
+  "recordedAt": "2026-10-13T03:25:27.093954+00:00",
+  "head": "a8f58de6178e282acd3a71851c66f4a56b119f14",
+  "branch": "octoberBranch",
+  "ownedHashCount": 17,
+  "forgeHashCount": 12,
+  "postTypecheckHashesMatch": true,
+  "typecheck": {
+    "cwd": "/Users/tim/Code/fhfhockey.com/web",
+    "command": "NODE_OPTIONS=--max-old-space-size=8192 npx tsc --noEmit --incremental false",
+    "exitCode": 0,
+    "logBytes": 0
+  },
+  "testsRerun": false,
+  "ownedProcessesRunning": false,
+  "workingTreeStatusBeforeHandoff": " M tasks/TASKS/repository-audit-remediation/migration-authority.json\n M tasks/TASKS/super-goal/super-goal-final-summary.md\n M web/__tests__/components/RosterScheduleOptimizer/CategoryGains.test.tsx\n M web/__tests__/fixtures/consumerGameRevision.ts\n M web/__tests__/pages/api/v1/forge/__snapshots__/goalies.test.ts.snap\n M web/__tests__/pages/api/v1/forge/goalies.test.ts\n M web/__tests__/pages/api/v1/forge/players.test.ts\n M web/__tests__/pages/api/v1/start-chart.test.ts\n M web/lib/player-forecasts/planningContributions.test.ts\n M web/lib/player-forecasts/planningContributions.ts\n M web/lib/projections/apiHelpers.test.ts\n M web/lib/projections/apiHelpers.ts\n M web/lib/projections/calibrationEligibility.ts\n M web/lib/projections/consumerRevisionAdmission.ts\n M web/lib/projections/gameRevisions.ts\n M web/lib/projections/run-forge-projections.local-attempt.test.ts\n M web/lib/projections/stages/goalie-stage.ts\n M web/lib/projections/stages/skater-stage.ts\n M web/lib/rosterScheduleData/planning.test.ts\n M web/lib/rosterScheduleData/planning.ts\n M web/lib/rosterScheduleOptimizer/planning.test.ts\n M web/lib/rosterScheduleOptimizer/planning.ts\n M web/lib/supabase/supportedBaselineMigration.test.ts\n M web/pages/api/v1/db/run-projection-accuracy.ts\n M web/pages/api/v1/forge/goalies.ts\n M web/pages/api/v1/forge/players.ts\n M web/pages/api/v1/projections/goalies.ts\n M web/pages/api/v1/projections/players.ts\n M web/pages/api/v1/projections/teams.ts\n M web/pages/api/v1/start-chart.ts\n M web/scripts/qualify-native-players-offline.test.ts\n?? tasks/artifacts/branch-reconciliation-2026-10-12/\n?? tasks/artifacts/forge-native-input-separation-2026-10-13/\n?? tasks/artifacts/rso-consumer-checkpoint-2026-10-13/\n?? web/__tests__/pages/api/v1/projections/explicitRunAdmission.test.ts\n?? web/lib/player-forecasts/nativeContributionAdmission.test.ts\n?? web/lib/player-forecasts/nativeContributionAdmission.ts\n?? web/lib/projections/nativeInputEligibility.test.ts\n"
+}

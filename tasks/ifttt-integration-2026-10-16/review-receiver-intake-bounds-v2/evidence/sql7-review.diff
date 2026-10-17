@@ -1,0 +1,58 @@
+--- 
++++ 
+@@ -94,6 +94,7 @@
+   insert into public.ifttt_intake_policies select expected.*;
+   select * into existing from public.ifttt_intake_policies where policy_id=expected.policy_id;
+   if not found or to_jsonb(existing) is distinct from to_jsonb(expected) then raise exception 'Registered intake policy mismatch'; end if;
++  if exists(select 1 from public.ifttt_intake_receipts where policy_id=expected.policy_id) then raise exception 'New intake policy already has admissions'; end if;
+   return to_jsonb(existing);
+ end $$;
+ revoke all on function public.register_ifttt_intake_policy(jsonb) from public,anon,authenticated,service_role;
+@@ -103,16 +104,19 @@
+ -- SQL6 remains invoker but is no longer directly service-callable.
+ create function public.stop_ifttt_intake_policy(p_id text,p_reason text) returns jsonb
+ language plpgsql security definer set search_path='' set lock_timeout='2s' as $$
+-declare p public.ifttt_intake_policies; actual public.ifttt_intake_policies;
++declare p public.ifttt_intake_policies; actual public.ifttt_intake_policies; before_map jsonb; final_map jsonb;
+ begin
+   if p_reason is null or length(p_reason) not between 1 and 256 then raise exception 'Stop reason required'; end if;
+   select * into p from public.ifttt_intake_policies where policy_id=p_id for update;
+   if not found then raise exception 'Unknown intake policy'; end if;
+   if p.stopped_at is not null then return to_jsonb(p); end if;
++  select coalesce(jsonb_agg(to_jsonb(r) order by receipt_id),'[]'::jsonb) into before_map from public.ifttt_intake_receipts r where policy_id=p_id;
+   p.stopped_at:=clock_timestamp(); p.stop_reason:=p_reason;
+   update public.ifttt_intake_policies set stopped_at=p.stopped_at,stop_reason=p.stop_reason where policy_id=p_id;
+   select * into actual from public.ifttt_intake_policies where policy_id=p_id;
+   if not found or to_jsonb(actual) is distinct from to_jsonb(p) then raise exception 'Intake stop was rewritten'; end if;
++  select coalesce(jsonb_agg(to_jsonb(r) order by receipt_id),'[]'::jsonb) into final_map from public.ifttt_intake_receipts r where policy_id=p_id;
++  if final_map is distinct from before_map then raise exception 'Intake stop rewrote admissions'; end if;
+   return to_jsonb(actual);
+ end $$;
+ revoke all on function public.stop_ifttt_intake_policy(text,text) from public,anon,authenticated,service_role;
+@@ -151,10 +155,18 @@
+   else
+     select to_jsonb(r) into before_raw from public.lines_ccc_ifttt_events r where tweet_id=p_row->>'tweet_id' for update;
+   end if;
++  -- R20: quota triggers must not establish their own admission baseline. Take
++  -- this snapshot before the first mutation, outside the inner savepoint, and
++  -- reject every admission change before retention starts. A fault here rolls
++  -- back the complete attempt; ordinary later storage failures still charge it.
++  select coalesce(jsonb_agg(to_jsonb(r) order by receipt_id),'[]'::jsonb),count(*) into before_map,n from public.ifttt_intake_receipts r where policy_id=p.policy_id;
++  if n>(p.contract->>'maxReceipts')::bigint then raise exception 'Intake admissions already exceed cap'; end if;
+   p.attempts:=p.attempts+1;
+   update public.ifttt_intake_policies set attempts=p.attempts where policy_id=p.policy_id;
+   select * into actual from public.ifttt_intake_policies where policy_id=p.policy_id;
+   if not found or to_jsonb(actual) is distinct from to_jsonb(p) then raise exception 'Intake attempt counter was rewritten'; end if;
++  select coalesce(jsonb_agg(to_jsonb(r) order by receipt_id),'[]'::jsonb) into final_maps from public.ifttt_intake_receipts r where policy_id=p.policy_id;
++  if final_maps is distinct from before_map then raise exception 'Intake attempt rewrote admissions'; end if;
+   if tab='line_source_ifttt_events' then
+     select to_jsonb(r) into final_raw from public.line_source_ifttt_events r where source_key=p_row->>'source_key' and tweet_id=p_row->>'tweet_id';
+   else
+@@ -172,7 +184,6 @@
+     execute format('select to_jsonb(r) from public.%I r where id=$1',tab) into retained_raw using (receipt->>'eventId')::uuid;
+     if retained_raw is null or (before_raw is not null and retained_raw is distinct from before_raw) then raise exception 'Intake raw carrier mismatch'; end if;
+     select jsonb_agg(to_jsonb(r) order by receipt_id) into retained_archive from public.ifttt_raw_receipt_variants r where receipt_id=any(ids);
+-    select coalesce(jsonb_agg(to_jsonb(r) order by receipt_id),'[]'::jsonb),count(*) into before_map,n from public.ifttt_intake_receipts r where policy_id=p.policy_id;
+     expected_maps:=before_map;
+     foreach rid in array ids loop
+       if not exists(select 1 from public.ifttt_intake_receipts where policy_id=p.policy_id and receipt_id=rid) then

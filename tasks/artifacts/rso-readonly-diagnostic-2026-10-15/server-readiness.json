@@ -1,0 +1,44 @@
+{
+  "observedAt": "2026-10-15T15:06:58.691737+00:00",
+  "status": "existing_dev_listener_ready_for_browser_owned_first_route_load",
+  "url": "http://localhost:3000/api/v1/roster-schedule-optimizer/diagnostic",
+  "sourcePins": {
+    "web/lib/rosterScheduleOptimizer/diagnostic.ts": "c9c8d0343942bfd7919ac126a86d3995f0ac78aff2dc18daf83f72e104e05af8",
+    "web/lib/rosterScheduleOptimizer/diagnostic.test.ts": "3b711619fb017bb3e39e957a5f8b5a02e608e2af12d83310e1ee38ab50b2232a",
+    "web/pages/api/v1/roster-schedule-optimizer/diagnostic.ts": "98e98ec4e506e053650698404e1871fe0dd601d0bb9373631674387590c72719",
+    "web/pages/api/v1/roster-schedule-optimizer/diagnostic-context.ts": "7c75581903fe53a721519f6072df7f81db4d3169984a7b369057e223d207a625",
+    "web/__tests__/pages/api/v1/roster-schedule-optimizer/diagnostic-context.test.ts": "2c1590e5e483bb354f15b6aaa14743073f335b205b47a39fd212085aecdb0328"
+  },
+  "review": "independent-review.md",
+  "patchSha256": "3e3c56dd2e25e792451b2c40c44b6507e50cf3acd22a012126e94738c955b16f",
+  "server": {
+    "pid": 20004,
+    "parentPid": 20003,
+    "version": "Next.js 15.5.22",
+    "cwd": "/Users/tim/Code/fhfhockey.com/web",
+    "command": "next dev -H 0.0.0.0 -p 3000",
+    "startedAsReportedByHostPs": "Thu Oct 15 10:04:50 2026",
+    "listener": "IPv4 *:3000",
+    "lifecycle": "pre-existing server reused; not started, restarted, or stopped by this task; existing owner retains lifecycle"
+  },
+  "scope": {
+    "provider": "yahoo",
+    "leagueName": "2026-27 FHFH",
+    "teamName": "FHFH TJ",
+    "providerSeasonRequired": "2026",
+    "seasonId": 20262027,
+    "startDate": "2026-10-12",
+    "endDate": "2026-10-18",
+    "horizonStatus": "owner_working_assumption",
+    "timeZone": null
+  },
+  "soleBrowserRequestOwner": "01a13ff4-fc5e-7046-a3c7-7e57d8eff023",
+  "requestsMadeByServerReadinessTask": 0,
+  "authenticatedDiagnosticRunsByThisTask": 0,
+  "runtimeRouteValidation": "not performed; reserved for sole browser owner",
+  "limitations": [
+    "Direct localhost only; no proxy/tunnel. Existing dev server is wildcard-bound but both diagnostic endpoints require loopback Host and actual socket peer.",
+    "Existing valid local session required; production session does not carry over. Missing/expired session must stop without refresh or retry.",
+    "No aggregate compiler/build claimed; first route compilation belongs to approved browser route load."
+  ]
+}

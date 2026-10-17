@@ -1,0 +1,175 @@
+{
+  "viewport": {
+    "width": 1440,
+    "height": 900,
+    "devicePixelRatio": 1,
+    "screenWidth": 1440,
+    "screenHeight": 900,
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/148.0.7778.96 Safari/537.36",
+    "touchPoints": 0,
+    "coarsePointer": false
+  },
+  "document": {
+    "width": 1440,
+    "height": 900,
+    "scrollY": 0
+  },
+  "header": {
+    "x": 0,
+    "y": 0,
+    "width": 1440,
+    "height": 68,
+    "bottom": 68
+  },
+  "panels": [
+    {
+      "label": "Roster and setup",
+      "x": 4,
+      "y": 513.59375,
+      "width": 372.3125,
+      "height": 382.40625,
+      "bottom": 896
+    },
+    {
+      "label": "Itinerary",
+      "x": 384.3125,
+      "y": 513.59375,
+      "width": 700.015625,
+      "height": 382.40625,
+      "bottom": 896
+    },
+    {
+      "label": "Candidates and detail",
+      "x": 1092.328125,
+      "y": 513.59375,
+      "width": 343.671875,
+      "height": 382.40625,
+      "bottom": 896
+    }
+  ],
+  "typography": {
+    "headingFamily": "\"Roboto Condensed\", sans-serif",
+    "headingSize": "21px",
+    "headingWeight": "700",
+    "bodyFamily": "Roboto, sans-serif",
+    "headerFamily": "\"Roboto Condensed\", sans-serif",
+    "fontStatus": "loaded",
+    "fontCheck400": true,
+    "fontCheck700": true,
+    "faces": [
+      {
+        "family": "Roboto Condensed",
+        "weight": "100 900",
+        "status": "loaded"
+      }
+    ]
+  },
+  "summaryMetrics": {
+    "bounds": {
+      "x": 4,
+      "y": 276.59375,
+      "width": 1432,
+      "height": 54,
+      "bottom": 330.59375
+    },
+    "display": "grid",
+    "columns": "197.703px 197.719px 197.719px 197.703px 197.719px 197.719px 197.703px",
+    "rows": "54px",
+    "children": [
+      {
+        "tag": "ARTICLE",
+        "bounds": {
+          "x": 4,
+          "y": 276.59375,
+          "width": 197.703125,
+          "height": 54,
+          "bottom": 330.59375
+        }
+      },
+      {
+        "tag": "ARTICLE",
+        "bounds": {
+          "x": 209.703125,
+          "y": 276.59375,
+          "width": 197.71875,
+          "height": 54,
+          "bottom": 330.59375
+        }
+      },
+      {
+        "tag": "ARTICLE",
+        "bounds": {
+          "x": 415.421875,
+          "y": 276.59375,
+          "width": 197.71875,
+          "height": 54,
+          "bottom": 330.59375
+        }
+      },
+      {
+        "tag": "ARTICLE",
+        "bounds": {
+          "x": 621.140625,
+          "y": 276.59375,
+          "width": 197.703125,
+          "height": 54,
+          "bottom": 330.59375
+        }
+      },
+      {
+        "tag": "ARTICLE",
+        "bounds": {
+          "x": 826.84375,
+          "y": 276.59375,
+          "width": 197.71875,
+          "height": 54,
+          "bottom": 330.59375
+        }
+      },
+      {
+        "tag": "ARTICLE",
+        "bounds": {
+          "x": 1032.5625,
+          "y": 276.59375,
+          "width": 197.71875,
+          "height": 54,
+          "bottom": 330.59375
+        }
+      },
+      {
+        "tag": "ARTICLE",
+        "bounds": {
+          "x": 1238.28125,
+          "y": 276.59375,
+          "width": 197.703125,
+          "height": 54,
+          "bottom": 330.59375
+        }
+      }
+    ],
+    "qualifier": {
+      "text": "Partial schedule · known subtotals; full-range totals and percentages unavailable.",
+      "bounds": {
+        "x": 4,
+        "y": 334.59375,
+        "width": 1432,
+        "height": 14,
+        "bottom": 348.59375
+      },
+      "gridColumn": "auto",
+      "insideMetricCarousel": false,
+      "margin": "0px",
+      "fontSize": "12px",
+      "lineHeight": "normal",
+      "scrollWidth": 1432,
+      "clientWidth": 1432
+    }
+  },
+  "caption": {
+    "x": 1245.921875,
+    "y": 860.5,
+    "width": 190.078125,
+    "height": 35.5,
+    "bottom": 896
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "cases": [
+    "initial service-role CAS and exact returned revision",
+    "revision and previous-hash conflicts leave head unchanged",
+    "matching revision and previous hash advance exactly once",
+    "wrong season, expired selection, wrong kind, missing/null expiry and missing/null season rejected",
+    "two concurrent initial callers have exactly one winner",
+    "anonymous/authenticated lack read/execute and service role cannot directly update heads"
+  ],
+  "failure": null,
+  "sqlPath": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-rso-completion-2026-10-15/pipeline/native-catalog-head-review.sql",
+  "sqlSHA256": "4149d89da3bcc94b271596acc1cf1b8e18458cd5baffefd7359e654101a901d7",
+  "transport": "new disposable synthetic PostgreSQL17 Unix socket; TCP disabled",
+  "ownedClusterStoppedAndRemoved": true,
+  "existingInstancesTouched": false,
+  "hostedRequests": 0,
+  "schemaAppliedToHosted": false
+}

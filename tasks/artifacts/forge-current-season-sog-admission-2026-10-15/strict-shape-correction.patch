@@ -1,0 +1,31 @@
+--- a/web/lib/player-forecasts/currentSeasonSogContribution.test.ts
++++ b/web/lib/player-forecasts/currentSeasonSogContribution.test.ts
+@@ -165,4 +165,16 @@
+     expect((await loadApprovedContributionBundle(database([[f.bundleRow], [f.policyRow, f.reviewRow]]), scope.seasonId, now,
+       { environment: f.environment })).sources).toEqual([]);
+   });
++  it.each(["gameId", "scheduledAt"])("preserves legacy strict shape rejection for an explicit null %s", async field => {
++    const { input } = fixture(), initial = buildCurrentSeasonSogContributionBundle(input, issuedAt, now);
++    const source = { ...initial.sources[0], policyVersion: "synthetic-legacy-global-v1" };
++    delete source.gameId; delete source.scheduledAt;
++    const { checksum: _checksum, ...base } = initial.manifest;
++    const manifest = { ...base, policyVersion: source.policyVersion };
++    const sources = [{ ...source, [field]: null }];
++    const bundle = { sources: sources as any, manifest: { ...manifest,
++      checksum: contributionBundleChecksum({ manifest, sources: sources as any }) } };
++    const noDatabase = new Proxy({}, { get() { throw new Error("Database forbidden"); } });
++    await expect(persistContributionBundle(noDatabase as never, bundle)).rejects.toThrow(/Invalid or incomplete/);
++  });
+ });
+--- a/web/lib/player-forecasts/contributionStore.ts
++++ b/web/lib/player-forecasts/contributionStore.ts
+@@ -126,7 +126,8 @@
+   const seen = new Set<string>();
+   for (const source of sources) {
+     const scopedSog = source?.policyVersion === CURRENT_SEASON_SOG_CONTRIBUTION_VERSION;
+-    if (!source || Object.keys(source).some((key) => !sourceKeys.has(key)) ||
++    if (!source || Object.keys(source).some((key) => !sourceKeys.has(key)
++      || !scopedSog && (key === "gameId" || key === "scheduledAt")) ||
+         source.kind !== "baseline" || (!scopedSog && (source.gameId != null || source.scheduledAt != null)) ||
+         (scopedSog && (!Number.isSafeInteger(source.gameId) || source.gameId! <= 0 || !validTimestamp(source.scheduledAt)
+           || source.targetKey !== "SHOTS_ON_GOAL" || source.unit !== "count" || source.basis !== "per_appearance"

@@ -1,0 +1,22 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/tasks/artifacts/fresh-rso-forge-review-2026-10-16
+
+stdout | synthetic.test.ts > Independent synthetic product audit — source behavior, no empirical forecast claims > positive control: one candidate finds the weak-player drop and +9 points
+CONTROL {"baseline":{"objective":"outcome","activeGames":3,"projectedPoints":191},"best":{"objective":"agp","steps":[{"id":"add:100:0:2026-10-16:drop:3","type":"add","playerId":"100","at":"2026-10-16T12:00:00Z","effectiveAt":"2026-10-16T12:00:00Z","conditional":false,"dependsOn":[],"dropPlayerId":"3"}],"netAGP":0,"netPoints":9,"dropped":[{"playerId":"3","lostAGP":1,"lostPoints":1}],"displacedPlayerIds":["3"]}}
+
+stdout | synthetic.test.ts > Independent synthetic product audit — source behavior, no empirical forecast claims > 40 candidates exhaust default budget before any weak-player drop despite identical +9 legal opportunities
+MISSED_POSITIVE_SWAP {"search":{"evaluated":160,"maxEvaluations":160,"candidates":40,"eligibleCandidates":40,"maxCandidates":40,"maxProposalsPerCandidate":12,"complete":false},"returnedBestNet":-80,"oracleNet":9,"drops":["2","1"]}
+
+stdout | synthetic.test.ts > Independent synthetic product audit — source behavior, no empirical forecast claims > 41st ID is never evaluated even when its forecast is far stronger
+UNSEEN_BEST_CANDIDATE {"playerId":"140","status":"not_selected","stopReason":"candidate_limit","generated":0,"skipped":0,"evaluated":0,"illegal":0,"unverifiedBudget":0,"retained":0,"reasons":["Outside the bounded candidate evaluation set."]}
+
+stdout | synthetic.test.ts > Independent synthetic product audit — source behavior, no empirical forecast claims > schedule loader calls a sparse fresh single team-row complete without a coverage witness
+SCHEDULE_COVERAGE {"games":1,"evidence":{"source":"roster_optimizer_team_games","asOf":"2026-10-16T11:00:00Z","seasonId":20262027,"completeness":"complete","limitations":[]}}
+
+ ✓ synthetic.test.ts (5 tests) 102ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  20:52:47
+   Duration  327ms (transform 100ms, setup 10ms, collect 114ms, tests 102ms, environment 0ms, prepare 27ms)
+

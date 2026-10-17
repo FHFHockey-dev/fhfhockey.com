@@ -1,0 +1,36 @@
+lib/player-forecasts/goalieBaselineRates.ts(277,21): error TS2820: Type '"native-goalie-appearance-summary-win-rates-v1"' is not assignable to type '"native-goalie-appearance-win-rates-v1" | "native-goalie-appearance-volume-rates-v1" | "native-goalie-appearance-shutout-rates-v1" | "goalie-baseline-rates-v1"'. Did you mean '"native-goalie-appearance-win-rates-v1"'?
+lib/player-forecasts/goalieBaselineRates.ts(324,29): error TS2367: This comparison appears to be unintentional because the types '"native-goalie-appearance-win-rates-v1" | "native-goalie-appearance-volume-rates-v1" | "native-goalie-appearance-shutout-rates-v1" | "goalie-baseline-rates-v1"' and '"native-goalie-appearance-summary-win-rates-v1"' have no overlap.
+lib/player-forecasts/nativeBaselineCadence.ts(244,86): error TS18048: 'row' is possibly 'undefined'.
+lib/player-forecasts/nativeBaselineCadence.ts(245,12): error TS18048: 'row' is possibly 'undefined'.
+lib/player-forecasts/nativeBaselineCadence.ts(245,39): error TS18048: 'row' is possibly 'undefined'.
+lib/player-forecasts/nativeBaselineCadence.ts(245,91): error TS18048: 'row' is possibly 'undefined'.
+lib/player-forecasts/nativeBaselineCadence.ts(246,12): error TS18048: 'row' is possibly 'undefined'.
+lib/player-forecasts/nativeBaselineCadence.ts(246,65): error TS18048: 'row' is possibly 'undefined'.
+lib/player-forecasts/nativeBaselineCadence.ts(251,100): error TS18048: 'row' is possibly 'undefined'.
+lib/player-forecasts/nativeBaselineCadence.ts(252,23): error TS18048: 'row' is possibly 'undefined'.
+lib/player-forecasts/nativeBaselineCadence.ts(252,84): error TS18048: 'row' is possibly 'undefined'.
+lib/player-forecasts/nativeBaselineCadence.ts(253,94): error TS18048: 'row' is possibly 'undefined'.
+lib/player-forecasts/nativeCatalogHead.ts(57,94): error TS2339: Property 'payload' does not exist on type 'ParserError<"Unexpected input: " | "Unexpected input: ,payload">'.
+  Property 'payload' does not exist on type '{ error: true; } & "Unexpected input: "'.
+lib/player-forecasts/nativeCatalogHead.ts(59,27): error TS2339: Property 'provider' does not exist on type 'ParserError<"Unexpected input: " | "Unexpected input: ,payload">'.
+  Property 'provider' does not exist on type '{ error: true; } & "Unexpected input: "'.
+lib/player-forecasts/nativeCatalogHead.ts(59,57): error TS2339: Property 'entity_key' does not exist on type 'ParserError<"Unexpected input: " | "Unexpected input: ,payload">'.
+  Property 'entity_key' does not exist on type '{ error: true; } & "Unexpected input: "'.
+lib/player-forecasts/nativeCatalogHead.ts(59,109): error TS2339: Property 'dataset_key' does not exist on type 'ParserError<"Unexpected input: " | "Unexpected input: ,payload">'.
+  Property 'dataset_key' does not exist on type '{ error: true; } & "Unexpected input: "'.
+lib/player-forecasts/nativeCatalogHead.ts(60,17): error TS2339: Property 'payload_hash' does not exist on type 'ParserError<"Unexpected input: " | "Unexpected input: ,payload">'.
+  Property 'payload_hash' does not exist on type '{ error: true; } & "Unexpected input: "'.
+lib/player-forecasts/nativeCatalogHead.ts(60,87): error TS2339: Property 'available_at' does not exist on type 'ParserError<"Unexpected input: " | "Unexpected input: ,payload">'.
+  Property 'available_at' does not exist on type '{ error: true; } & "Unexpected input: "'.
+lib/player-forecasts/nativeCatalogHead.ts(62,22): error TS2339: Property 'available_at' does not exist on type 'ParserError<"Unexpected input: " | "Unexpected input: ,payload">'.
+  Property 'available_at' does not exist on type '{ error: true; } & "Unexpected input: "'.
+lib/rosterScheduleData/planningDataTransport.ts(93,5): error TS2322: Type '{ participationSources?: ContributionParticipation[] | WireParticipation[] | undefined; baselineSources?: ContributionSource[]; ... 5 more ...; evidence: Record<string, SourceEvidence>; }' is not assignable to type 'Omit<PlanningData, "participationSources"> & { participationSources?: WireParticipation[] | undefined; }'.
+  Type '{ participationSources?: ContributionParticipation[] | WireParticipation[] | undefined; baselineSources?: ContributionSource[]; ... 5 more ...; evidence: Record<string, SourceEvidence>; }' is not assignable to type '{ participationSources?: WireParticipation[] | undefined; }'.
+    Types of property 'participationSources' are incompatible.
+      Type 'ContributionParticipation[] | WireParticipation[] | undefined' is not assignable to type 'WireParticipation[] | undefined'.
+        Type 'ContributionParticipation[]' is not assignable to type 'WireParticipation[]'.
+          Type 'ContributionParticipation' is not assignable to type 'WireParticipation'.
+            Type 'ContributionParticipation' is not assignable to type '{ model?: [metadata: number, inputHash: string, evidence: number[]] | undefined; }'.
+              Types of property 'model' are incompatible.
+                Type '{ version: "skater-participation-frequency-v1" | "goalie-appearance-frequency-v1" | "skater-frozen-window-appearance-frequency-v1" | "goalie-frozen-window-appearance-frequency-v1" | "goalie-frozen-window-start-frequency-v1" | "skater-roster-observation-appearance-frequency-v1" | "goalie-roster-observation-appearance...' is not assignable to type '[metadata: number, inputHash: string, evidence: number[]] | undefined'.
+                  Type '{ version: "skater-participation-frequency-v1" | "goalie-appearance-frequency-v1" | "skater-frozen-window-appearance-frequency-v1" | "goalie-frozen-window-appearance-frequency-v1" | "goalie-frozen-window-start-frequency-v1" | "skater-roster-observation-appearance-frequency-v1" | "goalie-roster-observation-appearance...' is not assignable to type '[metadata: number, inputHash: string, evidence: number[]]'.

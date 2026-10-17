@@ -1,0 +1,68 @@
+{
+  "sourceCheckout": "/Users/tim/Code/fhfhockey.com",
+  "sourceBranch": "octoberBranch",
+  "sourceHead": "a8f58de6178e282acd3a71851c66f4a56b119f14",
+  "noWholeCheckoutHold": true,
+  "continuedGoalWorkExcludedFromFrozenRelease": true,
+  "owners": [
+    {
+      "owner": "01a14283-f596-73c3-8590-37d198756c4b",
+      "scope": "Combined FORGE/RSO/Start Chart completion",
+      "checkpoint": "tasks/artifacts/forge-rso-completion-2026-10-15/release-checkpoint.md",
+      "pins": "tasks/artifacts/forge-rso-completion-2026-10-15/checkpoint-source-pins.json",
+      "state": "meaningful development checkpoint; goal continues after short hold release",
+      "releaseMembership": "excluded wider graph; genuine publication/consumer requirements remain incomplete"
+    },
+    {
+      "owner": "01a14299-0127-7424-85aa-42578c6740ef",
+      "scope": "IFTTT integration",
+      "checkpoint": "tasks/ifttt-integration-2026-10-16/RELEASE-CHECKPOINT.md",
+      "pins": "tasks/ifttt-integration-2026-10-16/next-increment/owned-source-v4-sha256.json",
+      "state": "localheld/shadow accepted; new excluded durable work continues",
+      "releaseMembership": "all claim/legacy integration excluded; no SQL/dispatch/activation"
+    },
+    {
+      "owner": "01a142bb-decf-77fe-ac88-1dc20c8ed0f2",
+      "scope": "IFTTT independent review",
+      "checkpoint": "tasks/ifttt-integration-2026-10-16/review-v4/REVIEW.md",
+      "state": "review accepted boundedlocalv4; later excluded occurrence review separate",
+      "releaseMembership": "review/task artifacts excluded"
+    },
+    {
+      "owner": "01a13df3-0374-727c-a8bd-a932723c2032",
+      "scope": "RSO release gaps",
+      "checkpoint": "tasks/artifacts/rso-release-coordination-2026-10-16/checkpoint.json",
+      "pins": "tasks/artifacts/rso-release-coordination-2026-10-16/current-observed.sha256",
+      "state": "16observed latestcohort pins; completion ownership supersedes3oldpins",
+      "releaseMembership": "excluded largerRSO graph"
+    },
+    {
+      "owner": "01a135c9-bda9-752d-ba1a-f6e782ca70cd",
+      "scope": "Start Chart",
+      "checkpoint": "/tmp/start-chart-release-checkpoint-20261016/checkpoint.json",
+      "pins": "/tmp/start-chart-release-checkpoint-20261016/candidate.sha256",
+      "state": "5paths captured and hold released",
+      "releaseMembership": "excluded consumer graph/genuine readback requirements"
+    },
+    {
+      "owner": "01a135c8-567b-71d2-b610-6b78f3cc40d7",
+      "scope": "FORGE current-season SOG",
+      "state": "fouraccepted files remain stable;2CLI paths superseded by completion checkpoint",
+      "releaseMembership": "excluded allnative forecasts/research/publication"
+    },
+    {
+      "owner": "01a14214-82f5-77a5-a8f6-d51b7f0430f2",
+      "scope": "Recurring schedule preparation",
+      "checkpoint": "tasks/artifacts/schedule-refresh-recurring-2026-10-15/CAPTURE-HANDOFF.json",
+      "state": "current5captured;4matcholdacceptance,newsource.tsbelongscompletioncheckpoint",
+      "releaseMembership": "excluded scheduler/DDL/routes/cadence graph"
+    },
+    {
+      "owner": "01a142f9-bbd1-7408-805b-c3a4ada820d6",
+      "scope": "Independent release boundary review",
+      "checkpoint": "independent-review-v4.json",
+      "state": "exactv4ACCEPTsource/dependency/activationboundary",
+      "releaseMembership": "reviewsafe37pathcandidate only"
+    }
+  ]
+}

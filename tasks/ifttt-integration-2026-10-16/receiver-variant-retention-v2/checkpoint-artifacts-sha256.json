@@ -1,0 +1,121 @@
+{
+  "sourceManifestSha256": "a63680cd434c6ca71713853e26e2cd3c3c18a261d8f694de10da171670409964",
+  "files": [
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/CHECKPOINT.md",
+      "sha256": "e73fa5fdb5cc389847b229d80147bc230c1bdc46b55b877b6d75ec8589ecf424"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/dependency-snapshot/supabase/migrations/20260716112908_production_schema_baseline.sql",
+      "sha256": "27067d2221516be147d5cf71492b1fee3f0fd377d0ccd14e49557931ad1b791d"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/dependency-snapshot/web/lib/projections/evidenceTime.ts",
+      "sha256": "c818c021a2857607055d60454ecf03ac39fb27298719726662652d8321e42a00"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/dependency-snapshot/web/lib/projections/starterBoardFlags.ts",
+      "sha256": "f6f0bea6cedda71bb43f41f7aa0235232178524b9bf9271c0a1b3567ae251e2d"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/evidence/R19-changed-variant.json",
+      "sha256": "10168a0f65e667b4526f3bd17a746712f30608e7d94b531fce2c1934f648a9b8"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/evidence/R19-exact-retry.json",
+      "sha256": "f70c4813a5bae08e4ce938e74da62d2173fceafa01eca7207983337b9bc4dcd4"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/evidence/absent-race-line_source_ifttt_events.json",
+      "sha256": "bb5d561bf983b1a4e1488200d9bfc6adc16d04721a23a708bf8f5e3eea4e42ea"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/evidence/absent-race-lines_ccc_ifttt_events.json",
+      "sha256": "07cfc834056a154f9050cdbe405d77ca068fdf1d91eab6384c4d554806cdae9f"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/evidence/before-integrity.json",
+      "sha256": "9f62050e15e48a6336fe1d30d5590ef1167c91750eed9fbeff54ed264b8871ec"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/evidence/check-summary.json",
+      "sha256": "0ab016ad67d621be5463d8ecc4b0d0fcdcb1b415ad7a16daa220bf0a56d1b87e"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/evidence/final-tsc.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/evidence/final59-results.json",
+      "sha256": "827fbee2d3b45782481780ca8f35434933dd042cf85258b833b28d6427131320"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/evidence/final59.log",
+      "sha256": "c7428e0e7027ab8658d36977e7102500166cf6d93df565875a0252563390fe73"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/evidence/integrity.json",
+      "sha256": "3cf88aaaec9adbeb4d4b14d0559d514dbdb56c84803f8f9787fd18d9ad009559"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/evidence/repaired-race-results.json",
+      "sha256": "5215ec8e04c013a2681207f3550b0a70beb361512c306ee0e434393c6e4dc3fd"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/evidence/repaired-race.log",
+      "sha256": "792d0da155bf6774ed588c8a8c3610f02b7b898f07a21076e2240d9c62c22a45"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/evidence/rpc-diagnostic-error.json",
+      "sha256": "bd85b491cc77b185cb37facddb273898042ced7a02c21649b44f23595c1a3837"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/evidence/same-key-variant-retained.json",
+      "sha256": "ff67368d84007b162070f8f072bd85c8831419d6bffc800cec836398d4ad54bd"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/evidence/scoped-tsc.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/evidence/sql6-correction.diff",
+      "sha256": "d9f335800b53f3c2e756bc5f5af38c30e10871951f0749ac2207e1f555734526"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/evidence/unchanged53-results.json",
+      "sha256": "4aad776a58d46e3f27a51107e1fea18ebb5da8652279f1d5174cd6c9620ced1c"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/evidence/unchanged53.log",
+      "sha256": "9d397cfed7dd1aef65bc882da478f2a98e6b6009e6b99bdd5f05170d247013f6"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/owned-source-v2-sha256.json",
+      "sha256": "a63680cd434c6ca71713853e26e2cd3c3c18a261d8f694de10da171670409964"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/read-only-dependencies.json",
+      "sha256": "c864eec679a2061537202281a619918eb376d46484d817af3425d043cb46f500"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/receiver-storage.test.ts",
+      "sha256": "ba8c668a06d4c0ecefee205ad4cb9bdefa07d5988eca0e01c1cde61d54266233"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/regression.config.mjs",
+      "sha256": "aa6c29991c406df69f1f52d1c1a0b1bc1134fd0ca9b0b2b791f4ed4f6a49f2c9"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/supabase/migrations/20261016082142_ifttt_raw_receipt_variants.sql",
+      "sha256": "789772078e3b8405539358e07413cf2fd4cf6d80a82513911bf989f8c02b0483"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/tsconfig.json",
+      "sha256": "d8047afaafb65ee0c2c66d42e7fc995b34376dd703c3e916fec27fea95010238"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/vitest.config.mjs",
+      "sha256": "e6b2589f680a4018c22e510872f9af497fe505d497d1076583135b321196928d"
+    }
+  ]
+}

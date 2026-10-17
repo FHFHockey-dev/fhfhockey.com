@@ -1,0 +1,11 @@
+{
+  "checkedAt": "2026-10-16T04:27:08.706755+00:00",
+  "acceptedManifestSha256": "8a6e3b3c27cf60860b206a4dfd068dbc0aede9ceb76ea03b815e42ffc97ac958",
+  "pinsChecked": 41,
+  "mismatches": [],
+  "runtimeChanged": false,
+  "fullCompilerActive": false,
+  "testsActive": false,
+  "hostedReads": 0,
+  "scope": "offline artifacts only; does not expand v4 acceptance"
+}

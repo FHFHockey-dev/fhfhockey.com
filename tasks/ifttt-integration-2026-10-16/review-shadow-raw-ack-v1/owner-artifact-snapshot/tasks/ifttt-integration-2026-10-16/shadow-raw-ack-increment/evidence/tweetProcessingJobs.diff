@@ -1,0 +1,29 @@
+--- accepted95/web/lib/sources/tweetProcessingJobs.ts
++++ candidate/web/lib/sources/tweetProcessingJobs.ts
+@@ -1,5 +1,6 @@
+ import { randomUUID } from "node:crypto";
+ import { tweetPipelineFlags } from "./tweetInterpretation";
++import { acknowledgeTweetClaimRawEvent } from "./tweetClaimRawAcknowledgment";
+ 
+ const leases = new WeakMap<object, { key: string; owner: string }>();
+ 
+@@ -52,6 +53,19 @@
+   }
+ }
+ 
++export async function finishTweetClaimShadowEvent(supabase: any, event: { id: string }, args: {
++  table: "line_source_ifttt_events" | "lines_ccc_ifttt_events";
++  expectedPayload: Record<string, unknown>; observationIds: string[];
++}) {
++  if (process.env.TWEET_CLAIMS_MODE !== "shadow") throw new Error("Explicit claim shadow mode is required");
++  const lease = leases.get(event);
++  if (!lease) throw new Error("A retained raw job lease is required for shadow completion");
++  const result = await acknowledgeTweetClaimRawEvent({ db: supabase, table: args.table, eventId: event.id,
++    ...lease, expectedPayload: args.expectedPayload, observationIds: args.observationIds, enabled: true });
++  leases.delete(event);
++  return result;
++}
++
+ async function settleEvent(supabase: any, event: object, status: "complete" | "failed", stage?: string) {
+   const lease = leases.get(event);
+   if (!lease) return;

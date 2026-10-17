@@ -1,0 +1,524 @@
+diff --git a/web/pages/game/[gameId].tsx b/web/pages/game/[gameId].tsx
+index 5d946ede9..a3084de0a 100644
+--- a/web/pages/game/[gameId].tsx
++++ b/web/pages/game/[gameId].tsx
+@@ -27,51 +27,89 @@ function formatGoalieSavePct(value) {
+ 
+ export default function Page() {
+   const router = useRouter();
+-  const { gameId } = router.query;
++  const gameId =
++    typeof router.query.gameId === "string" ? router.query.gameId : undefined;
++  return <GamePage key={gameId} gameId={gameId} />;
++}
++
++type RequestStatus = "loading" | "ready" | "empty" | "error";
++
++function GamePage({ gameId }: { gameId?: string }) {
+   const [gameDetails, setGameDetails] = useState(null);
+   const [gameLandingDetails, setGameLandingDetails] = useState(null); // Added state for game landing details
++  const [gameDetailsStatus, setGameDetailsStatus] = useState<RequestStatus>("loading");
++  const [gameLandingStatus, setGameLandingStatus] = useState<RequestStatus>("loading");
++  const [retryCount, setRetryCount] = useState(0);
+   const [homeTeamStats, setHomeTeamStats] = useState({});
+   const [awayTeamStats, setAwayTeamStats] = useState({});
+   const [homeTeamPowerPlayStats, setHomeTeamPowerPlayStats] = useState({});
+   const [awayTeamPowerPlayStats, setAwayTeamPowerPlayStats] = useState({});
+ 
+   useEffect(() => {
++    if (!gameId) return;
++    let active = true;
++    const isCurrent = () => active;
++    setGameDetailsStatus("loading");
++    setGameLandingStatus("loading");
++
+     async function fetchGameDetails() {
+-      if (!gameId) return;
+       const endpointURL = `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`;
+       try {
+-        const response = await Fetch(endpointURL).then((res) => res.json());
++        const res = await Fetch(endpointURL);
++        if (!res.ok) throw new Error(`Game details request failed (${res.status})`);
++        const response = await res.json();
++        if (!active) return;
++        if (!response?.homeTeam?.abbrev || !response?.awayTeam?.abbrev) {
++          setGameDetailsStatus("empty");
++          return;
++        }
+         const seasonId =
+           String(response?.season ?? response?.seasonId ?? "").trim() ||
+           deriveSeasonIdFromGameDate(response?.gameDate);
+         setGameDetails(response);
+-        fetchTeamStats(response.homeTeam.abbrev, "home", seasonId);
+-        fetchTeamStats(response.awayTeam.abbrev, "away", seasonId);
+-        fetchPowerPlayStats(response.homeTeam.abbrev, "home", seasonId);
+-        fetchPowerPlayStats(response.awayTeam.abbrev, "away", seasonId);
++        setGameDetailsStatus("ready");
++        fetchTeamStats(response.homeTeam.abbrev, "home", seasonId, isCurrent);
++        fetchTeamStats(response.awayTeam.abbrev, "away", seasonId, isCurrent);
++        fetchPowerPlayStats(response.homeTeam.abbrev, "home", seasonId, isCurrent);
++        fetchPowerPlayStats(response.awayTeam.abbrev, "away", seasonId, isCurrent);
+       } catch (error) {
++        if (!active) return;
++        setGameDetailsStatus("error");
+         console.error("Error fetching game details:", error);
+       }
+     }
+ 
+     async function fetchGameLandingDetails() {
+-      if (!gameId) return;
+       const landingURL = `https://api-web.nhle.com/v1/gamecenter/${gameId}/landing`;
+       try {
+-        const landingResponse = await Fetch(landingURL).then((res) =>
+-          res.json()
+-        );
++        const res = await Fetch(landingURL);
++        if (!res.ok) throw new Error(`Game landing request failed (${res.status})`);
++        const landingResponse = await res.json();
++        if (!active) return;
++        if (
++          typeof landingResponse?.gameState !== "string" ||
++          !landingResponse.gameState.trim()
++        ) {
++          setGameLandingStatus("empty");
++          return;
++        }
+         setGameLandingDetails(landingResponse); // Update state with fetched game landing details
++        setGameLandingStatus("ready");
+       } catch (error) {
++        if (!active) return;
++        setGameLandingStatus("error");
+         console.error("Error fetching game landing details:", error);
+       }
+     }
+ 
+     fetchGameDetails();
+     fetchGameLandingDetails();
+-  }, [gameId]);
++    return () => {
++      active = false;
++    };
++  }, [gameId, retryCount]);
+ 
+-  async function fetchTeamStats(teamAbbreviation, teamType, seasonId) {
++  async function fetchTeamStats(teamAbbreviation, teamType, seasonId, isCurrent) {
+     const franchiseId = teamsInfo[teamAbbreviation]?.franchiseId;
+     if (!franchiseId) return;
+ 
+@@ -79,6 +117,7 @@ export default function Page() {
+     const statsURL = `https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=false&sort=[{"property":"points","direction":"DESC"},{"property":"wins","direction":"DESC"},{"property":"teamId","direction":"ASC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=${franchiseId} and gameTypeId=2 and seasonId<=${targetSeasonId} and seasonId>=${targetSeasonId}`;
+     try {
+       const response = await Fetch(statsURL).then((res) => res.json());
++      if (!isCurrent()) return;
+       const statsData = response.data[0] || {}; // Assuming the first object contains the relevant stats
+       if (teamType === "home") {
+         setHomeTeamStats(statsData);
+@@ -86,11 +125,12 @@ export default function Page() {
+         setAwayTeamStats(statsData);
+       }
+     } catch (error) {
++      if (!isCurrent()) return;
+       console.error(`Error fetching ${teamType} team stats:`, error);
+     }
+   }
+ 
+-  async function fetchPowerPlayStats(teamAbbreviation, teamType, seasonId) {
++  async function fetchPowerPlayStats(teamAbbreviation, teamType, seasonId, isCurrent) {
+     // Match the teamID from teamsInfo to fetch the correct stats
+     const teamId = teamsInfo[teamAbbreviation]?.id;
+     if (!teamId) return;
+@@ -99,6 +139,7 @@ export default function Page() {
+     const powerPlayStatsURL = `https://api.nhle.com/stats/rest/en/team/powerplay?isAggregate=false&isGame=false&sort=[{"property":"powerPlayPct","direction":"DESC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=teamId=${teamId} and gameTypeId=2 and seasonId<=${targetSeasonId} and seasonId>=${targetSeasonId}`;
+     try {
+       const response = await Fetch(powerPlayStatsURL).then((res) => res.json());
++      if (!isCurrent()) return;
+       const powerPlayStats = response.data?.[0];
+       if (!powerPlayStats) {
+         console.error(`No power play stats found for teamId: ${teamId}`);
+@@ -110,6 +151,7 @@ export default function Page() {
+         setAwayTeamPowerPlayStats(powerPlayStats);
+       }
+     } catch (error) {
++      if (!isCurrent()) return;
+       console.error(`Error fetching ${teamType} team power play stats:`, error);
+     }
+   }
+@@ -638,12 +680,44 @@ export default function Page() {
+     ]
+   ); // Recalculate when dependencies change
+ 
++  const isLoading = gameDetailsStatus === "loading" || gameLandingStatus === "loading";
++  const hasError = gameDetailsStatus === "error" || gameLandingStatus === "error";
++  const hasEmptyResponse = gameDetailsStatus === "empty" || gameLandingStatus === "empty";
++  const requestFeedback = (
++    <>
++      {isLoading ? <p role="status">Loading game details...</p> : null}
++      {hasError ? (
++        <p role="alert">
++          {gameDetails
++            ? "Some game details could not be loaded. Showing available details."
++            : "Game details could not be loaded. Please try again."}
++        </p>
++      ) : !isLoading && hasEmptyResponse ? (
++        <p role="status">
++          {gameDetails
++            ? "Some game details are not available. Showing available details."
++            : "Game details are not available."}
++        </p>
++      ) : null}
++      {hasError || hasEmptyResponse || (isLoading && retryCount > 0) ? (
++        <button
++          type="button"
++          disabled={isLoading}
++          onClick={() => setRetryCount((count) => count + 1)}
++        >
++          {isLoading && retryCount > 0 ? "Retrying..." : "Retry"}
++        </button>
++      ) : null}
++    </>
++  );
++
+   if (
+     gameLandingDetails?.gameState === "FUT" ||
+     gameLandingDetails?.gameState === "PRE"
+   ) {
+     return (
+       <div className={styles["game-page"]} style={themeStyles}>
++        {requestFeedback}
+         {gameDetails ? (
+           <>
+             {renderGameHero()}
+@@ -661,9 +735,7 @@ export default function Page() {
+               </div>
+             </section>
+           </>
+-        ) : (
+-          <p>Loading game details...</p>
+-        )}
++        ) : null}
+       </div>
+     );
+   } else if (
+@@ -673,6 +745,7 @@ export default function Page() {
+   ) {
+     return (
+       <div className={styles["gameOverPage"]} style={themeStyles}>
++        {requestFeedback}
+         {gameDetails ? (
+           <>
+             {renderGameHero()}
+@@ -826,15 +899,17 @@ export default function Page() {
+               </div>
+             </section>
+           </>
+-        ) : (
+-          <p>Loading game details...</p>
+-        )}
++        ) : null}
+       </div>
+     );
+   } else {
+     return (
+       <div className={styles["game-page"]} style={themeStyles}>
+-        <p>Game details are not available.</p>
++        {requestFeedback}
++        {gameDetails ? renderGameHero() : null}
++        {!isLoading && !hasError && !hasEmptyResponse ? (
++          <p>Game details are not available.</p>
++        ) : null}
+       </div>
+     );
+   }
+diff --git a/web/__tests__/pages/game.test.tsx b/web/__tests__/pages/game.test.tsx
+new file mode 100644
+index 000000000..8dc1c4712
+--- /dev/null
++++ b/web/__tests__/pages/game.test.tsx
+@@ -0,0 +1,287 @@
++import React from "react";
++import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++
++const { router, fetchMock, boxscoreMock, landingMock } = vi.hoisted(() => ({
++  router: { query: { gameId: "2026020001" } },
++  fetchMock: vi.fn(),
++  boxscoreMock: vi.fn(),
++  landingMock: vi.fn(),
++}));
++
++vi.mock("next/router", () => ({ useRouter: () => router }));
++vi.mock("lib/cors-fetch", () => ({ default: fetchMock }));
++vi.mock("next/image", () => ({
++  default: ({ alt }: { alt: string }) => <span role="img" aria-label={alt} />,
++}));
++vi.mock("components/PoissonDistributionChart", () => ({ default: () => null }));
++vi.mock("components/GamePreview/GamePreview", () => ({
++  default: ({ gameId, gameContext }: { gameId: string; gameContext: { homeTeam: { abbrev: string } } }) => (
++    <div data-testid="game-preview">{gameId}: {gameContext.homeTeam.abbrev}</div>
++  ),
++}));
++
++import GamePage from "pages/game/[gameId]";
++
++function response(payload: unknown, ok = true) {
++  return {
++    ok,
++    status: ok ? 200 : 503,
++    json: vi.fn().mockResolvedValue(payload),
++  } as unknown as Response;
++}
++
++function boxscore(homeName = "Rangers", homeAbbrev = "NYR") {
++  return {
++    id: Number(router.query.gameId),
++    season: 20262027,
++    gameDate: "2026-10-15",
++    homeTeam: { abbrev: homeAbbrev, commonName: { default: homeName }, logo: "/home.svg", score: 2, sog: 20 },
++    awayTeam: { abbrev: "BOS", commonName: { default: "Bruins" }, logo: "/away.svg", score: 1, sog: 18 },
++  };
++}
++
++function deferredResponse() {
++  let resolve!: (value: Response) => void;
++  let reject!: (error: Error) => void;
++  const promise = new Promise<Response>((resolvePromise, rejectPromise) => {
++    resolve = resolvePromise;
++    reject = rejectPromise;
++  });
++  return { promise, resolve, reject };
++}
++
++describe("game page request states", () => {
++  beforeEach(() => {
++    router.query.gameId = "2026020001";
++    boxscoreMock.mockReset().mockResolvedValue(response(boxscore()));
++    landingMock.mockReset().mockResolvedValue(response({ gameState: "FUT" }));
++    fetchMock.mockReset().mockImplementation((url: string) => {
++      if (url.endsWith("/boxscore")) return boxscoreMock(url);
++      if (url.endsWith("/landing")) return landingMock(url);
++      if (url.startsWith("https://api.nhle.com/stats/rest/en/team/")) {
++        return Promise.resolve(response({ data: [{}] }));
++      }
++      throw new Error(`Unexpected fixture request: ${url}`);
++    });
++    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Real network requests are forbidden")));
++    vi.spyOn(console, "error").mockImplementation(() => {});
++  });
++
++  afterEach(() => {
++    cleanup();
++    expect(globalThis.fetch).not.toHaveBeenCalled();
++    vi.unstubAllGlobals();
++    vi.restoreAllMocks();
++  });
++
++  it.each(["FUT", "PRE", "OFF", "OVER", "FINAL"])(
++    "replaces settled loading with a retryable boxscore error for %s games",
++    async (gameState) => {
++      boxscoreMock.mockRejectedValue(new Error("Boxscore unavailable"));
++      landingMock.mockResolvedValue(response({ gameState }));
++
++      render(<GamePage />);
++
++      expect(await screen.findByRole("alert")).toBeTruthy();
++      expect(screen.queryByText("Loading game details...")).toBeNull();
++      expect((screen.getByRole("button", { name: "Retry" }) as HTMLButtonElement).disabled).toBe(false);
++      expect(boxscoreMock).toHaveBeenCalledTimes(1);
++      expect(landingMock).toHaveBeenCalledTimes(1);
++    },
++  );
++
++  it("preserves the available boxscore when the landing request fails", async () => {
++    landingMock.mockRejectedValue(new Error("Landing unavailable"));
++
++    render(<GamePage />);
++
++    expect(await screen.findByRole("alert")).toBeTruthy();
++    expect(screen.getByText("Rangers")).toBeTruthy();
++    expect(screen.queryByText("Loading game details...")).toBeNull();
++    expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
++  });
++
++  it("ends loading and offers recovery when both requests fail", async () => {
++    boxscoreMock.mockRejectedValue(new Error("Boxscore unavailable"));
++    landingMock.mockRejectedValue(new Error("Landing unavailable"));
++
++    render(<GamePage />);
++
++    expect(await screen.findByRole("alert")).toBeTruthy();
++    expect(screen.queryByText("Loading game details...")).toBeNull();
++    expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
++    expect(fetchMock).toHaveBeenCalledTimes(2);
++  });
++
++  it("does not claim to be retrying while the initial landing request is pending", async () => {
++    const landing = deferredResponse();
++    boxscoreMock.mockRejectedValue(new Error("Boxscore unavailable"));
++    landingMock.mockReturnValue(landing.promise);
++
++    render(<GamePage />);
++    await screen.findByRole("alert");
++
++    expect(screen.getByText("Loading game details...")).toBeTruthy();
++    const retryButton = screen.getByRole("button", { name: "Retry" }) as HTMLButtonElement;
++    expect(retryButton.disabled).toBe(true);
++    fireEvent.click(retryButton);
++    expect(boxscoreMock).toHaveBeenCalledTimes(1);
++    expect(landingMock).toHaveBeenCalledTimes(1);
++
++    await act(async () => landing.resolve(response({ gameState: "FUT" })));
++
++    expect(screen.queryByText("Loading game details...")).toBeNull();
++    expect((screen.getByRole("button", { name: "Retry" }) as HTMLButtonElement).disabled).toBe(false);
++  });
++
++  it.each([null, {}])("shows unavailable data instead of loading for an empty successful response: %j", async (payload) => {
++    boxscoreMock.mockResolvedValue(response(payload));
++    landingMock.mockResolvedValue(response(payload));
++
++    render(<GamePage />);
++
++    await waitFor(() => expect(screen.queryByText("Loading game details...")).toBeNull());
++    expect(screen.getByText("Game details are not available.")).toBeTruthy();
++    expect(screen.queryByRole("alert")).toBeNull();
++    expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
++    expect(fetchMock).toHaveBeenCalledTimes(2);
++  });
++
++  it("treats non-success HTTP responses as failures even if they contain game data", async () => {
++    boxscoreMock.mockResolvedValue(response(boxscore(), false));
++    landingMock.mockResolvedValue(response({ gameState: "FINAL" }, false));
++
++    render(<GamePage />);
++
++    expect(await screen.findByRole("alert")).toBeTruthy();
++    expect(screen.queryByText("Rangers")).toBeNull();
++    expect(screen.queryByText("Loading game details...")).toBeNull();
++    expect(fetchMock).toHaveBeenCalledTimes(2);
++  });
++
++  it("allows one pending retry and clears its failure after successful recovery", async () => {
++    boxscoreMock.mockRejectedValueOnce(new Error("Boxscore unavailable"));
++
++    render(<GamePage />);
++    await screen.findByRole("alert");
++
++    const retry = deferredResponse();
++    boxscoreMock.mockReturnValueOnce(retry.promise);
++    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
++
++    expect(screen.queryByRole("alert")).toBeNull();
++    expect(screen.getByText("Loading game details...")).toBeTruthy();
++    const retryButton = screen.getByRole("button", { name: "Retrying..." }) as HTMLButtonElement;
++    expect(retryButton.disabled).toBe(true);
++    fireEvent.click(retryButton);
++    expect(boxscoreMock).toHaveBeenCalledTimes(2);
++    expect(landingMock).toHaveBeenCalledTimes(2);
++
++    await act(async () => retry.resolve(response(boxscore())));
++
++    expect(screen.getByTestId("game-preview").textContent).toBe("2026020001: NYR");
++    expect(screen.queryByText("Loading game details...")).toBeNull();
++    expect(screen.queryByRole("alert")).toBeNull();
++    expect(screen.queryByRole("button", { name: /retry/i })).toBeNull();
++  });
++
++  it("keeps the last valid boxscore through pending, failed, and empty retries", async () => {
++    landingMock.mockRejectedValueOnce(new Error("Landing unavailable"));
++
++    render(<GamePage />);
++    await screen.findByRole("alert");
++    expect(screen.getByText("Rangers")).toBeTruthy();
++
++    const retry = deferredResponse();
++    boxscoreMock.mockReturnValueOnce(retry.promise);
++    landingMock.mockRejectedValueOnce(new Error("Landing still unavailable"));
++    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
++    expect(screen.getByText("Rangers")).toBeTruthy();
++
++    await act(async () => retry.reject(new Error("Boxscore unavailable")));
++    expect(screen.getByText("Rangers")).toBeTruthy();
++    expect(screen.queryByText("Loading game details...")).toBeNull();
++    expect(screen.getByRole("alert")).toBeTruthy();
++
++    boxscoreMock.mockResolvedValueOnce(response(null));
++    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
++    await waitFor(() => expect(screen.queryByText("Loading game details...")).toBeNull());
++
++    expect(screen.getByText("Rangers")).toBeTruthy();
++    expect(screen.getByText("Some game details are not available. Showing available details.")).toBeTruthy();
++    expect(screen.queryByRole("alert")).toBeNull();
++    expect(screen.getByTestId("game-preview").textContent).toBe("2026020001: NYR");
++    expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
++  });
++
++  it.each(["failure", "empty"])("retains the last valid landing data after a retry returns %s", async (outcome) => {
++    boxscoreMock.mockRejectedValueOnce(new Error("Boxscore unavailable"));
++    render(<GamePage />);
++    await screen.findByRole("alert");
++
++    if (outcome === "failure") {
++      landingMock.mockRejectedValueOnce(new Error("Landing unavailable"));
++    } else {
++      landingMock.mockResolvedValueOnce(response(null));
++    }
++    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
++
++    await waitFor(() => expect(screen.queryByText("Loading game details...")).toBeNull());
++    expect(screen.getByTestId("game-preview").textContent).toBe("2026020001: NYR");
++    expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
++    expect(screen.queryByRole("alert") !== null).toBe(outcome === "failure");
++  });
++
++  it("clears the prior game's data while a different game is pending", async () => {
++    const { rerender } = render(<GamePage />);
++    await screen.findByTestId("game-preview");
++
++    const nextBoxscore = deferredResponse();
++    const nextLanding = deferredResponse();
++    boxscoreMock.mockReturnValueOnce(nextBoxscore.promise);
++    landingMock.mockReturnValueOnce(nextLanding.promise);
++    router.query.gameId = "2026020002";
++    rerender(<GamePage />);
++
++    expect(screen.queryByText("Rangers")).toBeNull();
++    expect(screen.queryByTestId("game-preview")).toBeNull();
++    expect(screen.getByText("Loading game details...")).toBeTruthy();
++
++    await act(async () => {
++      nextBoxscore.resolve(response(boxscore("Maple Leafs", "TOR")));
++      nextLanding.resolve(response({ gameState: "FUT" }));
++    });
++    expect(screen.getByTestId("game-preview").textContent).toBe("2026020002: TOR");
++  });
++
++  it.each(["success", "failure"])("ignores a previous game's late %s after switching IDs", async (outcome) => {
++    const oldBoxscore = deferredResponse();
++    const oldLanding = deferredResponse();
++    const previousBoxscore = boxscore("Old Rangers");
++    boxscoreMock.mockReturnValueOnce(oldBoxscore.promise);
++    landingMock.mockReturnValueOnce(oldLanding.promise);
++    const { rerender } = render(<GamePage />);
++
++    router.query.gameId = "2026020002";
++    boxscoreMock.mockResolvedValueOnce(response(boxscore("Maple Leafs", "TOR")));
++    rerender(<GamePage />);
++    await screen.findByTestId("game-preview");
++    const requestCount = fetchMock.mock.calls.length;
++
++    await act(async () => {
++      if (outcome === "success") {
++        oldBoxscore.resolve(response(previousBoxscore));
++        oldLanding.resolve(response({ gameState: "FINAL" }));
++      } else {
++        oldBoxscore.reject(new Error("Old boxscore failure"));
++        oldLanding.reject(new Error("Old landing failure"));
++      }
++    });
++
++    expect(screen.getByTestId("game-preview").textContent).toBe("2026020002: TOR");
++    expect(screen.queryByText("Old Rangers")).toBeNull();
++    expect(screen.queryByRole("alert")).toBeNull();
++    expect(fetchMock).toHaveBeenCalledTimes(requestCount);
++  });
++});

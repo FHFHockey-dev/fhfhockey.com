@@ -1,0 +1,25 @@
+
+> web@0.1.0 test
+> vitest --run lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts hooks/useCandidateMetrics.test.tsx components/RosterScheduleOptimizer/CandidateCard.test.tsx components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:473) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:477) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:476) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:472) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ hooks/useCandidateMetrics.test.tsx (2 tests) 12ms
+ ✓ components/RosterScheduleOptimizer/CandidateCard.test.tsx (12 tests) 65ms
+ ✓ lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts (34 tests) 85ms
+ ✓ components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx (18 tests) 479ms
+
+ Test Files  4 passed (4)
+      Tests  66 passed (66)
+   Start at  17:07:56
+   Duration  1.23s (transform 658ms, setup 8ms, collect 1.10s, tests 640ms, environment 901ms, prepare 168ms)
+

@@ -1,0 +1,89 @@
+{
+  "status": "Production READY on exact approved commit; four recovery smoke checks passed with full TLS validation within five total counted attempts; canonical synchronization deferred",
+  "candidateCommit": "457435eb3010c5b3dd92d2e1a46d9c75d851780a",
+  "candidateTree": "15a49218d955fb8e41ed408ea5d6e0930052beea",
+  "sourceBranch": "master",
+  "remote": "https://github.com/FHFHockey-dev/fhfhockey.com.git",
+  "environment": "production",
+  "vercelTeam": "team_KVFicHhQJARTbO6wRD2x6jpq",
+  "project": "fhfhockey",
+  "projectId": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+  "path": "One ordinary fast-forward Git push of exact candidate to master; no CLI deployment, promotion, preview or retry",
+  "expectedEntries": [
+    {
+      "project": "fhfhockey",
+      "root": "web",
+      "branch": "master",
+      "expected": "one completed production web build; web path delta triggers existing filter"
+    },
+    {
+      "project": "fhfhockey.com",
+      "root": null,
+      "branch": "master",
+      "expected": "canceled/ignored entry; root ignoreCommand exit0"
+    },
+    {
+      "project": "cms-fhfhockey",
+      "root": "cms",
+      "branch": "master",
+      "expected": "ignored/canceled entry; no CMS delta, existing path filter"
+    },
+    {
+      "project": "functions-fhfhockey",
+      "root": "functions",
+      "branch": "master",
+      "expected": "ignored/canceled entry; no functions delta, existing path filter"
+    }
+  ],
+  "previewDeployments": "All4projects previewDeploymentsDisabled=true; no preview action or October remote push planned",
+  "costLimits": "One web build; no duplicate/retry absent relevant evidence. Exact dollar cost and remote prerender read count unknown. Companion fail-open behavior if history is unavailable is disclosed; stop and report unexpected builds, do not change settings.",
+  "candidateDeploymentLookup": "0productionentries for exactSHA at prepublication check",
+  "rollback": {
+    "deployment": "dpl_HxdhE1sPUQM9RXaBuUJK1y4VFcPW",
+    "sourceCommit": "90d3d5963f47dccfe690d5582dae3d23a598e16d",
+    "state": "READY",
+    "domains": [
+      "fhfhockey.com",
+      "www.fhfhockey.com"
+    ],
+    "path": "Existing deployment rollback/promotion only; no rebuild necessary; autoassignment implications per Vercel skill"
+  },
+  "smoke": {
+    "maxRequests": 5,
+    "concurrency": 1,
+    "retry": false,
+    "followRedirects": false,
+    "requests": [
+      {
+        "path": "/robots.txt",
+        "expectedStatus": 200
+      },
+      {
+        "path": "/sitemap.xml",
+        "expectedStatus": 200
+      },
+      {
+        "path": "/auth/reset-password",
+        "expectedStatus": 200,
+        "sourceAudit": "getServerSideProps returns empty props; no SSR service action"
+      },
+      {
+        "path": "/game/2026010049",
+        "expectedStatus": 200,
+        "sourceAudit": "getServerSideProps returns empty props; no SSR service action"
+      },
+      {
+        "path": "/api/cors?url=http%3A%2F%2F127.0.0.1",
+        "expectedStatus": 400,
+        "sourceAudit": "parseNhlProxyUrl rejects HTTP/host before DNS/fetch"
+      }
+    ],
+    "stop": "First unexpected status/transport error, or after5checks; no cron/ingestion endpoints"
+  },
+  "synchronization": "Prepared clean October merge f08e59095260a35405f5eb121b497a4b2bfffce7. Preserve dirty sources; apply only four reviewed auth fixtures at base hashes; CAS-update local October head and index to merge without reset/stash/checkout; update local master after remote master confirmed. No force push; remote October unchanged.",
+  "authorization": "TJ conditional production push reconciled by Scout before the single exact-SHA ordinary fast-forward push; executed once successfully",
+  "flags": "No feature inclusion relies on uncertain/hidden flag values.403metadata denial and supportedCLI fallback provenance retained; no further env/credential reads.",
+  "canonicalSynchronizationExecuted": false,
+  "productionTerminalEvidence": "production-terminal-result.json",
+  "smokeOutcome": "production-smoke-recovery-result.json: four remaining allowlisted checks passed with installed Certifi normal chain/hostname validation after client CA diagnosis; original failed robots attempt retained/not retried. Five total counted attempts, four HTTP responses; no retries/redirects."
+}

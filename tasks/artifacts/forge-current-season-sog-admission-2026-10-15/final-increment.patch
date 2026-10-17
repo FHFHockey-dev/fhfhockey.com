@@ -1,0 +1,533 @@
+--- a/web/lib/player-forecasts/currentSeasonSogContribution.ts
++++ b/web/lib/player-forecasts/currentSeasonSogContribution.ts
+@@ -0,0 +1,77 @@
++import { assembleCurrentSeasonSogBaseline, CURRENT_SEASON_SOG_VERSION } from "./currentSeasonSogBaseline";
++import { playerForecastSourcePayloadHash as hash } from "./sourceSnapshot";
++import { timestampMicros } from "../projections/evidenceTime";
++import type { ContributionGame, ContributionSource } from "./contributions";
++import { contributionBundleChecksum } from "./contributionStore";
++
++export const CURRENT_SEASON_SOG_INPUT_VERSION = "current-season-sog-contribution-inputs-v1";
++export type CurrentSeasonSogContributionInput = {
++  version: typeof CURRENT_SEASON_SOG_INPUT_VERSION;
++  packet: ReturnType<typeof assembleCurrentSeasonSogBaseline>;
++  binding: ContributionGame & { observedAt: string };
++};
++const keys = (value: unknown, allowed: string[]) => !!value && typeof value === "object" && !Array.isArray(value)
++  && Object.keys(value).length === allowed.length && Object.keys(value).every(key => allowed.includes(key));
++const clock = (value: string) => { const time = timestampMicros(value); if (time === null) throw new Error("Invalid SOG binding clock."); return time; };
++
++/** Replay supplied receipts for validation, retaining original forecast time.
++ * Contribution issuance is distinct from the earlier private forecast generation. */
++export function buildCurrentSeasonSogContribution(input: CurrentSeasonSogContributionInput,
++  issuedAt: string, now = new Date()): ContributionSource {
++  if (!keys(input, ["version", "packet", "binding"]) || input.version !== CURRENT_SEASON_SOG_INPUT_VERSION
++    || !input.packet || !keys(input.binding, ["playerId", "nhlPlayerId", "seasonId", "teamId", "gameId",
++      "scheduledAt", "scheduleRevision", "rosterRevision", "observedAt"])) throw new Error("Invalid versioned SOG contribution input.");
++  const { packet, binding } = input;
++  if (packet.version !== CURRENT_SEASON_SOG_VERSION || packet.status !== "unreleased_local"
++    || typeof packet.generatedAt !== "string" || new Date(packet.generatedAt).toISOString() !== packet.generatedAt) {
++    throw new Error("Original SOG generation clock/version is incompatible.");
++  }
++  const replay = assembleCurrentSeasonSogBaseline(packet.sourceReceipts, new Date(packet.generatedAt));
++  if (hash(replay) !== hash(packet)) throw new Error("SOG packet does not reproduce from original receipt bytes.");
++  const scope = replay.scope;
++  const target = JSON.parse(packet.sourceReceipts.schedule.rawBody).games.find((game: { id: number }) => game.id === scope.targetGameId);
++  if (binding.playerId !== scope.playerId || binding.nhlPlayerId !== scope.nhlPlayerId
++    || binding.teamId !== scope.teamId || binding.seasonId !== scope.seasonId || binding.gameId !== scope.targetGameId
++    || clock(binding.scheduledAt) !== clock(target.startTimeUTC)
++    || !/^[a-f0-9]{64}$/.test(binding.scheduleRevision) || !/^[a-f0-9]{64}$/.test(binding.rosterRevision)
++    || clock(binding.observedAt) < clock(packet.generatedAt) || clock(binding.observedAt) > clock(issuedAt)
++    || clock(issuedAt) > BigInt(now.getTime()) * BigInt(1000)
++    || clock(issuedAt) >= clock(packet.expiresAt) || clock(packet.expiresAt) <= BigInt(now.getTime()) * BigInt(1000)) {
++    throw new Error("SOG game/start/revision binding is inconsistent, future or expired.");
++  }
++  const unsigned = { kind: "baseline" as const, policyVersion: CURRENT_SEASON_SOG_VERSION, released: false,
++    playerId: binding.playerId, nhlPlayerId: binding.nhlPlayerId, seasonId: binding.seasonId,
++    teamId: binding.teamId, gameId: binding.gameId, scheduledAt: binding.scheduledAt,
++    targetKey: "SHOTS_ON_GOAL", unit: "count" as const, basis: "per_appearance" as const,
++    mean: packet.target.mean, participationIntegrated: false, cutoffAt: packet.cutoffAt, issuedAt,
++    expiresAt: packet.expiresAt, sourceWatermark: hash(input), scheduleRevision: binding.scheduleRevision,
++    rosterRevision: binding.rosterRevision, limitations: [...packet.limitations,
++      `Original conditional forecast generated: ${packet.generatedAt}; original input cutoff: ${packet.cutoffAt}.`,
++      `Game/roster context bound: ${binding.observedAt}; contribution issued: ${issuedAt}.`,
++      `SOG support: ${packet.target.sampleSize} positive-minute appearances; dates ${packet.target.sampleDates.join(", ")}.`,
++      "This source covers only the bound game. Receipt replay does not authenticate the supplied context binding."] };
++  return { ...unsigned, sourceId: `baseline:${hash({ policyVersion: CURRENT_SEASON_SOG_VERSION,
++    inputHash: unsigned.sourceWatermark, targetKey: unsigned.targetKey })}` };
++}
++
++/** Unreleased, default-deny bundle; persisting or approving it is a separate action. */
++export function buildCurrentSeasonSogContributionBundle(input: CurrentSeasonSogContributionInput, issuedAt: string, now = new Date()) {
++  const source = buildCurrentSeasonSogContribution(input, issuedAt, now);
++  const manifest = { seasonId: source.seasonId, policyVersion: source.policyVersion, inputCutoff: source.cutoffAt,
++    issuedAt, expiresAt: source.expiresAt, sourceCount: 1, sourceWatermarks: [source.sourceWatermark],
++    rosterRevisions: [source.rosterRevision], evaluationPolicyId: null, reviewId: null, released: false };
++  return { sources: [source], manifest: { ...manifest, checksum: contributionBundleChecksum({ manifest, sources: [source] }) } };
++}
++
++/** Called only after existing exact policy/review/allowlist admission. No files or DB reads. */
++export function admitsCurrentSeasonSogContribution(source: ContributionSource, row: any, now: Date): boolean {
++  try {
++    if (row?.provider !== "fhfh" || row.dataset_key !== "baseline-inputs-v1" || row.entity_kind !== "player"
++      || row.entity_key !== `${source.seasonId}:${source.playerId}` || row.payload_hash !== source.sourceWatermark
++      || hash(row.payload) !== row.payload_hash || clock(row.available_at) !== clock(row.payload?.binding?.observedAt)) return false;
++    const derived = buildCurrentSeasonSogContribution(row.payload, source.issuedAt, now);
++    const candidate = { ...source, released: false };
++    delete candidate.allowedUses;
++    return hash(candidate) === hash(derived);
++  } catch { return false; }
++}
+--- a/web/lib/player-forecasts/currentSeasonSogContribution.test.ts
++++ b/web/lib/player-forecasts/currentSeasonSogContribution.test.ts
+@@ -0,0 +1,181 @@
++// @vitest-environment node
++import { createHash } from "node:crypto";
++import { describe, expect, it } from "vitest";
++import { assembleCurrentSeasonSogBaseline, CURRENT_SEASON_SOG_SCOPE as scope } from "./currentSeasonSogBaseline";
++import { admitsCurrentSeasonSogContribution, buildCurrentSeasonSogContribution,
++  buildCurrentSeasonSogContributionBundle, CURRENT_SEASON_SOG_INPUT_VERSION,
++  type CurrentSeasonSogContributionInput } from "./currentSeasonSogContribution";
++import { contributionBundleCandidateInputHash, contributionBundleChecksum, loadApprovedContributionBundle, persistContributionBundle } from "./contributionStore";
++import { loadNativeContributionBundle } from "./nativeContributionAdmission";
++import { playerForecastSourcePayloadHash as hash } from "./sourceSnapshot";
++import { resolveContribution } from "./contributions";
++import { buildGameExpectations } from "./gameExpectations";
++import type { PlanningData } from "../rosterScheduleOptimizer/planningTypes";
++
++const now = new Date("2026-10-15T22:10:00Z"), issuedAt = "2026-10-15T22:05:00Z";
++// Synthetic public-response fixtures only; none qualify genuine readback or publication.
++function fixture() {
++  const response = (payload: unknown, url: string) => { const rawBody = JSON.stringify(payload);
++    return { rawBody, url, capturedAt: "2026-10-15T19:00:00Z", bodySha256: createHash("sha256").update(rawBody).digest("hex") }; };
++  const games = [8, 10].map((day, i) => ({ id: 2026020001 + i, season: scope.seasonId, gameType: 2,
++    gameDate: `2026-10-${String(day).padStart(2, "0")}`, startTimeUTC: `2026-10-${String(day).padStart(2, "0")}T23:00:00Z`,
++    homeTeam: { id: 13 }, awayTeam: { id: 23 }, gameState: "OFF" }));
++  const packet = assembleCurrentSeasonSogBaseline({ schedule: response({ games: [...games,
++    { ...games[0], id: scope.targetGameId, gameDate: "2026-10-15", startTimeUTC: "2026-10-15T23:00:00Z", gameState: "FUT" }] },
++  "https://api-web.nhle.com/v1/club-schedule-season/VAN/20262027"), boxscores: games.map((game, i) => response({ ...game,
++    playerByGameStats: { homeTeam: { forwards: [{ playerId: 1 }], defense: [], goalies: [{ playerId: 2 }] },
++      awayTeam: { forwards: [{ playerId: scope.nhlPlayerId, toi: "20:00", sog: i * 4 }], defense: [], goalies: [{ playerId: 3 }] } } },
++  `https://api-web.nhle.com/v1/gamecenter/${game.id}/boxscore`)) }, new Date("2026-10-15T20:00:00Z"));
++  const binding: CurrentSeasonSogContributionInput["binding"] = { playerId: scope.playerId, nhlPlayerId: scope.nhlPlayerId, teamId: scope.teamId,
++    seasonId: scope.seasonId, gameId: scope.targetGameId, scheduledAt: "2026-10-15T23:00:00Z",
++    scheduleRevision: "a".repeat(64), rosterRevision: "b".repeat(64), observedAt: "2026-10-15T22:00:00Z" };
++  const input: CurrentSeasonSogContributionInput = { version: CURRENT_SEASON_SOG_INPUT_VERSION, packet, binding };
++  const source = buildCurrentSeasonSogContribution(input, issuedAt, now);
++  const row = { provider: "fhfh", dataset_key: "baseline-inputs-v1", entity_kind: "player",
++    entity_key: `20262027:${scope.playerId}`, available_at: binding.observedAt, payload_hash: hash(input), payload: input };
++  return { input, source, row };
++}
++function database(replies: unknown[][]) {
++  let i = 0;
++  const query: any = { select: () => query, eq: () => query, in: () => query, limit: () => query,
++    then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data: replies[i++] ?? [], error: null }).then(resolve) };
++  return { from: () => query } as any;
++}
++function releasedFixture() {
++  const f = fixture(), bundle = buildCurrentSeasonSogContributionBundle(f.input, issuedAt, now);
++  const policyId = "11111111-1111-4111-8111-111111111111", reviewId = "22222222-2222-4222-8222-222222222222",
++    bundleId = "33333333-3333-4333-8333-333333333333";
++  const sources = bundle.sources.map(source => ({ ...source, released: true }));
++  const { checksum: _checksum, ...initial } = bundle.manifest;
++  const unsigned = { ...initial, released: true, evaluationPolicyId: policyId, reviewId };
++  const published = { sources, manifest: { ...unsigned, checksum: contributionBundleChecksum({ manifest: unsigned, sources }) } };
++  const candidateInputHash = contributionBundleCandidateInputHash(published);
++  const policy = { version: "baseline-evaluation-policy-v1", seasonId: scope.seasonId, policyVersion: f.source.policyVersion,
++    candidateInputHash, status: "owner_approved", allowedPublicUses: ["conditionalTieBreak"],
++    prospectiveEvidenceRef: "synthetic source capture only", ownerApprovalRef: "synthetic conditional-use approval",
++    approvedAt: "2026-10-15T22:01:00Z" };
++  const review = { version: "baseline-validation-review-v1", seasonId: scope.seasonId, policyVersion: f.source.policyVersion,
++    candidateInputHash, policyHash: hash(policy), bundleChecksum: published.manifest.checksum, status: "owner_approved",
++    eligible: true, prospectiveEvidenceRef: policy.prospectiveEvidenceRef, ownerApprovalRef: policy.ownerApprovalRef,
++    reviewedAt: "2026-10-15T22:06:00Z" };
++  const receipt = <T>(id: string, dataset: string, kind: string, payload: T, at: string) => ({ id, provider: "fhfh",
++    dataset_key: dataset, entity_kind: kind, entity_key: "20262027", available_at: at, payload_hash: hash(payload), payload });
++  const bundleRow = receipt(bundleId, "contribution-bundle-v1", "seasonal_rate_bundle", published, issuedAt);
++  const policyRow = receipt(policyId, "baseline-evaluation-policy-v1", "baseline_evaluation_policy", policy, policy.approvedAt);
++  const reviewRow = receipt(reviewId, "baseline-validation-review-v1", "baseline_validation_review", review, review.reviewedAt);
++  return { ...f, published, bundleRow, policyRow, reviewRow, environment: { PLAYER_FORECAST_BASELINE_RELEASE_IDS: bundleId } };
++}
++
++describe("current-season SOG one-game contribution adapter", () => {
++  it("keeps original forecast clocks distinct from later binding/issuance and defaults unreleased", async () => {
++    const { input, source } = fixture(), before = JSON.stringify(input);
++    expect(source).toMatchObject({ mean: 2, gameId: scope.targetGameId, targetKey: "SHOTS_ON_GOAL", released: false,
++      cutoffAt: "2026-10-15T20:00:00.000Z", issuedAt, expiresAt: "2026-10-15T23:00:00Z", participationIntegrated: false });
++    expect(source.allowedUses).toBeUndefined();
++    expect(source.limitations?.join(" ")).toContain("Original conditional forecast generated: 2026-10-15T20:00:00.000Z");
++    expect(source.sourceWatermark).toBe(hash(input)); expect(source.sourceWatermark).not.toBe(input.packet.payloadHash);
++    expect(JSON.stringify(input)).toBe(before);
++    const bundle = buildCurrentSeasonSogContributionBundle(input, issuedAt, now);
++    const noDatabase = new Proxy({}, { get() { throw new Error("Database forbidden"); } });
++    expect(await persistContributionBundle(noDatabase as never, bundle)).toMatchObject({ dryRun: true, snapshotId: null });
++    const later = buildCurrentSeasonSogContributionBundle(input, "2026-10-15T22:07:00Z", now);
++    expect(contributionBundleCandidateInputHash(later)).toBe(contributionBundleCandidateInputHash(bundle));
++  });
++  it.each(["version", "mean", "body", "player", "nhl", "team", "season", "game", "start", "scheduleRevision",
++    "rosterRevision", "earlyBinding", "futureBinding", "futureIssue", "expired"])("rejects %s input/clock before transport", kind => {
++    const { input } = fixture(); let issue = issuedAt, asOf = now;
++    if (kind === "version") input.version = "unknown" as never;
++    if (kind === "mean") input.packet.target.mean = 999;
++    if (kind === "body") input.packet.sourceReceipts.boxscores[0].rawBody += " ";
++    if (kind === "player") input.binding.playerId++;
++    if (kind === "nhl") input.binding.nhlPlayerId++;
++    if (kind === "team") input.binding.teamId++;
++    if (kind === "season") input.binding.seasonId = 20252026;
++    if (kind === "game") input.binding.gameId++;
++    if (kind === "start") input.binding.scheduledAt = "2026-10-15T23:00:00.000001Z";
++    if (kind === "scheduleRevision") input.binding.scheduleRevision = "unverified";
++    if (kind === "rosterRevision") input.binding.rosterRevision = "unverified";
++    if (kind === "earlyBinding") input.binding.observedAt = "2026-10-15T19:59:59.999999Z";
++    if (kind === "futureBinding") input.binding.observedAt = "2026-10-15T22:05:00.000001Z";
++    if (kind === "futureIssue") issue = "2026-10-15T22:10:00.000001Z";
++    if (kind === "expired") asOf = new Date("2026-10-15T23:00:00Z");
++    expect(() => buildCurrentSeasonSogContribution(input, issue, asOf)).toThrow();
++  });
++  it("requires original native input reproduction even after adversarial rehashing", () => {
++    const { source, row } = fixture(); source.released = true;
++    expect(admitsCurrentSeasonSogContribution(source, row, now)).toBe(true);
++    row.payload.packet.target.mean = source.mean = 999;
++    row.payload_hash = source.sourceWatermark = hash(row.payload);
++    source.sourceId = `baseline:${hash({ policyVersion: source.policyVersion, inputHash: source.sourceWatermark, targetKey: source.targetKey })}`;
++    expect(admitsCurrentSeasonSogContribution(source, row, now)).toBe(false);
++  });
++  it.each(["game", "start", "schedule", "roster", "season", "nhl", "expiry"])("withholds a transported source with mismatched %s context", kind => {
++    const { input, source } = fixture(); source.released = true;
++    source.allowedUses = { assignment: true, totals: true, comparison: true, conditionalTieBreak: true };
++    const game = { ...input.binding };
++    if (kind === "game") game.gameId++;
++    if (kind === "start") game.scheduledAt = "2026-10-15T23:00:00.000001Z";
++    if (kind === "schedule") game.scheduleRevision = "c".repeat(64);
++    if (kind === "roster") game.rosterRevision = "c".repeat(64);
++    if (kind === "season") game.seasonId = 20252026;
++    if (kind === "nhl") game.nhlPlayerId++;
++    const result = resolveContribution({ game, targetKey: "SHOTS_ON_GOAL", now: kind === "expiry" ? source.expiresAt : now.toISOString(), baseline: source });
++    expect(result.sourceKind).toBeNull(); expect(result.conditionalMean).toBeNull();
++  });
++  it("does not invent participation or blend the finite canary into a different forecast", () => {
++    const { input, source } = fixture(); source.released = true;
++    source.allowedUses = { assignment: true, totals: true, comparison: true, conditionalTieBreak: true };
++    const participation = { ...input.binding, released: true, allowedUses: source.allowedUses, basis: "appearance" as const,
++      probability: 1, revisionId: "synthetic-confirmation", cutoffAt: issuedAt, issuedAt, expiresAt: source.expiresAt };
++    const conditional = resolveContribution({ game: input.binding, targetKey: "SHOTS_ON_GOAL", now: now.toISOString(), baseline: source, participation });
++    expect(conditional.conditionalMean).toBe(2); expect(conditional.unconditionalMean).toBeNull();
++    expect(conditional.participationRevisionId).toBeNull();
++    expect(conditional.allowedUses).toEqual({ assignment: false, totals: false, comparison: false, conditionalTieBreak: true });
++    const detailed = { ...source, kind: "detailed" as const, policyVersion: "existing-detailed-v1", mean: 10 };
++    const selected = resolveContribution({ game: input.binding, targetKey: "SHOTS_ON_GOAL", now: now.toISOString(), baseline: source, detailed });
++    expect(selected.sourceKind).toBe("detailed"); expect(selected.conditionalMean).toBe(10); expect(selected.blendWeight).toBeNull();
++  });
++  it("reads through existing explicit policy/review/native admission without DB writes", async () => {
++    const f = releasedFixture();
++    const result = await loadNativeContributionBundle(database([[f.bundleRow], [f.policyRow, f.reviewRow], [f.row]]),
++      scope.seasonId, now, { environment: f.environment });
++    expect(result.sources).toHaveLength(1);
++    expect(result.sources[0]).toMatchObject({ gameId: scope.targetGameId, scheduledAt: f.input.binding.scheduledAt,
++      mean: 2, allowedUses: { assignment: false, totals: false, comparison: false, conditionalTieBreak: true } });
++    const resolved = resolveContribution({ game: f.input.binding, targetKey: "SHOTS_ON_GOAL", now: now.toISOString(), baseline: result.sources[0] });
++    expect(resolved.conditionalMean).toBe(2); expect(resolved.unconditionalMean).toBeNull();
++    expect(resolved.participationRevisionId).toBeNull();
++    const snapshot: PlanningData = { players: [{ id: String(scope.playerId), nhlId: scope.nhlPlayerId, nhlTeamId: scope.teamId,
++      rosterRevision: f.input.binding.rosterRevision, name: "Synthetic SOG Skater", teamAbbreviation: "VAN", eligiblePositions: ["RW"],
++      playerClass: "skater", availability: "unknown", ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] }],
++    games: [scope.targetGameId, scope.targetGameId + 1].map((id, index) => ({ id: String(id), date: index ? "2026-10-17" : "2026-10-15",
++      startsAt: index ? "2026-10-17T23:00:00Z" : f.input.binding.scheduledAt, teamAbbreviation: "VAN", opponent: "FLA", home: false,
++      status: "scheduled" as const, scheduleRevision: f.input.binding.scheduleRevision })), forecasts: [], baselineSources: result.sources,
++    evidence: { schedule: { source: "synthetic", seasonId: scope.seasonId, asOf: now.toISOString(), completeness: "complete", limitations: [] } } };
++    const view = buildGameExpectations(snapshot, { seasonId: scope.seasonId, startDate: "2026-10-15", endDate: "2026-10-18",
++      timeZone: "UTC", mode: "next_n", games: 2 }, now);
++    expect(view.players[0].games.map(game => game.targets.SHOTS_ON_GOAL.conditional)).toEqual([2, null]);
++    expect(view.players[0].games[0].targets.SHOTS_ON_GOAL.sources[0].methodVersion).toBe(f.source.policyVersion);
++    expect(view.players[0].totals.SHOTS_ON_GOAL.expected).toBeNull();
++    expect(view.players[0].expectedAppearances).toBeNull();
++  });
++  it("keeps default serving disabled and rejects permission broadening", async () => {
++    const f = releasedFixture();
++    expect((await loadApprovedContributionBundle(database([]), scope.seasonId, now, { environment: {} })).sources).toEqual([]);
++    f.policyRow.payload.allowedPublicUses.push("comparison"); f.policyRow.payload_hash = hash(f.policyRow.payload);
++    expect((await loadApprovedContributionBundle(database([[f.bundleRow], [f.policyRow, f.reviewRow]]), scope.seasonId, now,
++      { environment: f.environment })).sources).toEqual([]);
++  });
++  it.each(["gameId", "scheduledAt"])("preserves legacy strict shape rejection for an explicit null %s", async field => {
++    const { input } = fixture(), initial = buildCurrentSeasonSogContributionBundle(input, issuedAt, now);
++    const source = { ...initial.sources[0], policyVersion: "synthetic-legacy-global-v1" };
++    delete source.gameId; delete source.scheduledAt;
++    const { checksum: _checksum, ...base } = initial.manifest;
++    const manifest = { ...base, policyVersion: source.policyVersion };
++    const sources = [{ ...source, [field]: null }];
++    const bundle = { sources: sources as any, manifest: { ...manifest,
++      checksum: contributionBundleChecksum({ manifest, sources: sources as any }) } };
++    const noDatabase = new Proxy({}, { get() { throw new Error("Database forbidden"); } });
++    await expect(persistContributionBundle(noDatabase as never, bundle)).rejects.toThrow(/Invalid or incomplete/);
++  });
++});
+--- a/web/lib/player-forecasts/contributions.ts
++++ b/web/lib/player-forecasts/contributions.ts
+@@ -1,6 +1,7 @@
+ import { timestampMicros } from "../projections/evidenceTime";
+ 
+ export const CONTRIBUTION_RESOLVER_POLICY_VERSION = "contribution-resolver-v1";
++export const CURRENT_SEASON_SOG_CONTRIBUTION_VERSION = "current-season-sog-appearance-mean-v1";
+ 
+ /** Calendar coverage/overlap policy; independent of next-N-team-games ordinals. */
+ export type ForecastCalendarPolicy = { version: "forecast-calendar-v1"; calendarDays: number;
+@@ -138,20 +139,29 @@
+   now: string): ContributionExclusion[] {
+   if (!source) return ["no_issued_revision"];
+   const reasons: ContributionExclusion[] = [];
++  const scopedSog = source.policyVersion === CURRENT_SEASON_SOG_CONTRIBUTION_VERSION;
++  const time = (value: string) => scopedSog
++    ? timestampMicros(value) === null ? NaN : Number(timestampMicros(value)) : milliseconds(value);
+   if (!source.released) reasons.push("unreleased_source");
+   if (source.playerId !== game.playerId || source.nhlPlayerId !== game.nhlPlayerId
+     || source.seasonId !== game.seasonId || source.teamId !== game.teamId
+-    || (source.kind === "detailed" && source.gameId !== game.gameId)
+-    || ((source.kind === "detailed" || source.participationIntegrated)
++    || ((source.kind === "detailed" || scopedSog) && source.gameId !== game.gameId)
++    || ((source.kind === "detailed" || source.participationIntegrated || scopedSog)
+       && source.scheduleRevision !== game.scheduleRevision)
+-    || source.rosterRevision !== game.rosterRevision) reasons.push("identity_conflict");
++    || source.rosterRevision !== game.rosterRevision
++    || scopedSog && (source.kind !== "baseline" || source.targetKey !== "SHOTS_ON_GOAL" || source.unit !== "count"
++      || source.basis !== "per_appearance" || source.participationIntegrated
++      || !Number.isFinite(time(source.scheduledAt ?? "")) || time(source.scheduledAt!) !== time(game.scheduledAt)
++      || !Number.isFinite(time(source.expiresAt)) || time(source.expiresAt) > time(game.scheduledAt)
++      || time(source.expiresAt) <= time(source.issuedAt))) reasons.push("identity_conflict");
+   if (source.targetKey !== targetKey || !Number.isFinite(source.mean)
+     || (targetKey !== "PLUS_MINUS" && source.mean < 0)) reasons.push("missing_target");
+-  if (!validTime(source.cutoffAt) || !validTime(source.issuedAt)
+-    || milliseconds(source.cutoffAt) > milliseconds(source.issuedAt)
+-    || milliseconds(source.cutoffAt) > milliseconds(game.scheduledAt)
+-    || milliseconds(source.issuedAt) > milliseconds(now)) reasons.push("future_input");
+-  if (!validTime(source.expiresAt) || milliseconds(source.expiresAt) <= milliseconds(now)) reasons.push("stale_source");
++  if (!Number.isFinite(time(now)) || !validTime(source.cutoffAt) || !validTime(source.issuedAt)
++    || !Number.isFinite(time(source.cutoffAt)) || !Number.isFinite(time(source.issuedAt))
++    || time(source.cutoffAt) > time(source.issuedAt)
++    || time(source.cutoffAt) > time(game.scheduledAt)
++    || time(source.issuedAt) > time(now)) reasons.push("future_input");
++  if (!validTime(source.expiresAt) || !Number.isFinite(time(source.expiresAt)) || time(source.expiresAt) <= time(now)) reasons.push("stale_source");
+   if (source.legacyAvailabilityAdjustment
+     || (["unconditional_game", "per_team_game"].includes(source.basis) !== source.participationIntegrated)) {
+     reasons.push("unsupported_conditioning");
+@@ -161,6 +171,8 @@
+ 
+ function participationFor(source: ContributionSource, participation: ContributionParticipation | undefined,
+   now: string, game: ContributionGame): number | null {
++  // This finite conditional canary has no admitted participation contract.
++  if (source.policyVersion === CURRENT_SEASON_SOG_CONTRIBUTION_VERSION) return null;
+   if (source.participationIntegrated) return 1;
+   const basis = source.basis === "per_start" ? "start" : "appearance";
+   const model = participation?.model;
+@@ -245,7 +257,7 @@
+   let sourceKind: ResolvedContribution["sourceKind"] = selected?.kind ?? null;
+   let sourceIds = selected ? [selected.sourceId] : [];
+   let blendWeight: number | null = null;
+-  if (detailed && baseline && horizonDays > 0) {
++  if (detailed && baseline && horizonDays > 0 && baseline.policyVersion !== CURRENT_SEASON_SOG_CONTRIBUTION_VERSION) {
+     const weight = Math.min(1, Math.max(0, (horizonDays - lead) / calendarPolicy!.overlapDays));
+     if (weight < 1) {
+       if (detailed.unit === baseline.unit && detailed.basis === baseline.basis
+--- a/web/lib/player-forecasts/contributions.test.ts
++++ b/web/lib/player-forecasts/contributions.test.ts
+@@ -37,6 +37,21 @@
+   issuedAt: "2026-09-29T00:00:00Z" };
+ 
+ describe("shared contribution resolver", () => {
++  it.each(["", "not-a-clock", "2026-99-99T00:00:00Z"])("withholds every source for invalid read clock %j", (now) => {
++    for (const kind of ["baseline", "detailed"] as const) {
++      for (const participationIntegrated of [false, true]) {
++        const candidate: ContributionSource = { ...source, kind, participationIntegrated,
++          basis: participationIntegrated ? "unconditional_game" : "per_appearance" };
++        const resolved = resolveContribution({ game, targetKey: "GOALS", now, [kind]: candidate });
++        expect(resolved.sourceKind).toBeNull();
++        expect(resolved.conditionalMean).toBeNull();
++        expect(resolved.unconditionalMean).toBeNull();
++        expect(resolved.sourceIds).toEqual([]);
++        expect(Object.values(resolved.allowedUses)).toEqual([false, false, false, false]);
++        expect(resolved.exclusionReasons).toContain("future_input");
++      }
++    }
++  });
+   it.each([7, 14, 21])("retains the %i-day UTC policy and measures its discrete overlap boundary", (days) => {
+     const policy = forecastCalendarPolicy(days);
+     const baseline = { ...source, kind: "baseline" as const, sourceId: "rate", mean: 1,
+--- a/web/lib/player-forecasts/contributionStore.ts
++++ b/web/lib/player-forecasts/contributionStore.ts
+@@ -1,6 +1,7 @@
+ import type { SupabaseClient } from "@supabase/supabase-js";
+ 
+ import type { ContributionAllowedUses, ContributionSource } from "./contributions";
++import { CURRENT_SEASON_SOG_CONTRIBUTION_VERSION } from "./contributions";
+ import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
+ import { timestampMicros } from "../projections/evidenceTime";
+ 
+@@ -77,6 +78,8 @@
+       teamId: source.teamId, targetKey: source.targetKey, unit: source.unit, basis: source.basis,
+       mean: source.mean, cutoffAt: source.cutoffAt, sourceWatermark: source.sourceWatermark,
+       scheduleRevision: source.scheduleRevision, rosterRevision: source.rosterRevision,
++      ...(source.policyVersion === CURRENT_SEASON_SOG_CONTRIBUTION_VERSION
++        ? { gameId: source.gameId, scheduledAt: source.scheduledAt } : {}),
+     })).sort((a, b) => a.playerId - b.playerId || a.targetKey.localeCompare(b.targetKey)),
+   });
+ }
+@@ -106,7 +109,7 @@
+     "sourceCount", "sourceWatermarks", "rosterRevisions", "evaluationPolicyId", "reviewId", "released", "checksum"]);
+   const sourceKeys = new Set(["kind", "sourceId", "policyVersion", "released", "playerId", "nhlPlayerId",
+     "seasonId", "teamId", "targetKey", "unit", "basis", "mean", "participationIntegrated", "cutoffAt",
+-    "issuedAt", "expiresAt", "sourceWatermark", "scheduleRevision", "rosterRevision", "limitations"]);
++    "issuedAt", "expiresAt", "sourceWatermark", "scheduleRevision", "rosterRevision", "limitations", "gameId", "scheduledAt"]);
+   if (!manifest || !Array.isArray(sources) || sources.length === 0 ||
+       Object.keys(manifest).some((key) => !manifestKeys.has(key)) ||
+       !Number.isSafeInteger(manifest.seasonId) || manifest.seasonId <= 0 ||
+@@ -122,8 +125,15 @@
+         !UUID.test(manifest.reviewId ?? "")))) return false;
+   const seen = new Set<string>();
+   for (const source of sources) {
+-    if (!source || Object.keys(source).some((key) => !sourceKeys.has(key)) ||
+-        source.kind !== "baseline" || source.gameId != null ||
++    const scopedSog = source?.policyVersion === CURRENT_SEASON_SOG_CONTRIBUTION_VERSION;
++    if (!source || Object.keys(source).some((key) => !sourceKeys.has(key)
++      || !scopedSog && (key === "gameId" || key === "scheduledAt")) ||
++        source.kind !== "baseline" || (!scopedSog && (source.gameId != null || source.scheduledAt != null)) ||
++        (scopedSog && (!Number.isSafeInteger(source.gameId) || source.gameId! <= 0 || !validTimestamp(source.scheduledAt)
++          || source.targetKey !== "SHOTS_ON_GOAL" || source.unit !== "count" || source.basis !== "per_appearance"
++          || !validTimestamp(source.issuedAt) || !validTimestamp(source.expiresAt)
++          || timestampMicros(source.issuedAt)! >= timestampMicros(source.scheduledAt!)!
++          || timestampMicros(source.expiresAt)! > timestampMicros(source.scheduledAt!)!)) ||
+         !nonempty(source.sourceId) || !nonempty(source.policyVersion) ||
+         source.policyVersion !== manifest.policyVersion ||
+         source.released !== manifest.released ||
+@@ -189,6 +199,8 @@
+     policy.allowedPublicUses.length > 0 &&
+     new Set(policy.allowedPublicUses).size === policy.allowedPublicUses.length &&
+     policy.allowedPublicUses.every((use) => validUses.includes(use)) &&
++    (policy.policyVersion !== CURRENT_SEASON_SOG_CONTRIBUTION_VERSION
++      || policy.allowedPublicUses.every(use => use === "conditionalTieBreak")) &&
+     nonempty(policy.prospectiveEvidenceRef) && nonempty(policy.ownerApprovalRef) &&
+     validTimestamp(policy.approvedAt) && timestampMicros(policy.approvedAt) === timestampMicros(row.available_at) &&
+     timestampMicros(policy.approvedAt)! <= timestampMicros(bundle.manifest.issuedAt)!;
+@@ -217,6 +229,8 @@
+     allowedUses: { assignment: approved.has("assignment"), totals: approved.has("totals"),
+       comparison: approved.has("comparison"), conditionalTieBreak: approved.has("conditionalTieBreak") },
+     seasonId: source.seasonId, teamId: source.teamId, targetKey: source.targetKey,
++    ...(source.policyVersion === CURRENT_SEASON_SOG_CONTRIBUTION_VERSION
++      ? { gameId: source.gameId, scheduledAt: source.scheduledAt } : {}),
+     unit: source.unit, basis: source.basis, mean: source.mean,
+     participationIntegrated: source.participationIntegrated, cutoffAt: source.cutoffAt,
+     issuedAt: source.issuedAt, expiresAt: source.expiresAt,
+--- a/web/lib/player-forecasts/nativeContributionAdmission.ts
++++ b/web/lib/player-forecasts/nativeContributionAdmission.ts
+@@ -7,10 +7,15 @@
+ import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
+ import type { ContributionSource } from "./contributions";
+ import { timestampMicros } from "../projections/evidenceTime";
++import { CURRENT_SEASON_SOG_CONTRIBUTION_VERSION } from "./contributions";
++import { admitsCurrentSeasonSogContribution } from "./currentSeasonSogContribution";
+ 
+ type NativeRateCache = { payloadHashes: Map<object, string>; skaterSnapshots: Map<string, SkaterBaselineRateSnapshot> };
+ 
+-function nativeRate(source: ContributionSource, row: any, cache: NativeRateCache): boolean {
++function nativeRate(source: ContributionSource, row: any, cache: NativeRateCache, now: Date): boolean {
++  if (source.policyVersion === CURRENT_SEASON_SOG_CONTRIBUTION_VERSION) {
++    return admitsCurrentSeasonSogContribution(source, row, now);
++  }
+   const goalie = source.policyVersion === GOALIE_BASELINE_POLICY_VERSION;
+   const payload = row?.payload;
+   if (![BASELINE_RATE_POLICY_VERSION, GOALIE_BASELINE_POLICY_VERSION].includes(source.policyVersion)
+@@ -76,7 +81,7 @@
+   const cache: NativeRateCache = { payloadHashes: new Map(), skaterSnapshots: new Map() };
+   const sources = approved.sources.filter(source => {
+     const matches = data.filter(row => row.payload_hash === source.sourceWatermark);
+-    return matches.length === 1 && nativeRate(source, matches[0], cache);
++    return matches.length === 1 && nativeRate(source, matches[0], cache, now);
+   });
+   if (!sources.length) return empty("baseline_external_or_unclassified_inputs_excluded");
+   return { ...approved, sources, checksum: playerForecastSourcePayloadHash({ approvedChecksum: approved.checksum,
+--- a/web/pages/forge/forecasts.tsx
++++ b/web/pages/forge/forecasts.tsx
+@@ -49,6 +49,10 @@
+     && `${player.name} ${player.team ?? ""}`.toLowerCase().includes(search.toLowerCase())) ?? [];
+   const anyValue = players.some(player => player.games.some(game => Object.values(game.targets)
+     .some(target => target.expected !== null || target.conditional !== null)));
++  const conditionalRows = players.flatMap(player => player.games.flatMap(game => Object.entries(game.targets)
++    .filter(([, target]) => target.allowedUses.conditionalTieBreak && target.expected === null && target.conditional !== null
++      && ["per_appearance", "per_start"].includes(target.basis ?? ""))
++    .map(([key, target]) => ({ player, game, key, target }))));
+   return <main className={styles.page}>
+     <Head><title>FORGE game forecasts | FHFH</title></Head>
+     <nav aria-label="FORGE navigation"><Link href="/forge/command-center">Command Center</Link>{" · "}
+@@ -81,6 +85,24 @@
+       </div>
+       {!anyValue && <p role="status">No released category values are available for this selection. Schedule opportunities are shown below.</p>}
+       {!players.length && <p>No players match this selection.</p>}
++      {conditionalRows.length > 0 && <section aria-labelledby="conditional-values-heading">
++        <h2 id="conditional-values-heading">Conditional category values</h2>
++        <p>These values apply if the player appears or starts. They are not expected game totals or a participation estimate,
++          and are not multiplied across the selected window. Missing categories remain unavailable.</p>
++        <div className={styles.tableScroll} tabIndex={0} role="region" aria-label="Conditional forecast values">
++          <table><caption>Conditional category values for admitted games</caption>
++            <thead><tr><th scope="col">Player</th><th scope="col">Game</th><th scope="col">Category</th>
++              <th scope="col">Conditional value</th><th scope="col">Basis</th></tr></thead>
++            <tbody>{conditionalRows.map(({ player, game, key, target }) => <tr key={`${player.playerId}:${game.gameId}:${key}`}>
++              <th scope="row">{player.name}</th><td>{game.awayTeam} at {game.homeTeam} · {game.date} · Game {game.gameId}</td>
++              <td>{columns.find(([targetKey]) => targetKey === key)?.[1] ?? key}</td><td>{show(target.conditional)}</td>
++              <td>{target.basis === "per_start" ? "Per start" : target.methodVersions.includes("current-season-sog-appearance-mean-v1")
++                ? "Per positive-minute appearance" : "Per appearance"}</td>
++            </tr>)}</tbody>
++          </table>
++        </div>
++        <p>Original source clocks and available sample coverage and limitations appear in each player’s game values and sources below.</p>
++      </section>}
+       <div className={styles.tableScroll} tabIndex={0} role="region" aria-label="Forecast totals">
+         <table><caption>Expected totals for {data.scope.mode === "next_n" ? `the next ${data.scope.games} scheduled team games` : `${data.scope.startDate} through ${data.scope.endDate}`}</caption>
+           <thead><tr><th scope="col">Player</th><th scope="col">Schedule opportunities</th><th scope="col">Expected appearances</th>
+@@ -113,7 +135,7 @@
+               <th scope="row">{key}</th><td>{show(target.expected)}</td>
+               <td>{show(target.conditional)}{target.conditional !== null && ` (${target.basis === "per_start" ? "per start" : "per appearance"}; conditional ability only)`}</td>
+               <td>{target.methodVersions.join(", ") || "Unavailable"}
+-                {target.sources.map(source => <small key={source.sourceId}>Issued: {source.issuedAt}
++                {target.sources.map(source => <small key={source.sourceId}>{source.methodVersion === "current-season-sog-appearance-mean-v1" ? "Contribution issued" : "Issued"}: {source.issuedAt}
+                   {` · Input cutoff: ${source.cutoffAt} · Expires: ${source.expiresAt}`}</small>)}
+                 {target.participation && <small>Participation issued: {target.participation.issuedAt}</small>}
+                 {target.participation?.model && <small>Participation model estimate · calibration unavailable
+--- a/web/__tests__/pages/forge/forecasts.test.tsx
++++ b/web/__tests__/pages/forge/forecasts.test.tsx
+@@ -22,6 +22,28 @@
+ beforeEach(() => vi.restoreAllMocks());
+ afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+ describe("FORGE forecast page synthetic API readback", () => {
++  it("shows a conditional-only head immediately without multiplying it into next-N totals", async () => {
++    const data = payload(), player = data.players[0];
++    data.scope.games = 3; player.requestedGames = 3;
++    const target = player.games[0].targets.SHOTS_ON_GOAL;
++    target.methodVersions = ["current-season-sog-appearance-mean-v1"];
++    target.sources[0].methodVersion = "current-season-sog-appearance-mean-v1";
++    player.games[0].limitations = ["SOG support: 2 positive-minute appearances; dates 2026-10-08, 2026-10-10.",
++      "Original conditional forecast generated: 2026-10-15T09:10:00Z; calibration unavailable."];
++    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true, data }) }));
++    render(<ForgeForecastsPage />); fireEvent.click(screen.getByRole("button", { name: "Load released forecasts" }));
++    const conditional = await screen.findByRole("table", { name: "Conditional category values for admitted games" });
++    expect(within(conditional).getAllByRole("row")).toHaveLength(2);
++    expect(within(conditional).getByText("4")).toBeTruthy();
++    expect(within(conditional).getByText("Per positive-minute appearance")).toBeTruthy();
++    expect(within(conditional).queryByText("12")).toBeNull();
++    expect(within(screen.getByRole("table", { name: /Expected totals/ })).queryByText("4")).toBeNull();
++    const details = screen.getByText("Synthetic Baseline Skater · game values and sources").closest("details")!;
++    details.open = true; fireEvent(details, new Event("toggle"));
++    expect(await screen.findByText(/SOG support: 2 positive-minute appearances/)).toBeTruthy();
++    expect(screen.getByText(/Contribution issued: 2026-10-15T09:10:00Z/)).toBeTruthy();
++    expect(screen.getByText(/Appearance probability: Unavailable/)).toBeTruthy();
++  });
+   it("labels explicit modeled participation independently of source means and confirmation", async () => {
+     const data = payload(), game = data.players[0].games[0], target = game.targets.SHOTS_ON_GOAL;
+     target.participation = { revisionId: "synthetic-model-receipt", probability: 0.5, basis: "appearance",
+@@ -52,7 +74,7 @@
+     expect(screen.getByText("Issued: 2026-10-15T09:10:00Z", { exact: false })).toBeTruthy();
+     expect(screen.getByText("Sources: native-synthetic-receipt")).toBeTruthy();
+     expect(screen.getByText("Appearance probability: Unavailable", { exact: false })).toBeTruthy();
+-    expect(screen.getByText(/TOR at MIN/)).toBeTruthy();
++    expect(screen.getByRole("heading", { name: /TOR at MIN/ })).toBeTruthy();
+     expect(fetchMock.mock.calls[0][1]).toMatchObject({ cache: "no-store" });
+   });
+   it("requests next-N and selected-week modes explicitly, without multiplying any page value", async () => {

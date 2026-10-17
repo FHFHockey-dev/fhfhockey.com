@@ -1,4 +1,5 @@
-import type { ContributionAllowedUses, ContributionExclusion, ContributionSource, ForecastCalendarPolicy, ResolvedContribution } from "../player-forecasts/contributions";
+import type { ContributionAllowedUses, ContributionExclusion, ContributionParticipation, ContributionSource, ForecastCalendarPolicy, ResolvedContribution } from "../player-forecasts/contributions";
+import type { GameExpectationPowerPlayRole } from "../player-forecasts/gameExpectations";
 export type ForecastExclusionReason = ContributionExclusion | "canary_excluded" | "discovery_timeout"
   | "discovery_failed" | "incomplete_refresh" | "eligibility_unverified" | "game_mismatch"
   | "invalid_cutoff" | "no_usable_target" | "conflicting_forecast";
@@ -84,6 +85,10 @@ export type GameForecast = {
   conditionalStats?: StatLine;
   tieBreakStats?: StatLine;
   appearanceProbability?: number | null;
+  /** Explicit unknown deployment; PPP production does not establish a PP unit. Optional for older snapshots. */
+  powerPlayRole?: GameExpectationPowerPlayRole;
+  /** Separately admitted modeled start metadata; never weights appearance-conditioned means. */
+  startParticipation?: ContributionParticipation;
   contributions?: Record<string, ResolvedContribution>;
   cutoffAt?: string;
   expiresAt?: string;
@@ -105,6 +110,8 @@ export type AcquisitionPeriod = {
   end: string;
   remaining: number | null;
   source: "provider" | "manager" | "unknown";
+  /** Optional display/edit zone; start/end remain exact instants used by the planner. */
+  timeZone?: string;
   /** Weekly lineup lock, independently specified from acquisition resets. */
   lineupLockAt?: string | null;
 };
@@ -155,6 +162,7 @@ export type AcquisitionEvidence = {
 export type PlanningSnapshot = {
   acquisitionEvidence?: AcquisitionEvidence;
   baselineSources?: ContributionSource[];
+  participationSources?: ContributionParticipation[];
   forecastManifest?: ForecastManifest;
   /** Internal duplicate-input diagnostics, kept with the evaluated snapshot only. */
   forecastInputExclusions?: ForecastDiscoveryExclusion[];
@@ -172,7 +180,7 @@ export type PlanningSnapshot = {
 };
 /** Statistical resolution also serves diagnostics without inventing league rules. */
 export type ContributionPlanningSnapshot = Pick<PlanningSnapshot,
-  "players" | "games" | "forecasts" | "baselineSources" | "forecastManifest" | "forecastInputExclusions"> & {
+  "players" | "games" | "forecasts" | "baselineSources" | "participationSources" | "forecastManifest" | "forecastInputExclusions"> & {
   context: Pick<PlanningContext, "seasonId" | "asOf" | "startDate" | "endDate">;
 };
 export type PlanStep = {
@@ -290,6 +298,7 @@ export type ProviderCapabilities = {
 };
 export type PlanningData = {
   baselineSources?: ContributionSource[];
+  participationSources?: ContributionParticipation[];
   forecastManifest?: ForecastManifest;
   matchupWeeks?: Array<{ gameKey: string; week: number; startDate: string; endDate: string }>;
   players: PlanningPlayer[];
@@ -309,6 +318,8 @@ export type ForecastManifest = {
   scheduleRevision: string;
   rosterRevision: string;
   issuedRevisionIds: string[];
+  participationRevisionIds?: string[];
+  participationChecksum?: string | null;
   baselineChecksum: string | null;
   requiredOpportunities: number;
   forecastedOpportunities: number;

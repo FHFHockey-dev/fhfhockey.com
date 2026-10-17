@@ -1,0 +1,19 @@
+{
+  "rejected": true,
+  "receipt": null,
+  "after": {
+    "raw": {
+      "processing_status": "pending",
+      "raw_payload": {
+        "text": "isolated synthetic retained fixture",
+        "receipt": "local-only"
+      }
+    },
+    "job": {
+      "status": "running",
+      "attempts": 1,
+      "payload": {}
+    },
+    "outbox": 0
+  }
+}

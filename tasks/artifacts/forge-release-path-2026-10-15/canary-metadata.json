@@ -1,0 +1,58 @@
+{
+  "version": "forge-release-canary-metadata-v1",
+  "classification": "read_only_metadata_not_forecast_or_admission",
+  "clockObservationUTC": "2026-10-15T19:10:03Z",
+  "projectId": "fyhftlxokyjtpndbkfse",
+  "projectName": "fhfhockey.com",
+  "projectMetadataCalls": 1,
+  "sqlQueries": 2,
+  "databaseWrites": 0,
+  "outcomeValuesRead": false,
+  "privateResearchArtifactsRead": false,
+  "firstGame": {
+    "gameId": 2026020108,
+    "seasonId": 20262027,
+    "date": "2026-10-15",
+    "startsAt": "2026-10-15T23:00:00Z",
+    "note": "Excluded from proposed independent canary because it is in the known private live-pilot game set."
+  },
+  "proposedGame": {
+    "gameId": 2026020112,
+    "seasonId": 20262027,
+    "date": "2026-10-15",
+    "startsAt": "2026-10-15T23:00:00Z",
+    "homeTeamId": 13,
+    "homeTeam": "FLA",
+    "awayTeamId": 23,
+    "awayTeam": "VAN",
+    "status": "FUT",
+    "scheduleStatus": "OK",
+    "bothSidesFetchedAt": "2026-10-14T00:12:54.911Z",
+    "latestRevisionMetadata": null
+  },
+  "checkedCandidates": [
+    {
+      "canonicalId": 7807,
+      "nhlPlayerId": 8483433,
+      "name": "Jack Devine",
+      "rosterTeamId": 13,
+      "identityTeamId": 13,
+      "nativePriorSupport": "not_read_or_verified",
+      "participation": "not_read_or_verified"
+    },
+    {
+      "canonicalId": 8466,
+      "nhlPlayerId": 8478147,
+      "name": "Bokondji Imama",
+      "rosterTeamId": 13,
+      "identityTeamId": 5,
+      "status": "withheld_identity_team_disagreement"
+    }
+  ],
+  "limitations": [
+    "The checked source schedule receipt is more than 36 hours old at the observed clock. No upstream refresh was invoked.",
+    "Roster membership and current identity disagree for one candidate; it is not admitted as an eligible competitor.",
+    "This is not a release-ready two-player tuple. No normalized history, source bodies, participation assertions or model values were read.",
+    "No raw-source hashes are claimed; this document records the bounded tool-returned metadata only."
+  ]
+}

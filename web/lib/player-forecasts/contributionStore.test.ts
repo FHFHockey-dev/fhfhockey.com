@@ -36,7 +36,177 @@ const manifest: ContributionBundleManifest = {
   checksum: contributionBundleChecksum({ manifest: manifestWithoutChecksum, sources: [source] }),
 };
 
+function chronologyBundle(times: Partial<typeof manifestWithoutChecksum> = {}, sourceTimes: Partial<ContributionSource> = {}) {
+  const unsigned = { ...manifestWithoutChecksum, inputCutoff: "2026-09-28T00:00:00Z",
+    issuedAt: "2026-09-28T00:00:00.000002Z", ...times };
+  const sources = [{ ...source, cutoffAt: unsigned.inputCutoff, issuedAt: unsigned.issuedAt,
+    expiresAt: unsigned.expiresAt, ...sourceTimes }];
+  return { manifest: { ...unsigned, checksum: contributionBundleChecksum({ manifest: unsigned, sources }) }, sources };
+}
+
+describe("contribution store microsecond chronology", () => {
+  // Approval documents below are mocked mechanics receipts, not actual authorization.
+  function release(bundle = chronologyBundle()) {
+    const row = { id: snapshotId, provider: "fhfh", dataset_key: "contribution-bundle-v1",
+      entity_kind: "seasonal_rate_bundle", entity_key: "20262027", available_at: bundle.manifest.issuedAt,
+      payload_hash: playerForecastSourcePayloadHash(bundle), payload: bundle };
+    const candidateInputHash = contributionBundleCandidateInputHash(bundle);
+    const policy: ContributionEvaluationPolicy = { version: "baseline-evaluation-policy-v1", seasonId: 20262027,
+      policyVersion: bundle.manifest.policyVersion, candidateInputHash, status: "owner_approved",
+      allowedPublicUses: ["assignment"], prospectiveEvidenceRef: "offline-fixture", ownerApprovalRef: "offline-fixture",
+      approvedAt: bundle.manifest.issuedAt };
+    const policyRow = { ...row, id: policyId, dataset_key: "baseline-evaluation-policy-v1",
+      entity_kind: "baseline_evaluation_policy", payload: policy, payload_hash: playerForecastSourcePayloadHash(policy) };
+    const review: ContributionValidationReview = { version: "baseline-validation-review-v1", seasonId: 20262027,
+      policyVersion: bundle.manifest.policyVersion, candidateInputHash, policyHash: policyRow.payload_hash,
+      bundleChecksum: bundle.manifest.checksum, status: "owner_approved", eligible: true,
+      prospectiveEvidenceRef: "offline-fixture", ownerApprovalRef: "offline-fixture", reviewedAt: bundle.manifest.issuedAt };
+    const reviewRow = { ...row, id: reviewId, dataset_key: "baseline-validation-review-v1",
+      entity_kind: "baseline_validation_review", payload: review, payload_hash: playerForecastSourcePayloadHash(review) };
+    return { row, policyRow, reviewRow };
+  }
+  async function load(releases: ReturnType<typeof release>[], now = "2026-09-28T00:00:00.001Z") {
+    let calls = 0;
+    const db = { from: () => ({ select: () => {
+      const data = calls++ === 0 ? releases.map(item => item.row) : releases.flatMap(item => [item.policyRow, item.reviewRow]);
+      const query: any = { in: () => query, eq: () => query,
+        then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data, error: null }).then(resolve) };
+      return query;
+    } }) } as any;
+    return loadApprovedContributionBundle(db, 20262027, new Date(now), {
+      environment: { PLAYER_FORECAST_BASELINE_RELEASE_IDS: releases.map(item => item.row.id).join(",") },
+    });
+  }
+
+  it("preserves a positive sub-millisecond dry-run interval and its original clock strings", async () => {
+    const bundle = chronologyBundle({ expiresAt: "2026-09-27T20:00:00.000003-04:00" });
+    const before = JSON.stringify(bundle), from = vi.fn();
+    const result = await persistContributionBundle({ from } as any, bundle);
+    expect(result).toEqual({ dryRun: true, snapshotId: null, payloadHash: playerForecastSourcePayloadHash(bundle) });
+    expect(JSON.stringify(bundle)).toBe(before);
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["cutoff after issue", { inputCutoff: "2026-09-28T00:00:00.000003Z" }, {}],
+    ["equal expiry", { expiresAt: "2026-09-27T20:00:00.000002-04:00" }, {}],
+    ["expiry before issue", { expiresAt: "2026-09-28T00:00:00.000001Z" }, {}],
+    ["source cutoff after manifest", {}, { cutoffAt: "2026-09-28T00:00:00.000001Z" }],
+    ["source issuance after packaging", {}, { issuedAt: "2026-09-28T00:00:00.000003Z" }],
+    ["source expires before packaging validity", { expiresAt: "2026-10-01T00:00:00.000002Z" }, { expiresAt: "2026-10-01T00:00:00.000001Z" }],
+    ["source cutoff after its issuance", {}, { issuedAt: "2026-09-27T23:59:59Z" }],
+    ["source has no positive validity interval", {}, { expiresAt: "2026-09-28T00:00:00.000002Z" }],
+    ["source already expired", {}, { expiresAt: "2026-09-27T23:59:59Z" }],
+    ["invalid calendar timestamp", { inputCutoff: "2026-02-30T00:00:00Z" }, {}],
+  ] as const)("rejects %s before database access even when the checksum matches", async (_name, times, sourceTimes) => {
+    const from = vi.fn();
+    await expect(persistContributionBundle({ from } as any, chronologyBundle(times, sourceTimes)))
+      .rejects.toThrow("Invalid or incomplete");
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it("packages mixed original issuance clocks without changing reused source bytes", async () => {
+    const bundle = chronologyBundle({ expiresAt: "2026-09-29T00:00:00Z" }, {
+      cutoffAt: "2026-09-27T00:00:00Z", issuedAt: "2026-09-27T12:00:00Z",
+      expiresAt: "2026-10-02T00:00:00Z",
+    });
+    bundle.sources.push({ ...bundle.sources[0], sourceId: "second-rate", targetKey: "blocks",
+      cutoffAt: "2026-09-28T00:00:00Z", issuedAt: "2026-09-28T00:00:00.000001Z",
+      expiresAt: "2026-10-01T00:00:00Z" });
+    bundle.manifest.sourceCount = 2;
+    const { checksum: priorChecksum, ...unsigned } = bundle.manifest;
+    bundle.manifest.checksum = contributionBundleChecksum({ manifest: unsigned, sources: bundle.sources });
+    expect(bundle.manifest.checksum).not.toBe(priorChecksum);
+    const original = JSON.stringify(bundle.sources);
+    await expect(persistContributionBundle({} as any, bundle)).resolves.toMatchObject({ dryRun: true });
+    const loaded = await load([release(bundle)]);
+    expect(loaded.sources).toHaveLength(2);
+    for (const originalSource of bundle.sources) {
+      expect(loaded.sources.find(row => row.sourceId === originalSource.sourceId))
+        .toMatchObject({ sourceId: originalSource.sourceId, cutoffAt: originalSource.cutoffAt,
+          issuedAt: originalSource.issuedAt, expiresAt: originalSource.expiresAt,
+          catalogExpiresAt: bundle.manifest.expiresAt });
+    }
+    expect(JSON.stringify(bundle.sources)).toBe(original);
+    expect((await load([release(bundle)], bundle.manifest.expiresAt)).sources).toEqual([]);
+  });
+
+  it("accepts source clocks at equal instants expressed in another timezone", async () => {
+    const bundle = chronologyBundle({}, { cutoffAt: "2026-09-27T20:00:00-04:00",
+      issuedAt: "2026-09-27T20:00:00.000002-04:00", expiresAt: "2026-09-30T20:00:00-04:00" });
+    await expect(persistContributionBundle({} as any, bundle)).resolves.toMatchObject({ dryRun: true });
+  });
+
+  it("reads an approved fixture expiring one microsecond after now without rewriting source clocks", async () => {
+    const fixture = release(chronologyBundle({ expiresAt: "2026-09-28T00:00:00.001001Z" }));
+    fixture.row.available_at = "2026-09-27T20:00:00.000002-04:00";
+    const before = JSON.stringify(fixture), result = await load([fixture]);
+    expect(result.sources[0]).toMatchObject({ issuedAt: fixture.row.payload.manifest.issuedAt,
+      expiresAt: "2026-09-28T00:00:00.001001Z", allowedUses: { assignment: true, totals: false,
+        comparison: false, conditionalTieBreak: false } });
+    expect(result.manifests).toEqual([fixture.row.payload.manifest]);
+    expect(JSON.stringify(fixture)).toBe(before);
+  });
+
+  it.each(["snapshot receipt mismatch", "future issuance", "expiry at now", "policy receipt mismatch",
+    "policy after issuance", "review receipt mismatch", "review before issuance", "future review"])(
+    "rejects %s at microsecond precision in the approved reader", async problem => {
+      const fixture = release(chronologyBundle(problem === "future issuance"
+        ? { issuedAt: "2026-09-28T00:00:00.001001Z" }
+        : problem === "expiry at now" ? { expiresAt: "2026-09-27T20:00:00.001000-04:00" } : {}));
+      if (problem === "snapshot receipt mismatch") fixture.row.available_at = "2026-09-28T00:00:00.000003Z";
+      if (problem === "policy receipt mismatch") fixture.policyRow.available_at = "2026-09-28T00:00:00.000003Z";
+      if (problem === "policy after issuance") {
+        fixture.policyRow.payload.approvedAt = fixture.policyRow.available_at = "2026-09-28T00:00:00.000003Z";
+        fixture.policyRow.payload_hash = playerForecastSourcePayloadHash(fixture.policyRow.payload);
+        fixture.reviewRow.payload.policyHash = fixture.policyRow.payload_hash;
+      }
+      if (problem === "review receipt mismatch") fixture.reviewRow.available_at = "2026-09-28T00:00:00.000003Z";
+      if (problem === "review before issuance" || problem === "future review") {
+        fixture.reviewRow.payload.reviewedAt = fixture.reviewRow.available_at = problem === "future review"
+          ? "2026-09-28T00:00:00.001001Z" : "2026-09-28T00:00:00.000001Z";
+      }
+      fixture.reviewRow.payload_hash = playerForecastSourcePayloadHash(fixture.reviewRow.payload);
+      const result = await load([fixture]);
+      expect(result.sources).toEqual([]);
+      expect(result.limitations).toEqual([problem === "snapshot receipt mismatch" || problem === "future issuance"
+        || problem === "expiry at now" ? "release_snapshot_invalid_or_stale" : "baseline_review_unverified"]);
+    });
+
+  it("selects the later issued bundle by instant across timezone representations", async () => {
+    const older = release(chronologyBundle({ issuedAt: "2026-09-28T00:00:00.000001Z" }));
+    const newer = release(chronologyBundle({ issuedAt: "2026-09-27T20:00:00.000002-04:00" }));
+    newer.row.id = "44444444-4444-4444-8444-444444444444";
+    newer.policyRow.id = newer.row.payload.manifest.evaluationPolicyId = "55555555-5555-4555-8555-555555555555";
+    newer.reviewRow.id = newer.row.payload.manifest.reviewId = "66666666-6666-4666-8666-666666666666";
+    const { checksum: _oldChecksum, ...unsigned } = newer.row.payload.manifest;
+    newer.row.payload.manifest.checksum = contributionBundleChecksum({ manifest: unsigned, sources: newer.row.payload.sources });
+    newer.row.payload_hash = playerForecastSourcePayloadHash(newer.row.payload);
+    newer.reviewRow.payload.bundleChecksum = newer.row.payload.manifest.checksum;
+    newer.reviewRow.payload_hash = playerForecastSourcePayloadHash(newer.reviewRow.payload);
+    const result = await load([older, newer]);
+    expect(result.manifests).toEqual([newer.row.payload.manifest]);
+    expect(result.sources[0].issuedAt).toBe("2026-09-27T20:00:00.000002-04:00");
+  });
+});
+
 describe("contribution bundle store", () => {
+  it("preserves planned bundle IDs and rejects conflicting collision readbacks", async () => {
+    const payload = { manifest, sources: [source] }, row = { id: snapshotId, provider: "fhfh", dataset_key: "contribution-bundle-v1",
+      entity_kind: "seasonal_rate_bundle", entity_key: "20262027", source_url: null, source_revision_key: manifest.checksum,
+      observed_at: manifest.inputCutoff, available_at: manifest.issuedAt, payload_hash: playerForecastSourcePayloadHash(payload), payload,
+      metadata: { policyVersion: manifest.policyVersion, released: true } };
+    for (const conflict of [false, true]) {
+      const selectRead: any = { eq: () => selectRead, limit: async () => ({ data: [{ ...row, ...(conflict ? { entity_key: "foreign" } : {}) }], error: null }) };
+      const insert = vi.fn(() => ({ select: () => ({ single: async () => ({ error: { code: "23505" } }) }) }));
+      const db = { from: () => ({ insert, select: () => selectRead }) } as any;
+      const write = persistContributionBundle(db, { manifest, sources: [source], snapshotId, dryRun: false });
+      if (conflict) await expect(write).rejects.toThrow("cannot be verified");
+      else await expect(write).resolves.toMatchObject({ snapshotId });
+      expect(insert).toHaveBeenCalledWith(expect.objectContaining({ id: snapshotId }));
+    }
+    await expect(persistContributionBundle({} as any, { manifest, sources: [source], snapshotId: "invalid" })).rejects.toThrow("Invalid planned");
+  });
   it("defaults persistence to dry run and rejects partial or unreviewed releases", async () => {
     const from = vi.fn();
     const db = { from } as any;
@@ -133,7 +303,7 @@ describe("contribution bundle store", () => {
       payload_hash: playerForecastSourcePayloadHash(mismatchedReview) }]))
       .toMatchObject({ sources: [], limitations: ["baseline_review_unverified"] });
     const approved = await load([policyRow, reviewRow]);
-    expect(approved.sources).toEqual([{ ...source, allowedUses: { assignment: true,
+    expect(approved.sources).toEqual([{ ...source, catalogExpiresAt: manifest.expiresAt, allowedUses: { assignment: true,
       totals: true, comparison: true, conditionalTieBreak: false } }]);
     expect(approved.checksum).toBe(manifest.checksum);
     expect(approved.manifests).toEqual([manifest]);

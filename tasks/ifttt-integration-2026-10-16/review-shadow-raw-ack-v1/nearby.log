@@ -1,0 +1,123 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/review-shadow-raw-ack-v1/nearby-sql.test.ts ../tasks/ifttt-integration-2026-10-16/review-shadow-raw-ack-v1/nearby-integration.test.ts -t nearby --no-file-parallelism --config ../tasks/ifttt-integration-2026-10-16/review-shadow-raw-ack-v1/vitest.compatibility.config.mjs --reporter=default --reporter=json --outputFile=../tasks/ifttt-integration-2026-10-16/review-shadow-raw-ack-v1/nearby-results.json
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-shadow-raw-ack-v1/nearby-integration.test.ts (14 tests | 1 failed | 11 skipped) 1190ms
+   ↓ actual shadow raw/job settlement integration > actual line_source_ifttt_events claim/extraction/context/commit hook completes raw and job atomically, retaining held evidence only
+   ↓ actual shadow raw/job settlement integration > actual lines_ccc_ifttt_events claim/extraction/context/commit hook completes raw and job atomically, retaining held evidence only
+   ↓ actual shadow raw/job settlement integration > separates two raw receipts of the same post while preserving shared claim lineage
+   ↓ actual shadow raw/job settlement integration > source metadata for a different raw event cannot acknowledge this receipt
+   ↓ actual shadow raw/job settlement integration > overlapping processed/deferred receipt is held before any claim or raw completion write
+   ↓ actual shadow raw/job settlement integration > lost atomic reply uses exact job/raw readback and never calls settlement twice
+   ↓ actual shadow raw/job settlement integration > raw readback loss after commit remains unresolved; catch cannot downgrade; restarted claim skips completion
+   ↓ actual shadow raw/job settlement integration > a one-microsecond raw receipt change after commit cannot be accepted by lost-reply readback
+   ↓ actual shadow raw/job settlement integration > later job-write failure rolls raw status back while retained observations survive; route catch records retry
+   ↓ actual shadow raw/job settlement integration > server-expired lease holds despite a backdated application clock
+   ↓ actual shadow raw/job settlement integration > default-off acknowledgment and wrong-mode shadow hook do not access storage
+   × actual shadow raw/job settlement integration > nearby R18 actual hook rejects a normal successful RPC reply whose stored raw receipt was rewritten 185ms
+     → An actual successful-reply hook cannot certify a stored raw receipt that contradicts the job receipt: expected false to be true // Object.is equality
+   ✓ actual shadow raw/job settlement integration > nearby changed raw evidence between qualification and settlement is held by actual RPC 156ms
+   ✓ actual shadow raw/job settlement integration > nearby lost reply with a replaced readback owner stays unresolved without a second mutation 158ms
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-shadow-raw-ack-v1/nearby-sql.test.ts (30 tests | 2 failed | 26 skipped) 950ms
+   ↓ unwired draft atomic shadow raw/job RPC > commits raw completion and the exact job acknowledgment together without a dispatch
+   ↓ unwired draft atomic shadow raw/job RPC > rolls back the earlier raw update if the later job update fails
+   ↓ unwired draft atomic shadow raw/job RPC > recovers a lost transaction response with the same retained receipt and no second attempt
+   ↓ unwired draft atomic shadow raw/job RPC > serializes concurrent duplicate acknowledgments to the same receipt
+   ↓ unwired draft atomic shadow raw/job RPC > holds replaced owners and leaves both rows unchanged
+   ↓ unwired draft atomic shadow raw/job RPC > holds expired owners and leaves both rows unchanged
+   ↓ unwired draft atomic shadow raw/job RPC > holds raw payload conflicts without overwriting the retained input
+   ↓ unwired draft atomic shadow raw/job RPC > holds missing/duplicate/empty identity set [ 'missing-observation' ]
+   ↓ unwired draft atomic shadow raw/job RPC > holds missing/duplicate/empty identity set [ 'observation-a', 'observation-a' ]
+   ↓ unwired draft atomic shadow raw/job RPC > holds missing/duplicate/empty identity set []
+   ↓ unwired draft atomic shadow raw/job RPC > holds omitted retained observations for the same receipt
+   ↓ unwired draft atomic shadow raw/job RPC > holds inconsistent evidence tweetId
+   ↓ unwired draft atomic shadow raw/job RPC > holds inconsistent evidence receivedAt
+   ↓ unwired draft atomic shadow raw/job RPC > holds inconsistent evidence interpretedAt
+   ↓ unwired draft atomic shadow raw/job RPC > holds inconsistent evidence eventId
+   ↓ unwired draft atomic shadow raw/job RPC > holds complete jobs without a retained protocol receipt
+   ↓ unwired draft atomic shadow raw/job RPC > holds incompatible retained job payload null without partial raw completion
+   ↓ unwired draft atomic shadow raw/job RPC > holds incompatible retained job payload [] without partial raw completion
+   ↓ unwired draft atomic shadow raw/job RPC > holds incompatible retained job payload 1 without partial raw completion
+   ↓ unwired draft atomic shadow raw/job RPC > holds raw changes after a committed acknowledgment
+   ↓ unwired draft atomic shadow raw/job RPC > supports the second allowlisted raw table with its exact separate job key
+   ↓ unwired draft atomic shadow raw/job RPC > keeps another retained receipt clock separate from this raw acknowledgment
+   ↓ unwired draft atomic shadow raw/job RPC > holds an omitted conflicting clock retained for the same raw event
+   ↓ unwired draft atomic shadow raw/job RPC > holds a microsecond raw receipt-clock mutation after completion
+   ↓ unwired draft atomic shadow raw/job RPC > denies the anon role without changing rows
+   ↓ unwired draft atomic shadow raw/job RPC > denies the authenticated role without changing rows
+   ✓ unwired draft atomic shadow raw/job RPC > nearby mid-transaction expiry change rolls raw and job writes back 73ms
+   ✓ unwired draft atomic shadow raw/job RPC > nearby mid-transaction owner change rolls raw and job writes back 72ms
+   × unwired draft atomic shadow raw/job RPC > nearby R18 rejects an in-transaction raw receipt-clock rewrite before certifying completion 64ms
+     → The RPC must reject a raw row whose post-trigger receipt clock contradicts its acknowledgment: expected false to be true // Object.is equality
+   × unwired draft atomic shadow raw/job RPC > nearby R18 rejects a final job trigger that drops the supposedly persisted protocol receipt 66ms
+     → Matched update must verify the actual persisted same-owner terminal acknowledgment after triggers: expected false to be true // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/review-shadow-raw-ack-v1/nearby-integration.test.ts > actual shadow raw/job settlement integration > nearby R18 actual hook rejects a normal successful RPC reply whose stored raw receipt was rewritten
+AssertionError: An actual successful-reply hook cannot certify a stored raw receipt that contradicts the job receipt: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-shadow-raw-ack-v1/nearby-integration.test.ts:220:125
+    218|     const after=await inventory(),raw=(await sql("select to_jsonb(r) b…
+    219|     writeFileSync(join(__dirname,"evidence/R18-actual-hook.json"),JSON…
+    220|     expect(rejected,"An actual successful-reply hook cannot certify a …
+       |                                                                                                                             ^
+    221|   });
+    222|   it("nearby changed raw evidence between qualification and settlement…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/review-shadow-raw-ack-v1/nearby-sql.test.ts > unwired draft atomic shadow raw/job RPC > nearby R18 rejects an in-transaction raw receipt-clock rewrite before certifying completion
+AssertionError: The RPC must reject a raw row whose post-trigger receipt clock contradicts its acknowledgment: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-shadow-raw-ack-v1/nearby-sql.test.ts:126:116
+    124|   const job=(await sql("select to_jsonb(j) body from public.tweet_pipe…
+    125|   writeFileSync(join(__dirname,"evidence/R18-sql-raw-clock.json"),JSON…
+    126|   expect(rejected,"The RPC must reject a raw row whose post-trigger re…
+       |                                                                                                                    ^
+    127|  });
+    128|  it("nearby R18 rejects a final job trigger that drops the supposedly …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/review-shadow-raw-ack-v1/nearby-sql.test.ts > unwired draft atomic shadow raw/job RPC > nearby R18 rejects a final job trigger that drops the supposedly persisted protocol receipt
+AssertionError: Matched update must verify the actual persisted same-owner terminal acknowledgment after triggers: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-shadow-raw-ack-v1/nearby-sql.test.ts:132:120
+    130|   let rejected=false,receipt:any=null;try{receipt=await settle();}catc…
+    131|   const after=await inventory();writeFileSync(join(__dirname,"evidence…
+    132|   expect(rejected,"Matched update must verify the actual persisted sam…
+       |                                                                                                                        ^
+    133|  });
+    134| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  3 failed | 4 passed | 37 skipped (44)
+   Start at  03:06:44
+   Duration  2.65s (transform 148ms, setup 35ms, collect 243ms, tests 2.14s, environment 0ms, prepare 60ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/review-shadow-raw-ack-v1/nearby-results.json

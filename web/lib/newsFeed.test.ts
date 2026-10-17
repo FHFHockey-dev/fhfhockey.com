@@ -53,6 +53,7 @@ function buildItem(overrides: Partial<NewsFeedItem> = {}): NewsFeedItem {
     observed_at: "2026-07-14T12:00:00.000Z",
     published_at: "2026-07-14T12:01:00.000Z",
     metadata: {
+      primaryTextSource: "quoted_oembed",
       wrapperAuthorHandle: "GameDayNewsNHL",
       wrapperUrl: "https://x.com/GameDayNewsNHL/status/100",
       quotedAuthorName: "Ben Pope",
@@ -66,6 +67,23 @@ function buildItem(overrides: Partial<NewsFeedItem> = {}): NewsFeedItem {
 }
 
 describe("public NewsFeed source attribution", () => {
+  it.each(["GameDayLines", "GameDayGoalies", "GameDayNewsNHL", "CcCMiddleton", "DFOFantasy", "NHL_Rosters"])("never exposes ingest account %s in a public DTO", handle => {
+    const item = buildItem({ source_label: handle, source_account: handle, source_url: `https://x.com/${handle}/status/100`, tweet_url: `https://x.com/${handle}/status/100`,
+      headline: `Via @${handle}: Injury update`, blurb: `Via @${handle}: Player remains out`, metadata: { rawPayload: { account: handle }, sourceKey: handle } });
+    const publicItem = sanitizePublicNewsFeedItem(item);
+    expect(publicItem.source_label).toBe("Original source pending"); expect(publicItem.source_url).toBeNull();
+    expect(JSON.stringify(publicItem).toLowerCase()).not.toContain(handle.toLowerCase());
+    expect(item.source_account).toBe(handle);
+  });
+  it("selects the claim's author rather than the first handle or unrelated quoted author", () => {
+    const item = buildItem({ source_url: "https://x.com/Reporter/status/100", source_account: "Reporter", source_label: "Reporter",
+      metadata: { primaryTextSource: "wrapper_oembed", quotedAuthorHandle: "OtherWriter", quotedAuthorName: "Other Writer", quotedTweetUrl: "https://x.com/OtherWriter/status/200" } });
+    expect(getPublicNewsSourceAttribution({ item })).toEqual({ displayName: "Reporter", account: "@Reporter", url: "https://x.com/Reporter/status/100" });
+    expect(getPublicNewsSourceAttribution({ item: { ...item, metadata: { ...item.metadata, primaryTextSource: "quoted_oembed", quotedAuthorHandle: "WrongAuthor" } } }))
+      .toEqual({ displayName: "Original source pending", account: null, url: null });
+    expect(getPublicNewsSourceAttribution({ item: { ...item, blurb: "RT @OtherWriter: Practice update" } }))
+      .toEqual({ displayName: "Original source pending", account: null, url: null });
+  });
   it.each(["SOURCE_ACCOUNT", "@null", "undefined", "unknown", "N/A", "bad handle", "bad/handle", "<author>"])("rejects placeholder or malformed account %s", (account) => {
     expect(getPublicNewsSourceAttribution({ item: buildItem({ metadata: null, source_account: account, source_url: null, tweet_url: null }) }).account).toBeNull();
   });
@@ -156,6 +174,17 @@ describe("public NewsFeed source attribution", () => {
     });
   });
 
+  it("suppresses conflicting retained original post IDs without hiding matching quote evidence", () => {
+    const metadata = { primaryTextSource: "quoted_oembed", quotedTweetId: "999", quotedTweetUrl: "https://x.com/Reporter/status/1000", quotedAuthorHandle: "Reporter" };
+    const item = buildItem({ metadata });
+    const pending = { displayName: "Original source pending", account: null, url: null };
+    expect(getPublicNewsSourceAttribution({ item })).toEqual(pending);
+    const matching = buildItem({ metadata: { ...metadata, quotedTweetId: "1000" } });
+    expect(getPublicNewsSourceAttribution({ item: matching })).toMatchObject({ account: "@Reporter", url: metadata.quotedTweetUrl });
+    expect(getPublicNewsSourceAttribution({ item: matching, provenance: { metadata: { quotedTweetId: "999" } } })).toEqual(pending);
+    expect(getPublicNewsSourceAttribution({ item: matching, provenance: { metadata: { quotedTweetUrl: "https://x.com/Reporter/status/999" } } })).toEqual(pending);
+  });
+
   it("removes relay identities and wrapper URLs from public item data", () => {
     const item = sanitizePublicNewsFeedItem(buildItem(), {
       source_handle: "GameDayNewsNHL",
@@ -182,7 +211,7 @@ describe("public NewsFeed source attribution", () => {
     });
     const source = getPublicNewsSourceAttribution({ item });
 
-    expect(source).toEqual({ displayName: null, account: null, url: null });
+    expect(source).toEqual({ displayName: "Original source pending", account: null, url: null });
   });
 
   it("removes appended relay bylines from public text", () => {

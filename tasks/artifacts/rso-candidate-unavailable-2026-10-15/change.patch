@@ -1,0 +1,93 @@
+--- a/web/components/RosterScheduleOptimizer/CandidateBrowser.tsx
++++ b/web/components/RosterScheduleOptimizer/CandidateBrowser.tsx
+@@ -72,6 +72,27 @@
+   const filtered = candidates.filter(({ player }) => (!team || player.teamAbbreviation === team)
+     && (!position || normalizeEligibility(player.eligiblePositions).positions.includes(position as typeof positions[number]))
+     && `${player.name} ${player.teamAbbreviation ?? ""}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
++  const hasEvaluatedFit = filtered.some(item => item.activeGames !== null || item.activePoints !== null);
++  const discoveryReasons: string[] = [];
++  if (!snapshot) discoveryReasons.push("Load a planning roster and schedule to evaluate acquisition plans.");
++  else {
++    if (snapshot.evidence.schedule?.completeness !== "complete") discoveryReasons.push("Planning schedule coverage is incomplete or unknown; team schedule counts do not establish net active games.");
++    discoveryReasons.push(...snapshot.rules.unsupported);
++    if (snapshot.rules.scoring.mode === "points" && (!Object.keys(snapshot.rules.scoring.weights).length
++      || Object.values(snapshot.rules.scoring.weights).some(weight => !Number.isFinite(weight)))) discoveryReasons.push("Supply valid league scoring weights for net points. Points also require complete qualified game forecasts for the original roster and candidate plan.");
++    const acquisitionGaps = [snapshot.rules.acquisitionTiming === "unknown" && "effective timing",
++      snapshot.rules.acquisitionCost === null && "cost per add",
++      (!snapshot.rules.periods.length || snapshot.rules.periods.some(period => period.remaining === null)) && "remaining moves and reset periods"].filter(Boolean);
++    if (acquisitionGaps.length) discoveryReasons.push(`Acquisition inputs need review: ${acquisitionGaps.join(", ")}.`);
++    const unverifiedEligibility = filtered.filter(({ player }) => {
++      const eligibility = normalizeEligibility(player.eligiblePositions);
++      return player.eligibilityVerified !== true || !eligibility.valid || eligibility.playerClass !== player.playerClass;
++    }).length;
++    const unknownAvailability = filtered.filter(({ player }) => player.availability === "unknown").length;
++    if (unverifiedEligibility) discoveryReasons.push(`${unverifiedEligibility} matching candidate(s) lack usable verified league eligibility.`);
++    if (unknownAvailability) discoveryReasons.push(`${unknownAvailability} matching candidate(s) have unknown league availability.`);
++    if (metrics && !filtered.some(item => item.comparison?.plans.length)) discoveryReasons.push("No legal acquisition plan with a verified move budget was retained. Review availability, waiver clearance, timing, locks, roster capacity and drop restrictions.");
++  }
+   const grouped = [...new Set(filtered.map(row => row.player.teamAbbreviation ?? "Team unknown"))]
+     .map(name => ({ name, rows: filtered.filter(row => (row.player.teamAbbreviation ?? "Team unknown") === name) }))
+     .sort((a, b) => compareCandidateFits([...a.rows].sort((x, y) => compareCandidateFits(x, y, categories ? "schedule" : sort))[0],
+@@ -99,13 +120,17 @@
+     const visibleUnranked = unranked.slice(0, limit - visibleForecasted.length - visibleSchedule.length);
+     return <>{visibleForecasted.length > 0 && <><h4>Net points · gains and tradeoffs</h4>{visibleForecasted.map((item, index) => row(item, index))}</>}
+       {visibleSchedule.length > 0 && <><h4>{pointsFirst ? "Net AGP · points unavailable" : "Net active games"}</h4>{visibleSchedule.map((item, index) => row(item, visibleForecasted.length + index))}</>}
+-      {visibleUnranked.length > 0 && <><details className={styles.unrankedDisclosure}><summary><h4>Unranked players</h4><span> · Team schedule only</span></summary><p className={styles.limitation}>{unranked.some(item => item.upcomingGames !== null)
++      {visibleUnranked.length > 0 && <><details open className={styles.unrankedDisclosure}><summary><h4>Unranked players</h4><span> · Team schedule only</span></summary><p className={styles.limitation}>{unranked.some(item => item.upcomingGames !== null)
+         ? "Upcoming NHL games first; this is team schedule context, not net roster fit or player participation. Unknown teams follow."
+         : "Alphabetical browsing; verified upcoming NHL schedule counts are unavailable."} Net comparisons require verified schedule, eligibility, availability and acquisition rules; changing the sort does not supply missing evidence.</p></details>
+         {visibleUnranked.map((item, index) => row(item, index, false))}</>}
+       {rows.length > limit && <button onClick={showMore}>Show more players</button>}</>;
+   };
+   return <section aria-label="Candidate browser" aria-busy={loading}>
++    <h3>{hasEvaluatedFit ? "Evaluated fit results" : "Player discovery"}</h3>
++    {!hasEvaluatedFit && <><p role="status">{loading ? "Candidate comparisons are being calculated. Discovery order is not a projection or roster-fit ranking."
++      : "No evaluated fit ranking is available. This is a player discovery list; its order is not a projection or roster-fit score."}</p>
++      {!loading && discoveryReasons.length > 0 && <ul aria-label="Missing comparison inputs">{discoveryReasons.map((reason, index) => <li key={`${index}:${reason}`}>{reason}</li>)}</ul>}</>}
+     <div className={styles.candidateToolbar}>
+       <div className={styles.candidateViews} role="group" aria-label="Candidate views">
+         <button aria-pressed={view === "team"} onClick={() => setView("team")}>By Team</button>
+--- a/web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx
++++ b/web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx
+@@ -95,15 +95,39 @@
+   return { players, rosterIds: new Set<string>(), snapshot, intent: workspace.intent, fits: [], manual: false, select: vi.fn(), add: vi.fn(), markAvailable: vi.fn() };
+ }
+ it("leaves unavailable comparisons unranked and names alphabetical browsing for either selected net sort", () => {
+-  render(<CandidateBrowser {...discoveryFixture()} />);
++  const props = discoveryFixture();
++  props.snapshot.rules.unsupported = ["Retained roster inputs are unverified; this is provisional schedule analysis."];
++  const before = JSON.stringify({ snapshot: props.snapshot, intent: props.intent });
++  render(<CandidateBrowser {...props} />);
+   const ids = () => screen.getAllByRole("article").map(article => article.getAttribute("data-rso-candidate-id"));
+   expect(ids()).toEqual(["alpha", "missing", "zulu"]);
+   expect(screen.queryAllByLabelText(/^Result /)).toHaveLength(0);
+   expect(screen.getByRole("heading", { name: "Unranked players" })).toBeTruthy();
+-  expect(screen.getByText(/Alphabetical browsing; verified upcoming NHL schedule counts are unavailable/)).toBeTruthy();
++  expect(screen.getByRole("heading", { name: "Player discovery" })).toBeTruthy();
++  expect(screen.getByRole("status").textContent).toContain("its order is not a projection or roster-fit score");
++  const explanation = screen.getByText(/Alphabetical browsing; verified upcoming NHL schedule counts are unavailable/);
++  expect((explanation.closest("details") as HTMLDetailsElement).open).toBe(true);
++  const missing = within(screen.getByRole("list", { name: "Missing comparison inputs" }));
++  expect(missing.getByText(/Planning schedule coverage is incomplete/)).toBeTruthy();
++  expect(missing.getByText(/Retained roster inputs are unverified/)).toBeTruthy();
++  expect(missing.getByText(/Supply valid league scoring weights for net points/)).toBeTruthy();
++  expect(missing.getByText("Acquisition inputs need review: effective timing, cost per add, remaining moves and reset periods.")).toBeTruthy();
++  expect(missing.getByText("3 matching candidate(s) lack usable verified league eligibility.")).toBeTruthy();
++  expect(missing.getByText("3 matching candidate(s) have unknown league availability.")).toBeTruthy();
+   fireEvent.change(screen.getByRole("combobox", { name: "Sort" }), { target: { value: "schedule" } });
+   expect(ids()).toEqual(["alpha", "missing", "zulu"]);
+   expect(screen.queryAllByLabelText(/^Result /)).toHaveLength(0);
++  expect(JSON.stringify({ snapshot: props.snapshot, intent: props.intent })).toBe(before);
++});
++it.each(["points", "schedule"])("labels evaluated fit results and preserves %s ordering ahead of discovery names", mode => {
++  const props = discoveryFixture();
++  fixture.candidates = props.players.slice(0, 2).map((player, index) => ({ playerId: player.id, complete: true,
++    plans: [{ objective: "outcome", steps: [], netAGP: index ? 3 : 1, netPoints: mode === "points" ? index ? 8 : 2 : null, dropped: [], displacedPlayerIds: [] }] }));
++  render(<CandidateBrowser {...props} />);
++  expect(screen.getByRole("heading", { name: "Evaluated fit results" })).toBeTruthy();
++  expect(screen.queryByText(/No evaluated fit ranking is available/)).toBeNull();
++  expect(screen.getAllByRole("article").map(article => article.getAttribute("data-rso-candidate-id"))).toEqual(["zulu", "alpha", "missing"]);
++  expect(screen.queryAllByLabelText(/^Result /)).toHaveLength(2);
+ });
+ it("shares command-bar search with candidate filtering and resets the display budget without changing intent", () => {
+   const fixtureProps = discoveryFixture();

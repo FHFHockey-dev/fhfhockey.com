@@ -1,0 +1,1077 @@
+{
+  "ownerThreadId": "01a142bb-decf-77fe-ac88-1dc20c8ed0f2",
+  "stableForCombinedVerification": true,
+  "sourceOwnerThreadId": "01a14299-0127-7424-85aa-42578c6740ef",
+  "sourceManifest": "tasks/ifttt-integration-2026-10-16/next-increment/owned-source-v4-sha256.json",
+  "sourceManifestSha256": "8a6e3b3c27cf60860b206a4dfd068dbc0aede9ceb76ea03b815e42ffc97ac958",
+  "sourcePinCount": 41,
+  "sourceDrift": [],
+  "files": [
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/REVIEW.md",
+      "bytes": 14515,
+      "sha256": "d7b8407d435e67ce401be6ab71d97ab2e4fc801accbdc2950ced38d42031be46"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/adapter-imports.diff",
+      "bytes": 875,
+      "sha256": "bd435dc105248bba9faee574a36850a4364f0bb9ac037ca2a3d6744c8f5e2ed3"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/critical-parser-results.json",
+      "bytes": 30703,
+      "sha256": "28f63fca92c5305a12063749ce96b6c0be1e8c9ee4dcc9ffa80165866f4facc9"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/critical-parser-run.log",
+      "bytes": 763,
+      "sha256": "83ae2e7714e5834deefb00148aa2e8507fc76b48af8fc062ea436656ecc0d88f"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/deny-network.ts",
+      "bytes": 383,
+      "sha256": "b5877133232b17c55cf8c5e9b7419411f51f9ec01ebe8d427d1d62760794d6d8"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/evaluation-db-results.json",
+      "bytes": 8134,
+      "sha256": "b505cdc47ad0aed3190c127403a80c38ada784393a33c32a4d0c598785c91cd3"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/evaluation-db-run.log",
+      "bytes": 4438,
+      "sha256": "63c1978f4cde107037791c8ae3b2764966bdf89ac3b8ab53f4fa345191eac5c7"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/focused-results.json",
+      "bytes": 40833,
+      "sha256": "5ef3c994cf3df776de1887bea06bd5a110bdfe4f12ff970f97de69303f3bf0eb"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/focused-run.log",
+      "bytes": 1190,
+      "sha256": "6ec65a2fec2ea84de3ba5313153e574baed9cb9cc5074d83b86409837dfce4cb"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-owned-source-sha256.json",
+      "bytes": 5694,
+      "sha256": "fd81bab35e9ffba3aa8d750e188c9cf897afed57753a1d9346a8657a2586044c"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/tasks/ifttt-integration-2026-10-16/migrations/20261016024711_tweet_claim_registry.sql",
+      "bytes": 14970,
+      "sha256": "4bf56a9ecc2dda1cc52edc7cbd1fc71f0311d538f8cd997781668772d7c69c5e"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/__tests__/pages/api/v1/db/update-line-sources.test.ts",
+      "bytes": 63992,
+      "sha256": "240c3122ea5adb9e6dc3fd9177b1530aaaf2d8dd74eedbd4f35bbad914e630cc"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/__tests__/pages/api/v1/db/update-lines-ccc.test.ts",
+      "bytes": 17287,
+      "sha256": "c7bbd6d2cd93b29bb43a0fe6731cf99ed7cb5a4b677778e56de5b9d8181a229a"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/components/NewsFeed/NewsCard.test.tsx",
+      "bytes": 12424,
+      "sha256": "4ef4b7adf05abd67a9a12d7dd95fccc7f1fc8c95bb87a47ab431c18e7b769031"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/lib/lines/service.test.ts",
+      "bytes": 4918,
+      "sha256": "d5ce4cca0d066eba5a2eb5d93fdcfd958c24f05d7bd12ff48ad49f8dbc533f66"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/lib/lines/service.ts",
+      "bytes": 8508,
+      "sha256": "e95dbaa4eb65af4887ce91f9076152f4d93265f3c2e5bcae6e1c74b8a0f5d54b"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/lib/newsFeed.test.ts",
+      "bytes": 12355,
+      "sha256": "8d5bf4ce3968aef797b5cb8ef2b4305c9b6a88dd160007f7cf855ca0bac76aa8"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/lib/newsFeed.ts",
+      "bytes": 24386,
+      "sha256": "d742879e473ac3ddb15cdedfe6b0c081add4b8ce5bc8b621d4524ee2aaad9202"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/lib/sources/fixtures/claimContextCases.json",
+      "bytes": 2195,
+      "sha256": "a9ebc8de647914cec6f9639f0b91f8b208821dcc62631cd5c9293c1712ae7d36"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/lib/sources/linesCccIngestion.ts",
+      "bytes": 74145,
+      "sha256": "3b9a29f70d9a95f6657f62b9154459e801d8cb3eb0d96f6a143ca2956f7080c0"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/lib/sources/projectedLineups.test.ts",
+      "bytes": 40196,
+      "sha256": "096b9df26f93fd55012bc342c3f653230ef252977ee14642f478e9131e3934f2"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/lib/sources/tweetClaimCompatibility.ts",
+      "bytes": 3258,
+      "sha256": "1dc6d0036c09db09318187a1754db9514c3193c8b423b025efcc5c8f3588aee1"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/lib/sources/tweetClaimEvaluation.ts",
+      "bytes": 7337,
+      "sha256": "d598c0208ed82f325034a4c3ba19bcfe5652808d639fdda2ba8035d987da8805"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/lib/sources/tweetClaimExtraction.test.ts",
+      "bytes": 8214,
+      "sha256": "7532d92566fe5b72ae13b5c08d55a4df6d1f54d1b4336cdeb7df6b7a6a3cb978"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/lib/sources/tweetClaimExtraction.ts",
+      "bytes": 12235,
+      "sha256": "998b5129cb9043c6c4743a4be545b62de905dbee319c89939478d23fc85b714c"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/lib/sources/tweetClaimReducerAdapter.ts",
+      "bytes": 22958,
+      "sha256": "78a0e2cce23be93a07f781477657dad6bfa1cd74dfb6a73ffe68a082724b2332"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/lib/sources/tweetClaimRegistry.test.ts",
+      "bytes": 20813,
+      "sha256": "f8c0bb6bf68bc07c780ccbc252a18c0071c3a730df3b0ec1f1a438899b0d59dc"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/lib/sources/tweetClaimRegistry.ts",
+      "bytes": 9755,
+      "sha256": "ea0c58c55844d80dfa596c4376f290ac191f9510cf94504eef618ce4340649b1"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/lib/sources/tweetInterpretation.test.ts",
+      "bytes": 70804,
+      "sha256": "d1703752a02cf6ce469aef69565599031bb2dc2d28bf126db9c04f43d55213c2"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/lib/sources/tweetPlayerEvents.ts",
+      "bytes": 22924,
+      "sha256": "14c421d37506f33df08cac5914e30c38a578b2588ae46f3c6e461b70efadc88c"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/lib/sources/tweetProjectionStorage.ts",
+      "bytes": 20256,
+      "sha256": "a3987dd70356e5b96016a19b28286700ec1fa46aa0ea7911eaedbb7e4f4f73b6"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/lib/sources/tweetSourceClaimRegistry.ts",
+      "bytes": 36905,
+      "sha256": "03f58f5793b5083dd48935ab525f869205e338798b45d768c9008c0b55004468"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/lib/sources/tweetSourceDirectory.test.ts",
+      "bytes": 4730,
+      "sha256": "a790743e19f0e65f501f9497afe8615ecc8c118e864be76e6e3c7b5c24fdf7af"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/lib/sources/tweetSourceDirectory.ts",
+      "bytes": 6759,
+      "sha256": "499b5ffe8727342346ec6e16336140c1e38f4c89bbaebf1c799426bdd0041684"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/pages/api/v1/db/update-line-sources.ts",
+      "bytes": 36334,
+      "sha256": "5ea9b1ded884e6e38865076881eea650ea6942b19026ebb497b7c56d3e720dca"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/pages/api/v1/db/update-lines-ccc.ts",
+      "bytes": 25288,
+      "sha256": "38dd335da6672d6c145a53b12522afa071df8f3911aac4cb7a695d4e94ae16a6"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/frozen-source/web/scripts/evaluate-tweet-claims.ts",
+      "bytes": 760,
+      "sha256": "672af9835b481682066cd10d919b12073bc089da5804400f478ac9b75baf1849"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/independent-postgres-results.json",
+      "bytes": 9372,
+      "sha256": "4e13d6c8153595eac92d1cd1f6cec1310d0acda627b47d1ca7a812ae67b7cc99"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/independent-postgres-run.log",
+      "bytes": 5946,
+      "sha256": "eccdb4842f4ea0d6a9fbb66430e71db0b433a463f9256ee9410349bfc8c05d4f"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/independent-postgres.test.ts",
+      "bytes": 25592,
+      "sha256": "ca1389e53d9d34b61225df6c1f878ea98fc96df216b2a091cca945561791ee19"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/independent-regressions.test.ts",
+      "bytes": 6318,
+      "sha256": "9b967eee3cf8751ae625c49bb3eb6fbc0e273cbd2174f7ec4298c8607b0fec3f"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/independent-results.json",
+      "bytes": 9179,
+      "sha256": "5dbec97debe1e2104cdd40c03d6ec2266532a73e5d9817f4557220548aa22f63"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/independent-run.log",
+      "bytes": 9846,
+      "sha256": "24431cca331a1414fecd0fffa32467a1d9fd13df1045ba54cb0382030b8c8a12"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/integrity.json",
+      "bytes": 7829,
+      "sha256": "b606235b9149f8bbe6caf7adb7c239f47c6787eb63c75882396eefe8f4f2c6ed"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/postgres-results.json",
+      "bytes": 7037,
+      "sha256": "90a0ed16f88545e9056fe99e230369509c21337a4595c2813e87795e3a81d9a6"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/postgres-run.log",
+      "bytes": 681,
+      "sha256": "fa934c487325aa1301b15e80e281c2c156966cbdf1098376f6c24b62ba526d6a"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/postgres-setup-error.log",
+      "bytes": 3428,
+      "sha256": "c3c65615808d2aacadc66d767f747251c59cb9c140d35cbeada025e6233d59b2"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review/vitest.review.config.mjs",
+      "bytes": 441,
+      "sha256": "e33f689623d970de3b65b2ddacf899e3887efc284babacaccb90c82079bea564"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/REVIEW.md",
+      "bytes": 13877,
+      "sha256": "28c300812a45f477f95cd00a97cee135bf2f25b1ac91ff329a58ba4e14ceed3f"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/focused-results.json",
+      "bytes": 43890,
+      "sha256": "858d41cef86341c877172de90a7086b4f01164adbe1cf1f08246707e18f45d62"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/focused-run.log",
+      "bytes": 3559,
+      "sha256": "21cfdd3e79d8342b825c89c9b11a79f039cfda635d8c9f6b7ed4a302ac94c148"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-owned-source-sha256.json",
+      "bytes": 6222,
+      "sha256": "eeabe4230c19f10b9e820c37b16b4681b85ac7901509c6a7a6c592822ca84e47"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/tasks/ifttt-integration-2026-10-16/migrations/20261016024711_tweet_claim_registry.sql",
+      "bytes": 15378,
+      "sha256": "7570300e3e6dfc6a899e2296fa20483ee02ad206c1e0e1f3a966ba1d29847ea7"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/tasks/ifttt-integration-2026-10-16/next-increment/20261016073000_tweet_claim_qualification.sql",
+      "bytes": 14794,
+      "sha256": "14e332f36fa32144fb060f99f72b3b7ebf7759c356f939313db4ec5af7922aa7"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/__tests__/pages/api/v1/db/update-line-sources.test.ts",
+      "bytes": 63992,
+      "sha256": "240c3122ea5adb9e6dc3fd9177b1530aaaf2d8dd74eedbd4f35bbad914e630cc"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/__tests__/pages/api/v1/db/update-lines-ccc.test.ts",
+      "bytes": 17287,
+      "sha256": "c7bbd6d2cd93b29bb43a0fe6731cf99ed7cb5a4b677778e56de5b9d8181a229a"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/components/NewsFeed/NewsCard.test.tsx",
+      "bytes": 12424,
+      "sha256": "4ef4b7adf05abd67a9a12d7dd95fccc7f1fc8c95bb87a47ab431c18e7b769031"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/lines/service.test.ts",
+      "bytes": 4918,
+      "sha256": "d5ce4cca0d066eba5a2eb5d93fdcfd958c24f05d7bd12ff48ad49f8dbc533f66"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/lines/service.ts",
+      "bytes": 9177,
+      "sha256": "bde1b3b012df923cd9fb05f0bb4e8b5148c5aec941a9c1ed06cbdcbd7852e03f"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/newsFeed.test.ts",
+      "bytes": 12355,
+      "sha256": "8d5bf4ce3968aef797b5cb8ef2b4305c9b6a88dd160007f7cf855ca0bac76aa8"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/newsFeed.ts",
+      "bytes": 24458,
+      "sha256": "53f76a90ebb81a1a86526c153650abf20c7d3da874dfdff01f3fa24600ee8d16"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/fixtures/claimContextCases.json",
+      "bytes": 2195,
+      "sha256": "a9ebc8de647914cec6f9639f0b91f8b208821dcc62631cd5c9293c1712ae7d36"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/fixtures/tweetClaimQualificationFixture.ts",
+      "bytes": 2209,
+      "sha256": "82555df4e3643e551f266a1d42b9d83b30e87eadab62669db3fc84c649e2405a"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/linesCccIngestion.ts",
+      "bytes": 74145,
+      "sha256": "3b9a29f70d9a95f6657f62b9154459e801d8cb3eb0d96f6a143ca2956f7080c0"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/projectedLineups.test.ts",
+      "bytes": 40196,
+      "sha256": "096b9df26f93fd55012bc342c3f653230ef252977ee14642f478e9131e3934f2"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/tweetClaimCompatibility.ts",
+      "bytes": 3258,
+      "sha256": "1dc6d0036c09db09318187a1754db9514c3193c8b423b025efcc5c8f3588aee1"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/tweetClaimEvaluation.ts",
+      "bytes": 8294,
+      "sha256": "b9ea1340a4660daad29b42572f80c1d422d654ea9d1d1ba6438dbdc9411da633"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/tweetClaimEvaluationBounds.test.ts",
+      "bytes": 871,
+      "sha256": "6e445891dd7bfed3f5c1d12aca9cd9a8e806521452b093b8d59a2492ab33455d"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/tweetClaimEvaluationBounds.ts",
+      "bytes": 972,
+      "sha256": "006147fbf246adb99e861ed39867eb4a86f3310ff406751b4e588c91da195593"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/tweetClaimEvidence.test.ts",
+      "bytes": 2223,
+      "sha256": "b2e4505c8cf9490262dfb571d697d97f185d5db28509a70a196ba57a9aa60f88"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/tweetClaimEvidence.ts",
+      "bytes": 5750,
+      "sha256": "7baa12d1001cc133861f092eb48b5bd218f140d4d23e83f75f754ad42eb5b2e7"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/tweetClaimExtraction.test.ts",
+      "bytes": 8214,
+      "sha256": "7532d92566fe5b72ae13b5c08d55a4df6d1f54d1b4336cdeb7df6b7a6a3cb978"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/tweetClaimExtraction.ts",
+      "bytes": 12235,
+      "sha256": "998b5129cb9043c6c4743a4be545b62de905dbee319c89939478d23fc85b714c"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/tweetClaimLineage.test.ts",
+      "bytes": 4132,
+      "sha256": "b2318b8168abbc68a3cb9c1d7fa8a53cca3420b5ee4f7614927e36ae0fb0ee5e"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/tweetClaimLineage.ts",
+      "bytes": 8617,
+      "sha256": "2515c1998de409122c6e337762339a4ab04c507602e9037ec0be842aa66fdd69"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/tweetClaimQualificationStorage.test.ts",
+      "bytes": 16834,
+      "sha256": "e3c98d2a8f697ccd717f5f8ab2ed95c867f6406e09647f743b4575362d26851b"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/tweetClaimQualificationStorage.ts",
+      "bytes": 4431,
+      "sha256": "0a16a078942841527f3cccfe3b7d9b7d35c18d2dfd7620033c030f56401695b8"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/tweetClaimReducerAdapter.ts",
+      "bytes": 22958,
+      "sha256": "78a0e2cce23be93a07f781477657dad6bfa1cd74dfb6a73ffe68a082724b2332"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/tweetClaimRegistry.test.ts",
+      "bytes": 21181,
+      "sha256": "b928c0d45f5c7348ab8c9291bf21c728fdb9709da406c827b507e34a71e09860"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/tweetClaimRegistry.ts",
+      "bytes": 8866,
+      "sha256": "985f6f9368ca4d96ff4cbeb06d1e98887494cb0e034ae28b85087021df9c2b90"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/tweetInterpretation.test.ts",
+      "bytes": 70804,
+      "sha256": "d1703752a02cf6ce469aef69565599031bb2dc2d28bf126db9c04f43d55213c2"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/tweetPlayerEvents.ts",
+      "bytes": 22924,
+      "sha256": "14c421d37506f33df08cac5914e30c38a578b2588ae46f3c6e461b70efadc88c"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/tweetProjectionStorage.ts",
+      "bytes": 20256,
+      "sha256": "a3987dd70356e5b96016a19b28286700ec1fa46aa0ea7911eaedbb7e4f4f73b6"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/tweetSourceClaimRegistry.ts",
+      "bytes": 36905,
+      "sha256": "03f58f5793b5083dd48935ab525f869205e338798b45d768c9008c0b55004468"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/tweetSourceDirectory.test.ts",
+      "bytes": 4730,
+      "sha256": "a790743e19f0e65f501f9497afe8615ecc8c118e864be76e6e3c7b5c24fdf7af"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/lib/sources/tweetSourceDirectory.ts",
+      "bytes": 6759,
+      "sha256": "499b5ffe8727342346ec6e16336140c1e38f4c89bbaebf1c799426bdd0041684"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/pages/api/v1/db/update-line-sources.ts",
+      "bytes": 36334,
+      "sha256": "5ea9b1ded884e6e38865076881eea650ea6942b19026ebb497b7c56d3e720dca"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/pages/api/v1/db/update-lines-ccc.ts",
+      "bytes": 25288,
+      "sha256": "38dd335da6672d6c145a53b12522afa071df8f3911aac4cb7a695d4e94ae16a6"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/frozen-source/web/scripts/evaluate-tweet-claims.ts",
+      "bytes": 760,
+      "sha256": "672af9835b481682066cd10d919b12073bc089da5804400f478ac9b75baf1849"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/independent-lineage-results.json",
+      "bytes": 5043,
+      "sha256": "f80589b34ff0fddf2591977daf318c03f327e91fc656d60241abbd657818f892"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/independent-lineage-run.log",
+      "bytes": 4477,
+      "sha256": "ae94936eb1edd1428d1313f708127cd750e18d4d1fa80da561292f39502c8d09"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/independent-lineage.test.ts",
+      "bytes": 2521,
+      "sha256": "783bf662036984ac425fc2f403a74816f2a27acfb64af70142a1a1d593813fb5"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/independent-postgres-results.json",
+      "bytes": 5955,
+      "sha256": "c768eb702652466528dcd5f9bac740fa0d9de90456319d6d18de8a05753cfade"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/independent-postgres-run.log",
+      "bytes": 5241,
+      "sha256": "94d7dbaa8baba15f5d61a6703f31326eecd98e52c3c308c6405647292a3bd3f9"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/independent-postgres.test.ts",
+      "bytes": 20274,
+      "sha256": "c36d57a94c4545dd214ac374247ad253d8fc1efe91512469c0e3a782a584b86a"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/integrity.json",
+      "bytes": 6909,
+      "sha256": "d8c66c873b617893d7598e703195eee597a392e2b83f5b6df2caae9375f9eb84"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/postgres-results.json",
+      "bytes": 10460,
+      "sha256": "99257a3665bdb08718ade823364b6d17af60c08b72d2cda3b3dac67d74811a47"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/postgres-run.log",
+      "bytes": 814,
+      "sha256": "11d6d385c58f1060cd58f986816674c042f8dbc49410eade3c58aac5d2e1bab6"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v2/vitest.review.config.mjs",
+      "bytes": 261,
+      "sha256": "12090f3c9f6514121dceaf5faec272a0a4e3592b55bd087504bb8175fa1754b4"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/REVIEW.md",
+      "bytes": 11941,
+      "sha256": "407bb77d14b2c1a8ce3d4044962aae97b0f10eaaf7528fb0b7f3d34f9fd38098"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/focused-results.json",
+      "bytes": 48054,
+      "sha256": "8ffe57703d6ee585513e777af122f21146058ccd9f02bbff2cf8b2caec681c3a"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/focused-run.log",
+      "bytes": 3948,
+      "sha256": "36a4bb1c2ce5b42315927a27566694a9c4c1c87d043d37dcf9bf9fa17222d592"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-owned-source-sha256.json",
+      "bytes": 6858,
+      "sha256": "13a20c3f995e20a299e0f51d05fa871e81e125814aa788b3b2864719c927c903"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/tasks/ifttt-integration-2026-10-16/migrations/20261016024711_tweet_claim_registry.sql",
+      "bytes": 15378,
+      "sha256": "7570300e3e6dfc6a899e2296fa20483ee02ad206c1e0e1f3a966ba1d29847ea7"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/tasks/ifttt-integration-2026-10-16/next-increment/20261016073000_tweet_claim_qualification.sql",
+      "bytes": 21553,
+      "sha256": "510eae121f939ffe4e2c3ebd953df1d5206f5e423cdbd014c88e43812a4906bb"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/__tests__/pages/api/v1/db/update-line-sources.test.ts",
+      "bytes": 64812,
+      "sha256": "e2d3e319a791a62dd24060710ace781ec39615917f93d73e412849cd55d3c304"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/__tests__/pages/api/v1/db/update-lines-ccc.test.ts",
+      "bytes": 17968,
+      "sha256": "cd6a64c8bc4397d344db37e258fc349cb00b89f77c944a8735ca259696c1736b"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/components/NewsFeed/NewsCard.test.tsx",
+      "bytes": 12424,
+      "sha256": "4ef4b7adf05abd67a9a12d7dd95fccc7f1fc8c95bb87a47ab431c18e7b769031"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/lines/service.test.ts",
+      "bytes": 4918,
+      "sha256": "d5ce4cca0d066eba5a2eb5d93fdcfd958c24f05d7bd12ff48ad49f8dbc533f66"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/lines/service.ts",
+      "bytes": 9177,
+      "sha256": "bde1b3b012df923cd9fb05f0bb4e8b5148c5aec941a9c1ed06cbdcbd7852e03f"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/newsFeed.test.ts",
+      "bytes": 12355,
+      "sha256": "8d5bf4ce3968aef797b5cb8ef2b4305c9b6a88dd160007f7cf855ca0bac76aa8"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/newsFeed.ts",
+      "bytes": 24458,
+      "sha256": "53f76a90ebb81a1a86526c153650abf20c7d3da874dfdff01f3fa24600ee8d16"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/fixtures/claimContextCases.json",
+      "bytes": 2195,
+      "sha256": "a9ebc8de647914cec6f9639f0b91f8b208821dcc62631cd5c9293c1712ae7d36"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/fixtures/tweetClaimQualificationFixture.ts",
+      "bytes": 2209,
+      "sha256": "82555df4e3643e551f266a1d42b9d83b30e87eadab62669db3fc84c649e2405a"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/linesCccIngestion.ts",
+      "bytes": 74145,
+      "sha256": "3b9a29f70d9a95f6657f62b9154459e801d8cb3eb0d96f6a143ca2956f7080c0"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/projectedLineups.test.ts",
+      "bytes": 40196,
+      "sha256": "096b9df26f93fd55012bc342c3f653230ef252977ee14642f478e9131e3934f2"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetClaimCompatibility.ts",
+      "bytes": 3258,
+      "sha256": "1dc6d0036c09db09318187a1754db9514c3193c8b423b025efcc5c8f3588aee1"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetClaimEvaluation.ts",
+      "bytes": 8294,
+      "sha256": "b9ea1340a4660daad29b42572f80c1d422d654ea9d1d1ba6438dbdc9411da633"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetClaimEvaluationBounds.test.ts",
+      "bytes": 871,
+      "sha256": "6e445891dd7bfed3f5c1d12aca9cd9a8e806521452b093b8d59a2492ab33455d"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetClaimEvaluationBounds.ts",
+      "bytes": 972,
+      "sha256": "006147fbf246adb99e861ed39867eb4a86f3310ff406751b4e588c91da195593"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetClaimEvaluationIntake.test.ts",
+      "bytes": 1230,
+      "sha256": "2da9e84ae79344359522d83346d20451e8328f803bf9a02493f7b31a353e0478"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetClaimEvaluationIntake.ts",
+      "bytes": 1241,
+      "sha256": "774d814693771a5d0dbaa8fe7ba7a00df7501dc663ec246ae1379b397db907d3"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetClaimEvidence.test.ts",
+      "bytes": 2223,
+      "sha256": "b2e4505c8cf9490262dfb571d697d97f185d5db28509a70a196ba57a9aa60f88"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetClaimEvidence.ts",
+      "bytes": 5901,
+      "sha256": "9f9188f471cd4e0b7e4ff2e88a6b978bf917e7a704bdb7beaac599331a10c89a"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetClaimExtraction.test.ts",
+      "bytes": 8214,
+      "sha256": "7532d92566fe5b72ae13b5c08d55a4df6d1f54d1b4336cdeb7df6b7a6a3cb978"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetClaimExtraction.ts",
+      "bytes": 12290,
+      "sha256": "c11ff33867274c01e02f2b28749bc00c10f82b1a39bc44b34b354105fecaee95"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetClaimLineage.test.ts",
+      "bytes": 5977,
+      "sha256": "c6ddc848a3ecd8ecaab9d04c074bd7518d410203b6de02264e6359545937cdcd"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetClaimLineage.ts",
+      "bytes": 10246,
+      "sha256": "34bb82c78526319a9116ba5e7b045a17e90671c91f180222609fa2e3209b2e86"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetClaimQualificationStorage.test.ts",
+      "bytes": 25805,
+      "sha256": "a5c5a44bc04dd1260ef4d5f503fd945e7c4f430412b38f98874fa0815b567239"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetClaimQualificationStorage.ts",
+      "bytes": 4597,
+      "sha256": "b575991daa9a6179677f64394b1c48446022cba9cb58081a1709aa0b25cc610a"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetClaimReducerAdapter.ts",
+      "bytes": 22958,
+      "sha256": "78a0e2cce23be93a07f781477657dad6bfa1cd74dfb6a73ffe68a082724b2332"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetClaimRegistry.test.ts",
+      "bytes": 21181,
+      "sha256": "b928c0d45f5c7348ab8c9291bf21c728fdb9709da406c827b507e34a71e09860"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetClaimRegistry.ts",
+      "bytes": 9061,
+      "sha256": "5abf16d2eb722f92d219aafd28d90ea5e2356fc60099856bf41b19c63cfed1d3"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetClaimSourceHints.test.ts",
+      "bytes": 3332,
+      "sha256": "85bbbbc09bd38129cdbb45b7aa6429f8bd97b984f7c1331bb679de8b53c69e8a"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetClaimSourceHints.ts",
+      "bytes": 4918,
+      "sha256": "fd6b33d592bc4b3ec845ac67fb46e97adb8b31a0e92573d2530fbbb31caf97c3"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetInterpretation.test.ts",
+      "bytes": 70804,
+      "sha256": "d1703752a02cf6ce469aef69565599031bb2dc2d28bf126db9c04f43d55213c2"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetPlayerEvents.ts",
+      "bytes": 22924,
+      "sha256": "14c421d37506f33df08cac5914e30c38a578b2588ae46f3c6e461b70efadc88c"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetProjectionStorage.ts",
+      "bytes": 20256,
+      "sha256": "a3987dd70356e5b96016a19b28286700ec1fa46aa0ea7911eaedbb7e4f4f73b6"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetSourceClaimRegistry.ts",
+      "bytes": 36905,
+      "sha256": "03f58f5793b5083dd48935ab525f869205e338798b45d768c9008c0b55004468"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetSourceDirectory.test.ts",
+      "bytes": 4730,
+      "sha256": "a790743e19f0e65f501f9497afe8615ecc8c118e864be76e6e3c7b5c24fdf7af"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/lib/sources/tweetSourceDirectory.ts",
+      "bytes": 6759,
+      "sha256": "499b5ffe8727342346ec6e16336140c1e38f4c89bbaebf1c799426bdd0041684"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/pages/api/v1/db/update-line-sources.ts",
+      "bytes": 37054,
+      "sha256": "3730aa17e7140b10815bf9d044acc502cbb616de720c12c95a091f06e051890e"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/pages/api/v1/db/update-lines-ccc.ts",
+      "bytes": 26006,
+      "sha256": "a7777315823ff655e2625faa531cf39ca23bdf0c544f5b1ba7d8a4715d850084"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/frozen-source/web/scripts/evaluate-tweet-claims.ts",
+      "bytes": 760,
+      "sha256": "672af9835b481682066cd10d919b12073bc089da5804400f478ac9b75baf1849"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/hint-hook-results.json",
+      "bytes": 7660,
+      "sha256": "1ec03c74f131612c3e5b8b51e3de2eef33dce981776da437cb52e196c05c805c"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/hint-hook-run.log",
+      "bytes": 4364,
+      "sha256": "0513114ac79469d9f5562a1ddefef764f378c770d12a0fdeeb1838e5d09e9995"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/independent-hint-provenance-results.json",
+      "bytes": 3621,
+      "sha256": "64f14070336a6db83cd8f3591cc5c0f012d255f0ae001968800c170f8775c4bc"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/independent-hint-provenance-run.log",
+      "bytes": 3440,
+      "sha256": "926d8647f3b708b3afa73cd5fce886a024228a23142362f3ce01c73fab78302e"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/independent-hint-provenance.test.ts",
+      "bytes": 2287,
+      "sha256": "a40b964123e5d43d019c3fecc8d3fe1529082be0c2e662fa8eca2b1d955536d4"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/independent-lineage.test.ts",
+      "bytes": 2610,
+      "sha256": "1153d46565be198bfae5f7b02e9decd67379a5f44b6f0d8653f65b92e910da51"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/independent-postgres-results.json",
+      "bytes": 7006,
+      "sha256": "a74f6dac6ffd3e7bc3588679456683384cf38eec4afd911c71086e166a5bd44d"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/independent-postgres-run.log",
+      "bytes": 830,
+      "sha256": "9325c1151d83876a468c9da25b81bce5ab0304ade36b63c81d77330b1aecd5ba"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/independent-postgres.test.ts",
+      "bytes": 31423,
+      "sha256": "c2bfac50b33e6d6ff54e6f90b62be932ffc54bfb156c179b74a7a7919b710635"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/integrity.json",
+      "bytes": 7445,
+      "sha256": "0c7ac19736fd8f32467dad25b6fea03f150fe20350429f9c8cedcadbb52a972b"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/postgres-results.json",
+      "bytes": 26126,
+      "sha256": "604ecd9f213fe554ab211f7ab304101eea04abd3d9f9a618bcb0194138e05453"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/postgres-run.log",
+      "bytes": 18175,
+      "sha256": "8c7e331dbcb57bd4bd22bb30c6c9bc3f5664ff608090a7c7351433258045a243"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/registry-stable-clock-results.json",
+      "bytes": 7044,
+      "sha256": "b3d3b6cd683cf146cf386a16e7ece9ecfd81fb62ad08603668d9009e25d38fbc"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/registry-stable-clock-run.log",
+      "bytes": 716,
+      "sha256": "a43297868e17f0a41f544443c7f578632ea4f2c5ea6c385cc19129aa0004fb73"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v3/vitest.review.config.mjs",
+      "bytes": 261,
+      "sha256": "12090f3c9f6514121dceaf5faec272a0a4e3592b55bd087504bb8175fa1754b4"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/REVIEW.md",
+      "bytes": 10066,
+      "sha256": "34549a83ee97ff2d4a49504aa987dd252883f9d5ea9539b6c53311928be8663d"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/focused-results.json",
+      "bytes": 21488,
+      "sha256": "e71a0242b8979dd5d1f18a1dccfccc0dedbcda244047c3effc5c3ba3d1784bfa"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/focused-run.log",
+      "bytes": 1611,
+      "sha256": "cd5ef07f4e759e66166782089c9b8f548aec1bb65d913adc3815e72589c41abc"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-owned-source-sha256.json",
+      "bytes": 6898,
+      "sha256": "8a6e3b3c27cf60860b206a4dfd068dbc0aede9ceb76ea03b815e42ffc97ac958"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/tasks/ifttt-integration-2026-10-16/migrations/20261016024711_tweet_claim_registry.sql",
+      "bytes": 15378,
+      "sha256": "7570300e3e6dfc6a899e2296fa20483ee02ad206c1e0e1f3a966ba1d29847ea7"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/tasks/ifttt-integration-2026-10-16/next-increment/20261016073000_tweet_claim_qualification.sql",
+      "bytes": 21553,
+      "sha256": "510eae121f939ffe4e2c3ebd953df1d5206f5e423cdbd014c88e43812a4906bb"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/__tests__/pages/api/v1/db/update-line-sources.test.ts",
+      "bytes": 64812,
+      "sha256": "e2d3e319a791a62dd24060710ace781ec39615917f93d73e412849cd55d3c304"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/__tests__/pages/api/v1/db/update-lines-ccc.test.ts",
+      "bytes": 17968,
+      "sha256": "cd6a64c8bc4397d344db37e258fc349cb00b89f77c944a8735ca259696c1736b"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/components/NewsFeed/NewsCard.test.tsx",
+      "bytes": 12424,
+      "sha256": "4ef4b7adf05abd67a9a12d7dd95fccc7f1fc8c95bb87a47ab431c18e7b769031"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/lines/service.test.ts",
+      "bytes": 4918,
+      "sha256": "d5ce4cca0d066eba5a2eb5d93fdcfd958c24f05d7bd12ff48ad49f8dbc533f66"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/lines/service.ts",
+      "bytes": 9177,
+      "sha256": "bde1b3b012df923cd9fb05f0bb4e8b5148c5aec941a9c1ed06cbdcbd7852e03f"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/newsFeed.test.ts",
+      "bytes": 13356,
+      "sha256": "ee8963100f43cef662af318ad091c27c95f38315730f34f4b83ad08014e53e08"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/newsFeed.ts",
+      "bytes": 24881,
+      "sha256": "bca7e485757f4555f395b9aeabfdef7676f930a019e6f3aabf8bb3b8e76e2d6c"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/fixtures/claimContextCases.json",
+      "bytes": 2195,
+      "sha256": "a9ebc8de647914cec6f9639f0b91f8b208821dcc62631cd5c9293c1712ae7d36"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/fixtures/tweetClaimQualificationFixture.ts",
+      "bytes": 2209,
+      "sha256": "82555df4e3643e551f266a1d42b9d83b30e87eadab62669db3fc84c649e2405a"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/linesCccIngestion.ts",
+      "bytes": 74145,
+      "sha256": "3b9a29f70d9a95f6657f62b9154459e801d8cb3eb0d96f6a143ca2956f7080c0"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/projectedLineups.test.ts",
+      "bytes": 40196,
+      "sha256": "096b9df26f93fd55012bc342c3f653230ef252977ee14642f478e9131e3934f2"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetClaimCompatibility.ts",
+      "bytes": 3258,
+      "sha256": "1dc6d0036c09db09318187a1754db9514c3193c8b423b025efcc5c8f3588aee1"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetClaimEvaluation.ts",
+      "bytes": 8294,
+      "sha256": "b9ea1340a4660daad29b42572f80c1d422d654ea9d1d1ba6438dbdc9411da633"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetClaimEvaluationBounds.test.ts",
+      "bytes": 871,
+      "sha256": "6e445891dd7bfed3f5c1d12aca9cd9a8e806521452b093b8d59a2492ab33455d"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetClaimEvaluationBounds.ts",
+      "bytes": 972,
+      "sha256": "006147fbf246adb99e861ed39867eb4a86f3310ff406751b4e588c91da195593"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetClaimEvaluationIntake.test.ts",
+      "bytes": 1230,
+      "sha256": "2da9e84ae79344359522d83346d20451e8328f803bf9a02493f7b31a353e0478"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetClaimEvaluationIntake.ts",
+      "bytes": 1241,
+      "sha256": "774d814693771a5d0dbaa8fe7ba7a00df7501dc663ec246ae1379b397db907d3"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetClaimEvidence.test.ts",
+      "bytes": 2223,
+      "sha256": "b2e4505c8cf9490262dfb571d697d97f185d5db28509a70a196ba57a9aa60f88"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetClaimEvidence.ts",
+      "bytes": 5901,
+      "sha256": "9f9188f471cd4e0b7e4ff2e88a6b978bf917e7a704bdb7beaac599331a10c89a"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetClaimExtraction.test.ts",
+      "bytes": 8214,
+      "sha256": "7532d92566fe5b72ae13b5c08d55a4df6d1f54d1b4336cdeb7df6b7a6a3cb978"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetClaimExtraction.ts",
+      "bytes": 12290,
+      "sha256": "c11ff33867274c01e02f2b28749bc00c10f82b1a39bc44b34b354105fecaee95"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetClaimLineage.test.ts",
+      "bytes": 5977,
+      "sha256": "c6ddc848a3ecd8ecaab9d04c074bd7518d410203b6de02264e6359545937cdcd"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetClaimLineage.ts",
+      "bytes": 10246,
+      "sha256": "34bb82c78526319a9116ba5e7b045a17e90671c91f180222609fa2e3209b2e86"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetClaimQualificationStorage.test.ts",
+      "bytes": 26737,
+      "sha256": "25019b9e8a31c6a0fa6e0ed6c03634afe838775629ad92315d7e63bd42cd88e8"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetClaimQualificationStorage.ts",
+      "bytes": 4597,
+      "sha256": "b575991daa9a6179677f64394b1c48446022cba9cb58081a1709aa0b25cc610a"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetClaimReducerAdapter.ts",
+      "bytes": 22958,
+      "sha256": "78a0e2cce23be93a07f781477657dad6bfa1cd74dfb6a73ffe68a082724b2332"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetClaimRegistry.test.ts",
+      "bytes": 22123,
+      "sha256": "8d502b7e6b42100775f25ce5fc3ede6d11640fe726e6ff02dd6d78b6b74bcaf5"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetClaimRegistry.ts",
+      "bytes": 9061,
+      "sha256": "5abf16d2eb722f92d219aafd28d90ea5e2356fc60099856bf41b19c63cfed1d3"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetClaimSourceHints.test.ts",
+      "bytes": 4241,
+      "sha256": "5f083086571427ea989dc8765f929db381a0602906bdb6a9a5a5b2d726d30f89"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetClaimSourceHints.ts",
+      "bytes": 4965,
+      "sha256": "31b5b180aa0d43a173f99593c24a1210192c0966118101c81f19cd63b62213b6"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetInterpretation.test.ts",
+      "bytes": 70804,
+      "sha256": "d1703752a02cf6ce469aef69565599031bb2dc2d28bf126db9c04f43d55213c2"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetPlayerEvents.ts",
+      "bytes": 22924,
+      "sha256": "14c421d37506f33df08cac5914e30c38a578b2588ae46f3c6e461b70efadc88c"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetProjectionStorage.ts",
+      "bytes": 20256,
+      "sha256": "a3987dd70356e5b96016a19b28286700ec1fa46aa0ea7911eaedbb7e4f4f73b6"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetSourceClaimRegistry.ts",
+      "bytes": 36905,
+      "sha256": "03f58f5793b5083dd48935ab525f869205e338798b45d768c9008c0b55004468"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetSourceDirectory.test.ts",
+      "bytes": 4730,
+      "sha256": "a790743e19f0e65f501f9497afe8615ecc8c118e864be76e6e3c7b5c24fdf7af"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/lib/sources/tweetSourceDirectory.ts",
+      "bytes": 6759,
+      "sha256": "499b5ffe8727342346ec6e16336140c1e38f4c89bbaebf1c799426bdd0041684"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/pages/api/v1/db/update-line-sources.ts",
+      "bytes": 37054,
+      "sha256": "3730aa17e7140b10815bf9d044acc502cbb616de720c12c95a091f06e051890e"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/pages/api/v1/db/update-lines-ccc.ts",
+      "bytes": 26006,
+      "sha256": "a7777315823ff655e2625faa531cf39ca23bdf0c544f5b1ba7d8a4715d850084"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/frozen-source/web/scripts/evaluate-tweet-claims.ts",
+      "bytes": 760,
+      "sha256": "672af9835b481682066cd10d919b12073bc089da5804400f478ac9b75baf1849"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/independent-hint-provenance.test.ts",
+      "bytes": 2287,
+      "sha256": "a40b964123e5d43d019c3fecc8d3fe1529082be0c2e662fa8eca2b1d955536d4"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/independent-postgres-results.json",
+      "bytes": 6260,
+      "sha256": "51f495cff2c400d4934eb3a6da517fbecf1c481870d437220d2f53fcfdef43ce"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/independent-postgres-run.log",
+      "bytes": 842,
+      "sha256": "f3eb993dae004c9ec6bd9625e6c25b97d74d3183dd6ffb4291603653d3e965b2"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/independent-postgres.test.ts",
+      "bytes": 29185,
+      "sha256": "5b8e47b35fb29ff9f8cb0d8def52731f90104d762736b79e9628582f13a5090e"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/integrity.json",
+      "bytes": 7742,
+      "sha256": "b7425fc752c86dc57e189d4fdb7370e6eb71f3af11cf0eeaab618a3799bb36c8"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/postgres-results.json",
+      "bytes": 13139,
+      "sha256": "774e92fbeb9285b6b65b6ce6b7f1890777ddebd758e4a968a9499aa8e1a514c7"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/postgres-run.log",
+      "bytes": 815,
+      "sha256": "b3af2fbe0f392c44594d42756a788ca8f51d3d381f24d27bfd130bc08142c788"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/vitest.review.config.mjs",
+      "bytes": 261,
+      "sha256": "12090f3c9f6514121dceaf5faec272a0a4e3592b55bd087504bb8175fa1754b4"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-checkpoint/CHECKPOINT.md",
+      "bytes": 7548,
+      "sha256": "d1161bb5680ecfe5cec23300dd3f13852ffc51e3c2c9e3cbe678879e9932f3fa"
+    }
+  ],
+  "manifestExcludesItself": true
+}

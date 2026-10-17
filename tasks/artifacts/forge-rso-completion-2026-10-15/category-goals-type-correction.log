@@ -1,0 +1,17 @@
+
+> web@0.1.0 test
+> vitest __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx --run -t actual GOALS inputs
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:67494) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx (206 tests | 205 skipped) 332ms
+   ✓ active provider refresh scheduling > applies actual GOALS inputs to connected category results without changing provider evidence  331ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 205 skipped (206)
+   Start at  03:26:18
+   Duration  1.52s (transform 480ms, setup 3ms, collect 754ms, tests 332ms, environment 240ms, prepare 36ms)
+

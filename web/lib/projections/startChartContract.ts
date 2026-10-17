@@ -1,17 +1,21 @@
 import type { StartChartTeamForm } from "./startChartTeamForm";
+import type { GameExpectationsResponse, GameExpectationTarget, GameExpectationPowerPlayRole } from "lib/player-forecasts/gameExpectations";
+import { teamsInfo } from "lib/teamsInfo";
 import type { TeamPowerSnapshotLike } from "lib/dashboard/teamContext";
 import { normalizeBoardValidationDisclosure, type BoardValidationDisclosure } from "./starterBoardValidation";
 import type { ResolvedDataServingContract } from "lib/dashboard/freshness";
-import { BOARD_CATEGORIES, parseBoardScoringRequest, type BoardForecast, type BoardScoringRequest } from "./starterBoardScoring";
+import { BOARD_CATEGORIES, parseBoardScoringRequest, scoreStarterBoardPayload, type BoardForecast, type BoardScoringRequest } from "./starterBoardScoring";
 import {
   START_CHART_FANTASY_SCORING_CONTRACT,
   START_CHART_RANKING_CONTRACT,
+  addStartChartPositionRanks,
   type StartChartFantasyScoringContract,
   type StartChartPositionRanks,
   type StartChartRankingContract,
 } from "lib/projections/startChartFantasyScoring";
 
 export type StartChartSourceState = "ready" | "partial" | "missing" | "error";
+export type StartChartExpectationBasis = "expected" | "per_appearance" | "per_start";
 
 export type StartChartSourceStatusEntry = {
   state: StartChartSourceState;
@@ -85,8 +89,16 @@ export type StartChartPlayerContext = {
 };
 
 export type StartChartPlayer = {
+  gameExpectation?: {
+    playerId: string; scheduleRevision: string; rosterRevision: string | null;
+    appearanceProbability: number | null; startProbability: number | null;
+    powerPlayRole: GameExpectationPowerPlayRole;
+    startParticipation?: GameExpectationTarget["participation"];
+    limitations: string[];
+    targets: Record<string, GameExpectationTarget>;
+  };
   forecast?: BoardForecast | null;
-  boardScore?: { points: number | null; categoryValue: number | null; sortValue: number | null; basis: string; missingCategories: string[]; change?: number | null };
+  boardScore?: { points: number | null; categoryValue: number | null; sortValue: number | null; basis: string; missingCategories: string[]; change?: number | null; comparisonAllowed?: boolean };
   row_key: string;
   game_id: number;
   player_id: number;
@@ -149,12 +161,21 @@ export type StartChartServing = ResolvedDataServingContract & {
 };
 
 export type StartChartResponse = {
+  gameExpectations?: {
+    version: "forge-game-expectations-v1"; readAsOf: string;
+    manifestId: string | null; baselineChecksum: string | null; expiresAt: string | null;
+    basis: StartChartExpectationBasis;
+  };
   recentGoals?: StartChartTeamForm;
   validation?: BoardValidationDisclosure;
   newsStatus?: { available: boolean; pendingGames: number; freshnessBreachedGames: number; unresolvedConflicts: number; oldestAcceptedAt: string | null };
   scoringProfile?: BoardScoringRequest & { id: string };
   contractVersion?: 1 | 2;
   publishedForecastsEnabled?: boolean;
+  forecastAdmission?: {
+    exclusionCounts: Record<string, number>;
+    exclusions: Array<{ gameId: string; playerId?: string; targetKey?: string; reasons: string[] }>;
+  };
   gameRevisions?: Array<{
     gameId: number; revisionId: string; runId: string;
     decisionAsOf: string; publishedAt: string;
@@ -189,6 +210,102 @@ const finiteOrNull = (value: unknown): number | null => {
 
 const stringOrNull = (value: unknown): string | null =>
   typeof value === "string" && value.trim() ? value : null;
+
+function normalizeParticipationModel(value: unknown, totalsAllowed: boolean): NonNullable<GameExpectationTarget["participation"]>["model"] {
+  const model = asRecord(value);
+  const start = model.version === "goalie-frozen-window-start-frequency-v1"
+    || model.version === "goalie-roster-observation-start-frequency-v1";
+  if (!["skater-participation-frequency-v1", "goalie-appearance-frequency-v1",
+    "skater-frozen-window-appearance-frequency-v1", "goalie-frozen-window-appearance-frequency-v1",
+    "goalie-frozen-window-start-frequency-v1", "skater-roster-observation-appearance-frequency-v1",
+    "goalie-roster-observation-appearance-frequency-v1", "goalie-roster-observation-start-frequency-v1"].includes(model.version)
+    || model.event !== (start ? "official_starter" : "positive_minutes")
+    || model.probabilityStatus !== "uncalibrated_model" || model.calibration !== "unavailable"
+    || !stringOrNull(model.inputHash)) return undefined;
+  const strings = (value: unknown): string[] => Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string") : [];
+  return { version: model.version, event: model.event,
+    probabilityStatus: "uncalibrated_model", calibration: "unavailable", inputHash: model.inputHash,
+    evidenceHashes: strings(model.evidenceHashes), limitations: strings(model.limitations),
+    sampleSize: totalsAllowed && Number.isSafeInteger(model.sampleSize) && model.sampleSize > 0 ? model.sampleSize : null };
+}
+
+function normalizeGameExpectation(value: unknown): StartChartPlayer["gameExpectation"] {
+  const row = asRecord(value);
+  if (!stringOrNull(row.playerId) || !stringOrNull(row.scheduleRevision)) return undefined;
+  const strings = (value: unknown): string[] => Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string") : [];
+  const rawStart = asRecord(row.startParticipation), startModel = normalizeParticipationModel(rawStart.model, true);
+  const startProbability = finiteOrNull(rawStart.probability);
+  const startParticipation: GameExpectationTarget["participation"] = startModel?.event === "official_starter"
+    && rawStart.basis === "start" && stringOrNull(rawStart.revisionId) && startProbability != null
+    && startProbability >= 0 && startProbability <= 1 && startProbability === finiteOrNull(row.startProbability)
+    && [rawStart.cutoffAt, rawStart.issuedAt, rawStart.expiresAt].every(value => typeof value === "string" && Number.isFinite(Date.parse(value)))
+    && Date.parse(rawStart.cutoffAt) <= Date.parse(rawStart.issuedAt) && Date.parse(rawStart.issuedAt) < Date.parse(rawStart.expiresAt)
+    ? { revisionId: rawStart.revisionId, basis: "start", probability: startProbability, model: startModel,
+      cutoffAt: rawStart.cutoffAt, issuedAt: rawStart.issuedAt, expiresAt: rawStart.expiresAt } : null;
+  const role = asRecord(row.powerPlayRole);
+  const roleNotApplicable = role.status === "not_applicable" && role.reason === "not_applicable"
+    && role.value === null && role.source === null;
+  return {
+    playerId: row.playerId, scheduleRevision: row.scheduleRevision, rosterRevision: stringOrNull(row.rosterRevision),
+    appearanceProbability: finiteOrNull(row.appearanceProbability),
+    startProbability: row.startParticipation ? startParticipation?.probability ?? null : finiteOrNull(row.startProbability),
+    powerPlayRole: { value: null, source: null,
+      status: roleNotApplicable ? "not_applicable" : "unavailable",
+      reason: roleNotApplicable ? "not_applicable" : "current_role_evidence_unavailable" },
+    ...(startParticipation ? { startParticipation } : {}),
+    limitations: strings(row.limitations),
+    targets: Object.fromEntries(BOARD_CATEGORIES.filter(key => row.targets?.[key]).map(key => {
+      const target = asRecord(row.targets[key]), uses = asRecord(target.allowedUses);
+      const model = normalizeParticipationModel(target.participation?.model, uses.totals === true);
+      return [key, {
+        expected: uses.totals === true ? finiteOrNull(target.expected) : null,
+        conditional: uses.conditionalTieBreak === true ? finiteOrNull(target.conditional) : null,
+        basis: stringOrNull(target.basis), unit: target.unit === "minutes" ? "minutes" : "count",
+        allowedUses: { assignment: uses.assignment === true, totals: uses.totals === true,
+          comparison: uses.comparison === true, conditionalTieBreak: uses.conditionalTieBreak === true },
+        sourceKind: stringOrNull(target.sourceKind) as GameExpectationTarget["sourceKind"],
+        sourceIds: strings(target.sourceIds), methodVersions: strings(target.methodVersions),
+        sourceWatermarks: strings(target.sourceWatermarks), cutoffAt: stringOrNull(target.cutoffAt),
+        issuedAt: stringOrNull(target.issuedAt), expiresAt: stringOrNull(target.expiresAt),
+        sources: Array.isArray(target.sources) ? target.sources.flatMap((value: unknown) => {
+          const source = asRecord(value);
+          if (!stringOrNull(source.sourceId) || !["baseline", "detailed"].includes(source.kind)) return [];
+          return [{ sourceId: source.sourceId, kind: source.kind as "baseline" | "detailed",
+            methodVersion: String(source.methodVersion ?? ""), sourceWatermark: String(source.sourceWatermark ?? ""),
+            cutoffAt: String(source.cutoffAt ?? ""), issuedAt: String(source.issuedAt ?? ""), expiresAt: String(source.expiresAt ?? "") }];
+        }) : [],
+        participation: target.participation && ["appearance", "start"].includes(target.participation.basis)
+          && stringOrNull(target.participation.revisionId)
+          ? { revisionId: target.participation.revisionId, basis: target.participation.basis,
+              probability: uses.totals === true ? finiteOrNull(target.participation.probability) : null,
+              ...(model ? { model } : {}),
+              cutoffAt: String(target.participation.cutoffAt ?? ""),
+              issuedAt: String(target.participation.issuedAt ?? ""), expiresAt: String(target.participation.expiresAt ?? "") } : null,
+        participationRevisionId: stringOrNull(target.participationRevisionId), reasons: strings(target.reasons),
+        limitations: strings(target.limitations),
+      } satisfies GameExpectationTarget];
+    })),
+  };
+}
+
+function normalizeForecastAdmission(value: unknown): StartChartResponse["forecastAdmission"] {
+  const admission = asRecord(value);
+  if (!Array.isArray(admission.exclusions)) return undefined;
+  const isReason = (value: unknown): value is string => typeof value === "string" && /^[a-z][a-z0-9_]{0,63}$/.test(value);
+  return {
+    exclusionCounts: Object.fromEntries(Object.entries(asRecord(admission.exclusionCounts))
+      .filter(([reason, count]) => isReason(reason) && Number.isSafeInteger(count) && count > 0)),
+    exclusions: admission.exclusions.flatMap((value: unknown) => {
+      const row = asRecord(value), gameId = stringOrNull(row.gameId);
+      const reasons = Array.isArray(row.reasons) ? row.reasons.filter(isReason) : [];
+      if (!gameId || !reasons.length) return [];
+      const playerId = stringOrNull(row.playerId), targetKey = stringOrNull(row.targetKey);
+      return [{ gameId, ...(playerId ? { playerId } : {}), ...(targetKey ? { targetKey } : {}), reasons }];
+    }),
+  };
+}
 
 function normalizeForecast(value: unknown): BoardForecast | null {
   if (!value || typeof value !== "object") return null;
@@ -259,6 +376,135 @@ const normalizeSourceEntry = (value: unknown): StartChartSourceStatusEntry => {
   };
 };
 
+/** One comparison basis for the whole board; missing heads never borrow from another basis. */
+export function selectStartChartExpectationBasis<T extends StartChartResponse>(response: T, basis: StartChartExpectationBasis): T {
+  if (!response.gameExpectations) return response;
+  return { ...response, gameExpectations: { ...response.gameExpectations, basis },
+    players: response.players.map(player => {
+      const targets = player.gameExpectation?.targets ?? {};
+      const stats = Object.fromEntries(BOARD_CATEGORIES.map(key => {
+        const target = targets[key];
+        const permitted = basis === "expected" ? target?.allowedUses.totals && target.allowedUses.comparison
+          : target?.allowedUses.conditionalTieBreak && target.basis === basis;
+        return [key, permitted ? target?.[basis === "expected" ? "expected" : "conditional"] ?? null : null];
+      }));
+      return { ...player, proj_goals: stats.GOALS, proj_assists: stats.ASSISTS, proj_shots: stats.SHOTS_ON_GOAL,
+        proj_pp_points: stats.PP_POINTS, proj_hits: stats.HITS, proj_blocks: stats.BLOCKED_SHOTS,
+        proj_pim: stats.PENALTY_MINUTES, proj_toi_minutes: stats.TIME_ON_ICE_PER_GAME,
+        forecast: { participationProbability: null, probabilityStatus: "missing", distributionStatus: "means_only_unvalidated",
+          evidence: [], conflicts: [], ...player.forecast, expected: basis === "expected" ? stats : null,
+          ...(basis !== "expected" ? { participationProbability: basis === "per_start" ? player.gameExpectation?.startProbability ?? null
+            : player.gameExpectation?.appearanceProbability ?? null } : {}),
+          conditional: basis !== "expected" ? stats : null,
+          conditioning: basis === "expected" ? "unconditional" : "conditional_playing" } };
+    }) };
+}
+
+/** Conditional ability may be displayed without granting permission for a primary comparison. */
+export function scoreStartChartPayload<T extends StartChartResponse>(response: T, request: BoardScoringRequest) {
+  const scored = scoreStarterBoardPayload(response, request);
+  if (!response.gameExpectations) return scored;
+  const players = scored.players.map(player => {
+    const targets = player.gameExpectation?.targets ?? {};
+    const goalie = player.positions.includes("G");
+    const keys = request.mode === "categories" ? [request.category!]
+      : Object.entries(request.profile[goalie ? "goalie" : "skater"]).filter(([, weight]) => weight !== 0).map(([key]) => key);
+    const comparisonAllowed = goalie && request.mode !== "categories" && request.goalieSort === "start_probability"
+      ? Object.values(targets).some(target => target.allowedUses.comparison && target.participation?.basis === "start"
+          && target.participationRevisionId === target.participation.revisionId
+          && target.participation.probability === player.start_probability)
+      : keys.length > 0 && keys.every(key => targets[key]?.allowedUses.comparison === true);
+    return { ...player, boardScore: { ...player.boardScore, comparisonAllowed,
+      sortValue: comparisonAllowed ? player.boardScore?.sortValue ?? null : null } };
+  });
+  return { ...scored, players: addStartChartPositionRanks(players, player => player.boardScore.sortValue) };
+}
+
+/** Daily view of the same admitted per-game values shown by FORGE. No participation integration happens here. */
+export function startChartFromGameExpectations(response: GameExpectationsResponse): StartChartResponse {
+  const date = response.scope.startDate;
+  const games = new Map<number, StartChartGame>();
+  const players: unknown[] = [];
+  const expiries: string[] = [];
+  let coveredRows = 0;
+  for (const player of response.players) for (const game of player.games) {
+    if (game.date !== date) continue;
+    const gameId = Number(game.gameId);
+    const home = teamsInfo[game.homeTeam], away = teamsInfo[game.awayTeam];
+    if (!Number.isSafeInteger(gameId) || gameId <= 0 || !home || !away) continue;
+    if (game.team !== game.homeTeam && game.team !== game.awayTeam) continue;
+    if (!games.has(gameId)) games.set(gameId, { id: gameId, date, startTime: game.scheduledAt,
+      homeTeamId: home.id, awayTeamId: away.id, homeAbbrev: home.abbrev, awayAbbrev: away.abbrev,
+      homeGoalies: [], awayGoalies: [] });
+    if (!Number.isSafeInteger(player.nhlPlayerId) || player.nhlPlayerId! <= 0) continue;
+    const stats = (basis: "expected" | "conditional") => Object.fromEntries(BOARD_CATEGORIES.map(key => {
+      const target = game.targets[key];
+      const permitted = basis === "expected" ? target?.allowedUses.totals && target.allowedUses.comparison
+        : target?.allowedUses.conditionalTieBreak;
+      return [key, permitted ? target?.[basis] ?? null : null];
+    }));
+    const expectedStats = stats("expected"), conditionalStats = stats("conditional");
+    const expected = Object.values(expectedStats).some(value => value != null) ? expectedStats : null;
+    const conditional = Object.values(conditionalStats).some(value => value != null) ? conditionalStats : null;
+    // Never fill a missing expected head with a per-appearance/start value.
+    const displayed = expected ?? conditional ?? {};
+    if (expected || conditional) coveredRows++;
+    for (const target of Object.values(game.targets)) {
+      // Probability-only rows also depend on these receipts, even when a head cannot be compared.
+      if (target.expiresAt) expiries.push(target.expiresAt);
+      if (target.participation?.expiresAt) expiries.push(target.participation.expiresAt);
+      for (const source of target.sources) expiries.push(source.expiresAt);
+    }
+    expiries.push(game.scheduledAt);
+    if (game.startParticipation?.expiresAt) expiries.push(game.startParticipation.expiresAt);
+    const goalie = player.playerClass === "goalie";
+    const probability = goalie ? game.startProbability : game.appearanceProbability;
+    if (!expected && !conditional && probability == null) continue;
+    const team = game.team === game.homeTeam ? home : away;
+    const opponent = game.team === game.homeTeam ? away : home;
+    if (goalie) games.get(gameId)![game.team === game.homeTeam ? "homeGoalies" : "awayGoalies"].push({
+      player_id: player.nhlPlayerId!, name: player.name, start_probability: probability,
+      projected_gsaa_per_60: null, confirmed_status: null, source_updated_at: null, source_confidence: null, is_stale: false,
+    });
+    players.push({ row_key: `game-expectations:${game.gameId}:${player.playerId}`, game_id: gameId,
+      player_id: player.nhlPlayerId, name: player.name, positions: goalie ? ["G"] : player.positions,
+      team_id: team.id, team_abbrev: team.abbrev, opponent_team_id: opponent.id, opponent_abbrev: opponent.abbrev,
+      proj_goals: displayed.GOALS, proj_assists: displayed.ASSISTS, proj_shots: displayed.SHOTS_ON_GOAL,
+      proj_pp_points: displayed.PP_POINTS, proj_hits: displayed.HITS, proj_blocks: displayed.BLOCKED_SHOTS,
+      proj_pim: displayed.PENALTY_MINUTES, proj_toi_minutes: displayed.TIME_ON_ICE_PER_GAME,
+      start_probability: goalie ? probability : null,
+      forecast: { expected, conditional, conditioning: expected ? "unconditional" : "conditional_playing",
+        participationProbability: probability,
+        // This public view has no original confirmed/model classification.
+        probabilityStatus: "missing" },
+      gameExpectation: { playerId: player.playerId, scheduleRevision: game.scheduleRevision,
+        rosterRevision: game.rosterRevision, appearanceProbability: game.appearanceProbability, startProbability: game.startProbability,
+        powerPlayRole: game.powerPlayRole,
+        ...(game.startParticipation ? { startParticipation: game.startParticipation } : {}),
+        limitations: game.limitations, targets: game.targets },
+    });
+  }
+  expiries.sort((a, b) => Date.parse(a) - Date.parse(b));
+  const board = normalizeStartChartResponse({ date, requestedDate: date, resolvedDate: date, contractVersion: 2,
+    projectionRunId: null, gameRevisions: [], players, games: [...games.values()],
+    gameExpectations: { version: response.version, readAsOf: response.readAsOf,
+      manifestId: response.manifestId, baselineChecksum: response.baselineChecksum, expiresAt: expiries[0] ?? null,
+      basis: "expected" },
+    serving: { mode: games.size ? "partial" : "no_games",
+      reason: games.size ? "game_expectation_coverage" : "no_upcoming_games_on_selected_date",
+      message: games.size ? "Daily values use admitted game expectations. Missing heads or participation remain unavailable."
+        : `No upcoming scheduled games are available for ${date}.` },
+    sourceStatus: { overall: "degraded", projection: { state: coveredRows ? "partial" : "missing", affectsRanking: true,
+      date, updatedAt: null, message: "Read time is separate from original issuance. Conditional values are not expected game totals." },
+      degradedReasons: coveredRows ? ["partial_game_expectation_coverage"] : ["missing_projection"] },
+    coverage: { slateGames: games.size, slateTeams: games.size * 2, projectionRows: coveredRows, renderedRows: players.length },
+  });
+  return selectStartChartExpectationBasis(board,
+    board.players.some(player => Object.values(player.forecast?.expected ?? {}).some(value => value != null)) ? "expected"
+      : board.players.some(player => Object.values(player.gameExpectation?.targets ?? {}).some(target => target.conditional != null && target.basis === "per_appearance"))
+        ? "per_appearance" : "per_start");
+}
+
 export function normalizeStartChartResponse(payload: unknown): StartChartResponse {
   const root = asRecord(payload);
   const resolvedDate =
@@ -302,11 +548,13 @@ export function normalizeStartChartResponse(payload: unknown): StartChartRespons
           team_abbrev: stringOrNull(row.team_abbrev),
           proj_fantasy_points: finiteOrNull(row.proj_fantasy_points),
           forecast: normalizeForecast(row.forecast),
+          gameExpectation: normalizeGameExpectation(row.gameExpectation),
           ...(row.boardScore ? { boardScore: {
             points: finiteOrNull(row.boardScore.points), categoryValue: finiteOrNull(row.boardScore.categoryValue),
             change: finiteOrNull(row.boardScore.change),
             sortValue: finiteOrNull(row.boardScore.sortValue), basis: String(row.boardScore.basis ?? "legacy_unclassified"),
             missingCategories: Array.isArray(row.boardScore.missingCategories) ? row.boardScore.missingCategories.filter((item: unknown) => typeof item === "string") : [],
+            ...(typeof row.boardScore.comparisonAllowed === "boolean" ? { comparisonAllowed: row.boardScore.comparisonAllowed } : {}),
           } } : {}),
           proj_goals: finiteOrNull(row.proj_goals),
           proj_assists: finiteOrNull(row.proj_assists),
@@ -399,11 +647,17 @@ export function normalizeStartChartResponse(payload: unknown): StartChartRespons
   }
 
   return {
+    gameExpectations: root.gameExpectations?.version === "forge-game-expectations-v1" && stringOrNull(root.gameExpectations.readAsOf)
+      ? { version: "forge-game-expectations-v1", readAsOf: root.gameExpectations.readAsOf,
+          manifestId: stringOrNull(root.gameExpectations.manifestId), baselineChecksum: stringOrNull(root.gameExpectations.baselineChecksum),
+          expiresAt: stringOrNull(root.gameExpectations.expiresAt),
+          basis: root.gameExpectations.basis === "per_appearance" || root.gameExpectations.basis === "per_start" ? root.gameExpectations.basis : "expected" } : undefined,
     scoringProfile,
     validation: normalizeBoardValidationDisclosure(root.validation),
     dateUsed: resolvedDate,
     contractVersion: root.contractVersion === 2 ? 2 : 1,
     publishedForecastsEnabled: typeof root.publishedForecastsEnabled === "boolean" ? root.publishedForecastsEnabled : undefined,
+    forecastAdmission: normalizeForecastAdmission(root.forecastAdmission),
     newsStatus: root.newsStatus ? { available: root.newsStatus.available === true,
       pendingGames: finiteOrNull(root.newsStatus.pendingGames) ?? 0,
       freshnessBreachedGames: finiteOrNull(root.newsStatus.freshnessBreachedGames) ?? 0,

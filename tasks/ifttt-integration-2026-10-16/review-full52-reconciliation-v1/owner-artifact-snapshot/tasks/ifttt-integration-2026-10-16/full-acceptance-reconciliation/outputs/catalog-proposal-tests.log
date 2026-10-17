@@ -1,0 +1,28 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/catalog-proposal.test.ts --config ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/vitest.config.mjs
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/catalog-proposal.test.ts (4 tests | 4 skipped) 562ms
+   ↓ unexecuted hosted proposal tested only on private PG > returns bounded catalog fingerprints without stored values, bodies or invoking write helpers
+   ↓ unexecuted hosted proposal tested only on private PG > reports an absent prerequisite without inferring compatible or empty history
+   ↓ unexecuted hosted proposal tested only on private PG > withholds payload when the named function overload bound is exceeded
+   ↓ unexecuted hosted proposal tested only on private PG > withholds oversized catalog payload while remaining inside the function-count bound
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/catalog-proposal.test.ts > unexecuted hosted proposal tested only on private PG
+Error: Command failed: /opt/homebrew/opt/postgresql@17/bin/pg_ctl -D /var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-ifttt-catalog-proposal-QnWytc/data -l /var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-ifttt-catalog-proposal-QnWytc/server.log -w -t 10 -o -c listen_addresses='' -c unix_socket_directories='/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-ifttt-catalog-proposal-QnWytc/socket' -p 65444 start
+pg_ctl: could not start server
+Examine the log output.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 skipped (4)
+   Start at  02:03:53
+   Duration  751ms (transform 21ms, setup 16ms, collect 21ms, tests 562ms, environment 0ms, prepare 32ms)
+

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { webcrypto } from "node:crypto";
-import { acquirePreservationWriter, capturePreservation, preservationChecksum, readPreservedKeys, restorePreservedKeys, validatePreservation, withWorkspaceWriter, defaultWorkspace, readWorkspace, readWorkspaceHistory, resolveImportedNames, retainedScheduleSnapshot, retainProviderInputs, writeWorkspace, WORKSPACE_HISTORY_LIMIT } from "./workspace";
+import { acquirePreservationWriter, capturePreservation, preservationChecksum, readPreservedKeys, restorePreservedKeys, validatePreservation, withWorkspaceWriter, currentPlanningRange, currentProviderPeriod, defaultContext, defaultWorkspace, readWorkspace, readWorkspaceHistory, resolveImportedNames, retainedScheduleSnapshot, retainProviderInputs, writeWorkspace, WORKSPACE_HISTORY_LIMIT } from "./workspace";
 
 const player = { id: "fhfh:1", nhlId: 1, name: "Alpha Center", teamAbbreviation: "CAR", eligiblePositions: ["C"], playerClass: "skater" as const, availability: "unknown" as const, ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] };
 describe("manual workspace", () => {
@@ -111,6 +111,32 @@ it("keeps shared schedule analysis after a provider failure without restoring av
   expect(result.opponent).toBeNull();
 });
 
+it("carries participation receipts and explicit revocation into a retained roster without restoring provider authority", () => {
+  const workspace = defaultWorkspace(new Date("2026-10-01T00:00:00Z"));
+  workspace.context.provider = "yahoo";
+  workspace.roster = [{ playerId: player.id, position: "active" }];
+  workspace.manualPlayers = [{ ...player, availability: "rostered", canDrop: true }];
+  const participation = { playerId: 1, nhlPlayerId: 1, seasonId: workspace.context.seasonId, gameId: 31, teamId: 6,
+    basis: "appearance" as const, probability: 0.5, revisionId: "synthetic-participation", released: true,
+    allowedUses: { assignment: true, totals: false, comparison: false, conditionalTieBreak: true },
+    scheduleRevision: "fixture-schedule", rosterRevision: "fixture-roster", issuedAt: workspace.context.asOf,
+    cutoffAt: workspace.context.asOf, expiresAt: "2026-10-08T00:00:00Z" };
+  const evidence = { source: "Synthetic uncalibrated participation", asOf: workspace.context.asOf,
+    seasonId: workspace.context.seasonId, completeness: "partial" as const, limitations: ["Calibration unavailable."] };
+  const data = { players: [], games: [], forecasts: [], participationSources: [participation], evidence: { participation: evidence } };
+  const before = JSON.stringify(workspace);
+  const retained = retainedScheduleSnapshot(workspace, data, "2026-10-02T00:00:00Z")!;
+  expect(retained.participationSources).toBe(data.participationSources);
+  expect(retained.evidence.participation).toBe(evidence);
+  expect(retained.participationSources?.[0].allowedUses?.totals).toBe(false);
+  expect(retained.players[0]).toMatchObject({ availability: "unknown", canDrop: null });
+  expect(retained.rules.acquisitionTiming).toBe("unknown");
+  expect(retained.rules.periods).toEqual([]);
+  expect(retainedScheduleSnapshot(workspace, { ...data, participationSources: [] }, retained.context.asOf)?.participationSources).toEqual([]);
+  expect(retainedScheduleSnapshot(workspace, { ...data, participationSources: undefined }, retained.context.asOf)?.participationSources).toBeUndefined();
+  expect(JSON.stringify(workspace)).toBe(before);
+});
+
 it("uses current catalog lineage only for matching retained player identity and team", () => {
   const workspace = defaultWorkspace(new Date("2026-10-01T00:00:00Z"));
   workspace.roster = [{ playerId: player.id, position: "active" }];
@@ -207,5 +233,41 @@ describe("workspace preservation", () => {
     lease.release(); await Promise.all(jobs);
     await withWorkspaceWriter(locks, write); expect(write).toHaveBeenCalledOnce();
     await expect(acquirePreservationWriter(undefined)).rejects.toThrow(/unavailable/);
+  });
+});
+
+
+describe("current league planning range", () => {
+  it.each([
+    ["2026-10-14T12:00:00Z", "America/New_York", "2026-10-12", "2026-10-18"],
+    ["2026-10-19T02:00:00Z", "America/New_York", "2026-10-12", "2026-10-18"],
+    ["2026-10-19T04:00:00Z", "America/New_York", "2026-10-19", "2026-10-25"],
+    ["2026-11-01T06:30:00Z", "America/New_York", "2026-10-26", "2026-11-01"],
+    ["2026-03-08T07:30:00Z", "America/New_York", "2026-03-02", "2026-03-08"],
+    ["2026-10-19T02:00:00Z", "Asia/Tokyo", "2026-10-19", "2026-10-25"],
+  ])("uses local Mon–Sun at %s in %s", (instant, zone, startDate, endDate) => {
+    expect(currentPlanningRange(new Date(instant), zone)).toEqual({ startDate, endDate, source: "calendar" });
+    expect(defaultContext(new Date(instant), zone)).toMatchObject({ startDate, endDate, timeZone: zone });
+  });
+  it("uses a known current nonstandard matchup and rejects expired or invalid dates", () => {
+    const now = new Date("2026-10-13T12:00:00Z");
+    expect(currentPlanningRange(now, "UTC", { startDate: "2026-10-09", endDate: "2026-10-22" })).toEqual({ startDate: "2026-10-09", endDate: "2026-10-22", source: "provider" });
+    for (const period of [{ startDate: "2026-10-01", endDate: "2026-10-11" }, { startDate: "2026-02-30", endDate: "2026-10-18" }])
+      expect(currentPlanningRange(now, "UTC", period).source).toBe("calendar");
+  });
+  it("requires fresh owned current-week provider evidence, preserving unverified dates", () => {
+    const now = new Date("2026-10-13T12:00:00Z");
+    const context = { ...defaultContext(now, "UTC"), provider: "yahoo" as const, teamId: "team", leagueId: "league" };
+    const snapshot = { context, evidence: { roster: { completeness: "complete" } }, acquisitionEvidence: {
+      source: "Yahoo team roster_adds and league current_week", asOf: now.toISOString(), counter: { coverageType: "week", coverageWeek: 1, used: 0 },
+      period: { week: 1, startDate: "2026-10-09", endDate: "2026-10-22", containsHorizon: true }
+    } } as any;
+    expect(currentProviderPeriod(snapshot, context, now)).toEqual(snapshot.acquisitionEvidence.period);
+    for (const invalid of [
+      { ...snapshot, context: { ...context, teamId: "other" } },
+      { ...snapshot, acquisitionEvidence: { ...snapshot.acquisitionEvidence, asOf: "2026-10-13T11:00:00Z" } },
+      { ...snapshot, acquisitionEvidence: { ...snapshot.acquisitionEvidence, counter: { coverageType: "week", coverageWeek: 1, used: null } } },
+      { ...snapshot, acquisitionEvidence: { ...snapshot.acquisitionEvidence, period: { ...snapshot.acquisitionEvidence.period, containsHorizon: false } } },
+    ]) expect(currentProviderPeriod(invalid, context, now)).toBeUndefined();
   });
 });

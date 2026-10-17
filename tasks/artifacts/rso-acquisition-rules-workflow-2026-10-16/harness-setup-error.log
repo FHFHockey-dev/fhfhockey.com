@@ -1,0 +1,32 @@
+
+> web@0.1.0 test
+> vitest --run __tests__/components/RosterScheduleOptimizer/AcquisitionRules.integration.test.tsx --reporter=dot
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:17474) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+xx
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  __tests__/components/RosterScheduleOptimizer/AcquisitionRules.integration.test.tsx > collects only missing manual acquisition rules and automatically compares an empty plan after workspace reopen
+ FAIL  __tests__/components/RosterScheduleOptimizer/AcquisitionRules.integration.test.tsx > collects only missing yahoo acquisition rules and automatically compares an empty plan after workspace reopen
+Error: scrollIntoView does not exist
+ ❯ __tests__/components/RosterScheduleOptimizer/AcquisitionRules.integration.test.tsx:42:6
+     40|   vi.stubGlobal("Worker", LocalPlanningWorker);
+     41|   vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallba…
+     42|   vi.spyOn(HTMLElement.prototype, "scrollIntoView").mockImplementation…
+       |      ^
+     43| });
+     44| afterEach(() => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+   Start at  19:22:06
+   Duration  1.31s (transform 372ms, setup 4ms, collect 720ms, tests 4ms, environment 361ms, prepare 42ms)
+

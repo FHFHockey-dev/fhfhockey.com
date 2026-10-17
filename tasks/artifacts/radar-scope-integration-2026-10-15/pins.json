@@ -1,0 +1,15 @@
+{
+  "captured_at_utc": "2026-10-15T14:19:57.722293+00:00",
+  "branch": "octoberBranch",
+  "head": "a8f58de6178e282acd3a71851c66f4a56b119f14",
+  "files": {
+    "web/components/PlayerStats/PlayerRadarChart.tsx": "34e7bb44efc45627a2f710f27eca9c396bf9f6c3ff691af199da87153e1f53b9",
+    "web/components/PlayerStats/PlayerRadarChart.test.tsx": "fd792ad3ea182ec9eda455a04f77104db9e8ce9d31b6d21d8ffd1236deb859af",
+    "web/pages/stats/player/[playerId].tsx": "7ff3429d9bc7d57705b8acb8be3d654f395cb6271eac61d97c55583bef116785",
+    "web/__tests__/pages/stats/player/playerId.test.ts": "d512fb03c6156883a85ec0564574635ed96774140b3d8e3a60e483f2da23931c"
+  },
+  "patch_sha256": "234f40f7a95b0a3d4f157fccdc6a12d983f123f744267d34e74fad2a6e8e4669",
+  "policy_source": "Actual native user reply: selected-season regular-season aggregate; rankings unavailable for last-N windows and playoffs.",
+  "speed_source": "TJ/Scout explicitly verified all eight work chats as Standard before this resumed implementation.",
+  "review_status": "pending independent coordinator review"
+}

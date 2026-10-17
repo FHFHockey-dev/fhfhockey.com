@@ -1,0 +1,85 @@
+{
+  "independentCounts": {
+    "cases": 52,
+    "assertions": 227,
+    "matchingAssertions": 225,
+    "fullyMatchingCases": 50,
+    "pureCases": 43,
+    "pureAssertions": 196,
+    "pureMatchingAssertions": 194,
+    "persistenceCases": 9,
+    "persistenceAssertions": 31,
+    "persistenceMatchingAssertions": 31
+  },
+  "originalFailuresPreserved": [
+    {
+      "case": "CR011",
+      "assertionIndex": 0,
+      "originalAssertion": {
+        "op": "pairwise_distinct",
+        "field": "sourceClaimId",
+        "records": [
+          "a",
+          "b"
+        ]
+      },
+      "actual": [
+        "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+        null
+      ]
+    },
+    {
+      "case": "CR051",
+      "assertionIndex": 1,
+      "originalAssertion": {
+        "op": "pairwise_distinct",
+        "field": "effectId",
+        "records": [
+          "a",
+          "b"
+        ]
+      },
+      "actual": [
+        "tweet-source-claim-v1:effect:6866cd289bf92ee06135297023944d40aee3ec651eb08f4165b0d0bc7dff1084",
+        null
+      ]
+    }
+  ],
+  "freshNormalAndMutationRowsEqualOwnerAndAcceptedHistoricalRows": true,
+  "normalExit1Expected": [
+    "CR011",
+    "CR051"
+  ],
+  "mutationExit1Expected": [
+    "CR011",
+    "CR019",
+    "CR051"
+  ],
+  "approvedSeparatePositiveAssertions": 12,
+  "allOriginalGameAssertionsRetained": 7,
+  "rawCarrierNativeIdentityAccounting": [
+    {
+      "original": "CR011",
+      "rawCarriers": 2,
+      "canonicalOccurrences": 1,
+      "nativeEffects": [
+        "tweet-source-claim-v1:effect:64fb246b8fb069e85bdaba0227a3a3876f389696741c2151ae3c9b8b5ac66e85"
+      ],
+      "allCarriersHeld": true
+    },
+    {
+      "original": "CR051",
+      "rawCarriers": 2,
+      "canonicalOccurrences": 1,
+      "nativeEffects": [
+        "tweet-source-claim-v1:effect:64fb246b8fb069e85bdaba0227a3a3876f389696741c2151ae3c9b8b5ac66e85"
+      ],
+      "allCarriersHeld": true
+    }
+  ],
+  "authenticatedEditRemainsSeparateRevision": true,
+  "full52IntegratedAccepted": false,
+  "currentCombinedRuntimeAccepted": false,
+  "productionAccepted": false,
+  "authenticFutureOutcomesRead": false
+}

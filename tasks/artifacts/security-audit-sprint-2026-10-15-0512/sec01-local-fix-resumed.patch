@@ -1,0 +1,508 @@
+diff --git a/web/pages/api/cors/index.ts b/web/pages/api/cors/index.ts
+index eb714693b..a581d89ad 100644
+--- a/web/pages/api/cors/index.ts
++++ b/web/pages/api/cors/index.ts
+@@ -1,9 +1,5 @@
+ import type { NextApiRequest, NextApiResponse } from "next";
+-
+-const DEFAULT_HEADERS = {
+-  Accept: "application/json",
+-  "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)"
+-};
++import { fetchNhlProxyText, parseNhlProxyUrl } from "lib/NHL/corsProxy";
+ 
+ function summarizeHtmlError(value: string): string {
+   const title = value.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim() ?? null;
+@@ -39,25 +35,21 @@ export default async function handler(
+   req: NextApiRequest,
+   res: NextApiResponse
+ ) {
+-  const url = Array.isArray(req.query.url) ? req.query.url[0] : req.query.url;
+-  const method = (req.query.method ?? "GET") as string;
+-
+-  if (!url) {
++  if (req.method !== "GET") {
++    res.setHeader("Allow", "GET");
++    return res.status(405).json({ success: false, message: "Only GET is supported." });
++  }
++  const target = parseNhlProxyUrl(req.query.url);
++  if (!target || (req.query.method !== undefined && req.query.method !== "GET")) {
+     return res.status(400).json({
+       success: false,
+-      message: "Missing required url query parameter."
++      message: "Only supported NHL HTTPS GET resources are allowed."
+     });
+   }
+ 
+   try {
+-    const target = new URL(url);
+-    const upstream = await fetch(target, {
+-      method,
+-      headers: DEFAULT_HEADERS,
+-      cache: "no-store"
+-    });
++    const { upstream, bodyText } = await fetchNhlProxyText(target);
+     const contentType = upstream.headers.get("content-type") ?? "";
+-    const bodyText = await upstream.text();
+     const trimmed = bodyText.trim();
+     const parsed = tryParseJson(bodyText);
+     const looksLikeHtml =
+@@ -88,11 +80,10 @@ export default async function handler(
+     }
+ 
+     res.status(200).json(parsed);
+-  } catch (e: any) {
++  } catch {
+     res.status(502).json({
+-      url,
+       success: false,
+-      message: `Error: ${e.message}`,
++      message: "Unable to retrieve NHL data.",
+     });
+   }
+ }
+diff --git a/web/lib/NHL/corsProxy.ts b/web/lib/NHL/corsProxy.ts
+new file mode 100644
+index 000000000..688f6f9df
+--- /dev/null
++++ b/web/lib/NHL/corsProxy.ts
+@@ -0,0 +1,104 @@
++import { lookup } from "node:dns";
++import { Agent } from "node:https";
++import { BlockList, isIP, type LookupFunction } from "node:net";
++import fetch, { type RequestInit } from "node-fetch";
++
++const MAX_RESPONSE_BYTES = 4 * 1024 * 1024;
++const REQUEST_TIMEOUT_MS = 10_000;
++const STATS_PATHS = new Set([
++  "/stats/rest/en/season",
++  "/stats/rest/en/shiftcharts",
++  "/stats/rest/en/team/summary",
++  "/stats/rest/en/team/powerplay",
++  "/stats/rest/en/goalie/summary",
++  "/stats/rest/en/goalie/advanced"
++]);
++const STATS_PARAMETERS = new Set([
++  "isAggregate", "isGame", "sort", "start", "limit", "factCayenneExp", "cayenneExp"
++]);
++
++// Only the HTTPS NHL resources used by browser callers are part of this contract.
++export function parseNhlProxyUrl(value: unknown): URL | null {
++  if (typeof value !== "string" || value.length > 8192 || /[\\\u0000-\u001f\u007f#]/.test(value)) return null;
++  try {
++    const target = new URL(value);
++    if (
++      target.protocol !== "https:" || target.username || target.password || target.port ||
++      !["api-web.nhle.com", "api.nhle.com"].includes(target.hostname) ||
++      !value.startsWith(`${target.origin}/`) ||
++      value.slice(target.origin.length).split("?")[0] !== target.pathname
++    ) return null;
++
++    if (target.hostname === "api-web.nhle.com") {
++      if (target.search) return null;
++      return /^\/v1\/(?:gamecenter\/\d{10}\/(?:boxscore|landing|play-by-play)|(?:schedule|standings|score)\/(?:now|\d{4}-\d{2}-\d{2})|club-schedule-season\/[A-Z]{2,3}\/\d{8})$/.test(target.pathname)
++        ? target : null;
++    }
++    if (!STATS_PATHS.has(target.pathname)) return null;
++    const seen = new Set<string>();
++    for (const [key, parameter] of target.searchParams) {
++      if (!STATS_PARAMETERS.has(key) || seen.has(key) || parameter.length > 2048 || /[\u0000-\u001f\u007f]/.test(parameter)) return null;
++      seen.add(key);
++      if (["isAggregate", "isGame"].includes(key) && !["true", "false"].includes(parameter)) return null;
++      if (key === "limit" && (!/^\d{1,3}$/.test(parameter) || Number(parameter) < 1 || Number(parameter) > 100)) return null;
++      if (key === "start" && !/^\d{1,6}$/.test(parameter)) return null;
++    }
++    if (target.pathname.endsWith("/shiftcharts") && (
++      seen.size !== 1 || !/^gameId=\d{10}$/.test(target.searchParams.get("cayenneExp") ?? "")
++    )) return null;
++    return target;
++  } catch {
++    return null;
++  }
++}
++
++const blocked = new BlockList();
++for (const [address, prefix] of [
++  ["0.0.0.0", 8], ["10.0.0.0", 8], ["100.64.0.0", 10], ["127.0.0.0", 8],
++  ["169.254.0.0", 16], ["172.16.0.0", 12], ["192.0.0.0", 24], ["192.0.2.0", 24],
++  ["192.88.99.0", 24], ["192.168.0.0", 16], ["198.18.0.0", 15],
++  ["198.51.100.0", 24], ["203.0.113.0", 24], ["224.0.0.0", 4], ["240.0.0.0", 4]
++] as const) blocked.addSubnet(address, prefix, "ipv4");
++
++// Resolve at socket connection time and hand that exact checked address to TLS.
++// IPv4-only egress avoids IPv6 transition/mapped-address ambiguity; no second lookup.
++export const lookupNhlAddress: LookupFunction = (hostname, _options, callback) => {
++  if (!["api-web.nhle.com", "api.nhle.com"].includes(hostname)) {
++    callback(new Error("Unsupported NHL host"), "", 4);
++    return;
++  }
++  lookup(hostname, { all: true, family: 4 }, (error, addresses) => {
++    if (error || !addresses?.length || addresses.some(({ address, family }) =>
++      family !== 4 || isIP(address) !== 4 || blocked.check(address, "ipv4")
++    )) {
++      callback(new Error("NHL address unavailable"), "", 4);
++      return;
++    }
++    callback(null, addresses[0].address, 4);
++  });
++};
++
++export async function fetchNhlProxyText(target: URL) {
++  if (!parseNhlProxyUrl(target.toString())) throw new Error("Unsupported NHL URL");
++  const agent = new Agent({ lookup: lookupNhlAddress, family: 4 });
++  const controller = new AbortController();
++  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
++  try {
++    const upstream = await fetch(target, {
++      method: "GET",
++      headers: {
++        Accept: "application/json",
++        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)"
++      },
++      redirect: "error",
++      agent,
++      // node-fetch v2 has its own older AbortSignal declaration.
++      signal: controller.signal as NonNullable<RequestInit["signal"]>,
++      size: MAX_RESPONSE_BYTES
++    });
++    return { upstream, bodyText: await upstream.text() };
++  } finally {
++    clearTimeout(timeout);
++    agent.destroy();
++  }
++}
+diff --git a/web/__tests__/pages/api/cors.test.ts b/web/__tests__/pages/api/cors.test.ts
+new file mode 100644
+index 000000000..df7a01526
+--- /dev/null
++++ b/web/__tests__/pages/api/cors.test.ts
+@@ -0,0 +1,145 @@
++// @vitest-environment node
++import type { NextApiRequest, NextApiResponse } from "next";
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import handler from "../../../pages/api/cors";
++
++const { fetchMock } = vi.hoisted(() => ({ fetchMock: vi.fn() }));
++vi.mock("node-fetch", () => ({ default: fetchMock }));
++
++const GAME_URL = "https://api-web.nhle.com/v1/gamecenter/2026010054/boxscore";
++
++function response() {
++  return {
++    statusCode: 200,
++    body: undefined as unknown,
++    setHeader: vi.fn(),
++    status(code: number) { this.statusCode = code; return this; },
++    json(body: unknown) { this.body = body; return this; }
++  };
++}
++
++async function request(query: NextApiRequest["query"], method = "GET") {
++  const res = response();
++  await handler({ method, query } as NextApiRequest, res as unknown as NextApiResponse);
++  return res;
++}
++
++beforeEach(() => {
++  fetchMock.mockReset();
++  fetchMock.mockImplementation(() => { throw new Error("Unexpected transport"); });
++});
++afterEach(() => vi.restoreAllMocks());
++
++describe("NHL proxy boundary", () => {
++  it("rejects the unauthenticated arbitrary-method loopback reproduction before transport", async () => {
++    const res = await request({ url: "http://127.0.0.1:7777/synthetic", method: "DELETE" });
++    expect(res.statusCode).toBe(400);
++    expect(fetchMock).not.toHaveBeenCalled();
++  });
++
++  it.each(["POST", "DELETE", "PUT", "PATCH", "HEAD", "OPTIONS"])("denies HTTP %s", async (method) => {
++    const res = await request({ url: GAME_URL }, method);
++    expect(res.statusCode).toBe(405);
++    expect(res.setHeader).toHaveBeenCalledWith("Allow", "GET");
++    expect(fetchMock).not.toHaveBeenCalled();
++  });
++
++  it.each([
++    {}, { url: "" }, { url: [GAME_URL, GAME_URL] },
++    { url: GAME_URL, method: "DELETE" }, { url: GAME_URL, method: ["GET"] },
++    { url: "https://169.254.169.254/latest/meta-data" },
++    { url: "https://10.1.2.3/v1/schedule/now" },
++    { url: "https://[::1]/v1/schedule/now" },
++    { url: "https://2130706433/v1/schedule/now" },
++    { url: "https://0x7f000001/v1/schedule/now" },
++    { url: GAME_URL.replace("https:", "http:") },
++    { url: GAME_URL.replace("https:", "file:") },
++    { url: GAME_URL.replace("api-web.nhle.com", "api-web.nhle.com.attacker.invalid") },
++    { url: GAME_URL.replace("api-web.nhle.com", "api-web.nhle.com@127.0.0.1") },
++    { url: GAME_URL.replace("api-web.nhle.com", "user:pass@api-web.nhle.com") },
++    { url: GAME_URL.replace("api-web.nhle.com", "api-web.nhle.com:8443") },
++    { url: GAME_URL.replace("api-web.nhle.com", "api-web.nhle.com:443") },
++    { url: GAME_URL.replace("api-web.nhle.com", "api-web.nhle.com.") },
++    { url: GAME_URL.replace("api-web.nhle.com", "%61pi-web.nhle.com") },
++    { url: GAME_URL.replace("/v1/", "\\v1/") },
++    { url: `${GAME_URL}#fragment` }, { url: `${GAME_URL}#` },
++    { url: `${GAME_URL}\n` }, { url: ` ${GAME_URL}` },
++    { url: GAME_URL.replace("/v1/", "/unapproved/../v1/") },
++    { url: GAME_URL.replace("/v1/", "/unapproved/%2e%2e/v1/") },
++    { url: GAME_URL.replace("/v1/", "/%76%31/") },
++    { url: "https://api-web.nhle.com/v1/arbitrary-path" },
++    { url: `${GAME_URL}?url=http://127.0.0.1` },
++    { url: "https://api.nhle.com/stats/rest/en/skater/unapproved" },
++    { url: "https://api.nhle.com/stats/rest/en/season?redirect=https://attacker.invalid" },
++    { url: "https://api.nhle.com/stats/rest/en/season?limit=1&limit=2" },
++    { url: "https://api.nhle.com/stats/rest/en/season?limit=-1" },
++    { url: "https://api.nhle.com/stats/rest/en/season?limit=101" },
++    { url: "https://api.nhle.com/stats/rest/en/season?start=-1" },
++    { url: "https://api.nhle.com/stats/rest/en/season?isGame=1" },
++    { url: "https://api.nhle.com/stats/rest/en/season?sort=%00" },
++    { url: "https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=1 or 1=1" },
++    { url: "https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=2026010054&limit=100" },
++    { url: `https://api.nhle.com/stats/rest/en/season?sort=${"a".repeat(2049)}` },
++    { url: `${GAME_URL}?${"a".repeat(8192)}` }
++  ])("rejects unsupported URL/query before transport: %j", async (query) => {
++    const res = await request(query);
++    expect(res.statusCode).toBe(400);
++    expect(fetchMock).not.toHaveBeenCalled();
++  });
++
++  it.each([
++    GAME_URL,
++    GAME_URL.replace("boxscore", "landing"),
++    GAME_URL.replace("boxscore", "play-by-play"),
++    "https://api-web.nhle.com/v1/schedule/2026-10-15",
++    "https://api-web.nhle.com/v1/standings/2026-10-15",
++    "https://api-web.nhle.com/v1/standings/now",
++    "https://api-web.nhle.com/v1/score/2026-10-15",
++    "https://api-web.nhle.com/v1/club-schedule-season/FLA/20262027",
++    'https://api.nhle.com/stats/rest/en/season?sort=[{"property":"id","direction":"DESC"}]',
++    "https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=2026010054",
++    "https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=false&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=1 and gameTypeId=2 and seasonId<=20262027 and seasonId>=20262027",
++    "https://api.nhle.com/stats/rest/en/team/powerplay?isAggregate=false&isGame=false&start=0&limit=50&cayenneExp=teamId=1 and gameTypeId=2",
++    "https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=false&isGame=true&start=100&limit=100&cayenneExp=gameDate%3C=%222026-10-15%2023:59:59%22%20and%20gameTypeId=2",
++    "https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=true&isGame=true&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=1 and gameDate<='2026-10-15' and gameDate>='2026-10-01' and gameTypeId=2"
++  ])("relays supported NHL caller resource: %s", async (url) => {
++    const payload = { data: [{ id: 2026010054 }] };
++    fetchMock.mockResolvedValue(new Response(JSON.stringify(payload)));
++    const res = await request({ url });
++    expect(res.statusCode).toBe(200);
++    expect(res.body).toEqual(payload);
++    expect(fetchMock).toHaveBeenCalledExactlyOnceWith(new URL(url), expect.objectContaining({
++      method: "GET", redirect: "error", size: 4 * 1024 * 1024,
++      headers: { Accept: "application/json", "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)" }
++    }));
++  });
++
++  it("accepts the explicit GET compatibility parameter", async () => {
++    fetchMock.mockResolvedValue(new Response("{}"));
++    expect((await request({ url: GAME_URL, method: "GET" })).statusCode).toBe(200);
++  });
++
++  it("keeps upstream HTML diagnostics bounded", async () => {
++    fetchMock.mockResolvedValue(new Response('<html><title>NHL | 503: Unavailable</title>' + "x".repeat(500), {
++      status: 503, headers: { "content-type": "text/html" }
++    }));
++    const res = await request({ url: GAME_URL });
++    expect(res.statusCode).toBe(502);
++    expect(res.body).toMatchObject({ upstreamStatus: 503, message: expect.stringContaining("Code 503.") });
++    expect((res.body as { detail: string }).detail.length).toBe(240);
++  });
++
++  it("rejects successful non-JSON bodies", async () => {
++    fetchMock.mockResolvedValue(new Response("not json", { headers: { "content-type": "text/plain" } }));
++    const res = await request({ url: GAME_URL });
++    expect(res.statusCode).toBe(502);
++    expect(res.body).toMatchObject({ message: "Expected JSON but received text/plain." });
++  });
++
++  it("does not expose raw network failure details", async () => {
++    fetchMock.mockRejectedValue(new Error("synthetic private DNS detail"));
++    const res = await request({ url: GAME_URL });
++    expect(res.statusCode).toBe(502);
++    expect(res.body).toEqual({ success: false, message: "Unable to retrieve NHL data." });
++  });
++});
+diff --git a/web/lib/NHL/corsProxy.test.ts b/web/lib/NHL/corsProxy.test.ts
+new file mode 100644
+index 000000000..2d420e57d
+--- /dev/null
++++ b/web/lib/NHL/corsProxy.test.ts
+@@ -0,0 +1,178 @@
++// @vitest-environment node
++import { lookup, type LookupAddress } from "node:dns";
++import http, { type ClientRequest } from "node:http";
++import https, { Agent, type RequestOptions } from "node:https";
++import type { LookupFunction } from "node:net";
++import { PassThrough } from "node:stream";
++import { gzipSync } from "node:zlib";
++import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
++import { fetchNhlProxyText, lookupNhlAddress } from "./corsProxy";
++
++vi.mock("node:dns", () => ({ lookup: vi.fn() }));
++
++const TARGET = new URL("https://api-web.nhle.com/v1/gamecenter/2026010054/boxscore");
++const PUBLIC_ADDRESS = "23.45.67.89";
++type Fixture = {
++  statusCode: number;
++  headers: Record<string, string>;
++  body: Buffer;
++  stall?: "dns" | "headers" | "body";
++};
++let fixture: Fixture;
++let addresses: LookupAddress[];
++let dnsError: NodeJS.ErrnoException | null;
++let connectedAddresses: string[];
++let streams: PassThrough[];
++let transport: MockInstance<typeof https.request>;
++let httpTransport: MockInstance<typeof http.request>;
++let destroyAgent: MockInstance<Agent["destroy"]>;
++
++beforeEach(() => {
++  fixture = { statusCode: 200, headers: { "content-type": "application/json" }, body: Buffer.from('{"ok":true}') };
++  addresses = [{ address: PUBLIC_ADDRESS, family: 4 }];
++  dnsError = null;
++  connectedAddresses = [];
++  streams = [];
++  vi.mocked(lookup).mockReset();
++  vi.mocked(lookup).mockImplementation(((
++    _hostname: string,
++    _options: unknown,
++    callback: (error: NodeJS.ErrnoException | null, result: LookupAddress[]) => void
++  ) => {
++    if (fixture.stall !== "dns") callback(dnsError, addresses);
++  }) as typeof lookup);
++  destroyAgent = vi.spyOn(Agent.prototype, "destroy");
++  // These replace both possible transports before any test. No sockets are opened.
++  httpTransport = vi.spyOn(http, "request").mockImplementation(() => { throw new Error("Unexpected HTTP transport"); });
++  transport = vi.spyOn(https, "request").mockImplementation(((options: RequestOptions) => {
++    const req = Object.assign(new PassThrough(), { abort: vi.fn() });
++    streams.push(req);
++    queueMicrotask(() => {
++      const agent = options.agent as Agent;
++      const resolveAddress = agent.options.lookup as LookupFunction;
++      resolveAddress(String(options.hostname), { family: agent.options.family }, (error, address) => {
++        if (error) { req.emit("error", error); return; }
++        connectedAddresses.push(address);
++        if (fixture.stall === "headers") return;
++        const res = Object.assign(new PassThrough(), { statusCode: fixture.statusCode, headers: fixture.headers });
++        streams.push(res);
++        req.emit("response", res);
++        if (fixture.stall !== "body") res.end(fixture.body);
++      });
++    });
++    return req as unknown as ClientRequest;
++  }) as typeof https.request);
++});
++
++afterEach(() => {
++  for (const stream of streams) stream.destroy();
++  vi.useRealTimers();
++  vi.restoreAllMocks();
++});
++
++function resolveHost(hostname = TARGET.hostname) {
++  return new Promise<{ error: NodeJS.ErrnoException | null; address: string; family: number }>((resolve) => {
++    lookupNhlAddress(hostname, { family: 4 }, (error, address, family) => resolve({ error, address, family }));
++  });
++}
++
++describe("NHL socket address boundary", () => {
++  it("passes the checked public IPv4 address to the socket lookup without a second resolution", async () => {
++    const result = await fetchNhlProxyText(TARGET);
++    expect(result.bodyText).toBe('{"ok":true}');
++    expect(connectedAddresses).toEqual([PUBLIC_ADDRESS]);
++    expect(lookup).toHaveBeenCalledExactlyOnceWith(TARGET.hostname, { all: true, family: 4 }, expect.any(Function));
++    const options = transport.mock.calls[0][0] as RequestOptions;
++    expect(options.hostname).toBe(TARGET.hostname);
++    expect(options.method).toBe("GET");
++    expect((options.agent as Agent).options).toMatchObject({ family: 4, lookup: lookupNhlAddress });
++    expect(httpTransport).not.toHaveBeenCalled();
++    expect(destroyAgent).toHaveBeenCalledTimes(1);
++  });
++
++  it.each([
++    "0.0.0.0", "0.1.2.3", "10.0.0.1", "100.64.0.1", "100.127.255.254",
++    "127.0.0.1", "127.255.255.254", "169.254.169.254", "172.16.0.1", "172.31.255.254",
++    "192.0.0.8", "192.0.2.1", "192.88.99.1", "192.168.1.1", "198.18.0.1",
++    "198.19.255.254", "198.51.100.1", "203.0.113.1", "224.0.0.1", "239.255.255.254",
++    "240.0.0.1", "255.255.255.255", "2130706433", "0x7f000001", "not-an-address"
++  ])("denies DNS answer %s before any connection", async (address) => {
++    addresses = [{ address, family: 4 }];
++    await expect(fetchNhlProxyText(TARGET)).rejects.toThrow("NHL address unavailable");
++    expect(connectedAddresses).toEqual([]);
++    expect(destroyAgent).toHaveBeenCalledTimes(1);
++  });
++
++  it.each(["::1", "::ffff:127.0.0.1", "fc00::1", "fe80::1", "2001:4860:4860::8888"])("fails closed for IPv6 answer %s", async (address) => {
++    addresses = [{ address, family: 6 }];
++    expect((await resolveHost()).error).toBeInstanceOf(Error);
++  });
++
++  it.each([false, true])("rejects a mixed public/private DNS result, private answer first=%s", async (privateFirst) => {
++    addresses.push({ address: "10.0.0.1", family: 4 });
++    if (privateFirst) addresses.reverse();
++    await expect(fetchNhlProxyText(TARGET)).rejects.toThrow("NHL address unavailable");
++    expect(connectedAddresses).toEqual([]);
++  });
++
++  it("rejects empty answers and DNS failures", async () => {
++    addresses = [];
++    expect((await resolveHost()).error).toBeInstanceOf(Error);
++    dnsError = new Error("synthetic DNS failure");
++    expect((await resolveHost()).error?.message).toBe("NHL address unavailable");
++  });
++
++  it("denies unexpected socket hostnames without resolving", async () => {
++    expect((await resolveHost("attacker.invalid")).error).toBeInstanceOf(Error);
++    expect(lookup).not.toHaveBeenCalled();
++  });
++
++  it("rejects unsupported direct helper destinations before transport", async () => {
++    await expect(fetchNhlProxyText(new URL("https://127.0.0.1/"))).rejects.toThrow("Unsupported NHL URL");
++    expect(transport).not.toHaveBeenCalled();
++    expect(lookup).not.toHaveBeenCalled();
++    expect(destroyAgent).not.toHaveBeenCalled();
++  });
++});
++
++describe("NHL HTTP client limits with synthetic streams", () => {
++  it.each([301, 302, 303, 307, 308])("rejects HTTP %s without making a second request", async (statusCode) => {
++    fixture.statusCode = statusCode;
++    fixture.headers.location = "http://169.254.169.254/synthetic";
++    await expect(fetchNhlProxyText(TARGET)).rejects.toMatchObject({ type: "no-redirect" });
++    expect(transport).toHaveBeenCalledTimes(1);
++    expect(httpTransport).not.toHaveBeenCalled();
++    expect(destroyAgent).toHaveBeenCalledTimes(1);
++  });
++
++  it("also rejects redirects to an otherwise approved resource", async () => {
++    fixture.statusCode = 302;
++    fixture.headers.location = "https://api-web.nhle.com/v1/standings/now";
++    await expect(fetchNhlProxyText(TARGET)).rejects.toMatchObject({ type: "no-redirect" });
++    expect(transport).toHaveBeenCalledTimes(1);
++  });
++
++  it.each([false, true])("enforces the decoded-body limit with compression=%s", async (compressed) => {
++    const oversized = "x".repeat(4 * 1024 * 1024 + 1);
++    fixture.body = compressed ? gzipSync(oversized) : Buffer.from(oversized);
++    if (compressed) fixture.headers["content-encoding"] = "gzip";
++    await expect(fetchNhlProxyText(TARGET)).rejects.toMatchObject({ type: "max-size" });
++    expect(destroyAgent).toHaveBeenCalledTimes(1);
++  });
++
++  it.each(["dns", "headers", "body"] as const)("aborts stalled %s within the total 10-second deadline", async (stall) => {
++    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
++    fixture.stall = stall;
++    const result = expect(fetchNhlProxyText(TARGET)).rejects.toMatchObject({ name: "AbortError" });
++    await vi.advanceTimersByTimeAsync(10_000);
++    await result;
++    expect(destroyAgent).toHaveBeenCalledTimes(1);
++    expect(vi.getTimerCount()).toBe(0);
++  });
++
++  it("clears the deadline on success", async () => {
++    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
++    await expect(fetchNhlProxyText(TARGET)).resolves.toMatchObject({ bodyText: '{"ok":true}' });
++    expect(vi.getTimerCount()).toBe(0);
++  });
++});

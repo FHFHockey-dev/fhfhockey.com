@@ -1,0 +1,19 @@
+{
+  "createdAt": "2026-10-15T20:24:03.909669+00:00",
+  "files": {
+    "web/lib/rosterScheduleOptimizer/providerRules.ts": "fd731cc5520de95e83f3f5208b56694f275bcf5f619d6e54ffb8b11bcb6a9d69",
+    "web/lib/rosterScheduleOptimizer/providerRules.test.ts": "e73af1b50023f22281682e48feb17645ea0cb79dafd21949dd4f9eb211628c23"
+  },
+  "patchSha256": "0b579dcd67505475477c91824d9a54674f52b135a8d2d117ac237233ed68feb6",
+  "red": "New exact missing-window regression failed before correction (1failed,15skipped); stale limitation retained despite supplied validwindows.",
+  "tests": "providerRules.test.ts16/16passed after change; all mocked/synthetic/offline",
+  "lint": "2ownedfilespassed0errors0warnings",
+  "whitespace": "passed",
+  "frozenForecastCohort": "27pinsunchanged; neitherownedpath in cohort",
+  "compiler": "not run; no repeatfulltree compilation",
+  "liveRequests": 0,
+  "databaseWrites": 0,
+  "providerRequests": 0,
+  "deadlineUTC": "2026-10-15T21:10:00Z",
+  "independentReview": "pending"
+}

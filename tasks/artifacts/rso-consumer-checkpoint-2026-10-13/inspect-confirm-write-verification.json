@@ -1,0 +1,11 @@
+{
+  "sha256": "43129788749954e27f6b5ca5bee4b18fd4c4350af1b578a5553b87daf208d14b",
+  "verification": "AST compile + isolated pure sanitizer checks; no module/main/request execution",
+  "requestsMade": 0,
+  "credentialsRead": false,
+  "review": "ACCEPT exact SHA; 55 independent sanitizer checks and five mock-flow cases",
+  "scope": "fixed 57 games/114 sides/Oct11\u201319/477/20262027",
+  "automaticRetries": 0,
+  "pureSanitizerChecksPassed": 19,
+  "reviewReport": "inspect-confirm-write-independent-review.md"
+}

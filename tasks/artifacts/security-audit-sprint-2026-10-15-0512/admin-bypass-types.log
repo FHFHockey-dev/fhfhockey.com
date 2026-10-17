@@ -1,0 +1,2 @@
+TypeScript 5.7.3; root files: utils/adminOnlyMiddleware.ts, __tests__/utils/adminOnlyMiddleware.test.ts, next-bootstrap.d.ts, yahoo-fantasy.d.ts; imported dependencies included; no emit; not a full-tree type-check.
+PASS: no diagnostics.

@@ -1,0 +1,27 @@
+{
+  "before": {
+    "rls": false,
+    "kind": "r",
+    "name": "line_source_captures",
+    "exists": true,
+    "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+    "forceRls": false,
+    "shapeHash": "f41c1fd311ae9614ef53c26c725a50f1"
+  },
+  "after": {
+    "rls": false,
+    "kind": "r",
+    "name": "line_source_captures",
+    "exists": true,
+    "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+    "forceRls": false,
+    "shapeHash": "f41c1fd311ae9614ef53c26c725a50f1"
+  },
+  "grants": [
+    {
+      "column_select": true,
+      "truncate_grant": true
+    }
+  ],
+  "interpretation": "Fingerprint covers standard-role table SELECT/INSERT/UPDATE/DELETE only; column-level and TRUNCATE privileges need separate exact inventory before production acceptance."
+}

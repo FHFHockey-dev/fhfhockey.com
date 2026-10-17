@@ -66,6 +66,18 @@ describe("roster optimizer NHL schedule source", () => {
     ]);
   });
 
+  it("persists observed game IDs and explicit empty days through the existing row metadata", async () => {
+    getScheduleDailyMock.mockResolvedValue({ gameWeek: [
+      { date: "2026-10-05", games: [game] }, { date: "2026-10-06", games: [] },
+    ] });
+    const result = await fetchBoundedNhlSchedule({ startDate: "2026-10-05", endDate: "2026-10-06" });
+    const rows = normalizeNhlGameToTeamRows({ ...result.games[0], fetchedAt: "2026-10-01T10:00:00Z",
+      gameKey: "477", yahooSeason: "2026", mapping: { status: "unmapped", reason: "no_week" } });
+    for (const row of rows) expect(row.source_metadata.scheduleCoverage).toEqual({
+      version: "nhl-source-days-v1", date: "2026-10-05", gameIds: [2026020001], emptyDates: ["2026-10-06"],
+    });
+  });
+
   it("marks a partial club refresh incomplete so stale rows are preserved", async () => {
     getMock
       .mockResolvedValueOnce({ games: [game] })

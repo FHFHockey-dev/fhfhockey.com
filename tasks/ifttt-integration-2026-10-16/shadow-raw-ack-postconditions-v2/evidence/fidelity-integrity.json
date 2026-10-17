@@ -1,0 +1,19 @@
+{
+  "integrationByteIdentical": true,
+  "sqlReviewerFilePrefixUnchangedExceptEnclosingClose": true,
+  "reviewerFiles": [
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-shadow-raw-ack-v1/nearby-sql.test.ts",
+      "sha256": "f8b37b8f1522b2e0fe82aae97a7224aa863a39451c5c645653a1275072616946"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-shadow-raw-ack-v1/nearby-integration.test.ts",
+      "sha256": "c98b34c544c0804baa1d5a3453da1b92ef6804ce2656dbf91b0c3aaff44a35bf"
+    }
+  ],
+  "prior103SourceFilesUnchanged": true,
+  "prior69ArtifactFilesUnchanged": true,
+  "priorReviewFileCount": 218,
+  "priorReviewFilesUnchanged": true,
+  "dependencies15LiveAndNewSnapshotMatch": true
+}

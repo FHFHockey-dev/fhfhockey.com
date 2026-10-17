@@ -1,0 +1,9 @@
+[
+  "__tests__/components/RosterScheduleOptimizer/CategoryGains.test.tsx",
+  "__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+  "__tests__/pages/api/v1/db/update-line-sources.test.ts",
+  "lib/rosterScheduleOptimizer/planningReproducibility.test.ts",
+  "lib/sources/tweetInterpretation.test.ts",
+  "lib/supabase/supportedBaselineMigration.test.ts",
+  "scripts/qualify-native-players-offline.test.ts"
+]

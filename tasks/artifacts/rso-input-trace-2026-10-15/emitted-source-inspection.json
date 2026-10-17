@@ -1,0 +1,23 @@
+{
+  "path": "web/.next/static/chunks/pages/roster-schedule-optimizer.js",
+  "sha256": "506ab835313ef752d01974a97d71189d62bc9585a1cd8c8f5818ef5860e673b4",
+  "bytes": 7999907,
+  "fileModifiedAt": "2026-10-15T22:30:12.446467+00:00",
+  "sources": [
+    {
+      "source": "/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+      "target": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+      "embeddedSha256": "d13dac954bb9998368249bebb71a4a737c14c38a5a39abd2aae2f3bbe651f0e6",
+      "currentSha256": "d13dac954bb9998368249bebb71a4a737c14c38a5a39abd2aae2f3bbe651f0e6",
+      "matchesCurrentSource": true
+    },
+    {
+      "source": "/Users/tim/Code/fhfhockey.com/web/hooks/useYahooEligibility.ts",
+      "target": "web/hooks/useYahooEligibility.ts",
+      "embeddedSha256": "5a8ff56cd3cf1896a0e7ed2d23f0eb103169d7362ed8aa17f7baaf430831cca0",
+      "currentSha256": "5a8ff56cd3cf1896a0e7ed2d23f0eb103169d7362ed8aa17f7baaf430831cca0",
+      "matchesCurrentSource": true
+    }
+  ],
+  "scope": "Existing emitted development asset read from disk only; no server request/browser execution. This does not prove which bytes TJ browser loaded."
+}

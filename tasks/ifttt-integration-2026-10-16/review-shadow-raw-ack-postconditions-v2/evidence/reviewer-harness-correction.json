@@ -1,0 +1,7 @@
+{
+  "initialResult": "2 pass, 2 fixture-setup failures: delete fault injection lacked DELETE privileges in minimal fixture",
+  "runtimeSqlChanged": false,
+  "correction": "Grant DELETE only in each corresponding disposable deletion-fault fixture, so the injected trigger executes; preserve original failed logs/results/source.",
+  "rerun": "Only the two corrected deletion cases; do not repeat the already passing extra-column cases.",
+  "productionAclClaim": false
+}

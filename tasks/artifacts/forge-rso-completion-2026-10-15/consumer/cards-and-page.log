@@ -1,0 +1,19 @@
+
+> web@0.1.0 test
+> vitest components/RosterScheduleOptimizer/CandidateCard.test.tsx __tests__/pages/forge/forecasts.test.tsx
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:48769) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:48770) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/RosterScheduleOptimizer/CandidateCard.test.tsx (13 tests) 64ms
+ ✓ __tests__/pages/forge/forecasts.test.tsx (8 tests) 190ms
+
+ Test Files  2 passed (2)
+      Tests  21 passed (21)
+   Start at  21:27:59
+   Duration  785ms (transform 203ms, setup 4ms, collect 443ms, tests 254ms, environment 328ms, prepare 71ms)
+

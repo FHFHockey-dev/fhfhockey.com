@@ -1,0 +1,551 @@
+{
+  "capturedAt": "2026-10-16T04:24:34.562838+00:00",
+  "sourceCheckout": "/Users/tim/Code/fhfhockey.com",
+  "sourceBranch": "octoberBranch",
+  "sourceHead": "a8f58de6178e282acd3a71851c66f4a56b119f14",
+  "snapshotDirectory": "/tmp/fhf-release-checkpoint-20261016-0424",
+  "status": "source pins captured only; candidate membership and base reconciliation pending",
+  "copiedPrivateOrEnvironmentFiles": false,
+  "sources": [
+    {
+      "path": "tasks/artifacts/forge-rso-completion-2026-10-15/checkpoint-source-pins.json",
+      "sha256": "474d813d9e7128a1a1ce75ee375f256b4e627152e16d78d015276137af0e26b2"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/next-increment/owned-source-v4-sha256.json",
+      "sha256": "8a6e3b3c27cf60860b206a4dfd068dbc0aede9ceb76ea03b815e42ffc97ac958"
+    },
+    {
+      "path": "tasks/artifacts/rso-release-coordination-2026-10-16/current-observed.sha256",
+      "sha256": "f972c9c4cca33ef54d56f5e9f30c42229e2f0af3db21bd8be98b1ec6615abba8"
+    }
+  ],
+  "files": [
+    {
+      "path": "web/__tests__/components/RosterScheduleOptimizer/AcquisitionRules.integration.test.tsx",
+      "sha256": "5fbe032b27cbe9b9b18f6800f3007da9c4980b0732de1b1cb628020066daef74",
+      "bytes": 14914
+    },
+    {
+      "path": "web/__tests__/components/RosterScheduleOptimizer/CategoryGains.test.tsx",
+      "sha256": "04169540ae805565621f51a98c919ccb01a9488fdb6ecc00a6c6a6584e283613",
+      "bytes": 11930
+    },
+    {
+      "path": "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+      "sha256": "39c6e5513f1ca75fb285f796c2f048d86e690b3f7502b1f65dc34d4004c6a9c8",
+      "bytes": 254925
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-line-sources.test.ts",
+      "sha256": "e2d3e319a791a62dd24060710ace781ec39615917f93d73e412849cd55d3c304",
+      "bytes": 64812
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-lines-ccc.test.ts",
+      "sha256": "cd6a64c8bc4397d344db37e258fc349cb00b89f77c944a8735ca259696c1736b",
+      "bytes": 17968
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-roster-optimizer-schedule.test.ts",
+      "sha256": "0ed33ebfb86ea21f7e8a32fd4e565dc1a0db4a113f5632a24e851fb3ded05ba3",
+      "bytes": 27036
+    },
+    {
+      "path": "web/__tests__/pages/forge/forecasts.test.tsx",
+      "sha256": "062a0c58aa5be51a713d0670ab35c1631c6e1bdedee5232c8077d8ae43708c72",
+      "bytes": 12445
+    },
+    {
+      "path": "web/components/NewsFeed/NewsCard.test.tsx",
+      "sha256": "4ef4b7adf05abd67a9a12d7dd95fccc7f1fc8c95bb87a47ab431c18e7b769031",
+      "bytes": 12424
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/AcquisitionPeriodTimes.test.tsx",
+      "sha256": "06498058e4ae0d2094b751172d6e2601cc67d0425c76a0db22f85dfaa1fd862c",
+      "bytes": 3800
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/AcquisitionPeriodTimes.tsx",
+      "sha256": "ba4a9703f5f94f56e25197f5c97699c0500d2b5534a34bcd113ef0c627f4193b",
+      "bytes": 3224
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.integration.test.tsx",
+      "sha256": "9e3ead9f5d69ad918e2ad015465704c9416fc81c72b85fa3c928924ded25be93",
+      "bytes": 8749
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx",
+      "sha256": "8000c9329446d17a5cfd203ef12625467dc84c4c54be94fa0e4da25ccb985cb4",
+      "bytes": 25205
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx",
+      "sha256": "cb86658b8a3b3810311e872886741d2098e779ed6b9fd5c6639ab8aa6e6969aa",
+      "bytes": 18750
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/CandidateCard.test.tsx",
+      "sha256": "75e0dc00ef86415f4513c9d16381852d9d36bc96b1bf22a6d5b3bde7b8d94a6b",
+      "bytes": 5731
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/CandidateCard.tsx",
+      "sha256": "e24760edf9bb394c6124566d18596483464cc9305b8045bbe83d709db6cac0a3",
+      "bytes": 9965
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/CategoryGains.tsx",
+      "sha256": "045576ab1e07d945df4a8cc396bf90d195f63a8e1788b592efa989cec26236ff",
+      "bytes": 5108
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+      "sha256": "5f0a700c5edf0a12e0a5ec3a11243611e2a5eb882322c38c268e61b5975b149a",
+      "bytes": 162340
+    },
+    {
+      "path": "web/e2e/roster-schedule-optimizer.spec.ts",
+      "sha256": "43370ba20eb3e4afd428cd9012893c34d66d1873bdd7be7182f6534026d85fd0",
+      "bytes": 175094
+    },
+    {
+      "path": "web/lib/fantasy-projections/fantasyProjections.test.ts",
+      "sha256": "d55d8df1084458010df5e90862ac68ca1fd56a4b0c3c691399ef7524e5f6d846",
+      "bytes": 41206
+    },
+    {
+      "path": "web/lib/fantasy-projections/seasonJobs.ts",
+      "sha256": "0df207df4d2de1d5645cfcc765d57d0972192371ccaf31b1d6c31afb6954825d",
+      "bytes": 49431
+    },
+    {
+      "path": "web/lib/in-season/workspaceSchema.test.ts",
+      "sha256": "c9c519c3b9936352446b3a711ac2d18b2507e687feee4acd5030923715d9cd37",
+      "bytes": 21596
+    },
+    {
+      "path": "web/lib/in-season/workspaceSchema.ts",
+      "sha256": "39859b6aa7c9ca708c4838fc5ecc13ea35f05dce87f5dacbdccdf73b2a364cb7",
+      "bytes": 15780
+    },
+    {
+      "path": "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+      "sha256": "dc1abe03347a0308d888c1edc959cdbbf55854587a467fff940606d0738bd829",
+      "bytes": 43911
+    },
+    {
+      "path": "web/lib/integrations/yahoo/rosterPlanning.ts",
+      "sha256": "709b5cba1cdf73405eafce5b4067bcefed3a18416bf4407f3978cf5ff360e1a7",
+      "bytes": 29450
+    },
+    {
+      "path": "web/lib/lines/service.test.ts",
+      "sha256": "d5ce4cca0d066eba5a2eb5d93fdcfd958c24f05d7bd12ff48ad49f8dbc533f66",
+      "bytes": 4918
+    },
+    {
+      "path": "web/lib/lines/service.ts",
+      "sha256": "bde1b3b012df923cd9fb05f0bb4e8b5148c5aec941a9c1ed06cbdcbd7852e03f",
+      "bytes": 9177
+    },
+    {
+      "path": "web/lib/newsFeed.test.ts",
+      "sha256": "ee8963100f43cef662af318ad091c27c95f38315730f34f4b83ad08014e53e08",
+      "bytes": 13356
+    },
+    {
+      "path": "web/lib/newsFeed.ts",
+      "sha256": "bca7e485757f4555f395b9aeabfdef7676f930a019e6f3aabf8bb3b8e76e2d6c",
+      "bytes": 24881
+    },
+    {
+      "path": "web/lib/player-forecasts/baselineGeneration.ts",
+      "sha256": "76e077a8aa05afe4a2caaffa94004470aedb5a39215ee05ee8845b9ef0076622",
+      "bytes": 16430
+    },
+    {
+      "path": "web/lib/player-forecasts/baselineRates.ts",
+      "sha256": "0e03df70d0e7c4e834cfd5ae8eb49ab442823eea90f3c4785d8714b3c67b13df",
+      "bytes": 13637
+    },
+    {
+      "path": "web/lib/player-forecasts/contributions.test.ts",
+      "sha256": "d6f821910d59187380012a94da1d09733ebacf62f2e47685cd0b730b2c19ccf3",
+      "bytes": 89482
+    },
+    {
+      "path": "web/lib/player-forecasts/contributions.ts",
+      "sha256": "9c971d8055ab1e5499de4f144b2b3d50403296d29d32b25ce5796ec8019ba0b7",
+      "bytes": 20172
+    },
+    {
+      "path": "web/lib/player-forecasts/currentRosterInjuryEvidence.ts",
+      "sha256": "cb681ed818977827b31a625295730b6c51c55759adab15a9b4ae60016f0779e8",
+      "bytes": 4221
+    },
+    {
+      "path": "web/lib/player-forecasts/currentRosterNativeInputs.ts",
+      "sha256": "704578c2b1845cbab3f580efa519e2b4ee52869088732091b96719112d286b19",
+      "bytes": 13622
+    },
+    {
+      "path": "web/lib/player-forecasts/gameExpectationReader.ts",
+      "sha256": "efcc182f8363151043a94f539e87d57d1f1620466b3d383562d789664bc76800",
+      "bytes": 2203
+    },
+    {
+      "path": "web/lib/player-forecasts/gameExpectations.test.ts",
+      "sha256": "36b15a0850a21fcc03b7517888ee8f700b1d9f800e484ddff8d8ad507afa4727",
+      "bytes": 20223
+    },
+    {
+      "path": "web/lib/player-forecasts/gameExpectations.ts",
+      "sha256": "7229622c0f0b7421f03ec8cb43779bc3e8572100733b20217e20c31a5b5c1fe9",
+      "bytes": 15576
+    },
+    {
+      "path": "web/lib/player-forecasts/goalieBaseline.test.ts",
+      "sha256": "b93fb0d1024b3f64f49b31a50f02d7c13bafb53733d8d9787955d07dbed68f87",
+      "bytes": 59910
+    },
+    {
+      "path": "web/lib/player-forecasts/goalieBaselineRates.ts",
+      "sha256": "afbdaec6a7b7e048949d662e9b98f309eb474771e2f5d3a33fd124af43da989d",
+      "bytes": 26219
+    },
+    {
+      "path": "web/lib/player-forecasts/modeledGoalieParticipation.test.ts",
+      "sha256": "2c7ffc7167279a6a1950f2f7b9fa4dc9e2c84104b2780433a3389e156186bf4e",
+      "bytes": 10274
+    },
+    {
+      "path": "web/lib/player-forecasts/modeledGoalieParticipation.ts",
+      "sha256": "579a40e2f5560462bea56b09bd9cab526b4837c6f5c4e25609abab7af2966873",
+      "bytes": 6780
+    },
+    {
+      "path": "web/lib/player-forecasts/modeledGoalieParticipationStore.ts",
+      "sha256": "3485a0a3353de072b8e612715f7c1c619683c082607f18667936d26f325a940b",
+      "bytes": 5995
+    },
+    {
+      "path": "web/lib/player-forecasts/nativeContributionAdmission.test.ts",
+      "sha256": "8c37ffaa33c20d105fdf0d33eb1fd532b336780e9b5be172a620a98d6f5a0cdf",
+      "bytes": 20421
+    },
+    {
+      "path": "web/lib/player-forecasts/nativeContributionAdmission.ts",
+      "sha256": "dc416a240c0f5d06ed540ab8ae50474d06c80e823ff8033610b9551bdcd8f3d0",
+      "bytes": 8115
+    },
+    {
+      "path": "web/lib/player-forecasts/nativeGoalieOutcomes.test.ts",
+      "sha256": "c9d9635d332ca6adec2886cf6eb3e54e6fca46c641f8f2142cfb77a28fcd3aef",
+      "bytes": 12800
+    },
+    {
+      "path": "web/lib/player-forecasts/nativeGoalieOutcomes.ts",
+      "sha256": "c7f4ae3d1572b82ba885ec2d2549b17326e42339aaa1ba13241ffa76330387f7",
+      "bytes": 9744
+    },
+    {
+      "path": "web/lib/player-forecasts/nativePowerPlayPoints.test.ts",
+      "sha256": "be4763029f0f77d54331499b6513cef97925958972ca9b2c2dbde830f3ec1bc5",
+      "bytes": 10210
+    },
+    {
+      "path": "web/lib/player-forecasts/nativePowerPlayPoints.ts",
+      "sha256": "7079c0dd49a44267fec9593803ef5884af49abab02760bb754f8b9a66c388e8b",
+      "bytes": 8030
+    },
+    {
+      "path": "web/lib/player-forecasts/planningContributions.test.ts",
+      "sha256": "b08f4c5896ee95fb2f0c7d0034ddd5bfa41501cfa0fca578662d8f8ce9320ffc",
+      "bytes": 61326
+    },
+    {
+      "path": "web/lib/player-forecasts/planningContributions.ts",
+      "sha256": "d26671ef045d401550184fe02b5a29b02555cff95bfec68d6580c60c096c713f",
+      "bytes": 17441
+    },
+    {
+      "path": "web/lib/player-forecasts/seasonGameContributions.ts",
+      "sha256": "7c02a55a175f1223ccbcbae7aefc8b06bc331d7a176518a8dc83b53e03c39224",
+      "bytes": 7457
+    },
+    {
+      "path": "web/lib/projections/starterBoardQueue.test.ts",
+      "sha256": "b3d4f6c2fd371d022a2d84cc88bbd09e3d11deb2253b86f3c9eb0a10dd97eb8c",
+      "bytes": 7094
+    },
+    {
+      "path": "web/lib/projections/starterBoardQueue.ts",
+      "sha256": "91585d1df28ebe94446cb5b3accd6fb56de5cc389b8098628c0890fdfa6d0862",
+      "bytes": 8452
+    },
+    {
+      "path": "web/lib/rosterScheduleData/normalize.ts",
+      "sha256": "bf6a30c1ea38903f11b66643721915543af73f61d28a8b6e3b48e8869489c4a6",
+      "bytes": 7007
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planning.test.ts",
+      "sha256": "12e1c5fbe44e30737b547163bcee6eafb33056778dbd4b0b263b242315e895c4",
+      "bytes": 61996
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planning.ts",
+      "sha256": "2cb205aff77c68370e53743b10286e3761e32f67e4069110f70d561a3d9b6810",
+      "bytes": 17136
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planningInputs.ts",
+      "sha256": "6fd62c032d3c5ca7ed66e24d4d0b696601b492a50fe74838a3ec5aa40e348304",
+      "bytes": 13056
+    },
+    {
+      "path": "web/lib/rosterScheduleData/source.test.ts",
+      "sha256": "5823209501809d6e8fceec53344848e9e2a42fbf240d6389a5ffc1e443b5ebfe",
+      "bytes": 8401
+    },
+    {
+      "path": "web/lib/rosterScheduleData/source.ts",
+      "sha256": "770c0dd5820aaf745441e4b5b10bc5d73d727e3d14d0fc3617ab369bbac9b92e",
+      "bytes": 7223
+    },
+    {
+      "path": "web/lib/rosterScheduleData/types.ts",
+      "sha256": "7ee4dcccf5eef024aaafc0fe32ddc477c65c7bee9df22d6197f12c3ae7f5e2f3",
+      "bytes": 1893
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts",
+      "sha256": "782dde20cfd9e12645afa0b7ddc3ff6d3c23f76982cebb817eb5ec876322120d",
+      "bytes": 28598
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.ts",
+      "sha256": "f09c08a671c64f1e5d541c070523219dd52457ef2587fae69c112310cfedb616",
+      "bytes": 14287
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/periodBoundaries.test.ts",
+      "sha256": "a2e4ed8f4eab1fe63fb21030d2c8ec45657a0fdcd9808ce291edb530f1d9bffc",
+      "bytes": 2340
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/periodBoundaries.ts",
+      "sha256": "0e777c8af2b61ebe68b00818ccb89627dd25a79aa6aa93da3c100dada2ba9bbc",
+      "bytes": 2331
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planning.test.ts",
+      "sha256": "c935008e78f3596c63531f22dafd03945cb0129f42044642c1abe0e342832f26",
+      "bytes": 118522
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+      "sha256": "862094beee25015fc650e5462449a398f6cc79f07f594201aa8f65cc27717f78",
+      "bytes": 96977
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planningTypes.ts",
+      "sha256": "3ac73ac55c3999ca4bfe448cca0d553f48db71bd2fe43dee7b9e957c8ae0e445",
+      "bytes": 13928
+    },
+    {
+      "path": "web/lib/sources/fixtures/claimContextCases.json",
+      "sha256": "a9ebc8de647914cec6f9639f0b91f8b208821dcc62631cd5c9293c1712ae7d36",
+      "bytes": 2195
+    },
+    {
+      "path": "web/lib/sources/fixtures/tweetClaimQualificationFixture.ts",
+      "sha256": "82555df4e3643e551f266a1d42b9d83b30e87eadab62669db3fc84c649e2405a",
+      "bytes": 2209
+    },
+    {
+      "path": "web/lib/sources/linesCccIngestion.ts",
+      "sha256": "3b9a29f70d9a95f6657f62b9154459e801d8cb3eb0d96f6a143ca2956f7080c0",
+      "bytes": 74145
+    },
+    {
+      "path": "web/lib/sources/projectedLineups.test.ts",
+      "sha256": "096b9df26f93fd55012bc342c3f653230ef252977ee14642f478e9131e3934f2",
+      "bytes": 40196
+    },
+    {
+      "path": "web/lib/sources/tweetClaimCompatibility.ts",
+      "sha256": "1dc6d0036c09db09318187a1754db9514c3193c8b423b025efcc5c8f3588aee1",
+      "bytes": 3258
+    },
+    {
+      "path": "web/lib/sources/tweetClaimEvaluation.ts",
+      "sha256": "b9ea1340a4660daad29b42572f80c1d422d654ea9d1d1ba6438dbdc9411da633",
+      "bytes": 8294
+    },
+    {
+      "path": "web/lib/sources/tweetClaimEvaluationBounds.test.ts",
+      "sha256": "6e445891dd7bfed3f5c1d12aca9cd9a8e806521452b093b8d59a2492ab33455d",
+      "bytes": 871
+    },
+    {
+      "path": "web/lib/sources/tweetClaimEvaluationBounds.ts",
+      "sha256": "006147fbf246adb99e861ed39867eb4a86f3310ff406751b4e588c91da195593",
+      "bytes": 972
+    },
+    {
+      "path": "web/lib/sources/tweetClaimEvaluationIntake.test.ts",
+      "sha256": "2da9e84ae79344359522d83346d20451e8328f803bf9a02493f7b31a353e0478",
+      "bytes": 1230
+    },
+    {
+      "path": "web/lib/sources/tweetClaimEvaluationIntake.ts",
+      "sha256": "774d814693771a5d0dbaa8fe7ba7a00df7501dc663ec246ae1379b397db907d3",
+      "bytes": 1241
+    },
+    {
+      "path": "web/lib/sources/tweetClaimEvidence.test.ts",
+      "sha256": "b2e4505c8cf9490262dfb571d697d97f185d5db28509a70a196ba57a9aa60f88",
+      "bytes": 2223
+    },
+    {
+      "path": "web/lib/sources/tweetClaimEvidence.ts",
+      "sha256": "9f9188f471cd4e0b7e4ff2e88a6b978bf917e7a704bdb7beaac599331a10c89a",
+      "bytes": 5901
+    },
+    {
+      "path": "web/lib/sources/tweetClaimExtraction.test.ts",
+      "sha256": "7532d92566fe5b72ae13b5c08d55a4df6d1f54d1b4336cdeb7df6b7a6a3cb978",
+      "bytes": 8214
+    },
+    {
+      "path": "web/lib/sources/tweetClaimExtraction.ts",
+      "sha256": "c11ff33867274c01e02f2b28749bc00c10f82b1a39bc44b34b354105fecaee95",
+      "bytes": 12290
+    },
+    {
+      "path": "web/lib/sources/tweetClaimLineage.test.ts",
+      "sha256": "c6ddc848a3ecd8ecaab9d04c074bd7518d410203b6de02264e6359545937cdcd",
+      "bytes": 5977
+    },
+    {
+      "path": "web/lib/sources/tweetClaimLineage.ts",
+      "sha256": "34bb82c78526319a9116ba5e7b045a17e90671c91f180222609fa2e3209b2e86",
+      "bytes": 10246
+    },
+    {
+      "path": "web/lib/sources/tweetClaimQualificationStorage.test.ts",
+      "sha256": "25019b9e8a31c6a0fa6e0ed6c03634afe838775629ad92315d7e63bd42cd88e8",
+      "bytes": 26737
+    },
+    {
+      "path": "web/lib/sources/tweetClaimQualificationStorage.ts",
+      "sha256": "b575991daa9a6179677f64394b1c48446022cba9cb58081a1709aa0b25cc610a",
+      "bytes": 4597
+    },
+    {
+      "path": "web/lib/sources/tweetClaimReducerAdapter.ts",
+      "sha256": "78a0e2cce23be93a07f781477657dad6bfa1cd74dfb6a73ffe68a082724b2332",
+      "bytes": 22958
+    },
+    {
+      "path": "web/lib/sources/tweetClaimRegistry.test.ts",
+      "sha256": "8d502b7e6b42100775f25ce5fc3ede6d11640fe726e6ff02dd6d78b6b74bcaf5",
+      "bytes": 22123
+    },
+    {
+      "path": "web/lib/sources/tweetClaimRegistry.ts",
+      "sha256": "5abf16d2eb722f92d219aafd28d90ea5e2356fc60099856bf41b19c63cfed1d3",
+      "bytes": 9061
+    },
+    {
+      "path": "web/lib/sources/tweetClaimSourceHints.test.ts",
+      "sha256": "5f083086571427ea989dc8765f929db381a0602906bdb6a9a5a5b2d726d30f89",
+      "bytes": 4241
+    },
+    {
+      "path": "web/lib/sources/tweetClaimSourceHints.ts",
+      "sha256": "31b5b180aa0d43a173f99593c24a1210192c0966118101c81f19cd63b62213b6",
+      "bytes": 4965
+    },
+    {
+      "path": "web/lib/sources/tweetInterpretation.test.ts",
+      "sha256": "d1703752a02cf6ce469aef69565599031bb2dc2d28bf126db9c04f43d55213c2",
+      "bytes": 70804
+    },
+    {
+      "path": "web/lib/sources/tweetPlayerEvents.ts",
+      "sha256": "14c421d37506f33df08cac5914e30c38a578b2588ae46f3c6e461b70efadc88c",
+      "bytes": 22924
+    },
+    {
+      "path": "web/lib/sources/tweetProjectionStorage.ts",
+      "sha256": "a3987dd70356e5b96016a19b28286700ec1fa46aa0ea7911eaedbb7e4f4f73b6",
+      "bytes": 20256
+    },
+    {
+      "path": "web/lib/sources/tweetSourceClaimRegistry.ts",
+      "sha256": "03f58f5793b5083dd48935ab525f869205e338798b45d768c9008c0b55004468",
+      "bytes": 36905
+    },
+    {
+      "path": "web/lib/sources/tweetSourceDirectory.test.ts",
+      "sha256": "a790743e19f0e65f501f9497afe8615ecc8c118e864be76e6e3c7b5c24fdf7af",
+      "bytes": 4730
+    },
+    {
+      "path": "web/lib/sources/tweetSourceDirectory.ts",
+      "sha256": "499b5ffe8727342346ec6e16336140c1e38f4c89bbaebf1c799426bdd0041684",
+      "bytes": 6759
+    },
+    {
+      "path": "web/pages/api/v1/db/update-line-sources.ts",
+      "sha256": "3730aa17e7140b10815bf9d044acc502cbb616de720c12c95a091f06e051890e",
+      "bytes": 37054
+    },
+    {
+      "path": "web/pages/api/v1/db/update-lines-ccc.ts",
+      "sha256": "a7777315823ff655e2625faa531cf39ca23bdf0c544f5b1ba7d8a4715d850084",
+      "bytes": 26006
+    },
+    {
+      "path": "web/pages/api/v1/db/update-roster-optimizer-schedule.ts",
+      "sha256": "ff6dcdf25e0d7f9d8534088affa713f17d712c447969d2bb8299d21a08296859",
+      "bytes": 20256
+    },
+    {
+      "path": "web/pages/forge/forecasts.tsx",
+      "sha256": "e5bddac01005d4a2921b42d1695d2c94ef309ea9484e121c244e3dfffecc24f1",
+      "bytes": 13676
+    },
+    {
+      "path": "web/scripts/capture-current-season-sog-baseline.test.ts",
+      "sha256": "9d0fc88d3e97dd1f54b53a1434c532d99f31271c08b0b97c78077fd758e170fb",
+      "bytes": 20469
+    },
+    {
+      "path": "web/scripts/capture-current-season-sog-baseline.ts",
+      "sha256": "73dc8e5f67f7def285ff2cb518964c491585f7fa4e429506821e93ea520ba62d",
+      "bytes": 4308
+    },
+    {
+      "path": "web/scripts/evaluate-tweet-claims.ts",
+      "sha256": "672af9835b481682066cd10d919b12073bc089da5804400f478ac9b75baf1849",
+      "bytes": 760
+    },
+    {
+      "path": "web/scripts/preview-native-baseline.test.ts",
+      "sha256": "b40ebfba960b17425ee03ad560fddadf06d9b32d5d059595735aef3a30f63d6f",
+      "bytes": 16873
+    },
+    {
+      "path": "web/scripts/preview-native-baseline.ts",
+      "sha256": "8c095fc0b6a66ae8f6b07175ea624969821b89c041b843318bee447507a8e14b",
+      "bytes": 16345
+    }
+  ],
+  "excluded": "All task artifacts/SQL, private files, .env, credentials, node_modules and unclaimed working changes were excluded from this pin capture."
+}

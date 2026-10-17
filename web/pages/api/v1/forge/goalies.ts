@@ -5,6 +5,7 @@ import { buildEndpointScanSummary } from "lib/api/scanSummary";
 import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
 import { buildGoalieReaderCompatibility } from "lib/projections/compatibilityInventory";
 import supabase from "lib/supabase/server";
+import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import {
   buildProjectionApiErrorResponse,
@@ -468,7 +469,7 @@ export default async function handler(
       calibrationHints,
     ] = await Promise.all([
       requestedRunId ? fetchRunSummary(requestedRunId) : Promise.resolve(null),
-      !requestedRunId || requestedRunId === resolvedRunId
+      requestedRunId === resolvedRunId
         ? Promise.resolve(null)
         : fetchRunSummary(resolvedRunId),
       fetchGamesScheduledCount(requestedDate),
@@ -478,6 +479,12 @@ export default async function handler(
       fetchGoalieCalibrationHints(resolvedDate),
     ]);
     const runSummary = resolvedRunSummaryMaybe ?? requestedRunSummary;
+    if (runSummary?.run_id !== resolvedRunId || runSummary?.status !== "succeeded"
+      || runSummary?.metrics?.input_provenance?.external_fantasy_input_contract !== FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT) {
+      const error = new Error("Selected goalie run lacks external fantasy exclusion provenance.");
+      (error as any).statusCode = 422;
+      throw error;
+    }
     const scheduledGamesCount =
       resolvedScheduledGamesCountMaybe ?? requestedScheduledGamesCount;
 

@@ -1,0 +1,90 @@
+{
+  "rejected": false,
+  "receipt": {
+    "owner": "00000000-0000-4000-8000-000000000002",
+    "table": "line_source_ifttt_events",
+    "jobKey": "ingest:line_source_ifttt_events:00000000-0000-4000-8000-000000000001",
+    "marker": {
+      "lane": "shadow",
+      "delivery": "not_requested",
+      "capturedAt": "2026-10-16T03:06:46.664908-05:00",
+      "acknowledgmentKey": "ingest:line_source_ifttt_events:00000000-0000-4000-8000-000000000001"
+    },
+    "eventId": "00000000-0000-4000-8000-000000000001",
+    "tweetId": "fixture-raw-post",
+    "version": "shadow-raw-ack-v1",
+    "delivery": "not_requested",
+    "receivedAt": "2026-10-16T03:05:46.609-05:00",
+    "beforePayload": {
+      "text": "isolated synthetic retained fixture",
+      "receipt": "local-only"
+    },
+    "acknowledgedAt": "2026-10-16T03:06:46.664908-05:00",
+    "observationIds": [
+      "observation-a"
+    ]
+  },
+  "raw": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "text": null,
+    "source": "ifttt",
+    "tweet_id": "fixture-raw-post",
+    "username": null,
+    "source_key": "fixture",
+    "updated_at": "2026-10-16T03:06:46.664908-05:00",
+    "raw_payload": {
+      "text": "isolated synthetic retained fixture",
+      "receipt": "local-only",
+      "tweetClaimShadow": {
+        "lane": "shadow",
+        "delivery": "not_requested",
+        "capturedAt": "2026-10-16T03:06:46.664908-05:00",
+        "acknowledgmentKey": "ingest:line_source_ifttt_events:00000000-0000-4000-8000-000000000001"
+      }
+    },
+    "received_at": "2026-10-16T03:05:46.609001-05:00",
+    "source_group": "fixture",
+    "link_to_tweet": null,
+    "source_account": "fixture",
+    "created_at_label": null,
+    "tweet_created_at": null,
+    "tweet_embed_code": null,
+    "processing_status": "processed"
+  },
+  "job": {
+    "owner": "00000000-0000-4000-8000-000000000002",
+    "status": "complete",
+    "job_key": "ingest:line_source_ifttt_events:00000000-0000-4000-8000-000000000001",
+    "payload": {
+      "tweetClaimShadowAck": {
+        "owner": "00000000-0000-4000-8000-000000000002",
+        "table": "line_source_ifttt_events",
+        "jobKey": "ingest:line_source_ifttt_events:00000000-0000-4000-8000-000000000001",
+        "marker": {
+          "lane": "shadow",
+          "delivery": "not_requested",
+          "capturedAt": "2026-10-16T03:06:46.664908-05:00",
+          "acknowledgmentKey": "ingest:line_source_ifttt_events:00000000-0000-4000-8000-000000000001"
+        },
+        "eventId": "00000000-0000-4000-8000-000000000001",
+        "tweetId": "fixture-raw-post",
+        "version": "shadow-raw-ack-v1",
+        "delivery": "not_requested",
+        "receivedAt": "2026-10-16T03:05:46.609-05:00",
+        "beforePayload": {
+          "text": "isolated synthetic retained fixture",
+          "receipt": "local-only"
+        },
+        "acknowledgedAt": "2026-10-16T03:06:46.664908-05:00",
+        "observationIds": [
+          "observation-a"
+        ]
+      }
+    },
+    "attempts": 1,
+    "updated_at": "2026-10-16T03:06:46.664908-05:00",
+    "failure_stage": null,
+    "next_attempt_at": "2026-10-16T03:06:46.656192-05:00",
+    "lease_expires_at": null
+  }
+}

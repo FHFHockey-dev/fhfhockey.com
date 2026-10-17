@@ -10,6 +10,7 @@ import { baselineAppearanceFromBoxscore, baselineProjectionFromRow, verifyBaseli
   verifyBaselineHistoricalSources, BASELINE_HISTORICAL_ROSTER_COLUMNS,
   type BaselineHistoricalSourceReceipt, type BaselineProjectionSelection, type BaselineProjectionSelectionReceipt } from "./baselineSourceLineage";
 import type { GoalieAppearanceInput, GoalieProjectionInput } from "./goalieBaselineRates";
+import { deriveNativeGoalieOutcomes } from "./nativeGoalieOutcomes";
 import { capturePlayerForecastSourceObservation, playerForecastSourcePayloadHash } from "./sourceSnapshot";
 
 type GoalieRequest = { playerId: number; nhlPlayerId: number; teamId: number; rosterRevision: string };
@@ -22,9 +23,26 @@ export type CapturedGoalieInput = GoalieRequest & {
   projectionSources: BaselineProjectionReceipt[];
   projections: GoalieProjectionInput[];
   appearances: GoalieAppearanceInput[];
+  // Observed historical evidence only; legacy captures have no such catalog.
+  nativeOutcomes?: Array<{ gameId: number; receipt: ReturnType<typeof deriveNativeGoalieOutcomes> | null }>;
 };
 const count = (value: unknown): number | null => value !== null && value !== undefined && value !== ""
   && Number.isFinite(Number(value)) && Number(value) >= 0 ? Number(value) : null;
+
+function captureNativeOutcomes(appearance: GoalieAppearanceInput, nhlPlayerId: number, cutoffAt: string) {
+  // Selected-player identity, content and volume failures must remain fatal.
+  verifyBaselineBoxscoreReceipt(appearance, nhlPlayerId, cutoffAt, "goalie");
+  try {
+    return deriveNativeGoalieOutcomes({ appearance, nhlPlayerId, cutoffAt });
+  } catch (error) {
+    // Volume evidence can remain usable when the separate outcome contract fails.
+    if (error instanceof Error && [
+      "Native goalie outcomes require matching final boxscore and explicit starter/decision evidence.",
+      "Incomplete or conflicting boxscore goalie components",
+    ].includes(error.message)) return null;
+    throw error;
+  }
+}
 
 /** Current read receipt only; it does not reconstruct a historical publication time. */
 export async function captureCurrentGoalieBaselineInputs(args: {
@@ -119,12 +137,18 @@ export async function captureCurrentGoalieBaselineInputs(args: {
       }
       return [appearance];
     });
+    const nativeOutcomes = appearances.map(appearance => ({ gameId: appearance.gameId,
+      receipt: captureNativeOutcomes(appearance, player.nhlPlayerId, capturedAt) }));
     missingHistoricalTeams += playerMissingTeams; recoveredAppearances += playerRecovered;
     normalizedDisagreements += playerDisagreements;
     const limitations = ["Current read receipt only; original projection publication and box-score correction times are unknown.",
       "Historical discovery covers captured roster/log sources; row counts do not establish source completeness.",
       ...baselineHistoricalSourceLimitations(historySources),
       ...baselineProjectionSelectionLimitations(projectionSelection),
+      "Captured starter/decision outcomes are historical labels, not future start probabilities or outcome rates.",
+      "Credited shutouts remain unavailable without an explicit credited-outcome source.",
+      ...(nativeOutcomes.some(row => row.receipt === null)
+        ? ["Some goalie appearances lack consistent explicit starter/decision context; their native outcome receipts are unavailable."] : []),
       ...(playerMissingTeams ? [`Excluded ${playerMissingTeams} goalie appearances without verified historical team membership.`] : []),
       ...(playerRecovered ? [`Recovered ${playerRecovered} goalie appearances without normalized logs.`] : []),
       ...(playerDisagreements ? [`Retained boxscores supersede ${playerDisagreements} disagreeing normalized goalie rows.`] : [])];
@@ -134,8 +158,8 @@ export async function captureCurrentGoalieBaselineInputs(args: {
     const sourceWatermark = playerForecastSourcePayloadHash({ basis: "captured_current", capturedAt,
       playerId: player.playerId, nhlPlayerId: player.nhlPlayerId,
       teamId: player.teamId, rosterRevision: player.rosterRevision,
-      definitionHash, projectionSources, projections, projectionSelection, appearances, historicalSources: historySources, limitations });
-    return { ...player, definitionHash, projectionSources, sourceWatermark, projections, appearances,
+      definitionHash, projectionSources, projections, projectionSelection, appearances, nativeOutcomes, historicalSources: historySources, limitations });
+    return { ...player, definitionHash, projectionSources, sourceWatermark, projections, appearances, nativeOutcomes,
       projectionSelection, historicalSources: historySources, limitations };
   });
   return { basis: "captured_current", capturedAt, cutoffAt: capturedAt, players,
@@ -171,6 +195,7 @@ export async function persistCapturedGoalieBaselineInputs(args: {
       teamId: player.teamId, rosterRevision: player.rosterRevision,
       definitionHash: player.definitionHash, projectionSources: player.projectionSources,
       projections: player.projections, appearances: player.appearances,
+      ...(player.nativeOutcomes !== undefined ? { nativeOutcomes: player.nativeOutcomes } : {}),
       ...(player.projectionSelection ? { projectionSelection: player.projectionSelection } : {}),
       ...(player.historicalSources ? { historicalSources: player.historicalSources } : {}),
       ...(player.limitations ? { limitations: player.limitations } : {}) };
@@ -188,6 +213,11 @@ export async function persistCapturedGoalieBaselineInputs(args: {
       }
     }
     for (const appearance of player.appearances) verifyBaselineBoxscoreReceipt(appearance, player.nhlPlayerId, capture.capturedAt, "goalie");
+    if (player.nativeOutcomes !== undefined && playerForecastSourcePayloadHash(player.nativeOutcomes)
+      !== playerForecastSourcePayloadHash(player.appearances.map(appearance => ({ gameId: appearance.gameId,
+        receipt: captureNativeOutcomes(appearance, player.nhlPlayerId, capture.capturedAt) })))) {
+      throw new Error("Captured native goalie outcomes do not match their original boxscore evidence.");
+    }
     verifyBaselineHistoricalSources(player.historicalSources, player.appearances,
       player.nhlPlayerId, args.seasonId, capture.capturedAt, player.limitations ?? []);
     verifyBaselineProjectionSelection(player.projectionSelection, player.projections, player.projectionSources,

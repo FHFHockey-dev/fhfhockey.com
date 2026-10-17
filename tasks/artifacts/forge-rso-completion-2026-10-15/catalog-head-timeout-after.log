@@ -1,0 +1,14 @@
+
+> web@0.1.0 test
+> vitest lib/rosterScheduleData/planning.test.ts --run -t retains ordinary inputs and clears every release pin|multi-stage native admission|degrades a hung optional|bounds a hung required
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ lib/rosterScheduleData/planning.test.ts (99 tests | 94 skipped) 10ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed | 94 skipped (99)
+   Start at  03:15:30
+   Duration  513ms (transform 239ms, setup 2ms, collect 320ms, tests 10ms, environment 0ms, prepare 31ms)
+

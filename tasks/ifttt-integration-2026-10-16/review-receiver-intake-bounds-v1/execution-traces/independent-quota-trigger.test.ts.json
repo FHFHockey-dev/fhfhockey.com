@@ -1,0 +1,10 @@
+[
+  {
+    "path": "web/lib/projections/starterBoardFlags.ts",
+    "sha256": "f6f0bea6cedda71bb43f41f7aa0235232178524b9bf9271c0a1b3567ae251e2d"
+  },
+  {
+    "path": "web/lib/projections/evidenceTime.ts",
+    "sha256": "c818c021a2857607055d60454ecf03ac39fb27298719726662652d8321e42a00"
+  }
+]

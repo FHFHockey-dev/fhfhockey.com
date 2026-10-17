@@ -1,0 +1,884 @@
+diff --git a/web/lib/player-forecasts/gameExpectations.ts b/web/lib/player-forecasts/gameExpectations.ts
+new file mode 100644
+index 000000000..f0d8d2df7
+--- /dev/null
++++ b/web/lib/player-forecasts/gameExpectations.ts
+@@ -0,0 +1,204 @@
++import type { ContributionAllowedUses, ContributionSource } from "./contributions";
++import { resolvePlanningContributions } from "./planningContributions";
++import type { GameForecast, PlanningData, PlanningGame } from "../rosterScheduleOptimizer/planningTypes";
++
++export const GAME_EXPECTATIONS_VERSION = "forge-game-expectations-v1" as const;
++export type GameExpectationScope = {
++  seasonId: number; startDate: string; endDate: string; timeZone: string;
++  mode: "calendar" | "next_n"; games: number; playerIds?: string[];
++};
++const denied: ContributionAllowedUses = { assignment: false, totals: false, comparison: false, conditionalTieBreak: false };
++const skaterTargets = ["GOALS", "ASSISTS", "POINTS", "PP_POINTS", "SHOTS_ON_GOAL", "HITS", "BLOCKED_SHOTS", "PENALTY_MINUTES", "TIME_ON_ICE_PER_GAME"];
++const goalieTargets = ["SAVES_GOALIE", "GOALS_AGAINST_GOALIE", "SHOTS_AGAINST_GOALIE", "GOALIE_MINUTES", "WINS_GOALIE", "SHUTOUTS_GOALIE"];
++const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
++
++export type GameExpectationTarget = {
++  expected: number | null; conditional: number | null;
++  basis: string | null; unit: "count" | "minutes";
++  allowedUses: ContributionAllowedUses; sourceKind: GameForecast["sourceKind"] | null;
++  sourceIds: string[]; methodVersions: string[]; sourceWatermarks: string[];
++  cutoffAt: string | null; issuedAt: string | null; expiresAt: string | null;
++  /** Individual original receipts; the fields above are composite validity clocks. */
++  sources: Array<{ sourceId: string; kind: ContributionSource["kind"]; methodVersion: string;
++    sourceWatermark: string; cutoffAt: string; issuedAt: string; expiresAt: string }>;
++  participation: { revisionId: string; basis: "appearance" | "start"; probability: number | null;
++    cutoffAt: string; issuedAt: string; expiresAt: string } | null;
++  participationRevisionId: string | null; reasons: string[]; limitations: string[];
++};
++export type GameExpectation = {
++  gameId: string; date: string; scheduledAt: string; team: string; opponent: string;
++  homeTeam: string; awayTeam: string;
++  scheduleRevision: string; rosterRevision: string | null;
++  appearanceProbability: number | null; startProbability: number | null;
++  limitations: string[];
++  targets: Record<string, GameExpectationTarget>;
++};
++export type GameExpectationAggregate = {
++  expected: number | null; coveredSum: number | null; coveredGames: number; requiredGames: number;
++  unit: "count" | "minutes" | null; reason: string | null;
++};
++export type GameExpectationsResponse = {
++  version: typeof GAME_EXPECTATIONS_VERSION; readAsOf: string; scope: GameExpectationScope;
++  manifestId: string | null; baselineChecksum: string | null;
++  players: Array<{
++    playerId: string; nhlPlayerId: number | null; teamId: number | null; name: string;
++    team: string | null; playerClass: "skater" | "goalie"; positions: string[];
++    scheduledOpportunities: number; requestedGames: number | null; horizonComplete: boolean;
++    expectedAppearances: number | null; expectedStarts: number | null;
++    games: GameExpectation[]; totals: Record<string, GameExpectationAggregate>;
++    ratios: Record<string, { value: number | null; numerator: string; denominator: string;
++      interpretation: "ratio_of_expected_totals"; reason: string | null }>;
++  }>;
++  limitations: string[];
++};
++
++function orderedTime(sources: Array<{ cutoffAt: string; issuedAt: string; expiresAt: string }>,
++  key: "cutoffAt" | "issuedAt" | "expiresAt"): string | null {
++  const times = sources.map(source => source[key]).filter(time => Number.isFinite(Date.parse(time)))
++    .sort((a, b) => Date.parse(a) - Date.parse(b));
++  return (key === "expiresAt" ? times[0] : times.at(-1)) ?? null;
++}
++
++function targetView(forecast: GameForecast | undefined, target: string): GameExpectationTarget {
++  const row = forecast?.contributions?.[target];
++  if (forecast?.contributions && !row) return { ...targetView(undefined, target), reasons: ["missing_target"] };
++  const uses = row?.allowedUses ?? forecast?.allowedUses ?? denied;
++  const selected = row ? [row.inputs?.detailed, row.inputs?.baseline]
++    .filter((source): source is ContributionSource => !!source && row.sourceIds.includes(source.sourceId)) : [];
++  const participation = row?.inputs?.participation;
++  const clocks = [...selected, ...(participation && participation.revisionId === row?.participationRevisionId ? [participation] : [])];
++  const expected = row ? row.unconditionalMean : forecast?.stats[target];
++  const conditional = row?.conditionalMean ?? forecast?.conditionalStats?.[target];
++  return {
++    expected: uses.totals && finite(expected) ? expected : null,
++    conditional: uses.conditionalTieBreak && finite(conditional) ? conditional : null,
++    basis: row?.basis ?? (forecast ? "unconditional_game" : null),
++    unit: row?.unit ?? (target === "GOALIE_MINUTES" || target === "TIME_ON_ICE_PER_GAME" ? "minutes" : "count"),
++    allowedUses: { ...uses }, sourceKind: row ? row.sourceKind : forecast?.sourceKind ?? null,
++    sourceIds: row?.sourceIds ?? (forecast ? [forecast.revisionId] : []),
++    methodVersions: row ? [...new Set(selected.map(source => source.policyVersion))].sort() : forecast?.modelVersion ? [forecast.modelVersion] : [],
++    sourceWatermarks: row ? [...new Set(selected.map(source => source.sourceWatermark))].sort() : forecast?.sourceWatermark ? [forecast.sourceWatermark] : [],
++    cutoffAt: row ? orderedTime(clocks, "cutoffAt") : forecast?.cutoffAt ?? null,
++    issuedAt: row ? orderedTime(clocks, "issuedAt") : forecast?.issuedAt ?? null,
++    expiresAt: row ? orderedTime(clocks, "expiresAt") : forecast?.expiresAt ?? null,
++    sources: selected.length ? selected.map(source => ({ sourceId: source.sourceId, kind: source.kind,
++      methodVersion: source.policyVersion, sourceWatermark: source.sourceWatermark,
++      cutoffAt: source.cutoffAt, issuedAt: source.issuedAt, expiresAt: source.expiresAt }))
++      : !row && forecast?.cutoffAt && forecast.expiresAt && forecast.modelVersion && forecast.sourceWatermark
++        ? [{ sourceId: forecast.revisionId, kind: "detailed", methodVersion: forecast.modelVersion,
++          sourceWatermark: forecast.sourceWatermark, cutoffAt: forecast.cutoffAt, issuedAt: forecast.issuedAt,
++          expiresAt: forecast.expiresAt }] : [],
++    participation: participation && participation.revisionId === row?.participationRevisionId
++      ? { revisionId: participation.revisionId, basis: participation.basis,
++        probability: participation.allowedUses?.totals && row?.allowedUses.totals ? participation.probability : null,
++        cutoffAt: participation.cutoffAt, issuedAt: participation.issuedAt, expiresAt: participation.expiresAt } : null,
++    participationRevisionId: row?.participationRevisionId ?? null,
++    limitations: [...(row?.limitations ?? forecast?.limitations ?? [])],
++    reasons: [...new Set([...(row?.exclusionReasons ?? []),
++      ...(!finite(expected) && !finite(conditional) ? [forecast ? "missing_target" : "no_issued_revision"] : []),
++      ...(!uses.totals && !uses.conditionalTieBreak && forecast ? ["use_not_approved"] : [])])],
++  };
++}
++
++function participation(forecast: GameForecast | undefined, basis: "appearance" | "start"): number | null {
++  if (!forecast) return null;
++  if (!forecast.contributions) {
++    const value = basis === "appearance" ? forecast.appearanceProbability : forecast.startProbability;
++    return forecast.allowedUses?.totals && finite(value) && value >= 0 && value <= 1 ? value : null;
++  }
++  const evidence = Object.values(forecast.contributions).flatMap(row => {
++    const value = row.inputs?.participation;
++    return value?.basis === basis && value.revisionId === row.participationRevisionId
++      && value.allowedUses?.totals && row.allowedUses.totals ? [value.probability] : [];
++  });
++  return evidence.length && evidence.every(value => finite(value) && value >= 0 && value <= 1 && value === evidence[0])
++    ? evidence[0] : null;
++}
++
++/** A view of admitted shared inputs; this function never issues, releases or generates a forecast. */
++export function buildGameExpectations(data: PlanningData, scope: GameExpectationScope, now: Date): GameExpectationsResponse {
++  if (!Number.isFinite(now.getTime()) || !Number.isInteger(scope.games) || scope.games < 1 || scope.games > 10
++    || !["calendar", "next_n"].includes(scope.mode) || new Set(data.players.map(player => player.id)).size !== data.players.length) {
++    throw new Error("Invalid game expectation scope or duplicate player identities.");
++  }
++  const snapshot = resolvePlanningContributions({ ...data, context: { ...scope, asOf: now.toISOString() } });
++  const byForecast = new Map<string, GameForecast>();
++  for (const forecast of snapshot.forecasts) {
++    const key = `${forecast.playerId}:${forecast.gameId}`;
++    if (byForecast.has(key)) throw new Error("Conflicting player/game forecast revisions.");
++    byForecast.set(key, forecast);
++  }
++  const seen = new Set<string>();
++  const schedule = new Map<string, PlanningGame[]>();
++  const incompleteTeams = new Set<string>();
++  let invalidStarts = 0;
++  for (const game of data.games) {
++    if (game.date < scope.startDate || game.date > scope.endDate || game.status !== "scheduled") continue;
++    const key = `${game.teamAbbreviation}:${game.id}`;
++    if (seen.has(key)) throw new Error("Duplicate scheduled team/game identities.");
++    seen.add(key);
++    if (!game.startsAt || !Number.isFinite(Date.parse(game.startsAt)) || !game.scheduleRevision) {
++      invalidStarts++; incompleteTeams.add(game.teamAbbreviation); continue;
++    }
++    if (Date.parse(game.startsAt) <= now.getTime()) continue;
++    schedule.set(game.teamAbbreviation, [...(schedule.get(game.teamAbbreviation) ?? []), game]);
++  }
++  for (const games of schedule.values()) games.sort((a, b) => Date.parse(a.startsAt!) - Date.parse(b.startsAt!) || a.id.localeCompare(b.id));
++  const players = snapshot.players.filter(player => !scope.playerIds || scope.playerIds.includes(player.id)).map(player => {
++    const selected = schedule.get(player.teamAbbreviation ?? "") ?? [];
++    const opportunities = scope.mode === "next_n" ? selected.slice(0, scope.games) : selected;
++    const targets = player.playerClass === "goalie" ? goalieTargets : skaterTargets;
++    const games: GameExpectation[] = opportunities.map(game => {
++      const forecast = byForecast.get(`${player.id}:${game.id}`);
++      return { gameId: game.id, date: game.date, scheduledAt: game.startsAt!, team: game.teamAbbreviation,
++        opponent: game.opponent, homeTeam: game.home ? game.teamAbbreviation : game.opponent,
++        awayTeam: game.home ? game.opponent : game.teamAbbreviation,
++        scheduleRevision: game.scheduleRevision!, rosterRevision: player.rosterRevision ?? null,
++        appearanceProbability: participation(forecast, "appearance"), startProbability: participation(forecast, "start"),
++        limitations: [...(forecast?.limitations ?? [])],
++        targets: Object.fromEntries(targets.map(target => [target, targetView(forecast, target)])) };
++    });
++    const horizonComplete = data.evidence.schedule?.completeness === "complete"
++      && !incompleteTeams.has(player.teamAbbreviation ?? "") && (scope.mode === "calendar" || games.length === scope.games);
++    const totals = Object.fromEntries(targets.map(target => {
++      const values = games.flatMap(game => finite(game.targets[target].expected) ? [game.targets[target].expected!] : []);
++      const units = new Set(games.filter(game => finite(game.targets[target].expected)).map(game => game.targets[target].unit));
++      const compatible = units.size <= 1;
++      const coveredSum = compatible && values.length ? values.reduce((sum, value) => sum + value, 0) : null;
++      return [target, { expected: horizonComplete && games.length > 0 && values.length === games.length ? coveredSum : null,
++        coveredSum, coveredGames: values.length, requiredGames: games.length,
++        unit: !compatible ? null : [...units][0] ?? (target === "GOALIE_MINUTES" || target === "TIME_ON_ICE_PER_GAME" ? "minutes" as const : "count" as const),
++        reason: !compatible ? "incompatible_units" : !horizonComplete ? "incomplete_horizon"
++          : !games.length ? "no_scheduled_opportunity" : values.length !== games.length ? "incomplete_target" : null }];
++    }));
++    const probabilitySum = (key: "appearanceProbability" | "startProbability") => horizonComplete && games.length
++      && games.every(game => finite(game[key])) ? games.reduce((sum, game) => sum + game[key]!, 0) : null;
++    const ratios: GameExpectationsResponse["players"][number]["ratios"] = {};
++    if (player.playerClass === "goalie") for (const [key, numerator, denominator, multiplier] of [
++      ["SAVE_PERCENTAGE", "SAVES_GOALIE", "SHOTS_AGAINST_GOALIE", 1],
++      ["GOALS_AGAINST_AVERAGE", "GOALS_AGAINST_GOALIE", "GOALIE_MINUTES", 60],
++    ] as const) {
++      const n = totals[numerator].expected, d = totals[denominator].expected;
++      const compatible = totals[numerator].unit === "count"
++        && totals[denominator].unit === (denominator === "GOALIE_MINUTES" ? "minutes" : "count");
++      ratios[key] = { value: compatible && n !== null && d !== null && d > 0 ? multiplier * n / d : null,
++        numerator, denominator, interpretation: "ratio_of_expected_totals",
++        reason: !compatible ? "incompatible_units" : n === null || d === null ? "incomplete_primitives" : d <= 0 ? "zero_denominator" : null };
++    }
++    return { playerId: player.id, nhlPlayerId: player.nhlId, teamId: player.nhlTeamId ?? null,
++      name: player.name, team: player.teamAbbreviation, playerClass: player.playerClass, positions: player.eligiblePositions,
++      scheduledOpportunities: games.length, requestedGames: scope.mode === "next_n" ? scope.games : null,
++      horizonComplete, expectedAppearances: probabilitySum("appearanceProbability"), expectedStarts: probabilitySum("startProbability"),
++      games, totals, ratios };
++  });
++  return { version: GAME_EXPECTATIONS_VERSION, readAsOf: now.toISOString(), scope,
++    manifestId: data.forecastManifest?.id ?? null, baselineChecksum: data.forecastManifest?.baselineChecksum ?? null,
++    players, limitations: [...new Set([
++      "Scheduled opportunities are not expected appearances. Unknown participation remains unavailable.",
++      "Conditional values are per appearance/start and permitted only for the stated conditional use; they are not horizon totals.",
++      "Totals sum distinct admitted game-level expectations; incomplete heads or horizons remain unavailable.",
++      "Ratios use summed expected primitives, not the expected value of a realized ratio. No calibrated uncertainty is implied.",
++      ...(invalidStarts ? ["Some scheduled games have no verified start/revision; the schedule horizon is incomplete."] : []),
++      ...Object.values(data.evidence).flatMap(source => source.limitations),
++    ])] };
++}
+diff --git a/web/lib/player-forecasts/gameExpectations.test.ts b/web/lib/player-forecasts/gameExpectations.test.ts
+new file mode 100644
+index 000000000..ecbf525cb
+--- /dev/null
++++ b/web/lib/player-forecasts/gameExpectations.test.ts
+@@ -0,0 +1,132 @@
++import { describe, expect, it } from "vitest";
++import { buildGameExpectations, type GameExpectationScope } from "./gameExpectations";
++import type { ContributionSource } from "./contributions";
++import type { GameForecast, PlanningData } from "../rosterScheduleOptimizer/planningTypes";
++
++const now = new Date("2026-10-15T12:00:00Z");
++const scope: GameExpectationScope = { seasonId: 20262027, startDate: "2026-10-15", endDate: "2026-10-21", timeZone: "UTC", mode: "next_n", games: 2 };
++const uses = { assignment: true, totals: true, comparison: true, conditionalTieBreak: true };
++function fixture(): PlanningData {
++  return { players: [{ id: "7", nhlId: 77, nhlTeamId: 1, name: "Synthetic Skater", rosterRevision: "roster-a",
++    teamAbbreviation: "MIN", eligiblePositions: ["LW"], playerClass: "skater", availability: "unknown", ownership: null,
++    canDrop: null, holdValue: null, reserveEligibility: [] }],
++    games: ["2026-10-15", "2026-10-17"].map((date, i) => ({ id: String(30 + i), date,
++      startsAt: `${date}T23:00:00Z`, teamAbbreviation: "MIN", opponent: "TOR", home: true,
++      status: "scheduled", scheduleRevision: `schedule-${i}` })), forecasts: [], evidence: {
++        schedule: { source: "synthetic", asOf: now.toISOString(), seasonId: 20262027, completeness: "complete", limitations: [] } } };
++}
++function detail(data: PlanningData, index: number, stats: Record<string, number | null>, probability: number | null = 1): GameForecast {
++  const game = data.games[index], player = data.players[0];
++  return { playerId: player.id, gameId: game.id, stats, sourceKind: "detailed", sourceWatermark: `input-${index}`,
++    conditioning: "unconditional", appearanceProbability: probability, startProbability: player.playerClass === "goalie" ? probability : null,
++    confirmedStart: false, revisionId: `issued-${index}`, modelVersion: "native-fixture-v1", allowedUses: uses,
++    issuedAt: "2026-10-15T11:00:00Z", cutoffAt: "2026-10-15T10:00:00Z", expiresAt: "2026-10-20T12:00:00Z", limitations: [],
++    issuedContext: { version: "forge-issued-context-v1", playerId: player.id, gameId: game.id, nhlPlayerId: 77,
++      seasonId: 20262027, teamId: 1, scheduledAt: game.startsAt!, scheduleRevision: game.scheduleRevision!,
++      rosterRevision: "roster-a", observedAt: "2026-10-15T10:00:00Z", scheduleFetchedAt: null,
++      scheduleSourceUpdatedAt: null, identityUpdatedAt: null, membershipCreatedAt: [] } };
++}
++function baseline(overrides: Partial<ContributionSource> = {}): ContributionSource {
++  return { kind: "baseline", sourceId: "baseline-fixture", policyVersion: "native-rate-fixture-v1", released: true,
++    playerId: 7, nhlPlayerId: 77, seasonId: 20262027, teamId: 1, rosterRevision: "roster-a", scheduleRevision: "catalog-schedule",
++    targetKey: "SHOTS_ON_GOAL", unit: "count", basis: "per_appearance", mean: 4, participationIntegrated: false,
++    cutoffAt: "2026-10-15T09:00:00Z", issuedAt: "2026-10-15T09:10:00Z", expiresAt: "2026-10-20T12:00:00Z",
++    sourceWatermark: "native-input-hash", allowedUses: uses, ...overrides };
++}
++
++describe("shared per-game expectation view (synthetic engineering fixtures)", () => {
++  it("sums unequal game forecasts, retains original clocks, and never treats opportunities as appearances", () => {
++    const data = fixture();
++    data.forecasts = [detail(data, 0, { SHOTS_ON_GOAL: 3 }, 0.75), detail(data, 1, { SHOTS_ON_GOAL: 8 }, 0.5)];
++    data.games.reverse();
++    const result = buildGameExpectations(data, scope, now), player = result.players[0];
++    expect(player.games.map(game => game.gameId)).toEqual(["30", "31"]);
++    expect(player.totals.SHOTS_ON_GOAL).toMatchObject({ expected: 11, coveredGames: 2, requiredGames: 2 });
++    expect(player.scheduledOpportunities).toBe(2); expect(player.expectedAppearances).toBe(1.25);
++    expect(player.games[0].targets.SHOTS_ON_GOAL).toMatchObject({ issuedAt: "2026-10-15T11:00:00Z", cutoffAt: "2026-10-15T10:00:00Z", sourceIds: ["issued-0"] });
++    expect(result.readAsOf).toBe(now.toISOString());
++    expect(player.totals.PP_POINTS.expected).toBeNull();
++  });
++  it("keeps a released baseline conditional with unknown participation, without inventing a revision or total", () => {
++    const data = fixture(); data.baselineSources = [baseline()];
++    const player = buildGameExpectations(data, scope, now).players[0];
++    expect(player.games[0].targets.SHOTS_ON_GOAL).toMatchObject({ expected: null, conditional: 4, basis: "per_appearance",
++      sourceKind: "baseline", sourceIds: ["baseline-fixture"], methodVersions: ["native-rate-fixture-v1"], sourceWatermarks: ["native-input-hash"],
++      issuedAt: "2026-10-15T09:10:00Z", cutoffAt: "2026-10-15T09:00:00Z", participationRevisionId: null });
++    expect(player.games[0].targets.SHOTS_ON_GOAL.reasons).toContain("missing_participation");
++    expect(player.expectedAppearances).toBeNull(); expect(player.totals.SHOTS_ON_GOAL.expected).toBeNull();
++    expect(player.games[0].targets.GOALS.sourceIds).toEqual([]);
++    expect(player.games[0].targets.GOALS.issuedAt).toBeNull();
++  });
++  it("retains the baseline's original issue separately from a later participation receipt", () => {
++    const data = fixture(); data.baselineSources = [baseline()];
++    data.forecasts = [detail(data, 0, { GOALS: 1 }, 0.5)];
++    const target = buildGameExpectations(data, { ...scope, games: 1 }, now).players[0].games[0].targets.SHOTS_ON_GOAL;
++    expect(target.expected).toBe(2); expect(target.conditional).toBe(4);
++    expect(target.sources).toMatchObject([{ sourceId: "baseline-fixture", issuedAt: "2026-10-15T09:10:00Z" }]);
++    expect(target.participation).toMatchObject({ issuedAt: "2026-10-15T11:00:00Z", probability: 0.5 });
++    expect(target.issuedAt).toBe("2026-10-15T11:00:00Z");
++  });
++  it("withholds participation probability without totals permission while retaining its receipt clocks", () => {
++    const data = fixture(); data.baselineSources = [baseline()];
++    data.forecasts = [detail(data, 0, { GOALS: 1 }, 0.5)];
++    data.forecasts[0].allowedUses = { ...uses, totals: false };
++    const player = buildGameExpectations(data, { ...scope, games: 1 }, now).players[0];
++    expect(player.games[0].targets.SHOTS_ON_GOAL.participation)
++      .toMatchObject({ probability: null, issuedAt: "2026-10-15T11:00:00Z" });
++    expect(player.games[0].appearanceProbability).toBeNull();
++  });
++  it.each(["unreleased", "expired", "wrong_roster", "unapproved"])("withholds %s baseline values", reason => {
++    const data = fixture();
++    data.baselineSources = [baseline(reason === "unreleased" ? { released: false } : reason === "expired"
++      ? { expiresAt: now.toISOString() } : reason === "wrong_roster" ? { rosterRevision: "other" }
++        : { allowedUses: { assignment: false, totals: false, comparison: false, conditionalTieBreak: false } })];
++    const row = buildGameExpectations(data, scope, now).players[0].games[0].targets.SHOTS_ON_GOAL;
++    expect(row.expected).toBeNull(); expect(row.conditional).toBeNull();
++  });
++  it("withholds a full target total if any selected game is missing, while reporting partial coverage", () => {
++    const data = fixture(); data.forecasts = [detail(data, 0, { SHOTS_ON_GOAL: 3 })];
++    expect(buildGameExpectations(data, scope, now).players[0].totals.SHOTS_ON_GOAL)
++      .toEqual({ expected: null, coveredSum: 3, coveredGames: 1, requiredGames: 2, unit: "count", reason: "incomplete_target" });
++    const short = buildGameExpectations(data, { ...scope, games: 3 }, now).players[0];
++    expect(short.horizonComplete).toBe(false); expect(short.totals.SHOTS_ON_GOAL.expected).toBeNull();
++  });
++  it("uses the same game expectations in next-game and selected calendar views", () => {
++    const data = fixture(); data.forecasts = [detail(data, 0, { SHOTS_ON_GOAL: 3 }), detail(data, 1, { SHOTS_ON_GOAL: 8 })];
++    const next = buildGameExpectations(data, { ...scope, games: 1 }, now).players[0];
++    const day = buildGameExpectations(data, { ...scope, mode: "calendar", endDate: scope.startDate }, now).players[0];
++    expect(next.games).toEqual(day.games); expect(next.totals).toEqual(day.totals);
++  });
++  it("forms goalie ratios from summed primitives, never from averaged game ratios", () => {
++    const data = fixture(); data.players[0].playerClass = "goalie";
++    data.forecasts = [detail(data, 0, { SAVES_GOALIE: 18, SHOTS_AGAINST_GOALIE: 20, GOALS_AGAINST_GOALIE: 2, GOALIE_MINUTES: 60 }),
++      detail(data, 1, { SAVES_GOALIE: 38, SHOTS_AGAINST_GOALIE: 40, GOALS_AGAINST_GOALIE: 2, GOALIE_MINUTES: 30 })];
++    const player = buildGameExpectations(data, scope, now).players[0];
++    expect(player.ratios.SAVE_PERCENTAGE.value).toBeCloseTo(56 / 60);
++    expect(player.ratios.GOALS_AGAINST_AVERAGE.value).toBeCloseTo(60 * 4 / 90);
++    data.forecasts[1].stats.GOALIE_MINUTES = null;
++    expect(buildGameExpectations(data, scope, now).players[0].ratios.GOALS_AGAINST_AVERAGE.value).toBeNull();
++  });
++  it("rejects duplicate games and forecast revisions instead of double counting", () => {
++    const data = fixture(); data.games.push({ ...data.games[0] });
++    expect(() => buildGameExpectations(data, scope, now)).toThrow(/Duplicate/);
++    data.games.pop(); data.forecasts = [detail(data, 0, { SHOTS_ON_GOAL: 3 })]; data.forecasts.push({ ...data.forecasts[0] });
++    expect(() => buildGameExpectations(data, scope, now)).toThrow(/Conflicting/);
++  });
++  it("withholds full horizons when schedule evidence or start times are incomplete", () => {
++    const data = fixture(); data.forecasts = [detail(data, 0, { SHOTS_ON_GOAL: 3 })];
++    data.games[1].startsAt = null;
++    let player = buildGameExpectations(data, { ...scope, mode: "calendar" }, now).players[0];
++    expect(player.horizonComplete).toBe(false); expect(player.totals.SHOTS_ON_GOAL.expected).toBeNull();
++    data.games.pop(); data.evidence.schedule.completeness = "partial";
++    player = buildGameExpectations(data, { ...scope, mode: "calendar" }, now).players[0];
++    expect(player.horizonComplete).toBe(false); expect(player.totals.SHOTS_ON_GOAL.coveredSum).toBe(3);
++  });
++  it("retains admitted penalty-minute units in the aggregate", () => {
++    const data = fixture(); data.baselineSources = [baseline()];
++    data.forecasts = [detail(data, 0, { PENALTY_MINUTES: 2 }), detail(data, 1, { PENALTY_MINUTES: 3 })];
++    const player = buildGameExpectations(data, scope, now).players[0];
++    expect(player.games[0].targets.PENALTY_MINUTES.unit).toBe("minutes");
++    expect(player.totals.PENALTY_MINUTES).toMatchObject({ expected: 5, unit: "minutes" });
++  });
++});
+diff --git a/web/lib/player-forecasts/gameExpectationReader.ts b/web/lib/player-forecasts/gameExpectationReader.ts
+new file mode 100644
+index 000000000..e77e87f8d
+--- /dev/null
++++ b/web/lib/player-forecasts/gameExpectationReader.ts
+@@ -0,0 +1,31 @@
++import type { SupabaseClient } from "@supabase/supabase-js";
++import { loadPlanningData, parsePlanningDataQuery } from "../rosterScheduleData/planning";
++import { buildGameExpectations, type GameExpectationScope } from "./gameExpectations";
++
++/** Calendar windows cover at most 21 days; next-N discovery is bounded to 60 days. */
++export function parseGameExpectationScope(query: Record<string, unknown>, now = new Date()): GameExpectationScope {
++  const range = parsePlanningDataQuery(query);
++  const mode = query.mode ?? "next_n";
++  const rawGames = query.games ?? "1";
++  if (mode !== "next_n" && mode !== "calendar" || typeof rawGames !== "string" || !/^(?:[1-9]|10)$/.test(rawGames)) {
++    throw new Error("Choose next_n or calendar and 1–10 scheduled team games.");
++  }
++  const days = (Date.parse(range.endDate) - Date.parse(range.startDate)) / 86400000 + 1;
++  if (days > (mode === "calendar" ? 21 : 60)) throw new Error("Forecast read range exceeds the selected mode's bound.");
++  const today = new Intl.DateTimeFormat("en-CA", { timeZone: range.timeZone ?? "UTC", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
++  if (mode === "next_n" && (range.startDate > today || range.endDate < today)) {
++    throw new Error("Next-N discovery must include today's date; use calendar mode for a future window.");
++  }
++  const ids = query.playerIds;
++  const playerIds = typeof ids === "string" ? ids.split(",") : undefined;
++  if (ids !== undefined && (!playerIds || !playerIds.length || playerIds.length > 50
++    || playerIds.some(id => !/^[1-9]\d*$/.test(id) || !Number.isSafeInteger(Number(id)))
++    || new Set(playerIds).size !== playerIds.length)) throw new Error("Provide up to 50 distinct canonical player IDs.");
++  return { ...range, timeZone: range.timeZone ?? "UTC", mode, games: Number(rawGames), ...(playerIds ? { playerIds } : {}) };
++}
++
++/** Shared server entry point for FORGE/consumer adapters. No generation, writes or private artifact reads. */
++export async function loadGameExpectations(db: SupabaseClient<any>, scope: GameExpectationScope, now = new Date()) {
++  const data = await loadPlanningData(db, scope, { now });
++  return buildGameExpectations(data, scope, now);
++}
+diff --git a/web/pages/api/v1/forge/forecasts.ts b/web/pages/api/v1/forge/forecasts.ts
+new file mode 100644
+index 000000000..80709351a
+--- /dev/null
++++ b/web/pages/api/v1/forge/forecasts.ts
+@@ -0,0 +1,20 @@
++import type { NextApiRequest, NextApiResponse } from "next";
++import supabase from "lib/supabase/server";
++import { loadGameExpectations, parseGameExpectationScope } from "lib/player-forecasts/gameExpectationReader";
++
++/** Reads only the shared released catalog and admitted game revisions. */
++export default async function handler(req: NextApiRequest, res: NextApiResponse) {
++  if (req.method !== "GET") { res.setHeader("Allow", "GET"); return res.status(405).end(); }
++  let scope;
++  try { scope = parseGameExpectationScope(req.query); }
++  catch (error) { return res.status(400).json({ success: false, error: error instanceof Error ? error.message : "Invalid forecast scope." }); }
++  try {
++    if (!supabase) throw new Error("Unavailable database client");
++    const data = await loadGameExpectations(supabase, scope);
++    // Expiry/use admission is checked at every read; do not serve a cached expired release.
++    res.setHeader("Cache-Control", "no-store");
++    return res.status(200).json({ success: true, data });
++  } catch {
++    return res.status(503).json({ success: false, error: "Released forecasts are temporarily unavailable." });
++  }
++}
+diff --git a/web/__tests__/pages/api/v1/forge/forecasts.test.ts b/web/__tests__/pages/api/v1/forge/forecasts.test.ts
+new file mode 100644
+index 000000000..c62193126
+--- /dev/null
++++ b/web/__tests__/pages/api/v1/forge/forecasts.test.ts
+@@ -0,0 +1,37 @@
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++const mocks = vi.hoisted(() => ({ load: vi.fn(), db: {} }));
++vi.mock("lib/supabase/server", () => ({ default: mocks.db }));
++vi.mock("lib/rosterScheduleData/planning", async importOriginal => ({
++  ...await importOriginal<typeof import("lib/rosterScheduleData/planning")>(), loadPlanningData: mocks.load,
++}));
++import handler from "pages/api/v1/forge/forecasts";
++const query = { seasonId: "20262027", startDate: "2026-10-15", endDate: "2026-10-18", games: "2", mode: "next_n" };
++function response() {
++  const res: any = { code: null, body: null, headers: {}, setHeader: vi.fn((k, v) => { res.headers[k] = v; }),
++    status: vi.fn(code => { res.code = code; return res; }), end: vi.fn(), json: vi.fn(body => { res.body = body; return res; }) };
++  return res;
++}
++async function request(changes = {}) {
++  const res = response(); await handler({ method: "GET", query, ...changes } as any, res); return res;
++}
++beforeEach(() => { vi.clearAllMocks(); vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-15T12:00:00Z"));
++  mocks.load.mockResolvedValue({ players: [], games: [], forecasts: [], evidence: {} }); });
++afterEach(() => vi.useRealTimers());
++describe("read-only public game expectations", () => {
++  it("uses one shared loader, returns a versioned view and never invents missing forecasts", async () => {
++    const res = await request(); expect(res.code).toBe(200); expect(res.headers["Cache-Control"]).toBe("no-store");
++    expect(mocks.load).toHaveBeenCalledExactlyOnceWith(mocks.db, { ...query, seasonId: 20262027, games: 2, timeZone: "UTC" }, { now: new Date() });
++    expect(res.body.data).toMatchObject({ version: "forge-game-expectations-v1", readAsOf: "2026-10-15T12:00:00.000Z", players: [], manifestId: null });
++  });
++  it.each([{ games: "1.5" }, { games: "11" }, { mode: "unknown" }, { mode: ["calendar"] },
++    { startDate: "2026-02-30" }, { playerIds: "7,7" }, { playerIds: ["7"] },
++    { mode: "calendar", endDate: "2026-11-15" }, { endDate: "2027-01-15" },
++    { startDate: "2026-10-16" }, { endDate: "2026-10-14", startDate: "2026-10-12" }])("rejects invalid scope %j before reads", async overrides => {
++    const res = await request({ query: { ...query, ...overrides } }); expect(res.code).toBe(400); expect(mocks.load).not.toHaveBeenCalled();
++  });
++  it("rejects writes and redacts backend errors", async () => {
++    expect((await request({ method: "POST" })).code).toBe(405); expect(mocks.load).not.toHaveBeenCalled();
++    mocks.load.mockRejectedValue(new Error("fixture-secret-database-url"));
++    const res = await request(); expect(res.code).toBe(503); expect(JSON.stringify(res.body)).not.toContain("fixture-secret");
++  });
++});
+diff --git a/web/pages/forge/forecasts.tsx b/web/pages/forge/forecasts.tsx
+new file mode 100644
+index 000000000..1ef1df105
+--- /dev/null
++++ b/web/pages/forge/forecasts.tsx
+@@ -0,0 +1,130 @@
++import Head from "next/head";
++import Link from "next/link";
++import { useEffect, useRef, useState, type FormEvent } from "react";
++import type { GameExpectationsResponse } from "lib/player-forecasts/gameExpectations";
++import styles from "styles/ForgeForecasts.module.scss";
++
++const skaterColumns = [["GOALS", "G"], ["ASSISTS", "A"], ["PP_POINTS", "PPP"], ["SHOTS_ON_GOAL", "SOG"],
++  ["HITS", "HIT"], ["BLOCKED_SHOTS", "BLK"], ["PENALTY_MINUTES", "PIM"]];
++const goalieColumns = [["SAVES_GOALIE", "SV"], ["GOALS_AGAINST_GOALIE", "GA"], ["SHOTS_AGAINST_GOALIE", "SA"],
++  ["GOALIE_MINUTES", "Minutes"], ["WINS_GOALIE", "W"], ["SHUTOUTS_GOALIE", "SO"]];
++const show = (value: number | null | undefined) => value == null ? "Unavailable" : value.toLocaleString("en-US", { maximumFractionDigits: 2 });
++function addDays(date: string, days: number) {
++  const instant = Date.parse(`${date}T12:00:00Z`);
++  return Number.isFinite(instant) ? new Date(instant + days * 86400000).toISOString().slice(0, 10) : "";
++}
++
++export default function ForgeForecastsPage() {
++  const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10));
++  const [endDate, setEndDate] = useState(() => addDays(new Date().toISOString().slice(0, 10), 6));
++  const [mode, setMode] = useState("next_n"), [games, setGames] = useState("1");
++  const [playerClass, setPlayerClass] = useState("skater"), [search, setSearch] = useState("");
++  const [data, setData] = useState<GameExpectationsResponse | null>(null);
++  const [expandedPlayers, setExpandedPlayers] = useState<Set<string>>(() => new Set());
++  const [loading, setLoading] = useState(false), [error, setError] = useState<string | null>(null);
++  const controller = useRef<AbortController | null>(null);
++  useEffect(() => () => controller.current?.abort(), []);
++
++  async function load(event: FormEvent) {
++    event.preventDefault(); controller.current?.abort();
++    const pending = new AbortController(); controller.current = pending;
++    setLoading(true); setError(null); setData(null); setExpandedPlayers(new Set());
++    const year = Number(startDate.slice(0, 4)) - (Number(startDate.slice(5, 7)) < 7 ? 1 : 0);
++    const query = new URLSearchParams({ seasonId: `${year}${year + 1}`, startDate,
++      endDate: mode === "next_n" ? addDays(startDate, 59) : endDate, mode, games, timeZone: "UTC" });
++    try {
++      const response = await fetch(`/api/v1/forge/forecasts?${query}`, { signal: pending.signal, cache: "no-store" });
++      const payload = await response.json();
++      if (!response.ok || !payload.success || payload.data?.version !== "forge-game-expectations-v1") {
++        throw new Error(payload.error ?? "Released forecasts could not be loaded.");
++      }
++      if (!pending.signal.aborted) setData(payload.data);
++    } catch (failure) {
++      if (!pending.signal.aborted) setError(failure instanceof Error ? failure.message : "Released forecasts could not be loaded.");
++    } finally { if (!pending.signal.aborted) setLoading(false); }
++  }
++
++  const columns = playerClass === "goalie" ? goalieColumns : skaterColumns;
++  const players = data?.players.filter(player => player.playerClass === playerClass
++    && `${player.name} ${player.team ?? ""}`.toLowerCase().includes(search.toLowerCase())) ?? [];
++  const anyValue = players.some(player => player.games.some(game => Object.values(game.targets)
++    .some(target => target.expected !== null || target.conditional !== null)));
++  return <main className={styles.page}>
++    <Head><title>FORGE game forecasts | FHFH</title></Head>
++    <nav aria-label="FORGE navigation"><Link href="/forge/command-center">Command Center</Link>{" · "}
++      <Link href="/start-chart">Start Chart</Link>{" · "}<Link href="/roster-schedule-optimizer">Roster Schedule Optimizer</Link></nav>
++    <h1>Game forecasts</h1>
++    <p>Next-game, next-N and selected-date expectations use the same released game-level forecasts.</p>
++    <form onSubmit={load} className={styles.controls}>
++      <label>Window<select value={mode} onChange={event => setMode(event.target.value)}>
++        <option value="next_n">Next scheduled team games</option><option value="calendar">Selected dates / week</option>
++      </select></label>
++      <label>From (UTC)<input required type="date" value={startDate} onChange={event => setStartDate(event.target.value)} /></label>
++      {mode === "calendar" ? <label>Through (UTC)<input required type="date" value={endDate} min={startDate}
++        max={addDays(startDate, 20)} onChange={event => setEndDate(event.target.value)} /></label>
++        : <label>Team games<select value={games} onChange={event => setGames(event.target.value)}>
++          {Array.from({ length: 10 }, (_, index) => <option key={index + 1}>{index + 1}</option>)}
++        </select></label>}
++      <button type="submit" disabled={loading}>{loading ? "Loading…" : "Load released forecasts"}</button>
++    </form>
++    <p>Scheduled games describe opportunities. Actual appearances and starts depend on participation evidence.
++      Missing categories and incomplete totals remain unavailable.</p>
++    {error && <p role="alert">{error}</p>}
++    {loading && <p role="status">Loading released forecast coverage…</p>}
++    {!data && !loading && !error && <p>Select a window to read released forecasts.</p>}
++    {data && <>
++      <p>Read as of <time dateTime={data.readAsOf}>{data.readAsOf}</time>. Forecast issuance times appear with each game.</p>
++      <div className={styles.controls}>
++        <label>Players<select value={playerClass} onChange={event => setPlayerClass(event.target.value)}>
++          <option value="skater">Skaters</option><option value="goalie">Goalies</option></select></label>
++        <label>Find player or team<input type="search" value={search} onChange={event => setSearch(event.target.value)} /></label>
++      </div>
++      {!anyValue && <p role="status">No released category values are available for this selection. Schedule opportunities are shown below.</p>}
++      {!players.length && <p>No players match this selection.</p>}
++      <div className={styles.tableScroll} tabIndex={0} role="region" aria-label="Forecast totals">
++        <table><caption>Expected totals for {data.scope.mode === "next_n" ? `the next ${data.scope.games} scheduled team games` : `${data.scope.startDate} through ${data.scope.endDate}`}</caption>
++          <thead><tr><th scope="col">Player</th><th scope="col">Schedule opportunities</th><th scope="col">Expected appearances</th>
++            {columns.map(([key, label]) => <th key={key} scope="col">{label}</th>)}</tr></thead>
++          <tbody>{players.map(player => <tr key={player.playerId}>
++            <th scope="row"><a href={`#player-${player.playerId}`}>{player.name}</a><small>{player.team ?? "Team unknown"}</small></th>
++            <td>{player.scheduledOpportunities}{!player.horizonComplete && " · incomplete"}</td><td>{show(player.expectedAppearances)}</td>
++            {columns.map(([key]) => <td key={key} title={`${player.totals[key]?.coveredGames ?? 0}/${player.scheduledOpportunities} games covered`}>{show(player.totals[key]?.expected)}</td>)}
++          </tr>)}</tbody>
++        </table>
++      </div>
++      {players.filter(player => player.games.length).map(player => <details key={player.playerId} id={`player-${player.playerId}`} className={styles.player}
++        onToggle={event => {
++          const open = event.currentTarget.open;
++          setExpandedPlayers(current => {
++            if (current.has(player.playerId) === open) return current;
++            const next = new Set(current);
++            if (open) next.add(player.playerId); else next.delete(player.playerId);
++            return next;
++          });
++        }}>
++        <summary>{player.name} · game values and sources</summary>
++        {expandedPlayers.has(player.playerId) && player.games.map(game => <section key={game.gameId}>
++          <h2>{game.awayTeam} at {game.homeTeam} · <time dateTime={game.scheduledAt}>{game.scheduledAt}</time></h2>
++          <p>Game {game.gameId} · Appearance probability: {show(game.appearanceProbability)} · Start probability: {show(game.startProbability)}</p>
++          {game.limitations.length > 0 && <ul>{game.limitations.map(text => <li key={text}>{text}</li>)}</ul>}
++          <div className={styles.tableScroll}><table><caption>{player.name}: per-game category coverage</caption>
++            <thead><tr><th scope="col">Category</th><th scope="col">Expected contribution</th><th scope="col">Conditional value</th><th scope="col">Method / original issue</th></tr></thead>
++            <tbody>{Object.entries(game.targets).map(([key, target]) => <tr key={key}>
++              <th scope="row">{key}</th><td>{show(target.expected)}</td>
++              <td>{show(target.conditional)}{target.conditional !== null && ` (${target.basis === "per_start" ? "per start" : "per appearance"}; conditional ability only)`}</td>
++              <td>{target.methodVersions.join(", ") || "Unavailable"}
++                {target.sources.map(source => <small key={source.sourceId}>Issued: {source.issuedAt}
++                  {` · Input cutoff: ${source.cutoffAt} · Expires: ${source.expiresAt}`}</small>)}
++                {target.participation && <small>Participation issued: {target.participation.issuedAt}</small>}
++                <small>Sources: {target.sourceIds.join(", ") || "Unavailable"}</small>
++                {target.reasons.length > 0 && <small>{target.reasons.join(", ")}</small>}</td>
++            </tr>)}</tbody>
++          </table></div>
++        </section>)}
++        {expandedPlayers.has(player.playerId) && player.playerClass === "goalie" && <p>Ratio of expected totals: SV% {show(player.ratios.SAVE_PERCENTAGE.value)};
++          GAA {show(player.ratios.GOALS_AGAINST_AVERAGE.value)}. These are not expected realized ratios.</p>}
++      </details>)}
++      <details><summary>Coverage and method limitations</summary><ul>{data.limitations.map(text => <li key={text}>{text}</li>)}</ul></details>
++    </>}
++  </main>;
++}
+diff --git a/web/__tests__/pages/forge/forecasts.test.tsx b/web/__tests__/pages/forge/forecasts.test.tsx
+new file mode 100644
+index 000000000..87d19778e
+--- /dev/null
++++ b/web/__tests__/pages/forge/forecasts.test.tsx
+@@ -0,0 +1,76 @@
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
++import ForgeForecastsPage from "pages/forge/forecasts";
++import { buildGameExpectations, type GameExpectationScope } from "lib/player-forecasts/gameExpectations";
++import type { PlanningData } from "lib/rosterScheduleOptimizer/planningTypes";
++vi.mock("next/head", () => ({ default: () => null }));
++const now = new Date("2026-10-15T12:00:00Z");
++const scope: GameExpectationScope = { seasonId: 20262027, startDate: "2026-10-15", endDate: "2026-10-18", timeZone: "UTC", mode: "next_n", games: 1 };
++function payload() {
++  const fixture: PlanningData = { players: [{ id: "7", nhlId: 77, nhlTeamId: 1, rosterRevision: "roster-a", name: "Synthetic Baseline Skater",
++    teamAbbreviation: "MIN", eligiblePositions: ["LW"], playerClass: "skater", availability: "unknown", ownership: null,
++    canDrop: null, holdValue: null, reserveEligibility: [] }], games: [{ id: "30", date: "2026-10-16", startsAt: "2026-10-16T23:00:00Z",
++    teamAbbreviation: "MIN", opponent: "TOR", home: true, status: "scheduled", scheduleRevision: "schedule-a" }], forecasts: [],
++    baselineSources: [{ playerId: 7, nhlPlayerId: 77, teamId: 1, seasonId: 20262027, kind: "baseline", sourceId: "native-synthetic-receipt",
++      policyVersion: "native-rate-test-v1", released: true, allowedUses: { assignment: false, totals: false, comparison: false, conditionalTieBreak: true },
++      rosterRevision: "roster-a", scheduleRevision: "catalog-schedule", targetKey: "SHOTS_ON_GOAL", mean: 4,
++      unit: "count", basis: "per_appearance", participationIntegrated: false, sourceWatermark: "synthetic-input",
++      cutoffAt: "2026-10-15T09:00:00Z", issuedAt: "2026-10-15T09:10:00Z", expiresAt: "2026-10-18T12:00:00Z" }],
++    evidence: { schedule: { source: "synthetic", asOf: now.toISOString(), seasonId: 20262027, completeness: "complete", limitations: [] } } };
++  return buildGameExpectations(fixture, scope, now);
++}
++beforeEach(() => vi.restoreAllMocks());
++afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
++describe("FORGE forecast page synthetic API readback", () => {
++  it("loads only on request and displays conditional lineage without inventing appearances or totals", async () => {
++    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true, data: payload() }) });
++    vi.stubGlobal("fetch", fetchMock); render(<ForgeForecastsPage />);
++    expect(fetchMock).not.toHaveBeenCalled();
++    fireEvent.click(screen.getByRole("button", { name: "Load released forecasts" }));
++    await screen.findByText("Synthetic Baseline Skater", { selector: "a" });
++    const totals = screen.getByRole("table", { name: /Expected totals/ });
++    expect(within(totals).queryByText("4")).toBeNull();
++    expect(screen.queryByText("4 (per appearance; conditional ability only)")).toBeNull();
++    const details = screen.getByText("Synthetic Baseline Skater · game values and sources").closest("details")!;
++    details.open = true; fireEvent(details, new Event("toggle"));
++    expect(await screen.findByText("4 (per appearance; conditional ability only)")).toBeTruthy();
++    expect(screen.getByText("Issued: 2026-10-15T09:10:00Z", { exact: false })).toBeTruthy();
++    expect(screen.getByText("Sources: native-synthetic-receipt")).toBeTruthy();
++    expect(screen.getByText("Appearance probability: Unavailable", { exact: false })).toBeTruthy();
++    expect(screen.getByText(/TOR at MIN/)).toBeTruthy();
++    expect(fetchMock.mock.calls[0][1]).toMatchObject({ cache: "no-store" });
++  });
++  it("requests next-N and selected-week modes explicitly, without multiplying any page value", async () => {
++    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true, data: payload() }) });
++    vi.stubGlobal("fetch", fetchMock); render(<ForgeForecastsPage />);
++    fireEvent.change(screen.getByLabelText("From (UTC)"), { target: { value: "2026-10-15" } });
++    fireEvent.change(screen.getByLabelText("Team games"), { target: { value: "3" } });
++    fireEvent.click(screen.getByRole("button", { name: "Load released forecasts" }));
++    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
++    expect(String(fetchMock.mock.calls[0][0])).toContain("games=3");
++    await screen.findByText("Synthetic Baseline Skater", { selector: "a" });
++    fireEvent.change(screen.getByLabelText("Window"), { target: { value: "calendar" } });
++    fireEvent.change(screen.getByLabelText("Through (UTC)"), { target: { value: "2026-10-18" } });
++    fireEvent.click(screen.getByRole("button", { name: "Load released forecasts" }));
++    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
++    expect(String(fetchMock.mock.calls[1][0])).toContain("endDate=2026-10-18&mode=calendar");
++  });
++  it("renders unavailable coverage and retryable read errors without fabricated rows", async () => {
++    const empty = { ...payload(), players: [] };
++    const fetchMock = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, data: empty }) })
++      .mockResolvedValueOnce({ ok: false, json: async () => ({ success: false, error: "Released forecasts are temporarily unavailable." }) });
++    vi.stubGlobal("fetch", fetchMock); render(<ForgeForecastsPage />);
++    fireEvent.click(screen.getByRole("button", { name: "Load released forecasts" }));
++    await screen.findByText(/No released category values/);
++    fireEvent.click(screen.getByRole("button", { name: "Load released forecasts" }));
++    expect((await screen.findByRole("alert")).textContent).toContain("Released forecasts are temporarily unavailable.");
++    expect(screen.queryByRole("table")).toBeNull();
++  });
++  it("keeps calendar controls usable when the date field is cleared", () => {
++    render(<ForgeForecastsPage />);
++    fireEvent.change(screen.getByLabelText("Window"), { target: { value: "calendar" } });
++    fireEvent.change(screen.getByLabelText("From (UTC)"), { target: { value: "" } });
++    expect((screen.getByLabelText("From (UTC)") as HTMLInputElement).value).toBe("");
++    expect(screen.getByRole("button", { name: "Load released forecasts" })).toBeTruthy();
++  });
++});
+diff --git a/web/styles/ForgeForecasts.module.scss b/web/styles/ForgeForecasts.module.scss
+new file mode 100644
+index 000000000..fba1c1bd3
+--- /dev/null
++++ b/web/styles/ForgeForecasts.module.scss
+@@ -0,0 +1,32 @@
++@use "styles/vars" as v;
++
++.page {
++  width: min(1400px, calc(100% - 2rem));
++  margin: 1.5rem auto;
++  color: v.$text-primary;
++
++  h1 { margin: 1.2rem 0 0.5rem; }
++  h2 { font-size: 1rem; margin-top: 1rem; }
++  p { line-height: 1.5; max-width: 90ch; }
++  a { color: v.$primary-color; }
++  small { display: block; margin-top: 0.3rem; overflow-wrap: anywhere; }
++  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
++  caption { text-align: left; font-weight: 600; padding: 0.75rem 0; }
++  th, td { padding: 0.7rem; text-align: left; vertical-align: top; border-bottom: 1px solid v.$border-secondary; }
++  summary { cursor: pointer; padding: 0.8rem 0; }
++  :focus-visible { outline: 2px solid v.$primary-color; outline-offset: 3px; }
++}
++.controls {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 0.8rem;
++  align-items: end;
++  margin: 1.2rem 0;
++
++  label { display: grid; gap: 0.35rem; max-width: 100%; }
++  input, select, button { min-height: 44px; padding: 0.5rem; color: inherit; background: v.$background-dark; border: 1px solid v.$border-secondary; border-radius: 4px; max-width: 100%; }
++  button { cursor: pointer; }
++  button:disabled { opacity: 0.65; cursor: wait; }
++}
++.tableScroll { overflow-x: auto; margin: 1rem 0; }
++.player { margin: 0.8rem 0; padding: 0 0.8rem; border: 1px solid v.$border-secondary; border-radius: 6px; }
+diff --git a/web/components/forge-dashboard/ForgeRouteNav.tsx b/web/components/forge-dashboard/ForgeRouteNav.tsx
+index 3627ed76a..af6dd8697 100644
+--- a/web/components/forge-dashboard/ForgeRouteNav.tsx
++++ b/web/components/forge-dashboard/ForgeRouteNav.tsx
+@@ -5,6 +5,7 @@ import styles from "styles/ForgeDashboard.module.scss";
+ 
+ type ForgeRouteKey =
+   | "commandCenter"
++  | "forecasts"
+   | "dashboard"
+   | "startChart"
+   | "trends"
+@@ -51,6 +52,11 @@ function buildNavItems({
+   } as const;
+ 
+   return [
++    {
++      key: "forecasts",
++      label: "Game Forecasts",
++      href: "/forge/forecasts"
++    },
+     {
+       key: "commandCenter",
+       label: "Command Center",
+diff --git a/web/scripts/preview-native-baseline.ts b/web/scripts/preview-native-baseline.ts
+new file mode 100644
+index 000000000..b4b53a1e1
+--- /dev/null
++++ b/web/scripts/preview-native-baseline.ts
+@@ -0,0 +1,74 @@
++import { lstatSync, openSync, closeSync, readFileSync, writeFileSync } from "node:fs";
++import { resolve } from "node:path";
++import { dryRunNativeSkaterBaselineBundle, type NativeSkaterBaselineObservation } from "../lib/player-forecasts/baselineGeneration";
++import { playerForecastSourcePayloadHash } from "../lib/player-forecasts/sourceSnapshot";
++
++export type NativeBaselinePreviewScope = {
++  seasonId: number; scheduleRevision: string;
++  games: Array<{ gameId: number; scheduledAt: string }>;
++  players: Array<{ playerId: number; nhlPlayerId: number; teamId: number; rosterRevision: string }>;
++};
++const usage = "preview-native-baseline.ts --inputs APPROVED_NATIVE_OBSERVATIONS_JSON --scope REVIEWED_GAME_SCOPE_JSON --expires-at ISO_TIMESTAMP --out NEW_PRIVATE_JSON";
++const noDatabase = new Proxy({}, { get() { throw new Error("Native preview forbids database access"); } });
++
++/** Compose the existing native method only. A preview is neither issued nor released. */
++export async function previewNativeBaseline(observations: NativeSkaterBaselineObservation[],
++  scope: NativeBaselinePreviewScope, expiresAt: string, now = new Date()) {
++  const issuedAt = now.toISOString(), expiry = Date.parse(expiresAt);
++  if (!Array.isArray(observations) || observations.length < 1 || observations.length > 2
++    || !Array.isArray(scope.players) || scope.players.length !== observations.length
++    || !Array.isArray(scope.games) || !scope.games.length || scope.games.length > 10
++    || new Set(scope.games.map(game => game.gameId)).size !== scope.games.length
++    || scope.games.some(game => !Number.isSafeInteger(game.gameId) || game.gameId <= 0
++      || !Number.isFinite(Date.parse(game.scheduledAt)) || Date.parse(game.scheduledAt) <= now.getTime())
++    || !Number.isFinite(expiry) || expiry <= now.getTime() || expiry > now.getTime() + 86400000
++    || scope.games.some(game => expiry > Date.parse(game.scheduledAt))) {
++    throw new Error("Native preview requires 1–2 exact skaters, 1–10 future games and a pregame expiry within 24 hours.");
++  }
++  const cutoffAt = observations[0].available_at;
++  if (!Number.isFinite(Date.parse(cutoffAt)) || Date.parse(cutoffAt) > now.getTime()
++    || now.getTime() - Date.parse(cutoffAt) > 86400000
++    || observations.some(row => !scope.players.some(player => player.playerId === row.payload?.playerId
++      && player.nhlPlayerId === row.payload.nhlPlayerId && player.teamId === row.payload.teamId
++      && player.rosterRevision === row.payload.rosterRevision))) throw new Error("Native preview source scope/capture is stale or mismatched.");
++  const bundle = await dryRunNativeSkaterBaselineBundle(noDatabase as never, {
++    seasonId: scope.seasonId, cutoffAt, issuedAt, expiresAt, scheduleRevision: scope.scheduleRevision, observations,
++  });
++  const payload = { version: "native-baseline-preview-v1", status: "unreleased_preview",
++    generatedAt: issuedAt, scope, scopeHash: playerForecastSourcePayloadHash(scope),
++    originalInputHashes: observations.map(row => row.payload_hash), bundle,
++    coverage: scope.players.map(player => ({ ...player, targets: bundle.sources.filter(source => source.playerId === player.playerId)
++      .map(source => ({ targetKey: source.targetKey, unit: source.unit, basis: source.basis, sourceId: source.sourceId })) })),
++    participation: "not_supplied", publicUsesApproved: false, databaseWrites: 0,
++    limitations: ["Original native observations and their actual capture clocks are required; private experiment outputs are not inputs.",
++      "Mean rates are conditional per appearance. No actual-appearance, unconditional total or predictive superiority claim.",
++      "A separate owner-approved exact-input public-use policy, independent review and explicit publication authorization are required."] };
++  return { ...payload, checksum: playerForecastSourcePayloadHash(payload) };
++}
++
++function readBoundedJson(path: string, maximum: number) {
++  const stat = lstatSync(path);
++  if (!stat.isFile() || stat.size <= 0 || stat.size > maximum) throw new Error("Preview inputs must be bounded regular JSON files.");
++  return JSON.parse(readFileSync(path, "utf8"));
++}
++
++export async function runNativeBaselinePreview(argv: string[]) {
++  const args = new Map<string, string>();
++  for (let index = 0; index < argv.length; index += 2) {
++    const key = argv[index], value = argv[index + 1];
++    if (!["--inputs", "--scope", "--expires-at", "--out"].includes(key) || !value || value.startsWith("--") || args.has(key)) throw new Error(usage);
++    args.set(key, value);
++  }
++  if (args.size !== 4) throw new Error(usage);
++  const out = resolve(args.get("--out")!);
++  if (out === resolve(args.get("--inputs")!) || out === resolve(args.get("--scope")!)) throw new Error("Preview output must be a new file.");
++  const inputs = readBoundedJson(args.get("--inputs")!, 32 * 1024 * 1024);
++  const scope = readBoundedJson(args.get("--scope")!, 64 * 1024);
++  const result = await previewNativeBaseline(inputs, scope, args.get("--expires-at")!);
++  const fd = openSync(out, "wx", 0o600);
++  try { writeFileSync(fd, JSON.stringify(result, null, 2)); } finally { closeSync(fd); }
++  return { output: out, checksum: result.checksum, status: result.status, databaseWrites: 0, localFilesWritten: 1 };
++}
++
++if (require.main === module) runNativeBaselinePreview(process.argv.slice(2)).then(result => console.log(JSON.stringify(result)))
++  .catch(error => { console.error(error instanceof Error ? error.message : "Native preview failed"); process.exitCode = 1; });
+diff --git a/web/scripts/preview-native-baseline.test.ts b/web/scripts/preview-native-baseline.test.ts
+new file mode 100644
+index 000000000..6398c147c
+--- /dev/null
++++ b/web/scripts/preview-native-baseline.test.ts
+@@ -0,0 +1,64 @@
++import { afterEach, describe, expect, it, vi } from "vitest";
++import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
++import { tmpdir } from "node:os";
++import { join } from "node:path";
++import { previewNativeBaseline, runNativeBaselinePreview, type NativeBaselinePreviewScope } from "./preview-native-baseline";
++import type { NativeSkaterBaselineObservation } from "../lib/player-forecasts/baselineGeneration";
++import { baselineDefinitionHash } from "../lib/player-forecasts/baselinePolicy";
++import { baselineAppearanceFromBoxscore, baselineHistoricalSources, baselineHistoricalSourceLimitations } from "../lib/player-forecasts/baselineSourceLineage";
++import { playerForecastSourcePayloadHash } from "../lib/player-forecasts/sourceSnapshot";
++
++const now = new Date("2026-10-15T12:00:00Z"), cutoff = "2026-10-15T11:00:00Z", expiry = "2026-10-15T22:00:00Z";
++const scope: NativeBaselinePreviewScope = { seasonId: 20262027, scheduleRevision: "synthetic-schedule",
++  games: [{ gameId: 2026020112, scheduledAt: "2026-10-15T23:00:00Z" }],
++  players: [{ playerId: 7, nhlPlayerId: 77, teamId: 1, rosterRevision: "synthetic-roster" }] };
++function observation(): NativeSkaterBaselineObservation {
++  const game = { id: 2025020001, seasonId: 20252026, date: "2025-10-10", type: 2,
++    startTime: "2025-10-10T01:00:00Z", homeTeamId: 1, awayTeamId: 2 };
++  const raw = { id: 1, game_id: game.id, season_id: game.seasonId, payload_hash: "a".repeat(64), fetched_at: "2025-10-10T10:00:00Z",
++    payload: { id: game.id, season: game.seasonId, gameDate: game.date, gameType: 2, gameState: "FINAL", homeTeam: { id: 1 }, awayTeam: { id: 2 },
++      playerByGameStats: { homeTeam: { forwards: [{ playerId: 77, toi: "20:00", hits: 2, sog: 3 }], defense: [], goalies: [{ playerId: 99 }] },
++        awayTeam: { forwards: [{ playerId: 100 }], defense: [], goalies: [{ playerId: 101 }] } } } };
++  const appearance = baselineAppearanceFromBoxscore({ rawRow: raw, game, nhlPlayerId: 77, teamId: 1, cutoffAt: cutoff, population: "skater" })!;
++  const historicalSources = baselineHistoricalSources([{ gameId: game.id, playerId: 77, games: game }],
++    [{ game_id: game.id, player_id: 77, team_id: 1, season_id: game.seasonId, game_date: game.date,
++      source_play_by_play_hash: "a".repeat(64), parser_version: 1 }], [], { nhlIds: [77], seasonId: 20262027, upperDate: cutoff.slice(0, 10) }, 77);
++  const payload: NativeSkaterBaselineObservation["payload"] = { basis: "captured_current", capturedAt: cutoff,
++    ...scope.players[0], definitionHash: baselineDefinitionHash("skater", 20262027), projections: [], appearances: [appearance],
++    historicalSources, limitations: baselineHistoricalSourceLimitations(historicalSources) };
++  return { provider: "fhfh", dataset_key: "baseline-inputs-v1", entity_kind: "player", entity_key: "20262027:7",
++    available_at: cutoff, payload_hash: playerForecastSourcePayloadHash(payload), payload };
++}
++afterEach(() => vi.useRealTimers());
++describe("native-only producer preview (synthetic receipts, no release qualification)", () => {
++  it("reproduces supported native rates without database access and retains the input clock", async () => {
++    const input = observation(), before = JSON.stringify(input);
++    const result = await previewNativeBaseline([input], scope, expiry, now);
++    expect(result.status).toBe("unreleased_preview"); expect(result.publicUsesApproved).toBe(false);
++    expect(result.bundle.receipt).toMatchObject({ dryRun: true, snapshotId: null });
++    expect(result.bundle.sources.find(row => row.targetKey === "HITS")).toMatchObject({ mean: 2, cutoffAt: cutoff, released: false, participationIntegrated: false });
++    expect(result.bundle.sources.find(row => row.targetKey === "PP_POINTS")).toBeUndefined();
++    expect(JSON.stringify(input)).toBe(before);
++  });
++  it.each(["external", "stale", "identity", "started", "expiry"])("rejects %s source/scope before any publication", async kind => {
++    const input = observation(), changed = structuredClone(scope);
++    if (kind === "external") { input.payload.projections = [{ sourceId: "ag_skaters" }] as never; input.payload_hash = playerForecastSourcePayloadHash(input.payload); }
++    if (kind === "stale") input.available_at = "2026-10-13T00:00:00Z";
++    if (kind === "identity") changed.players[0].nhlPlayerId = 88;
++    if (kind === "started") changed.games[0].scheduledAt = now.toISOString();
++    await expect(previewNativeBaseline([input], changed, kind === "expiry" ? "2026-10-16T00:00:00Z" : expiry, now)).rejects.toThrow();
++  });
++  it("writes one exclusive local preview file and refuses overwrite/write flags", async () => {
++    vi.useFakeTimers(); vi.setSystemTime(now);
++    const directory = mkdtempSync(join(tmpdir(), "forge-native-preview-test-"));
++    try {
++      const inputs = join(directory, "inputs.json"), scopePath = join(directory, "scope.json"), out = join(directory, "preview.json");
++      writeFileSync(inputs, JSON.stringify([observation()])); writeFileSync(scopePath, JSON.stringify(scope));
++      const argv = ["--inputs", inputs, "--scope", scopePath, "--expires-at", expiry, "--out", out];
++      expect(await runNativeBaselinePreview(argv)).toMatchObject({ status: "unreleased_preview", databaseWrites: 0, localFilesWritten: 1 });
++      expect(JSON.parse(readFileSync(out, "utf8")).bundle.manifest.released).toBe(false);
++      await expect(runNativeBaselinePreview(argv)).rejects.toThrow();
++      await expect(runNativeBaselinePreview([...argv, "--write", "true"])).rejects.toThrow();
++    } finally { rmSync(directory, { recursive: true, force: true }); }
++  });
++});

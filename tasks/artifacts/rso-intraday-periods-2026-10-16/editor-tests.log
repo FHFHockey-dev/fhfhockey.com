@@ -1,0 +1,26 @@
+
+> web@0.1.0 test
+> vitest --run components/RosterScheduleOptimizer/AcquisitionPeriodTimes.test.tsx lib/in-season/workspaceSchema.test.ts __tests__/components/RosterScheduleOptimizer/AcquisitionRules.integration.test.tsx --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:36432) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/components/RosterScheduleOptimizer/AcquisitionRules.integration.test.tsx (4 tests) 1446ms
+   ✓ collects only missing manual acquisition rules and automatically compares an empty plan after workspace reopen  407ms
+   ✓ collects only missing yahoo acquisition rules and automatically compares an empty plan after workspace reopen  319ms
+   ✓ saves and reopens explicit Monday 03:00 manual periods without applying drafts or supplying unknown future allowances  375ms
+   ✓ saves and reopens explicit Monday 03:00 yahoo periods without applying drafts or supplying unknown future allowances  344ms
+(node:36442) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/in-season/workspaceSchema.test.ts (30 tests) 27ms
+(node:36444) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/RosterScheduleOptimizer/AcquisitionPeriodTimes.test.tsx (10 tests) 98ms
+
+ Test Files  3 passed (3)
+      Tests  44 passed (44)
+   Start at  20:55:20
+   Duration  3.08s (transform 342ms, setup 5ms, collect 739ms, tests 1.57s, environment 425ms, prepare 87ms)
+

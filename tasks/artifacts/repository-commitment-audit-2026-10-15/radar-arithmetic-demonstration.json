@@ -1,0 +1,31 @@
+{
+  "source": "web/components/PlayerStats/PlayerRadarChart.tsx:428-440",
+  "method": "Direct arithmetic reproduction of inspected formula; does not execute application/component/tests.",
+  "cohort": [
+    2,
+    3,
+    4
+  ],
+  "lower_is_better": true,
+  "rows": [
+    {
+      "value": 2,
+      "current_rank": 1,
+      "current_favorable_percentile": 0,
+      "strict_worse_share_for_comparison": 67
+    },
+    {
+      "value": 3,
+      "current_rank": 2,
+      "current_favorable_percentile": 33,
+      "strict_worse_share_for_comparison": 33
+    },
+    {
+      "value": 4,
+      "current_rank": 3,
+      "current_favorable_percentile": 67,
+      "strict_worse_share_for_comparison": 0
+    }
+  ],
+  "conclusion": "Best and worst favorable direction are reversed; exact tie convention is a separate existing policy choice."
+}

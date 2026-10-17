@@ -1,0 +1,19 @@
+{
+  "observedAt": "2026-10-15T22:29:27Z",
+  "runtime": "intake before copies; newly added tests only",
+  "runs": [
+    {
+      "command": "npm test -- --run hooks/useYahooEligibility.test.tsx -t 'candidate catalogue'",
+      "exitCode": 1,
+      "testsFailed": 1,
+      "observedFailure": "180-ID single request rejected by mocked existing60-ID route; receipt null"
+    },
+    {
+      "command": "npm test -- --run __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx -t 'requests stored positions for catalogue candidates'",
+      "exitCode": 1,
+      "testsFailed": 1,
+      "observedFailure": "candidate eligibilityVerified remained false; cache request contained roster only"
+    }
+  ],
+  "rawOutput": "Recorded in execution tool history; this file is an author observation, not a raw test log."
+}

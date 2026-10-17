@@ -1,0 +1,6 @@
+All commands run from `/Users/tim/Code/fhfhockey.com/web`; outputs stay in this review root.
+
+1. `IFTTT_POSTGRES_BIN=/opt/homebrew/opt/postgresql@17/bin npm test -- --run ../tasks/ifttt-integration-2026-10-16/review-shadow-raw-ack-postconditions-v2/integration.test.ts ../tasks/ifttt-integration-2026-10-16/review-shadow-raw-ack-postconditions-v2/raw-settlement.test.ts --no-file-parallelism --config ../tasks/ifttt-integration-2026-10-16/review-shadow-raw-ack-postconditions-v2/vitest.compatibility.config.mjs --reporter=default --reporter=json --outputFile=../tasks/ifttt-integration-2026-10-16/review-shadow-raw-ack-postconditions-v2/unchanged54-results.json` → exit0,54pass; stdout/stderr in unchanged54.log.
+2. `./node_modules/.bin/tsc --noEmit --project ../tasks/ifttt-integration-2026-10-16/review-shadow-raw-ack-postconditions-v2/tsconfig.json` → exit0; scoped-tsc.log.
+3. Same Vitest flags/config with `independent-postconditions.test.ts -t 'independent complete-row'` and independent-results.json → exit1,2pass/2fixturepermissionfail/40skip; independent.log preserved.
+4. After disposable-only fault DELETE grants, same file with `-t 'independent complete-row check rejects deleted'` and independent-deletion-corrected-results.json → exit0,2pass/42skip; independent-deletion-corrected.log. No successful cases repeated.

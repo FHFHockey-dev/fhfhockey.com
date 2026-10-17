@@ -1,0 +1,572 @@
+[
+  {
+    "master_id": "MS41-001",
+    "section": "1",
+    "scope": "FORGE horizons 10 and 20 scheduled games, separate appearance forecasts, dependence-aware simulation",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-002",
+    "section": "1",
+    "scope": "Bounded goalie-start experiment, chronological recent-start-share baseline and Brier/calibration",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-003",
+    "section": "1",
+    "scope": "DRR factual/accounting correction layer and paused implementation",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-004",
+    "section": "1",
+    "scope": "Shared official NHL schedule freshness and completeness",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-005",
+    "section": "1",
+    "scope": "Research guides, forecast contracts, exploratory captures and separate final outcomes",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-006",
+    "section": "1",
+    "scope": "Goals baseline, complete appearances, PP exposure and truthful coverage",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-007",
+    "section": "1",
+    "scope": "Future participation intake, appearance probabilities, conditional EV PP PK minutes, goalie relief/no-appearance",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-008",
+    "section": "1",
+    "scope": "Disjoint full-game goal accounting, strength period net state residuals",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-009",
+    "section": "1",
+    "scope": "Shared feature fetching, NST GP grain, reviewed historical adapter and prospective test",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-010",
+    "section": "1",
+    "scope": "Team player goalie accounting, cutoffs lineage immutable revisions issuance and shared consumers",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-011",
+    "section": "1",
+    "scope": "Original immutable forecasts, prospective evaluation, whole-lineup decision gain and category coverage",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-012",
+    "section": "1",
+    "scope": "Actual selected TOI storage, observed zeros, failed game 0041 and qualified native canary",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-013",
+    "section": "1",
+    "scope": "Hosted/local migration version reconciliation and separately held raw-shift function",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-014",
+    "section": "1",
+    "scope": "Daily prospective capture follow-through, closed October 11, separate PHI BOS and ANA CGY comparison receipts",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-015",
+    "section": "1",
+    "scope": "Forecasting-gap odds PP research, fitted model calibration provenance SQL guard and untouched evaluation",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-016",
+    "section": "2",
+    "scope": "Accepted local RSO engine and seven-file daily-beta corrections, conditional-reconstruction patch",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-017",
+    "section": "2",
+    "scope": "Fresh compatible native forecasts and genuine real-data acceptance",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-018",
+    "section": "2",
+    "scope": "Startable marginal gains, maximum starts versus outcomes, category alternatives",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-019",
+    "section": "2",
+    "scope": "Actual provider eligibility locks acquisitions resets waivers goalie minimums vacancies reserves",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-020",
+    "section": "2",
+    "scope": "Availability completeness exclusions and connected-league behavior",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-021",
+    "section": "2",
+    "scope": "Connected Yahoo league 477.l.125593 team t.10 October 12–18 read-only acceptance",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-022",
+    "section": "2",
+    "scope": "Context-scoped continuity, preservation, principal CAS cross-device, nonzero refresh Undo reopen",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-023",
+    "section": "2",
+    "scope": "Premium automatic versus free on-request recalculation",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-024",
+    "section": "2",
+    "scope": "Desktop/mobile accepted workspace and remaining product acceptance",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-025",
+    "section": "2",
+    "scope": "Daily beta weekly-lock full launch commercial operational gates and task attachment delivery",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-026",
+    "section": "3",
+    "scope": "Start Chart local scoring conditional category and goalie probability corrections",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-027",
+    "section": "3",
+    "scope": "Start Chart same fresh forecast revision as RSO",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-028",
+    "section": "3",
+    "scope": "Goalie start/appearance DiPietro derived credit, candidate-exclusion diagnostic and coverage",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-029",
+    "section": "3",
+    "scope": "Start Chart naming layout sources and release inclusion",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-030",
+    "section": "3",
+    "scope": "Start Chart real-data daily skater/goalie release acceptance",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-031",
+    "section": "4",
+    "scope": "Released mobile Game Grid, desktop sticky header, Week Score GP OFF ordering date range and compact metrics",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-032",
+    "section": "4",
+    "scope": "Best Players Available style, Game Grid audits and handoff",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-033",
+    "section": "4",
+    "scope": "Expandable team-row forecast acceptance, matching lineage and team/player accounting",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-034",
+    "section": "4",
+    "scope": "Category opponent strength skater/goalie effects",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-035",
+    "section": "4",
+    "scope": "Graded crowding bounded ±0.25 and approved GP/off-night guarantees",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-036",
+    "section": "4",
+    "scope": "Timestamped O/U market input experiment and combined release acceptance",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-037",
+    "section": "5",
+    "scope": "Completed bounded 0001 0003 0023 and 2026010004 Stage 1 repair, Stage 2 qualification pending",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-038",
+    "section": "5",
+    "scope": "IFTTT CCC GDL gamedaynewsnhl gamedaygoalies real-feed assignment confirmation semantic corroboration",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-039",
+    "section": "5",
+    "scope": "Lines entry history timestamped changes carry-forward next game genuine acceptance",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-040",
+    "section": "5",
+    "scope": "Player identity resolution aliases split names atomic save idempotency and exclusions",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-041",
+    "section": "5",
+    "scope": "Historical shifts TOI overlap identities observed zeros parser lineage physical duplicates",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-042",
+    "section": "5",
+    "scope": "Held 2026020031, separate 2026010014 and 2026010056 scopes",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-043",
+    "section": "5",
+    "scope": "Schedule roster completeness and freshness, selected schedule milestone complete",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-044",
+    "section": "5",
+    "scope": "NST identity resumability pagination throughput partial tables, Mahura Hughes repair deployed, natural cron evidence",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-045",
+    "section": "5",
+    "scope": "Raw projection input 0056 and 0014 recovery",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-046",
+    "section": "5",
+    "scope": "PBP conflict 2026020019 exact 741-write scope",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-047",
+    "section": "5",
+    "scope": "Weekly FORGE h5 and rolling child durable output recovery",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-048",
+    "section": "5",
+    "scope": "Projection accuracy 2026010001 durable result",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-049",
+    "section": "5",
+    "scope": "NST six tables 179 players, Veleno cross-run, 160/140 calendar discrepancy",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-050",
+    "section": "5",
+    "scope": "Unknown five no-output and five submission-only outcomes",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-051",
+    "section": "5",
+    "scope": "Lineup/goalie 153 historical FK observations and separate CCC timeout",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-052",
+    "section": "5",
+    "scope": "Underlying-stats contention historical game set, six October 11 recoveries complete",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-053",
+    "section": "5",
+    "scope": "ESPN odds three historical 403 source/access scopes",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-054",
+    "section": "5",
+    "scope": "Yahoo ownership coverage beyond 556 fresh/1041 omitted",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-055",
+    "section": "5",
+    "scope": "Schedule discrepancy 2026020983 22 versus 23 UTC",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-056",
+    "section": "5",
+    "scope": "Morning report timing owner decision, released reporting milestones and retained cost/bounded response patches",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-057",
+    "section": "5",
+    "scope": "In-season trust Original 7 provenance/live QA",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-058",
+    "section": "6",
+    "scope": "Confirmed $24.99 season/$4.99 monthly access calendar July 1 cutoff grandfathering and pure contract",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-059",
+    "section": "6",
+    "scope": "Duplicate purchases refund entitlement edge cases, Patreon and genuine paid lifecycle",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-060",
+    "section": "7",
+    "scope": "Local social schedule cards PNG export integration freshness rights and release approval",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-061",
+    "section": "7",
+    "scope": "Weekday Monday Tuesday Wednesday WiGO category-rescue formats, qualified forecast/ownership recommendations",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-062",
+    "section": "7",
+    "scope": "Ownership provider time observed/projected labels and synthetic weekday design formats",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-063",
+    "section": "8",
+    "scope": "Yahoo Fantrax live Draft sync interrupted session recovery",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-064",
+    "section": "8",
+    "scope": "Consolidated recovery resume restart import CSV parent (17/30/31/32/40)",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-065",
+    "section": "8",
+    "scope": "Keeper order refund God View roster impact recommendation correctness",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-066",
+    "section": "8",
+    "scope": "ADP sounds tier hero dual-position targeted acceptance",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-067",
+    "section": "8",
+    "scope": "DUST local closure and live calendar paid API roster acceptance",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-068",
+    "section": "8",
+    "scope": "ESPN draft league supported access rights ingestion interruption recovery",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-069",
+    "section": "9",
+    "scope": "Underlying Stats local mobile keyboard acceptance and separate missing-summary first materialization",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-070",
+    "section": "9",
+    "scope": "Shift Chart genuine source/game/time acceptance",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-071",
+    "section": "9",
+    "scope": "WiGO polish and current inclusion",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-072",
+    "section": "9",
+    "scope": "Navbar/avatar current inclusion and global navigation consistency",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-073",
+    "section": "9",
+    "scope": "Blog feature-specific live acceptance, content/local ISR evidence",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-074",
+    "section": "9",
+    "scope": "SEO privacy operator/contact retention/deletion tracking/indexing facts; repository ACL/task-026 follow-ups",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-075",
+    "section": "9",
+    "scope": "Auth User Settings connected-account entitlement lifecycle",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-076",
+    "section": "9",
+    "scope": "Three Pillars sustainability trends deployment changes Performance Above Expected",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-077",
+    "section": "9",
+    "scope": "Sustainability Barometer streak research visual sandbox",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-078",
+    "section": "9",
+    "scope": "Homepage tables sparklines eligibility Slate hero concrete brief and unreleased local card fixes",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-079",
+    "section": "9",
+    "scope": "Top-100/top-250 position-distribution analysis",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-080",
+    "section": "Release",
+    "scope": "Vercel comparable billing credits build runtime project/environment attribution",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-081",
+    "section": "Release",
+    "scope": "Four linked-project owner purpose repository root branch triggers ignore build machine concurrency inventory",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-082",
+    "section": "Release",
+    "scope": "Same-SHA actual ignored canceled duplicate retry deployment accounting",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-083",
+    "section": "Release",
+    "scope": "Completed scoped cost-control release previews disabled Yahoo August 1 2027 pause filters AGENTS",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-084",
+    "section": "Release",
+    "scope": "Comparable measured savings and remaining route cost attribution",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-085",
+    "section": "Release",
+    "scope": "Master/octoberBranch branch reconciliation preserve 299 refs 179 local/13 remote source tests and generated collections",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-086",
+    "section": "Release",
+    "scope": "Exact unreleased RSO release scope, local patches private captures research held SQL and social",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-087",
+    "section": "Release",
+    "scope": "Completed release-safe/research-safe branches preview focused tests canonical consolidation CMS Node fixes prior releases",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-088",
+    "section": "Parked",
+    "scope": "Paused classifier/parser/goalie forecast fitting, Rankings archetypes MCM BEAST, FA Portal",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-089",
+    "section": "Parked",
+    "scope": "Deferred RSO multi-itinerary sharing exports notifications; regression ML experimental replacement",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-090",
+    "section": "Parked",
+    "scope": "Richer opportunity-change archetypes modules integrations Draft polish social after core",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-091",
+    "section": "Other",
+    "scope": "Completed topic grouping limited coverage, Beacon naming icon and app criteria",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-092",
+    "section": "Other",
+    "scope": "Pipeline Proxy GPT draft complete creation unverified",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-093",
+    "section": "Other",
+    "scope": "Quest planning geometry Alpha Unity multiplayer functional acceptance, preserve explorations",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-094",
+    "section": "Other",
+    "scope": "Parked Mac/iMac home lab; CRT ident halftone assets unverified; fitness/discovery complete; guests unknown",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  },
+  {
+    "master_id": "MS41-095",
+    "section": "Provenance",
+    "scope": "42 original-task rollups retained, older completed audits and historical captures/repairs preserved",
+    "source": "User-supplied Master Page sequence 41, read October 13; normalized scope, not live verification"
+  }
+]

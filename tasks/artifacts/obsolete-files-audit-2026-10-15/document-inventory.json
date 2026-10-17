@@ -1,0 +1,3530 @@
+[
+  {
+    "path": "AGENTS.md",
+    "bytes": 16116,
+    "sha256": "c27e33dbfd19868373e25307cbc90853c5d6edf05f824fc117e1a500673bfc09",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "README.md",
+    "bytes": 2376,
+    "sha256": "0a27c487fe7e4607a124e7ab295f4471c3b890e89f0d406a71b298e73f84dbdb",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "SPRINT-MODE.md",
+    "bytes": 10079,
+    "sha256": "254e337b8ef63c4f136cae1801d055caf1def87233b52e91a51f866e1f238940",
+    "tracked": false,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "cms/README.md",
+    "bytes": 2906,
+    "sha256": "8b27a791941a8c9682ec97d2354efd562a93fa86ab33175f3954f434a1e55da4",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "docs/repository-audit/README.md",
+    "bytes": 12772,
+    "sha256": "90576961417607770fc15ee7b269236d33936d98d490effc7458d711c9536e12",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "docs/repository-audit/artifact-schemas.md",
+    "bytes": 5723,
+    "sha256": "3c28f12bcfa71dbd75c4c75b0fc71261c929e1ce923b591dacc86b056e064048",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "docs/repository-audit/audit-charter.md",
+    "bytes": 12480,
+    "sha256": "9c576c1dfc1a50f5b563a5e778c1f7c165ad569bf76c832b7c8ab74e2753a451",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "docs/repository-audit/audit-diary.md",
+    "bytes": 20920,
+    "sha256": "72964cf39ee5b989a7848c9840de6b2954279f20d139e93d1ebde566b329e03d",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "docs/repository-audit/cleanup-guide.md",
+    "bytes": 4760,
+    "sha256": "09f1cf7d13061f4ba60263c969f68c0054f92325c70feddcd03f725aad01739f",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "docs/repository-audit/current-state.md",
+    "bytes": 2893,
+    "sha256": "90a58c3c17d58e6b7ef88dd47d497c63f53acbdfaada4f822912718b9104a5e3",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "docs/repository-audit/generate-audit-tasks-prompt.md",
+    "bytes": 6093,
+    "sha256": "61bee04f0eb784e4544efa21f56c656201f38ab1ce850a362d0efa4f1cac792b",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 1
+  },
+  {
+    "path": "docs/repository-audit/generate-justified-tasks-prompt.md",
+    "bytes": 812,
+    "sha256": "8eb5ebb20ef7fae654af88547ed33d535118757afb07bf7aaf1d5ffcfe7da2f4",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "docs/repository-audit/site-map.md",
+    "bytes": 173495,
+    "sha256": "f3cf8b32461fec61d7db463bd7aa88d9578e9c848a25385a062c833ffbc9d890",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "docs/repository-audit/stylesheet-cleanup-plan.md",
+    "bytes": 6598,
+    "sha256": "e9942f6f11e606d8a3c8c3184ec546ab86c88767477539a38ab3f07332032a7a",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "docs/roster-schedule-optimizer.md",
+    "bytes": 12199,
+    "sha256": "92ca6de8ab3e027da95c465d9b7318feaf77a02cb43a9f90e40d41108f662e03",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "docs/start-chart/deep-research.md",
+    "bytes": 100160,
+    "sha256": "3b76e3cba3b326bbd93bd4d94f2c28bdbf0b698f8efc37d22e77113ab8dd701b",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 18
+  },
+  {
+    "path": "docs/start-chart/implementation.md",
+    "bytes": 10442,
+    "sha256": "57e2586ab03ae66e2d8c458d0fac52d581f49b3148dbccec6e4ecd4b10ecbc8c",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "docs/start-chart/launch-validation.md",
+    "bytes": 95406,
+    "sha256": "dc392a5221ed941dade6becc24cc1a362b9b4bb002c2cd942d3bc5879f073edc",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "functions/README.md",
+    "bytes": 184,
+    "sha256": "99bcc4166025f3b68b3112431dc086e87b78c3198d665c24818536bbaa028b2a",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "functions/lib/sustainability/README.md",
+    "bytes": 595,
+    "sha256": "6fedf88796f072fd21ec650a2e55391f0851df1d6c247e2d6ad1cbc100cce899",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "mise-en-place.md",
+    "bytes": 7140,
+    "sha256": "d27d251366dbd5b36659ccc9e4c9210ce0a009dbb1a71d1d8a5c2c9ea385becd",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "supabase/migration-archive/pre-baseline-20260716/README.md",
+    "bytes": 8978,
+    "sha256": "73d5a6f78213e0885c83679d43708987bcaa64c530a5cecdc500d3c2ea63a3cb",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "supabase/tests/goalie_team_resolution_runbook.md",
+    "bytes": 21460,
+    "sha256": "cfad98918031cc48e0b057f1b7f69820376708dfeb2d8c3b9e8979f2e3bc7a15",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/auth-user-settings-platform/docs/auth-provider-manual-config.md",
+    "bytes": 10791,
+    "sha256": "05b8f6fe4e9bf4ca058c0d9152240aef3736376893a84522e6ede98f283f16aa",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/auth-user-settings-platform/prd/prd-auth-user-settings-platform.md",
+    "bytes": 31530,
+    "sha256": "9b2b743962f86b50b74a3c34ddf571d6f183d41463aa2d792a6b21bc4b5c9851",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+    "bytes": 73335,
+    "sha256": "8e7ef4f6bcd3096c212e391231ae29b0977f4ed6cc213d5c37d35065272224af",
+    "tracked": true,
+    "checked_tasks": 202,
+    "unchecked_tasks": 6
+  },
+  {
+    "path": "tasks/TASKS/contextual-hockey-rankings/2026-06-07-goal.md",
+    "bytes": 18266,
+    "sha256": "50608b1714fb5bf872280d3aee81ce68d4e95f01a0d6bb98c02b938085bd4b8e",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/contextual-hockey-rankings/gpt-codex-suggested-prompt.md",
+    "bytes": 26454,
+    "sha256": "2b095ea7ce7528dc13f9ee8879da3896a710738cbc37a6d221462a0ce5e933cf",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/contextual-hockey-rankings/prd-contextual-hockey-rankings.md",
+    "bytes": 57800,
+    "sha256": "7fa5db7fcaf94cf076e0963418739e1482d6cc01b80e21ee4187ef0b2638bec6",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/contextual-hockey-rankings/prd-rankings-ecosystem-alignment-audit.md",
+    "bytes": 16471,
+    "sha256": "6ccc3745d506cc49c636e248604ff437e4a29584c8f2be7ccbf339eca2e342fb",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/contextual-hockey-rankings/prd-rankings-post-alignment-gap-audit.md",
+    "bytes": 27518,
+    "sha256": "9183311619adcf6b7b4a555b83f88e463df3c5cbd8b8af850c45c06864879f62",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/contextual-hockey-rankings/prd-v2-pass-CHR.md",
+    "bytes": 30048,
+    "sha256": "3de3ef08ec39e82097db682e843dbb8de6a1ac6743c2b9ed192bbeaa311cf20c",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/contextual-hockey-rankings/research/deep-research-report.md",
+    "bytes": 28167,
+    "sha256": "a562057b2cafcce30a58dacaee995a372d8409ca243d2b8d126dd896cc38e855",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-contextual-hockey-rankings.md",
+    "bytes": 152980,
+    "sha256": "b020222f70df640678e880203c8a0970ef94018387816eb1ebcae396f002f56f",
+    "tracked": true,
+    "checked_tasks": 467,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-ecosystem-alignment-audit.md",
+    "bytes": 44096,
+    "sha256": "fb381f65cebb310d487066122da6b601d0a62a429eafc3f22e14ece4a005b686",
+    "tracked": true,
+    "checked_tasks": 123,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-post-alignment-gap-audit.md",
+    "bytes": 27867,
+    "sha256": "50623817ab2f96501fd8643b2099c6b563ec84e0fef0e5cbb8b9cc2961361c06",
+    "tracked": true,
+    "checked_tasks": 63,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/contextual-hockey-rankings/workstation/Recommendations-DRR.md",
+    "bytes": 18373,
+    "sha256": "191f919e180ca069b510ac9cbf5ab6208a408d8fd4efba3f83b354f8db7f501e",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/contextual-hockey-rankings/workstation/context.md",
+    "bytes": 23995,
+    "sha256": "68b581c6a625094baaf975575863cb861512b56df72cdcf66b11e8a70e2b1456",
+    "tracked": true,
+    "checked_tasks": 32,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/contextual-hockey-rankings/workstation/deep-research-report.md",
+    "bytes": 28167,
+    "sha256": "a562057b2cafcce30a58dacaee995a372d8409ca243d2b8d126dd896cc38e855",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/contextual-hockey-rankings/workstation/goal.md",
+    "bytes": 18219,
+    "sha256": "9f1391c4b23d404d580091b875136a235c39e1cf31e346641784343500b3621a",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/cron-operations/cron-schedule.md",
+    "bytes": 100152,
+    "sha256": "a6bcacf7281947c76da48b3f3f31daa0315350769be9988471d30895a27406fe",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/cron-operations/prd/prd-cron-audit-and-schedule-optimization.md",
+    "bytes": 29580,
+    "sha256": "6419f112194d3d433fdb1b8af1e8635718edc90f51d781c251c4b7df34ce8995",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/cron-operations/prd/prd-cron-failed-jobs-remediation.md",
+    "bytes": 3713,
+    "sha256": "35b51d67c821656bc5b37eff913d34b2c907749b09b6f9ef2e12de97dda420cd",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/cron-operations/prd/prd-cron-nst-audit-remediation.md",
+    "bytes": 76660,
+    "sha256": "4f36ba3e9b2c1e8aed8c37d7602518f2be5e4d9d86ad66ba44a5756c7b1a6b69",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md",
+    "bytes": 54618,
+    "sha256": "111db36b215c532f988788474454e5c3f3b73e55c60c194adc6e38f960d73a34",
+    "tracked": true,
+    "checked_tasks": 65,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md",
+    "bytes": 18120,
+    "sha256": "7d91946a81e10f2e089228fed063c69f3cf295863764b351cc635210d8658051",
+    "tracked": true,
+    "checked_tasks": 43,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/cron-operations/tasks-prd-cron-failed-jobs-remediation.md",
+    "bytes": 13516,
+    "sha256": "eecd1d51617d1560b19810b0b568f3cb0f8cf9530eff403a2f8af9d0142fea80",
+    "tracked": true,
+    "checked_tasks": 34,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md",
+    "bytes": 80065,
+    "sha256": "d636bee7c7dc8bdf2610c5189ec51bc61228c57159633f80df99305eb9c90b25",
+    "tracked": true,
+    "checked_tasks": 75,
+    "unchecked_tasks": 2
+  },
+  {
+    "path": "tasks/TASKS/cron-operations/tasks-prd-nst-api-audit-and-migration.md",
+    "bytes": 14425,
+    "sha256": "f15b78c2cf90819ca6205706cb45991a143e0cc9e1316ea4236f34f4955996b8",
+    "tracked": true,
+    "checked_tasks": 46,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/burn-down-plan.md",
+    "bytes": 11196,
+    "sha256": "a4333e26f591dd2f068dd20b31fed45b16067bfe575220c36ab810fb7b0b9464",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/drm-local-gates-checkpoint-2026-08-01.md",
+    "bytes": 2353,
+    "sha256": "24e99a46251b9c02360003cbfa291718ce98bd7fe765077c4de03c5c531237fe",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/hidden-product-surface-ownership-matrix.md",
+    "bytes": 6577,
+    "sha256": "836c5df358c30308a789141fc0568d6aec782fe65ab5b848a87763f8a49dc432",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/prd-cleanup-tasks.md",
+    "bytes": 54450,
+    "sha256": "537f88afae9ba557298bf2ef403aeb8f58d93478a4e575a06886683eb2abb642",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+    "bytes": 36468,
+    "sha256": "6f0969a99cb341f534807383ddf6268cbc6707c60177c44c7a6fdbd17f878131",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/prd-drm-refactor.md",
+    "bytes": 50891,
+    "sha256": "2985e89d54448ccd66987c653b80d7a1e32f7a497af06c7e316d2d2aaaa2b36d",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/prd-file-inventory.md",
+    "bytes": 80369,
+    "sha256": "0b0a198c946c4eb01fbcc9169d5d46a92db61a813937d95da0d45717c855708c",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md",
+    "bytes": 86968,
+    "sha256": "a115f320d5b31430e8aad3b79062552d230fcc518470bcd8a87befdba2e39e7d",
+    "tracked": true,
+    "checked_tasks": 158,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md",
+    "bytes": 25566,
+    "sha256": "01bd01347a31b4d9044f0e03accc7b53bde1d35ed76143c698c3fd4759bbe214",
+    "tracked": true,
+    "checked_tasks": 44,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+    "bytes": 73401,
+    "sha256": "bc74e92515ac85386703cc0e546f1a2912b60be299b70d49b9396a609094cda7",
+    "tracked": true,
+    "checked_tasks": 99,
+    "unchecked_tasks": 12
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/wgo-relocation-era-identity-contract.md",
+    "bytes": 4366,
+    "sha256": "c9ca13726d40a722fdf24c9e13dbc29298fade4c848bddc7b2d3a279fc9f1747",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/wgo-utah-identity-repair-contract.md",
+    "bytes": 3800,
+    "sha256": "8ef777162f3fe08b9881cdf8e2f2afcd42f6b6f0f376fa4505ff284d8bb731f1",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/docs/DraftDashboard_Audit.md",
+    "bytes": 114785,
+    "sha256": "c063cab68f39ace4cd651dc74bc774cffc003fb33fd462ba1f1bbc929ecb8db3",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/docs/live-draft-runbook.md",
+    "bytes": 9593,
+    "sha256": "65f143fa43c8b3eaadde4c2c5f273448ef3206307bb5546b1df3191fdff5c497",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/docs/yahoo-tables.md",
+    "bytes": 9428,
+    "sha256": "3b8988c67e1ac72c5d9674e978cea2f7febc71ae41aefa7da538864b8accbb06",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/draft-dashbord-audit.md",
+    "bytes": 9030,
+    "sha256": "1e50eab3ee185d82f2ef94e60ee4ab8dc59e6ab1f338919348e45ca574bbf1f3",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/gamegrid-draft-dashboard-style-audit-report.md",
+    "bytes": 9607,
+    "sha256": "b92d59b8ab4db4f460f487d2f4e5e5fb6ff1d4e7f259fc894a5194b9999f9c14",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/live-draft-production-readiness.md",
+    "bytes": 5957,
+    "sha256": "e584a8a3c87dfa8507cdfc1266bdb4b58bd6ca46da0e21dc89e09fbeee8d03b6",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/prd-yahoo-audit.md",
+    "bytes": 49230,
+    "sha256": "58fb090d46ebdd5743a67f7583f29be8f358de891fe1e84c42bd3965ea26d287",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md",
+    "bytes": 104656,
+    "sha256": "5b863f8804d9159c8f9f60531898b934c1af66f0cf0010648e8aed3948072d3b",
+    "tracked": true,
+    "checked_tasks": 15,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dashboard.md",
+    "bytes": 15996,
+    "sha256": "1ffb08389dc03942356d0fa8b69c13e7fca1db1527d1dd0da6e8f7acd62b875e",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-gamegrid-draft-dashboard-style-overhaul.md",
+    "bytes": 14421,
+    "sha256": "c04c8ce768554f857da892ea986e117a2aaf78f85364af89d3d7471a9f90b9b8",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-draft-dashboard-interface-polish.md",
+    "bytes": 6901,
+    "sha256": "8a1e4cb7e8160f4d9c3434aebf85c279fbe851af71f5a5403c48dac6b8591f49",
+    "tracked": true,
+    "checked_tasks": 56,
+    "unchecked_tasks": 2
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md",
+    "bytes": 50947,
+    "sha256": "cde5522a224030f78f765f29aec1713cbd58b75350d5f09455a17647b603695a",
+    "tracked": true,
+    "checked_tasks": 92,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-gamegrid-draft-dashboard-style-overhaul.md",
+    "bytes": 17929,
+    "sha256": "4b4d7d3642431f62fb7d13db8181ff55da80a44821cbbcdfedbb938a97d84f5e",
+    "tracked": true,
+    "checked_tasks": 56,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md",
+    "bytes": 38560,
+    "sha256": "ccd494110fe8374e47cc41710feaa8633f5e33b9ac81b7353ee1b5443184202b",
+    "tracked": true,
+    "checked_tasks": 65,
+    "unchecked_tasks": 7
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md",
+    "bytes": 15977,
+    "sha256": "9a4c0044bd1f322ddc7cccfc69b8a426345b618ee3edc9c6f1ce9d8a00d159ec",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/yahoo-live-draft-backlog.md",
+    "bytes": 2272,
+    "sha256": "fc43f5343286440c25bd31490d2f8b325a2214c1467172a63c1513e616f33225",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-ranker/community-ranking-runbook.md",
+    "bytes": 7820,
+    "sha256": "fb71ca92648ebdbe15f01a16d8359e790dfd2e53522d13ec67f9d64b2348beb0",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-ranker/decision-record.md",
+    "bytes": 19642,
+    "sha256": "eae78c5a2a96826c5e52d63432157ca6ffb25e74701d0a8dc2ea450cc8cde9cf",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-ranker/discovery-source-contract.md",
+    "bytes": 12536,
+    "sha256": "65df1032b27b23b2e53b324c99b6124aead343468ab50dafc1254f46123e8c6f",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-ranker/dr-010-migration-review.md",
+    "bytes": 5211,
+    "sha256": "bf7d08642ca4f3a81b3741400b0737659b3e19a3a5c4ae87ac27fab8b42341aa",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-ranker/dr-011-yahoo-mapping-review.md",
+    "bytes": 3985,
+    "sha256": "a5fa835a26723d0b4b2ce5cbfc611a8249fb219e970e5833cedafa3f3ba470f2",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-ranker/dr-012-migration-review.md",
+    "bytes": 5874,
+    "sha256": "74950c630fe43cf4bf713b0271f3ef1c3a72cce1aca45e7735217de08dd34583",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-ranker/execution-boundary.md",
+    "bytes": 8121,
+    "sha256": "c28048c1f64dc93ef212f75e69f1d9fe6e26df1c084b5dcae217b9bc9611b8e6",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-ranker/goal-prompt.md",
+    "bytes": 5769,
+    "sha256": "120c64050fbca00551d462acc7928e5834c0d72d28447f23d78420d261eac042",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-ranker/implementation-plan.md",
+    "bytes": 50581,
+    "sha256": "5214b4749c30091e9f05197a68b9372717dc037e6e962f6ed8963a093c2ec442",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-ranker/launch-runbook.md",
+    "bytes": 21880,
+    "sha256": "075f467912a6362724fee5f10ab553ac677fe0778d141b820faa9231c86495dd",
+    "tracked": true,
+    "checked_tasks": 10,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-ranker/prd-draft-ranker.md",
+    "bytes": 17503,
+    "sha256": "36eadc05568d4f917b2ce84b1e2c11848ba8970c12fd0fc8120cb5f2ed2fd995",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-ranker/product-strategy.md",
+    "bytes": 39720,
+    "sha256": "ff1834b853dafa70068af3512e8139208900967c83370abb9d6a71cf5d3462ca",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-ranker/progress.md",
+    "bytes": 60423,
+    "sha256": "91aab0f26c18e546d0f7dcfc6d23c1bcc8d29feadd29657a65397b78f50ba758",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-ranker/release-manifest.md",
+    "bytes": 19509,
+    "sha256": "a144b02934061d943919cfc72e506f639c86edc86a0400ec3b183f5822122047",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-ranker/repository-audit.md",
+    "bytes": 13083,
+    "sha256": "d25fd2a655dbf2c5763ed408b2d9faa3ae97a0f8fd8c9be55747ee2c639f3da3",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-ranker/repository-record.md",
+    "bytes": 11891,
+    "sha256": "e240b9dbcb30e0052b9d7f32f73e839b7301bb992a88da02164421382125c5ff",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-ranker/tasks-prd-draft-ranker.md",
+    "bytes": 14546,
+    "sha256": "f1260c0ce67310c274cbff4271546bc3a45f0ae3383b67e057b2f12b74ffca6a",
+    "tracked": true,
+    "checked_tasks": 57,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/draft-ranker/technical-contract.md",
+    "bytes": 24945,
+    "sha256": "58c47def2c12a73b9bc1dd85dd01fab50b27cc62584007b6173cd1da068d3aab",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/command-center/prd-forge-command-center-rebuild.md",
+    "bytes": 21543,
+    "sha256": "f2993446200478cbaff5194fe7dfa0d647ea5eb61cfa7272be0fd3e403714257",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/command-center/tasks-prd-forge-command-center-rebuild.md",
+    "bytes": 17061,
+    "sha256": "a9628ebf4f10b4d62d45f8da75e506e420149525f8939056e5b6680610559a1b",
+    "tracked": true,
+    "checked_tasks": 83,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/context/forge-tables.md",
+    "bytes": 14997,
+    "sha256": "df1fbdda862c7dffda4cfec4955701a6f7a850e0d1971bb0e328d69d1df1ff19",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/context/projection-model-research.md",
+    "bytes": 27233,
+    "sha256": "ef4d11885e116e532f87c414abbba8f50d8fb32b5d1b0fa1b9834803d9035a3b",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/context/projectionTableStructure.md",
+    "bytes": 8466,
+    "sha256": "4d6680a32d0a3c00c2e0aede5bc4540f0a619efddc961f9bba07cd4bed0fa6d6",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/dashboard-health/prd/prd-forge-dashboard-component-health.md",
+    "bytes": 21091,
+    "sha256": "e5d1f7234c45120ae1a5d52192fcc8818ae29a9b4cde5ab7eb852e0f5e8c9368",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/dashboard-health/prd/prd-forge-dashboard.md",
+    "bytes": 18696,
+    "sha256": "743f09fe929cff0f26f5a30ab7ab9fa10802a5759e379d7bcf610cf3068ecc64",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/dashboard-health/tasks-forge-dashboard-component-remediation.md",
+    "bytes": 34998,
+    "sha256": "401ac54a9bd9213099efd9e8e6eba45bb115c0a156fe9d557a34c976b6052493",
+    "tracked": true,
+    "checked_tasks": 78,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard-component-health.md",
+    "bytes": 26045,
+    "sha256": "96e8ee3f4fff357b7625b0c6f8f62de2e9bf7e5c25219e0ed682fa22524d5335",
+    "tracked": true,
+    "checked_tasks": 47,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard.md",
+    "bytes": 20565,
+    "sha256": "c7d8fc9a07116b77acf06308a80ad315e330cbf5e9f82f81f8a1fa9c1eb5f8a0",
+    "tracked": true,
+    "checked_tasks": 49,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/docs/FORGE_ECOSYSTEM_ELI5_AUDIT.md",
+    "bytes": 8757,
+    "sha256": "1c5b086e4ade172656c0aa9eb301f319188fec725193d168f2ad7855e8cf979d",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/docs/FORGE_EXPLAINED.md",
+    "bytes": 11657,
+    "sha256": "4f015e18573239112cfe2e7ef3be6539adeb6aff8915d0a1d2d231121f55031c",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/ecosystem-audits/forge-trends-combo-architecture.md",
+    "bytes": 10511,
+    "sha256": "4b387ed6ffe2d5ffd2da8ef879c1647ad84019f2894958673dd8e347ca0fb97b",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/ecosystem-audits/prd-forge-pass-4-living-audit-remediation.md",
+    "bytes": 11470,
+    "sha256": "7b1d030b94b997aee28e434510c8b69c1fab81153293682a5a0c3afe5015389a",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/ecosystem-audits/prd/prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md",
+    "bytes": 51416,
+    "sha256": "4ec697543cb06ae4e2908b604994769d48c6a504b96234b8f7dfce4464393535",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/ecosystem-audits/prd/prd-forge-ecosystem-pass-4-audit-remediation.md",
+    "bytes": 10602,
+    "sha256": "224bea954777a70b93515d8a70a675bbc8eb3f38726d118db2c12ddc89d44b99",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/ecosystem-audits/prd/prd-forge-trends-combo-project.md",
+    "bytes": 13132,
+    "sha256": "f3333a4d4fd043519d4d68054a01e4a6c88cb578df0b33c8e74b5a7cca312389",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md",
+    "bytes": 82282,
+    "sha256": "73fad2a8e8ab7a073af908a6f2d5b5e806b3c8badc709bb580c39bbd84c9a95d",
+    "tracked": true,
+    "checked_tasks": 47,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-4-audit-remediation.md",
+    "bytes": 32583,
+    "sha256": "48636bfa4e23c2ecfd46a7575d8b17bd23d575f28371f08e09d43d2d0bbac1be",
+    "tracked": true,
+    "checked_tasks": 94,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-pass-4-living-audit-remediation.md",
+    "bytes": 21140,
+    "sha256": "cf55e795365d1fd5d6a877f62e31614a78b8df868ed5cbb06474bc3ffd4084e4",
+    "tracked": true,
+    "checked_tasks": 66,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md",
+    "bytes": 8315,
+    "sha256": "0b1e7f2e4bb5f7aa23b2d8672fe2d3d067df257d3eb39189d4810e0b48f7b6f7",
+    "tracked": true,
+    "checked_tasks": 39,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/prediction-engine/tasks-prd-forge-prediction-engine-super-task-list.md",
+    "bytes": 37014,
+    "sha256": "51a78692ee0ec7f07fb577511fcb6054a1fab5bd13cfa1ff21c4bcaff532d52c",
+    "tracked": true,
+    "checked_tasks": 102,
+    "unchecked_tasks": 1
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/docs/goalie-forge-operator-runbook.md",
+    "bytes": 9340,
+    "sha256": "6dc10247757feedf2e1022b7b8f31a3cbb7231705b8935476ab9c01113e06075",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/goalie-forge.md",
+    "bytes": 22296,
+    "sha256": "e1e58da5e8f11456750070be9db1628d1e95155d0362e429a4d3191e6c3103cd",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/prd/goalie-forge-implementation-plan.md",
+    "bytes": 2289,
+    "sha256": "c33a3a7e8e1dddc98906822885f3e9678050ce4f4f49c6e4c6145c9c1e4070a6",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/prd/prd-projection-model.md",
+    "bytes": 71191,
+    "sha256": "3ab046de393b19ac123bb83d9d001bacdaf44b739f782ba137ffbc9982d1afd0",
+    "tracked": true,
+    "checked_tasks": 18,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/prd/prd-run-forge-projections-modularization.md",
+    "bytes": 11598,
+    "sha256": "b177dc88ceaf19310c46246aff5c8cdbc70023d93b6b81914660c64b21a25c37",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/prd/prd-start-chart-model.md",
+    "bytes": 6332,
+    "sha256": "cf3ee0fd3cf0a7033dc77689170dec171f46212c96f99723ef3f7f5ae98a3044",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/prd/prd-start-chart.md",
+    "bytes": 17541,
+    "sha256": "3417e05f47f627991a2e8ca06aeecbadad107a7bc42e51ee4c5af4d0405f1f24",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md",
+    "bytes": 47321,
+    "sha256": "babd08d1cf6722aa340b2096360909658de5ec2f1a11a9d1a6663db7e46c1b5d",
+    "tracked": true,
+    "checked_tasks": 56,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "bytes": 42776,
+    "sha256": "eb92fc5ef06cfc6ccc826c534cb9f8fe7666ecb1501a9b60246d06d6efd6b4e2",
+    "tracked": true,
+    "checked_tasks": 44,
+    "unchecked_tasks": 15
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md",
+    "bytes": 18568,
+    "sha256": "9f445b650d174be733e048c722a86b2fd864cbce16cd583985f15f7bee1f18b9",
+    "tracked": true,
+    "checked_tasks": 36,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+    "bytes": 45009,
+    "sha256": "8a58dcf100a3f660bbf36f0694a90ae3831618a2581351e536c2278c871e46db",
+    "tracked": true,
+    "checked_tasks": 103,
+    "unchecked_tasks": 10
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-skater-forge.md",
+    "bytes": 19001,
+    "sha256": "1f799bd7fded25035dfb0c55226c60c8d3e3161903292621d9d5bbdf70cbbcd4",
+    "tracked": true,
+    "checked_tasks": 57,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/lines-ccc-ingestion/prd-lines-ccc-ingestion.md",
+    "bytes": 18972,
+    "sha256": "416a942dae8a8701ec64e1b186bf834dabfb6b15176a8cd64b5002f3cbf2d430",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/lines-ccc-ingestion/tasks-prd-lines-ccc-ingestion.md",
+    "bytes": 28946,
+    "sha256": "9f8625fc709582f7958888f3800fe5078b55b339440c5c632cf2c16c5e200f51",
+    "tracked": true,
+    "checked_tasks": 94,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/GDL-INGESTION-RUNBOOK.md",
+    "bytes": 9200,
+    "sha256": "d94e7c571ccd117102404bf7ec9a5bff4ae2e1e46165e46e189955b099efc0d3",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/TWEET-PIPELINE-RELEASE.md",
+    "bytes": 17775,
+    "sha256": "1a7d90a9ce427ad4df93acf9b6f4520e12ba75e17078c6c7a6f11aa0f1c7360f",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-hardening.md",
+    "bytes": 21626,
+    "sha256": "9091531a63216fd8e6d9cf45b5a894da1fb9db406f7331dde0f81dd4421dbb9e",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-implementation.md",
+    "bytes": 36550,
+    "sha256": "b93b9c3677e3e81e134dffc014bd39c2c9f326c8d9fc1af3fe70e251c6fbd30f",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/game-line-snapshots-local-handoff.md",
+    "bytes": 14299,
+    "sha256": "e22fda98d7fd7f7b378ee23f63ef7f3420ff61bb427d52f62ec8b9f67c57e3ce",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/goalie-confirmation-context-snapshot-2026-10-06.md",
+    "bytes": 18028,
+    "sha256": "a985bba1796fd360c952248ef3fddf37d808677969ebe40bdcf1cf580d37b58a",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/prd/prd-gdl-suite-ingestion.md",
+    "bytes": 16245,
+    "sha256": "a336daf9730ab8863a3d502e047f4449d105cd4ffa7030cc1d0b7551db251284",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md",
+    "bytes": 38937,
+    "sha256": "e3b6adf794d175771bfa12bdc5b5f968a10281a192fcf246bba1532d129b15a6",
+    "tracked": true,
+    "checked_tasks": 74,
+    "unchecked_tasks": 11
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-hockey-update-classification-hardening.md",
+    "bytes": 18207,
+    "sha256": "8e7416c20b29d9203cfe7596a76fd88b9799c081ba41a66b8ca46e3d54fa4ed0",
+    "tracked": true,
+    "checked_tasks": 13,
+    "unchecked_tasks": 19
+  },
+  {
+    "path": "tasks/TASKS/nhl-game-prediction-model/paired-capture-game2026020053.md",
+    "bytes": 12883,
+    "sha256": "221251fd8aca1c65b4dbc0d88471837cb6ee9c361680b6fd7a8fc3a23f78772f",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/nhl-game-prediction-model/prd-nhl-game-prediction-model.md",
+    "bytes": 56959,
+    "sha256": "3f072cb02511e17f6759594a6c63f8b2e8daf565accf2029c342aa7b3dd4912c",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/nhl-game-prediction-model/research/deep-research-report.md",
+    "bytes": 41157,
+    "sha256": "5138a9053ed017943605fa662ae219ec3f258f16dcb11e20da57adac7dd05119",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/nhl-game-prediction-model/tasks-prd-game-prediction-accuracy-improvement.md",
+    "bytes": 13472,
+    "sha256": "f1403491beda09ebe3553e74a6030571b53c6e85f2271ae2e09da1aba0794a72",
+    "tracked": true,
+    "checked_tasks": 49,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/nhl-game-prediction-model/tasks-prd-nhl-game-prediction-model.md",
+    "bytes": 30779,
+    "sha256": "f7723e71a3b87549122133b938007d6f346d605b68b922cc9d1574440d3b03ae",
+    "tracked": true,
+    "checked_tasks": 118,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/nhl-game-prediction-model/tasks-prd-nhl-game-prediction-roster-sos-model.md",
+    "bytes": 25155,
+    "sha256": "1eb54267825e39f10856deb42b2fd99184d13de92cee31272eeec7efb8193dd2",
+    "tracked": true,
+    "checked_tasks": 64,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/prd-rso-consolidated-2026-10-09.md",
+    "bytes": 49354,
+    "sha256": "9043fe42b9b39d310056acfe9fd4b25503918421188f6cf2ba16c5816c60dff1",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/prd-rso.md",
+    "bytes": 39177,
+    "sha256": "f8f3cfc3724cf18ee82c4eb88446dd626e42328cfb5420df213b214dc644cd3f",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/repository-audit-remediation/document-reference-working-set.md",
+    "bytes": 42917,
+    "sha256": "35e302d38577196fc27e6fdfc2d3a9d5b91bb9dcf8407773c8ca8a4fc3cfff59",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/repository-audit-remediation/operational-route-decision-matrix.md",
+    "bytes": 7418,
+    "sha256": "a885431271f8e4c5dea9705c11c90da7443e3f0b335692c9a82b3cd8714ff5c3",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/repository-audit-remediation/rolling-player-pass-2-status-reconciliation.md",
+    "bytes": 3994,
+    "sha256": "10c4b8abc0b34190f7012901e5ca166e759b88fda453aa9423f685cda4add7d4",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/repository-audit-remediation/security-rpc-rollout-runbook.md",
+    "bytes": 35632,
+    "sha256": "ac7cc30f370d4933548333c18ed5f800a02fb6e64750000e8c58b31856910698",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/repository-audit-remediation/sko-output-provenance.md",
+    "bytes": 2997,
+    "sha256": "bd9033cb91cbd7f969de305d4a19e185e9de4e2cc3d068c2bead82f5df6f7be5",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+    "bytes": 158601,
+    "sha256": "8331d3c3efedea28b969c0adb05e14aeac4de4258f986a561088182d71099cc3",
+    "tracked": true,
+    "checked_tasks": 89,
+    "unchecked_tasks": 9
+  },
+  {
+    "path": "tasks/TASKS/rso-audit-2026-10-08.md",
+    "bytes": 16153,
+    "sha256": "aff8c61e855d776d60794f768a989de96981c3935cb43729e89ac0d4c140cb98",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/rso-compact-layout-amendment-2026-10-09.md",
+    "bytes": 51532,
+    "sha256": "7e1ead65338212938b4cd9589f20fb105c40d36c3525670b0f1e860bb99da2a1",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/rso-implementation-2026-10-08.md",
+    "bytes": 23980,
+    "sha256": "2c168201cff10b74dc9fadf70c2732c316995b3d71e9dc5bdb10b801f696de70",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/rules/brand-style-cheat-sheet.md",
+    "bytes": 7029,
+    "sha256": "45a57c3010b3bca57537e552e379c42d4550d7636777ddd7e0cfaa50d33f2add",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/rules/create-prd.mdc",
+    "bytes": 4337,
+    "sha256": "0f6b76968a1161ac8171df08ce617db5dee1d9e8879ab41e80db2efb5879faf9",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/rules/fhfh-styles.md",
+    "bytes": 72983,
+    "sha256": "5c05cf129a75fc266f28bcdd24e0a8acb4d13d83e1708f740284b79758ce96c4",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/rules/generate-tasks.mdc",
+    "bytes": 4263,
+    "sha256": "d683bb43a04c7ec580d2c4e28312d98d56b0e96202a5557dcf1cae2b52c088f8",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 6
+  },
+  {
+    "path": "tasks/TASKS/rules/process-task-list.mdc",
+    "bytes": 16489,
+    "sha256": "672e4e1ea794afb43a3418430590e41faaf81f5e8abfb8944b8d521d7f08cc32",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/rules/vars_Audit.md",
+    "bytes": 8134,
+    "sha256": "3a51973c11c7fd21233d9b288da89d83226084cef0511e4dd20050189e8609b4",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/schema-docs/README.md",
+    "bytes": 783,
+    "sha256": "f287b7d4f4a6190fc0a1a172002f27d2f5f476f4934ae5ea78fe3a28be9f424d",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/schema-docs/api-db.md",
+    "bytes": 2626,
+    "sha256": "e2241fd1adf8e07a6a6927aed8a38ee0a6f623799dcfff4f9e1fb54bad87fde2",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/schema-docs/edge-tables.md",
+    "bytes": 5915,
+    "sha256": "0096c38becf74299981946668dddd4d9652a29ff919e5aefc4599388ea102b4b",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/schema-docs/goalie-tables.md",
+    "bytes": 101794,
+    "sha256": "7e0b0bccee3be62706c94e3a8395fec8d9a5cd8ba3efc228338efbaaf7c07f65",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/schema-docs/other-tables.md",
+    "bytes": 308750,
+    "sha256": "f46bd74253cfef7c9365ac392f96a71c43f59003e47f0cdcf559f7da5ca27538",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/schema-docs/skater-tables.md",
+    "bytes": 148334,
+    "sha256": "3b2119775a518e974acf2ef0f3f613845ac8de98da213d3d2948ac13468221fa",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/schema-docs/supabase-context/goalie-tables.md",
+    "bytes": 55929,
+    "sha256": "36d368e29bb509910c90791f8acba32a19afaa96c60263fadf094d07d0fedb67",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/schema-docs/supabase-context/nst-goalie-table-schemas.md",
+    "bytes": 13300,
+    "sha256": "92035c41c835560bf5c55ab79bf0cc48f561857d2b9249af0863f384da693cfc",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/schema-docs/supabase-context/nst-team-tables-schemas.md",
+    "bytes": 21429,
+    "sha256": "38ac8447e31e219fab816ccc05e012c27c54faea23e384faf3b1c42a80d57d38",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/schema-docs/supabase-context/player-table-schemas.md",
+    "bytes": 22296,
+    "sha256": "0785cde8224a60b706e156754fbc06926978d4f447d3519dafc8f5e91b07ec8e",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/schema-docs/supabase-context/supabase-sql-tables.md",
+    "bytes": 16311,
+    "sha256": "870da775995eeabc49a3cd6d41c71976215e3078120e4013b0b127490dbc1975",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/schema-docs/supabase-context/supabase-table-structure.md",
+    "bytes": 88005,
+    "sha256": "2bc45ae5dcfbf828327401cbbdac8ce4bf9f58b152e33c5807fa60a6f2c6845f",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/schema-docs/supabase-context/supabase-table-structure.mdc",
+    "bytes": 215587,
+    "sha256": "1b44e95d42eae77df9cd58504b8e0d26033c414bf16807f100ed7db8108a952e",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/schema-docs/supabase-context/supabase-views.md",
+    "bytes": 33781,
+    "sha256": "fc7151f5a3fe846403d502fb12e4df7f3f5000e7fe7d10c4b5d0a6245c0542e0",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/schema-docs/team-tables.md",
+    "bytes": 121392,
+    "sha256": "2c15a0e427d5f960df98a305d95abb1242cf77fa838cb302df12839709fb274e",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/sko-charts/prd-sko-charts.md",
+    "bytes": 38523,
+    "sha256": "7020cd4b0fc83534082c22ce3105ac7dbef8a878b13f5d5313a27113e81da43f",
+    "tracked": true,
+    "checked_tasks": 25,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/sko-charts/prd-sko.md",
+    "bytes": 6224,
+    "sha256": "3ab4be78f6ec2e6b80c17f594767e4ea9ce74a4c4fdfe04747f2ea45fb25a8ab",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/sko-charts/sko-modeling-notes.md",
+    "bytes": 13845,
+    "sha256": "2ddaa7c4c182ea7c280d7359931be55976ec6c776955d9516ab8de93793a55a3",
+    "tracked": true,
+    "checked_tasks": 37,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/sko-charts/sko-ownership-contract.md",
+    "bytes": 26976,
+    "sha256": "d334ed72f3ec7bcb34b0bfbee19dbe998c85710729adfbcd787cafcc4af21247",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/sko-charts/sko-runbook.md",
+    "bytes": 12220,
+    "sha256": "677a997441728e984e112ce3f3fb24ceb6181799d0f51c1a5eba294d1ce333a6",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/sko-charts/tasks-prd-sko-charts.md",
+    "bytes": 32133,
+    "sha256": "2198e03e5923c99565fea8eeb9f8d7b8434f4ca77964cab8c965a91046066cc1",
+    "tracked": true,
+    "checked_tasks": 70,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/super-goal/cleanup-reconciliation.md",
+    "bytes": 2150,
+    "sha256": "5dbe36adf1dbb013c6b0023d81e808d5e99c3dda4babd6fc1a380e6eaf8cce34",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/super-goal/completion-gate-reconciliation.md",
+    "bytes": 25368,
+    "sha256": "cb9d80f8bf7ca7edfda6c087b2a35fa49dc51db2cf50e22ed8e928ad5b03b469",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/super-goal/cross-initiative-ownership-reconciliation.md",
+    "bytes": 10756,
+    "sha256": "7b6636e92dfe3b8d8965606bab5397eebfca7a08d7cca9a0ed41494c6637c08e",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/super-goal/data-completeness-reconciliation.md",
+    "bytes": 8476,
+    "sha256": "ac521b515a967dc02b3b3ae625e6085afdcda62a0119d200fe020e8c2a9de1d3",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/super-goal/documentation-parity-checkpoint.md",
+    "bytes": 33670,
+    "sha256": "1bd7d82efb47c208d3648b045e905e604cc3b32af31b5da12994625e0d73e49b",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/super-goal/end-to-end-state-reconciliation.md",
+    "bytes": 6181,
+    "sha256": "0e340d0db85a4b03cb61c4d9074a925a27625b6727683355f057fb61fb02cf7e",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/super-goal/prd/prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "bytes": 585925,
+    "sha256": "0c61e89e987b4466ce729c2ffdd9ad58376ef1bf018bf78b61f241cc52436e2d",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/super-goal/security-boundary-reconciliation.md",
+    "bytes": 8856,
+    "sha256": "b04279f96a09f40fc35902796881aaa634eac14fafc56fd4a93579c6cc6e3df4",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/super-goal/super-goal-context-diary.md",
+    "bytes": 2092695,
+    "sha256": "0c9c58b8324d41d6aee34e9075adfc86d7819365f125f6c2a8e7bb7c79c4b561",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/super-goal/super-goal-final-summary.md",
+    "bytes": 336786,
+    "sha256": "b7b361c69672631e7ef00fd6843ebd7ffa1c057865e1492e8b242ab927345c3e",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "bytes": 1662195,
+    "sha256": "c2879dae2e4ed4506269cc125967580a4dc667477a84b64c3a1f4de6cbb4ee3d",
+    "tracked": true,
+    "checked_tasks": 5104,
+    "unchecked_tasks": 73
+  },
+  {
+    "path": "tasks/TASKS/super-goal/ux-performance-observability-reconciliation.md",
+    "bytes": 5302,
+    "sha256": "45de2ccc1d7992c8419cc5e143988482cfe21a97ef651c2a0071d4a6194889d7",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/super-goal/verification-checkpoint-6-5.md",
+    "bytes": 5716,
+    "sha256": "0be6a6feafe37c79e2123db3721b45d9800a81eafd39a585124cd41ca2c7f2fc",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/nhl-edge/nhl-edge-feature-contract.md",
+    "bytes": 2023,
+    "sha256": "4d382b983ca88c4cf194b7eb3372f15cbcde81af7efa9acb38bc0f2b88733fe9",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/nhl-edge/nhl-edge-stats-api.md",
+    "bytes": 90821,
+    "sha256": "9f27b124ce4aaf6f819c90f1ded91bd2c5840e0cf26306967ad51e2394908357",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/prd-three-pillars-analytics.md",
+    "bytes": 19059,
+    "sha256": "abe1196d34e2dd026905633ef7c73dde51b9aadabc74e3ebda596a55017ffa6a",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-averages.md",
+    "bytes": 9343,
+    "sha256": "16a41037e6a43c79d924365d6beb79390165af5525edc39247ab94b8776445a3",
+    "tracked": true,
+    "checked_tasks": 5,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-metrics-audit-pass-2-trends-debug.md",
+    "bytes": 62076,
+    "sha256": "324cab5c13b737eface68558f60852ee2ac35f29d19451ab38f1159fd6b1c802",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-metrics-audit.md",
+    "bytes": 15231,
+    "sha256": "6c6e2aad3f7803bec98ba7a4418abe5f8e7dcfd798a29665c6b1948498cbd27b",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-metrics-remediation-blueprint.md",
+    "bytes": 43935,
+    "sha256": "de2f4f65f8d63e81cf607f98d5c71f4a3b8b18a42748660d97fd7c2f3359da49",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-metrics-remediation.md",
+    "bytes": 9765,
+    "sha256": "22fead93f9601c9b884007440d98dfc08cd474b57b0458fbee35d3211265b05f",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rolling-player-metrics-audit-notes.md",
+    "bytes": 208717,
+    "sha256": "56d54c886d3aeebb2aabb73ba30e449378166a57d086a1821dd8b75d6eff7a1c",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md",
+    "bytes": 38973,
+    "sha256": "97f0c4a879f10408d86a15a443cf7ec303d36c2eb8a1957086946e3c0476e53f",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md",
+    "bytes": 9941,
+    "sha256": "d5259df5564657288c12bbac6a5d372e6ffd145e74b00641f34bb42a560a6373",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-prd-rolling-player-metrics-audit-pass-2-trends-debug.md",
+    "bytes": 28835,
+    "sha256": "5923588348bde884eb2c087e3c42d3f20c2531e1302ad53cc3fad108cce17a76",
+    "tracked": true,
+    "checked_tasks": 48,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-prd-rolling-player-metrics-audit.md",
+    "bytes": 7393,
+    "sha256": "f9d571d46c4dd964c99fe384543229caac749e42d6d6355ba43723cee618a72c",
+    "tracked": true,
+    "checked_tasks": 41,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-prd-rolling-player-metrics-remediation-blueprint.md",
+    "bytes": 15905,
+    "sha256": "9cc89989c2179b82f96c1e8dcca152b1e8730906c201ca03f68824833b9d038b",
+    "tracked": true,
+    "checked_tasks": 63,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-prd-rolling-player-metrics-remediation.md",
+    "bytes": 7187,
+    "sha256": "a118b253522466e7a474b3aae3d41b96cfb54b583e41b411336280c9ff6bfa6c",
+    "tracked": true,
+    "checked_tasks": 31,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rolling-player-pass-2-main-audit.md",
+    "bytes": 19481,
+    "sha256": "6aaea2db81c73bfd0ac18b888dd05e862947af69e51a6d169634337a712607d0",
+    "tracked": true,
+    "checked_tasks": 38,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rpm-audit-action-items-pass-2.md",
+    "bytes": 17848,
+    "sha256": "b981cfde9e422e24d187573f8c5519516c41f8cd23efc4d67c21b7538edcfff8",
+    "tracked": true,
+    "checked_tasks": 37,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/site-roadmap/prd/fhfh-site-surface-expansion-implementation-map.md",
+    "bytes": 9081,
+    "sha256": "ec755b72c12061a721fd684b10840c26a819b799eb2e389ded108cbcbe6bb14c",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/site-roadmap/prd/prd-fhfh-site-surface-expansion-roadmap.md",
+    "bytes": 20867,
+    "sha256": "2847298e869134f8bbd6a69e601de19da1c65a5fd913eb37b3549a59d978aa27",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/site-roadmap/prd/prd-fhfh-style-system-and-underlying-stats-restyle.md",
+    "bytes": 18851,
+    "sha256": "54f50df3b572a0df18474b04d9f800268d23abba9ae9d451d3228ab122f0931a",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/site-roadmap/prd/prd-mobile-stats-page-optimization.md",
+    "bytes": 9408,
+    "sha256": "05ba6016675c493c3a4b68da18295e723cea8dc34f4fcbc7a06bcae7210819b9",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-fhfh-site-surface-expansion-roadmap.md",
+    "bytes": 34994,
+    "sha256": "39a8d6e43c244969a4bccbc48d0dfe8392b6fb979158cb7eedffd01d06142327",
+    "tracked": true,
+    "checked_tasks": 71,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-fhfh-style-system-and-underlying-stats-restyle.md",
+    "bytes": 29698,
+    "sha256": "ee7fcc72378cdb5ccf9b6a65681d66de153cd54208cff6109bbc4a6bc9dfd26a",
+    "tracked": true,
+    "checked_tasks": 88,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-mobile-stats-page-optimization.md",
+    "bytes": 10715,
+    "sha256": "6d64f1190e7f040b4292cd904f8e2b39cdc553b945d0e0f45e20630ad90f5965",
+    "tracked": true,
+    "checked_tasks": 43,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/SUSTAINABILITY-RUNBOOK.md",
+    "bytes": 11225,
+    "sha256": "d597e9096b20a8e96312dfb41a022182f4db6645985c6f66388bf7aa26c2c923",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/deep-research-report.md",
+    "bytes": 22089,
+    "sha256": "2cdba9dab7def7bd101e78b4c54fc6ea9195ac732fb983f88803931b46297573",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-barometer.md",
+    "bytes": 34742,
+    "sha256": "1718ff3d93f1206c8b4bc288a34ed70f30e94b0d12b78c644258b343e31e3afc",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-model.md",
+    "bytes": 13169,
+    "sha256": "5d2cf40da1c43791450d28cb0b0064a07b6452bd9b9fa8a3fb27a44647cb66c7",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-step4.md",
+    "bytes": 7722,
+    "sha256": "0a0f26cc091418420f0b0beb2c8fe6380f81446ff62442679d4421698b80c8fa",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-trends-audit.md",
+    "bytes": 23842,
+    "sha256": "5ecdf072650054e3ee00bee7109f5293f5406db5ed6a715f8c8480e357327695",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-forge-bounded-repair-manifest.md",
+    "bytes": 20679,
+    "sha256": "87d80f2f085d4eb9960458e83a576417832b6fa597a68cb67c4b12f9549dee05",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-audit-report.md",
+    "bytes": 72814,
+    "sha256": "397987998667390b8161f6d268e99dba9c206ce66391e98dc4df97f636b8faac",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md",
+    "bytes": 8797,
+    "sha256": "de5c10b7b2dbce6e3a692da9e25914d6884bbc0b58b5277a951ea787ba6e5b2e",
+    "tracked": true,
+    "checked_tasks": 19,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-barometer.md",
+    "bytes": 32020,
+    "sha256": "eb8e85e4c10c281a1cd5eb41ce6b42a4d9e57844b083c12b56c1dd6c332e1ac0",
+    "tracked": true,
+    "checked_tasks": 95,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md",
+    "bytes": 27233,
+    "sha256": "62e0adf2c39319111a3fe1fa09d4de76d9d8f516821dcc23af45cddd0db12a29",
+    "tracked": true,
+    "checked_tasks": 86,
+    "unchecked_tasks": 3
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+    "bytes": 42327,
+    "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+    "tracked": true,
+    "checked_tasks": 51,
+    "unchecked_tasks": 7
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/tasks-prd-three-pillars-analytics.md",
+    "bytes": 24710,
+    "sha256": "8e08a6572aac1c261a329eef7c279b3d297d5fb96011c4ee27066e5f62aa9e24",
+    "tracked": true,
+    "checked_tasks": 83,
+    "unchecked_tasks": 2
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/trends/ctpi-formula-audit-report.md",
+    "bytes": 23925,
+    "sha256": "11e9b55fca23fc6a8f52883dd287dbddba20a65992fff81334c726d464552703",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/trends/prd-trends.md",
+    "bytes": 12011,
+    "sha256": "0d33afd95c578bd709d7e93bc39cdcfb683da298d7fff6ced784301f75975117",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/trends/tasks-prd-ctpi-formula-audit.md",
+    "bytes": 15872,
+    "sha256": "e409808d50047a1f548b70391b7980929bbb932542beb36fb3660e52580e1cdd",
+    "tracked": true,
+    "checked_tasks": 55,
+    "unchecked_tasks": 4
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md",
+    "bytes": 16696,
+    "sha256": "d6da78a84770b0e80c718e475585f9bdc8a74fae43bed4005d369bc3b8414877",
+    "tracked": true,
+    "checked_tasks": 53,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/PlayerStatsDetail_Audit.md",
+    "bytes": 3071,
+    "sha256": "bbe88775ee96ebc1854f58034d982f4eb04c0d9005da85a3a2172dbe4a045411",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/PlayerStatsLanding_Audit.md",
+    "bytes": 6034,
+    "sha256": "957471827f30626f7fc1ebf7442d21f7750fb74da171243d944abdca84e51a4a",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/UnderlyingStats_Audit.md",
+    "bytes": 5841,
+    "sha256": "cf56415f0f74377c1ae25798ef4cf7bf6e308c2a0a766848a98cf3ce39ec232e",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/game-grid/game-grid-master-table-contract.md",
+    "bytes": 16275,
+    "sha256": "e2623adca749ccb2ad9664c186b5abd9d12a68eaa46cf420cbe9abb87910ec40",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/game-grid/game-grid-revamp-plan.md",
+    "bytes": 9702,
+    "sha256": "52aafe46815a089ec92618fa59ee2a48ab15b47a9d25f29084b6de0f41535de5",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/game-grid/modularization-of-the-game-page.md",
+    "bytes": 1099,
+    "sha256": "9972d5fb19875fcc212e4444bdb77a70140c490f2a77718d0d8a74f48c274000",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/game-grid/prd-game-grid-master-table-dashboard.md",
+    "bytes": 17576,
+    "sha256": "e3d084c595e5675c3dc6f4481aa7cd0b62a95cdcb783f8a8461df1dca51d8c43",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/goalie-underlying-stats-runbook.md",
+    "bytes": 15803,
+    "sha256": "5be25a68d57d57e11017c5065b686ae6a95d6d16d487b7e62043a0c96ff97b23",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/player-underlying-stats-runbook.md",
+    "bytes": 27233,
+    "sha256": "f98a5cc7d627f2e3b38caee2f80097f4d2e20a5198492c6eeee9b038bdafd91d",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/power-ratings-tables.md",
+    "bytes": 62111,
+    "sha256": "d95943d7421534ff8b013f84cbc69ada268c4197ec3f243df4909dc311275377",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/prd/prd-goalie-underlying-stats-landing-page.md",
+    "bytes": 17781,
+    "sha256": "98bc51d658d6da7bb28253a12857c7c02af3c084dbc7221664f8fe12c1429cd2",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/prd/prd-player-underlying-stats-landing-page.md",
+    "bytes": 19278,
+    "sha256": "d7b7f575be93375852379cc4c0981fa469a5f7ea324287cc78580a18b6a9acf9",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/prd/prd-team-underlying-stats-landing-page.md",
+    "bytes": 6755,
+    "sha256": "b755a5cc36ee86ccb7062319236f31ea61e9427bbd7d62a91b35efa0f262721f",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/prd/prd-underlying-stats-landing-page-sos.md",
+    "bytes": 12459,
+    "sha256": "318e24bc1d262733157b91704be91053c8d032919d58a79a7ee398e5b9836109",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-player-underlying-stats-landing-page.md",
+    "bytes": 282,
+    "sha256": "68d032aac03d71b43e03942d0e520b1823315288809030c2bbf45dd411f2f7c2",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-game-grid-master-table-dashboard.md",
+    "bytes": 13257,
+    "sha256": "9d5eb665c28ceae9a9f49deb5dbb7db06e2d1e805dabe6790c7889ed551114b9",
+    "tracked": true,
+    "checked_tasks": 38,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-goalie-underlying-stats-landing-page.md",
+    "bytes": 13758,
+    "sha256": "9c04492a033d415110b3f7c834be9a60dee07a89f512685067fdc31869a59659",
+    "tracked": true,
+    "checked_tasks": 46,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-player-underlying-stats-landing-page.md",
+    "bytes": 21929,
+    "sha256": "3735410ac3f206dbf963f1de2de6826fe541868082664c9cc7379d45b3ce0305",
+    "tracked": true,
+    "checked_tasks": 84,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-team-underlying-stats-landing-page.md",
+    "bytes": 17324,
+    "sha256": "b5204c5337203561d9d176555cfa1256962c6a98cb0ef5a518705f13f009a360",
+    "tracked": true,
+    "checked_tasks": 68,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-underlying-stats-landing-page-sos.md",
+    "bytes": 17265,
+    "sha256": "04641eb3b4636dd4a82d9283ab8785ea12beea229d860e48c1d07e9a2f536661",
+    "tracked": true,
+    "checked_tasks": 34,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-underlying-stats-landing-page.md",
+    "bytes": 8682,
+    "sha256": "136541fb28e7245ddf1a95eee7f573ffb49b237a55a9ec2f4c42e199e4327bd9",
+    "tracked": true,
+    "checked_tasks": 40,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-underlying-stats-power-rankings-roadmap.md",
+    "bytes": 8381,
+    "sha256": "7ef53718fe6230a96bcbf55a6698f819887c87e77c75358c295f94db79fe99a3",
+    "tracked": true,
+    "checked_tasks": 31,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/variance/v1/prd-skater-variance-leaderboard.md",
+    "bytes": 15241,
+    "sha256": "00d0a3209886e0f21f69d2b3c8c3fe682c1898b3ce1eed20cb3db0243c7fe545",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/variance/v1/prd/prd-variance-section.md",
+    "bytes": 19052,
+    "sha256": "2426659f260d0ffae4586c22823a382b656507fae0baa7cf0bc87f26e8bef671",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/variance/v1/tasks-prd-skater-variance-leaderboard.md",
+    "bytes": 13929,
+    "sha256": "9b1aa5b9414faa1af30fe01f0bd2658424fcb4a23a410ead29ea560fb45e18d5",
+    "tracked": true,
+    "checked_tasks": 94,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/variance/v1/tasks-prd-variance-section.md",
+    "bytes": 9901,
+    "sha256": "32f80a51a6af09c5cd5ca199d31d617c00b292704aec7542e06c7aac8f212b5f",
+    "tracked": true,
+    "checked_tasks": 54,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/variance/v2/goalie-page-relevant-tables.md",
+    "bytes": 60772,
+    "sha256": "2cc7d95bebe897c7e94b90114f343f21a6d14ded2680416efb30611264c1ff78",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/variance/v2/prd-variance-goalies-skaters-second-pass.md",
+    "bytes": 12648,
+    "sha256": "57e7e88de4431e90d2cb482e8f3e69c54a8fb7522a697eb62ff2c8c173d90d75",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/variance/v2/tasks-prd-variance-goalies-skaters-second-pass.md",
+    "bytes": 11034,
+    "sha256": "4cf41c5e990e57de6a31d51491bab082c111a6714902970a18640fe59699e9ea",
+    "tracked": true,
+    "checked_tasks": 67,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/variance/v2/variance-runbook.md",
+    "bytes": 11421,
+    "sha256": "57a8160ba9219b45754eeaa86876880e905ccf275a2ded8a569fecf100b0a545",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts-audit/00-shared-pipeline.md",
+    "bytes": 3023,
+    "sha256": "22e25ca340df9978167898507a9c96ab9c9cde30f2d68eae43746988c08c7b57",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts-audit/01-page-header.md",
+    "bytes": 1946,
+    "sha256": "0a4b5b931b413c88e2b649ef3d3b49ea974e9d7be64744b1f056cb555d7c75db",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts-audit/02-player-identity.md",
+    "bytes": 1834,
+    "sha256": "e5f7fce6a05998ced82046bf16e15157e65cf0f0815c3d1fa541df3510ed11b1",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts-audit/03-biographical-data.md",
+    "bytes": 2474,
+    "sha256": "21bb4513894e9145c52d6461bf6f7b5336e06a967514aaeacfdf353ad316535e",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts-audit/04-season-snapshot.md",
+    "bytes": 1748,
+    "sha256": "11b727d408d6210c63fb915c1e2a22bffaff1601835d68d5f41479337a3b32ce",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts-audit/05-per-game-pace.md",
+    "bytes": 2829,
+    "sha256": "4ea7e150c8d45e27028c99b5bc380e41744afcf1393a736cec6719eec94a3dbc",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts-audit/06-opponent-log.md",
+    "bytes": 2304,
+    "sha256": "9cc1c666a939361c688b23f45c0282ba289a7b0f44e78258be7a000e20f938de",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts-audit/07-player-ratings.md",
+    "bytes": 2669,
+    "sha256": "2c126f9a78b34972dad92b979f753cfd4102ca0f2de9a7e57377fdbe9f8794e2",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts-audit/08-chance-generation.md",
+    "bytes": 1985,
+    "sha256": "33192981724b1075b77c998c9d461e4ddcc61569f09770552309065a40fce4c8",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts-audit/09-chance-suppression.md",
+    "bytes": 1533,
+    "sha256": "e5b4a64e4d864ba1e6807cbc66a649fad4657de44212790cad44c8bdc48139f1",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts-audit/10-finishing.md",
+    "bytes": 1555,
+    "sha256": "e10569ed391bc7a0cc20caac09cac02b36a4d95174dcec27e2977b42ebe5de60",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts-audit/11-special-teams.md",
+    "bytes": 1689,
+    "sha256": "ffdce83f6a64092ed45ac1e1ea1420bd4ab36811d516e3dec33bd794f4aec8cd",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts-audit/12-comparison-table.md",
+    "bytes": 3579,
+    "sha256": "dd66cdae40f6c0826420fb7183b829797628ef1b9208af2329a7766cb554ce95",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts-audit/13-expanded-row-charts.md",
+    "bytes": 2478,
+    "sha256": "2e3fdb74dd3e975ad945f6087e96bb3cffd5ef202e6a3337e677090506d88169",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts-audit/14-point-consistency.md",
+    "bytes": 1783,
+    "sha256": "44e2cec8f7d6ec57b3f541da6cce92d285c0fdda77158bc31095fcc78d4f801d",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts-audit/15-percentile-radar.md",
+    "bytes": 2593,
+    "sha256": "1b542f4cef89c6160bd9c0e2869b4284240e39e6f0ddcdc27321020d18a6bfc5",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts-audit/16-time-on-ice.md",
+    "bytes": 2166,
+    "sha256": "6c2d97076657a43d394c9c322624b1b342fd9d45a40ab56014bc390cfb5ab341",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts-audit/17-points-per-game.md",
+    "bytes": 1983,
+    "sha256": "c92bc511021902e44b4492d6cc359a31d5a6e0f4e51fae28b2d7e8ded691022d",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts-audit/18-game-score.md",
+    "bytes": 2617,
+    "sha256": "26acf07c8b030cd60e04f0471274405d934c9534e2587892f5270b2556dbe5c9",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts-audit/19-rate-percentiles.md",
+    "bytes": 2470,
+    "sha256": "b8a655d0f554f091d80a904faa98ed8f371cd29fc1046f5196725d9e6033774e",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts-audit/CHATGPT-LAYOUT-PROMPT.md",
+    "bytes": 14101,
+    "sha256": "5c7f0bc407b43e0bf84dd1ba2610e0d3a69363f0aadf8a6cd36c7bccb8f64092",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts-audit/LIVE-EVIDENCE.md",
+    "bytes": 8990,
+    "sha256": "afa2e6433d3548ff643584237fbd3c1103d12ce78cdc66571d45c7c50708ba64",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts-audit/README.md",
+    "bytes": 8862,
+    "sha256": "c2d1a49a790726e5a91866cc0b6708eb851f9b538802c4da2214882e301bdc1e",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts/prd-wigo-charts-optimization.md",
+    "bytes": 19834,
+    "sha256": "579e7048a34f57a382cec376ecedf784e4af7096b2dc22c994535c968b6f8ad8",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-charts/tasks-prd-wigo-charts-optimization.md",
+    "bytes": 14264,
+    "sha256": "967554e7bc10f282e17d53c082a51bdeb7945e0a3ee48a351cf0dcaeaf013f09",
+    "tracked": true,
+    "checked_tasks": 40,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-single-viewport/implementation-brief.md",
+    "bytes": 26134,
+    "sha256": "71b4594126cd7d8869d18b5c086a3989f5e869aded3a8dbce530bd2c16e664ae",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-single-viewport/progress.md",
+    "bytes": 1863,
+    "sha256": "61b87fd1704c52addfd2d8b3b8f56b6037556830222da0b1a066682d1528f3b5",
+    "tracked": true,
+    "checked_tasks": 5,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/wigo-single-viewport/report.md",
+    "bytes": 9253,
+    "sha256": "b1b0fcf9316c8f03c851fb73782e53087d801fd297e8b0b0a6c59995be71ec7a",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/baseline/tasks-xg-baseline-follow-ups.md",
+    "bytes": 9181,
+    "sha256": "2fe14c3f73e3803f0572b5ca93535afe9b20e59fc3c5e948520a7e1566140a74",
+    "tracked": true,
+    "checked_tasks": 35,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/baseline/tasks-xg-baseline-options.md",
+    "bytes": 9206,
+    "sha256": "51bf1976284564da311e545fcc0bd638bfd4113d861cbf9403a898866ea6fe54",
+    "tracked": true,
+    "checked_tasks": 36,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/baseline/xg-training-dataset-contract.md",
+    "bytes": 12519,
+    "sha256": "246b3f88483b3a0f53c683f1d5de9d621c77e558c6ac46fb6873aa826a41be9d",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/baseline/xg-training-feature-contract.md",
+    "bytes": 9472,
+    "sha256": "f9fdc20a9c6235af375f18abe4578a0632763da7e4e544d5fbbd269e02d46075",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/baseline/xg-training-materialization-decision.md",
+    "bytes": 1893,
+    "sha256": "bac26ccfa6d87971eb0aa84a9a4046af2255c1954f8b9f392b56c88793810b30",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/docs/data-contract-boundaries.md",
+    "bytes": 9630,
+    "sha256": "a807eea2aa2c4f68068b8dd177a398ebc03cc2d8ca2a45174821cdc42dfbd08e",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/docs/definitions-and-parity.md",
+    "bytes": 15609,
+    "sha256": "d97c0eafccea8023f540ef4f247d49e3e55b714d997354df398ca573513a3c71",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/docs/event-dictionary.md",
+    "bytes": 13907,
+    "sha256": "851c83c7554699fe9d5dcffc33218631f284f7f78d16072787535a1fa5e165ac",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/docs/failure-handling-policy.md",
+    "bytes": 6413,
+    "sha256": "c9a0b9690968b31ec4cd786a4909bc7c317715ba848d35208855e6f661fa9fd3",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/docs/final-implementation-summary.md",
+    "bytes": 7971,
+    "sha256": "79379f0591862105b4ac6ef21684939afa6731c0829de7aa6a5d07530b26a817",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/nhl-api-foundation/corrective-migration-decision.md",
+    "bytes": 2612,
+    "sha256": "2ea5e31d113629343eea409d6bc1c4fa67ee03e0324ac642bba1013644ece6f4",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/nhl-api-foundation/feature-leakage-registry.md",
+    "bytes": 1485,
+    "sha256": "2afb047df7b73281fa2766c31444883e92754ac8fe597003c0d0c1b59b21d8fa",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/nhl-api-foundation/idempotent-backfill-behavior.md",
+    "bytes": 8042,
+    "sha256": "59bf33448bc1e1a2f684adf420de3e12cb26b3a7f96a74f8a6e097d84361bd67",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/nhl-api-foundation/legacy-ingest-conventions.md",
+    "bytes": 8221,
+    "sha256": "72d81a15e52564bc59809607ae0a4f11cb1b12544cd292354db4f46c57ea31ce",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/nhl-api-foundation/live-schema-drift-audit.md",
+    "bytes": 4436,
+    "sha256": "936b214cd56a96408b54b7dfb85d7d40834ce67c415c4740e89b8a5c51f27b4c",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/nhl-api-foundation/manual-audit-requirements.md",
+    "bytes": 4158,
+    "sha256": "7296e3c6b3bd2a150aa4ac060577bcf8655b078a00b316f5d8aabbe5265c94cb",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/nhl-api-foundation/metric-parity-map.md",
+    "bytes": 18209,
+    "sha256": "4d74d6f83a0f48877b4c14d92a738be4e1a686b0df7327146555fba18798942a",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/nhl-api-foundation/nhl-api-nst-migration-brief.md",
+    "bytes": 7827,
+    "sha256": "391d945036594216295a9ca29779ab5a2646f0206d5a01e99b7dd56b9a1b289e",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/nhl-api-foundation/pbp-plays-vs-nhl-api-events-audit.md",
+    "bytes": 5232,
+    "sha256": "d5e2d44e4b2aae56a21d0914d471e0dc81bc9eb116ebe2a26f06c115a91ea31a",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/nhl-api-foundation/post-drift-retry-verification.md",
+    "bytes": 2401,
+    "sha256": "7c86c9aaff0556ad607a649a88470d5ead81b46aa9108dec26ad11ffa31d1e0c",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/nhl-api-foundation/post-foundation-follow-ups.md",
+    "bytes": 4625,
+    "sha256": "2b03cc9e78ebd28cf1040e92016a8ad91b310d06f74757f3b1c251e7322c9da0",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/nhl-api-foundation/prd/prd-nhl-api-xg-model.md",
+    "bytes": 11307,
+    "sha256": "a589da8cfa8a325d023e28ef8869569eae7072d148bca54666d93ea3d5ce7618",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/nhl-api-foundation/schema-recommendation.md",
+    "bytes": 21668,
+    "sha256": "ed45be3900d0f3cde3b0301db107f3275dbe518021d7a29491f491d97d5e733d",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/nhl-api-foundation/shift-charts-vs-nhl-api-shifts-audit.md",
+    "bytes": 4453,
+    "sha256": "501d6f23cbf897c2a0b688f6d5f0595e9023535ee82bd87afc5dbb436f4a0f5f",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/nhl-api-foundation/strength-mapping.md",
+    "bytes": 4661,
+    "sha256": "9cfa8844f80ec187acd017c954be3d6ad786395f87f3d21b30c53875a6257731",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/nhl-api-foundation/upstream-ambiguities.md",
+    "bytes": 9854,
+    "sha256": "ff00c6f321dcd5e88f4643e21c5617be5f6757559b04c9876ae765d3bacc3713",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/nhl-api-foundation/validation-checklist.md",
+    "bytes": 10869,
+    "sha256": "0e169e24514d24b958dcba199cc785d9bad6d6e1e477f2440e52ef10fa1fa15b",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/nst-migration/nst-api-migration-runbook.md",
+    "bytes": 7363,
+    "sha256": "ee4c3b43c1c0d89d05c50183fc386bb49835d107aabdb87212e2f1f3dfb55b68",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/nst-migration/nst-config-contract.md",
+    "bytes": 5811,
+    "sha256": "5b3b239f93acc04f99f48ba93dc06e6ef32f95e831568592ddd4f26e7ab351b2",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/nst-migration/nst-direct-caller-inventory.md",
+    "bytes": 20678,
+    "sha256": "34d0878976b98fd0cec52b5bf6d23dc034df04a905e71049cdb36cadaaf24ead",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/nst-migration/nst-route-ownership-decisions.md",
+    "bytes": 2555,
+    "sha256": "781d52c1304097047d9f9c39524bdfd80fd63350325c55c34e522ad1b46ed257",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/nst-migration/prd/prd-nst-api-audit-and-migration.md",
+    "bytes": 16998,
+    "sha256": "0d49dc767f14876bda2025759e2a2c3cfc19166da9fb326d4a0480bd7c1cdeea",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/release/prd/prd-xg-release-validation-and-exception-resolution.md",
+    "bytes": 8335,
+    "sha256": "97212ca417dc8a15b927c928a2c1f17c36692f2b4739ade3b07885f05699c9ce",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/release/tasks-xg-release-exception-resolution.md",
+    "bytes": 6245,
+    "sha256": "fa34b4fb94b490d42df9108f6c326c26954f44117b0a0188238827979e18b449",
+    "tracked": true,
+    "checked_tasks": 16,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/release/tasks-xg-release-remediation.md",
+    "bytes": 10430,
+    "sha256": "086f8b1ab03e7dececdbf393de1fb363cc9c40beabd1e72eed809dcc87e38966",
+    "tracked": true,
+    "checked_tasks": 32,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/tasks-nhl-api-xg-model.md",
+    "bytes": 26816,
+    "sha256": "3936109ea2e3cff88eea5f4ba6463f539d4d2d0b34a02b93f787070fdb31b9d0",
+    "tracked": true,
+    "checked_tasks": 75,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/trending-model/prd/prd-xg-trending-model-completion.md",
+    "bytes": 13407,
+    "sha256": "f90e137e2387536747a6263369983c5944485efa477b6e6a90127c6ad5a65a47",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/TASKS/xg-model/trending-model/tasks-xg-trending-model-completion.md",
+    "bytes": 85340,
+    "sha256": "8dc0c530a3e80b100c2777183dc264c7e2e09f2a21218bfeb812cd5f1dbc34b3",
+    "tracked": true,
+    "checked_tasks": 171,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/draft-dashboard-youtube-outline.md",
+    "bytes": 43015,
+    "sha256": "13702fe82ea63f164d507f484fd8099ce0a4a7e4918214f08b02219f589dab04",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/draft-pro/INITIAL-RELEASE-PACKET.md",
+    "bytes": 12205,
+    "sha256": "25c871b87b99be58bd5abd972aac07db72b508eaaf369d0ac1364a1c95d4f7c6",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/draft-pro/LAUNCH-COPY.md",
+    "bytes": 6207,
+    "sha256": "e2274093bbc1f26ecfb7789fa4f1f4b2fa6b712811cfee92acc9400b822aa685",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/draft-pro/LEDGER.md",
+    "bytes": 126358,
+    "sha256": "6d8f407817f03a0b24bf902e7878764eb975a2edee34b7fd8748add7ff2a1c03",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/draft-pro/OPERATOR-CHECKLIST.md",
+    "bytes": 37679,
+    "sha256": "ba599b066037aca406f8205468c20847beae26e802b313e3d3209093dbce7c9f",
+    "tracked": true,
+    "checked_tasks": 51,
+    "unchecked_tasks": 11
+  },
+  {
+    "path": "tasks/draft-pro/PLAN.md",
+    "bytes": 9298,
+    "sha256": "12e439ba4cfb708ba249396ee00ba3c08f305d9a2d156c1e313e2ed2fca7683f",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/draft-pro/STRIPE.md",
+    "bytes": 1930,
+    "sha256": "beb5c22bc29eebc15569b9b4c2d8bacb7a735255247a63eb4f1325fae009f9a6",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/draft-pro/W09-HANDOFF.md",
+    "bytes": 5013,
+    "sha256": "c8016a86377106cebee8a677d3c663cdbc93ea5cefeca2db5a808d251a50d99e",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/draft-pro/W10-HANDOFF.md",
+    "bytes": 2977,
+    "sha256": "20b6e5514897caf46ca657d23b30b464e38e5b12508d920b39987b4e5783f7ee",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/draft-pro/YAHOO-WORK-ORDER.md",
+    "bytes": 9998,
+    "sha256": "d3b7111d8469cb464bd1676b77ce48789bfb953df29a6fe2b3258b9c717ed924",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/draft-pro/verification/README.md",
+    "bytes": 11325,
+    "sha256": "57cc655d03b9bf39870691c0c15e2d7626b53697d5c5eafa8c0d93445487001b",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/draft-pro/verification/browser.md",
+    "bytes": 1768,
+    "sha256": "ad58d0291eb23d075834d7bfde015e58c0cfde05317a2e9ea900db81a7508912",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/draft-pro/verification/stripe-provider-20260909.md",
+    "bytes": 6108,
+    "sha256": "bc5af769df27255fa6d0ead317099f4f39d00495b037a7b5e9fcf301dc9f0165",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/game-grid-task10-receipt-2026-10-10.md",
+    "bytes": 24705,
+    "sha256": "8628b0605194c774d10d00a6e8717303ed9908fe9bfe4eb72de7942198450096",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/prd-game-grid-refactor.md",
+    "bytes": 872,
+    "sha256": "cc1eea0a07a20df3dc658cae1054e6d0909a8b475c03985a3d9e9547e0e2e2db",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/prd-in-season-trust-clarity-decision-workflow.md",
+    "bytes": 32481,
+    "sha256": "321ef612fffa770f5cc6edb784e8986519b59050d475e280e9229f99dd69eca9",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/prd-positional-weighting.md",
+    "bytes": 3426,
+    "sha256": "284ef2eb44003a5e746549a83e1c29f2c761526c6124c18bda7b79d08bae1398",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/prd-roster-schedule-optimizer.md",
+    "bytes": 36541,
+    "sha256": "3767a836dbcef9aad6dbf56a149b7ae8b908aea2e1202fc974bf5ba57419f19a",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/rso-goal-handoff.md",
+    "bytes": 108403,
+    "sha256": "78838e5377ba8523bf8651dd23034130790c0f433ca64b6941344bb270703971",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/seo-audit-2026-09-25.md",
+    "bytes": 8822,
+    "sha256": "6022c3eddbea50d452cf9f4aab6057d92b65ea0cfa887575c240bf6c6bc8f05c",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/tasks-README.md",
+    "bytes": 42455,
+    "sha256": "28fc17b6954a2d78660555cabd8124c30816bf761dc444f7d143706b711f2497",
+    "tracked": true,
+    "checked_tasks": 23,
+    "unchecked_tasks": 90
+  },
+  {
+    "path": "tasks/tasks-game-grid-execution-2026-10-07.md",
+    "bytes": 22384,
+    "sha256": "c3f27ecb846247764d4d4d03c0f675222c14e17054c3756d935d47131a295327",
+    "tracked": true,
+    "checked_tasks": 58,
+    "unchecked_tasks": 5
+  },
+  {
+    "path": "tasks/tasks-goal-objective.md",
+    "bytes": 2099,
+    "sha256": "f5491559b59256573011fb5b06a6b49394c9641335fcd8b9382ac8a5fba6bad8",
+    "tracked": true,
+    "checked_tasks": 12,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/tasks-prd-game-grid-evolution-2026-10-07.md",
+    "bytes": 67599,
+    "sha256": "86919f878d30829bd89389f2dab40081427a560cab22806a7d3d3444a350040a",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 21
+  },
+  {
+    "path": "tasks/tasks-prd-game-grid-refactor.md",
+    "bytes": 5822,
+    "sha256": "81c4b152d026e6668083127d85ca13a4bbfc123c1678534da67dab8ce1fe8b81",
+    "tracked": true,
+    "checked_tasks": 19,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/tasks-prd-game-line-snapshots.md",
+    "bytes": 1625,
+    "sha256": "6426340d4aab2a77b55ded9cad7edebc87bcf67ec5b186db88d54cf76431b68c",
+    "tracked": true,
+    "checked_tasks": 5,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
+    "bytes": 71778,
+    "sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
+    "tracked": true,
+    "checked_tasks": 10,
+    "unchecked_tasks": 17
+  },
+  {
+    "path": "tasks/tasks-prd-positional-weighting.md",
+    "bytes": 6770,
+    "sha256": "2b78aa35e4112c6edfdd80e6069a8324f3e971639456d9050653d9ca8e9c762e",
+    "tracked": true,
+    "checked_tasks": 19,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "tasks/tasks-prd-roster-schedule-optimizer.md",
+    "bytes": 262889,
+    "sha256": "ced28e5f557e3d17cd3a0adb56164cac0f0f79ad6494d72bf3fea0ad942b49f8",
+    "tracked": true,
+    "checked_tasks": 38,
+    "unchecked_tasks": 41
+  },
+  {
+    "path": "tasks/tasks-prd-rso-consolidated-2026-10-09.md",
+    "bytes": 82250,
+    "sha256": "4158fd9ccb740621305576607406d66cb860ee2b70b38aa15ec6ccd15d1ff2f8",
+    "tracked": true,
+    "checked_tasks": 40,
+    "unchecked_tasks": 52
+  },
+  {
+    "path": "tasks/tasks-prd-rso.md",
+    "bytes": 22106,
+    "sha256": "7191ef3a8867e9049ea53c4b246baf85e429716d633d9ddfcf8ef0f15f86aacc",
+    "tracked": true,
+    "checked_tasks": 23,
+    "unchecked_tasks": 18
+  },
+  {
+    "path": "tasks/tasks-rso-compact-layout-2026-10-09.md",
+    "bytes": 24845,
+    "sha256": "414cecb45a5edf97cc4bed34f53d68d57c016f093972d15a7549c43372b03e6c",
+    "tracked": true,
+    "checked_tasks": 30,
+    "unchecked_tasks": 2
+  },
+  {
+    "path": "tasks/tasks-underlying-stats-lineupexperts-alignment.md",
+    "bytes": 12463,
+    "sha256": "84b9153a0639e471052b4ceb0fe7cfde391af3d0de685dc4d709bda418041a3f",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 31
+  },
+  {
+    "path": "web/README.md",
+    "bytes": 34256,
+    "sha256": "a7b0d71f5b85488a48d5896a82e278a48c7c0f8f098fe0b4877a7751a660816f",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/404.md",
+    "bytes": 2721,
+    "sha256": "9b765a80f61819f756cc0979f20f715ff62c898af68c9545e06c2c373fbf8f16",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/FORGE.md",
+    "bytes": 2731,
+    "sha256": "009c2364b2ba6f12daa6a5bf857e1e5e31a9cf340e687e7764eb0d7f295024fc",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/README.md",
+    "bytes": 12917,
+    "sha256": "6db1c935acab1852cdd52f93bcdfe35217721fcd068833f24f3bca500ce61e59",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/account.md",
+    "bytes": 2753,
+    "sha256": "ce7485a60733c43a517a2590a7649705c11da2f36468c07eeae42c8c01c7c638",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/auth--callback.md",
+    "bytes": 2772,
+    "sha256": "51c45143e132dee087f77487ba4a086b877633e52e8b15dbd59c9581855fe519",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/auth--reset-password.md",
+    "bytes": 2802,
+    "sha256": "a187fcd3a2826723fb7fcfae3861927335c42e43326bf14c2c8146a638fbd7a8",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/auth.md",
+    "bytes": 2738,
+    "sha256": "0763422134fe8857a823f2540becdad8130f550cf32a8c816af7e7273d25c69e",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/blog--slug.md",
+    "bytes": 2760,
+    "sha256": "f1a2f1a112b30253abc4859186db24eca6440869e49b7ef355dc3365f26adf53",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/blog--substack--slug.md",
+    "bytes": 2806,
+    "sha256": "270cf4a9e3db0b49c7c05febf4316f216dad94fb82f755d87217b6c3974bb59d",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/blog.md",
+    "bytes": 2685,
+    "sha256": "f3aae051a44dd61142ee413e24181b75c4c9f7079f7e6e83a597b15da277f84f",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/buyLowSellHigh.md",
+    "bytes": 2774,
+    "sha256": "eff27794dc57652da9604d32c74ffed5bb42eeba0b364d8e4fa6a1262ce0fc48",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/charts.md",
+    "bytes": 2736,
+    "sha256": "112714664a0008ff056b4700f05adb20f182f27e0ccee499d6945a2e0706719b",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/community-draft-rankings.md",
+    "bytes": 2826,
+    "sha256": "174bb97da4e02964728150e6cf96d231b7497c8c89468a935f7b7ed8f18b9d83",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/cssTestingGrounds.md",
+    "bytes": 2791,
+    "sha256": "23ecfc34a83c6ac384ff95e5c06e4d1b332827b4e1f244db61118e20cb118cb2",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/draft-dashboard.md",
+    "bytes": 2728,
+    "sha256": "85a3869270d9d8a6da794fbbd29866e2209e13536d45d307d8effbe922050ab5",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/draft-pro--policies.md",
+    "bytes": 2797,
+    "sha256": "8cf7246e04d0c9c35f9fb7633e5662a96609ac0c81f4248a59dddc8522123d05",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/draft-rankings.md",
+    "bytes": 2788,
+    "sha256": "0f4474235fc95cb224b412469142e062df432a7e2123025f4eefc1ec6556ad39",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/drm.md",
+    "bytes": 2668,
+    "sha256": "655efa992d3f56c5cefa0ffbd806bd8def0c4b9a7e0ed96e1536f503b75b560d",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/fantasy-projections.md",
+    "bytes": 2801,
+    "sha256": "1bd1370602033ad73ea900885a8ab2cf7cf817eedee76c472b1ad1bac64724de",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/forge--command-center.md",
+    "bytes": 2807,
+    "sha256": "38b2e7092bdb1670cd166bcf5052c6e71484b06f0ad9fe41397c8dbbc5a36d3f",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/forge--dashboard.md",
+    "bytes": 2782,
+    "sha256": "ac6162d4e188328c9bac9c66bd0224c11d30f8af44728847c7888b4c689938f4",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/forge--player--playerId.md",
+    "bytes": 2821,
+    "sha256": "7ac9539ca069cff01f902ee75e731b21683808dce392c764aca40f5e2ec99083",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/forge--team--teamId.md",
+    "bytes": 2801,
+    "sha256": "65e18fa0c58824c735d8945f7f5adbaf1b5fb9319974fcd4aa4d44fc375e0436",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/game--gameId.md",
+    "bytes": 2770,
+    "sha256": "37d0231d022c72646d34995eb874d8996959fb696fb3882e69d52f0bf22f0c99",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/game-grid--dateRange.md",
+    "bytes": 2802,
+    "sha256": "22d65d9e4f6ec4c857d15be72e1e03a868eed3a6847fa101f77af030d433fa29",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/game-grid--mode.md",
+    "bytes": 4261,
+    "sha256": "eaa04c598db3d6ddd6044c4b19e4e8c6600f3f298672f9843be255695a722be5",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/game-grid.md",
+    "bytes": 2844,
+    "sha256": "38a2b94196cea13129a22fcb276c795f0b538bb065fb777ba96706070e46e9f9",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/goalies.md",
+    "bytes": 2739,
+    "sha256": "63b180dd4eca820dafe3807464bc757fd3f0e4375b3ae40f5d0646280b3ccb2c",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/home.md",
+    "bytes": 8387,
+    "sha256": "3cfd2f7ad522d86212471b738af117d055ec2547dd362c065bd643fb288d9fbf",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/lines--abbreviation.md",
+    "bytes": 2805,
+    "sha256": "a3f87849d80fc83f95bd8651d80b6970b02e46e242df88003ad9e7171a9fe70f",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/lines--line-combo--gameId.md",
+    "bytes": 2831,
+    "sha256": "eb396fc9b630396f7159dc7b5df46bc537180199b71133b9df24917d6824715f",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/lines.md",
+    "bytes": 2690,
+    "sha256": "8ff86905847f70b6408c39be2cd4a258284bc66d55af296660769cb0037ed738",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/news.md",
+    "bytes": 2738,
+    "sha256": "291740ad412ed67f72bba22f0648054721217a0aed003b5d69bee06bc41679d3",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/nhl-predictions.md",
+    "bytes": 2728,
+    "sha256": "f60ec31a97d29906399bd05426f4ac49d5e7214c56572aabee5aa24177fd86e6",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/player-forecasts.md",
+    "bytes": 2786,
+    "sha256": "5d42a53206e1c17d6ed1be339eeec8d174224b08bee2bb1b21b6402cbe5d08fb",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/podfeed.md",
+    "bytes": 2688,
+    "sha256": "82b56ab81987087ca29b4853b87ccc1e463848f519b50bf181dd676bfa397564",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/projections.md",
+    "bytes": 2773,
+    "sha256": "9b2b637a8b88ae4c993cbdf30c2129315546233f66eb0d0b927b4f5f2a0e8248",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/rankings.md",
+    "bytes": 2746,
+    "sha256": "91981815177e4a35de52611e162fb31737deaa0aa75916f989ce29565dd4c925",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/roster-schedule-optimizer.md",
+    "bytes": 2778,
+    "sha256": "e2c05f271d434f1f1b8f54c4f4816d7277f7c8a3e977b4d886cb71f6e7efc280",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/shared-navigation.md",
+    "bytes": 5846,
+    "sha256": "b2074b9c09e39b8df52afff7e25affecf7bda82818cc25b4a3a1188426457336",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/shiftChart.md",
+    "bytes": 2701,
+    "sha256": "2d12382ccdc2af94c1f00a85e202243d0224e56712e1d1977cd9b8d5e6fc2e78",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/skoCharts.md",
+    "bytes": 2751,
+    "sha256": "5f56b9ff29d428123cb4ff0bcc4af04546084f32ec360faa1380c04b12f65805",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/splits.md",
+    "bytes": 2695,
+    "sha256": "04fe6bfa72b7555cc074146c504a86aab526397019513f8059d34781c6860f54",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/start-chart.md",
+    "bytes": 2708,
+    "sha256": "bb70a713af6a1d8d56f66a1301ddc92ba1050e54834b283f8ab8e4cb60735677",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/stats--game--gameId.md",
+    "bytes": 2801,
+    "sha256": "456f9ffd7fc30389a64d3e78aae7c20c61f66e0bf0800f68dac7a922bc320e5e",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/stats--player--playerId.md",
+    "bytes": 2821,
+    "sha256": "3a9886e456b1a1b851f1f2755460e103eed6872c51601dbd834c64ece107d392",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/stats--team--teamAbbreviation.md",
+    "bytes": 2851,
+    "sha256": "3b7e5f21896411a9c785ec17e222b2971c5c8709bcfbf98fc856f65e7c6e7da0",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/stats.md",
+    "bytes": 2690,
+    "sha256": "d44302478e695bf120dc7eade1b3f249f9696854271c5c4adf33f60a189b30d6",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/statsPlaceholder.md",
+    "bytes": 2786,
+    "sha256": "e9a79e38a2662843c4f0a4601ac60c787af5e07089fdec57c3ab15bd27e1b3f1",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/teamStats--teamAbbreviation.md",
+    "bytes": 2845,
+    "sha256": "c8a913c26f6733247b985741db1ead02ab9f6507fccd91f130ed21283c590361",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/teamStats.md",
+    "bytes": 2751,
+    "sha256": "43e53ee48e82d644100b2bec909cbf92e2f369fb6470cc64c51173b39844ca32",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/trends--placeholder.md",
+    "bytes": 2797,
+    "sha256": "9056d780654c346065730cc2a799933abc7b088bd72fff93065447fe8f9728c3",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/trends--player--playerId.md",
+    "bytes": 2826,
+    "sha256": "493ab82fae82a3b903ff190255bad7fe0f939169a0726cd926a1d7f7974ed206",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/trends.md",
+    "bytes": 2695,
+    "sha256": "8d468b0dc8a537ee64f3a4c2b21d98f683985957d0f432529b65747bdcb5bc55",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/trendsDebug.md",
+    "bytes": 2761,
+    "sha256": "87c420b9da3a9da9c9486be34f93f91fb7fa69e8d6d8acec1fa0183e1dd546fb",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/trendsSandbox.md",
+    "bytes": 2771,
+    "sha256": "0f98ee29c6d6f3f7489a512737d810ac2056657db5a8cb2b66e636fc1c7933ca",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/trendsTestingGrounds.md",
+    "bytes": 2806,
+    "sha256": "7f91ae7d5dd3a595f921357845959ecfcbd4db86177855a748c5cf1c934839e0",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/trueGoalieValue.md",
+    "bytes": 2781,
+    "sha256": "c43be0349267e2ef3d1bdf74a94c6b24f20d64f6c084c5c4816aa1a64e5081ef",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/twitterEmbeds.md",
+    "bytes": 2783,
+    "sha256": "df610932d3fbed0f9e52f745d010f8c1e6dcf7e8e4e51919a7dafa7be21fe458",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/underlying-stats--goalieStats--playerId.md",
+    "bytes": 2901,
+    "sha256": "61b251544329a3e8b5336d102e5d693ec194ce84fe4815414c2acb89fd8eccfb",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/underlying-stats--goalieStats.md",
+    "bytes": 2859,
+    "sha256": "6b01f96198f546a0f86927c68c35aa873aed73702b1a1d1e542e8c67f10771d6",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/underlying-stats--playerStats--playerId.md",
+    "bytes": 2901,
+    "sha256": "511ebc2ce81e2ff66ca58dd1170bf3d0ad339fd781ed91f5f966df5e1172117c",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/underlying-stats--playerStats.md",
+    "bytes": 2859,
+    "sha256": "2f861994db146d5f1c6bc7b0a9d29ac85324b4af18495c0d43d7549510beb4a0",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/underlying-stats--teamStats.md",
+    "bytes": 2849,
+    "sha256": "46a4b0ec56c745e1d812adf9bfd6b4d909e232fed2fd9a34bba251a70c1ff319",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/underlying-stats--xg.md",
+    "bytes": 2814,
+    "sha256": "8fbf2ae9f640be89e3df769c3ca44ab182b2be3b4263384119b79def19b1e61b",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/underlying-stats.md",
+    "bytes": 2745,
+    "sha256": "73cb72ddfe3f385432d514ba019660b81ed00cc081f858defe1425c666fab543",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/variance--goalies.md",
+    "bytes": 2732,
+    "sha256": "0b48fe794d2a1c13276eed841d4990bd5e80552bb395fe7ffb855c59a8fb7a95",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/variance--skaters.md",
+    "bytes": 2734,
+    "sha256": "58dcea01bf83ad1e653aacf50475c24ec618a9820618309da22b5d9665d3e252",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/variance.md",
+    "bytes": 2758,
+    "sha256": "385d25797ffd139686bc828358cebc0a63ad6edf1bb33ac2571899c5c03d3191",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/prep-chef/wigoCharts.md",
+    "bytes": 2703,
+    "sha256": "858a3a21b1a977f5b1e3ff9ce833470737d74c31e6b9e0b4b25f072fe22dd902",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/rules/generate-tasks.mdc",
+    "bytes": 468,
+    "sha256": "45e5a61b4f5610f3bceb9ca611befba7d59e0eea360311a0ea8e740edb3e7945",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/rules/super-goal.md",
+    "bytes": 49528,
+    "sha256": "7db4a6d3f51266f24377c449a147d9b7fe569a9a7b3d9c271065656931c8da8d",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  },
+  {
+    "path": "web/scripts/qualify-native-players-offline.md",
+    "bytes": 12375,
+    "sha256": "134b689d97f3a87b005a7c7f300931d28bd4d0214aa7a181bbdf9b7d68eee5de",
+    "tracked": true,
+    "checked_tasks": 0,
+    "unchecked_tasks": 0
+  }
+]

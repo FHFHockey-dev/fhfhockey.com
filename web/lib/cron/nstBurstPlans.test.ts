@@ -5,7 +5,8 @@ import {
   GOALIE_URLS_PER_DATE,
   NST_GOALIES_REQUEST_INTERVAL_MS,
   NST_SAFE_INTERVAL_MS,
-  resolveGoalieNstRequestPlan
+  resolveGoalieNstRequestPlan,
+  resolveNstGamelogRequestPlan
 } from "./nstBurstPlans";
 import {
   NST_TEAM_DAILY_BURST_INTERVAL_MS,
@@ -19,6 +20,11 @@ import {
 } from "./nstBurstPlans";
 
 describe("NST route burst plans", () => {
+  it("allows two actual gamelog days with 40 URLs, but paces larger day apertures even with fewer URLs", () => {
+    expect(resolveNstGamelogRequestPlan({ queuedDates: 2, requestCount: 40 }).requestIntervalMs).toBe(0);
+    expect(resolveNstGamelogRequestPlan({ queuedDates: 3, requestCount: 3 }).requestIntervalMs).toBe(21_000);
+    expect(resolveNstGamelogRequestPlan({ queuedDates: 2, requestCount: 41 }).burstAllowed).toBe(false);
+  });
   it("allows update-nst-goalies to burst when two or fewer dates are queued", () => {
     const plan = resolveGoalieNstRequestPlan({
       queuedDates: 2,

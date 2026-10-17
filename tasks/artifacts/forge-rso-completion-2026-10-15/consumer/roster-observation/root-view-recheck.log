@@ -1,0 +1,12 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:48056) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/player-forecasts/gameExpectations.test.ts (20 tests) 25ms
+
+ Test Files  1 passed (1)
+      Tests  20 passed (20)
+   Start at  00:17:55
+   Duration  742ms (transform 205ms, setup 3ms, collect 289ms, tests 25ms, environment 245ms, prepare 36ms)
+

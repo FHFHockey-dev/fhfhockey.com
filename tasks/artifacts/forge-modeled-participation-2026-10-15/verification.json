@@ -1,0 +1,41 @@
+{
+  "originalCandidate": {
+    "focusedTests": "211passed/6files, synthetic engineering only",
+    "scopedEslint": "15paths exit0"
+  },
+  "clockCorrection": {
+    "focusedTests": "223passed/4files (27builder,13store,98resolver,85composition)",
+    "scopedEslint": "5changedpaths exit0",
+    "rejectedCandidatePreserved": "rejected-v1/"
+  },
+  "consumerIntegration": {
+    "focusedTests": "251passed/5files before clock corrections; shared composition/resolver rerun after corrections in223check",
+    "rsoOwner": "73library/schema+2componenttests; reviewer accepted8transportpaths",
+    "startChartOwner": "13focusedpage+4affectedAPItests;3paths lint0"
+  },
+  "checksNotRun": [
+    "genuine producer/input/model run",
+    "live metadata/source read",
+    "database/cache write",
+    "browser",
+    "build",
+    "deployment"
+  ],
+  "fullTypeScript": {
+    "exitCode": 0,
+    "logBytes": 0,
+    "durationSeconds": 51.546959916999185,
+    "sourceInventory": 2745,
+    "sourceDrift": [],
+    "cohortFiles": 27,
+    "receipt": "typescript-receipt.json"
+  },
+  "patchReverseCheck": "git apply --reverse --check change.patch exit0",
+  "candidateFiles": 15,
+  "independentReview": {
+    "status": "ACCEPT exact15files after twoP2 clock corrections",
+    "report": "independent-review-v2-2026-10-15.md",
+    "originalRejectionPreserved": "rejected-v1/independent-review.md"
+  },
+  "finalCohortPins": "27currentfiles reverified aftercompiler completion; unchanged"
+}

@@ -1,0 +1,60 @@
+{
+  "note": "Read-only dependencies are not owned or held by IFTTT. Before/after hashes bound tested compatibility; copies preserve exact reviewed input. Coordinate if a hash changes.",
+  "files": [
+    {
+      "path": "web/lib/player-forecasts/sourceObservations.ts",
+      "snapshotPath": "tasks/ifttt-integration-2026-10-16/consumer-binding-increment/dependency-snapshot/web/lib/player-forecasts/sourceObservations.ts",
+      "sha256": "de7aaaeeadae51bbe9d29b1fef900682070a0a3775285be010cd4ef8edd7490b"
+    },
+    {
+      "path": "web/lib/player-forecasts/scopeReads.ts",
+      "snapshotPath": "tasks/ifttt-integration-2026-10-16/consumer-binding-increment/dependency-snapshot/web/lib/player-forecasts/scopeReads.ts",
+      "sha256": "804d79e6e67091dd79d485db4835fb2b18f27accf59968ef7c4cad3ed034cdfd"
+    },
+    {
+      "path": "web/lib/player-forecasts/schedule.ts",
+      "snapshotPath": "tasks/ifttt-integration-2026-10-16/consumer-binding-increment/dependency-snapshot/web/lib/player-forecasts/schedule.ts",
+      "sha256": "65bce2663415d34a39e74d18c6250c33ad5ee8658118c0e68049935d90bf8049"
+    },
+    {
+      "path": "web/lib/player-forecasts/contracts.ts",
+      "snapshotPath": "tasks/ifttt-integration-2026-10-16/consumer-binding-increment/dependency-snapshot/web/lib/player-forecasts/contracts.ts",
+      "sha256": "9c85d1855d04b4f69d9d71e3790a5762e255c06a5538d690b2117de50c174347"
+    },
+    {
+      "path": "web/lib/projections/starterBoardFlags.ts",
+      "snapshotPath": "tasks/ifttt-integration-2026-10-16/consumer-binding-increment/dependency-snapshot/web/lib/projections/starterBoardFlags.ts",
+      "sha256": "f6f0bea6cedda71bb43f41f7aa0235232178524b9bf9271c0a1b3567ae251e2d"
+    },
+    {
+      "path": "web/lib/rosterScheduleData/normalize.ts",
+      "snapshotPath": "tasks/ifttt-integration-2026-10-16/consumer-binding-increment/dependency-snapshot/web/lib/rosterScheduleData/normalize.ts",
+      "sha256": "bf6a30c1ea38903f11b66643721915543af73f61d28a8b6e3b48e8869489c4a6"
+    },
+    {
+      "path": "web/lib/projections/issuedContext.ts",
+      "snapshotPath": "tasks/ifttt-integration-2026-10-16/consumer-binding-increment/dependency-snapshot/web/lib/projections/issuedContext.ts",
+      "sha256": "8d2aeb9d1c01f9513ee18a6301ef17dbfa49ea2100c321939de7d35f9ebabb9d"
+    },
+    {
+      "path": "web/lib/player-forecasts/contributions.ts",
+      "snapshotPath": "tasks/ifttt-integration-2026-10-16/consumer-binding-increment/dependency-snapshot/web/lib/player-forecasts/contributions.ts",
+      "sha256": "282c8b1e9c7362190c39a48b031e392afb6c2abaa45190d8f83d95d6319f9df7"
+    },
+    {
+      "path": "supabase/migrations/20260802163747_add_player_forecast_foundation.sql",
+      "snapshotPath": "tasks/ifttt-integration-2026-10-16/consumer-binding-increment/dependency-snapshot/supabase/migrations/20260802163747_add_player_forecast_foundation.sql",
+      "sha256": "d56beda964e2806cc5d547775ebf893dd54852676b74fd7721d78f036e97ec29"
+    },
+    {
+      "path": "supabase/migrations/20260916044919_starter_board_atomic_lineup_capture.sql",
+      "snapshotPath": "tasks/ifttt-integration-2026-10-16/consumer-binding-increment/dependency-snapshot/supabase/migrations/20260916044919_starter_board_atomic_lineup_capture.sql",
+      "sha256": "5b29e8c4337d0e6f0b2d34c421e0f26bbe00327713d9800dcf7cecfb3f34c93a"
+    },
+    {
+      "path": "supabase/migrations/20260916014510_starter_board_news_queue.sql",
+      "snapshotPath": "tasks/ifttt-integration-2026-10-16/consumer-binding-increment/dependency-snapshot/supabase/migrations/20260916014510_starter_board_news_queue.sql",
+      "sha256": "9f808d710c45fd7b82e7b452609f246332bcad762d6cd843236229c0b11c1203"
+    }
+  ]
+}

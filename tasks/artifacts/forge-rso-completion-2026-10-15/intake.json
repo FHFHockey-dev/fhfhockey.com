@@ -1,0 +1,22 @@
+{
+  "head": "a8f58de6178e282acd3a71851c66f4a56b119f14",
+  "branch": "octoberBranch",
+  "files": [
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+      "sha256": "6d9cccc048f75cd6254af106d720b3c6c2a84db51aa17593ad2e486f44e0a71b"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.ts",
+      "sha256": "0be1217d4a20ad3581a33b9455a65e6dce72e260d46a6a7ff8cd86aacecd8ee0"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planning.test.ts",
+      "sha256": "84ec06314da69a6657e06650c1903964714509110093fa30e1561500dac272e2"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts",
+      "sha256": "20990ac63fb31000545e591f9057b5b674a3c57dfc36d968e91f91c8080bc75d"
+    }
+  ]
+}

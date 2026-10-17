@@ -1,0 +1,44 @@
+{
+  "scope_red": {
+    "command": "npm test -- --run components/PlayerStats/PlayerRadarChart.test.tsx --silent -t 'selected season for both|missing comparison unavailable|strength-specific'",
+    "exit_code": 1,
+    "failed": 6,
+    "skipped": 48,
+    "output_was_truncated": true
+  },
+  "focused_tests": {
+    "chunk_id": "5f6e6a",
+    "wall_time_seconds": 1.218809858,
+    "exit_code": 0,
+    "original_token_count": 227,
+    "output": "\n> web@0.1.0 test\n> vitest --run components/PlayerStats/PlayerRadarChart.test.tsx __tests__/pages/stats/player/playerId.test.ts --silent\n\n\n RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web\n\n(node:11925) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.\n(Use `node --trace-deprecation ...` to show where the warning was created)\n(node:11924) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.\n(Use `node --trace-deprecation ...` to show where the warning was created)\n \u2713 __tests__/pages/stats/player/playerId.test.ts (5 tests) 53ms\n \u2713 components/PlayerStats/PlayerRadarChart.test.tsx (54 tests) 304ms\n\n Test Files  2 passed (2)\n      Tests  59 passed (59)\n   Start at  09:18:01\n   Duration  877ms (transform 238ms, setup 5ms, collect 528ms, tests 356ms, environment 323ms, prepare 63ms)\n\n"
+  },
+  "scoped_lint": {
+    "chunk_id": "bb2197",
+    "wall_time_seconds": 1.11506142,
+    "exit_code": 0,
+    "original_token_count": 109,
+    "output": "\n/Users/tim/Code/fhfhockey.com/web/pages/stats/player/[playerId].tsx\n  208:15  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element\n\n\u2716 1 problem (0 errors, 1 warning)\n\n"
+  },
+  "scoped_typecheck": {
+    "chunk_id": "8ac5c1",
+    "wall_time_seconds": 1.7546e-05,
+    "exit_code": 0,
+    "original_token_count": 0,
+    "output": ""
+  },
+  "full_tree_typecheck": "Reserved for release coordinator. Prior arithmetic-phase full-tree check hit default Node heap (exit 134); no new aggregate pass here.",
+  "browser_build_database_production": "Not run.",
+  "independent_review": {
+    "status": "ACCEPT \u2014 no findings",
+    "reviewer_thread": "01a135cf-dda8-7599-896b-ca48cede00da",
+    "receipt": "independent-review.md",
+    "source_and_patch_pins_match": true,
+    "source_changed_after_review": false,
+    "limitations": [
+      "source/cohort authenticity/completeness not verified",
+      "browser rendering not verified",
+      "full-tree TypeScript reserved for coordinator"
+    ]
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "scope": "Additive explicit modeled-skater participation metadata preservation and labeling only",
+  "files": {
+    "web/lib/projections/startChartContract.ts": "48d3e00e9aff10e381a61ea04dd69fe30af53eb4bb2be68025bdbffba1963033",
+    "web/pages/start-chart.tsx": "0022b0d6b5a575aac0386495d277ce14d553cc5bc490601e0b0167f22d6dfa15",
+    "web/__tests__/pages/start-chart.test.tsx": "6b22378f50910a44905c9008849f2d4ddbe5b479aa8bec7ce1fdaaaea8ea51b4"
+  },
+  "status": "frozen",
+  "behavior": [
+    "Recognize only version skater-participation-frequency-v1, event positive_minutes, probabilityStatus uncalibrated_model and calibration unavailable",
+    "Whitelist public input/evidence hashes, limitations and sampleSize; discard raw numerator, denominator, game/history IDs and unknown fields",
+    "Retain null-probability participation receipts and model classification; deny probability/sampleSize when totals permission is absent",
+    "Label explicit matched model estimate/calibration unavailable; absent or unrecognized metadata remains unclassified",
+    "Do not infer confirmed out from a modeled zero; permissions/ranking/forecast math otherwise unchanged"
+  ],
+  "checks": [
+    {
+      "command": "npm test -- --run __tests__/pages/start-chart.test.tsx -t 'public participation model|source assumptions|without inferring an exclusion'",
+      "exitCode": 0,
+      "passed": 13,
+      "skippedByFilter": 45
+    },
+    {
+      "command": "npm test -- --run __tests__/pages/api/v1/start-chart.test.ts -t 'shared daily|start-participation|probability-only'",
+      "exitCode": 0,
+      "passed": 4,
+      "skippedByFilter": 94
+    },
+    {
+      "command": "npx --no-install eslint lib/projections/startChartContract.ts pages/start-chart.tsx __tests__/pages/start-chart.test.tsx",
+      "exitCode": 0
+    },
+    {
+      "command": "git diff --check -- <three owned files>",
+      "exitCode": 0
+    }
+  ],
+  "typecheck": {
+    "owner": "FORGE sole coordinated checkpoint",
+    "receipt": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-modeled-participation-2026-10-15/typescript-receipt.json",
+    "exitCode": 0,
+    "logBytes": 0,
+    "completedAtUTC": "2026-10-15T20:01:03.873988+00:00",
+    "sourceDrift": [],
+    "allThreeFrozenPinsMatchCohortAndCurrentFiles": true,
+    "inventoryScope": "Web TS/JS source plus package/package-lock/tsconfig; excludes dependency trees and generated Next files. More inclusive than compiler root files, not a separately resolved dependency graph."
+  },
+  "boundaries": "Synthetic engineering regressions and coordinated compilation only; no genuine-input/model run, source/production writes, publication or deployment qualification",
+  "incrementPatchSha256": "de026d1b20477ca5f24922efd3b8876c46cac3bb13108eeddefb3979392a3ca4"
+}

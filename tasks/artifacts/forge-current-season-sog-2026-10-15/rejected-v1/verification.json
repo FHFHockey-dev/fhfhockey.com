@@ -1,0 +1,55 @@
+{
+  "scope": "offline new current-season conditional SOG initializer only",
+  "tests": {
+    "command": "npm test -- lib/player-forecasts/currentSeasonSogBaseline.test.ts scripts/capture-current-season-sog-baseline.test.ts",
+    "exit": 0,
+    "passed": 31,
+    "syntheticOnly": true
+  },
+  "sourceCollection": 0,
+  "genuineNumericReads": 0,
+  "producerExecutions": 0,
+  "databaseWrites": 0,
+  "publicActivation": false,
+  "fullTreeCompiler": "not run; pilot boundary held",
+  "independentReview": "pending",
+  "files": [
+    "web/lib/player-forecasts/currentSeasonSogBaseline.ts",
+    "web/lib/player-forecasts/currentSeasonSogBaseline.test.ts",
+    "web/scripts/capture-current-season-sog-baseline.ts",
+    "web/scripts/capture-current-season-sog-baseline.test.ts"
+  ],
+  "eslint": {
+    "files": 4,
+    "exit": 0,
+    "errors": 0,
+    "warnings": 0
+  },
+  "candidatePinsVerified": true,
+  "whitespace": [
+    {
+      "path": "web/lib/player-forecasts/currentSeasonSogBaseline.ts",
+      "passed": true,
+      "rawExit": 1,
+      "output": ""
+    },
+    {
+      "path": "web/lib/player-forecasts/currentSeasonSogBaseline.test.ts",
+      "passed": true,
+      "rawExit": 1,
+      "output": ""
+    },
+    {
+      "path": "web/scripts/capture-current-season-sog-baseline.ts",
+      "passed": true,
+      "rawExit": 1,
+      "output": ""
+    },
+    {
+      "path": "web/scripts/capture-current-season-sog-baseline.test.ts",
+      "passed": true,
+      "rawExit": 1,
+      "output": ""
+    }
+  ]
+}

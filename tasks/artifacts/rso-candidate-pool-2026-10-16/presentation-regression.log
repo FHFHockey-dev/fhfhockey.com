@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx -t shows652knownand197unknownof849 --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:31382) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx (19 tests | 18 skipped) 166ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 18 skipped (19)
+   Start at  20:33:50
+   Duration  1.19s (transform 291ms, setup 4ms, collect 511ms, tests 166ms, environment 345ms, prepare 39ms)
+

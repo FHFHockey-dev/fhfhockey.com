@@ -1,0 +1,18 @@
+{
+  "purpose": "Independent evidence readback; no new production or implementation authority",
+  "candidateManifestSha256": "2515e4b9e1391484656cf6a0a81d8f74c3ed6589d6309532df95edee2e8ebc41",
+  "files": {
+    "APPROVAL-PACKAGE.md": "cb16d7324f89843c392976a701ec06ab87199ed645712ca7b442f742680a8c85",
+    "NATIVE-WRAPPER-RESULT.json": "b384cb0162b870644a4e40cc1670dc5417b21d06672003b3f07dda5712a916dc",
+    "NATIVE-WRAPPER-PINS.json": "46e4679a7772c44f5b80d8c49fddb6d16eadf49c16bd219106654bd649636de2",
+    "native-wrapper-verification.cjs": "cd9c7e2b70dba4215f40e5e55766610bc4f340d6619ba4ac4622104c73702f43",
+    "native-wrapper-verification.tap": "57fd63b28bbb7bba1d14d85cf2e2d6e3828da6f30d41008a5f46fc68bd277e44",
+    "native-wrapper-initial-harness-error.tap": "5dcbfc5f917dbcd97e30b4b21e34d232b3ad4e6b0e345b75237b0ad11e849707",
+    "FROZEN-V2.json": "2515e4b9e1391484656cf6a0a81d8f74c3ed6589d6309532df95edee2e8ebc41",
+    "independent-review-v2.md": "e4ac84c60b6cb9bcb4f8b3c91d481658bab5a6d6280062bc797928b06e8cd895",
+    "POSTGRESQL-VERIFICATION.md": "c44692642145dad194240a9ba6488830f6c0f676d2efdecaed64052e70d14a2f",
+    "postgres-preparation/EXECUTION-RESULT.json": "b16175d9e4aac15a12c11d8ecba19b2c776378896ff55692b9e110d66a7c70ed",
+    "postgres-preparation/ESCALATED-EXECUTION-RESULT.json": "c9529906827670be492a83ab16e71b18225f82508c3c0448b1afa526c49ff01d",
+    "postgres-preparation/execution-pins.json": "64e789bbd994ee8fb3608317e6e632923b9a4dcd2ecd3c8993a49b3239a96ba6"
+  }
+}

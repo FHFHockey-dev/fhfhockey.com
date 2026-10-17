@@ -1,0 +1,15 @@
+{
+  "web/lib/player-forecasts/contributions.ts": "282c8b1e9c7362190c39a48b031e392afb6c2abaa45190d8f83d95d6319f9df7",
+  "web/lib/player-forecasts/planningContributions.ts": "93aea19b144c60576089b210fee3792e84792b6020750f97a00fef7a2eb464e1",
+  "web/lib/projections/startChartContract.ts": "f0fc857f754a1ef23820ca09ef620a377c574e6cc607bdbfca35abf9645ecb4e",
+  "web/lib/player-forecasts/planningContributions.test.ts": "02e66b1acbbba2afc9b21779e074c3768d220337af6b0e1033ceeb703427ed31",
+  "web/lib/player-forecasts/gameExpectations.test.ts": "985a7aff84fc42b378e47050215acb0751a002b25a23fc3c805b2c05209447f9",
+  "web/pages/start-chart.tsx": "b05163d55a16ff5a358cb6d42b5b9f18b7fd84462b71858e9631e56a73548aca",
+  "web/pages/forge/forecasts.tsx": "be051f87ff7e40c340a04e2609124131264fe868cf9e3d4882e02fb148580dce",
+  "web/__tests__/pages/start-chart.test.tsx": "be5daa7d41fc097c6c6cdd86068642f4ad333b39920bf130e95c5abaea961279",
+  "web/__tests__/pages/forge/forecasts.test.tsx": "8fa62f644cf7a0f5f7c5f6d69211002accb37ebed128c6f1fcf2b1fffacba4ba",
+  "web/lib/player-forecasts/modeledSkaterParticipation.ts": "c06406adfbdb7ccfc6e7c5367079a8bf25cfe2308d57b26a0fdcc21ee5a2298d",
+  "web/lib/player-forecasts/modeledGoalieParticipation.ts": "3b6fb3222837a652d2edbaab1baa606aa2a3b7f1cd6cf0187b3750e27048f2a4",
+  "web/lib/rosterScheduleData/planning.ts": "a53fae91866fb06101b9ab2c6d39cef5956238ed95fa758a1ed623f2bd41ab58",
+  "web/lib/player-forecasts/targetRosterObservation.ts": "d77157d4e3915efd4f539669d0ff8cf12494a5aad057579b7eb37ecb30ae6ee6"
+}

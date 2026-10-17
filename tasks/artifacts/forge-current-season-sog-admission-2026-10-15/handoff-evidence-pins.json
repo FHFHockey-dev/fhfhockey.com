@@ -1,0 +1,13 @@
+{
+  "recordedUTC": "2026-10-15T22:28:45.546827+00:00",
+  "all8SourcePinsMatch": true,
+  "evidenceSHA256": {
+    "final-readback-and-plan-review.md": "7595f539c18170a65efc59f75290b7717652f7fedd8ea615182d0d8767fce811",
+    "clock-guard/independent-review.md": "9953294526cc63c38e31ca42bd12c483f64bfbdc11dc45ad10a6a5dfd4ab50e8",
+    "independent-review-v2.md": "16d4ea035b45b5ae539f2d5509a88e80f286b4e594faccc917edcdd1080b2821",
+    "final-candidate.sha256": "4901fe13121e2752611effb28b902e434effad64964f66e09b8c2e426d60e84c",
+    "final-increment.patch": "7f41385bbf71115af7303183cd26cef97883f21783bb11b47c9e7ecad262f768",
+    "final-verification.json": "6f059d6519932bf9237090181979ae4f80b41a94986d09d244af98b9220735d1",
+    "GENUINE-READBACK-AND-PUBLICATION-PLAN-v2.md": "cc530e5db48779c700d9b7a010bbf17be74f9dcf67239cae36a47581329e34e0"
+  }
+}

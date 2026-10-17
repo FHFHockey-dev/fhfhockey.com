@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx -t recovers a held-open expired catalog
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:92874) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx (207 tests | 206 skipped) 198ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 206 skipped (207)
+   Start at  04:30:12
+   Duration  1.22s (transform 457ms, setup 2ms, collect 684ms, tests 198ms, environment 146ms, prepare 31ms)
+

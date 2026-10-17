@@ -149,10 +149,13 @@ const NEWS_RELAY_HANDLES = new Set([
   "gamedaylines",
   "gamedaynewsnhl",
   "gamedaystatsnhl",
+  "dfofantasy",
+  "nhl_rosters",
+  "gdl", "gdg", "gdnnhl", "ccc", "gdl_suite", "ifttt", "source_account",
 ]);
 
 const NEWS_RELAY_MENTION_PATTERN =
-  /@?(?:CcC\s*Middleton|Lines\s*CcC\s*Middleton|Game\s*Day\s*Goalies|Game\s*Day\s*Lines|Game\s*Day\s*News\s*NHL|NHL\s*Game\s*Day\s*News|Game\s*Day\s*Stats\s*NHL)/gi;
+  /@?(?:CcC\s*Middleton|Lines\s*CcC\s*Middleton|Game\s*Day\s*Goalies|Game\s*Day\s*Lines|Game\s*Day\s*News\s*NHL|NHL\s*Game\s*Day\s*News|Game\s*Day\s*Stats\s*NHL|DFOFantasy|NHL_Rosters)/gi;
 
 const NEWS_RELAY_BYLINE_PATTERN =
   /\s*[—–-]\s*(?:CcC\s*Middleton|Lines\s*CcC\s*Middleton|Game\s*Day\s*Goalies|Game\s*Day\s*Lines|Game\s*Day\s*News\s*NHL|NHL\s*Game\s*Day\s*News|Game\s*Day\s*Stats\s*NHL)(?:\s*\([^)]*\))?(?:\s+[A-Z][a-z]{2}\s+\d{1,2},\s+\d{4})?\s*$/gi;
@@ -172,6 +175,7 @@ export function isNewsRelayAccount(
 export function sanitizePublicNewsText(
   value: string | null | undefined,
 ): string {
+  if (isNewsRelayAccount(value)) return "";
   return normalizeWhitespace(
     String(value ?? "")
       .replace(NEWS_RELAY_BYLINE_PATTERN, "")
@@ -295,41 +299,37 @@ export function getPublicNewsSourceAttribution(args: {
     | "source_url"
     | "tweet_url"
     | "metadata"
-  >;
+  > & { blurb?: string | null };
   provenance?: NewsFeedSourceProvenance | null;
 }): PublicNewsSourceAttribution {
-  const metadata = args.item.metadata ?? args.provenance?.metadata ?? null;
+  const metadata = { ...args.provenance?.metadata, ...args.item.metadata };
   const quotedTweetUrl =
     args.provenance?.quoted_tweet_url ??
     readMetadataString(metadata, "quotedTweetUrl");
-  const originalHandle = firstOriginalHandle([
-    readMetadataString(metadata, "quotedAuthorHandle"),
-    parseTweetUrl(quotedTweetUrl).handle,
-    args.provenance?.source_handle,
-    parseTweetUrl(args.provenance?.source_url).handle,
-    parseTweetUrl(args.item.source_url).handle,
-    args.item.source_account,
-  ]);
-  const originalName = [
-    readMetadataString(metadata, "quotedAuthorName"),
-    args.provenance?.author_name,
-  ].find(
+  const usesQuote = readMetadataString(metadata, "primaryTextSource") === "quoted_oembed";
+  const selectedUrl = usesQuote ? quotedTweetUrl : args.provenance?.source_url ?? args.item.source_url ?? args.item.tweet_url;
+  const selectedPost = parseTweetUrl(selectedUrl);
+  const selectedHandle = selectedPost.handle;
+  const claimedHandle = usesQuote ? readMetadataString(metadata, "quotedAuthorHandle")
+    : args.provenance?.source_handle ?? args.item.source_account;
+  const originalHandle = firstOriginalHandle([selectedHandle]);
+  const retweetAuthor = args.item.blurb?.match(/^\s*RT\s+@([A-Za-z0-9_]+):/i)?.[1];
+  const inconsistentAuthor = Boolean(usesQuote && !claimedHandle) || Boolean(claimedHandle && originalHandle && claimedHandle.replace(/^@/, "").toLowerCase() !== originalHandle.toLowerCase())
+    || Boolean(!usesQuote && retweetAuthor && originalHandle?.toLowerCase() !== retweetAuthor.toLowerCase());
+  const inconsistentPost = usesQuote && [args.provenance?.metadata, args.item.metadata].some(retained => {
+    const id = readMetadataString(retained, "quotedTweetId");
+    const url = readMetadataString(retained, "quotedTweetUrl");
+    return Boolean(id && id !== selectedPost.tweetId) || Boolean(url && parseTweetUrl(url).tweetId !== selectedPost.tweetId);
+  });
+  const originalName = (usesQuote ? [readMetadataString(metadata, "quotedAuthorName")]
+    : [args.provenance?.author_name, args.item.source_label]).find(
     (value) =>
       Boolean(value?.trim()) &&
       !isNewsRelayAccount(value) &&
       sanitizePublicNewsText(value) !== "",
   );
-  const urlCandidates = [
-    quotedTweetUrl,
-    args.provenance?.source_url,
-    args.item.source_url,
-    args.provenance?.tweet_url,
-    args.item.tweet_url,
-  ];
-  const url =
-    urlCandidates
-      .map((candidate) => safeOriginalSourceUrl(candidate, originalHandle, Boolean(quotedTweetUrl && candidate === quotedTweetUrl)))
-      .find(Boolean) ?? null;
+  const url = !inconsistentAuthor && !inconsistentPost ? safeOriginalSourceUrl(selectedUrl, originalHandle, usesQuote) : null;
+  if (!url || !originalHandle) return { displayName: "Original source pending", account: null, url: null };
 
   return {
     displayName: originalName ? sanitizePublicNewsText(originalName) : null,
@@ -377,7 +377,13 @@ export function sanitizePublicNewsFeedItem(
     source_account: source.account,
     source_url: source.url,
     tweet_url: source.url,
-    metadata: sanitizePublicMetadataValue(item.metadata) as Record<
+    // Raw ingest lineage remains in storage, never in the public display DTO.
+    metadata: sanitizePublicMetadataValue(item.metadata ? {
+      interpretation: item.metadata.interpretation,
+      lineupCard: item.metadata.lineupCard,
+      automation: item.metadata.automation && typeof item.metadata.automation === "object"
+        ? { summary: (item.metadata.automation as Record<string, unknown>).summary } : undefined,
+    } : null) as Record<
       string,
       unknown
     > | null,

@@ -1,0 +1,4 @@
+{
+ "extends":"../consumer-binding-increment/tsconfig.json",
+ "include":["../../../web/next-bootstrap.d.ts","../../../web/yahoo-fantasy.d.ts","../../../web/lib/sources/tweetClaimRawAcknowledgment.ts","../../../web/lib/sources/tweetClaimQualificationStorage.test.ts","./*.ts"]
+}

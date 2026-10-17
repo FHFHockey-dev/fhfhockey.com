@@ -1,0 +1,57 @@
+{
+  "generatedAt": "2026-10-15T05:34:43.228Z",
+  "tests": [
+    {
+      "test": "Unauthenticated cors proxy accepts loopback URL, caller method, and returns mocked body",
+      "result": "PASS",
+      "networkRequests": 0
+    },
+    {
+      "test": "Development admin bypass trusts Host even when peer is non-loopback (synthetic address)",
+      "result": "PASS",
+      "networkRequests": 0
+    },
+    {
+      "test": "Production does not accept the Host-only development bypass",
+      "result": "PASS",
+      "networkRequests": 0
+    },
+    {
+      "test": "Audit-outside-auth wrapper inserts a database audit row after rejecting an unauthenticated request",
+      "result": "PASS",
+      "databaseRequests": 0
+    },
+    {
+      "test": "Patreon callback accepts a signed state without a browser binding and permits repeated state verification",
+      "result": "PASS",
+      "networkRequests": 0,
+      "databaseRequests": 0
+    },
+    {
+      "test": "Unauthenticated replay audit dispatches 250 mocked per-game upstream operations",
+      "result": "PASS",
+      "mockedOperations": 250,
+      "networkRequests": 0
+    },
+    {
+      "test": "Authorized CSV import path creates a public table without RLS or grants hardening even before rejecting empty data",
+      "result": "PASS",
+      "databaseRequests": 0,
+      "note": "Auth wrappers replaced with identity functions to isolate the already-authorized DDL path."
+    },
+    {
+      "test": "Anonymous comment endpoint forwards invalid field types and non-POST method to privileged CMS create",
+      "result": "PASS",
+      "networkRequests": 0,
+      "databaseRequests": 0
+    },
+    {
+      "test": "Cron audit stores unsanitized query string and response fields (synthetic markers only)",
+      "result": "PASS",
+      "networkRequests": 0,
+      "databaseRequests": 0,
+      "note": "Public-read exposure derives separately from baseline SQL, not a live database test."
+    }
+  ],
+  "limits": "Synthetic isolated module tests; no live application or database requests; deployed reachability unverified."
+}

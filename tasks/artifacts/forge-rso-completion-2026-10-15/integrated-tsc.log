@@ -1,0 +1,1 @@
+lib/sources/tweetClaimExtraction.ts(133,14): error TS2540: Cannot assign to 'id' because it is a read-only property.

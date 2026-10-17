@@ -1,0 +1,16 @@
+{
+  "extends": "/Users/tim/Code/fhfhockey.com/web/tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "noEmit": true
+  },
+  "files": [
+    "/Users/tim/Code/fhfhockey.com/web/next-bootstrap.d.ts",
+    "/Users/tim/Code/fhfhockey.com/web/yahoo-fantasy.d.ts",
+    "/Users/tim/Code/fhfhockey.com/web/components/PlayerStats/PlayerRadarChart.tsx",
+    "/Users/tim/Code/fhfhockey.com/web/components/PlayerStats/PlayerRadarChart.test.tsx",
+    "/Users/tim/Code/fhfhockey.com/web/pages/stats/player/[playerId].tsx",
+    "/Users/tim/Code/fhfhockey.com/web/__tests__/pages/stats/player/playerId.test.ts"
+  ],
+  "include": []
+}

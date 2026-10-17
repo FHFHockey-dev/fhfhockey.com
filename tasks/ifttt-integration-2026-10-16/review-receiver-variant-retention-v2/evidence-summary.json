@@ -1,0 +1,44 @@
+{
+  "verdict": "accept R19 correction within bounded local receiver variant-retention scope",
+  "selectedSql6Sha256": "789772078e3b8405539358e07413cf2fd4cf6d80a82513911bf989f8c02b0483",
+  "selectedSql6ReplacementOnly": true,
+  "sourcePinsReleased": 125,
+  "snapshotHoldsReleased": 15,
+  "unchangedCurrentCases": {
+    "passed": 59,
+    "failed": 0,
+    "actualPostgres": 47,
+    "nearestMocked": 12
+  },
+  "independentCases": {
+    "passed": 6,
+    "failed": 0,
+    "inheritedSkipped": 47,
+    "actualPostgres": 6
+  },
+  "totalDistinctPassing": 65,
+  "actualPostgresPassing": 53,
+  "nearestMockedPassing": 12,
+  "scopedTypeScriptExitCode": 0,
+  "reviewerHarnessFailures": 0,
+  "originalR19OracleUnchangedAndPassed": true,
+  "bothObservedLockAbsentKeyRacesPassed": true,
+  "runtimeLockTimeoutObservedMs": [
+    2008,
+    2008
+  ],
+  "runtimeLockTimeoutSqlState": "55P03",
+  "runtimeStatementDeadlineAccepted": false,
+  "allReviewProcessesFinished": true,
+  "privatePgStoppedAndRemoved": true,
+  "runtimeOrOwnerEvidenceEdits": false,
+  "hostedActions": false,
+  "aggregateCompilerBuildBroad81": false,
+  "full52OrProductionAcceptance": false,
+  "remainingGates": [
+    "Deployed raw schema/index/default/trigger/ACL/RLS and all-writer fence evidence; no deferred/subsequent writer acceptance.",
+    "Separately approved migration membership/order and selected SQL5/SQL6 alternatives; RPC caller/role statement timeout budget remains unverified.",
+    "Real sender/external queue and legacy/deferred atomicity, authentic identity/history/source coverage and correction policy, genuine future metrics and operational approvals.",
+    "Historical heterogeneous full52 reconciliation qualifications remain unchanged."
+  ]
+}

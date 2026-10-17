@@ -1,0 +1,66 @@
+{
+  "sourceManifestSha256": "2dfe05fa78cc65199002f0f7941a4b30ae4f6e1d136d7c7d506f28c801a5edc2",
+  "sourceFilesVerified": 95,
+  "snapshotDependenciesVerified": 15,
+  "artifactManifestSha256": "47f0a2f3dcaf1e0639762e17bca0c033fd38067dd1d0d2cb9974fa639329b358",
+  "artifactFilesVerified": 52,
+  "priorReviewFilesVerified": 1176,
+  "priorStatusAddendumUnchanged": true,
+  "changesToPrevious85": [
+    "web/__tests__/pages/api/v1/db/update-line-sources.test.ts"
+  ],
+  "claimOccurrenceConsumerRuntimeAndFourStagedSqlUnchanged": true,
+  "actualContributionsSha256": "1f08b1c5ca9ea296826d899f7e57c02f2262c4c4102c11ba925a64f7e703bae6",
+  "currentLiveDependenciesMatchSnapshots": true,
+  "readOnlyDependencyOwnershipUnchanged": true,
+  "verdict": "bounded job acknowledgment fix and captured injury-out/expiry compatibility accepted; no new defect found",
+  "tests": {
+    "originalJob10": {
+      "passed": 10,
+      "failed": 0,
+      "inheritedSkipped": 0
+    },
+    "nearbyJob6": {
+      "passed": 6,
+      "failed": 0,
+      "inheritedSkipped": 10
+    },
+    "consumer26PlusExpiry8": {
+      "passed": 34,
+      "failed": 0,
+      "inheritedSkipped": 0
+    },
+    "affectedRoutes41": {
+      "passed": 41,
+      "failed": 0,
+      "inheritedSkipped": 0
+    }
+  },
+  "distinctCasesPassed": 91,
+  "actualPrivatePgCases": 41,
+  "unitOrDefaultOffCases": 50,
+  "scopedTypeScript": "passed exit0",
+  "retainedOwnerBeforeEvidence": {
+    "passed": 2,
+    "failed": 8,
+    "independentlyReexecuted": false
+  },
+  "retainedOwnerAfterEvidence": {
+    "passed": 10,
+    "failed": 0
+  },
+  "allTenCapturedTsModulesActuallyExecuted": true,
+  "originalConsumerAssertionsPassed": 9,
+  "fidelityAudit": "fidelity-audit.json",
+  "rawStatusAndJobCompletionAtomic": false,
+  "serverClockLeaseGuarantee": false,
+  "goaliePolicyAccepted": false,
+  "goalOwnerAcknowledgment": "pending per last owner report; no response inferred",
+  "full52Ledger": "historical heterogeneous225/227 across50/52; CR011/51 original failures and separate approved positives unchanged",
+  "currentCombinedForgeRsoRuntimeAccepted": false,
+  "productionAccepted": false,
+  "sourceAndSnapshotHoldsReleased": true,
+  "reviewRootStable": true,
+  "runningReviewChecks": false,
+  "hostedOrProductionActions": 0
+}

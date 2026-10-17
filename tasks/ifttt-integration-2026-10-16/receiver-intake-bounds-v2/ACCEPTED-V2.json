@@ -1,0 +1,63 @@
+{
+  "status": "accepted bounded local intake; R20 closed by independent reviewer release notice",
+  "sourceManifest": "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v2/owned-source-v2-sha256.json",
+  "sourceManifestSha256": "81b41d7841a72c12cdb2824a7483cb81a0a13a61d40b916c4b218447cbd0b9fb",
+  "sourcePins": 148,
+  "readOnlyDependencies": 15,
+  "selectedSql7": {
+    "path": "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v2/supabase/migrations/20261016085537_ifttt_bounded_receipt_intake.sql",
+    "sha256": "ab5d686589f78815326b1b0c942975206cfc1cc4e6288fdfa64646e4289f8c5e",
+    "rule": "Replacement SQL7 only, after selected replacement SQL6; never both SQL7 alternatives."
+  },
+  "currentRuntimeAndNearestTests": [
+    {
+      "path": "web/lib/sources/lineSourceIftttReceiver.ts",
+      "sha256": "8f4c5bf3873b4ff28b2a250496bfe99194741bb3cf20570f54c7a54c53ec2c95"
+    },
+    {
+      "path": "web/lib/sources/iftttReceiptRetention.ts",
+      "sha256": "558644e21503afe10d3d034badc3404922dced094314d6902742ca7da1f4d20c"
+    },
+    {
+      "path": "web/lib/sources/iftttIntakePolicy.ts",
+      "sha256": "34a5f689e660561c6b1774c14be1bef01134b513fd9ae1102e8a4ecc0e8e7a2f"
+    },
+    {
+      "path": "web/lib/sources/iftttIntakePolicy.test.ts",
+      "sha256": "bd92a3d26daf737b803e67c9f077953afcfbee635a8c0a3a75bf21f52cae2266"
+    },
+    {
+      "path": "web/lib/sources/lineSourceIftttReceiver.test.ts",
+      "sha256": "9ce5fd2ea4caefb538aa3982ffe78235b7004bd1e988250e9b464582eaebbe1a"
+    }
+  ],
+  "ownerChecks": {
+    "cases": 109,
+    "passed": 109,
+    "actualPrivatePG": 77,
+    "purePolicy": 20,
+    "nearestMock": 12,
+    "scopedTypeScript": "exit0",
+    "lint": "exit0 on runtime/policy/nearest test increment; no runtime edit since v1 freeze"
+  },
+  "independentChecks": {
+    "distinctCases": 112,
+    "passed": 112,
+    "actualPrivatePG": 80,
+    "purePolicy": 20,
+    "nearestMock": 12,
+    "scopedTypeScript": "exit0",
+    "sourceHold": "released148/15",
+    "formalReport": "review-receiver-intake-bounds-v2/REVIEW.md (reviewer report-only writing at acceptance notice)"
+  },
+  "runningOwnerProcesses": [],
+  "operationalActionsPerformed": [],
+  "notRun": [
+    "broad81",
+    "full unit suite",
+    "full compiler",
+    "build",
+    "hosted checks or production actions"
+  ],
+  "nextStep": "Obtain exact policy choices and authorized deployed prerequisite proof; do not activate global flag alone."
+}

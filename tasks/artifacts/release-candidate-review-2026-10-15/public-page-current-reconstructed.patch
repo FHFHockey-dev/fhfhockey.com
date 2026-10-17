@@ -1,0 +1,934 @@
+diff --git a/web/__tests__/pages/stats/index.test.tsx b/web/__tests__/pages/stats/index.test.tsx
+index 10cac73b4a..c932d97e05 100644
+--- a/web/__tests__/pages/stats/index.test.tsx
++++ b/web/__tests__/pages/stats/index.test.tsx
+@@ -5,11 +5,13 @@ import {
+   render,
+   screen,
+   waitFor,
++  within,
+ } from "@testing-library/react";
+ import React from "react";
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ 
+ import StatsPage from "pages/stats";
++import type { GoalieStat, SkaterStat, StatsProps } from "lib/NHL/statsPageTypes";
+ 
+ vi.mock("next/image", () => ({
+   default: ({
+@@ -31,23 +33,11 @@ vi.mock("next/link", () => ({
+   ),
+ }));
+ 
+-vi.mock("components/StatsPage/LeaderboardCategory", () => ({
+-  default: () => null,
+-}));
+-vi.mock("components/StatsPage/LeaderboardCategoryBSH", () => ({
+-  default: () => null,
+-}));
+-vi.mock("components/StatsPage/LeaderboardCategoryGoalie", () => ({
+-  default: () => null,
+-}));
+ vi.mock("components/StatsPage/MobileTeamList", () => ({
+   default: ({ teamsGridState }: { teamsGridState: string }) => (
+     <div data-grid-state={teamsGridState} data-testid="mobile-team-list" />
+   ),
+ }));
+-vi.mock("components/StatsPage/MobileTabInterface", () => ({
+-  default: () => null,
+-}));
+ vi.mock("components/StatsPage/PlayerSearchBar", () => ({
+   default: () => null,
+ }));
+@@ -58,19 +48,73 @@ vi.mock("lib/supabase", () => ({ default: {} }));
+ vi.mock("lib/NHL/client", () => ({ getCurrentSeason: vi.fn() }));
+ vi.mock("lib/NHL/server", () => ({ getTeams: vi.fn() }));
+ 
+-const emptyStatsProps = {
++const emptyStatsProps: StatsProps = {
+   skaterSeasonLabel: "2025-26",
+   goalieSeasonLabel: "2025-26",
+   pointsLeaders: [],
+   goalsLeaders: [],
+   pppLeaders: [],
+   bshLeaders: [],
++  skaterLeadersByPosition: {},
+   goalieLeadersWins: [],
+   goalieLeadersSavePct: [],
+   goalieLeadersGAA: [],
+   goalieLeadersQS: [],
+ };
+ 
++const makeSkater = (position: string, points: number): SkaterStat => ({
++  player_id: points,
++  fullName: `${position} Leader`,
++  current_team_abbreviation: "BOS",
++  position,
++  points,
++  goals: points - 1,
++  pp_points: 1,
++  blocked_shots: 1,
++  shots: 2,
++  hits: 3,
++  bsh: 6,
++  total_primary_assists: 1,
++  total_secondary_assists: 0,
++  pp_goals: 0,
++  sh_goals: 0,
++  image_url: "",
++});
++
++const leaders = (player: SkaterStat) => ({
++  pointsLeaders: [player],
++  goalsLeaders: [player],
++  pppLeaders: [player],
++  bshLeaders: [player],
++});
++
++const goalie: GoalieStat = {
++  goalie_id: 30,
++  fullName: "Goalie Leader",
++  current_team_abbreviation: "BOS",
++  wins: 3,
++  save_pct: 0.925,
++  goals_against_avg: 2.1,
++  quality_starts_pct: 0.75,
++  games_played: 4,
++  image_url: "",
++};
++
++const populatedStatsProps: StatsProps = {
++  ...emptyStatsProps,
++  ...leaders(makeSkater("Overall", 20)),
++  skaterLeadersByPosition: {
++    C: leaders(makeSkater("C", 10)),
++    LW: leaders(makeSkater("LW", 9)),
++    RW: leaders(makeSkater("RW", 8)),
++    D: leaders(makeSkater("D", 7)),
++  },
++  goalieLeadersWins: [goalie],
++  goalieLeadersSavePct: [goalie],
++  goalieLeadersGAA: [goalie],
++  goalieLeadersQS: [goalie],
++};
++
+ beforeEach(() => {
+   Object.defineProperty(window, "innerWidth", {
+     configurable: true,
+@@ -88,6 +132,79 @@ afterEach(() => {
+   vi.restoreAllMocks();
+ });
+ 
++describe("StatsPage position filtering", () => {
++  it.each([
++    ["Center", "C", "10"],
++    ["Left Wing", "LW", "9"],
++    ["Right Wing", "RW", "8"],
++    ["Defense", "D", "7"],
++  ])("shows %s leaders in desktop, mobile, and key metrics", (label, position, points) => {
++    render(<StatsPage {...populatedStatsProps} teams={[]} />);
++    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Player & Team Stats");
++
++    fireEvent.click(screen.getByRole("radio", { name: label }));
++
++    const skaters = within(screen.getByRole("complementary", { name: "Skater Statistics" }));
++    expect(skaters.getAllByText(`${position} Leader`)).toHaveLength(4);
++    expect(screen.queryByText("Overall Leader")).toBeNull();
++    expect(screen.queryByText("Goalie Leader")).toBeNull();
++    expect(screen.getByLabelText("Points Leader value").textContent).toBe(points);
++    expect(screen.queryByLabelText("Save Percentage value")).toBeNull();
++    const mobile = within(screen.getByRole("region", { name: "Mobile leaderboards" }));
++    expect(mobile.getByRole("link", { name: new RegExp(`${position} Leader`) })).toBeDefined();
++    expect(mobile.queryByRole("tab", { name: "Goalies" })).toBeNull();
++
++    fireEvent.click(screen.getByRole("radio", { name: "All Players" }));
++
++    expect(skaters.getAllByText("Overall Leader")).toHaveLength(4);
++    expect(screen.getByLabelText("Points Leader value").textContent).toBe("20");
++    expect(screen.getByLabelText("Save Percentage value").textContent).toBe(".925");
++    expect(mobile.getByRole("tab", { name: "Goalies" })).toBeDefined();
++  });
++
++  it("shows only goalie leaders and metrics when Goalie is selected", () => {
++    render(<StatsPage {...populatedStatsProps} teams={[]} />);
++    fireEvent.click(screen.getByRole("radio", { name: "Goalie" }));
++
++    expect(screen.queryByText("Overall Leader")).toBeNull();
++    expect(screen.queryByLabelText("Points Leader value")).toBeNull();
++    expect(screen.getByLabelText("Save Percentage value").textContent).toBe(".925");
++    const goalies = within(screen.getByRole("complementary", { name: "Goaltender Statistics" }));
++    expect(goalies.getAllByText("Goalie Leader")).toHaveLength(4);
++    const mobile = within(screen.getByRole("region", { name: "Mobile leaderboards" }));
++    expect(mobile.getByRole("tab", { name: "Goalies" }).getAttribute("aria-selected")).toBe("true");
++    expect(mobile.getByRole("link", { name: /Goalie Leader/ })).toBeDefined();
++    expect(mobile.queryByRole("tab", { name: "Skaters" })).toBeNull();
++  });
++
++  it("shows position-specific empty states without inventing zero stats", () => {
++    render(<StatsPage {...populatedStatsProps} skaterLeadersByPosition={{}} teams={[]} />);
++    fireEvent.click(screen.getByRole("radio", { name: "Defense" }));
++
++    expect(screen.getAllByText("No defense leaders available for this season.")).toHaveLength(2);
++    expect(screen.getByLabelText("Points Leader value").textContent).toBe("—");
++    expect(screen.getByLabelText("Goals Leader value").textContent).toBe("—");
++    expect(screen.queryByText("Overall Leader")).toBeNull();
++  });
++
++  it("moves keyboard focus with the selected radio and wraps through filters", () => {
++    render(<StatsPage {...populatedStatsProps} teams={[]} />);
++    const allPlayers = screen.getByRole("radio", { name: "All Players" });
++    allPlayers.focus();
++    fireEvent.keyDown(allPlayers, { key: "ArrowLeft" });
++
++    const goalieFilter = screen.getByRole("radio", { name: "Goalie" });
++    expect(document.activeElement).toBe(goalieFilter);
++    expect(goalieFilter.getAttribute("aria-checked")).toBe("true");
++    expect(screen.queryByLabelText("Points Leader value")).toBeNull();
++
++    fireEvent.keyDown(goalieFilter, { key: "ArrowRight" });
++    expect(document.activeElement).toBe(allPlayers);
++    expect(allPlayers.getAttribute("aria-checked")).toBe("true");
++    expect(screen.getByLabelText("Points Leader value").textContent).toBe("20");
++  });
++});
++
+ describe("StatsPage team logos", () => {
+   it("uses the shared wrapper fallback for desktop failures and blank abbreviations", () => {
+     render(
+diff --git a/web/components/StatsPage/MobileTabInterface.tsx b/web/components/StatsPage/MobileTabInterface.tsx
+index 7f052a79c3..9934680287 100644
+--- a/web/components/StatsPage/MobileTabInterface.tsx
++++ b/web/components/StatsPage/MobileTabInterface.tsx
+@@ -22,6 +22,8 @@ type MobileLeaderSection = {
+ };
+ 
+ type MobileTabInterfaceProps = {
++  playerType?: "all" | MobileTabKey;
++  skaterEmptyMessage?: string;
+   pointsLeaders: SkaterStat[];
+   goalsLeaders: SkaterStat[];
+   pppLeaders: SkaterStat[];
+@@ -82,6 +84,8 @@ function mapGoalieRows(
+ }
+ 
+ export default function MobileTabInterface({
++  playerType = "all",
++  skaterEmptyMessage = "No leaders available.",
+   pointsLeaders,
+   goalsLeaders,
+   pppLeaders,
+@@ -92,6 +96,9 @@ export default function MobileTabInterface({
+   goalieLeadersQS
+ }: MobileTabInterfaceProps) {
+   const [activeTab, setActiveTab] = useState<MobileTabKey>("skaters");
++  const visibleTab = playerType === "all" ? activeTab : playerType;
++  const availableTabs: MobileTabKey[] =
++    playerType === "all" ? ["skaters", "goalies"] : [playerType];
+   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+     "skaters-points": true,
+     "goalies-save-pct": true
+@@ -209,15 +216,15 @@ export default function MobileTabInterface({
+         <div className={styles.mobileTabHeader}>
+           <h2 className={styles.mobileCardTitle}>Leaderboards</h2>
+           <div className={styles.mobileTabs} role="tablist" aria-label="Leaderboard type">
+-            {(["skaters", "goalies"] as MobileTabKey[]).map((tab) => (
++            {availableTabs.map((tab) => (
+               <button
+                 key={tab}
+                 type="button"
+                 role="tab"
+-                aria-selected={activeTab === tab}
++                aria-selected={visibleTab === tab}
+                 aria-controls={`mobile-${tab}-panel`}
+                 className={`${styles.mobileTabButton} ${
+-                  activeTab === tab ? styles.mobileTabButtonActive : ""
++                  visibleTab === tab ? styles.mobileTabButtonActive : ""
+                 }`}
+                 onClick={() => setActiveTab(tab)}
+               >
+@@ -228,11 +235,11 @@ export default function MobileTabInterface({
+         </div>
+ 
+         <div
+-          id={`mobile-${activeTab}-panel`}
++          id={`mobile-${visibleTab}-panel`}
+           role="tabpanel"
+           className={styles.mobileTabPanel}
+         >
+-          {sections[activeTab].map((section) => {
++          {sections[visibleTab].map((section) => {
+             const isExpanded = Boolean(expandedSections[section.id]);
+             return (
+               <article key={section.id} className={styles.mobileLeaderboardCard}>
+@@ -268,7 +275,7 @@ export default function MobileTabInterface({
+                   </div>
+                 ) : isExpanded ? (
+                   <div id={`${section.id}-rows`} className={styles.mobileEmptyState}>
+-                    No leaders available.
++                    {visibleTab === "skaters" ? skaterEmptyMessage : "No goalie leaders available."}
+                   </div>
+                 ) : null}
+               </article>
+diff --git a/web/components/underlying-stats/UnderlyingStatsDashboard.module.scss b/web/components/underlying-stats/UnderlyingStatsDashboard.module.scss
+index 16fd00fb74..83ec8b4b12 100644
+--- a/web/components/underlying-stats/UnderlyingStatsDashboard.module.scss
++++ b/web/components/underlying-stats/UnderlyingStatsDashboard.module.scss
+@@ -670,8 +670,9 @@
+     margin-top: 3px;
+     color: v.$text-secondary;
+     font-family: v.$font-family-primary, sans-serif;
+-    font-size: 0.62rem;
++    font-size: 0.75rem;
+     font-weight: 600;
++    line-height: 1.4;
+     letter-spacing: 0.08em;
+     text-transform: uppercase;
+   }
+@@ -708,8 +709,9 @@
+ 
+   small {
+     color: v.$text-secondary;
+-    font-size: 0.62rem;
++    font-size: 0.75rem;
+     font-weight: 600;
++    line-height: 1.4;
+     letter-spacing: 0.05em;
+     text-transform: uppercase;
+   }
+@@ -717,9 +719,9 @@
+   strong {
+     color: v.$text-primary;
+     font-family: v.$font-family-numbers, monospace;
+-    font-size: 0.72rem;
++    font-size: 0.875rem;
+     font-weight: 600;
+-    white-space: nowrap;
++    line-height: 1.4;
+   }
+ }
+ 
+@@ -756,7 +758,7 @@
+   display: grid;
+   gap: 4px;
+   color: v.$text-secondary;
+-  font-size: 0.7rem;
++  font-size: 0.8125rem;
+   line-height: 1.4;
+ }
+ 
+@@ -927,6 +929,7 @@
+ 
+   .powerLeader {
+     flex: 0 0 min(82vw, 380px);
++    max-width: 100%;
+     scroll-snap-align: start;
+   }
+ 
+diff --git a/web/lib/NHL/statsPageFetch.test.ts b/web/lib/NHL/statsPageFetch.test.ts
+index b1a7fe100c..dad924e661 100644
+--- a/web/lib/NHL/statsPageFetch.test.ts
++++ b/web/lib/NHL/statsPageFetch.test.ts
+@@ -196,6 +196,33 @@ beforeEach(() => {
+ });
+ 
+ describe("fetchStatsData", () => {
++  it("ranks the full season within each position before taking five, including NHL wing codes", async () => {
++    database.tables.wgo_skater_stats_totals = database.tables.wgo_skater_stats_totals.map((row) => ({
++      ...row,
++      hits: row.player_id,
++    }));
++    database.tables.players = database.tables.players.map((player) => ({
++      ...player,
++      position: player.id <= 6 ? "D" : player.id === 7 ? "L" : player.id === 8 ? "LW" : player.id === 9 ? "R" : player.id === 10 ? "RW" : player.id === 11 ? null : "C",
++    }));
++    const result = await fetchStatsData();
++
++    expect(result.pointsLeaders.map((player) => player.player_id)).toEqual([1001, 1000, 999, 998, 997]);
++    for (const metric of ["pointsLeaders", "goalsLeaders", "pppLeaders", "bshLeaders"] as const) {
++      expect(result.skaterLeadersByPosition.D?.[metric].map((player) => player.player_id)).toEqual([6, 5, 4, 3, 2]);
++      expect(result.skaterLeadersByPosition.LW?.[metric].map((player) => player.player_id)).toEqual([8, 7]);
++      expect(result.skaterLeadersByPosition.RW?.[metric].map((player) => player.player_id)).toEqual([10, 9]);
++      expect(result.skaterLeadersByPosition.C?.[metric]).toHaveLength(5);
++    }
++  });
++
++  it("leaves missing positions empty instead of reusing the overall leaders", async () => {
++    const result = await fetchStatsData();
++    expect(result.skaterLeadersByPosition.D).toEqual({
++      pointsLeaders: [], goalsLeaders: [], pppLeaders: [], bshLeaders: [],
++    });
++  });
++
+   it("fully pages leaderboard inputs, chunks identities, and isolates the latest goalie season", async () => {
+     const result = await fetchStatsData();
+ 
+diff --git a/web/lib/NHL/statsPageFetch.ts b/web/lib/NHL/statsPageFetch.ts
+index 29e4359a7a..eb184a113b 100644
+--- a/web/lib/NHL/statsPageFetch.ts
++++ b/web/lib/NHL/statsPageFetch.ts
+@@ -6,7 +6,7 @@ import {
+   fetchAllSupabaseFilterChunks,
+   fetchAllSupabasePages
+ } from "lib/supabase/pagination";
+-import { SkaterStat, GoalieStat } from "./statsPageTypes";
++import { SkaterStat, GoalieStat, StatsProps, SkaterLeaderboards } from "./statsPageTypes";
+ 
+ const GOALIE_TOTALS_SELECT = `
+   goalie_id,
+@@ -27,18 +27,16 @@ function formatSeasonLabel(seasonId: number | string | null | undefined) {
+   return `${season.slice(0, 4)}-${season.slice(6, 8)}`;
+ }
+ 
+-export async function fetchStatsData(): Promise<{
+-  skaterSeasonLabel: string;
+-  goalieSeasonLabel: string;
+-  pointsLeaders: SkaterStat[];
+-  goalsLeaders: SkaterStat[];
+-  pppLeaders: SkaterStat[];
+-  bshLeaders: SkaterStat[];
+-  goalieLeadersWins: GoalieStat[];
+-  goalieLeadersSavePct: GoalieStat[];
+-  goalieLeadersGAA: GoalieStat[];
+-  goalieLeadersQS: GoalieStat[];
+-}> {
++function buildSkaterLeaderboards(skaters: SkaterStat[]): SkaterLeaderboards {
++  return {
++    pointsLeaders: [...skaters].sort((a, b) => b.points - a.points).slice(0, 5),
++    goalsLeaders: [...skaters].sort((a, b) => b.goals - a.goals).slice(0, 5),
++    pppLeaders: [...skaters].sort((a, b) => b.pp_points - a.pp_points).slice(0, 5),
++    bshLeaders: [...skaters].sort((a, b) => b.bsh - a.bsh).slice(0, 5)
++  };
++}
++
++export async function fetchStatsData(): Promise<StatsProps> {
+   const currentSeason = await getCurrentSeason();
+   const skaterSeasonLabel = formatSeasonLabel(currentSeason.seasonId);
+   let goalieSeasonLabel = skaterSeasonLabel;
+@@ -80,6 +78,7 @@ export async function fetchStatsData(): Promise<{
+       goalsLeaders: [],
+       pppLeaders: [],
+       bshLeaders: [],
++      skaterLeadersByPosition: {},
+       goalieLeadersWins: [],
+       goalieLeadersSavePct: [],
+       goalieLeadersGAA: [],
+@@ -135,16 +134,19 @@ export async function fetchStatsData(): Promise<{
+     };
+   });
+ 
+-  const pointsLeaders = [...skaters]
+-    .sort((a, b) => b.points - a.points)
+-    .slice(0, 5);
+-  const goalsLeaders = [...skaters]
+-    .sort((a, b) => b.goals - a.goals)
+-    .slice(0, 5);
+-  const pppLeaders = [...skaters]
+-    .sort((a, b) => b.pp_points - a.pp_points)
+-    .slice(0, 5);
+-  const bshLeaders = [...skaters].sort((a, b) => b.bsh - a.bsh).slice(0, 5);
++  const { pointsLeaders, goalsLeaders, pppLeaders, bshLeaders } =
++    buildSkaterLeaderboards(skaters);
++  // Filter the full season dataset before taking each position's top five.
++  // NHL player metadata uses L/R as well as LW/RW for wings.
++  const skaterLeadersByPosition = Object.fromEntries(
++    ["C", "LW", "RW", "D"].map((position) => [
++      position,
++      buildSkaterLeaderboards(skaters.filter((skater) => {
++        const code = skater.position?.trim().toUpperCase();
++        return (code === "L" ? "LW" : code === "R" ? "RW" : code) === position;
++      }))
++    ])
++  );
+ 
+   // --- Fetch Goalie Stats (including games_played) ---
+   let goalieData: any[] = [];
+@@ -200,6 +202,7 @@ export async function fetchStatsData(): Promise<{
+       goalsLeaders,
+       pppLeaders,
+       bshLeaders,
++      skaterLeadersByPosition,
+       goalieLeadersWins: [],
+       goalieLeadersSavePct: [],
+       goalieLeadersGAA: [],
+@@ -311,6 +314,7 @@ export async function fetchStatsData(): Promise<{
+     goalsLeaders,
+     pppLeaders,
+     bshLeaders,
++    skaterLeadersByPosition,
+     goalieLeadersWins,
+     goalieLeadersSavePct,
+     goalieLeadersGAA,
+diff --git a/web/lib/NHL/statsPageTypes.ts b/web/lib/NHL/statsPageTypes.ts
+index c84bd6edaa..8f2d8febcc 100644
+--- a/web/lib/NHL/statsPageTypes.ts
++++ b/web/lib/NHL/statsPageTypes.ts
+@@ -48,13 +48,19 @@ export type GoalieStat = {
+   sweater_number?: number | null;
+ };
+ 
+-export type StatsProps = {
+-  skaterSeasonLabel: string;
+-  goalieSeasonLabel: string;
++export type SkaterPosition = "C" | "LW" | "RW" | "D";
++
++export type SkaterLeaderboards = {
+   pointsLeaders: SkaterStat[];
+   goalsLeaders: SkaterStat[];
+   pppLeaders: SkaterStat[];
+   bshLeaders: SkaterStat[];
++};
++
++export type StatsProps = SkaterLeaderboards & {
++  skaterSeasonLabel: string;
++  goalieSeasonLabel: string;
++  skaterLeadersByPosition: Partial<Record<SkaterPosition, SkaterLeaderboards>>;
+   goalieLeadersWins: GoalieStat[];
+   goalieLeadersSavePct: GoalieStat[];
+   goalieLeadersGAA: GoalieStat[];
+diff --git a/web/pages/lines/index.tsx b/web/pages/lines/index.tsx
+index 10b9d03b8d..752338ff71 100644
+--- a/web/pages/lines/index.tsx
++++ b/web/pages/lines/index.tsx
+@@ -36,12 +36,12 @@ type LandingPageProps = {
+   teams: Team[];
+   promotions: RowData[];
+   demotions: RowData[];
+-  lastUpdated: string;
++  pageRefreshedAt: string;
+ };
+ 
+ function Lines({
+   teams,
+-  lastUpdated,
++  pageRefreshedAt,
+   promotions,
+   demotions,
+ }: LandingPageProps) {
+@@ -58,7 +58,7 @@ function Lines({
+       <Teams teams={teams} />
+       <ProjectedLineups />
+       <Players
+-        lastUpdated={lastUpdated}
++        pageRefreshedAt={pageRefreshedAt}
+         promotions={promotions}
+         demotions={demotions}
+       />
+@@ -166,7 +166,7 @@ export const getStaticProps: GetStaticProps = async () => {
+       teams,
+       promotions,
+       demotions,
+-      lastUpdated: new Date().toISOString(),
++      pageRefreshedAt: new Date().toISOString(),
+     },
+     revalidate: 60, // in seconds
+   };
+@@ -195,11 +195,11 @@ function Teams({ teams }: { teams: Team[] }) {
+ function Players({
+   promotions,
+   demotions,
+-  lastUpdated,
++  pageRefreshedAt,
+ }: {
+   promotions: RowData[];
+   demotions: RowData[];
+-  lastUpdated: string;
++  pageRefreshedAt: string;
+ }) {
+   return (
+     <section className={styles.players}>
+@@ -210,7 +210,7 @@ function Players({
+         rel="noopener noreferrer"
+       >
+         <ClientOnly style={{ display: "inline" }}>
+-          Updated: <TimeAgo date={lastUpdated} />
++          Page refreshed: <TimeAgo date={pageRefreshedAt} />
+         </ClientOnly>
+       </a>
+       <div className={styles.tables}>
+diff --git a/web/pages/stats/index.tsx b/web/pages/stats/index.tsx
+index 026a1e29ba..88bbdb96a9 100644
+--- a/web/pages/stats/index.tsx
++++ b/web/pages/stats/index.tsx
+@@ -8,7 +8,7 @@ import LeaderboardCategoryGoalie from "components/StatsPage/LeaderboardCategoryG
+ import MobileTeamList from "components/StatsPage/MobileTeamList";
+ import MobileTabInterface from "components/StatsPage/MobileTabInterface";
+ import GoalieShareChart from "components/GoalieShareChart";
+-import { StatsProps } from "lib/NHL/statsPageTypes";
++import { StatsProps, SkaterPosition } from "lib/NHL/statsPageTypes";
+ import { fetchStatsData } from "lib/NHL/statsPageFetch";
+ import PlayerSearchBar from "components/StatsPage/PlayerSearchBar";
+ import OptimizedImage from "components/common/OptimizedImage";
+@@ -30,6 +30,8 @@ interface TeamListItem {
+   abbreviation: string;
+ }
+ 
++type PositionFilter = "all" | SkaterPosition | "G";
++
+ interface QuickStat {
+   label: string;
+   value: string | number;
+@@ -56,14 +58,15 @@ interface ActiveGradient {
+ export default function StatsPage({
+   skaterSeasonLabel = "Season",
+   goalieSeasonLabel = "Season",
+-  pointsLeaders,
+-  goalsLeaders,
+-  pppLeaders,
+-  bshLeaders,
+-  goalieLeadersWins,
+-  goalieLeadersSavePct,
+-  goalieLeadersGAA,
+-  goalieLeadersQS,
++  pointsLeaders: allPointsLeaders,
++  goalsLeaders: allGoalsLeaders,
++  pppLeaders: allPppLeaders,
++  bshLeaders: allBshLeaders,
++  skaterLeadersByPosition = {},
++  goalieLeadersWins: allGoalieLeadersWins,
++  goalieLeadersSavePct: allGoalieLeadersSavePct,
++  goalieLeadersGAA: allGoalieLeadersGAA,
++  goalieLeadersQS: allGoalieLeadersQS,
+   teams = []
+ }: StatsProps & { teams: TeamListItem[] }) {
+   // Dev logging wrapper (suppressed in production)
+@@ -72,7 +75,27 @@ export default function StatsPage({
+       console.log(...args);
+     }
+   };
+-  const [selectedFilter, setSelectedFilter] = useState<string>("all");
++  const [selectedFilter, setSelectedFilter] = useState<PositionFilter>("all");
++  const showSkaters = selectedFilter !== "G";
++  const showGoalies = selectedFilter === "all" || selectedFilter === "G";
++  const { pointsLeaders, goalsLeaders, pppLeaders, bshLeaders } =
++    selectedFilter === "all"
++      ? {
++          pointsLeaders: allPointsLeaders,
++          goalsLeaders: allGoalsLeaders,
++          pppLeaders: allPppLeaders,
++          bshLeaders: allBshLeaders
++        }
++      : (selectedFilter !== "G" && skaterLeadersByPosition[selectedFilter]) || {
++          pointsLeaders: [],
++          goalsLeaders: [],
++          pppLeaders: [],
++          bshLeaders: []
++        };
++  const goalieLeadersWins = showGoalies ? allGoalieLeadersWins : [];
++  const goalieLeadersSavePct = showGoalies ? allGoalieLeadersSavePct : [];
++  const goalieLeadersGAA = showGoalies ? allGoalieLeadersGAA : [];
++  const goalieLeadersQS = showGoalies ? allGoalieLeadersQS : [];
+   const [activeTeamColors, setActiveTeamColors] = useState<TeamColors | null>(
+     null
+   );
+@@ -169,28 +192,28 @@ export default function StatsPage({
+   const quickStats: QuickStat[] = [
+     {
+       label: "Points Leader",
+-      value: pointsLeaders[0]?.points || 0,
+-      subtitle: `${pointsLeaders[0]?.fullName || "N/A"}`,
++      value: pointsLeaders[0]?.points ?? "—",
++      subtitle: pointsLeaders[0]?.fullName ?? "No leaders available",
+       category: "scoring"
+     },
+     {
+       label: "Goals Leader",
+-      value: goalsLeaders[0]?.goals || 0,
+-      subtitle: `${goalsLeaders[0]?.fullName || "N/A"}`,
++      value: goalsLeaders[0]?.goals ?? "—",
++      subtitle: goalsLeaders[0]?.fullName ?? "No leaders available",
+       category: "scoring"
+     },
+     {
+       label: "Save Percentage",
+-      value: goalieLeadersSavePct[0]?.save_pct
++      value: goalieLeadersSavePct[0]?.save_pct != null
+         ? goalieLeadersSavePct[0].save_pct.toFixed(3).replace(/^0/, "")
+-        : "-.---",
+-      subtitle: `${goalieLeadersSavePct[0]?.fullName || "N/A"}`,
++        : "—",
++      subtitle: goalieLeadersSavePct[0]?.fullName ?? "No leaders available",
+       category: "goaltending"
+     }
+   ];
+ 
+   // Accessible filter options definition
+-  const filterOptions = useMemo(
++  const filterOptions = useMemo<Array<{ key: PositionFilter; label: string }>>(
+     () => [
+       { key: "all", label: "All Players" },
+       { key: "C", label: "Center" },
+@@ -205,6 +228,12 @@ export default function StatsPage({
+   const selectedFilterIndex = filterOptions.findIndex(
+     (f) => f.key === selectedFilter
+   );
++  const selectedFilterLabel = filterOptions[selectedFilterIndex]?.label;
++  const skaterEmptyMessage = showSkaters
++    ? selectedFilter === "all"
++      ? "No skater leaders available for this season."
++      : `No ${selectedFilterLabel?.toLowerCase()} leaders available for this season.`
++    : "Select All Players or a skater position to view skater leaders.";
+ 
+   const onFilterKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+     if (!["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown"].includes(e.key))
+@@ -215,6 +244,8 @@ export default function StatsPage({
+     const nextIndex =
+       (selectedFilterIndex + dir + filterOptions.length) % filterOptions.length;
+     setSelectedFilter(filterOptions[nextIndex].key);
++    e.currentTarget
++      .querySelectorAll<HTMLButtonElement>('[role="radio"]')[nextIndex]?.focus();
+   };
+ 
+   // Scroll handler for teams grid morphing
+@@ -406,22 +437,28 @@ export default function StatsPage({
+             <div className={styles.seasonBadge}>{skaterSeasonLabel} Season</div>
+           </header>
+           <div className={styles.leaderboards}>
+-            <LeaderboardCategory
+-              title="Points"
+-              leaders={pointsLeaders}
+-              statKey="points"
+-            />
+-            <LeaderboardCategory
+-              title="Goals"
+-              leaders={goalsLeaders}
+-              statKey="goals"
+-            />
+-            <LeaderboardCategory
+-              title="Power Play Points"
+-              leaders={pppLeaders}
+-              statKey="pp_points"
+-            />
+-            <LeaderboardCategoryBSH title="BSH Index" leaders={bshLeaders} />
++            {pointsLeaders.length === 0 ? (
++              <p className={styles.leaderboardEmptyState}>{skaterEmptyMessage}</p>
++            ) : (
++              <>
++                <LeaderboardCategory
++                  title="Points"
++                  leaders={pointsLeaders}
++                  statKey="points"
++                />
++                <LeaderboardCategory
++                  title="Goals"
++                  leaders={goalsLeaders}
++                  statKey="goals"
++                />
++                <LeaderboardCategory
++                  title="Power Play Points"
++                  leaders={pppLeaders}
++                  statKey="pp_points"
++                />
++                <LeaderboardCategoryBSH title="BSH Index" leaders={bshLeaders} />
++              </>
++            )}
+           </div>
+         </aside>
+ 
+@@ -431,10 +468,10 @@ export default function StatsPage({
+             {/* Hero Section - Clean and Minimal */}
+             <section className={styles.heroSection}>
+               <div className={styles.heroContent}>
+-                <h1 className={styles.heroTitle}>Underlying Stats Hub</h1>
++                <h1 className={styles.heroTitle}>Player &amp; Team Stats</h1>
+ 
+                 <p className={styles.heroSubtitle}>
+-                  Advanced hockey statistics and player performance analysis
++                  NHL scoring leaders, goalie statistics, and team performance
+                 </p>
+                 {/* PlayerSearchBar moved to sticky section above */}
+               </div>
+@@ -447,7 +484,9 @@ export default function StatsPage({
+                   role="list"
+                   aria-label="Key metrics"
+                 >
+-                  {quickStats.map((stat, index) => (
++                  {quickStats.filter((stat) => (
++                    stat.category === "scoring" ? showSkaters : showGoalies
++                  )).map((stat, index) => (
+                     <div
+                       key={index}
+                       role="listitem"
+@@ -485,7 +524,7 @@ export default function StatsPage({
+             aria-labelledby="position-filter-heading"
+           >
+             <h2 id="position-filter-heading" className={styles.filterTitle}>
+-              Filter by Position
++              Leaderboard Position
+             </h2>
+             <div
+               className={styles.filterButtons}
+@@ -493,11 +532,12 @@ export default function StatsPage({
+               aria-label="Player position filter"
+               onKeyDown={onFilterKeyDown}
+             >
+-              {filterOptions.map((filter, idx) => {
++              {filterOptions.map((filter) => {
+                 const isSelected = selectedFilter === filter.key;
+                 return (
+                   <button
+                     key={filter.key}
++                    type="button"
+                     role="radio"
+                     aria-checked={isSelected}
+                     tabIndex={isSelected ? 0 : -1}
+@@ -512,7 +552,7 @@ export default function StatsPage({
+               })}
+               {/* Live region announcing current filter */}
+               <div aria-live="polite" className={styles.visuallyHidden}>
+-                Selected filter: {filterOptions[selectedFilterIndex]?.label}
++                Showing {selectedFilterLabel} in key metrics and leaderboards.
+               </div>
+             </div>
+           </section>
+@@ -542,32 +582,44 @@ export default function StatsPage({
+             <div className={styles.seasonBadge}>{goalieSeasonLabel} Season</div>
+           </header>
+           <div className={styles.leaderboards}>
+-            <LeaderboardCategoryGoalie
+-              title="Wins"
+-              leaders={goalieLeadersWins}
+-              statKey="wins"
+-            />
+-            <LeaderboardCategoryGoalie
+-              title="Save Percentage"
+-              leaders={goalieLeadersSavePct}
+-              statKey="save_pct"
+-            />
+-            <LeaderboardCategoryGoalie
+-              title="Goals Against Average"
+-              leaders={goalieLeadersGAA}
+-              statKey="goals_against_avg"
+-            />
+-            <LeaderboardCategoryGoalie
+-              title="Quality Start Percentage"
+-              leaders={goalieLeadersQS}
+-              statKey="quality_starts_pct"
+-            />
++            {!showGoalies ? (
++              <p className={styles.leaderboardEmptyState}>
++                Select All Players or Goalie to view goaltender leaders.
++              </p>
++            ) : (
++              <>
++                <LeaderboardCategoryGoalie
++                  title="Wins"
++                  leaders={goalieLeadersWins}
++                  statKey="wins"
++                />
++                <LeaderboardCategoryGoalie
++                  title="Save Percentage"
++                  leaders={goalieLeadersSavePct}
++                  statKey="save_pct"
++                />
++                <LeaderboardCategoryGoalie
++                  title="Goals Against Average"
++                  leaders={goalieLeadersGAA}
++                  statKey="goals_against_avg"
++                />
++                <LeaderboardCategoryGoalie
++                  title="Quality Start Percentage"
++                  leaders={goalieLeadersQS}
++                  statKey="quality_starts_pct"
++                />
++              </>
++            )}
+           </div>
+         </aside>
+       </div>
+ 
+       {/* Mobile Leaderboard Cards - Appear Below Main Content on Mobile */}
+       <MobileTabInterface
++        playerType={
++          selectedFilter === "all" ? "all" : showSkaters ? "skaters" : "goalies"
++        }
++        skaterEmptyMessage={skaterEmptyMessage}
+         pointsLeaders={pointsLeaders}
+         goalsLeaders={goalsLeaders}
+         pppLeaders={pppLeaders}
+diff --git a/web/styles/Lines.module.scss b/web/styles/Lines.module.scss
+index 801e297e1f..4bb9a98b0a 100644
+--- a/web/styles/Lines.module.scss
++++ b/web/styles/Lines.module.scss
+@@ -16,9 +16,9 @@ $border-size: 2px;
+     position: relative;
+     border: none;
+     .time {
+-      position: absolute;
+-      top: 9px;
+-      right: 0;
++      display: block;
++      margin-bottom: 8px;
++      text-align: right;
+       opacity: 0.4;
+       font-size: 0.65rem;
+       &:hover {
+diff --git a/web/styles/Stats.module.scss b/web/styles/Stats.module.scss
+index 8c783c262d..60d477185c 100644
+--- a/web/styles/Stats.module.scss
++++ b/web/styles/Stats.module.scss
+@@ -2028,7 +2028,8 @@
+   text-align: right;
+ }
+ 
+-.mobileEmptyState {
++.mobileEmptyState,
++.leaderboardEmptyState {
+   margin: 0 v.$mobile-space-xs v.$mobile-space-xs;
+   min-height: v.$touch-target-min;
+   display: flex;
+diff --git a/web/__tests__/pages/lines/index.test.tsx b/web/__tests__/pages/lines/index.test.tsx
+new file mode 100644
+index 000000000..2c5847ac1
+--- /dev/null
++++ b/web/__tests__/pages/lines/index.test.tsx
+@@ -0,0 +1,50 @@
++import React from "react";
++import { cleanup, render, screen } from "@testing-library/react";
++import { afterEach, describe, expect, it, vi } from "vitest";
++
++import Lines, { getStaticProps } from "pages/lines";
++
++vi.mock("components/LineCombinations/ProjectedLineups", () => ({ default: () => null }));
++vi.mock("components/LineCombinations/utilities", () => ({ getLineCombinations: vi.fn() }));
++vi.mock("lib/NHL/server", () => ({ getTeams: vi.fn(async () => []), getCurrentSeason: vi.fn() }));
++vi.mock("lib/newsFeed", () => ({ fetchLatestPlayerNewsFlags: vi.fn(async () => new Map()) }));
++vi.mock("lib/supabase", () => ({
++  default: {
++    from: () => ({ select: () => ({ in: () => ({ throwOnError: async () => ({ data: [] }) }) }) }),
++  },
++}));
++vi.mock("next/legacy/image", () => ({
++  default: ({ alt = "" }: { alt?: string }) => React.createElement("img", { alt }),
++}));
++vi.mock("components/TimeAgo", () => ({
++  default: ({ date }: { date: string }) => <time dateTime={date}>1h ago</time>,
++}));
++
++afterEach(() => {
++  cleanup();
++  vi.useRealTimers();
++});
++
++describe("Lines page freshness", () => {
++  it("identifies the movement section timestamp as a page refresh", () => {
++    const refreshedAt = "2026-10-15T04:00:00.000Z";
++    render(<Lines teams={[]} promotions={[]} demotions={[]} pageRefreshedAt={refreshedAt} />);
++
++    const timestamp = screen.getByRole("link", { name: "Page refreshed: 1h ago" });
++    expect(timestamp.querySelector("time")?.dateTime).toBe(refreshedAt);
++    expect(screen.queryByText(/^Updated:/)).toBeNull();
++    expect(screen.getAllByText("No Data Found")).toHaveLength(2);
++  });
++
++  it("returns the page-generation time without claiming a source update time", async () => {
++    vi.useFakeTimers();
++    vi.setSystemTime(new Date("2026-10-15T05:00:00.000Z"));
++    const result = await getStaticProps({});
++
++    expect(result).toMatchObject({
++      props: { pageRefreshedAt: "2026-10-15T05:00:00.000Z", promotions: [], demotions: [] },
++      revalidate: 60,
++    });
++    if ("props" in result) expect(await result.props).not.toHaveProperty("lastUpdated");
++  });
++});

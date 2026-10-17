@@ -1,0 +1,1767 @@
+
+> web@0.1.0 test
+> vitest --run --maxWorkers=4 __tests__/components/RosterScheduleOptimizer/CategoryGains.test.tsx __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts __tests__/pages/api/v1/db/run-projection-accuracy.test.ts __tests__/pages/api/v1/db/update-line-sources.test.ts __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts __tests__/pages/api/v1/db/update-player-trend-metrics.test.ts __tests__/pages/api/v1/db/update-wgo-averages.route.test.ts __tests__/pages/api/v1/ml/update-predictions-sko.test.ts lib/cron/combinedCronInventory.test.ts lib/fantasy-projections/fantasyProjections.test.ts lib/game-predictions/workflow.test.ts lib/integrations/yahoo/writerPermissions.test.ts lib/player-forecasts/playerForecasts.test.ts lib/projections/nativeGoalLedgerAudit.test.ts lib/projections/nativeIntervalReconciliation.test.ts lib/projections/researchGoalBaseline.test.ts lib/rosterScheduleOptimizer/planningReproducibility.test.ts lib/sources/tweetInterpretation.test.ts lib/supabase/espnFantasyPrivateBetaMigration.test.ts lib/supabase/fantraxSettingsFirstMigration.test.ts lib/supabase/fhfhDraftRankerCommunityMigration.test.ts lib/supabase/fhfhDraftRankerDiscoveryMigration.test.ts lib/supabase/fhfhDraftRankerOwnershipMigration.test.ts lib/supabase/fhfhDraftRankerPairwiseMigration.test.ts lib/supabase/fhfhDraftRankerPlacementMigration.test.ts lib/supabase/fhfhDraftRankerPlacementResumeMigration.test.ts lib/supabase/fhfhDraftRankerPlayerActionsMigration.test.ts lib/supabase/fhfhDraftRankerPlayerSearchMigration.test.ts lib/supabase/fhfhDraftRankerRateControlsMigration.test.ts lib/supabase/fhfhDraftRankerReorderMigration.test.ts lib/supabase/fhfhDraftRankerRepairMigration.test.ts lib/supabase/fhfhDraftRankerVerifiedProspectMigration.test.ts lib/supabase/fhfhDraftRankerYahooSeedMigration.test.ts lib/supabase/fhfhPlayerIdentityBackfillMigration.test.ts lib/supabase/fhfhPlayerIdentityMigration.test.ts lib/supabase/fhfhYahooIdentityReviewMigration.test.ts lib/supabase/gamecenterNormalizationMigration.test.ts lib/supabase/immutableUnaccentMigration.test.ts lib/supabase/nonRealizedGameStatsMigration.test.ts lib/supabase/projectionMaterializationMigration.test.ts lib/supabase/shiftRelationshipPositionMigration.test.ts lib/supabase/supportedBaselineMigration.test.ts lib/supabase/sustainabilityVersionProvenanceMigration.test.ts lib/supabase/transactionalGameStatsMigration.test.ts lib/supabase/yahooLiveDraftCompanionMigration.test.ts lib/trends/ctpi.test.ts scripts/forge-local-failure-evidence.test.ts scripts/qualify-native-players-offline.test.ts scripts/run-forge-local.test.ts
+
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90m/private/tmp/fhf-release-checkpoint-20261016-0424/candidate/web[39m
+
+(node:16731) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:16732) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:16733) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:16734) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[90mstdout[2m | lib/rosterScheduleOptimizer/planningReproducibility.test.ts[2m > [22m[2mplanning search reproducibility[2m > [22m[2mbounds long-range default work by dates and available candidate groups
+[22m[39mLong-range planning fixture: 8.5 ms, 47 evaluations
+
+[90mstdout[2m | lib/rosterScheduleOptimizer/planningReproducibility.test.ts[2m > [22m[2mplanning search reproducibility[2m > [22m[2mbounds a 367-day catalog workload with 25 rostered and 300 available players
+[22m[39mCatalog planning fixture: 1473.4 ms, 13 evaluations
+
+ [31m❯[39m lib/rosterScheduleOptimizer/planningReproducibility.test.ts [2m([22m[2m15 tests[22m[2m | [22m[31m5 failed[39m[2m)[22m[33m 1616[2mms[22m[39m
+[31m   [31m×[31m planning search reproducibility[2m > [22mreproduces admitted detailed quality decisions across scoring profiles and input order[39m[32m 39[2mms[22m[39m
+[31m     → expected 'agp' to be 'outcome' // Object.is equality[39m
+[31m   [31m×[31m planning search reproducibility[2m > [22mreproduces admitted baseline quality decisions across scoring profiles and input order[39m[32m 28[2mms[22m[39m
+[31m     → expected 'agp' to be 'outcome' // Object.is equality[39m
+[31m   [31m×[31m planning search reproducibility[2m > [22mreproduces admitted blended quality decisions across scoring profiles and input order[39m[32m 26[2mms[22m[39m
+[31m     → expected 'agp' to be 'outcome' // Object.is equality[39m
+   [32m✓[39m planning search reproducibility[2m > [22mreplays admitted quality forecasts with daily locks and realized results[32m 5[2mms[22m[39m
+   [32m✓[39m planning search reproducibility[2m > [22mreplays admitted quality forecasts with weekly locks and realized results[32m 9[2mms[22m[39m
+   [32m✓[39m planning search reproducibility[2m > [22mretains an eligible quality checkpoint when a deadline interrupts search[32m 5[2mms[22m[39m
+   [32m✓[39m planning search reproducibility[2m > [22mbounds unchecked points bench decisions without inventing scoring evidence[32m 4[2mms[22m[39m
+[31m   [31m×[31m planning search reproducibility[2m > [22mbounds unchecked categories bench decisions without inventing scoring evidence[39m[32m 3[2mms[22m[39m
+[31m     → expected { policyVersion: 'rso-bench-v1', …(5) } to deeply equal { policyVersion: 'rso-bench-v1', …(5) }[39m
+[31m   [31m×[31m planning search reproducibility[2m > [22mbounds unchecked goalie bench decisions without inventing scoring evidence[39m[32m 3[2mms[22m[39m
+[31m     → expected { policyVersion: 'rso-bench-v1', …(5) } to deeply equal { policyVersion: 'rso-bench-v1', …(5) }[39m
+   [32m✓[39m planning search reproducibility[2m > [22mprioritizes selected-plan explanations and shares duplicate receipts within the quota[32m 3[2mms[22m[39m
+   [32m✓[39m planning search reproducibility[2m > [22mstarts no bench rechecks after the response deadline and retains approved numerical inputs[32m 2[2mms[22m[39m
+   [32m✓[39m planning search reproducibility[2m > [22muses canonical schedule-fit and acquisition ordering across input permutations[32m 3[2mms[22m[39m
+   [32m✓[39m planning search reproducibility[2m > [22muses work quotas by default and labels an explicit time interruption[32m 2[2mms[22m[39m
+   [32m✓[39m planning search reproducibility[2m > [22mbounds long-range default work by dates and available candidate groups[32m 9[2mms[22m[39m
+   [33m[2m✓[22m[39m planning search reproducibility[2m > [22mbounds a 367-day catalog workload with 25 rostered and 300 available players [33m 1475[2mms[22m[39m
+(node:16792) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/player-forecasts/playerForecasts.test.ts [2m([22m[2m58 tests[22m[2m)[22m[32m 73[2mms[22m[39m
+(node:16797) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [31m❯[39m __tests__/components/RosterScheduleOptimizer/CategoryGains.test.tsx [2m([22m[2m18 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 62[2mms[22m[39m
+[31m   [31m×[31m shows per-category gains and losses from startable days, preserving manager moves and reset accounting[39m[32m 17[2mms[22m[39m
+[31m     → expected [ [ '2026-10-06', '1' ], …(1) ] to deeply equal [ [ '2026-10-06', '1' ], …(1) ][39m
+   [32m✓[39m excludes a postponed candidate game from gains[32m 15[2mms[22m[39m
+   [32m✓[39m excludes a cancelled candidate game from gains[32m 3[2mms[22m[39m
+   [32m✓[39m excludes a final candidate game from gains[32m 2[2mms[22m[39m
+   [32m✓[39m keeps expired gains unavailable[32m 2[2mms[22m[39m
+   [32m✓[39m keeps missing gains unavailable[32m 2[2mms[22m[39m
+   [32m✓[39m keeps comparison denied gains unavailable[32m 3[2mms[22m[39m
+   [32m✓[39m keeps eligibility unknown gains unavailable[32m 2[2mms[22m[39m
+   [32m✓[39m keeps schedule changed gains unavailable[32m 2[2mms[22m[39m
+   [32m✓[39m keeps roster changed gains unavailable[32m 3[2mms[22m[39m
+   [32m✓[39m keeps opponent missing gains unavailable[32m 1[2mms[22m[39m
+   [32m✓[39m keeps allowance unknown gains unavailable[32m 1[2mms[22m[39m
+   [32m✓[39m keeps allowance exhausted gains unavailable[32m 1[2mms[22m[39m
+   [32m✓[39m keeps too early gains unavailable[32m 1[2mms[22m[39m
+   [32m✓[39m shows no category gain for a candidate without a compatible starting position[32m 2[2mms[22m[39m
+   [32m✓[39m does not compare different manifests or unapproved legacy evaluations[32m 2[2mms[22m[39m
+   [32m✓[39m uses whole-lineup goalie ratios and keeps projected starts separate from credited minimum progress[32m 3[2mms[22m[39m
+   [32m✓[39m omits category UI for a points league[32m 1[2mms[22m[39m
+(node:16802) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/fantasy-projections/fantasyProjections.test.ts [2m([22m[2m32 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[32m 22[2mms[22m[39m
+(node:16807) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/trends/ctpi.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+(node:16818) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/integrations/yahoo/writerPermissions.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m scripts/forge-local-failure-evidence.test.ts [2m([22m[2m28 tests[22m[2m)[22m[33m 3688[2mms[22m[39m
+   [33m[2m✓[22m[39m failed committed snapshot ownership disposition[2m > [22mserializes competing investigators and preserves a replacement claim [33m 491[2mms[22m[39m
+   [33m[2m✓[22m[39m failed committed snapshot ownership disposition[2m > [22mruns the real reconciliation CLI through five GETs and retains ownership until an explicit separate disposition [33m 385[2mms[22m[39m
+   [33m[2m✓[22m[39m failed snapshot archival freshness[2m > [22mrechecks 'wall clock preceding investigation' after publishing the complete claim [33m 300[2mms[22m[39m
+   [33m[2m✓[22m[39m failed snapshot archival freshness[2m > [22mrechecks 'exact freshness boundary' after publishing the complete claim [33m 317[2mms[22m[39m
+(node:16836) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[90mstderr[2m | __tests__/pages/api/v1/db/run-projection-accuracy.test.ts[2m > [22m[2m/api/v1/db/run-projection-accuracy[2m > [22m[2mreturns structured dependency diagnostics instead of raw html errors
+[22m[39mcron_job_audit insert failed __vite_ssr_import_1__.default.from is not a function
+
+[90mstderr[2m | __tests__/pages/api/v1/db/run-projection-accuracy.test.ts[2m > [22m[2m/api/v1/db/run-projection-accuracy[2m > [22m[2mreturns 422 when projection freshness preflight fails
+[22m[39mcron_job_audit insert failed __vite_ssr_import_1__.default.from is not a function
+
+ [32m✓[39m __tests__/pages/api/v1/db/run-projection-accuracy.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+(node:16840) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/cron/combinedCronInventory.test.ts [2m([22m[2m42 tests[22m[2m)[22m[32m 54[2mms[22m[39m
+(node:16856) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/game-predictions/workflow.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+(node:16872) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/espnFantasyPrivateBetaMigration.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+(node:16874) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/fantraxSettingsFirstMigration.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+(node:16878) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/fhfhDraftRankerCommunityMigration.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+(node:16880) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/fhfhDraftRankerDiscoveryMigration.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+(node:16882) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/fhfhDraftRankerOwnershipMigration.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+(node:16899) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/fhfhDraftRankerPairwiseMigration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+(node:16903) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/fhfhDraftRankerPlacementMigration.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+(node:16905) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/fhfhDraftRankerPlacementResumeMigration.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 1[2mms[22m[39m
+(node:16907) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/fhfhDraftRankerPlayerActionsMigration.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+(node:16909) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/fhfhDraftRankerPlayerSearchMigration.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+(node:16915) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/fhfhDraftRankerRateControlsMigration.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+(node:16929) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/fhfhDraftRankerReorderMigration.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+(node:16930) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/fhfhDraftRankerRepairMigration.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 1[2mms[22m[39m
+(node:16933) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/fhfhDraftRankerVerifiedProspectMigration.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+(node:16934) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/fhfhDraftRankerYahooSeedMigration.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+(node:16939) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/fhfhPlayerIdentityBackfillMigration.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+(node:16940) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/fhfhPlayerIdentityMigration.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+(node:16943) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/fhfhYahooIdentityReviewMigration.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 1[2mms[22m[39m
+(node:16944) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/gamecenterNormalizationMigration.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+(node:16950) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/immutableUnaccentMigration.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+(node:16951) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/nonRealizedGameStatsMigration.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+(node:16954) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/projectionMaterializationMigration.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+(node:16955) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/shiftRelationshipPositionMigration.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 1[2mms[22m[39m
+(node:16960) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:16961) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [31m❯[39m lib/supabase/supportedBaselineMigration.test.ts [2m([22m[2m19 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 25[2mms[22m[39m
+[31m   [31m×[31m supported Supabase schema-baseline reconciliation[2m > [22mkeeps only the reviewed baseline and supported post-baseline deltas active[39m[32m 5[2mms[22m[39m
+[31m     → expected [ …(80) ] to deeply equal [ …(72) ][39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mrequires an editor event for every opening projection release[32m 0[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22minherits long-lived season assumptions without auto-publishing direct stat edits[32m 0[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mrevokes browser execution of the two privileged maintenance RPCs[32m 0[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mkeeps credential-bearing routines out of the current-schema baseline[32m 12[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mmakes the authoritative-root provenance RPC match the reviewed A-GDL source[32m 1[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mpreserves all three trigger semantics through one fail-closed Vault helper[32m 1[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mkeeps legacy RPC tombstones credential-free and browser-denied[32m 0[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mkeeps the separately authorized legacy-RPC final drop exact and fail-closed[32m 0[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mrepairs compile-invalid legacy routines without restoring duplicate writers[32m 0[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mkeeps SKO run control service-only with deterministic lease rejection[32m 0[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22matomically versions complete Yahoo game metadata/week snapshots[32m 0[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mbounds the Utah WGO identity repair to the frozen replay-safe manifest[32m 0[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mmakes the April 2023 WGO/trend season repair atomic and reversible[32m 1[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mkeeps the legacy Yahoo cache revocation postdeploy and fail-closed[32m 0[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mkeeps public view and routine hardening explicit and bounded[32m 0[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mkeeps canonical aggregate readers public while privatizing materialized storage[32m 0[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mreconstructs the exact credential-free hosted analytics contract[32m 1[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mkeeps the frozen Production application classes and migration hashes exact[32m 2[2mms[22m[39m
+ [32m✓[39m lib/supabase/sustainabilityVersionProvenanceMigration.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+(node:16964) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:16965) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/supabase/transactionalGameStatsMigration.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m lib/supabase/yahooLiveDraftCompanionMigration.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+(node:16972) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:16973) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[90mstderr[2m | __tests__/pages/api/v1/ml/update-predictions-sko.test.ts[2m > [22m[2m/api/v1/ml/update-predictions-sko[2m > [22m[2mreturns a structured prerequisite failure when player_stats_unified is unavailable
+[22m[39m[update-predictions-sko] health error {
+  status: [32m'error'[39m,
+  alerts: [
+    {
+      code: [32m'run_failed'[39m,
+      severity: [32m'error'[39m,
+      message: [32m'Missing prerequisite data in player_stats_unified for sKO prediction refresh.'[39m
+    }
+  ]
+}
+
+[90mstdout[2m | __tests__/pages/api/v1/ml/update-predictions-sko.test.ts[2m > [22m[2m/api/v1/ml/update-predictions-sko[2m > [22m[2mreturns deterministic coverage, source-lag, model, and write diagnostics
+[22m[39m[update-predictions-sko] completed players=1 upserts=1 totalMs=0 avgFetchMs=0 avgProcessMs=0 batches=1
+
+[90mstdout[2m | __tests__/pages/api/v1/ml/update-predictions-sko.test.ts[2m > [22m[2m/api/v1/ml/update-predictions-sko[2m > [22m[2mreturns an exact dry-run manifest without changing prediction rows
+[22m[39m[update-predictions-sko] completed players=1 upserts=0 totalMs=0 avgFetchMs=0 avgProcessMs=0 batches=0
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mreturns a structured dependency error instead of leaking html
+[22m[39mStarting player stats update (v9 - Separate Recent Table - Full Code)...
+
+[90mstderr[2m | __tests__/pages/api/v1/ml/update-predictions-sko.test.ts[2m > [22m[2m/api/v1/ml/update-predictions-sko[2m > [22m[2mskips publication and warns when in-season source lag exceeds 72 hours
+[22m[39m[update-predictions-sko] health warning {
+  status: [32m'warning'[39m,
+  alerts: [
+    {
+      code: [32m'stale_source'[39m,
+      severity: [32m'warning'[39m,
+      message: [32m'No sKO predictions published for 2026-03-21: latest source data is 5 days old.'[39m
+    }
+  ]
+}
+
+ [32m✓[39m __tests__/pages/api/v1/ml/update-predictions-sko.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+[90mstderr[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mreturns a structured dependency error instead of leaking html
+[22m[39mCritical error during player stats update: Error: <!DOCTYPE html><html><body>Error code 522 from supabase.co</body></html>
+    at [90m/private/tmp/fhf-release-checkpoint-20261016-0424/candidate/web/[39m__tests__/pages/api/v1/db/calculate-wigo-stats.test.ts:45:7
+    at file:///Users/tim/Code/fhfhockey.com/web/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:155:11
+    at file:///Users/tim/Code/fhfhockey.com/web/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:752:26
+    at file:///Users/tim/Code/fhfhockey.com/web/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/tim/Code/fhfhockey.com/web/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///Users/tim/Code/fhfhockey.com/web/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1574:12)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at runSuite (file:///Users/tim/Code/fhfhockey.com/web/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///Users/tim/Code/fhfhockey.com/web/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8)
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with complete source coverage for every timeframe
+[22m[39mStarting player stats update (v9 - Separate Recent Table - Full Code)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with complete source coverage for every timeframe
+[22m[39mCurrent Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with complete source coverage for every timeframe
+[22m[39mWorkspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with complete source coverage for every timeframe
+[22m[39mObtained 1 unique player IDs to process.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with complete source coverage for every timeframe
+[22m[39mUpserting final batches (1 career, 1 recent)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with complete source coverage for every timeframe
+[22m[39mFinal wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with absent source coverage for every timeframe
+[22m[39mStarting player stats update (v9 - Separate Recent Table - Full Code)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with absent source coverage for every timeframe
+[22m[39mCurrent Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with absent source coverage for every timeframe
+[22m[39mWorkspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with absent source coverage for every timeframe
+[22m[39mObtained 1 unique player IDs to process.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with absent source coverage for every timeframe
+[22m[39mUpserting final batches (1 career, 1 recent)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with absent source coverage for every timeframe
+[22m[39mFinal wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with partial source coverage for every timeframe
+[22m[39mStarting player stats update (v9 - Separate Recent Table - Full Code)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with partial source coverage for every timeframe
+[22m[39mCurrent Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with partial source coverage for every timeframe
+[22m[39mWorkspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with partial source coverage for every timeframe
+[22m[39mObtained 1 unique player IDs to process.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with partial source coverage for every timeframe
+[22m[39mUpserting final batches (1 career, 1 recent)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with partial source coverage for every timeframe
+[22m[39mFinal wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with nonfinite source coverage for every timeframe
+[22m[39mStarting player stats update (v9 - Separate Recent Table - Full Code)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with nonfinite source coverage for every timeframe
+[22m[39mCurrent Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with nonfinite source coverage for every timeframe
+[22m[39mWorkspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with nonfinite source coverage for every timeframe
+[22m[39mObtained 1 unique player IDs to process.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with nonfinite source coverage for every timeframe
+[22m[39mUpserting final batches (1 career, 1 recent)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with nonfinite source coverage for every timeframe
+[22m[39mFinal wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with zero source coverage for every timeframe
+[22m[39mStarting player stats update (v9 - Separate Recent Table - Full Code)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with zero source coverage for every timeframe
+[22m[39mCurrent Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with zero source coverage for every timeframe
+[22m[39mWorkspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with zero source coverage for every timeframe
+[22m[39mObtained 1 unique player IDs to process.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with zero source coverage for every timeframe
+[22m[39mUpserting final batches (1 career, 1 recent)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with zero source coverage for every timeframe
+[22m[39mFinal wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing PP source coverage for every timeframe
+[22m[39mStarting player stats update (v9 - Separate Recent Table - Full Code)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing PP source coverage for every timeframe
+[22m[39mCurrent Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing PP source coverage for every timeframe
+[22m[39mWorkspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing PP source coverage for every timeframe
+[22m[39mObtained 1 unique player IDs to process.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing PP source coverage for every timeframe
+[22m[39mUpserting final batches (1 career, 1 recent)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing PP source coverage for every timeframe
+[22m[39mFinal wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with wrong season source coverage for every timeframe
+[22m[39mStarting player stats update (v9 - Separate Recent Table - Full Code)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with wrong season source coverage for every timeframe
+[22m[39mCurrent Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with wrong season source coverage for every timeframe
+[22m[39mWorkspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with wrong season source coverage for every timeframe
+[22m[39mObtained 1 unique player IDs to process.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with wrong season source coverage for every timeframe
+[22m[39mUpserting final batches (1 career, 1 recent)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with wrong season source coverage for every timeframe
+[22m[39mFinal wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing season source coverage for every timeframe
+[22m[39mStarting player stats update (v9 - Separate Recent Table - Full Code)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing season source coverage for every timeframe
+[22m[39mCurrent Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing season source coverage for every timeframe
+[22m[39mWorkspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing season source coverage for every timeframe
+[22m[39mObtained 1 unique player IDs to process.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing season source coverage for every timeframe
+[22m[39mUpserting final batches (1 career, 1 recent)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing season source coverage for every timeframe
+[22m[39mFinal wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing NHL season source coverage for every timeframe
+[22m[39mStarting player stats update (v9 - Separate Recent Table - Full Code)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing NHL season source coverage for every timeframe
+[22m[39mCurrent Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing NHL season source coverage for every timeframe
+[22m[39mWorkspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing NHL season source coverage for every timeframe
+[22m[39mObtained 1 unique player IDs to process.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing NHL season source coverage for every timeframe
+[22m[39mUpserting final batches (1 career, 1 recent)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing NHL season source coverage for every timeframe
+[22m[39mFinal wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with wrong date source coverage for every timeframe
+[22m[39mStarting player stats update (v9 - Separate Recent Table - Full Code)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with wrong date source coverage for every timeframe
+[22m[39mCurrent Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with wrong date source coverage for every timeframe
+[22m[39mWorkspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with wrong date source coverage for every timeframe
+[22m[39mObtained 1 unique player IDs to process.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with wrong date source coverage for every timeframe
+[22m[39mUpserting final batches (1 career, 1 recent)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with wrong date source coverage for every timeframe
+[22m[39mFinal wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with cross-season source coverage for every timeframe
+[22m[39mStarting player stats update (v9 - Separate Recent Table - Full Code)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with cross-season source coverage for every timeframe
+[22m[39mCurrent Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with cross-season source coverage for every timeframe
+[22m[39mWorkspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with cross-season source coverage for every timeframe
+[22m[39mObtained 1 unique player IDs to process.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with cross-season source coverage for every timeframe
+[22m[39mUpserting final batches (1 career, 1 recent)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with cross-season source coverage for every timeframe
+[22m[39mFinal wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing goals source coverage for every timeframe
+[22m[39mStarting player stats update (v9 - Separate Recent Table - Full Code)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing goals source coverage for every timeframe
+[22m[39mCurrent Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing goals source coverage for every timeframe
+[22m[39mWorkspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing goals source coverage for every timeframe
+[22m[39mObtained 1 unique player IDs to process.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing goals source coverage for every timeframe
+[22m[39mUpserting final batches (1 career, 1 recent)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing goals source coverage for every timeframe
+[22m[39mFinal wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with nonfinite goals source coverage for every timeframe
+[22m[39mStarting player stats update (v9 - Separate Recent Table - Full Code)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with nonfinite goals source coverage for every timeframe
+[22m[39mCurrent Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with nonfinite goals source coverage for every timeframe
+[22m[39mWorkspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with nonfinite goals source coverage for every timeframe
+[22m[39mObtained 1 unique player IDs to process.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with nonfinite goals source coverage for every timeframe
+[22m[39mUpserting final batches (1 career, 1 recent)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with nonfinite goals source coverage for every timeframe
+[22m[39mFinal wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing points source coverage for every timeframe
+[22m[39mStarting player stats update (v9 - Separate Recent Table - Full Code)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing points source coverage for every timeframe
+[22m[39mCurrent Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing points source coverage for every timeframe
+[22m[39mWorkspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing points source coverage for every timeframe
+[22m[39mObtained 1 unique player IDs to process.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing points source coverage for every timeframe
+[22m[39mUpserting final batches (1 career, 1 recent)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing points source coverage for every timeframe
+[22m[39mFinal wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing shots source coverage for every timeframe
+[22m[39mStarting player stats update (v9 - Separate Recent Table - Full Code)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing shots source coverage for every timeframe
+[22m[39mCurrent Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing shots source coverage for every timeframe
+[22m[39mWorkspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing shots source coverage for every timeframe
+[22m[39mObtained 1 unique player IDs to process.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing shots source coverage for every timeframe
+[22m[39mUpserting final batches (1 career, 1 recent)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing shots source coverage for every timeframe
+[22m[39mFinal wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing primary assists source coverage for every timeframe
+[22m[39mStarting player stats update (v9 - Separate Recent Table - Full Code)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing primary assists source coverage for every timeframe
+[22m[39mCurrent Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing primary assists source coverage for every timeframe
+[22m[39mWorkspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing primary assists source coverage for every timeframe
+[22m[39mObtained 1 unique player IDs to process.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing primary assists source coverage for every timeframe
+[22m[39mUpserting final batches (1 career, 1 recent)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing primary assists source coverage for every timeframe
+[22m[39mFinal wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing PP points source coverage for every timeframe
+[22m[39mStarting player stats update (v9 - Separate Recent Table - Full Code)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing PP points source coverage for every timeframe
+[22m[39mCurrent Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing PP points source coverage for every timeframe
+[22m[39mWorkspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing PP points source coverage for every timeframe
+[22m[39mObtained 1 unique player IDs to process.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing PP points source coverage for every timeframe
+[22m[39mUpserting final batches (1 career, 1 recent)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing PP points source coverage for every timeframe
+[22m[39mFinal wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing PP percentage source coverage for every timeframe
+[22m[39mStarting player stats update (v9 - Separate Recent Table - Full Code)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing PP percentage source coverage for every timeframe
+[22m[39mCurrent Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing PP percentage source coverage for every timeframe
+[22m[39mWorkspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing PP percentage source coverage for every timeframe
+[22m[39mObtained 1 unique player IDs to process.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing PP percentage source coverage for every timeframe
+[22m[39mUpserting final batches (1 career, 1 recent)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with missing PP percentage source coverage for every timeframe
+[22m[39mFinal wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with zero counts source coverage for every timeframe
+[22m[39mStarting player stats update (v9 - Separate Recent Table - Full Code)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with zero counts source coverage for every timeframe
+[22m[39mCurrent Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with zero counts source coverage for every timeframe
+[22m[39mWorkspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with zero counts source coverage for every timeframe
+[22m[39mObtained 1 unique player IDs to process.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with zero counts source coverage for every timeframe
+[22m[39mUpserting final batches (1 career, 1 recent)...
+
+[90mstdout[2m | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts[2m > [22m[2m/api/v1/db/calculate-wigo-stats route[2m > [22m[2mwrites recent rates with zero counts source coverage for every timeframe
+[22m[39mFinal wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+ [32m✓[39m __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts [2m([22m[2m20 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+(node:16976) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:16977) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[90mstdout[2m | __tests__/pages/api/v1/db/update-wgo-averages.route.test.ts[2m > [22m[2m/api/v1/db/update-wgo-averages route[2m > [22m[2mreturns a structured dependency error instead of leaking html
+[22m[39mStarting player average calculation...
+Fetching source data with pagination...
+Fetching all data from nst_seasonal_individual_counts...
+Fetching all data from nst_seasonal_on_ice_counts...
+Fetching all data from team_summary_years...
+
+[90mstderr[2m | __tests__/pages/api/v1/db/update-wgo-averages.route.test.ts[2m > [22m[2m/api/v1/db/update-wgo-averages route[2m > [22m[2mreturns a structured dependency error instead of leaking html
+[22m[39mError calculating player averages: Error: <!DOCTYPE html><html><body>Error code 522 from supabase.co</body></html>
+    at [90m/private/tmp/fhf-release-checkpoint-20261016-0424/candidate/web/[39m__tests__/pages/api/v1/db/update-wgo-averages.route.test.ts:40:19
+    at file:///Users/tim/Code/fhfhockey.com/web/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:155:11
+    at file:///Users/tim/Code/fhfhockey.com/web/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/tim/Code/fhfhockey.com/web/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1863:10)
+    at runHook (file:///Users/tim/Code/fhfhockey.com/web/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1436:51)
+    at callSuiteHook (file:///Users/tim/Code/fhfhockey.com/web/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1442:25)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at runTest (file:///Users/tim/Code/fhfhockey.com/web/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1566:26)
+    at runSuite (file:///Users/tim/Code/fhfhockey.com/web/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8)
+Error details: <!DOCTYPE html><html><body>Error code 522 from supabase.co</body></html> Error: <!DOCTYPE html><html><body>Error code 522 from supabase.co</body></html>
+    at /private/tmp/fhf-release-checkpoint-20261016-0424/candidate/web/__tests__/pages/api/v1/db/update-wgo-averages.route.test.ts:40:19
+    at file:///Users/tim/Code/fhfhockey.com/web/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///Users/tim/Code/fhfhockey.com/web/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/tim/Code/fhfhockey.com/web/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runHook (file:///Users/tim/Code/fhfhockey.com/web/node_modules/@vitest/runner/dist/chunk-hooks.js:1436:51)
+    at callSuiteHook (file:///Users/tim/Code/fhfhockey.com/web/node_modules/@vitest/runner/dist/chunk-hooks.js:1442:25)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at runTest (file:///Users/tim/Code/fhfhockey.com/web/node_modules/@vitest/runner/dist/chunk-hooks.js:1566:26)
+    at runSuite (file:///Users/tim/Code/fhfhockey.com/web/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+
+ [32m✓[39m __tests__/pages/api/v1/db/update-wgo-averages.route.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+[90mstdout[2m | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts[2m > [22m[2m/api/v1/db/update-nst-goalies[2m > [22m[2mpreserves representative playerteams goalie upsert shape through the migrated NST client
+[22m[39mUsing explicit startDate 2025-10-01.
+
+[2026-10-16T04:36:32.653Z] Starting URL 1/10: 5v5Counts for 2025-10-01
+
+[90mstdout[2m | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts[2m > [22m[2m/api/v1/db/update-nst-goalies[2m > [22m[2mpreserves representative playerteams goalie upsert shape through the migrated NST client
+[22m[39mData existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-01: false
+
+[90mstdout[2m | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts[2m > [22m[2m/api/v1/db/update-nst-goalies[2m > [22m[2mpreserves representative playerteams goalie upsert shape through the migrated NST client
+[22m[39mFetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+[90mstdout[2m | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts[2m > [22m[2m/api/v1/db/update-nst-goalies[2m > [22m[2mpreserves representative playerteams goalie upsert shape through the migrated NST client
+[22m[39mParsed 1 rows for datasetType "5v5Counts".
+
+[90mstdout[2m | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts[2m > [22m[2m/api/v1/db/update-nst-goalies[2m > [22m[2mpreserves representative playerteams goalie upsert shape through the migrated NST client
+[22m[39mUpserting 1 rows into table "nst_gamelog_goalie_5v5_counts".
+
+[90mstdout[2m | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts[2m > [22m[2m/api/v1/db/update-nst-goalies[2m > [22m[2mpreserves representative playerteams goalie upsert shape through the migrated NST client
+[22m[39mSuccessfully upserted data into "nst_gamelog_goalie_5v5_counts".
+
+[90mstdout[2m | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts[2m > [22m[2m/api/v1/db/update-nst-goalies[2m > [22m[2mpreserves representative playerteams goalie upsert shape through the migrated NST client
+[22m[39m[2026-10-16T04:36:32.656Z] Finished 5v5Counts for 2025-10-01 in 0.0s.
+Processed 1 out of 10 URLs.
+
+[90mstdout[2m | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts[2m > [22m[2m/api/v1/db/update-nst-goalies[2m > [22m[2mfails fast on missing NST configuration instead of retrying it
+[22m[39mUsing explicit startDate 2025-10-01.
+
+[2026-10-16T04:36:32.658Z] Starting URL 1/10: 5v5Counts for 2025-10-01
+
+[90mstdout[2m | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts[2m > [22m[2m/api/v1/db/update-nst-goalies[2m > [22m[2mfails fast on missing NST configuration instead of retrying it
+[22m[39mData existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-01: false
+
+[90mstdout[2m | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts[2m > [22m[2m/api/v1/db/update-nst-goalies[2m > [22m[2mfails fast on missing NST configuration instead of retrying it
+[22m[39mFetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+[90mstderr[2m | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts[2m > [22m[2m/api/v1/db/update-nst-goalies[2m > [22m[2mfails fast on missing NST configuration instead of retrying it
+[22m[39mAn error occurred: NST_KEY missing
+
+[90mstderr[2m | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts[2m > [22m[2m/api/v1/db/update-nst-goalies[2m > [22m[2mfails fast on missing NST configuration instead of retrying it
+[22m[39mError in API handler: NST_KEY missing
+
+ [32m✓[39m __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+(node:16980) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m __tests__/pages/api/v1/db/update-player-trend-metrics.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m lib/projections/researchGoalBaseline.test.ts [2m([22m[2m45 tests[22m[2m)[22m[33m 722[2mms[22m[39m
+   [33m[2m✓[22m[39m retained official GOALS research evaluation[2m > [22mruns deterministic offline CLI evaluations without overwriting retained input/output bytes [33m 576[2mms[22m[39m
+ [31m❯[39m __tests__/pages/api/v1/db/update-line-sources.test.ts [2m([22m[2m29 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 121[2mms[22m[39m
+   [32m✓[39m private Starter Board release operations[2m > [22mregisters a server-hashed frozen policy without activating it[32m 8[2mms[22m[39m
+   [32m✓[39m private Starter Board release operations[2m > [22mpublishes a matching review as evidence without promoting a model or intervals[32m 3[2mms[22m[39m
+   [32m✓[39m private Starter Board release operations[2m > [22mreturns a no-store bounded report with honest empty evidence[32m 0[2mms[22m[39m
+   [32m✓[39m private Starter Board release operations[2m > [22mrejects unbounded windows and does not disclose database errors[32m 0[2mms[22m[39m
+   [32m✓[39m private Starter Board release operations[2m > [22mrecords render time separately while retaining legacy receipt compatibility[32m 0[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mavoids empty-queue roster work while retaining scheduled reconciliation and audit[32m 2[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mleaves a concurrent arrival pending for the next unchanged scheduler cycle[32m 14[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22maudits queue-read failures rather than treating them as empty[32m 0[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mretains a bounded safe receipt for complete schedule reconciliation rejection in the failed response and audit[32m 7[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mdistinguishes an incomplete canonical_games schedule read without inventing unknown counts[32m 2[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mdistinguishes an incomplete team_game_status schedule read without inventing unknown counts[32m 2[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mkeeps generic errors on the existing failure path without serializing an arbitrary schedule receipt[32m 3[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mleaves events pending when required immutable evidence capture fails[32m 5[2mms[22m[39m
+[31m   [31m×[31m /api/v1/db/update-line-sources[2m > [22mreplays the frozen 11 regression and 24 candidate records equivalently through GDL and CCC with mocked enrichment and storage[39m[32m 4[2mms[22m[39m
+[31m     → ENOENT: no such file or directory, open '/private/tmp/fhf-release-checkpoint-20261016-0424/candidate/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-games.json'[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mretains both validated goalie teams and finalizes one raw receipt through gdl[32m 8[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mretains both validated goalie teams and finalizes one raw receipt through ccc[32m 2[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mlimits automatic retries to receipts on the Eastern slate, including UTC midnight[32m 2[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mwithholds game applicability for null / #Habs lines
+Caufield - Suzuki - Slafkovsky[32m 1[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mwithholds game applicability for 2026-04-28T23:00:00Z / #Habs lines
+Caufield - Suzuki - Slafkovsky[32m 2[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mwithholds game applicability for 2026-04-30T02:00:00Z / #Habs lines tomorrow
+Caufield - Suzuki - Slafkovsky[32m 2[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mprocesses GDL goalie, lines, news, non-NHL, and ambiguous events by source key[32m 10[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mprefixes capture keys so duplicate tweet ids from different sources do not collide[32m 2[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22muses the quoted report date and text for 2049560345441206272[32m 7[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22muses the quoted report date and text for 2047808467969220779[32m 4[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22muses the quoted report date and text for 2049560345441206272 tomorrow[32m 3[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mloads rosters for accepted teams that are not on the requested date schedule[32m 4[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22muses beat-writer handles and NHL hashtag hints to avoid false ambiguous GDL rejections[32m 16[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22maccepts Utah goalie tweets after second-pass roster loading when #TusksUp is the only team hint[32m 2[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22muses decisive roster-density fallback for short tweets with multiple same-team player hits[32m 2[2mms[22m[39m
+ [32m✓[39m lib/projections/nativeGoalLedgerAudit.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 197[2mms[22m[39m
+ [32m✓[39m lib/projections/nativeIntervalReconciliation.test.ts [2m([22m[2m25 tests[22m[2m)[22m[32m 132[2mms[22m[39m
+ [31m❯[39m __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx [2m([22m[2m148 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 10923[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: 2026-10-10T09:00:00Z[32m 1[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: 2026-10-10T08:59:59Z[32m 0[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: 2026-10-10T13:00:00Z[32m 0[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z[32m 0[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z[32m 0[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z[32m 0[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z[32m 0[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z[32m 0[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z[32m 0[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: null[32m 0[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: invalid[32m 0[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: 2026-10-10T15:00:01Z[32m 0[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mdoes not infer receipt age from a different source or invalid evaluation time[32m 0[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mcompares startable plan totals 95 and 100 safely[32m 14[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mcompares startable plan totals 94 and 100 safely[32m 2[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mcompares startable plan totals 0 and 0 safely[32m 1[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mcompares startable plan totals 0 and 1 safely[32m 1[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mcompares startable plan totals -100 and -95 safely[32m 2[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mcompares startable plan totals -100 and 100 safely[32m 1[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mcompares startable plan totals 1e-300 and 9.6e-301 safely[32m 1[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mcompares startable plan totals 1e-300 and 5e-301 safely[32m 1[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mcompares startable plan totals 1.7976931348623157e+308 and 1.7437623408164462e+308 safely[32m 2[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mcompares startable plan totals 1.7976931348623157e+308 and -1.7976931348623157e+308 safely[32m 1[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mwithholds unsupported or mismatched comparison null / 0[32m 1[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mwithholds unsupported or mismatched comparison NaN / 0[32m 1[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mwithholds unsupported or mismatched comparison Infinity / 0[32m 0[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mwithholds unsupported or mismatched comparison 95 / 100[32m 0[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mwithholds unsupported or mismatched comparison 95 / 100[32m 0[2mms[22m[39m
+   [33m[2m✓[22m[39m RosterScheduleOptimizer workspace[2m > [22mresumes a display day without aliasing a different owner or rewriting the plan [33m 468[2mms[22m[39m
+   [33m[2m✓[22m[39m RosterScheduleOptimizer workspace[2m > [22mresumes a display day without aliasing a different league or rewriting the plan [33m 398[2mms[22m[39m
+   [33m[2m✓[22m[39m RosterScheduleOptimizer workspace[2m > [22mresumes a display day without aliasing a different team or rewriting the plan [33m 391[2mms[22m[39m
+   [33m[2m✓[22m[39m RosterScheduleOptimizer workspace[2m > [22mresumes a display day without aliasing a different horizon or rewriting the plan [33m 382[2mms[22m[39m
+   [33m[2m✓[22m[39m RosterScheduleOptimizer workspace[2m > [22mresumes a display day without aliasing a different timezone or rewriting the plan [33m 383[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mkeeps display-preference corrupt separate from the working plan[32m 185[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mkeeps display-preference out-of-horizon separate from the working plan[32m 186[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mkeeps display-preference read-failure separate from the working plan[32m 184[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mkeeps display-preference write-failure separate from the working plan[32m 221[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mshows upstream stale and disabled evidence in manual readiness independently of reader time[32m 45[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mshows a provisional schedule warning without changing complete coverage or manager intent[32m 21[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mupdates the provisional schedule 2-hour warning after an edit without a new read[32m 31[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mupdates the provisional schedule 6-hour warning after an edit without a new read[32m 28[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mshows confirmed Yahoo zero usage independently from unknown allowance and planned adds[32m 0[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mdistinguishes projected fit from schedule-first order for unequal games and quality[32m 0[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mseparates planned adds from allowance 'Week: 0 remaining (manager)'[32m 20[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mseparates planned adds from allowance 'Week: Allowance unknown'[32m 20[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mseparates planned adds from allowance 'Week: Allowance unknown'[32m 20[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mrenders verified zero AGP separately from unavailable metrics[32m 5[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22muses schedule ordering and category-plan guidance instead of points claims in category leagues[32m 7[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mgroups candidates by team without changing eligibility, filters and deduplicates All players[32m 33[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mreviews manual candidate positions explicitly without replacing selected moves or leaking another candidate's positions[32m 150[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mpreserves API warnings without converting structured errors to object text[32m 0[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mrenders the structured planning-data failure as its actual warning[32m 16[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mshows the actual bench tradeoff and public assumptions within the selected date[32m 2[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mkeeps unsupported bench decisions unresolved and separates locks from scoring reasons[32m 2[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mshows category results and projected goalie assumptions without claiming a satisfied minimum[32m 3[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mguides an empty manual workspace to existing inputs without implying acquisition readiness[32m 150[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mrequires input review and renews it after rule changes without certifying unknown scoring[32m 161[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22muses eligible full-team evidence for goalie starts without capping conflicts or reviving legacy rows[32m 10[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mseparates remaining goalie windows by the selected split without hiding unknown timing or availability[32m 12[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mlabels the selected statistical source and its permitted uses without implying a total[32m 2[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mshows only each target's selected source timestamps across mixed inputs and replay[32m 3[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mlabels unverified lineups as schedule capacity[32m 58[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mdistinguishes category comparison availability (true) from a recommended winner[32m 117[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mdistinguishes category comparison availability (false) from a recommended winner[32m 97[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mwithholds category gains when the no-move lineup cannot satisfy a selected-player lock[32m 1[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mdistinguishes identically named Yahoo teams by league and selects the matching context[32m 103[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mcounts only acquired players' future games before their next drop[32m 0[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mkeeps exact canonical selections and unresolved pasted names across remount[32m 110[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mreports already-rostered pasted names without changing selected moves or unresolved names[32m 74[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mreveals and focuses existing player detail from 'roster' at 390 without editing the plan[32m 82[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mreveals and focuses existing player detail from 'compact' at 1440 without editing the plan[32m 132[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mreveals and focuses existing player detail from 'candidate' at 1440 without editing the plan[32m 143[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mundoes local roster edits without changing the public snapshot[32m 94[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mretains local undo when the workspace is reopened[32m 120[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mresumes each league's local working plan when switching contexts and reopening[32m 143[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mmarks a future selected add conditional until the provider confirms it[32m 78[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mshows selected acquisition cost 0 with its drop and sequence prerequisite[32m 18[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mshows selected acquisition cost 2 with its drop and sequence prerequisite[32m 19[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mshows selected acquisition cost null with its drop and sequence prerequisite[32m 19[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22midentifies the next selected action without promoting an unresolved plan (mistimed prerequisite: false)[32m 39[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22midentifies the next selected action without promoting an unresolved plan (mistimed prerequisite: true)[32m 18[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mkeeps the next selected action review-only after confirmation with unsupported rules[32m 34[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22muses a saved manager null lock through refresh, undo, save and reopen (provider conflict: false)[32m 129[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22muses a saved manager null lock through refresh, undo, save and reopen (provider conflict: true)[32m 127[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22muses a saved manager 'C#1' lock through refresh, undo, save and reopen (provider conflict: false)[32m 122[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22muses a saved manager 'C#1' lock through refresh, undo, save and reopen (provider conflict: true)[32m 127[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mselects an add using next-day rules and 'manager_available' clearance[32m 44[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mselects an add using next-day rules and 'waivers' clearance[32m 44[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mleaves acquisition intent unresolved for 'unknown'/'manager_available'[32m 51[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mleaves acquisition intent unresolved for 'same_day'/'waivers'[32m 52[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mshows provider refresh feedback immediately, prevents duplicate requests and reports unchanged inputs[32m 92[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains unavailable provider refresh for user null, sync false and team ''team''[32m 27[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains unavailable provider refresh for user { id: 'manager' }, sync false and team ''team''[32m 29[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains unavailable provider refresh for user { id: 'manager' }, sync true and team ''manual''[32m 29[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains unavailable provider refresh for user { id: 'manager' }, sync true and team '' ''[32m 35[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains unavailable provider inputs without reporting success or replacing saved inputs: 'Connected refresh is unavailable for …'[32m 37[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains unavailable provider inputs without reporting success or replacing saved inputs: 'Provider refresh returned no inputs. …'[32m 39[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mkeeps refreshed provider authority through undo and reopen without replacing selected moves[32m 204[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mrefreshes the selected 'leagueId' and ignores a late response for the previous scope[32m 97[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mrefreshes the selected 'teamId' and ignores a late response for the previous scope[32m 100[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mrefreshes the selected 'endDate' and ignores a late response for the previous scope[32m 54[2mms[22m[39m
+[31m   [31m×[31m RosterScheduleOptimizer workspace[2m > [22mrefreshes the selected 'timeZone' and ignores a late response for the previous scope[39m[33m 1037[2mms[22m[39m
+[31m     → expected [ { …(2) } ] to have a length of 2 but got 1
+
+Ignored nodes: comments, script, style
+[36m<html>[31m
+  [36m<head />[31m
+  [36m<body>[31m
+    [36m<div>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"_workspace_52fb3c"[31m
+      [36m>[31m
+        [36m<header[31m
+          [33mclass[31m=[32m"_topbar_52fb3c"[31m
+        [36m>[31m
+          [36m<div>[31m
+            [36m<span[31m
+              [33mclass[31m=[32m"_eyebrow_52fb3c"[31m
+            [36m>[31m
+              [0mTools / In-season planning[0m
+            [36m</span>[31m
+            [36m<h1>[31m
+              [0mRoster Schedule Optimizer[0m
+            [36m</h1>[31m
+          [36m</div>[31m
+          [36m<div[31m
+            [33mclass[31m=[32m"_actions_52fb3c"[31m
+          [36m>[31m
+            [36m<button[31m
+              [33maria-controls[31m=[32m"rso-planning-setup"[31m
+              [33maria-expanded[31m=[32m"false"[31m
+              [33mclass[31m=[32m"_mobileSetupToggle_52fb3c"[31m
+            [36m>[31m
+              [0mPlanning setup · [0m
+              [0mThu, Oct 15[0m
+              [0m – [0m
+              [0mWed, Oct 28[0m
+            [36m</button>[31m
+            [36m<button>[31m
+              [0mUndo[0m
+            [36m</button>[31m
+            [36m<button>[31m
+              [0mMatchup[0m
+            [36m</button>[31m
+            [36m<span>[31m
+              [0mReader checked 11:36:30 PM[0m
+            [36m</span>[31m
+          [36m</div>[31m
+        [36m</header>[31m
+        [36m<fieldset[31m
+          [33maria-label[31m=[32m"Planning setup"[31m
+          [33mclass[31m=[32m"_controls_52fb3c "[31m
+          [33mid[31m=[32m"rso-planning-setup"[31m
+        [36m>[31m
+          [36m<label>[31m
+            [0mSource[0m
+            [36m<select>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"manual"[31m
+              [36m>[31m
+                [0mManual[0m
+              [36m</option>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"yahoo"[31m
+              [36m>[31m
+                [0mYahoo[0m
+              [36m</option>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"fantrax"[31m
+              [36m>[31m
+                [0mFantrax[0m
+              [36m</option>[31m
+            [36m</select>[31m
+          [36m</label>[31m
+          [36m<label>[31m
+            [0mSeason[0m
+            [36m<input[31m
+              [33mtype[31m=[32m"number"[31m
+              [33mvalue[31m=[32m"20262027"[31m
+            [36m/>[31m
+          [36m</label>[31m
+          [36m<label>[31m
+            [0mFrom[0m
+            [36m<input[31m
+              [33mtype[31m=[32m"date"[31m
+              [33mvalue[31m=[32m"2026-10-15"[31m
+            [36m/>[31m
+          [36m</label>[31m
+          [36m<label>[31m
+            [0mThrough[0m
+            [36m<input[31m
+              [33mtype[31m=[32m"date"[31m
+              [33mvalue[31m=[32m"2026-10-28"[31m
+            [36m/>[31m
+          [36m</label>[31m
+          [36m<label>[31m
+            [0mTeam ID[0m
+            [36m<input[31m
+              [33mvalue[31m=[32m"team"[31m
+            [36m/>[31m
+          [36m</label>[31m
+          [36m<button[31m
+            [33maria-busy[31m=[32m"true"[31m
+            [33maria-describedby[31m=[32m"rso-provider-refresh-status"[31m
+            [33maria-label[31m=[32m"Refresh provider"[31m
+            [33mdisabled[31m=[32m""[31m
+          [36m>[31m
+            [0mRefreshing provider…[0m
+          [36m</button>[31m
+          [36m<label>[31m
+            [0mLeague ID[0m
+            [36m<input[31m
+              [33mvalue[31m=[32m"first-league"[31m
+            [36m/>[31m
+          [36m</label>[31m
+          [36m<label>[31m
+            [0mTime zone[0m
+            [36m<input[31m
+              [33mvalue[31m=[32m"America/Chicago"[31m
+            [36m/>[31m
+          [36m</label>[31m
+          [36m<label>[31m
+            [0mGoalie choice[0m
+            [36m<select>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"accept_risk"[31m
+              [36m>[31m
+                [0mAccept risk[0m
+              [36m</option>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"cover"[31m
+              [36m>[31m
+                [0mCover minimum[0m
+              [36m</option>[31m
+            [36m</select>[31m
+          [36m</label>[31m
+          [36m<label>[31m
+            [0mWindow[0m
+            [36m<select>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"any"[31m
+              [36m>[31m
+                [0mAny date[0m
+              [36m</option>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"early"[31m
+              [36m>[31m
+                [0mEarly[0m
+              [36m</option>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"late"[31m
+              [36m>[31m
+                [0mLate[0m
+              [36m</option>[31m
+            [36m</select>[31m
+          [36m</label>[31m
+          [36m<label>[31m
+            [0mSplit[0m
+            [36m<select>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"mon_thu"[31m
+              [36m>[31m
+                [0mMon–Thu / Fri–Sun[0m
+              [36m</option>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"mon_wed"[31m
+              [36m>[31m
+                [0mMon–Wed / Thu–Sun[0m
+              [36m</option>[31m
+            [36m</select>[31m
+          [36m</label>[31m
+          [36m<div[31m
+            [33maria-label[31m=[32m"Matchup week navigation"[31m
+            [33mclass[31m=[32m"_weekNav_52fb3c"[31m
+            [33mrole[31m=[32m"group"[31m
+          [36m>[31m
+            [36m<button[31m
+              [33maria-describedby[31m=[32m"rso-matchup-week-reason"[31m
+              [33maria-label[31m=[32m"Previous matchup week"[31m
+              [33mdisabled[31m=[32m""[31m
+            [36m>[31m
+              [0m‹[0m
+            [36m</button>[31m
+            [36m<label>[31m
+              [0mMatchup week[0m
+              [36m<select>[31m
+                [36m<option[31m
+                  [33mvalue[31m=[32m"-1"[31m
+                [36m>[31m
+                  [0mCustom dates[0m
+                [36m</option>[31m
+              [36m</select>[31m
+            [36m</label>[31m
+            [36m<button[31m
+              [33maria-describedby[31m=[32m"rso-matchup-week-reason"[31m
+              [33maria-label[31m=[32m"Next matchup week"[31m
+              [33mdisabled[31m=[32m""[31m
+            [36m>[31m
+              [0m›[0m
+            [36m</button>[31m
+            [36m<small[31m
+              [33mid[31m=[32m"rso-matchup-week-reason"[31m
+            [36m>[31m
+             ...[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22madopts Yahoo's league timezone without losing the selected team, horizon or intent[32m 22[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mkeeps the selected context when provider evidence belongs to another league[32m 24[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22muses the signed-in session for access and account reads, then refreshes after account switch[32m 238[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mignores an older same-account 'eligible' access response after a newer refresh[32m 85[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mignores an older same-account 'failed' access response after a newer refresh[32m 87[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mignores an older same-account 'eligible after failed revalidation' access response after a newer refresh[32m 86[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains access-service failures instead of silently disabling provider sync[32m 40[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mreports account-save failure, allows retry and preserves the submitted snapshot while local edits continue[32m 148[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mreports checking access before explaining a missing provider team[32m 28[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains disabled manual controls and invalid rule-window dates using visible descriptions[32m 275[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains empty manual continuation without enabling an unavailable action[32m 22[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains first, last and custom matchup-week navigation boundaries[32m 78[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains the 'input' Select plan gate and acknowledges selection when summaries match[32m 56[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains the 'scoring' Select plan gate and acknowledges selection when summaries match[32m 74[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains the 'legal' Select plan gate and acknowledges selection when summaries match[32m 77[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains the 'budget' Select plan gate and acknowledges selection when summaries match[32m 78[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains the 'hold' Select plan gate and acknowledges selection when summaries match[32m 75[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains the 'ready' Select plan gate and acknowledges selection when summaries match[32m 85[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mkeeps the local plan on a stale-version save and ignores a late save after account switching[32m 215[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mdoes not attach an old account save to a newly selected timeframe[32m 150[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mkeeps invalid zone and cleared period dates out of committed rules[32m 51[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mopens a saved manual snapshot read-only until the manager explicitly forks it[32m 188[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mdefaults future horizons to their first valid day while retaining today and past-week behavior[32m 0[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22maccounts for 19 players without duplicating dual eligibility and preserves configured vacancies[32m 1[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22maccounts for 20 players without duplicating dual eligibility and preserves configured vacancies[32m 1[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22maccounts for 25 players without duplicating dual eligibility and preserves configured vacancies[32m 0[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mretains a non-playing lock and weekly window occupant instead of inventing an open slot[32m 1[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mplaces all unstarted McDavid, Panarin and Batherson in local Bench after 13 filled slots[32m 102[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mkeeps eligibility, team and source warnings on unstarted Bench rows[32m 42[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mpreserves active and Bench locks while warning on unsupported and conflicting slot claims[32m 1[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mretains local Bench membership and collapse counts with configured capacity 0[32m 54[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mretains local Bench membership and collapse counts with configured capacity undefined[32m 55[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mretains local Bench membership and collapse counts with configured capacity -1[32m 56[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mkeeps unclaimed slots pending when active membership or schedule coverage is unresolved[32m 1[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mcounts verified active capacity and distinct roster and NHL games for the selected day[32m 1[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mkeeps unknown eligibility, unsupported reserves and conflicting locks honest[32m 0[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mchanges view state and bench visibility without editing intent, and distinguishes unknown goalie starts[32m 104[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mbounds range keyboard navigation and synchronizes the selected header and day label[32m 117[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mpreserves collapsed Bench membership as the selected day changes and honors controlled visibility[32m 80[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mlabels partial positive game evidence as known and missing partial evidence as unknown[32m 42[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mmarks an engine assignment conflicting with a held slot and an unknown weekly window as unresolved[32m 1[2mms[22m[39m
+[31m   [31m×[31m compact RSO schedule[2m > [22mlabels effective planned additions and reserve capacity conflicts without losing current roster players[39m[32m 4[2mms[22m[39m
+[31m     → .toMatch() expects to receive a string, but got undefined[39m
+   [32m✓[39m compact RSO schedule[2m > [22mkeeps missing team null schedules unknown despite complete shared coverage[32m 128[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mkeeps missing team  schedules unknown despite complete shared coverage[32m 131[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mpreserves the selected weekday during week navigation and falls back inside clipped weeks[32m 181[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mlabels a confirmed goalie only when eligible full-team evidence supports it[32m 91[2mms[22m[39m
+ [31m❯[39m lib/sources/tweetInterpretation.test.ts [2m([22m[2m67 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 198[2mms[22m[39m
+   [32m✓[39m BOS standard lineup identity regression[2m > [22mresolves the actual Oct. 8 forward Lindholm as Elias, retaining the raw source identity[32m 42[2mms[22m[39m
+   [32m✓[39m BOS standard lineup identity regression[2m > [22mkeeps four forward triplets, three defense pairs and ordered goalies while preserving excluded evidence[32m 4[2mms[22m[39m
+   [32m✓[39m BOS standard lineup identity regression[2m > [22mexcludes a fifth standard forward triplet without renumbering or discarding its spans[32m 2[2mms[22m[39m
+   [32m✓[39m BOS standard lineup identity regression[2m > [22mretains explicit 11F/7D evidence instead of silently capping it[32m 2[2mms[22m[39m
+   [32m✓[39m BOS standard lineup identity regression[2m > [22mretains explicit 11 forwards and 7 defensemen evidence instead of silently capping it[32m 2[2mms[22m[39m
+   [32m✓[39m BOS standard lineup identity regression[2m > [22mretains explicit Defense rotation evidence instead of silently capping it[32m 2[2mms[22m[39m
+   [32m✓[39m BOS standard lineup identity regression[2m > [22mretains explicit Correction to the lines evidence instead of silently capping it[32m 2[2mms[22m[39m
+   [32m✓[39m BOS standard lineup identity regression[2m > [22mretains explicit Contradictory lineup reports evidence instead of silently capping it[32m 2[2mms[22m[39m
+   [32m✓[39m BOS standard lineup identity regression[2m > [22mkeeps scratches separate from the active standard lineup and leaves camp groups uncapped[32m 4[2mms[22m[39m
+   [32m✓[39m BOS standard lineup identity regression[2m > [22mpreserves surname ambiguity with unknown positions[32m 2[2mms[22m[39m
+   [32m✓[39m BOS standard lineup identity regression[2m > [22mpreserves surname ambiguity with unknown team[32m 1[2mms[22m[39m
+   [32m✓[39m BOS standard lineup identity regression[2m > [22mpreserves surname ambiguity with conflicting teams[32m 1[2mms[22m[39m
+   [32m✓[39m BOS standard lineup identity regression[2m > [22mpreserves surname ambiguity with two forwards[32m 2[2mms[22m[39m
+   [32m✓[39m BOS standard lineup identity regression[2m > [22mretains conflicting scratch and duplicate-player rows instead of applying the standard cap[32m 4[2mms[22m[39m
+   [32m✓[39m BOS standard lineup identity regression[2m > [22mpreserves an explicitly named player instead of replacing him using row position[32m 0[2mms[22m[39m
+[31m   [31m×[31m structured tweet interpretation[2m > [22mchecks frozen source hashes and reports bounded semantic holdout classifications[39m[32m 3[2mms[22m[39m
+[31m     → ENOENT: no such file or directory, open '/private/tmp/fhf-release-checkpoint-20261016-0424/candidate/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json'[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mwithholds false availability in the exact warmup and hopeful return seeds[32m 32[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mretains two PP units and original offsets for 2105378254983205114[32m 4[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mretains two PP units and original offsets for 2105375596687843639[32m 2[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mretains two PP units and original offsets for 2105366758089695718[32m 2[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mpreserves CBJ row ordinals and slash uncertainty without combining identities[32m 5[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mstores partial relations without inventing complete units or canonical identities[32m 2[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mretains resolved subjects of partial changes without assigning unsupported slots[32m 0[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mrecognizes DTD and first-goaltender-off without confirming absence or a start[32m 2[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mretains questions without promoting their subjects to confirmed availability or starts[32m 6[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mdistinguishes historical comparison from historical or future applicability[32m 0[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mretains opposing same-post claims for review without publishing either availability[32m 0[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mkeeps opponent events out of the primary team's forecast assignments[32m 1[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mretains modality before the named subject and abstains on a separate pronoun sentence[32m 0[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mbinds a shared predicate to coordinated subjects without borrowing distinct predicates[32m 0[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mdoes not borrow an unresolved subject's return or resolve unsupported pronouns[32m 4[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mretains explicit absence durations without inventing a new injury from healthy scratches[32m 0[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mkeeps injury certainty, history and timeframes separate[32m 4[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mdoes not apply one player's return to another player's injury[32m 0[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mpreserves source spans for accents and repeated surname mentions[32m 2[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22msegments whitespace names and preserves compound surnames[32m 0[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mrejects prose, headings and skaters masquerading as goalies[32m 1[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mparses the Utah 3+2 power-play example without creating ES pairs[32m 1[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22msupports explicit PP units and PK pairs, keeping camp groups separate[32m 1[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22msupports 1+3+1 PP layouts and separates scratches from active units[32m 0[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mdoes not apply a later PP heading to earlier even-strength rows[32m 0[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mdoes not confirm conditional starts or assign a skater goalie status[32m 1[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mkeeps partial ES reports and camp groups out of forecast assignments[32m 1[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22mreconciles bad tokenization separately from missing membership[32m 1[2mms[22m[39m
+   [32m✓[39m structured tweet interpretation[2m > [22muses the new parser through the receiver's shared source builder[32m 10[2mms[22m[39m
+   [32m✓[39m retained audit claim regressions[2m > [22mbinds coordinated DTD and surgery to full subjects, preserving IR and minimum duration[32m 14[2mms[22m[39m
+   [32m✓[39m retained audit claim regressions[2m > [22mkeeps distinct parenthetical availability predicates with their own subjects[32m 1[2mms[22m[39m
+   [32m✓[39m retained audit claim regressions[2m > [22mkeeps distinct parenthetical starter and backup roles with their own subjects[32m 5[2mms[22m[39m
+   [32m✓[39m retained audit claim regressions[2m > [22mpreserves explicit starter versus backup roles[32m 6[2mms[22m[39m
+   [32m✓[39m retained audit claim regressions[2m > [22mkeeps both CCC starting-goalie subjects in 2108946348364153181[32m 1[2mms[22m[39m
+   [32m✓[39m retained audit claim regressions[2m > [22mkeeps both CCC starting-goalie subjects in 2108958735309865096[32m 0[2mms[22m[39m
+   [32m✓[39m retained audit claim regressions[2m > [22mconfirms affirmative goalie prose in 2108968319835603270[32m 1[2mms[22m[39m
+   [32m✓[39m retained audit claim regressions[2m > [22mconfirms affirmative goalie prose in 2108974712621805603[32m 3[2mms[22m[39m
+   [32m✓[39m retained audit claim regressions[2m > [22mdoes not derive a camp group from power play groupings[32m 1[2mms[22m[39m
+   [32m✓[39m retained audit claim regressions[2m > [22mparses all eleven forwards, seven defensemen and ordered goalies in the declared Tampa formation[32m 3[2mms[22m[39m
+   [32m✓[39m retained audit claim regressions[2m > [22mpreserves uncertainty or negation in Hart is expected in goal[32m 0[2mms[22m[39m
+   [32m✓[39m retained audit claim regressions[2m > [22mpreserves uncertainty or negation in The coach would expect Hart to start[32m 0[2mms[22m[39m
+   [32m✓[39m retained audit claim regressions[2m > [22mpreserves uncertainty or negation in Coach did not confirm Hart will start[32m 0[2mms[22m[39m
+   [32m✓[39m retained audit claim regressions[2m > [22mpreserves uncertainty or negation in Hart starts if healthy[32m 0[2mms[22m[39m
+   [32m✓[39m retained audit claim regressions[2m > [22mpreserves uncertainty or negation in Hart is not the starter[32m 0[2mms[22m[39m
+   [32m✓[39m retained audit claim regressions[2m > [22mpreserves uncertainty or negation in Hart is first goalie off[32m 0[2mms[22m[39m
+   [32m✓[39m retained audit claim regressions[2m > [22mpreserves uncertainty or negation in Hart has made two starts this season.[32m 0[2mms[22m[39m
+   [32m✓[39m retained audit claim regressions[2m > [22mpreserves uncertainty or negation in Hart is in the starter net at practice.[32m 0[2mms[22m[39m
+   [32m✓[39m retained audit claim regressions[2m > [22mpreserves uncertainty or negation in Hart did not start yesterday.[32m 0[2mms[22m[39m
+   [32m✓[39m retained audit claim regressions[2m > [22mkeeps genuine full-name Bäck claims while abstaining on ordinary lower-case nouns[32m 0[2mms[22m[39m
+   [32m✓[39m retained audit claim regressions[2m > [22mkeeps game absence scoped to the game and does not infer season absence[32m 1[2mms[22m[39m
+   [32m✓[39m retained audit claim regressions[2m > [22mdoes not turn a skater pair or an undeclared short forward row into defense[32m 0[2mms[22m[39m
+ [31m❯[39m scripts/qualify-native-players-offline.test.ts [2m([22m[2m56 tests[22m[2m | [22m[31m8 failed[39m[2m)[22m[33m 4765[2mms[22m[39m
+[31m   [31m×[31m offline current native player qualification[2m > [22mreproduces current native calculations with genuine admission and zero live client/transport/writes[39m[33m 552[2mms[22m[39m
+[31m     → expected false to be true // Object.is equality[39m
+[31m   [31m×[31m offline current native player qualification[2m > [22mleaves absent playing/start evidence unknown and preserves consumer missing-participation rejection[39m[32m 84[2mms[22m[39m
+[31m     → expected false to be true // Object.is equality[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds original publishedAt before/equal/one microsecond after cutoff[32m 172[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds original receivedAt before/equal/one microsecond after cutoff[32m 173[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds original verifiedAt before/equal/one microsecond after cutoff[32m 171[2mms[22m[39m
+[31m   [31m×[31m offline current native player qualification[2m > [22mbounds retained roster_optimizer_team_games.fetched_at before/equal/one microsecond after cutoff[39m[32m 82[2mms[22m[39m
+[31m     → expected false to be true // Object.is equality[39m
+[31m   [31m×[31m offline current native player qualification[2m > [22mbounds retained roster_optimizer_team_games.fetchedAt before/equal/one microsecond after cutoff[39m[32m 86[2mms[22m[39m
+[31m     → expected false to be true // Object.is equality[39m
+[31m   [31m×[31m offline current native player qualification[2m > [22mbounds retained roster_optimizer_team_games.source_updated_at before/equal/one microsecond after cutoff[39m[32m 81[2mms[22m[39m
+[31m     → expected false to be true // Object.is equality[39m
+[31m   [31m×[31m offline current native player qualification[2m > [22mbounds retained roster_optimizer_team_games.sourceUpdatedAt before/equal/one microsecond after cutoff[39m[32m 82[2mms[22m[39m
+[31m     → expected false to be true // Object.is equality[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained rosters.created_at before/equal/one microsecond after cutoff[32m 170[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained fhfh_player_identities.updated_at before/equal/one microsecond after cutoff[32m 173[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_lineup_snapshots.observed_at before/equal/one microsecond after cutoff[32m 167[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_lineup_snapshots.available_at before/equal/one microsecond after cutoff[32m 170[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_lineup_snapshots.created_at before/equal/one microsecond after cutoff[32m 170[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_lineup_assignments.created_at before/equal/one microsecond after cutoff[32m 167[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_goalie_start_observations.observed_at before/equal/one microsecond after cutoff[32m 168[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_goalie_start_observations.available_at before/equal/one microsecond after cutoff[32m 163[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_goalie_start_observations.created_at before/equal/one microsecond after cutoff[32m 160[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_observation_conflicts.detected_at before/equal/one microsecond after cutoff[32m 157[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_observation_conflicts.created_at before/equal/one microsecond after cutoff[32m 161[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_conflict_resolutions.resolved_at before/equal/one microsecond after cutoff[32m 162[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_conflict_resolutions.created_at before/equal/one microsecond after cutoff[32m 164[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained forge_board_news_events.accepted_at before/equal/one microsecond after cutoff[32m 158[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained market_prices_daily.source_observed_at before/equal/one microsecond after cutoff[32m 159[2mms[22m[39m
+[31m   [31m×[31m offline current native player qualification[2m > [22mallows future schedule/expiry/effective metadata and later local artifact creation without moving source cutoff[39m[32m 77[2mms[22m[39m
+[31m     → expected false to be true // Object.is equality[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects source evidence even one microsecond beyond the supplied cutoff[32m 4[2mms[22m[39m
+[31m   [31m×[31m offline current native player qualification[2m > [22mnever promotes a confirmed PP role to playing participation[39m[32m 78[2mms[22m[39m
+[31m     → expected false to be true // Object.is equality[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects missing receipts, incomplete exports, changed hashes and late nested source evidence[32m 4[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mfails closed if a native optional query swallows an unprovided input table[32m 6[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects omitted retained columns even when a producer fallback catches the query error[32m 7[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects later accepted-news evidence without backdating its receipt[32m 4[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects missing/future as-of and target/roster mismatch[32m 5[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mblocks direct RPC, adapter mutations and unsupported/unrecorded reads[32m 1[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for limit[32m 1[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for limit[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for select[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for order[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for order[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for range[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for eq[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for or[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for maybeSingle[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for abortSignal[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects implicit predicate type coercion and compares zoned timestamp filters exactly[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mimplements native exact-count HEAD without returning rows[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mblocks equivalent client paths and SDK entry points before inert config/sentinel access in a fresh process[32m 194[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects future outcomes in rolling/team/goalie history and their referenced game[32m 5[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mchecks aggregate and camel-case event times while allowing future schedule/expiry[32m 5[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrequires exact completion for cutoff-day history, and completion before the original publication[32m 86[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects historical statistics whose referenced puck drop is still in the future[32m 4[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mcannot certify PPP from missing or zero PP exposure denominators[32m 78[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mretains a native PPP diagnostic but blocks source support when PP rows are absent[32m 73[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mcannot relabel the immutable fictional artifact as retained exports (replace strings=false)[32m 4[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mcannot relabel the immutable fictional artifact as retained exports (replace strings=true)[32m 4[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mblocks network primitives and process escapes before dispatch and restores them[32m 1[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mwrites a new reproducible receipt without changing or overwriting original inputs[32m 169[2mms[22m[39m
+ [32m✓[39m scripts/run-forge-local.test.ts [2m([22m[2m84 tests[22m[2m | [22m[33m7 skipped[39m[2m)[22m[33m 78390[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mrecovers an expired and exhausted original execution with independent reads and no renewed generation [33m 3685[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mleaves negative recovery and interrupted filesystem claims unresolved without cleanup or generation [33m 2386[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mbounds a recovery child deadline without resetting unknown reads or releasing old ownership [33m 2476[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mblocks actual competing recovery/resume, then automatically stops an orphaned investigator without refunding its claim [33m 2934[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mruns the actual recovery CLI through only bounded Supabase GETs and matching retained issuance [33m 2370[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mexecutes the actual serial calendar supervisor with durable grants and distinguishes public coverage [33m 2352[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mresumes a lost calendar write receipt by positive read-only reconciliation without duplicate generation [33m 3479[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22maccounts for positive prior issuance after context drift but never starts changed-context generation [33m 2325[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mrequires positive immutable readback and a terminal local writer before ownership recovery [33m 1210[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mserializes actual competing recovery processes and preserves a later replacement owner [33m 1794[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mrecovers an actual investigator killed at the prepared checkpoint without altering its original operation [33m 1456[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mrecovers an actual investigator killed at the claimed checkpoint without altering its original operation [33m 1656[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mrecovers an actual investigator killed at the before archive checkpoint without altering its original operation [33m 1649[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mrecovers an actual investigator killed at the archived checkpoint without altering its original operation [33m 1368[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mpreserves interrupted claims with altered identity, missing evidence or a live investigator [33m 1418[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mautomatically stops children after an actual parent is killed before activation without resetting allocations [33m 3169[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mautomatically stops children after an actual parent is killed after write without resetting allocations [33m 3795[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mkeeps negative calendar reconciliation unresolved without retrying its generation [33m 1728[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mrejects changed calendar news before generation and never certifies disabled public coverage [33m 2956[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mretains ledger process evidence after an actual crash at ready without renewing its budget [33m 754[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mretains ledger process evidence after an actual crash at canonical without renewing its budget [33m 759[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mretains ledger result evidence after an actual crash at ready without renewing its budget [33m 764[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mretains ledger result evidence after an actual crash at canonical without renewing its budget [33m 757[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mgrants actual child I/O only after its durable allocation and PID, and refunds only terminal measured work [33m 550[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mwithholds actual child I/O when durable activation fails [33m 470[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22msupervises synchronous child work and kills a SIGTERM-resistant process at the shared deadline [33m 961[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mstops an activated resistant worker and its descendant after coordinator death, retaining unknown allocations [33m 772[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mrejects foreign guardian identity and ignores mismatched start messages without signalling an unrelated process [33m 352[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mfails closed after guardian loss while an owned descendant survives a terminal worker [33m 1452[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mcancels child work and retains a bounded private log without restarting it [33m 680[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mruns the actual calendar inspection CLI through reads and blocks attempted queue writes [33m 1820[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mpins source, dependencies, lockfile, compiler settings and model environment [33m 1272[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mpreviews via reads and skips a duplicate even with --write [33m 1843[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mreconciles matching issuance through reads and leaves absent, expired or active attempts unresolved [33m 1521[2mms[22m[39m
+   [33m[2m✓[22m[39m local FORGE scope and transport[2m > [22mretains CLI identities and uncertain publication state across failures without retrying [33m 13939[2mms[22m[39m
+   [33m[2m✓[22m[39m FORGE artifact gate at the actual issuance boundary[2m > [22mruns the calendar context guard inside capture before model calculation and withholds issuance on rejection [33m 306[2mms[22m[39m
+   [33m[2m✓[22m[39m FORGE artifact gate at the actual issuance boundary[2m > [22mbinds a local operation to reservation and never recomputes an existing attempt [33m 860[2mms[22m[39m
+   [33m[2m✓[22m[39m FORGE artifact gate at the actual issuance boundary[2m > [22mwithholds snapshot and publication after source drift during computation [33m 384[2mms[22m[39m
+   [33m[2m✓[22m[39m FORGE artifact gate at the actual issuance boundary[2m > [22mwithholds snapshot and publication after late dependency drift during computation [33m 369[2mms[22m[39m
+   [33m[2m✓[22m[39m FORGE artifact gate at the actual issuance boundary[2m > [22mrechecks the pin after snapshot storage and retains known identities before withholding issuance [33m 448[2mms[22m[39m
+   [33m[2m✓[22m[39m FORGE artifact gate at the actual issuance boundary[2m > [22missues unchanged pinned output and preserves known identities on a lost publication response [33m 812[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 19 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m scripts/qualify-native-players-offline.test.ts[2m > [22moffline current native player qualification[2m > [22mreproduces current native calculations with genuine admission and zero live client/transport/writes
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m scripts/qualify-native-players-offline.test.ts:[2m48:58[22m[39m
+    [90m 46| [39m    const skater = first.result.categoryCoverage[0], goalie = first.re…
+    [90m 47| [39m    [34mexpect[39m(skater[33m.[39mparticipation[33m.[39mstatus)[33m.[39m[34mtoBe[39m([32m"confirmed_evidence"[39m)[33m;[39m
+    [90m 48| [39m    [34mexpect[39m(skater[33m.[39madmission[33m.[39macceptedByUnchangedConsumer)[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   | [39m                                                         [31m^[39m
+    [90m 49| [39m    for (const key of ["G", "A", "SOG"]) expect(skater.categories.find…
+    [90m 50| [39m      modeledStatus: "missing", status: "blocked", reasons: expect.arr…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/19]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m scripts/qualify-native-players-offline.test.ts[2m > [22moffline current native player qualification[2m > [22mleaves absent playing/start evidence unknown and preserves consumer missing-participation rejection
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m scripts/qualify-native-players-offline.test.ts:[2m70:97[22m[39m
+    [90m 68| [39m    expect(skater.participation).toMatchObject({ status: "missing", pr…
+    [90m 69| [39m    [34mexpect[39m(skater[33m.[39madmission[33m.[39macceptedByUnchangedConsumer)[33m.[39m[34mtoBe[39m([35mfalse[39m)[33m;[39m
+    [90m 70| [39m    expect(skater.admission.reasons.some(row => row.reasons.includes("…
+    [90m   | [39m                                                                                                [31m^[39m
+    [90m 71| [39m    expect(receipt.result.categoryCoverage[1].participation.status).to…
+    [90m 72| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/19]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m scripts/qualify-native-players-offline.test.ts[2m > [22moffline current native player qualification[2m > [22mbounds retained roster_optimizer_team_games.fetched_at before/equal/one microsecond after cutoff
+[41m[1m FAIL [22m[49m scripts/qualify-native-players-offline.test.ts[2m > [22moffline current native player qualification[2m > [22mbounds retained roster_optimizer_team_games.fetchedAt before/equal/one microsecond after cutoff
+[41m[1m FAIL [22m[49m scripts/qualify-native-players-offline.test.ts[2m > [22moffline current native player qualification[2m > [22mbounds retained roster_optimizer_team_games.source_updated_at before/equal/one microsecond after cutoff
+[41m[1m FAIL [22m[49m scripts/qualify-native-players-offline.test.ts[2m > [22moffline current native player qualification[2m > [22mbounds retained roster_optimizer_team_games.sourceUpdatedAt before/equal/one microsecond after cutoff
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m scripts/qualify-native-players-offline.test.ts:[2m131:156[22m[39m
+    [90m129| [39m        [34mexpect[39m(receipt[33m.[39mresult[33m.[39mblockers)[33m.[39m[34mtoEqual[39m([])[33m;[39m
+    [90m130| [39m        [34mexpect[39m(receipt[33m.[39mresult[33m.[39mcalculation[33m?.[39mgamesProcessed)[33m.[39m[34mtoBe[39m([34m1[39m)[33m;[39m
+    [90m131| [39m        if (table === "roster_optimizer_team_games") expect(receipt.re…
+    [90m   | [39m                                                                                                                                                           [31m^[39m
+    [90m132| [39m      }
+    [90m133| [39m    }
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/19]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m scripts/qualify-native-players-offline.test.ts[2m > [22moffline current native player qualification[2m > [22mallows future schedule/expiry/effective metadata and later local artifact creation without moving source cutoff
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m scripts/qualify-native-players-offline.test.ts:[2m144:107[22m[39m
+    [90m142| [39m    const original = projectionInputHash(inputs), receipt = await qual…
+    [90m143| [39m    [34mexpect[39m(receipt[33m.[39mresult[33m.[39mblockers)[33m.[39m[34mtoEqual[39m([])[33m;[39m
+    [90m144| [39m    expect(receipt.result.categoryCoverage.every(target => target.admi…
+    [90m   | [39m                                                                                                          [31m^[39m
+    [90m145| [39m    [34mexpect[39m(receipt[33m.[39mresult[33m.[39masOf)[33m.[39m[34mtoBe[39m(asOf)[33m;[39m
+    [90m146| [39m    expect(Date.parse(receipt.createdAt)).toBeGreaterThan(Date.parse(a…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/19]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m scripts/qualify-native-players-offline.test.ts[2m > [22moffline current native player qualification[2m > [22mnever promotes a confirmed PP role to playing participation
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m scripts/qualify-native-players-offline.test.ts:[2m160:117[22m[39m
+    [90m158| [39m    const result = (await qualifyNativePlayersOffline(inputs, asOf)).r…
+    [90m159| [39m    expect(result.categoryCoverage[0].participation.probability).toBeN…
+    [90m160| [39m    expect(result.categoryCoverage[0].admission.reasons.some(row => ro…
+    [90m   | [39m                                                                                                                    [31m^[39m
+    [90m161| [39m  })[33m;[39m
+    [90m162| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/19]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m lib/rosterScheduleOptimizer/planningReproducibility.test.ts[2m > [22mplanning search reproducibility[2m > [22mreproduces admitted detailed quality decisions across scoring profiles and input order
+[41m[1m FAIL [22m[49m lib/rosterScheduleOptimizer/planningReproducibility.test.ts[2m > [22mplanning search reproducibility[2m > [22mreproduces admitted baseline quality decisions across scoring profiles and input order
+[41m[1m FAIL [22m[49m lib/rosterScheduleOptimizer/planningReproducibility.test.ts[2m > [22mplanning search reproducibility[2m > [22mreproduces admitted blended quality decisions across scoring profiles and input order
+[31m[1mAssertionError[22m: expected 'agp' to be 'outcome' // Object.is equality[39m
+
+Expected: [32m"outcome"[39m
+Received: [31m"agp"[39m
+
+[36m [2m❯[22m lib/rosterScheduleOptimizer/planningReproducibility.test.ts:[2m122:43[22m[39m
+    [90m120| [39m      const replayed = planRoster(JSON.parse(JSON.stringify(snapshot))…
+    [90m121| [39m      [35mfor[39m ([35mconst[39m result [35mof[39m [one[33m,[39m two[33m,[39m replayed]) {
+    [90m122| [39m        [34mexpect[39m(result[33m.[39mbaseline[33m.[39mobjective)[33m.[39m[34mtoBe[39m([32m"outcome"[39m)[33m;[39m
+    [90m   | [39m                                          [31m^[39m
+    [90m123| [39m        [34mexpect[39m(result[33m.[39mselected[33m.[39mrecommendation[33m?.[39meligible)[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m124| [39m        [34mexpect[39m(result[33m.[39mselected[33m.[39mcomparisonEligible)[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/19]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m lib/rosterScheduleOptimizer/planningReproducibility.test.ts[2m > [22mplanning search reproducibility[2m > [22mbounds unchecked categories bench decisions without inventing scoring evidence
+[41m[1m FAIL [22m[49m lib/rosterScheduleOptimizer/planningReproducibility.test.ts[2m > [22mplanning search reproducibility[2m > [22mbounds unchecked goalie bench decisions without inventing scoring evidence
+[31m[1mAssertionError[22m: expected { policyVersion: 'rso-bench-v1', …(5) } to deeply equal { policyVersion: 'rso-bench-v1', …(5) }[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "complete": false,[39m
+[31m+   "complete": true,[39m
+[2m    "evaluated": 0,[22m
+[2m    "maxEvaluations": 0,[22m
+[2m    "policyVersion": "rso-bench-v1",[22m
+[2m    "timeLimitReached": false,[22m
+[32m-   "workQuotaReached": true,[39m
+[31m+   "workQuotaReached": false,[39m
+[2m  }[22m
+
+[36m [2m❯[22m lib/rosterScheduleOptimizer/planningReproducibility.test.ts:[2m214:41[22m[39m
+    [90m212| [39m    [35mconst[39m options [33m=[39m { maxSteps[33m:[39m [34m0[39m[33m,[39m maxBenchEvaluations[33m:[39m [34m0[39m }[33m;[39m
+    [90m213| [39m    [35mconst[39m result [33m=[39m [34mplanRoster[39m(snapshot[33m,[39m intent[33m,[39m options)[33m;[39m
+    [90m214| [39m    expect(result.search.benchEvidence).toEqual({ policyVersion: "rso-…
+    [90m   | [39m                                        [31m^[39m
+    [90m215| [39m      maxEvaluations: 0, complete: false, workQuotaReached: true, time…
+    [90m216| [39m    expect(result.selected.recommendation).toMatchObject({ eligible: f…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/19]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m lib/sources/tweetInterpretation.test.ts[2m > [22mstructured tweet interpretation[2m > [22mchecks frozen source hashes and reports bounded semantic holdout classifications
+[31m[1mError[22m: ENOENT: no such file or directory, open '/private/tmp/fhf-release-checkpoint-20261016-0424/candidate/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json'[39m
+[36m [2m❯[22m lib/sources/tweetInterpretation.test.ts:[2m138:31[22m[39m
+    [90m136| [39m  [34mafterEach[39m(() [33m=>[39m vi[33m.[39m[34munstubAllEnvs[39m())[33m;[39m
+    [90m137| [39m  it("checks frozen source hashes and reports bounded semantic holdout…
+    [90m138| [39m    const labels = JSON.parse(readFileSync(resolve(process.cwd(), "../…
+    [90m   | [39m                              [31m^[39m
+    [90m139| [39m    const counts: Record<string, { truePositive: number; predicted: nu…
+    [90m140| [39m    [35mlet[39m matched [33m=[39m [34m0[39m[33m,[39m denominator [33m=[39m [34m0[39m[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/19]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m lib/supabase/supportedBaselineMigration.test.ts[2m > [22msupported Supabase schema-baseline reconciliation[2m > [22mkeeps only the reviewed baseline and supported post-baseline deltas active
+[31m[1mAssertionError[22m: expected [ …(80) ] to deeply equal [ …(72) ][39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[33m@@ -68,7 +68,15 @@[39m
+[2m    "20260916044919_starter_board_atomic_lineup_capture.sql",[22m
+[2m    "20260916045842_starter_board_operational_reporting.sql",[22m
+[2m    "20260916052239_starter_board_validation_registry.sql",[22m
+[2m    "20260916060521_starter_board_atomic_goalie_capture.sql",[22m
+[2m    "20260917133519_mock_draft_adp.sql",[22m
+[31m+   "20260919005608_tweet_pipeline_reports_and_review.sql",[39m
+[31m+   "20260919005622_nhl_draft_identity_ingestion.sql",[39m
+[31m+   "20260919005852_nhl_prospect_verification_actor.sql",[39m
+[31m+   "20260923184653_fantrax_live_draft_sessions.sql",[39m
+[31m+   "20260927104934_in_season_access_workspace.sql",[39m
+[2m    "20261002021651_forge_local_execution_fence.sql",[22m
+[31m+   "20261002134400_game_line_snapshots.sql",[39m
+[31m+   "20261002140500_resolve_goalie_unified_game_team.sql",[39m
+[31m+   "20261004181455_forge_public_revision_reader.sql",[39m
+[2m  ][22m
+
+[36m [2m❯[22m lib/supabase/supportedBaselineMigration.test.ts:[2m65:7[22m[39m
+    [90m 63| [39m        [33m.[39m[34mfilter[39m((name) [33m=>[39m name[33m.[39m[34mendsWith[39m([32m".sql"[39m))
+    [90m 64| [39m        [33m.[39m[34msort[39m()[33m,[39m
+    [90m 65| [39m    )[33m.[39m[34mtoEqual[39m(activeMigrationNames)[33m;[39m
+    [90m   | [39m      [31m^[39m
+    [90m 66| [39m
+    [90m 67| [39m    [34mexpect[39m(migrationAuthority[33m.[39mschemaVersion)[33m.[39m[34mtoBe[39m([34m1[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/19]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/components/RosterScheduleOptimizer/CategoryGains.test.tsx[2m > [22mshows per-category gains and losses from startable days, preserving manager moves and reset accounting
+[31m[1mAssertionError[22m: expected [ [ '2026-10-06', '1' ], …(1) ] to deeply equal [ [ '2026-10-06', '1' ], …(1) ][39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[33m@@ -3,8 +3,8 @@[39m
+[2m      "2026-10-06",[22m
+[2m      "1",[22m
+[2m    ],[22m
+[2m    [[22m
+[2m      "2026-10-07",[22m
+[32m-     "3",[39m
+[31m+     "1",[39m
+[2m    ],[22m
+[2m  ][22m
+
+[36m [2m❯[22m __tests__/components/RosterScheduleOptimizer/CategoryGains.test.tsx:[2m59:77[22m[39m
+    [90m 57| [39m    projectedValue: 0, acquisitions: { "Before reset": 1 }, steps: int…
+    [90m 58| [39m  [34mexpect[39m(evaluations[33m.[39mbaseline[33m.[39mprojectedValue)[33m.[39m[34mtoBe[39m([34m0[39m)[33m;[39m
+    [90m 59| [39m  expect(evaluations.plan.assignments.map(row => [row.date, row.player…
+    [90m   | [39m                                                                            [31m^[39m
+    [90m 60| [39m  expect(evaluations.plan.forecastInputs?.find(row => row.playerId ===…
+    [90m 61| [39m  [34mexpect[39m([33mJSON[39m[33m.[39m[34mstringify[39m(intent))[33m.[39m[34mtoBe[39m(original)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/19]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx[2m > [22mRosterScheduleOptimizer workspace[2m > [22mrefreshes the selected 'timeZone' and ignores a late response for the previous scope
+[31m[1mAssertionError[22m[39m: expected [ { …(2) } ] to have a length of 2 but got 1
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_workspace_52fb3c"[39m
+      [36m>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_topbar_52fb3c"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_eyebrow_52fb3c"[39m
+            [36m>[39m
+              [0mTools / In-season planning[0m
+            [36m</span>[39m
+            [36m<h1>[39m
+              [0mRoster Schedule Optimizer[0m
+            [36m</h1>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_actions_52fb3c"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_mobileSetupToggle_52fb3c"[39m
+            [36m>[39m
+              [0mPlanning setup · [0m
+              [0mThu, Oct 15[0m
+              [0m – [0m
+              [0mWed, Oct 28[0m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mUndo[0m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mMatchup[0m
+            [36m</button>[39m
+            [36m<span>[39m
+              [0mReader checked 11:36:30 PM[0m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</header>[39m
+        [36m<fieldset[39m
+          [33maria-label[39m=[32m"Planning setup"[39m
+          [33mclass[39m=[32m"_controls_52fb3c "[39m
+          [33mid[39m=[32m"rso-planning-setup"[39m
+        [36m>[39m
+          [36m<label>[39m
+            [0mSource[0m
+            [36m<select>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"manual"[39m
+              [36m>[39m
+                [0mManual[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"yahoo"[39m
+              [36m>[39m
+                [0mYahoo[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"fantrax"[39m
+              [36m>[39m
+                [0mFantrax[0m
+              [36m</option>[39m
+            [36m</select>[39m
+          [36m</label>[39m
+          [36m<label>[39m
+            [0mSeason[0m
+            [36m<input[39m
+              [33mtype[39m=[32m"number"[39m
+              [33mvalue[39m=[32m"20262027"[39m
+            [36m/>[39m
+          [36m</label>[39m
+          [36m<label>[39m
+            [0mFrom[0m
+            [36m<input[39m
+              [33mtype[39m=[32m"date"[39m
+              [33mvalue[39m=[32m"2026-10-15"[39m
+            [36m/>[39m
+          [36m</label>[39m
+          [36m<label>[39m
+            [0mThrough[0m
+            [36m<input[39m
+              [33mtype[39m=[32m"date"[39m
+              [33mvalue[39m=[32m"2026-10-28"[39m
+            [36m/>[39m
+          [36m</label>[39m
+          [36m<label>[39m
+            [0mTeam ID[0m
+            [36m<input[39m
+              [33mvalue[39m=[32m"team"[39m
+            [36m/>[39m
+          [36m</label>[39m
+          [36m<button[39m
+            [33maria-busy[39m=[32m"true"[39m
+            [33maria-describedby[39m=[32m"rso-provider-refresh-status"[39m
+            [33maria-label[39m=[32m"Refresh provider"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mRefreshing provider…[0m
+          [36m</button>[39m
+          [36m<label>[39m
+            [0mLeague ID[0m
+            [36m<input[39m
+              [33mvalue[39m=[32m"first-league"[39m
+            [36m/>[39m
+          [36m</label>[39m
+          [36m<label>[39m
+            [0mTime zone[0m
+            [36m<input[39m
+              [33mvalue[39m=[32m"America/Chicago"[39m
+            [36m/>[39m
+          [36m</label>[39m
+          [36m<label>[39m
+            [0mGoalie choice[0m
+            [36m<select>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"accept_risk"[39m
+              [36m>[39m
+                [0mAccept risk[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"cover"[39m
+              [36m>[39m
+                [0mCover minimum[0m
+              [36m</option>[39m
+            [36m</select>[39m
+          [36m</label>[39m
+          [36m<label>[39m
+            [0mWindow[0m
+            [36m<select>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"any"[39m
+              [36m>[39m
+                [0mAny date[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"early"[39m
+              [36m>[39m
+                [0mEarly[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"late"[39m
+              [36m>[39m
+                [0mLate[0m
+              [36m</option>[39m
+            [36m</select>[39m
+          [36m</label>[39m
+          [36m<label>[39m
+            [0mSplit[0m
+            [36m<select>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"mon_thu"[39m
+              [36m>[39m
+                [0mMon–Thu / Fri–Sun[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"mon_wed"[39m
+              [36m>[39m
+                [0mMon–Wed / Thu–Sun[0m
+              [36m</option>[39m
+            [36m</select>[39m
+          [36m</label>[39m
+          [36m<div[39m
+            [33maria-label[39m=[32m"Matchup week navigation"[39m
+            [33mclass[39m=[32m"_weekNav_52fb3c"[39m
+            [33mrole[39m=[32m"group"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-describedby[39m=[32m"rso-matchup-week-reason"[39m
+              [33maria-label[39m=[32m"Previous matchup week"[39m
+              [33mdisabled[39m=[32m""[39m
+            [36m>[39m
+              [0m‹[0m
+            [36m</button>[39m
+            [36m<label>[39m
+              [0mMatchup week[0m
+              [36m<select>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"-1"[39m
+                [36m>[39m
+                  [0mCustom dates[0m
+                [36m</option>[39m
+              [36m</select>[39m
+            [36m</label>[39m
+            [36m<button[39m
+              [33maria-describedby[39m=[32m"rso-matchup-week-reason"[39m
+              [33maria-label[39m=[32m"Next matchup week"[39m
+              [33mdisabled[39m=[32m""[39m
+            [36m>[39m
+              [0m›[0m
+            [36m</button>[39m
+            [36m<small[39m
+              [33mid[39m=[32m"rso-matchup-week-reason"[39m
+            [36m>[39m
+             ...
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 2[39m
+[31m+ 1[39m
+
+[36m [2m❯[22m __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx:[2m1303:41[22m[39m
+    [90m1301| [39m    fireEvent.change(screen.getByLabelText(label), { target: { value }…
+    [90m1302| [39m    if (field === "timeZone") fireEvent.blur(screen.getByLabelText(lab…
+    [90m1303| [39m    await waitFor(() => expect(pending).toHaveLength(2));
+    [90m   | [39m                                        [31m^[39m
+    [90m1304| [39m    expect(pending[0].init?.signal?.aborted).toBe(true);
+    [90m1305| [39m    expect(saved().context[field]).toBe(value);
+[90m [2m❯[22m runWithExpensiveErrorDiagnosticsDisabled ../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:[2m47:12[22m[39m
+[90m [2m❯[22m checkCallback ../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/wait-for.js:[2m124:77[22m[39m
+[90m [2m❯[22m Timeout.checkRealTimersCallback ../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/wait-for.js:[2m118:16[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/19]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx[2m > [22mcompact RSO schedule[2m > [22mlabels effective planned additions and reserve capacity conflicts without losing current roster players
+[31m[1mTypeError[22m: .toMatch() expects to receive a string, but got undefined[39m
+[36m [2m❯[22m __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx:[2m2044:62[22m[39m
+    [90m2042| [39m    input.intent.steps = [{ id: "add", type: "add", playerId: "new", d…
+    [90m2043| [39m    const rows = compactGroups(input).flatMap(group => group.rows);
+    [90m2044| [39m    expect(rows.find(row => row.playerId === "new")?.change).toMatch(/…
+    [90m   | [39m                                                             [31m^[39m
+    [90m2045| [39m    expect(rows.find(row => row.playerId === "p19")?.status).toContain…
+    [90m2046| [39m  });
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/19]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/pages/api/v1/db/update-line-sources.test.ts[2m > [22m/api/v1/db/update-line-sources[2m > [22mreplays the frozen 11 regression and 24 candidate records equivalently through GDL and CCC with mocked enrichment and storage
+[31m[1mError[22m: ENOENT: no such file or directory, open '/private/tmp/fhf-release-checkpoint-20261016-0424/candidate/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-games.json'[39m
+[36m [2m❯[22m __tests__/pages/api/v1/db/update-line-sources.test.ts:[2m675:38[22m[39m
+    [90m673| [39m      vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { st…
+    [90m674| [39m      const audit = JSON.parse(readFileSync(resolve(process.cwd(), "..…
+    [90m675| [39m      const frozenGames = JSON.parse(readFileSync(resolve(process.cwd(…
+    [90m   | [39m                                     [31m^[39m
+    [90m676| [39m      const holdout = JSON.parse(readFileSync(resolve(process.cwd(), "…
+    [90m677| [39m      const labels = JSON.parse(readFileSync(resolve(process.cwd(), ".…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/19]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m7 failed[39m[22m[2m | [22m[1m[32m43 passed[39m[22m[90m (50)[39m
+[2m      Tests [22m [1m[31m19 failed[39m[22m[2m | [22m[1m[32m888 passed[39m[22m[2m | [22m[33m8 skipped[39m[90m (915)[39m
+[2m   Start at [22m 23:36:23
+[2m   Duration [22m 79.60s[2m (transform 1.78s, setup 51ms, collect 3.44s, tests 101.13s, environment 7.01s, prepare 1.49s)[22m
+

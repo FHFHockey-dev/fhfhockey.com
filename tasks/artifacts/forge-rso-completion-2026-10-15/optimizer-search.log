@@ -1,0 +1,27 @@
+
+> web@0.1.0 test
+> vitest --run lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts lib/rosterScheduleOptimizer/planning.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:47524) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:47525) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts (43 tests) 197ms
+stdout | lib/rosterScheduleOptimizer/planning.test.ts > planning engine > evaluates the entire 1000-player population across 2 days with exact full-plan gains
+{"candidateBenchmark":"1000 players","days":2,"forecasts":2000,"evaluated":998,"elapsedMs":110.89716599999997}
+
+stdout | lib/rosterScheduleOptimizer/planning.test.ts > planning engine > evaluates the entire 1000-player population across 13 days with exact full-plan gains
+{"candidateBenchmark":"1000 players","days":13,"forecasts":13000,"evaluated":998,"elapsedMs":461.76920800000005}
+
+ ✓ lib/rosterScheduleOptimizer/planning.test.ts (113 tests) 3574ms
+   ✓ planning engine > evaluates the entire 1000-player population across 13 days with exact full-plan gains  883ms
+   ✓ planning engine > reaches multiple acquisitions within the bounded 25/300/7/4 workload  2290ms
+
+ Test Files  2 passed (2)
+      Tests  156 passed (156)
+   Start at  21:26:47
+   Duration  4.11s (transform 222ms, setup 4ms, collect 322ms, tests 3.77s, environment 334ms, prepare 78ms)
+

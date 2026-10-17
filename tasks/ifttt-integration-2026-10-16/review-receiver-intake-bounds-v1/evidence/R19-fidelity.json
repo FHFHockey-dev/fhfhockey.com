@@ -1,0 +1,6 @@
+{
+  "originalR19AndBothTableClockCccRaceBlockUnchanged": true,
+  "acceptedSource": "tasks/ifttt-integration-2026-10-16/review-receiver-variant-retention-v2/receiver-storage.test.ts",
+  "newCurrentSource": "tasks/ifttt-integration-2026-10-16/review-receiver-intake-bounds-v1/receiver-storage.test.ts",
+  "adaptedSetupAndGatewayBridgeDisclosed": true
+}

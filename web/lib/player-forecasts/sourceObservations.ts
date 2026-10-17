@@ -315,7 +315,7 @@ async function enqueueTeamHorizon(args: {
   watermark: string;
 }): Promise<number> {
   const now = new Date(args.watermark);
-  const games = await readForecastSchedule({ db: args.supabase, now, teamId: args.row.team_id! });
+  const games = await readForecastSchedule({ db: args.supabase, now, teamId: args.row.team_id!, mode: "next_ten_team_games" });
   const scopes = buildNextTenGameScopes({
     games,
     now,

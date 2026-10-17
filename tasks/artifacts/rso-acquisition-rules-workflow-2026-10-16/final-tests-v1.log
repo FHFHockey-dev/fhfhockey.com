@@ -1,0 +1,18 @@
+
+> web@0.1.0 test
+> vitest --run __tests__/components/RosterScheduleOptimizer/AcquisitionRules.integration.test.tsx __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx -t collects only missing|shows confirmed Yahoo zero usage|separates planned adds from allowance|guides an empty manual workspace|requires input review|explains disabled manual controls|keeps invalid zone and cleared period --reporter=dot
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:19162) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:19161) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+--------------------------------------------------------------·-···-------------····--------------------------------------------------------------·----------·-------------------------------------------
+
+ Test Files  2 passed (2)
+      Tests  10 passed | 191 skipped (201)
+   Start at  19:26:44
+   Duration  2.16s (transform 484ms, setup 7ms, collect 1.33s, tests 1.83s, environment 364ms, prepare 70ms)
+

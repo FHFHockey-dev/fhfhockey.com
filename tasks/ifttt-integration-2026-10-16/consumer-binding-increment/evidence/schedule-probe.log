@@ -1,0 +1,36 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts -t CR042 original --config ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/vitest.config.mjs
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts (10 tests | 1 failed | 9 skipped) 898ms
+   ↓ forecast consumer default > does no work unless explicitly enabled
+   × real forecast capture, queue and retained action binding > CR042 original clocks recover the real retained binding and proof without a new identity or expired dispatch 182ms
+     → {"readStatus":"complete","validationStatus":"rejected","stage":"reconciliation","scope":{"fromDate":"2026-10-14","throughDate":null,"teamId":12,"mode":"next_ten_team_games"},"discoveredGames":2,"checkedGames":2,"unreadGames":0,"reasons":["unknown_status"],"rejectedGames":[{"gameId":900012,"reasons":["unknown_status"]},{"gameId":900013,"reasons":["unknown_status"]}]}
+   ↓ real forecast capture, queue and retained action binding > CR043 original clocks keep actual partial consumer history unknown without a send or new identity
+   ↓ real forecast capture, queue and retained action binding > CR044 original clocks adopt verified real native capture and queue receipts then suppress replay after caller loss
+   ↓ real forecast capture, queue and retained action binding > atomically captures actual native snapshot, assignments, both queue scopes, news trigger and receipt
+   ↓ real forecast capture, queue and retained action binding > recovers exact receipt after actual consumer commit acknowledgement loss
+   ↓ real forecast capture, queue and retained action binding > retains receipt and suppresses replay after outbox settlement reply is lost
+   ↓ real forecast capture, queue and retained action binding > rolls back snapshot, assignments, first queue and news trigger when the second queue fails
+   ↓ real forecast capture, queue and retained action binding > rejects same-action changed parent/assignments and incomplete delivered adoption without adding bindings
+   ↓ real forecast capture, queue and retained action binding > serializes two actual consumer workers and fences stale apply ownership
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts > real forecast capture, queue and retained action binding > CR042 original clocks recover the real retained binding and proof without a new identity or expired dispatch
+Error: {"readStatus":"complete","validationStatus":"rejected","stage":"reconciliation","scope":{"fromDate":"2026-10-14","throughDate":null,"teamId":12,"mode":"next_ten_team_games"},"discoveredGames":2,"checkedGames":2,"unreadGames":0,"reasons":["unknown_status"],"rejectedGames":[{"gameId":900012,"reasons":["unknown_status"]},{"gameId":900013,"reasons":["unknown_status"]}]}
+ ❯ fixture ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts:80:156
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts:127:11
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 skipped (10)
+   Start at  01:13:40
+   Duration  1.39s (transform 186ms, setup 17ms, collect 297ms, tests 898ms, environment 0ms, prepare 38ms)
+

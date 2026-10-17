@@ -1,7 +1,29 @@
-import { lineupPeriodAtDate } from "./planningDates";
+import { lineupPeriodAtDate, nextLocalMidnight, zonedMidnight } from "./planningDates";
 import type { LeagueRules, LockedAssignment, ManagerRuleOverrides, PlanningSnapshot } from "./planningTypes";
 
 const missing = (value: unknown) => value === null || value === undefined || value === "unknown" || value === "unsupported" || (Array.isArray(value) && value.length === 0) || (typeof value === "object" && value !== null && !Array.isArray(value) && Object.keys(value).length === 0);
+
+const missingWeeklyWindows = "Supply verified weekly lineup windows; the roster response alone does not establish their exact locks.";
+function completeWeeklyWindows(context: PlanningSnapshot["context"], periods: LeagueRules["lineupPeriods"]): boolean {
+  if (!periods?.length || periods.length > 100) return false;
+  const windows = periods.map(period => ({ id: period.id, start: Date.parse(period.start), end: Date.parse(period.end),
+    lock: Date.parse(period.lockAt ?? "") })).sort((a, b) => a.start - b.start);
+  if (new Set(windows.map(window => window.id)).size !== windows.length || windows.some((window, index) =>
+    !window.id.trim() || ![window.start, window.end, window.lock].every(Number.isFinite)
+    || window.start >= window.end || window.lock > window.end || index > 0 && windows[index - 1].end > window.start)) return false;
+  const start = Date.parse(`${context.startDate}T12:00:00Z`), end = Date.parse(`${context.endDate}T12:00:00Z`);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start || end - start > 366 * 86400000) return false;
+  try {
+    for (let day = start; day <= end; day += 86400000) {
+      const date = new Date(day).toISOString().slice(0, 10);
+      const midnight = Date.parse(zonedMidnight(date, context.timeZone));
+      const until = Date.parse(nextLocalMidnight(date, context.timeZone));
+      const window = windows.find(window => window.start <= midnight && midnight < window.end);
+      if (!window || window.end < until) return false;
+    }
+    return true;
+  } catch { return false; }
+}
 
 /** Preserve authoritative inputs; manager rules fill gaps and manager locks constrain the simulation. */
 export function supplementProviderRules(snapshot: PlanningSnapshot, overrides: ManagerRuleOverrides, managerLocks: readonly LockedAssignment[] = []): { snapshot: PlanningSnapshot; conflicts: string[] } {
@@ -16,7 +38,11 @@ export function supplementProviderRules(snapshot: PlanningSnapshot, overrides: M
   apply("Acquisition timing", rules.acquisitionTiming, overrides.acquisitionTiming, () => { rules.acquisitionTiming = overrides.acquisitionTiming!; });
   apply("Acquisition cost", rules.acquisitionCost, overrides.acquisitionCost, () => { rules.acquisitionCost = overrides.acquisitionCost!; });
   apply("Acquisition periods", rules.periods, overrides.periods, () => { rules.periods = overrides.periods!; });
-  apply("Lineup periods", rules.lineupPeriods, overrides.lineupPeriods, () => { rules.lineupPeriods = overrides.lineupPeriods!; });
+  let managerWindowsApplied = false;
+  apply("Lineup periods", rules.lineupPeriods, overrides.lineupPeriods, () => { rules.lineupPeriods = overrides.lineupPeriods!; managerWindowsApplied = true; });
+  if (managerWindowsApplied && rules.lineupMode === "weekly" && completeWeeklyWindows(snapshot.context, rules.lineupPeriods)) {
+    rules.unsupported = rules.unsupported.filter(reason => reason !== missingWeeklyWindows);
+  }
   if (overrides.waivers) {
     if (!rules.waivers || rules.waivers.mode === "unknown") rules.waivers = overrides.waivers;
     else {

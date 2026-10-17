@@ -1,0 +1,7 @@
+{
+  "observedAt": "2026-10-15T20:22:46.038075+00:00",
+  "files": {
+    "web/lib/rosterScheduleOptimizer/providerRules.ts": "7f5ae66a4e8dc69f1a98151ff397f2e19536fef51440e9456b695c09bf09c2d1",
+    "web/lib/rosterScheduleOptimizer/providerRules.test.ts": "2c1d0567f1109bc7c07ca6af4fa21056f2b1304429a89906213b05b4015b753b"
+  }
+}

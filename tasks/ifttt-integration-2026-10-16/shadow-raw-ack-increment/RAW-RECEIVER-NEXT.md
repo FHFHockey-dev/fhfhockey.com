@@ -1,0 +1,9 @@
+# Next bounded local check after atomicity review
+
+The current candidate closes processed-shadow raw status/job completion, not the preceding HTTP receipt contract. Read-only inspection located the existing interface in `web/lib/sources/lineSourceIftttReceiver.ts`: it awaits raw storage before HTTP 200; known post IDs use upsert/ignoreDuplicates on `(source_key,tweet_id)` or CCC `(tweet_id)`; text-only inputs insert without post identity. Immediate processing is a separate follow-up, and its failure is reported without deleting the pending raw row.
+
+Existing receiver tests mock storage. Next useful disposable-storage check: invoke the unchanged handler in process with a fixture secret, actual raw schemas/indexes and a strict local SQL adapter; simulate storage-commit reply loss, HTTP-response loss, concurrent duplicate delivery and a committed processed receipt retried with the same key. Keep `process=false`, capture off and fetch denied. Distinguish this adapter/handler check from hosted PostgREST, the network sender's retry behavior and an external queue guarantee.
+
+Also reproduce differing payloads at the same known key and missing-ID receipts. The code requests ignoreDuplicates; it does not establish immutable retention/review of a newly changed same-key body. Do not silently dedupe unknown posts by text or treat edits as independent effects. The user-approved edit/revision policy and retained original evidence must govern any later implementation. This inspection is not yet an independently reproduced production finding or authorization for live reads/writes.
+
+Both receiver source/test files already contain dirty changes (trusted processor origin/capture behavior). Their ownership must be coordinated before edits; IFTTT did not edit them during this increment. No new credentials, HTTP request, scheduler or receiver activation is needed for the proposed local check. The exact 103-file current review freeze remains untouched.

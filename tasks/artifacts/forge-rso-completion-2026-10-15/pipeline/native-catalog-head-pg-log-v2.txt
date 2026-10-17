@@ -1,0 +1,141 @@
+The files belonging to this database system will be owned by user "tim".
+This user must also own the server process.
+
+The database cluster will be initialized with locale "C".
+The default database encoding has accordingly been set to "SQL_ASCII".
+The default text search configuration will be set to "english".
+
+Data page checksums are disabled.
+
+creating directory /private/tmp/fhfh-nh-jdv22s01/data ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... America/Chicago
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+syncing data to disk ... ok
+
+Success. You can now start the database server using:
+
+    '/opt/homebrew/opt/postgresql@17/bin/pg_ctl' -D /private/tmp/fhfh-nh-jdv22s01/data -l logfile start
+
+waiting for server to start.... done
+server started
+1
+ERROR:  Native catalog CAS conflict
+CONTEXT:  PL/pgSQL function cas_native_forecast_catalog_head(uuid,integer,bigint,text,uuid,text) line 34 at RAISE
+ERROR:  Native catalog CAS conflict
+CONTEXT:  PL/pgSQL function cas_native_forecast_catalog_head(uuid,integer,bigint,text,uuid,text) line 34 at RAISE
+ERROR:  Native catalog CAS conflict
+CONTEXT:  PL/pgSQL function cas_native_forecast_catalog_head(uuid,integer,bigint,text,uuid,text) line 34 at RAISE
+1
+2
+ERROR:  Native catalog selection envelope mismatch
+CONTEXT:  PL/pgSQL function cas_native_forecast_catalog_head(uuid,integer,bigint,text,uuid,text) line 22 at RAISE
+ERROR:  Native catalog selection envelope mismatch
+CONTEXT:  PL/pgSQL function cas_native_forecast_catalog_head(uuid,integer,bigint,text,uuid,text) line 22 at RAISE
+ERROR:  Native catalog selection envelope mismatch
+CONTEXT:  PL/pgSQL function cas_native_forecast_catalog_head(uuid,integer,bigint,text,uuid,text) line 22 at RAISE
+ERROR:  Native catalog selection envelope mismatch
+CONTEXT:  PL/pgSQL function cas_native_forecast_catalog_head(uuid,integer,bigint,text,uuid,text) line 22 at RAISE
+ERROR:  Native catalog selection envelope mismatch
+CONTEXT:  PL/pgSQL function cas_native_forecast_catalog_head(uuid,integer,bigint,text,uuid,text) line 22 at RAISE
+ERROR:  Native catalog selection envelope mismatch
+CONTEXT:  PL/pgSQL function cas_native_forecast_catalog_head(uuid,integer,bigint,text,uuid,text) line 22 at RAISE
+ERROR:  Native catalog selection envelope mismatch
+CONTEXT:  PL/pgSQL function cas_native_forecast_catalog_head(uuid,integer,bigint,text,uuid,text) line 22 at RAISE
+1
+ERROR:  Native catalog CAS conflict
+CONTEXT:  PL/pgSQL function cas_native_forecast_catalog_head(uuid,integer,bigint,text,uuid,text) line 34 at RAISE
+1|1|1
+ERROR:  permission denied for table native_forecast_catalog_heads
+ERROR:  permission denied for function cas_native_forecast_catalog_head
+ERROR:  permission denied for table native_forecast_catalog_heads
+ERROR:  permission denied for function cas_native_forecast_catalog_head
+ERROR:  permission denied for table native_forecast_catalog_heads
+2
+waiting for server to shut down.... done
+server stopped
+2026-10-16 02:56:29.862 CDT [49815] LOG:  starting PostgreSQL 17.11 (Homebrew) on aarch64-apple-darwin27.0.0, compiled by Apple clang version 21.0.0 (clang-2100.3.34.2), 64-bit
+2026-10-16 02:56:29.862 CDT [49815] LOG:  listening on Unix socket "/private/tmp/fhfh-nh-jdv22s01/socket/.s.PGSQL.58634"
+2026-10-16 02:56:29.866 CDT [49818] LOG:  database system was shut down at 2026-10-16 02:56:29 CDT
+2026-10-16 02:56:29.868 CDT [49815] LOG:  database system is ready to accept connections
+2026-10-16 02:56:30.123 CDT [49847] ERROR:  Native catalog CAS conflict
+2026-10-16 02:56:30.123 CDT [49847] CONTEXT:  PL/pgSQL function cas_native_forecast_catalog_head(uuid,integer,bigint,text,uuid,text) line 34 at RAISE
+2026-10-16 02:56:30.123 CDT [49847] STATEMENT:  SET ROLE service_role; SELECT revision FROM public.cas_native_forecast_catalog_head(
+	          '10000000-0000-4000-8000-000000000001',20262027,0,NULL,
+	          '00000000-0000-4000-8000-000000000002','6948f964f97e326bdd25f009fadddf3af96b218b1fac62746a5a5b2f214654dc');
+2026-10-16 02:56:30.135 CDT [49849] ERROR:  Native catalog CAS conflict
+2026-10-16 02:56:30.135 CDT [49849] CONTEXT:  PL/pgSQL function cas_native_forecast_catalog_head(uuid,integer,bigint,text,uuid,text) line 34 at RAISE
+2026-10-16 02:56:30.135 CDT [49849] STATEMENT:  SET ROLE service_role; SELECT revision FROM public.cas_native_forecast_catalog_head(
+	          '10000000-0000-4000-8000-000000000001',20262027,1,'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
+	          '00000000-0000-4000-8000-000000000002','6948f964f97e326bdd25f009fadddf3af96b218b1fac62746a5a5b2f214654dc');
+2026-10-16 02:56:30.147 CDT [49851] ERROR:  Native catalog CAS conflict
+2026-10-16 02:56:30.147 CDT [49851] CONTEXT:  PL/pgSQL function cas_native_forecast_catalog_head(uuid,integer,bigint,text,uuid,text) line 34 at RAISE
+2026-10-16 02:56:30.147 CDT [49851] STATEMENT:  SET ROLE service_role; SELECT revision FROM public.cas_native_forecast_catalog_head(
+	          '10000000-0000-4000-8000-000000000001',20262027,2,'18504ae0e94c2ca9eec73f8c14a6caa7e0000e73aaa9b3bf2e46c564c3f3c4e2',
+	          '00000000-0000-4000-8000-000000000002','6948f964f97e326bdd25f009fadddf3af96b218b1fac62746a5a5b2f214654dc');
+2026-10-16 02:56:30.181 CDT [49857] ERROR:  Native catalog selection envelope mismatch
+2026-10-16 02:56:30.181 CDT [49857] CONTEXT:  PL/pgSQL function cas_native_forecast_catalog_head(uuid,integer,bigint,text,uuid,text) line 22 at RAISE
+2026-10-16 02:56:30.181 CDT [49857] STATEMENT:  SET ROLE service_role; SELECT revision FROM public.cas_native_forecast_catalog_head(
+	          '10000000-0000-4000-8000-000000000001',20262027,2,'6948f964f97e326bdd25f009fadddf3af96b218b1fac62746a5a5b2f214654dc',
+	          '00000000-0000-4000-8000-000000000003','7dd60e6f4457dd096f8be01ba06d407d2c9dc21548ed89f2eee19baf86d293b5');
+2026-10-16 02:56:30.192 CDT [49859] ERROR:  Native catalog selection envelope mismatch
+2026-10-16 02:56:30.192 CDT [49859] CONTEXT:  PL/pgSQL function cas_native_forecast_catalog_head(uuid,integer,bigint,text,uuid,text) line 22 at RAISE
+2026-10-16 02:56:30.192 CDT [49859] STATEMENT:  SET ROLE service_role; SELECT revision FROM public.cas_native_forecast_catalog_head(
+	          '10000000-0000-4000-8000-000000000001',20262027,2,'6948f964f97e326bdd25f009fadddf3af96b218b1fac62746a5a5b2f214654dc',
+	          '00000000-0000-4000-8000-000000000004','4b54d6136b4b8011f356bdc8e13d16136665cdc2e6d6b055b477bc637979d043');
+2026-10-16 02:56:30.204 CDT [49861] ERROR:  Native catalog selection envelope mismatch
+2026-10-16 02:56:30.204 CDT [49861] CONTEXT:  PL/pgSQL function cas_native_forecast_catalog_head(uuid,integer,bigint,text,uuid,text) line 22 at RAISE
+2026-10-16 02:56:30.204 CDT [49861] STATEMENT:  SET ROLE service_role; SELECT revision FROM public.cas_native_forecast_catalog_head(
+	          '10000000-0000-4000-8000-000000000001',20262027,2,'6948f964f97e326bdd25f009fadddf3af96b218b1fac62746a5a5b2f214654dc',
+	          '00000000-0000-4000-8000-000000000005','97cbcd78d2ab0da143b3dcc6f1ae3115b92dacca00ad790c5e477ce5a61b1926');
+2026-10-16 02:56:30.215 CDT [49863] ERROR:  Native catalog selection envelope mismatch
+2026-10-16 02:56:30.215 CDT [49863] CONTEXT:  PL/pgSQL function cas_native_forecast_catalog_head(uuid,integer,bigint,text,uuid,text) line 22 at RAISE
+2026-10-16 02:56:30.215 CDT [49863] STATEMENT:  SET ROLE service_role; SELECT revision FROM public.cas_native_forecast_catalog_head(
+	          '10000000-0000-4000-8000-000000000001',20262027,2,'6948f964f97e326bdd25f009fadddf3af96b218b1fac62746a5a5b2f214654dc',
+	          '00000000-0000-4000-8000-000000000006','02ce36ae6419a7805b177b15a42027245fb2b1e7e6863a5bc2ccc14f0aaf6f8d');
+2026-10-16 02:56:30.226 CDT [49865] ERROR:  Native catalog selection envelope mismatch
+2026-10-16 02:56:30.226 CDT [49865] CONTEXT:  PL/pgSQL function cas_native_forecast_catalog_head(uuid,integer,bigint,text,uuid,text) line 22 at RAISE
+2026-10-16 02:56:30.226 CDT [49865] STATEMENT:  SET ROLE service_role; SELECT revision FROM public.cas_native_forecast_catalog_head(
+	          '10000000-0000-4000-8000-000000000001',20262027,2,'6948f964f97e326bdd25f009fadddf3af96b218b1fac62746a5a5b2f214654dc',
+	          '00000000-0000-4000-8000-000000000007','a2228e5c3551d4376824a1cda73721ca1af8f7109fd3c0181090437f35ca6fdd');
+2026-10-16 02:56:30.238 CDT [49867] ERROR:  Native catalog selection envelope mismatch
+2026-10-16 02:56:30.238 CDT [49867] CONTEXT:  PL/pgSQL function cas_native_forecast_catalog_head(uuid,integer,bigint,text,uuid,text) line 22 at RAISE
+2026-10-16 02:56:30.238 CDT [49867] STATEMENT:  SET ROLE service_role; SELECT revision FROM public.cas_native_forecast_catalog_head(
+	          '10000000-0000-4000-8000-000000000001',20262027,2,'6948f964f97e326bdd25f009fadddf3af96b218b1fac62746a5a5b2f214654dc',
+	          '00000000-0000-4000-8000-000000000008','ca98e6c7c1f837d9f5329273a82216c3fa7c2b67a30e48487d3414fe0789980a');
+2026-10-16 02:56:30.249 CDT [49869] ERROR:  Native catalog selection envelope mismatch
+2026-10-16 02:56:30.249 CDT [49869] CONTEXT:  PL/pgSQL function cas_native_forecast_catalog_head(uuid,integer,bigint,text,uuid,text) line 22 at RAISE
+2026-10-16 02:56:30.249 CDT [49869] STATEMENT:  SET ROLE service_role; SELECT revision FROM public.cas_native_forecast_catalog_head(
+	          '10000000-0000-4000-8000-000000000001',20262027,2,'6948f964f97e326bdd25f009fadddf3af96b218b1fac62746a5a5b2f214654dc',
+	          '00000000-0000-4000-8000-000000000009','f6c495c5b5cba0d73b082b652e2055ebaf9872d3523e28070f1fbe852defc26d');
+2026-10-16 02:56:30.278 CDT [49873] ERROR:  Native catalog CAS conflict
+2026-10-16 02:56:30.278 CDT [49873] CONTEXT:  PL/pgSQL function cas_native_forecast_catalog_head(uuid,integer,bigint,text,uuid,text) line 34 at RAISE
+2026-10-16 02:56:30.278 CDT [49873] STATEMENT:  SET ROLE service_role; SELECT revision FROM public.cas_native_forecast_catalog_head(
+	          '10000000-0000-4000-8000-000000000002',20262027,0,NULL,
+	          '00000000-0000-4000-8000-000000000002','6948f964f97e326bdd25f009fadddf3af96b218b1fac62746a5a5b2f214654dc');
+2026-10-16 02:56:30.300 CDT [49877] ERROR:  permission denied for table native_forecast_catalog_heads
+2026-10-16 02:56:30.300 CDT [49877] STATEMENT:  SET ROLE anon; SELECT * FROM public.native_forecast_catalog_heads
+2026-10-16 02:56:30.310 CDT [49879] ERROR:  permission denied for function cas_native_forecast_catalog_head
+2026-10-16 02:56:30.310 CDT [49879] STATEMENT:  SET ROLE anon; SELECT revision FROM public.cas_native_forecast_catalog_head(
+	          '10000000-0000-4000-8000-000000000001',20262027,2,'6948f964f97e326bdd25f009fadddf3af96b218b1fac62746a5a5b2f214654dc',
+	          '00000000-0000-4000-8000-000000000001','18504ae0e94c2ca9eec73f8c14a6caa7e0000e73aaa9b3bf2e46c564c3f3c4e2');
+2026-10-16 02:56:30.320 CDT [49881] ERROR:  permission denied for table native_forecast_catalog_heads
+2026-10-16 02:56:30.320 CDT [49881] STATEMENT:  SET ROLE authenticated; SELECT * FROM public.native_forecast_catalog_heads
+2026-10-16 02:56:30.330 CDT [49883] ERROR:  permission denied for function cas_native_forecast_catalog_head
+2026-10-16 02:56:30.330 CDT [49883] STATEMENT:  SET ROLE authenticated; SELECT revision FROM public.cas_native_forecast_catalog_head(
+	          '10000000-0000-4000-8000-000000000001',20262027,2,'6948f964f97e326bdd25f009fadddf3af96b218b1fac62746a5a5b2f214654dc',
+	          '00000000-0000-4000-8000-000000000001','18504ae0e94c2ca9eec73f8c14a6caa7e0000e73aaa9b3bf2e46c564c3f3c4e2');
+2026-10-16 02:56:30.341 CDT [49885] ERROR:  permission denied for table native_forecast_catalog_heads
+2026-10-16 02:56:30.341 CDT [49885] STATEMENT:  SET ROLE service_role; UPDATE public.native_forecast_catalog_heads SET revision=999 WHERE id='10000000-0000-4000-8000-000000000001'
+2026-10-16 02:56:30.357 CDT [49815] LOG:  received fast shutdown request
+2026-10-16 02:56:30.357 CDT [49815] LOG:  aborting any active transactions
+2026-10-16 02:56:30.357 CDT [49815] LOG:  background worker "logical replication launcher" (PID 49821) exited with exit code 1
+2026-10-16 02:56:30.357 CDT [49816] LOG:  shutting down
+2026-10-16 02:56:30.357 CDT [49816] LOG:  checkpoint starting: shutdown immediate
+2026-10-16 02:56:30.359 CDT [49816] LOG:  checkpoint complete: wrote 81 buffers (0.5%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.002 s, sync=0.001 s, total=0.002 s; sync files=0, longest=0.000 s, average=0.000 s; distance=303 kB, estimate=303 kB; lsn=0/15665D8, redo lsn=0/15665D8
+2026-10-16 02:56:30.360 CDT [49815] LOG:  database system is shut down

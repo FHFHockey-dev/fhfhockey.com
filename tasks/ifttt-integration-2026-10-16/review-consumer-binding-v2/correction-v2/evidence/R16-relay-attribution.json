@@ -1,0 +1,1465 @@
+{
+  "id": "R16_relay_attribution_plan",
+  "originalPlan": {
+    "version": "tweet-forecast-consumer-v1",
+    "parent": {
+      "source": "tweet_projection",
+      "status": "observed",
+      "game_id": 900012,
+      "team_id": 12,
+      "metadata": {
+        "derived": true,
+        "interpretation": {
+          "units": [],
+          "events": [
+            {
+              "kind": "injury",
+              "state": "unknown",
+              "times": {
+                "reference": "2026-10-16",
+                "observation": "2026-10-16T06:45:30.535Z",
+                "applicability": "unresolved"
+              },
+              "teamId": 12,
+              "evidence": {
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "start": 0
+              },
+              "modality": "negated",
+              "playerId": 8473533,
+              "timeline": {
+                "text": "tonight",
+                "unit": null,
+                "maximum": null,
+                "minimum": null,
+                "purpose": "unknown",
+                "targetDate": "2026-10-16"
+              },
+              "timelines": [
+                {
+                  "text": "tonight",
+                  "unit": null,
+                  "maximum": null,
+                  "minimum": null,
+                  "purpose": "unknown",
+                  "targetDate": "2026-10-16"
+                }
+              ],
+              "playerName": "Jordan Staal",
+              "claimAnchor": {
+                "subjectSpan": {
+                  "end": 12,
+                  "text": "Jordan Staal",
+                  "start": 0
+                },
+                "predicateSpan": {
+                  "end": 26,
+                  "text": "will not play",
+                  "start": 13
+                }
+              },
+              "availability": "out",
+              "effectiveDate": null,
+              "resolutionBasis": "full_name",
+              "availabilityScope": "unspecified"
+            }
+          ],
+          "context": "game",
+          "version": "interpretation-rule-1",
+          "certainty": "confirmed",
+          "unresolved": []
+        },
+        "provenanceHash": "7209fdc6499a03893c26f414230da71e5b7180503346543690c403edeaffc857",
+        "projectionReports": [
+          {
+            "key": "96b361321336a959e2964d86060b078b24292d0b8c166321e0d88842aeb5f914:12:interpretation-rule-1",
+            "date": "2026-10-16",
+            "text": "Jordan Staal will not play tonight.",
+            "gameId": 900012,
+            "teamId": 12,
+            "session": null,
+            "provenance": {
+              "relayTweetId": "9900000000000000002",
+              "originalTweetId": "9900000000000000001",
+              "attributionStatus": "resolved"
+            },
+            "receivedAt": "2026-10-16T06:46:30.535Z",
+            "originalUrl": "https://x.com/fixture_a/status/9900000000000000001",
+            "publishedAt": "2026-10-16T06:45:30.535Z",
+            "interpretedAt": "2026-10-16T06:47:30.535Z",
+            "interpretation": {
+              "units": [],
+              "events": [
+                {
+                  "kind": "injury",
+                  "state": "unknown",
+                  "times": {
+                    "reference": "2026-10-16",
+                    "observation": "2026-10-16T06:45:30.535Z",
+                    "applicability": "unresolved"
+                  },
+                  "teamId": 12,
+                  "evidence": {
+                    "end": 35,
+                    "text": "Jordan Staal will not play tonight.",
+                    "start": 0
+                  },
+                  "modality": "negated",
+                  "playerId": 8473533,
+                  "timeline": {
+                    "text": "tonight",
+                    "unit": null,
+                    "maximum": null,
+                    "minimum": null,
+                    "purpose": "unknown",
+                    "targetDate": "2026-10-16"
+                  },
+                  "timelines": [
+                    {
+                      "text": "tonight",
+                      "unit": null,
+                      "maximum": null,
+                      "minimum": null,
+                      "purpose": "unknown",
+                      "targetDate": "2026-10-16"
+                    }
+                  ],
+                  "playerName": "Jordan Staal",
+                  "claimAnchor": {
+                    "subjectSpan": {
+                      "end": 12,
+                      "text": "Jordan Staal",
+                      "start": 0
+                    },
+                    "predicateSpan": {
+                      "end": 26,
+                      "text": "will not play",
+                      "start": 13
+                    }
+                  },
+                  "availability": "out",
+                  "effectiveDate": null,
+                  "resolutionBasis": "full_name",
+                  "availabilityScope": "unspecified"
+                }
+              ],
+              "context": "game",
+              "version": "interpretation-rule-1",
+              "certainty": "confirmed",
+              "unresolved": []
+            },
+            "teamAbbreviation": "CAR",
+            "originalPublishedAt": "2026-10-16T06:45:30.535Z"
+          }
+        ],
+        "sourceAccountKind": "internal_derivation"
+      },
+      "raw_text": "Jordan Staal will not play tonight.",
+      "tweet_id": null,
+      "team_name": "Carolina Hurricanes",
+      "tweet_url": null,
+      "source_key": "validated_events",
+      "source_url": "https://x.com/fixture_a/status/9900000000000000001",
+      "updated_at": "2026-10-16T01:47:30.535-05:00",
+      "author_name": null,
+      "capture_key": "96b361321336a959e2964d86060b078b24292d0b8c166321e0d88842aeb5f914:12:interpretation-rule-1:injury",
+      "observed_at": "2026-10-16T01:46:30.535-05:00",
+      "raw_payload": {
+        "reports": [
+          {
+            "key": "96b361321336a959e2964d86060b078b24292d0b8c166321e0d88842aeb5f914:12:interpretation-rule-1",
+            "date": "2026-10-16",
+            "text": "Jordan Staal will not play tonight.",
+            "gameId": 900012,
+            "teamId": 12,
+            "session": null,
+            "provenance": {
+              "relayTweetId": "9900000000000000002",
+              "originalTweetId": "9900000000000000001",
+              "attributionStatus": "resolved"
+            },
+            "receivedAt": "2026-10-16T06:46:30.535Z",
+            "originalUrl": "https://x.com/fixture_a/status/9900000000000000001",
+            "publishedAt": "2026-10-16T06:45:30.535Z",
+            "interpretedAt": "2026-10-16T06:47:30.535Z",
+            "interpretation": {
+              "units": [],
+              "events": [
+                {
+                  "kind": "injury",
+                  "state": "unknown",
+                  "times": {
+                    "reference": "2026-10-16",
+                    "observation": "2026-10-16T06:45:30.535Z",
+                    "applicability": "unresolved"
+                  },
+                  "teamId": 12,
+                  "evidence": {
+                    "end": 35,
+                    "text": "Jordan Staal will not play tonight.",
+                    "start": 0
+                  },
+                  "modality": "negated",
+                  "playerId": 8473533,
+                  "timeline": {
+                    "text": "tonight",
+                    "unit": null,
+                    "maximum": null,
+                    "minimum": null,
+                    "purpose": "unknown",
+                    "targetDate": "2026-10-16"
+                  },
+                  "timelines": [
+                    {
+                      "text": "tonight",
+                      "unit": null,
+                      "maximum": null,
+                      "minimum": null,
+                      "purpose": "unknown",
+                      "targetDate": "2026-10-16"
+                    }
+                  ],
+                  "playerName": "Jordan Staal",
+                  "claimAnchor": {
+                    "subjectSpan": {
+                      "end": 12,
+                      "text": "Jordan Staal",
+                      "start": 0
+                    },
+                    "predicateSpan": {
+                      "end": 26,
+                      "text": "will not play",
+                      "start": 13
+                    }
+                  },
+                  "availability": "out",
+                  "effectiveDate": null,
+                  "resolutionBasis": "full_name",
+                  "availabilityScope": "unspecified"
+                }
+              ],
+              "context": "game",
+              "version": "interpretation-rule-1",
+              "certainty": "confirmed",
+              "unresolved": []
+            },
+            "teamAbbreviation": "CAR",
+            "originalPublishedAt": "2026-10-16T06:45:30.535Z"
+          }
+        ],
+        "sources": [
+          {
+            "table": "line_source_snapshots",
+            "snapshot": {
+              "source": "fixture_original",
+              "status": "observed",
+              "game_id": 900012,
+              "team_id": 12,
+              "metadata": {
+                "interpretation": {
+                  "units": [],
+                  "events": [
+                    {
+                      "kind": "injury",
+                      "state": "unknown",
+                      "times": {
+                        "reference": "2026-10-16",
+                        "observation": "2026-10-16T06:45:30.535Z",
+                        "applicability": "unresolved"
+                      },
+                      "teamId": 12,
+                      "evidence": {
+                        "end": 35,
+                        "text": "Jordan Staal will not play tonight.",
+                        "start": 0
+                      },
+                      "modality": "negated",
+                      "playerId": 8473533,
+                      "timeline": {
+                        "text": "tonight",
+                        "unit": null,
+                        "maximum": null,
+                        "minimum": null,
+                        "purpose": "unknown",
+                        "targetDate": "2026-10-16"
+                      },
+                      "timelines": [
+                        {
+                          "text": "tonight",
+                          "unit": null,
+                          "maximum": null,
+                          "minimum": null,
+                          "purpose": "unknown",
+                          "targetDate": "2026-10-16"
+                        }
+                      ],
+                      "playerName": "Jordan Staal",
+                      "claimAnchor": {
+                        "subjectSpan": {
+                          "end": 12,
+                          "text": "Jordan Staal",
+                          "start": 0
+                        },
+                        "predicateSpan": {
+                          "end": 26,
+                          "text": "will not play",
+                          "start": 13
+                        }
+                      },
+                      "availability": "out",
+                      "effectiveDate": null,
+                      "resolutionBasis": "full_name",
+                      "availabilityScope": "unspecified"
+                    }
+                  ],
+                  "context": "game",
+                  "version": "interpretation-rule-1",
+                  "certainty": "confirmed",
+                  "unresolved": []
+                }
+              },
+              "raw_text": "Jordan Staal will not play tonight.",
+              "tweet_id": "9900000000000000002",
+              "team_name": "Carolina Hurricanes",
+              "tweet_url": null,
+              "source_key": "offline-fixture",
+              "source_url": null,
+              "updated_at": "2026-10-16T01:46:30.535-05:00",
+              "author_name": null,
+              "capture_key": "offline-fixture:retained:9900000000000000002",
+              "observed_at": "2026-10-16T01:46:30.535-05:00",
+              "raw_payload": {
+                "time": {
+                  "receivedAt": "2026-10-16T06:46:30.535Z",
+                  "validUntil": "2026-10-16T22:45:30.535Z",
+                  "effectiveAt": "2026-10-16T17:45:30.535Z",
+                  "interpretedAt": "2026-10-16T06:47:30.535Z",
+                  "wrapperPublishedAt": null,
+                  "originalPublishedAt": "2026-10-16T06:45:30.535Z"
+                },
+                "legacy": null,
+                "source": {
+                  "relayId": "9900000000000000002",
+                  "namespace": "offline-fixture",
+                  "originalId": "9900000000000000001",
+                  "originalAuthor": "fixture_a",
+                  "primaryTextMode": "verified_original",
+                  "retainedSourceId": "offline-fixture:retained:9900000000000000002",
+                  "lineageCandidateCount": 1,
+                  "provenanceVerification": "synthetic_verified"
+                },
+                "evidence": {
+                  "displaySpan": {
+                    "end": 35,
+                    "text": "Jordan Staal will not play tonight.",
+                    "start": 0,
+                    "offsetUnit": "UTF-16_code_unit"
+                  },
+                  "ruleVersion": "evidence-rule-1"
+                },
+                "recordId": "a",
+                "occurrence": {
+                  "subjectSpan": {
+                    "end": 12,
+                    "text": "Jordan Staal",
+                    "start": 0,
+                    "offsetUnit": "UTF-16_code_unit"
+                  },
+                  "contextSpans": [],
+                  "predicateSpan": {
+                    "end": 26,
+                    "text": "will not play",
+                    "start": 13,
+                    "offsetUnit": "UTF-16_code_unit"
+                  },
+                  "alignmentProof": "unique_1_to_1_fixture_alignment",
+                  "governingClauseSpan": {
+                    "end": 35,
+                    "text": "Jordan Staal will not play tonight.",
+                    "start": 0,
+                    "offsetUnit": "UTF-16_code_unit"
+                  }
+                },
+                "sourceText": {
+                  "text": "Jordan Staal will not play tonight.",
+                  "sha256": "190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66",
+                  "sourceTextVersionId": "fixture-text:190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66"
+                },
+                "fixtureClass": "synthetic_already_bound",
+                "interpretation": {
+                  "fact": {
+                    "kind": "availability",
+                    "status": "out",
+                    "playerId": 8473533
+                  },
+                  "scope": {
+                    "kind": "game",
+                    "group": null,
+                    "phase": "entry",
+                    "gameId": 900012,
+                    "status": "known",
+                    "teamId": 12
+                  },
+                  "subject": {
+                    "status": "known",
+                    "teamId": 12,
+                    "playerId": 8473533
+                  },
+                  "modality": "asserted",
+                  "polarity": "affirmed",
+                  "relation": null,
+                  "validation": {
+                    "basis": "synthetic_explicit_local_clause",
+                    "status": "supported"
+                  },
+                  "ruleVersion": "interpretation-rule-1",
+                  "assertionStrength": "asserted"
+                }
+              },
+              "keyword_hits": null,
+              "source_group": "offline-fixture",
+              "source_label": null,
+              "enriched_text": null,
+              "goalie_1_name": null,
+              "goalie_2_name": null,
+              "snapshot_date": "2026-10-16",
+              "source_handle": null,
+              "classification": null,
+              "source_account": "fixture_a",
+              "detected_league": null,
+              "quoted_raw_text": "Jordan Staal will not play tonight.",
+              "quoted_tweet_id": "9900000000000000001",
+              "tweet_posted_at": "2026-10-16T01:45:30.535-05:00",
+              "unmatched_names": null,
+              "quoted_tweet_url": "https://x.com/fixture_a/status/9900000000000000001",
+              "line_1_player_ids": null,
+              "line_2_player_ids": null,
+              "line_3_player_ids": null,
+              "line_4_player_ids": null,
+              "nhl_filter_reason": null,
+              "nhl_filter_status": "accepted",
+              "pair_1_player_ids": null,
+              "pair_2_player_ids": null,
+              "pair_3_player_ids": null,
+              "team_abbreviation": "CAR",
+              "goalie_1_player_id": null,
+              "goalie_2_player_id": null,
+              "injured_player_ids": null,
+              "matched_player_ids": null,
+              "quoted_author_name": null,
+              "tweet_posted_label": null,
+              "line_1_player_names": null,
+              "line_2_player_names": null,
+              "line_3_player_names": null,
+              "line_4_player_names": null,
+              "pair_1_player_names": null,
+              "pair_2_player_names": null,
+              "pair_3_player_names": null,
+              "primary_text_source": "quoted_oembed",
+              "injured_player_names": null,
+              "matched_player_names": null,
+              "quoted_author_handle": "fixture_a",
+              "quoted_enriched_text": null,
+              "scratches_player_ids": null,
+              "scratches_player_names": null
+            }
+          }
+        ],
+        "derivation": "tweet-projection-v1"
+      },
+      "keyword_hits": null,
+      "source_group": "tweet_projection",
+      "source_label": null,
+      "enriched_text": null,
+      "goalie_1_name": null,
+      "goalie_2_name": null,
+      "snapshot_date": "2026-10-16",
+      "source_handle": null,
+      "classification": "injury",
+      "source_account": "tweet_projection",
+      "detected_league": "NHL",
+      "quoted_raw_text": "Jordan Staal will not play tonight.",
+      "quoted_tweet_id": null,
+      "tweet_posted_at": "2026-10-16T01:45:30.535-05:00",
+      "unmatched_names": null,
+      "quoted_tweet_url": null,
+      "line_1_player_ids": null,
+      "line_2_player_ids": null,
+      "line_3_player_ids": null,
+      "line_4_player_ids": null,
+      "nhl_filter_reason": null,
+      "nhl_filter_status": "accepted",
+      "pair_1_player_ids": null,
+      "pair_2_player_ids": null,
+      "pair_3_player_ids": null,
+      "team_abbreviation": "CAR",
+      "goalie_1_player_id": null,
+      "goalie_2_player_id": null,
+      "injured_player_ids": null,
+      "matched_player_ids": null,
+      "quoted_author_name": null,
+      "tweet_posted_label": "2026-10-16T06:45:30.535Z",
+      "line_1_player_names": null,
+      "line_2_player_names": null,
+      "line_3_player_names": null,
+      "line_4_player_names": null,
+      "pair_1_player_names": null,
+      "pair_2_player_names": null,
+      "pair_3_player_names": null,
+      "primary_text_source": null,
+      "injured_player_names": null,
+      "matched_player_names": null,
+      "quoted_author_handle": null,
+      "quoted_enriched_text": null,
+      "scratches_player_ids": null,
+      "scratches_player_names": null
+    },
+    "snapshot": {
+      "game_id": 900012,
+      "team_id": 12,
+      "source_group": "tweet_projection",
+      "source_key": "validated_events",
+      "source_account": "fixture_a",
+      "source_capture_key": "96b361321336a959e2964d86060b078b24292d0b8c166321e0d88842aeb5f914:12:interpretation-rule-1:injury",
+      "source_url": "https://x.com/fixture_a/status/9900000000000000001",
+      "classification": "injury",
+      "observed_at": "2026-10-16T06:45:30.535Z",
+      "available_at": "2026-10-16T06:46:30.535Z",
+      "expires_at": null,
+      "completeness": 1,
+      "accepted": true,
+      "parser_version": "interpretation-rule-1",
+      "metadata": {
+        "derived": true,
+        "interpretation": {
+          "units": [],
+          "events": [
+            {
+              "kind": "injury",
+              "state": "unknown",
+              "times": {
+                "reference": "2026-10-16",
+                "observation": "2026-10-16T06:45:30.535Z",
+                "applicability": "unresolved"
+              },
+              "teamId": 12,
+              "evidence": {
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "start": 0
+              },
+              "modality": "negated",
+              "playerId": 8473533,
+              "timeline": {
+                "text": "tonight",
+                "unit": null,
+                "maximum": null,
+                "minimum": null,
+                "purpose": "unknown",
+                "targetDate": "2026-10-16"
+              },
+              "timelines": [
+                {
+                  "text": "tonight",
+                  "unit": null,
+                  "maximum": null,
+                  "minimum": null,
+                  "purpose": "unknown",
+                  "targetDate": "2026-10-16"
+                }
+              ],
+              "playerName": "Jordan Staal",
+              "claimAnchor": {
+                "subjectSpan": {
+                  "end": 12,
+                  "text": "Jordan Staal",
+                  "start": 0
+                },
+                "predicateSpan": {
+                  "end": 26,
+                  "text": "will not play",
+                  "start": 13
+                }
+              },
+              "availability": "out",
+              "effectiveDate": null,
+              "resolutionBasis": "full_name",
+              "availabilityScope": "unspecified"
+            }
+          ],
+          "context": "game",
+          "version": "interpretation-rule-1",
+          "certainty": "confirmed",
+          "unresolved": []
+        },
+        "provenanceHash": "7209fdc6499a03893c26f414230da71e5b7180503346543690c403edeaffc857",
+        "projectionReports": [
+          {
+            "key": "96b361321336a959e2964d86060b078b24292d0b8c166321e0d88842aeb5f914:12:interpretation-rule-1",
+            "date": "2026-10-16",
+            "text": "Jordan Staal will not play tonight.",
+            "gameId": 900012,
+            "teamId": 12,
+            "session": null,
+            "provenance": {
+              "relayTweetId": "9900000000000000002",
+              "originalTweetId": "9900000000000000001",
+              "attributionStatus": "resolved"
+            },
+            "receivedAt": "2026-10-16T06:46:30.535Z",
+            "originalUrl": "https://x.com/fixture_a/status/9900000000000000001",
+            "publishedAt": "2026-10-16T06:45:30.535Z",
+            "interpretedAt": "2026-10-16T06:47:30.535Z",
+            "interpretation": {
+              "units": [],
+              "events": [
+                {
+                  "kind": "injury",
+                  "state": "unknown",
+                  "times": {
+                    "reference": "2026-10-16",
+                    "observation": "2026-10-16T06:45:30.535Z",
+                    "applicability": "unresolved"
+                  },
+                  "teamId": 12,
+                  "evidence": {
+                    "end": 35,
+                    "text": "Jordan Staal will not play tonight.",
+                    "start": 0
+                  },
+                  "modality": "negated",
+                  "playerId": 8473533,
+                  "timeline": {
+                    "text": "tonight",
+                    "unit": null,
+                    "maximum": null,
+                    "minimum": null,
+                    "purpose": "unknown",
+                    "targetDate": "2026-10-16"
+                  },
+                  "timelines": [
+                    {
+                      "text": "tonight",
+                      "unit": null,
+                      "maximum": null,
+                      "minimum": null,
+                      "purpose": "unknown",
+                      "targetDate": "2026-10-16"
+                    }
+                  ],
+                  "playerName": "Jordan Staal",
+                  "claimAnchor": {
+                    "subjectSpan": {
+                      "end": 12,
+                      "text": "Jordan Staal",
+                      "start": 0
+                    },
+                    "predicateSpan": {
+                      "end": 26,
+                      "text": "will not play",
+                      "start": 13
+                    }
+                  },
+                  "availability": "out",
+                  "effectiveDate": null,
+                  "resolutionBasis": "full_name",
+                  "availabilityScope": "unspecified"
+                }
+              ],
+              "context": "game",
+              "version": "interpretation-rule-1",
+              "certainty": "confirmed",
+              "unresolved": []
+            },
+            "teamAbbreviation": "CAR",
+            "originalPublishedAt": "2026-10-16T06:45:30.535Z"
+          }
+        ],
+        "sourceAccountKind": "internal_derivation",
+        "relaySourceAccount": null,
+        "relaySourceUrl": "https://x.com/fixture_a/status/9900000000000000001",
+        "originalAuthorKnown": true,
+        "sourceTiming": {
+          "sourcePublishedAt": "2026-10-16T06:45:30.535Z",
+          "receivedAt": "2026-10-16T06:46:30.535Z",
+          "sourceReference": "tweet:9900000000000000001"
+        }
+      }
+    },
+    "assignments": [
+      {
+        "player_id": 8473533,
+        "raw_player_name": "Jordan Staal",
+        "unit_type": "injury",
+        "unit_number": null,
+        "slot_number": 1,
+        "assignment_status": "ruled_out"
+      }
+    ],
+    "queues": [
+      {
+        "p_scope_key": "game:900012:team:12",
+        "p_game_id": 900012,
+        "p_team_id": 12,
+        "p_team_game_horizon": 1,
+        "p_reason": "source:validated_events:injury",
+        "p_observed_at": "2026-10-16T06:46:30.535Z",
+        "p_not_before": "2026-10-16T06:51:30.535Z",
+        "p_metadata": {
+          "sourceCaptureKey": "96b361321336a959e2964d86060b078b24292d0b8c166321e0d88842aeb5f914:12:interpretation-rule-1:injury",
+          "teamWide": true
+        }
+      },
+      {
+        "p_scope_key": "game:900013:team:12",
+        "p_game_id": 900013,
+        "p_team_id": 12,
+        "p_team_game_horizon": 2,
+        "p_reason": "source:validated_events:injury",
+        "p_observed_at": "2026-10-16T06:46:30.535Z",
+        "p_not_before": "2026-10-16T06:51:30.535Z",
+        "p_metadata": {
+          "sourceCaptureKey": "96b361321336a959e2964d86060b078b24292d0b8c166321e0d88842aeb5f914:12:interpretation-rule-1:injury",
+          "teamWide": true
+        }
+      }
+    ]
+  },
+  "submittedPlan": {
+    "version": "tweet-forecast-consumer-v1",
+    "parent": {
+      "source": "tweet_projection",
+      "status": "observed",
+      "game_id": 900012,
+      "team_id": 12,
+      "metadata": {
+        "derived": true,
+        "interpretation": {
+          "units": [],
+          "events": [
+            {
+              "kind": "injury",
+              "state": "unknown",
+              "times": {
+                "reference": "2026-10-16",
+                "observation": "2026-10-16T06:45:30.535Z",
+                "applicability": "unresolved"
+              },
+              "teamId": 12,
+              "evidence": {
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "start": 0
+              },
+              "modality": "negated",
+              "playerId": 8473533,
+              "timeline": {
+                "text": "tonight",
+                "unit": null,
+                "maximum": null,
+                "minimum": null,
+                "purpose": "unknown",
+                "targetDate": "2026-10-16"
+              },
+              "timelines": [
+                {
+                  "text": "tonight",
+                  "unit": null,
+                  "maximum": null,
+                  "minimum": null,
+                  "purpose": "unknown",
+                  "targetDate": "2026-10-16"
+                }
+              ],
+              "playerName": "Jordan Staal",
+              "claimAnchor": {
+                "subjectSpan": {
+                  "end": 12,
+                  "text": "Jordan Staal",
+                  "start": 0
+                },
+                "predicateSpan": {
+                  "end": 26,
+                  "text": "will not play",
+                  "start": 13
+                }
+              },
+              "availability": "out",
+              "effectiveDate": null,
+              "resolutionBasis": "full_name",
+              "availabilityScope": "unspecified"
+            }
+          ],
+          "context": "game",
+          "version": "interpretation-rule-1",
+          "certainty": "confirmed",
+          "unresolved": []
+        },
+        "provenanceHash": "7209fdc6499a03893c26f414230da71e5b7180503346543690c403edeaffc857",
+        "projectionReports": [
+          {
+            "key": "96b361321336a959e2964d86060b078b24292d0b8c166321e0d88842aeb5f914:12:interpretation-rule-1",
+            "date": "2026-10-16",
+            "text": "Jordan Staal will not play tonight.",
+            "gameId": 900012,
+            "teamId": 12,
+            "session": null,
+            "provenance": {
+              "relayTweetId": "9900000000000000002",
+              "originalTweetId": "9900000000000000001",
+              "attributionStatus": "resolved"
+            },
+            "receivedAt": "2026-10-16T06:46:30.535Z",
+            "originalUrl": "https://x.com/fixture_a/status/9900000000000000001",
+            "publishedAt": "2026-10-16T06:45:30.535Z",
+            "interpretedAt": "2026-10-16T06:47:30.535Z",
+            "interpretation": {
+              "units": [],
+              "events": [
+                {
+                  "kind": "injury",
+                  "state": "unknown",
+                  "times": {
+                    "reference": "2026-10-16",
+                    "observation": "2026-10-16T06:45:30.535Z",
+                    "applicability": "unresolved"
+                  },
+                  "teamId": 12,
+                  "evidence": {
+                    "end": 35,
+                    "text": "Jordan Staal will not play tonight.",
+                    "start": 0
+                  },
+                  "modality": "negated",
+                  "playerId": 8473533,
+                  "timeline": {
+                    "text": "tonight",
+                    "unit": null,
+                    "maximum": null,
+                    "minimum": null,
+                    "purpose": "unknown",
+                    "targetDate": "2026-10-16"
+                  },
+                  "timelines": [
+                    {
+                      "text": "tonight",
+                      "unit": null,
+                      "maximum": null,
+                      "minimum": null,
+                      "purpose": "unknown",
+                      "targetDate": "2026-10-16"
+                    }
+                  ],
+                  "playerName": "Jordan Staal",
+                  "claimAnchor": {
+                    "subjectSpan": {
+                      "end": 12,
+                      "text": "Jordan Staal",
+                      "start": 0
+                    },
+                    "predicateSpan": {
+                      "end": 26,
+                      "text": "will not play",
+                      "start": 13
+                    }
+                  },
+                  "availability": "out",
+                  "effectiveDate": null,
+                  "resolutionBasis": "full_name",
+                  "availabilityScope": "unspecified"
+                }
+              ],
+              "context": "game",
+              "version": "interpretation-rule-1",
+              "certainty": "confirmed",
+              "unresolved": []
+            },
+            "teamAbbreviation": "CAR",
+            "originalPublishedAt": "2026-10-16T06:45:30.535Z"
+          }
+        ],
+        "sourceAccountKind": "internal_derivation"
+      },
+      "raw_text": "Jordan Staal will not play tonight.",
+      "tweet_id": null,
+      "team_name": "Carolina Hurricanes",
+      "tweet_url": null,
+      "source_key": "validated_events",
+      "source_url": "https://x.com/fixture_a/status/9900000000000000001",
+      "updated_at": "2026-10-16T01:47:30.535-05:00",
+      "author_name": null,
+      "capture_key": "96b361321336a959e2964d86060b078b24292d0b8c166321e0d88842aeb5f914:12:interpretation-rule-1:injury",
+      "observed_at": "2026-10-16T01:46:30.535-05:00",
+      "raw_payload": {
+        "reports": [
+          {
+            "key": "96b361321336a959e2964d86060b078b24292d0b8c166321e0d88842aeb5f914:12:interpretation-rule-1",
+            "date": "2026-10-16",
+            "text": "Jordan Staal will not play tonight.",
+            "gameId": 900012,
+            "teamId": 12,
+            "session": null,
+            "provenance": {
+              "relayTweetId": "9900000000000000002",
+              "originalTweetId": "9900000000000000001",
+              "attributionStatus": "resolved"
+            },
+            "receivedAt": "2026-10-16T06:46:30.535Z",
+            "originalUrl": "https://x.com/fixture_a/status/9900000000000000001",
+            "publishedAt": "2026-10-16T06:45:30.535Z",
+            "interpretedAt": "2026-10-16T06:47:30.535Z",
+            "interpretation": {
+              "units": [],
+              "events": [
+                {
+                  "kind": "injury",
+                  "state": "unknown",
+                  "times": {
+                    "reference": "2026-10-16",
+                    "observation": "2026-10-16T06:45:30.535Z",
+                    "applicability": "unresolved"
+                  },
+                  "teamId": 12,
+                  "evidence": {
+                    "end": 35,
+                    "text": "Jordan Staal will not play tonight.",
+                    "start": 0
+                  },
+                  "modality": "negated",
+                  "playerId": 8473533,
+                  "timeline": {
+                    "text": "tonight",
+                    "unit": null,
+                    "maximum": null,
+                    "minimum": null,
+                    "purpose": "unknown",
+                    "targetDate": "2026-10-16"
+                  },
+                  "timelines": [
+                    {
+                      "text": "tonight",
+                      "unit": null,
+                      "maximum": null,
+                      "minimum": null,
+                      "purpose": "unknown",
+                      "targetDate": "2026-10-16"
+                    }
+                  ],
+                  "playerName": "Jordan Staal",
+                  "claimAnchor": {
+                    "subjectSpan": {
+                      "end": 12,
+                      "text": "Jordan Staal",
+                      "start": 0
+                    },
+                    "predicateSpan": {
+                      "end": 26,
+                      "text": "will not play",
+                      "start": 13
+                    }
+                  },
+                  "availability": "out",
+                  "effectiveDate": null,
+                  "resolutionBasis": "full_name",
+                  "availabilityScope": "unspecified"
+                }
+              ],
+              "context": "game",
+              "version": "interpretation-rule-1",
+              "certainty": "confirmed",
+              "unresolved": []
+            },
+            "teamAbbreviation": "CAR",
+            "originalPublishedAt": "2026-10-16T06:45:30.535Z"
+          }
+        ],
+        "sources": [
+          {
+            "table": "line_source_snapshots",
+            "snapshot": {
+              "source": "fixture_original",
+              "status": "observed",
+              "game_id": 900012,
+              "team_id": 12,
+              "metadata": {
+                "interpretation": {
+                  "units": [],
+                  "events": [
+                    {
+                      "kind": "injury",
+                      "state": "unknown",
+                      "times": {
+                        "reference": "2026-10-16",
+                        "observation": "2026-10-16T06:45:30.535Z",
+                        "applicability": "unresolved"
+                      },
+                      "teamId": 12,
+                      "evidence": {
+                        "end": 35,
+                        "text": "Jordan Staal will not play tonight.",
+                        "start": 0
+                      },
+                      "modality": "negated",
+                      "playerId": 8473533,
+                      "timeline": {
+                        "text": "tonight",
+                        "unit": null,
+                        "maximum": null,
+                        "minimum": null,
+                        "purpose": "unknown",
+                        "targetDate": "2026-10-16"
+                      },
+                      "timelines": [
+                        {
+                          "text": "tonight",
+                          "unit": null,
+                          "maximum": null,
+                          "minimum": null,
+                          "purpose": "unknown",
+                          "targetDate": "2026-10-16"
+                        }
+                      ],
+                      "playerName": "Jordan Staal",
+                      "claimAnchor": {
+                        "subjectSpan": {
+                          "end": 12,
+                          "text": "Jordan Staal",
+                          "start": 0
+                        },
+                        "predicateSpan": {
+                          "end": 26,
+                          "text": "will not play",
+                          "start": 13
+                        }
+                      },
+                      "availability": "out",
+                      "effectiveDate": null,
+                      "resolutionBasis": "full_name",
+                      "availabilityScope": "unspecified"
+                    }
+                  ],
+                  "context": "game",
+                  "version": "interpretation-rule-1",
+                  "certainty": "confirmed",
+                  "unresolved": []
+                }
+              },
+              "raw_text": "Jordan Staal will not play tonight.",
+              "tweet_id": "9900000000000000002",
+              "team_name": "Carolina Hurricanes",
+              "tweet_url": null,
+              "source_key": "offline-fixture",
+              "source_url": null,
+              "updated_at": "2026-10-16T01:46:30.535-05:00",
+              "author_name": null,
+              "capture_key": "offline-fixture:retained:9900000000000000002",
+              "observed_at": "2026-10-16T01:46:30.535-05:00",
+              "raw_payload": {
+                "time": {
+                  "receivedAt": "2026-10-16T06:46:30.535Z",
+                  "validUntil": "2026-10-16T22:45:30.535Z",
+                  "effectiveAt": "2026-10-16T17:45:30.535Z",
+                  "interpretedAt": "2026-10-16T06:47:30.535Z",
+                  "wrapperPublishedAt": null,
+                  "originalPublishedAt": "2026-10-16T06:45:30.535Z"
+                },
+                "legacy": null,
+                "source": {
+                  "relayId": "9900000000000000002",
+                  "namespace": "offline-fixture",
+                  "originalId": "9900000000000000001",
+                  "originalAuthor": "fixture_a",
+                  "primaryTextMode": "verified_original",
+                  "retainedSourceId": "offline-fixture:retained:9900000000000000002",
+                  "lineageCandidateCount": 1,
+                  "provenanceVerification": "synthetic_verified"
+                },
+                "evidence": {
+                  "displaySpan": {
+                    "end": 35,
+                    "text": "Jordan Staal will not play tonight.",
+                    "start": 0,
+                    "offsetUnit": "UTF-16_code_unit"
+                  },
+                  "ruleVersion": "evidence-rule-1"
+                },
+                "recordId": "a",
+                "occurrence": {
+                  "subjectSpan": {
+                    "end": 12,
+                    "text": "Jordan Staal",
+                    "start": 0,
+                    "offsetUnit": "UTF-16_code_unit"
+                  },
+                  "contextSpans": [],
+                  "predicateSpan": {
+                    "end": 26,
+                    "text": "will not play",
+                    "start": 13,
+                    "offsetUnit": "UTF-16_code_unit"
+                  },
+                  "alignmentProof": "unique_1_to_1_fixture_alignment",
+                  "governingClauseSpan": {
+                    "end": 35,
+                    "text": "Jordan Staal will not play tonight.",
+                    "start": 0,
+                    "offsetUnit": "UTF-16_code_unit"
+                  }
+                },
+                "sourceText": {
+                  "text": "Jordan Staal will not play tonight.",
+                  "sha256": "190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66",
+                  "sourceTextVersionId": "fixture-text:190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66"
+                },
+                "fixtureClass": "synthetic_already_bound",
+                "interpretation": {
+                  "fact": {
+                    "kind": "availability",
+                    "status": "out",
+                    "playerId": 8473533
+                  },
+                  "scope": {
+                    "kind": "game",
+                    "group": null,
+                    "phase": "entry",
+                    "gameId": 900012,
+                    "status": "known",
+                    "teamId": 12
+                  },
+                  "subject": {
+                    "status": "known",
+                    "teamId": 12,
+                    "playerId": 8473533
+                  },
+                  "modality": "asserted",
+                  "polarity": "affirmed",
+                  "relation": null,
+                  "validation": {
+                    "basis": "synthetic_explicit_local_clause",
+                    "status": "supported"
+                  },
+                  "ruleVersion": "interpretation-rule-1",
+                  "assertionStrength": "asserted"
+                }
+              },
+              "keyword_hits": null,
+              "source_group": "offline-fixture",
+              "source_label": null,
+              "enriched_text": null,
+              "goalie_1_name": null,
+              "goalie_2_name": null,
+              "snapshot_date": "2026-10-16",
+              "source_handle": null,
+              "classification": null,
+              "source_account": "fixture_a",
+              "detected_league": null,
+              "quoted_raw_text": "Jordan Staal will not play tonight.",
+              "quoted_tweet_id": "9900000000000000001",
+              "tweet_posted_at": "2026-10-16T01:45:30.535-05:00",
+              "unmatched_names": null,
+              "quoted_tweet_url": "https://x.com/fixture_a/status/9900000000000000001",
+              "line_1_player_ids": null,
+              "line_2_player_ids": null,
+              "line_3_player_ids": null,
+              "line_4_player_ids": null,
+              "nhl_filter_reason": null,
+              "nhl_filter_status": "accepted",
+              "pair_1_player_ids": null,
+              "pair_2_player_ids": null,
+              "pair_3_player_ids": null,
+              "team_abbreviation": "CAR",
+              "goalie_1_player_id": null,
+              "goalie_2_player_id": null,
+              "injured_player_ids": null,
+              "matched_player_ids": null,
+              "quoted_author_name": null,
+              "tweet_posted_label": null,
+              "line_1_player_names": null,
+              "line_2_player_names": null,
+              "line_3_player_names": null,
+              "line_4_player_names": null,
+              "pair_1_player_names": null,
+              "pair_2_player_names": null,
+              "pair_3_player_names": null,
+              "primary_text_source": "quoted_oembed",
+              "injured_player_names": null,
+              "matched_player_names": null,
+              "quoted_author_handle": "fixture_a",
+              "quoted_enriched_text": null,
+              "scratches_player_ids": null,
+              "scratches_player_names": null
+            }
+          }
+        ],
+        "derivation": "tweet-projection-v1"
+      },
+      "keyword_hits": null,
+      "source_group": "tweet_projection",
+      "source_label": null,
+      "enriched_text": null,
+      "goalie_1_name": null,
+      "goalie_2_name": null,
+      "snapshot_date": "2026-10-16",
+      "source_handle": null,
+      "classification": "injury",
+      "source_account": "tweet_projection",
+      "detected_league": "NHL",
+      "quoted_raw_text": "Jordan Staal will not play tonight.",
+      "quoted_tweet_id": null,
+      "tweet_posted_at": "2026-10-16T01:45:30.535-05:00",
+      "unmatched_names": null,
+      "quoted_tweet_url": null,
+      "line_1_player_ids": null,
+      "line_2_player_ids": null,
+      "line_3_player_ids": null,
+      "line_4_player_ids": null,
+      "nhl_filter_reason": null,
+      "nhl_filter_status": "accepted",
+      "pair_1_player_ids": null,
+      "pair_2_player_ids": null,
+      "pair_3_player_ids": null,
+      "team_abbreviation": "CAR",
+      "goalie_1_player_id": null,
+      "goalie_2_player_id": null,
+      "injured_player_ids": null,
+      "matched_player_ids": null,
+      "quoted_author_name": null,
+      "tweet_posted_label": "2026-10-16T06:45:30.535Z",
+      "line_1_player_names": null,
+      "line_2_player_names": null,
+      "line_3_player_names": null,
+      "line_4_player_names": null,
+      "pair_1_player_names": null,
+      "pair_2_player_names": null,
+      "pair_3_player_names": null,
+      "primary_text_source": null,
+      "injured_player_names": null,
+      "matched_player_names": null,
+      "quoted_author_handle": null,
+      "quoted_enriched_text": null,
+      "scratches_player_ids": null,
+      "scratches_player_names": null
+    },
+    "snapshot": {
+      "game_id": 900012,
+      "team_id": 12,
+      "source_group": "tweet_projection",
+      "source_key": "validated_events",
+      "source_account": "relay_wrapper",
+      "source_capture_key": "96b361321336a959e2964d86060b078b24292d0b8c166321e0d88842aeb5f914:12:interpretation-rule-1:injury",
+      "source_url": "https://x.com/relay_wrapper/status/9900000000000000002",
+      "classification": "injury",
+      "observed_at": "2026-10-16T06:45:30.535Z",
+      "available_at": "2026-10-16T06:46:30.535Z",
+      "expires_at": null,
+      "completeness": 1,
+      "accepted": true,
+      "parser_version": "interpretation-rule-1",
+      "metadata": {
+        "derived": true,
+        "interpretation": {
+          "units": [],
+          "events": [
+            {
+              "kind": "injury",
+              "state": "unknown",
+              "times": {
+                "reference": "2026-10-16",
+                "observation": "2026-10-16T06:45:30.535Z",
+                "applicability": "unresolved"
+              },
+              "teamId": 12,
+              "evidence": {
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "start": 0
+              },
+              "modality": "negated",
+              "playerId": 8473533,
+              "timeline": {
+                "text": "tonight",
+                "unit": null,
+                "maximum": null,
+                "minimum": null,
+                "purpose": "unknown",
+                "targetDate": "2026-10-16"
+              },
+              "timelines": [
+                {
+                  "text": "tonight",
+                  "unit": null,
+                  "maximum": null,
+                  "minimum": null,
+                  "purpose": "unknown",
+                  "targetDate": "2026-10-16"
+                }
+              ],
+              "playerName": "Jordan Staal",
+              "claimAnchor": {
+                "subjectSpan": {
+                  "end": 12,
+                  "text": "Jordan Staal",
+                  "start": 0
+                },
+                "predicateSpan": {
+                  "end": 26,
+                  "text": "will not play",
+                  "start": 13
+                }
+              },
+              "availability": "out",
+              "effectiveDate": null,
+              "resolutionBasis": "full_name",
+              "availabilityScope": "unspecified"
+            }
+          ],
+          "context": "game",
+          "version": "interpretation-rule-1",
+          "certainty": "confirmed",
+          "unresolved": []
+        },
+        "provenanceHash": "7209fdc6499a03893c26f414230da71e5b7180503346543690c403edeaffc857",
+        "projectionReports": [
+          {
+            "key": "96b361321336a959e2964d86060b078b24292d0b8c166321e0d88842aeb5f914:12:interpretation-rule-1",
+            "date": "2026-10-16",
+            "text": "Jordan Staal will not play tonight.",
+            "gameId": 900012,
+            "teamId": 12,
+            "session": null,
+            "provenance": {
+              "relayTweetId": "9900000000000000002",
+              "originalTweetId": "9900000000000000001",
+              "attributionStatus": "resolved"
+            },
+            "receivedAt": "2026-10-16T06:46:30.535Z",
+            "originalUrl": "https://x.com/fixture_a/status/9900000000000000001",
+            "publishedAt": "2026-10-16T06:45:30.535Z",
+            "interpretedAt": "2026-10-16T06:47:30.535Z",
+            "interpretation": {
+              "units": [],
+              "events": [
+                {
+                  "kind": "injury",
+                  "state": "unknown",
+                  "times": {
+                    "reference": "2026-10-16",
+                    "observation": "2026-10-16T06:45:30.535Z",
+                    "applicability": "unresolved"
+                  },
+                  "teamId": 12,
+                  "evidence": {
+                    "end": 35,
+                    "text": "Jordan Staal will not play tonight.",
+                    "start": 0
+                  },
+                  "modality": "negated",
+                  "playerId": 8473533,
+                  "timeline": {
+                    "text": "tonight",
+                    "unit": null,
+                    "maximum": null,
+                    "minimum": null,
+                    "purpose": "unknown",
+                    "targetDate": "2026-10-16"
+                  },
+                  "timelines": [
+                    {
+                      "text": "tonight",
+                      "unit": null,
+                      "maximum": null,
+                      "minimum": null,
+                      "purpose": "unknown",
+                      "targetDate": "2026-10-16"
+                    }
+                  ],
+                  "playerName": "Jordan Staal",
+                  "claimAnchor": {
+                    "subjectSpan": {
+                      "end": 12,
+                      "text": "Jordan Staal",
+                      "start": 0
+                    },
+                    "predicateSpan": {
+                      "end": 26,
+                      "text": "will not play",
+                      "start": 13
+                    }
+                  },
+                  "availability": "out",
+                  "effectiveDate": null,
+                  "resolutionBasis": "full_name",
+                  "availabilityScope": "unspecified"
+                }
+              ],
+              "context": "game",
+              "version": "interpretation-rule-1",
+              "certainty": "confirmed",
+              "unresolved": []
+            },
+            "teamAbbreviation": "CAR",
+            "originalPublishedAt": "2026-10-16T06:45:30.535Z"
+          }
+        ],
+        "sourceAccountKind": "internal_derivation",
+        "relaySourceAccount": null,
+        "relaySourceUrl": "https://x.com/fixture_a/status/9900000000000000001",
+        "originalAuthorKnown": true,
+        "sourceTiming": {
+          "sourcePublishedAt": "2026-10-16T06:45:30.535Z",
+          "receivedAt": "2026-10-16T06:46:30.535Z",
+          "sourceReference": "tweet:9900000000000000001"
+        }
+      }
+    },
+    "assignments": [
+      {
+        "player_id": 8473533,
+        "raw_player_name": "Jordan Staal",
+        "unit_type": "injury",
+        "unit_number": null,
+        "slot_number": 1,
+        "assignment_status": "ruled_out"
+      }
+    ],
+    "queues": [
+      {
+        "p_scope_key": "game:900012:team:12",
+        "p_game_id": 900012,
+        "p_team_id": 12,
+        "p_team_game_horizon": 1,
+        "p_reason": "source:validated_events:injury",
+        "p_observed_at": "2026-10-16T06:46:30.535Z",
+        "p_not_before": "2026-10-16T06:51:30.535Z",
+        "p_metadata": {
+          "sourceCaptureKey": "96b361321336a959e2964d86060b078b24292d0b8c166321e0d88842aeb5f914:12:interpretation-rule-1:injury",
+          "teamWide": true
+        }
+      },
+      {
+        "p_scope_key": "game:900013:team:12",
+        "p_game_id": 900013,
+        "p_team_id": 12,
+        "p_team_game_horizon": 2,
+        "p_reason": "source:validated_events:injury",
+        "p_observed_at": "2026-10-16T06:46:30.535Z",
+        "p_not_before": "2026-10-16T06:51:30.535Z",
+        "p_metadata": {
+          "sourceCaptureKey": "96b361321336a959e2964d86060b078b24292d0b8c166321e0d88842aeb5f914:12:interpretation-rule-1:injury",
+          "teamWide": true
+        }
+      }
+    ]
+  },
+  "rejected": true,
+  "result": null,
+  "inventory": {
+    "snapshots": 0,
+    "assignments": 0,
+    "queues": 0,
+    "receipts": 0,
+    "forgeQueues": 0
+  },
+  "nativeSnapshots": []
+}

@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts --config ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/vitest.config.mjs
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts (26 tests) 6602ms
+   ✓ real forecast capture, queue and retained action binding > enforces every required proof field and exact identities on direct service inserts, including ON CONFLICT  574ms
+   ✓ real forecast capture, queue and retained action binding > authenticates the complete next-ten prefix and holds omitted scopes even with a recomputed hash  319ms
+
+ Test Files  1 passed (1)
+      Tests  26 passed (26)
+   Start at  01:43:26
+   Duration  7.07s (transform 182ms, setup 16ms, collect 291ms, tests 6.60s, environment 0ms, prepare 36ms)
+

@@ -208,6 +208,74 @@ For each upcoming game:
 - Full xG modeling
 - Public UI
 
+## October 14, 2026: versioned candidate comparison and accountability program
+
+TJ requires FORGE to keep testing justified approaches against one another over time and expose their historical accuracy and scores in an accountability dashboard. This is an ongoing, versioned program across the full requested skater, goalie, participation and usage scope, not a claim that the conditional BLK pilot completes FORGE or RSO. Implementation tasks remain open in `../tasks-prd-projection-model.md`, IDs `OCT14-COMP-0` through `OCT14-COMP-9`; the unified operating plan maps to that granular ledger.
+
+This addendum records requirements only. It does not authorize new source acquisition, reserved-label access, model promotion, storage publication, dashboard deployment or production execution. Preserve accepted experiment artifacts and their original selection rules; do not retroactively relabel an MAE-selected development result as a squared-error-selected expected-mean model. A changed estimand, loss or selection policy requires a new version and review before its evaluation.
+
+### Candidate families and bounded runs
+
+Keep the existing native FORGE implementation as a versioned comparator alongside expanding individual means, recency baselines, shrinkage/exposure models, count models and probability models. Add boosted trees or ensembles only in a later justified stage after data coverage, simpler comparisons and compute budgets support them. Team Elo/Glicko may be tested as a dated contextual feature with an ablation; it is not a complete player model or a substitute for player, role, usage or goalie evidence.
+
+Before each run, pin the target and estimand, conditional/unconditional basis, units, horizon, cohort, source-availability cutoff, training/validation periods, recipe list, parameter budget, comparison rule, compute limits and stopping rule. Run a finite candidate set according to available coverage and compute; stop at the declared budget regardless of whether the scores look attractive. An ongoing program consists of separately versioned bounded runs, not an indefinitely expanding search or an automatically enabled schedule. Preserve the existing model executor and exact file ownership; no parallel model owner follows from this plan.
+
+### Evidence and complete experiment ledger
+
+Separate retrospective development, tuning/validation, untouched final evaluation and prospective originally issued forecasts in both storage and display. Match candidates on the same as-of input set, player-game population, target, horizon, conditioning and decision context. Preserve simulated historical clocks separately from actual acquisition/computation/issuance clocks. Later reconstruction cannot become original as-of evidence by hiding labels or rewriting timestamps.
+
+Retain every trial and issued forecast, including unsuccessful or abandoned recipes: candidate/model/feature versions and hashes, parameters, source and cohort manifests, real cutoff/issue/settlement clocks, revisions, selection decisions, exposure records, missingness, abstentions and exclusion reasons. Show both requested-population coverage and the paired comparison population. Do not reward a candidate for excluding difficult players or silently converting missing predictions, appearances or targets to zero.
+
+At this program's October 14 registration, January 8 onward was reserved. The later separately approved January 8–13 continuation remains exposed development; at the October 15 planning reconciliation January 14 onward remains reserved. The reviewed January 3–7 continuation also retains its original development classification. New targets and cohorts require exact allocation and date-isolation review before decoding labels; this document allocates none. Record exposure uncertainty honestly; future untouched-evaluation claims need defensible provenance and an independently reviewed protocol.
+
+### Target-appropriate selection and uncertainty
+
+For an expected-mean forecast, predeclare squared error/MSE or a proper predictive-distribution score as the selection objective; never select an expected mean solely by MAE, which targets a different point estimand. Use appropriate proper scores for count distributions and probability forecasts, such as log score, CRPS for supported distributions, and Brier/log loss for binary or multinomial outcomes. Report MAE, RMSE, signed bias, calibration, interval coverage/width, forecast coverage and abstention counts alongside the primary loss.
+
+Compare candidates on baseline-covered matched observations and report coverage differences explicitly. Report chronological fold stability and paired differences with player-game/slate counts and defensible game/slate/time-block uncertainty. Sparse or dependent samples may make uncertainty or subgroup performance not estimable; do not imply independent player rows or infer unsupported rookie, trade or role-change cohorts. Keep raw losses separate by target units, horizon, conditioning and evidence class. Baseline-relative skill is undefined when its loss denominator is zero; any aggregate skill score requires a separately declared normalization and weights, not pooling raw errors across units.
+
+### Accountability dashboard and decision gains
+
+The dashboard must expose time-series accuracy/loss and coverage trends; signed-error and absolute-error histograms; per-target/horizon/version leaderboards; baseline-relative skill; paired comparisons, sample sizes and uncertainty; and supported rookie, trade and role-change cohorts. Include visible missing/unsupported/abstained states and evidence-stage filters. Do not present a generic accuracy percentage, a histogram alone, or a repeatedly consulted held-out leaderboard as proof of model superiority.
+
+Evaluate lineup and drop/add net decision gains under identical frozen scoring, roster, eligibility, locks, waiver timing, transaction/allowance and acquisition-cost rules. Preserve the same issued forecast context and realized-outcome coverage for candidate and baseline; shared players/games must remain paired. Report legality, net gains/regret, sample sizes and excluded decisions. Conditional category-choice proxies or sensitivity scenarios are not evidence of actual unconditional roster optimization or realized transaction value.
+
+### Promotion, rollback and reuse
+
+Define numerical sample/coverage requirements, meaningful baseline improvement, calibration/coherence limits, subgroup safeguards, input/issuance integrity, operating budgets and rollback triggers before final evaluation. The independent evaluator controls sealed final feedback; consume the declared final once for the declared decision rather than repeatedly mining its leaderboard. Shadow/prospective evidence and explicit release authority remain separate from development selection. Preserve a hash-pinned accepted fallback; rollback policy must specify version, trigger, bounds and required operational authorization.
+
+Reuse existing evaluation, forecast/run/artifact storage and UI infrastructure where contracts fit: `web/lib/player-forecasts/evaluation.ts`, `accountability.ts`, `dashboard.ts`, `planComparison.ts`, `web/pages/player-forecasts.tsx`, the player-forecast dashboard/accountability APIs, `modeling/player_forecasts/scoring.py`, and FORGE accuracy/promotion/rollout modules. Inventory their actual gaps before proposing migrations or a duplicate evaluation/dashboard stack. Current point-summary MAE/bias and accountability candles do not by themselves implement the new proper-score leaderboard, histograms or coverage-aware selection requirements.
+
+The October 14 accepted candidate freeze was 17:30 Eastern, with separate 17:50 capture, 18:15 source cutoff and 18:30 issuance guards and the accepted BLK fallback. These are dated operational references, not permission to retry a passed window. The existing operations owner retains the original missed-window and subsequent-event policy. This documentation adds no experiment, scheduler, serving or deployment action.
+
+## October 15, 2026: research amendment requirements
+
+Scout's delivered research amendment is reconciled in the [F00–F22 mapping](../tasks-prd-projection-model.md#october-15-research-amendment-reconciliation--f00f22). That mapping extends `OCT14-COMP-0` through `OCT14-COMP-9` and existing V1/skater/goalie tasks; it creates no parallel task register. Imported checkmarks establish supplied planning work only. Current source implements substantial rate, role, distribution, goalie, evaluation, consumer and admission machinery; the mapping identifies the narrower contract gaps and separates implementation from verified data, predictive performance and release evidence.
+
+### Population and opportunity before additional model complexity
+
+Define the forecast population from scheduled player-game opportunities with dated identity/team membership, eligibility and source availability. Distinguish verified nonappearance, an observed zero, missing/unresolved evidence and outside-population rows. Positive TOI is not interchangeable with every official game-play credit. Preserve the conditional appearance/start estimand when a complete opportunity population is unavailable; do not infer calibrated participation from an appearance-only sample. Keep official goalie start evidence separate from minutes played and relief win credit.
+
+For counts with zero contribution on nonappearance, separate appearance probability from conditional production. Forecast-minutes times forecast-rate is an approximation when role, minutes and rates vary together; do not multiply appearance twice. Separate team PP opportunity from player deployment and use manpower-aware skater-minute budgets. EV, 5v5, extra-attacker and official PP credit must keep their declared meanings. Paired opportunity/rate ablations must use pregame predicted exposure; future actual minutes belong only in a labeled oracle diagnostic. A second-stage model using predicted exposure needs chronological out-of-fold exposure predictions.
+
+### Finite experiments and target-specific accounting
+
+After the separately approved metadata feasibility review and an exact allocation/protocol freeze, the first proposed benchmark is baseline → pooled exposure/rate → the same model with one context addition. Limit that wave to baseline plus at most two additional mean specifications for one coverage-supported head/component and one separate mean-fixed distribution diagnostic. This is a search budget, not a statistical sufficiency threshold or execution authorization. Do not run a Cartesian product of all previously available recipes.
+
+Use current-era, training-only venue effects as an optional recorded-count experiment; distinguish neutralized ability from the provider-credited fantasy target. Verify SHOT/SOG and shooting-team BLOCK/defending-player BLK semantics. G/A/PPP decomposition must retain compatible shot denominators, official PP credits and an other-player residual when the cohort is incomplete. PIM severity modeling requires admitted penalty classifications and retains legitimate extreme games. Dynamic role/trade/rookie adaptation and nonlinear or ensemble methods remain later, bounded comparisons that must beat simpler methods under the frozen selection procedure.
+
+For goalies, evaluate appearance/start/relief, workload and stopping components separately, then enforce compatible SV + GA = SA accounting. W, SO and pStart need independently defined opportunity populations and event labels. Expected game ratios, ratios of expected totals and multi-game aggregate ratios are different estimands; aggregate from counts/minutes and leave zero-denominator ratios undefined. A detailed game simulator remains optional later work.
+
+Mean accuracy, probability calibration, distribution quality and legal lineup value remain separate objectives. A mean-fixed dispersion change cannot by itself improve point MSE or change a risk-neutral linear-points solver's choices with unchanged constraints. Require residual zero/tail checks, proper distribution scores and interval width/coverage; pooled outcome variance alone is not conditional dispersion evidence. Predeclare practical gains, tolerable regressions, dependence-aware uncertainty and an inconclusive/finite-stop outcome; do not adopt a universal improvement or sample threshold from the amendment.
+
+### Horizons, consumers, accountability and future operation
+
+F18 requires next-10/20 **scheduled-game** totals whose component forecasts share one real issuance origin, with later refreshes retained as separate versions. Existing 1–10 route scaffolding, reconstructed vintages and independent-game rest-of-season moments do not establish that requirement or correlated horizon uncertainty.
+
+F17 reuses the legal RSO solver and Start Chart contracts. Baseline and challenger need matching original forecast/roster/eligibility/participation/scoring/lock/waiver/cost evidence; report complete drop/add net contribution against the optimized existing roster, exclusions and shared-game dependence. Simulated candidate availability and hindsight-optimal decisions must remain labeled diagnostics. F19 extends existing forecast/accountability views with per-target/version loss and coverage trends, signed-error histograms, paired comparisons, subgroup support and explicit research/shadow/deployed status.
+
+A future cloud-ready capture package needs pinned nonsecret runner/model/schema/guard dependencies, environment/clock parity, duplicate controls and immutable receipts. Packaging, access setup, future capture, final evaluation and per-head release remain separately scoped approvals. Preserve the existing sole executor, evaluator, consumer owners and BLK operation; new development/blend/fitting/allocation stays held. This amendment does not run the separately pending metadata audit, reopen mixed outcome files, acquire sources, retry missed windows, change shared code, publish data or deploy.
+
 ## Addendum: Projection Accountability + Learning Constraints
 ### Status (implemented)
 - `run-projection-accuracy` endpoint exists and computes FP-based accuracy using `fantasyPointsConfig`.

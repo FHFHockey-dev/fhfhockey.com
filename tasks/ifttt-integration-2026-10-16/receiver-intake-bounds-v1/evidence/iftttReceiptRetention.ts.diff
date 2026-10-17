@@ -1,0 +1,32 @@
+--- accepted125/web/lib/sources/iftttReceiptRetention.ts
++++ web/lib/sources/iftttReceiptRetention.ts
+@@ -1,15 +1,27 @@
+ import { isDeepStrictEqual } from "node:util";
+ import { timestampMicros } from "lib/projections/evidenceTime";
++import type { IftttIntakePolicy, IftttIntakeScope } from "./iftttIntakePolicy";
+ 
+ /** Evidence retention only. Same-post variants never become another queue item. */
+ export async function retainIftttRawReceipt(args: {
+   db: { rpc: (name: string, args: Record<string, unknown>) => PromiseLike<{ data: any; error: any }> };
+   table: "line_source_ifttt_events" | "lines_ccc_ifttt_events";
+   row: Record<string, unknown>;
++  policy: IftttIntakePolicy;
++  scope: IftttIntakeScope;
+ }) {
+-  const result = await args.db.rpc("retain_ifttt_raw_receipt", { p_table: args.table, p_row: args.row });
++  const result = await args.db.rpc("retain_bounded_ifttt_raw_receipt", {
++    p_policy: args.policy, p_scope: args.scope, p_row: args.row,
++  });
+   if (result.error) throw result.error;
+-  const receipt = result.data;
++  if (result.data?.version !== "ifttt-intake-v1" || result.data.policyId !== args.policy.id
++    || result.data.status !== "retained") {
++    const status = result.data?.status;
++    const known = ["invalid_policy", "missing_policy", "policy_mismatch", "scope_denied", "stopped",
++      "not_started", "expired", "attempt_cap", "receipt_cap", "storage_failed"].includes(status);
++    throw new Error(`IFTTT intake was not admitted: ${known ? status : "invalid_reply"}`);
++  }
++  const receipt = result.data.receipt;
+   const { updated_at: _updatedAt, processing_status: _status, ...expected } = args.row;
+   const normalized = (input: Record<string, unknown>) => {
+     const postedAt = input.tweet_created_at;

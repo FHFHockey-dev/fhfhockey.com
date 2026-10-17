@@ -1,0 +1,41 @@
+{
+  "receivedAt": "2026-10-15T22:51:03.287604+00:00",
+  "provenance": "User-delivered FORGE-owner delegation; this task made no database or network read",
+  "scope": {
+    "yahooGameKey": "477",
+    "yahooSeason": "2026",
+    "nhlSeasonId": 20262027,
+    "date": "2026-10-15",
+    "gameIds": [
+      2026020108,
+      2026020109,
+      2026020110,
+      2026020111,
+      2026020112,
+      2026020113,
+      2026020114,
+      2026020115,
+      2026020116,
+      2026020117,
+      2026020118
+    ],
+    "uniqueTeamSides": 22
+  },
+  "sourceFetchedAt": "2026-10-14T00:12:54.911Z",
+  "inspectedTriggerSurfaces": {
+    "matchingPgCronJobs": 0,
+    "webVercelCron": false,
+    "canonicalCronRegisterEntry": false
+  },
+  "audits": {
+    "inspectedFrom": "2026-10-13",
+    "inspectedThrough": "2026-10-15",
+    "onlyReportedSuccessAt": "2026-10-14T00:12:55Z",
+    "rowsInThatSuccess": 114,
+    "priorFailureCode": "REFRESH_SOURCE_CHANGED",
+    "priorFailureWrites": 0,
+    "laterAuditedRunFound": false
+  },
+  "interpretation": "Supports absent routine trigger in inspected surfaces; does not prove upstream NHL failure today. Indirect/external orchestration and failures before audit remain unknown.",
+  "separateOwnerWork": "FORGE preparing today-only22-side dry-run plan; not executed; review pending. No RSO action or authorization inferred."
+}

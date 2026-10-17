@@ -1,0 +1,77 @@
+{
+  "scope": "task-local offline artifacts only; excluded from production release; accepted v4 source manifest unchanged",
+  "files": [
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/CONSUMER-CONTRACT.md",
+      "sha256": "ac7c221b9c72d585f7ec986ef791b250b4bc5faf2df6303bcb551f889b737c54"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/NEXT-READ-APPROVAL.md",
+      "sha256": "ed302b0c46acc7c6c5f0f1d40fce8e1c83aa1552ce5912a10efd987ae58ad21c"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/SEMANTIC-RESULTS.md",
+      "sha256": "4903b161d42378b95b06c6bce7f828f902a97afb8573a818ffa543eda5885f9e"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/acceptance-results.json",
+      "sha256": "f0f3f8cae602ee0b3b6749c44f2f89b5630b9b3dbec4aa0a94b1d10004382227"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/acceptance-run.log",
+      "sha256": "f2a01e4b12bd5a33fb84fcfa53b6f355f07d2f0f7462cf3707d878d2dfa3e00a"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/disabled-release-run.log",
+      "sha256": "ea68fd37a86737df50baf78cdbf793208d62a17cef2ae219545661cb329bb0f8"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/disabled-release.test.ts",
+      "sha256": "a5e5e5231f117fdc49eb773fa5476322d3cff74526a0a0f4b6c83cb51ddf7a0b"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/initial-adapter-acceptance-results.json",
+      "sha256": "784bef93bc45672e5a1ccb73b517a32a90d26ac3c0e6a578090ac005ec347e7e"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/initial-adapter-acceptance-run.log",
+      "sha256": "5795bb15a157bf40a9d982b05ca3e3e40b0e471a64a7e9fbedbf948bdec4be0c"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/metadata-package.test.ts",
+      "sha256": "4f7900d11d0b21d268ddeda8c6c22f0f380c4877516ca9f8018bd45b87086b59"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/metadata-test-run.log",
+      "sha256": "3790f6b84266afbf48f3fb98788438f953247845921b387dc473cf40d37f6c96"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/run-acceptance.ts",
+      "sha256": "becb0d588fa9b7c63ddd08f3787197d163db76965768701214bf754dde346271"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/schema-objects.sql",
+      "sha256": "2252a8f4052ec136dc6a12e7646a61c98842e9310b40eefe4986f2d102ff3176"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/schema-relations.sql",
+      "sha256": "015250c3ceadb73c113e758429432c627e0fe9107a1fb57fdda10c3a6ef0d002"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/v4-integrity.json",
+      "sha256": "6e0f720538f82d49d8da1f69928614d73c7c5f77617ade30e2ba249da1f444f6"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/vitest.offline.config.mjs",
+      "sha256": "21514543629ea5d59178b67a726feb3a21504b36c25175a3ea9661430f19a2e9"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/RELEASE-CHECKPOINT.md",
+      "sha256": "f9507ac1a41e178fdf64153cbaa26e79078b18ede56917f77c54043033a6c13c"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/APPROVAL-PACKAGES.md",
+      "sha256": "7a1e3ec9014bd7c89f886b1af4c716d59c53622ace298d79bfdf2ce3040e8bcf"
+    }
+  ]
+}

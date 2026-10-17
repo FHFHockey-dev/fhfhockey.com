@@ -1,0 +1,80 @@
+{
+  "result": {
+    "versionConflict": true,
+    "originalImmutableBytesUnchanged": true,
+    "newEffectProposalCount": 0,
+    "downstreamCallsAfterConflict": 0
+  },
+  "attempted": true,
+  "error": "error: immutable r3 evidence version collision",
+  "prior": {
+    "anchor": {
+      "subjectSpan": {
+        "end": 12,
+        "text": "Jordan Staal",
+        "start": 0,
+        "offsetUnit": "UTF-16_code_unit"
+      },
+      "predicateSpan": {
+        "end": 26,
+        "text": "will not play",
+        "start": 13,
+        "offsetUnit": "UTF-16_code_unit"
+      },
+      "sourceTextVersionId": "tweet-source-claim-v1:text:2e159c0eabc42217a88eaaa55ebbd9a03af18ec87b75cf653d92af4f1b566fe7"
+    },
+    "evidence": {
+      "contextSpans": [],
+      "displaySpans": [
+        {
+          "end": 35,
+          "text": "Jordan Staal will not play tonight.",
+          "start": 0
+        }
+      ],
+      "governingClauseSpan": {
+        "end": 35,
+        "text": "Jordan Staal will not play tonight.",
+        "start": 0
+      },
+      "representationVersion": "governing-qualifier-v2"
+    },
+    "sourceClaimId": "tweet-original-v1:9900000000000000001:occurrence:1",
+    "evidenceVersionId": "tweet-source-claim-v1:evidence:827814132e0ac065f0bddc2e74754ac5ac40be2ebbe2cec15ef0cb9d1f598288"
+  },
+  "retained": {
+    "anchor": {
+      "subjectSpan": {
+        "end": 12,
+        "text": "Jordan Staal",
+        "start": 0,
+        "offsetUnit": "UTF-16_code_unit"
+      },
+      "predicateSpan": {
+        "end": 26,
+        "text": "will not play",
+        "start": 13,
+        "offsetUnit": "UTF-16_code_unit"
+      },
+      "sourceTextVersionId": "tweet-source-claim-v1:text:2e159c0eabc42217a88eaaa55ebbd9a03af18ec87b75cf653d92af4f1b566fe7"
+    },
+    "evidence": {
+      "contextSpans": [],
+      "displaySpans": [
+        {
+          "end": 35,
+          "text": "Jordan Staal will not play tonight.",
+          "start": 0
+        }
+      ],
+      "governingClauseSpan": {
+        "end": 35,
+        "text": "Jordan Staal will not play tonight.",
+        "start": 0
+      },
+      "representationVersion": "governing-qualifier-v2"
+    },
+    "sourceClaimId": "tweet-original-v1:9900000000000000001:occurrence:1",
+    "evidenceVersionId": "tweet-source-claim-v1:evidence:827814132e0ac065f0bddc2e74754ac5ac40be2ebbe2cec15ef0cb9d1f598288"
+  }
+}

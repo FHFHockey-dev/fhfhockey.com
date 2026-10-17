@@ -1,0 +1,17 @@
+{
+  "prior110Unchanged": true,
+  "prior36ArtifactsUnchanged": true,
+  "priorReview199Unchanged": true,
+  "priorReviewManifestSha256": "2a5622705e318994571cb17c51ae063afb262653a202a129aa33db14899689a7",
+  "liveAndCaptured15Match": true,
+  "receiverBeforeHashes": [
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v1/before/lineSourceIftttReceiver.ts",
+      "sha256": "8d70c81d893fd96d428f85e783c4d2f530a8bd6e1da6912582a16ee39ace99d1"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v1/before/lineSourceIftttReceiver.test.ts",
+      "sha256": "4f7ef78a364f396f8940babfc66200a3dd4a2d253985a30d51bc7ad35ba07597"
+    }
+  ]
+}

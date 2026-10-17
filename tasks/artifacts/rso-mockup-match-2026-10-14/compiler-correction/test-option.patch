@@ -1,0 +1,11 @@
+--- a/web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx
++++ b/web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx
+@@ -1184,7 +1184,7 @@
+       fireEvent.click(screen.getByRole("button", { name: "Roster" }));
+       fireEvent.click(screen.getByRole("button", { name: /^Alpha Center/ }));
+     } else if (source === "compact") {
+-      fireEvent.click(within(screen.getByRole("group", { name: "Workspace actions" })).getByRole("button", { name: "Matchup", exact: true }));
++      fireEvent.click(within(screen.getByRole("group", { name: "Workspace actions" })).getByRole("button", { name: "Matchup" }));
+       fireEvent.click(screen.getByRole("button", { name: /^Schedule details for Alpha Center/ }));
+     } else {
+       fireEvent.click(screen.getByRole("button", { name: "All players" }));

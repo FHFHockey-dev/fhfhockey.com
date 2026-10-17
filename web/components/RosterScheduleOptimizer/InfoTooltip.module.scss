@@ -1,0 +1,44 @@
+@use "styles/vars" as v;
+
+.trigger.trigger {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: v.$radius-control;
+  background: transparent;
+  color: v.$text-secondary;
+  font: 400 18px/1 v.$font-family-primary;
+  cursor: pointer;
+
+  &:hover, &[aria-expanded="true"] { color: v.$primary-color; }
+  &:focus-visible { outline: 2px solid v.$focus-color; outline-offset: -2px; }
+}
+
+.tooltip {
+  position: fixed;
+  z-index: v.$mobile-z-index-modal;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(340px, calc(100vw - 16px));
+  max-height: calc(100dvh - 16px);
+  overflow: auto;
+  padding: v.$space-sm v.$space-md;
+  border: v.$border-subtle;
+  border-radius: v.$radius-card;
+  background: v.$draft-surface-raised;
+  color: v.$text-primary;
+  box-shadow: v.$shadow-panel;
+  font: 400 v.$font-size-sm/1.5 v.$font-family-primary;
+  text-wrap: pretty;
+
+  p { margin: v.$space-xs 0; }
+}
+
+@media (max-width: 1100px) {
+  .trigger.trigger { width: 44px; height: 44px; min-height: 44px; }
+}

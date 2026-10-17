@@ -1,0 +1,24 @@
+{
+  "base_head": "a8f58de6178e282acd3a71851c66f4a56b119f14",
+  "branch": "octoberBranch",
+  "sha256": {
+    "web/utils/adminOnlyMiddleware.ts": "491c123b5e765546bcda1e81c0b0ae7d197d58413236a399d458ec80177c924f",
+    "web/__tests__/utils/adminOnlyMiddleware.test.ts": "baf3783a3103f06b5db2a28779636b56c454e2bcbace76986a9545c7067ac05c",
+    "tasks/artifacts/security-audit-sprint-2026-10-15-0512/admin-bypass-fix.patch": "bb9c88d8769575220dd2477a39d6b5bbb286d393ac009748f3e8031afa647095",
+    "tasks/artifacts/security-audit-sprint-2026-10-15-0512/admin-bypass-red.log": "779e4cec4a1dd3452c24d84e0c7d473dce63b6db7c2a7c30c24762eb6cf08bfb",
+    "tasks/artifacts/security-audit-sprint-2026-10-15-0512/admin-bypass-green.log": "443cf5c502c6b33f9032a6e37298d7b0bcb2f69fb18023f7b57de40eb7ed3e6a",
+    "tasks/artifacts/security-audit-sprint-2026-10-15-0512/admin-bypass-security-review.md": "2088a8b1a3bb9ea750027bf83f1642a8db6b58d389536f58194f816d70b673d1",
+    "tasks/artifacts/security-audit-sprint-2026-10-15-0512/admin-bypass-fix-checkpoint.md": "84c6078eb2aee815157539cf7741e78d030782820329c817d9cde61f7d13a392",
+    "tasks/artifacts/security-audit-sprint-2026-10-15-0512/admin-bypass-lint.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tasks/artifacts/security-audit-sprint-2026-10-15-0512/admin-bypass-types.log": "5e59980df48c6e596f77ecb6cd57fe9815479eb91681c35ae0c75469345cefa5"
+  },
+  "resumed_checks": {
+    "focused_eslint": "passed",
+    "isolated_typescript": "passed",
+    "typescript_version": "5.7.3",
+    "full_tree_compiler_or_build": "not_run",
+    "source_security_review": "completed_in_resumed_task",
+    "independent_release_coordinator_review": "pending",
+    "application_files_changed_since_prior_93_test_pass": false
+  }
+}

@@ -1,0 +1,15 @@
+
+> web@0.1.0 test
+> vitest --run lib/sources/tweetClaimRegistry.test.ts lib/sources/tweetClaimQualificationStorage.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ lib/sources/tweetClaimRegistry.test.ts (16 tests) 1389ms
+ ✓ lib/sources/tweetClaimQualificationStorage.test.ts (14 tests) 1440ms
+
+ Test Files  2 passed (2)
+      Tests  30 passed (30)
+   Start at  22:58:24
+   Duration  1.90s (transform 198ms, setup 4ms, collect 550ms, tests 2.83s, environment 0ms, prepare 62ms)
+

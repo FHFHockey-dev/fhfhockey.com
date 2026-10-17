@@ -1,0 +1,51 @@
+{
+  "createdAt": "2026-10-15T20:33:43.713263+00:00",
+  "candidateVersion": 3,
+  "files": {
+    "web/lib/rosterScheduleOptimizer/providerRules.ts": "c78853d6e8b7a5ebbe134610e3818c8e697635ce1d63de6819df13a9f4d6e26b",
+    "web/lib/rosterScheduleOptimizer/providerRules.test.ts": "e386b3fa4063086d4ea378582e4b78d2c94b8c6f768dc092549abc4939d720ef"
+  },
+  "patchSha256": "401a7ad2c7c404de35033058e72d7d884a213a62312ee8fc443831eca3ff1bfa",
+  "red": "New missing-window regression failed before implementation (1 failed, 15 skipped); stale limitation retained despite supplied valid windows.",
+  "reviewCorrection": "V1 REJECT: midnight sampling allowed uncovered partial days/gaps. V2 REJECT: continuous union coverage admitted intraday period transitions incompatible with the planner. V3 requires every selected league-local day to fit wholly in the single period containing its midnight. Both reviews and exact rejected artifacts retained.",
+  "tests": {
+    "command": "npm test -- --run lib/rosterScheduleOptimizer/providerRules.test.ts",
+    "passed": 28,
+    "failed": 0,
+    "scope": "synthetic/offline",
+    "durationMs": 527
+  },
+  "regressions": [
+    "one second into final day with an uncovered evening game keeps net AGP unknown",
+    "intraday gap",
+    "short final day",
+    "spring-forward 167-hour exact coverage and one-second shortfall",
+    "fall-back 169-hour exact coverage and fixed-168-hour shortfall",
+    "complete Asia/Tokyo local boundaries",
+    "missing/malformed/overlapping windows",
+    "unrelated unsupported rules, provider authority, provenance and input immutability",
+    "adjoining intraday windows with changed lock and later game remain unsupported, with and without repeated-hour gap",
+    "adjoining windows at actual local midnight after spring/fall DST remain supported"
+  ],
+  "lint": {
+    "command": "npx eslint lib/rosterScheduleOptimizer/providerRules.ts lib/rosterScheduleOptimizer/providerRules.test.ts",
+    "exitCode": 0,
+    "outputBytes": 0
+  },
+  "whitespace": "git diff --check passed for the two owned paths",
+  "frozenForecastCohort": {
+    "pins": 27,
+    "unchanged": true,
+    "manifestSha256": "42929006a75dea1de6d6d158720c4f8886b69c74b27bfdf636415105654bf191",
+    "ownedPathsOverlap": false
+  },
+  "compiler": "not run; earlier compiler covers its own 27-file cohort, not this new pair",
+  "liveRequests": 0,
+  "databaseWrites": 0,
+  "providerRequests": 0,
+  "builds": 0,
+  "modelRuns": 0,
+  "deadlineUTC": "2026-10-15T21:10:00Z",
+  "independentReview": "pending corrected V3 frozen pair review",
+  "intermediateTestFailure": "First V3 attempt:26 passed,2 failed because an added candidate-metric assertion dereferenced an absent candidate in the moved-date fixture. Replaced it with a direct assertion that the evaluator retains the unsupported limitation for that later game; then28/28 passed."
+}

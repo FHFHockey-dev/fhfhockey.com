@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "completedAt": "2026-10-14T03:08:03.994056+00:00",
+  "receipt": "/tmp/rso-combined-typecheck-20261014-final-8gb-030715/completion.json",
+  "receiptSHA256": "0f8cf73fa800270dd891ce23cc9d93488b29ac14726f8dd2564050f1e2ff7b37",
+  "log": "/tmp/rso-combined-typecheck-20261014-final-8gb-030715/tsc.log",
+  "logBytes": 0,
+  "sourceDrift": [],
+  "addedSourcePaths": [],
+  "removedSourcePaths": [],
+  "scope": "Full web nonincremental TypeScript with8GiB heap; no build, deployment, provider or account action",
+  "owner": "01a135c8-567b-71d2-b610-6b78f3cc40d7",
+  "sourceHold": "FORGE owner notified release after completion",
+  "attempts": [
+    {
+      "exitCode": -6,
+      "result": "Default4GiB heap aborted; no TypeScript result; private source drift recorded",
+      "receipt": "/tmp/rso-combined-typecheck-20261014-025514/completion.json"
+    },
+    {
+      "exitCode": 2,
+      "result": "One new visual-test getByRole exact-option diagnostic; corrected by owner and reviewed",
+      "receipt": "/tmp/rso-combined-typecheck-20261014-8gb-030025/completion.json"
+    },
+    {
+      "exitCode": 0,
+      "result": "Corrected final candidate passed; no source drift",
+      "receipt": "/tmp/rso-combined-typecheck-20261014-final-8gb-030715/completion.json"
+    }
+  ]
+}

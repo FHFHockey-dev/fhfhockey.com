@@ -1,0 +1,61 @@
+{
+  "allTenCapturedTsModulesExecuted": true,
+  "consumerRuntimeMarkers": [
+    {
+      "path": "web/lib/projections/starterBoardFlags.ts",
+      "sha256": "f6f0bea6cedda71bb43f41f7aa0235232178524b9bf9271c0a1b3567ae251e2d"
+    },
+    {
+      "path": "web/lib/player-forecasts/contracts.ts",
+      "sha256": "9c85d1855d04b4f69d9d71e3790a5762e255c06a5538d690b2117de50c174347"
+    },
+    {
+      "path": "web/lib/projections/evidenceTime.ts",
+      "sha256": "c818c021a2857607055d60454ecf03ac39fb27298719726662652d8321e42a00"
+    },
+    {
+      "path": "web/lib/player-forecasts/contributions.ts",
+      "sha256": "1f08b1c5ca9ea296826d899f7e57c02f2262c4c4102c11ba925a64f7e703bae6"
+    },
+    {
+      "path": "web/lib/player-forecasts/schedule.ts",
+      "sha256": "65bce2663415d34a39e74d18c6250c33ad5ee8658118c0e68049935d90bf8049"
+    },
+    {
+      "path": "web/lib/rosterScheduleData/normalize.ts",
+      "sha256": "bf6a30c1ea38903f11b66643721915543af73f61d28a8b6e3b48e8869489c4a6"
+    },
+    {
+      "path": "web/lib/player-forecasts/sourceSnapshot.ts",
+      "sha256": "7ec78dcefc5dd0d64de52ae6e03172594cf2c8c9232b1d20a0c34e8833de1c82"
+    },
+    {
+      "path": "web/lib/projections/issuedContext.ts",
+      "sha256": "8d2aeb9d1c01f9513ee18a6301ef17dbfa49ea2100c321939de7d35f9ebabb9d"
+    },
+    {
+      "path": "web/lib/player-forecasts/scopeReads.ts",
+      "sha256": "804d79e6e67091dd79d485db4835fb2b18f27accf59968ef7c4cad3ed034cdfd"
+    },
+    {
+      "path": "web/lib/player-forecasts/sourceObservations.ts",
+      "sha256": "de7aaaeeadae51bbe9d29b1fef900682070a0a3775285be010cd4ef8edd7490b"
+    }
+  ],
+  "expiryRuntimeMarkers": [
+    {
+      "path": "web/lib/projections/evidenceTime.ts",
+      "sha256": "c818c021a2857607055d60454ecf03ac39fb27298719726662652d8321e42a00"
+    },
+    {
+      "path": "web/lib/player-forecasts/contributions.ts",
+      "sha256": "1f08b1c5ca9ea296826d899f7e57c02f2262c4c4102c11ba925a64f7e703bae6"
+    }
+  ],
+  "snapshotFilesStillExact": 15,
+  "realSqlFixturesReadFromReviewSnapshotDirectory": true,
+  "consumerOriginalAssertionsPassed": 9,
+  "configurationChanges": "Snapshot destination redirected to review copies; same relative/lib import resolution; hash-on-load and observational runtime markers only",
+  "goaliePolicyBehaviorAccepted": false,
+  "actualContributionsHash": "1f08b1c5ca9ea296826d899f7e57c02f2262c4c4102c11ba925a64f7e703bae6"
+}

@@ -1,0 +1,55 @@
+{
+  "status": "local_engineering_accepted_genuine_public_issuance_blocked",
+  "owner": "FORGE coordinator01a135c8",
+  "branch": "octoberBranch",
+  "sourceFiles": {
+    "web/lib/player-forecasts/gameExpectations.ts": "e93300248d3e40eec27e1a9c3aa3ddda7e64579bb97a9a99bc714b6b471dd23e",
+    "web/lib/player-forecasts/gameExpectations.test.ts": "306ba77bdac1a05e56c51a54ab240608193ce9797e17a8a494a55501502563df",
+    "web/lib/player-forecasts/gameExpectationReader.ts": "6aebf5c001b8aa5c66efda8d5d61b15d90707864b0e6add21af65ffef24de5ca",
+    "web/pages/api/v1/forge/forecasts.ts": "efd04cd03bd40c1230ba67f80cbf89adc6630100a7a3a6878b8e5a52afd2adce",
+    "web/__tests__/pages/api/v1/forge/forecasts.test.ts": "a37f478f390a99efaeb7464eaf7c4b74d43a0bf971fb7564a7a99e18d711263d",
+    "web/pages/forge/forecasts.tsx": "da36d359f5aeb43b43aa4a66aaf6893a9b238574bf3b711846f99e7964f413f9",
+    "web/__tests__/pages/forge/forecasts.test.tsx": "91d0aaaaf43b1e380cd0034a0a75030e8d6b210cf0c41ddf63ddfdf3245eb0cf",
+    "web/styles/ForgeForecasts.module.scss": "2adffb14d0cdb6d1d4f20f0acc7c1be4d97bbecf7a609e3cc2e0a7c820cdabde",
+    "web/components/forge-dashboard/ForgeRouteNav.tsx": "579ad8f7dfb66d432f5f8dd96135142b2fd6855f2a788e007b08b36fdc34fbd8",
+    "web/scripts/preview-native-baseline.ts": "3f6714e986a75727ad4f9a699c48f0418abec2fecdd649352f6eee5bd20dcacb",
+    "web/scripts/preview-native-baseline.test.ts": "6bd3410c54dba81cb08cf15b7d28b105e300beff18dcbe599cad5bb7334e835a"
+  },
+  "patch": "change.patch",
+  "patchSha256": "79935f41bcd6a035520a46caff79d94ccaca0224c55965a8d890b4d07c5c6746",
+  "focusedTests": "38passed;affected14helper+4pagepassedagainafterlimitations/lazydetails",
+  "independentReview": "independent-review.json; no unresolved local source findings",
+  "combinedTypeScript": {
+    "receipt": "typescript-receipt-v2.json",
+    "exitCode": 0,
+    "log": "typescript-v2.log",
+    "logBytes": 0,
+    "sourceDrift": [],
+    "cohortManifest": "compiler-cohort-v2.sha256"
+  },
+  "consumers": {
+    "RSO": "Existing per-game PlanningData/resolver retained; separately accepted consumer-refresh slice and test receipts at tasks/artifacts/rso-shared-forecast-refresh-2026-10-15/",
+    "StartChart": "Direct loadGameExpectations per-date branch, comparison/basis permissions and original limitations retained; separately accepted5-file owner candidate at /tmp/start-chart-expectations-20261015/final-frozen.sha256"
+  },
+  "producer": "web/scripts/preview-native-baseline.ts composes original native observations offline using existing method; no database access/publicrelease,not executed on genuine current receipts",
+  "publicInterface": "GET /api/v1/forge/forecasts and /forge/forecasts; version forge-game-expectations-v1",
+  "publicationProposal": "PUBLICATION-PROPOSAL.md",
+  "immediateDataBlockers": [
+    "No genuine current public-safe two-skater/input/participation tuple admitted.",
+    "Checked game2026020112 cache receipt2026-10-14T00:12:54.911Z exceeds36hourthreshold.",
+    "One checked roster/identity team mismatch; no repair or replacement guess.",
+    "Unconditional totals require game-specific participation. Future nextN games cannot inherit firstgame confirmation.",
+    "Separate exact source/input/publication/activation/deployment authority remains necessary. No predictive superiority gate is imposed."
+  ],
+  "liveActions": {
+    "projectMetadataCalls": 1,
+    "sqlMetadataReads": 2,
+    "writes": 0,
+    "outcomeOrForecastBodies": 0,
+    "privateExperimentArtifacts": 0,
+    "producerExecutions": 0,
+    "deployments": 0
+  },
+  "privatePilot": "Runtime/source/model/scheduler untouched; temporaryTSfilehold released19:26:28UTC,wellbefore21:10UTCboundary",
+  "nextApproval": "Five sequential metadata-only reads\u2264256KiB scoped to exact still-future game2026020112; pin coherent two-player and source/evidence scope before numericcapture or issuance. Any stale-cache refresh/identityrepair/publication is separately scoped. Details in PUBLICATION-PROPOSAL.md."
+}

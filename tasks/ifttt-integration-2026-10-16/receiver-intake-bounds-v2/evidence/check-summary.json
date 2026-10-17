@@ -1,0 +1,15 @@
+{
+  "sourceManifest": "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v2/owned-source-v2-sha256.json",
+  "sourceManifestSha256": "81b41d7841a72c12cdb2824a7483cb81a0a13a61d40b916c4b218447cbd0b9fb",
+  "cases": 109,
+  "actualPrivatePG": 77,
+  "purePolicy": 20,
+  "nearestMock": 12,
+  "passed": 109,
+  "failed": 0,
+  "scopedTypeScript": "exit0",
+  "runtimeUnchangedFromV1": true,
+  "noHostedActions": true,
+  "independentReview": "pending",
+  "R20OriginalAssertionsUnchanged": true
+}

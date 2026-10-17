@@ -1,0 +1,141 @@
+--- a/web/lib/player-forecasts/contributions.ts
++++ b/web/lib/player-forecasts/contributions.ts
+@@ -1,3 +1,5 @@
++import { timestampMicros } from "../projections/evidenceTime";
++
+ export const CONTRIBUTION_RESOLVER_POLICY_VERSION = "contribution-resolver-v1";
+ 
+ /** Calendar coverage/overlap policy; independent of next-N-team-games ordinals. */
+@@ -161,6 +163,13 @@
+   now: string, game: ContributionGame): number | null {
+   if (source.participationIntegrated) return 1;
+   const basis = source.basis === "per_start" ? "start" : "appearance";
++  const model = participation?.model;
++  // Preserve the original legacy clock contract; the versioned modeled branch
++  // uses the same microsecond identity/order checks as its receipt builder.
++  const clock = model ? (value: string) => {
++    const parsed = timestampMicros(value); return parsed === null ? NaN : Number(parsed);
++  } : milliseconds;
++  const validClock = (value: string) => Number.isFinite(clock(value));
+   if (!participation || !participation.released || !participation.revisionId.trim()
+     || participation.playerId !== game.playerId || participation.nhlPlayerId !== game.nhlPlayerId
+     || participation.seasonId !== game.seasonId || participation.gameId !== game.gameId
+@@ -168,14 +177,13 @@
+     || participation.scheduleRevision !== game.scheduleRevision || participation.rosterRevision !== game.rosterRevision
+     || !Number.isFinite(participation.probability)
+     || participation.probability < 0 || participation.probability > 1
+-    || !validTime(participation.cutoffAt)
+-    || !validTime(participation.issuedAt) || milliseconds(participation.cutoffAt) > milliseconds(participation.issuedAt)
+-    || milliseconds(participation.issuedAt) > milliseconds(now)
+-    || milliseconds(participation.cutoffAt) > milliseconds(game.scheduledAt)
+-    || milliseconds(participation.cutoffAt) > milliseconds(now)
+-    || !validTime(participation.expiresAt)
+-    || milliseconds(participation.expiresAt) <= milliseconds(now)) return null;
+-  const model = participation.model;
++    || !validClock(participation.cutoffAt) || !validClock(now) || !validClock(game.scheduledAt)
++    || !validClock(participation.issuedAt) || clock(participation.cutoffAt) > clock(participation.issuedAt)
++    || clock(participation.issuedAt) > clock(now)
++    || clock(participation.cutoffAt) > clock(game.scheduledAt)
++    || clock(participation.cutoffAt) > clock(now)
++    || !validClock(participation.expiresAt)
++    || clock(participation.expiresAt) <= clock(now)) return null;
+   if (model && (source.kind !== "baseline" || source.policyVersion !== "skater-baseline-rates-v1"
+     || source.basis !== "per_appearance" || model.version !== "skater-participation-frequency-v1"
+     || model.event !== "positive_minutes" || model.probabilityStatus !== "uncalibrated_model" || model.calibration !== "unavailable"
+@@ -188,10 +196,12 @@
+     || new Set(model.selectedGameIds).size !== model.selectedGameIds.length
+     || model.selectedGameIds.some(value => !Number.isSafeInteger(value) || value <= 0 || value === game.gameId)
+     || !Array.isArray(model.limitations) || model.limitations.some(value => typeof value !== "string")
+-    || !validTime(participation.scheduledAt ?? "") || milliseconds(participation.scheduledAt!) !== milliseconds(game.scheduledAt)
+-    || milliseconds(participation.issuedAt) >= milliseconds(game.scheduledAt)
+-    || milliseconds(participation.expiresAt) > milliseconds(game.scheduledAt)
+-    || milliseconds(participation.expiresAt) - milliseconds(participation.issuedAt) > DAY_MS)) return null;
++    || !validClock(participation.scheduledAt ?? "") || clock(participation.scheduledAt!) !== clock(game.scheduledAt)
++    || clock(participation.issuedAt) >= clock(game.scheduledAt)
++    || clock(participation.expiresAt) > clock(game.scheduledAt)
++    || clock(participation.expiresAt) <= clock(participation.issuedAt)
++    || clock(participation.issuedAt) - clock(participation.cutoffAt) > DAY_MS * 1000
++    || clock(participation.expiresAt) - clock(participation.issuedAt) > DAY_MS * 1000)) return null;
+   return participation.probability;
+ }
+ 
+--- a/web/lib/player-forecasts/modeledSkaterParticipation.test.ts
++++ b/web/lib/player-forecasts/modeledSkaterParticipation.test.ts
+@@ -18,6 +18,19 @@
+ }
+ 
+ describe("finite modeled skater participation", () => {
++  it.each(["one_microsecond", "available_only", "captured_only"])("rejects %s pregame historical outcome evidence", kind => {
++    const input = fixture(), game = input.history.games[2];
++    const before = "2026-10-13T23:59:59.999999Z";
++    game.outcomeEvidence = { ...game.outcomeEvidence!, id: "synthetic-outcome-clock",
++      availableAt: kind === "captured_only" ? game.scheduledAt : before,
++      capturedAt: kind === "available_only" ? game.scheduledAt : before };
++    expect(() => buildSkaterParticipationReceipt(input, issuance)).toThrow("Historical outcome evidence predates its game");
++  });
++  it("accepts timezone-equivalent outcome boundary clocks without asserting a final horn", () => {
++    const input = fixture(); input.history.games[2].outcomeEvidence = { ...input.history.games[2].outcomeEvidence!,
++      id: "synthetic-boundary-clock", availableAt: "2026-10-13T20:00:00-04:00", capturedAt: "2026-10-14T00:00:00.000000Z" };
++    expect(buildSkaterParticipationReceipt(input, issuance).probability).toBe(2 / 3);
++  });
+   it("uses eligible opportunities including explicit nonappearances; endpoint frequency is still a model", () => {
+     const input = fixture(), row = buildSkaterParticipationReceipt(input, issuance);
+     expect(row).toMatchObject({ probability: 2 / 3, numerator: 2, denominator: 3,
+--- a/web/lib/player-forecasts/modeledSkaterParticipation.ts
++++ b/web/lib/player-forecasts/modeledSkaterParticipation.ts
+@@ -71,6 +71,10 @@
+     if (game.positiveMinutes === true && (game.occurred === false || game.eligible === false)) {
+       throw new Error("Conflicting participation history labels.");
+     }
++    if (game.outcomeEvidence && (time(game.outcomeEvidence.availableAt) < time(game.scheduledAt)
++      || time(game.outcomeEvidence.capturedAt) < time(game.scheduledAt))) {
++      throw new Error("Historical outcome evidence predates its game.");
++    }
+     if (game.eligibilityEvidence) evidence.push(game.eligibilityEvidence);
+     if (game.outcomeEvidence) evidence.push(game.outcomeEvidence);
+   }
+--- a/web/lib/player-forecasts/modeledSkaterParticipationStore.test.ts
++++ b/web/lib/player-forecasts/modeledSkaterParticipationStore.test.ts
+@@ -32,6 +32,19 @@
+ const environment = (row: ReturnType<typeof fixture>) => ({ PLAYER_FORECAST_PARTICIPATION_RELEASES: `${row.id}:${row.payload_hash}` });
+ 
+ describe("modeled participation release admission", () => {
++  it("rejects rehashed pregame-outcome packets during replay, preserving valid equivalent-offset evidence", async () => {
++    const row = fixture(), entry = row.payload.entries[0];
++    entry.input.history.games[1].outcomeEvidence = { ...entry.input.history.games[1].outcomeEvidence!, id: "synthetic-before-start",
++      availableAt: "2026-10-13T23:59:59.999999Z", capturedAt: "2026-10-13T23:59:59.999999Z" };
++    entry.receipt.inputHash = playerForecastSourcePayloadHash(entry.input);
++    row.payload_hash = playerForecastSourcePayloadHash(row.payload);
++    expect((await loadModeledSkaterParticipation(db([row]) as never, 20262027, now, { environment: environment(row) })).sources).toEqual([]);
++    entry.input.history.games[1].outcomeEvidence = { ...entry.input.history.games[1].outcomeEvidence!,
++      availableAt: "2026-10-13T20:00:00-04:00", capturedAt: "2026-10-14T00:00:00Z" };
++    entry.receipt = buildSkaterParticipationReceipt(entry.input, { issuedAt: row.payload.issuedAt, expiresAt: row.payload.expiresAt });
++    row.payload_hash = playerForecastSourcePayloadHash(row.payload);
++    expect((await loadModeledSkaterParticipation(db([row]) as never, 20262027, now, { environment: environment(row) })).sources[0].probability).toBe(0.5);
++  });
+   it("is disabled without an explicit ID+hash release and makes no read", async () => {
+     const database = db([]);
+     expect((await loadModeledSkaterParticipation(database as never, 20262027, now, { environment: {} })).sources).toEqual([]);
+--- a/web/lib/player-forecasts/planningContributions.test.ts
++++ b/web/lib/player-forecasts/planningContributions.test.ts
+@@ -53,6 +53,20 @@
+ 
+ describe("independent modeled participation catalog", () => {
+   const nativeRate = { ...rate, policyVersion: "skater-baseline-rates-v1" };
++  it.each(["target", "issued", "cutoff", "expiry"])("withholds a one-microsecond modeled %s mismatch", kind => {
++    const data = fixture([nativeRate]), p = modeledParticipation();
++    if (kind === "target") p.scheduledAt = "2026-10-08T23:00:00.000001Z";
++    if (kind === "issued") p.issuedAt = "2026-09-29T00:00:00.000001Z";
++    if (kind === "cutoff") p.cutoffAt = "2026-09-29T00:00:00.000001Z";
++    if (kind === "expiry") p.expiresAt = "2026-09-28T23:59:59.999999Z";
++    data.participationSources = [p]; expect(resolvePlanningContributions(data).forecasts[0].stats.GOALS).toBeNull();
++  });
++  it("accepts equivalent target offsets and a positive microsecond validity interval", () => {
++    const data = fixture([nativeRate]), p = modeledParticipation();
++    p.scheduledAt = "2026-10-08T19:00:00-04:00";
++    p.cutoffAt = p.issuedAt = "2026-09-28T23:59:59.999999Z"; p.expiresAt = "2026-09-29T00:00:00.000001Z";
++    data.participationSources = [p]; expect(resolvePlanningContributions(data).forecasts[0].stats.GOALS).toBe(0.5);
++  });
+   it("reaches baseline-only totals without forging an atomic game revision, and survives retained reconstruction", () => {
+     const data = fixture([nativeRate]); data.participationSources = [modeledParticipation()];
+     const resolved = resolvePlanningContributions(data), forecast = resolved.forecasts[0];

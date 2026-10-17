@@ -1,0 +1,160 @@
+{
+  "objective": "Finish independently actionable RSO functional work and prepare a verified local release candidate",
+  "state": "locally_verified_rso_release_candidate",
+  "contractAudit": [
+    {
+      "item": 1,
+      "status": "local-source-and-fixture-verified",
+      "evidence": "planning.test.ts113; candidatePlanMetrics20; original roster baseline reoptimization and explicit locks inspected"
+    },
+    {
+      "item": 2,
+      "status": "source-and-retained-fixture-verified",
+      "evidence": "currentPlanningRange/currentProviderPeriod and dateRangeOrigin inspected; frozen visual reviewer accepted current-week/custom-range tests",
+      "liveGap": "verified current provider matchup"
+    },
+    {
+      "item": 3,
+      "status": "local-fixture-verified",
+      "evidence": "113 planner cases and20 candidate cases; new invalid waiver-clear red/green; unsupported-rule labels retained",
+      "liveGap": "actual slots, eligibility, timing, locks, reserve and remaining allowance authority"
+    },
+    {
+      "item": 4,
+      "status": "source-and-frozen-ui-verified",
+      "evidence": "contributionLedger and benchDecisions inspected; GP/AGP/bench/DUST rows visible; explicit protections retained; automatic must-keep remains off"
+    },
+    {
+      "item": 5,
+      "status": "local-fixture-verified",
+      "evidence": "20 full-swap cases cover lost contribution, dual eligibility and positional reshuffling"
+    },
+    {
+      "item": 6,
+      "status": "source-and-local-fixture-verified",
+      "evidence": "candidatePlanMetrics20 includes separate AGP/points tradeoffs; CandidateBrowser labels unknowns unranked, team schedule only; no invented fit score"
+    },
+    {
+      "item": 7,
+      "status": "source-and-retained-fixture-verified",
+      "evidence": "canonical schedule/top-five context source and frozen TeamScheduleContext tests; actual schedule receipt114rows/57games reused without rerun"
+    },
+    {
+      "item": 8,
+      "status": "local-fixture-verified-live-open",
+      "evidence": "workspace22, reconciliation3, affected component3; repair proposal preserves original intent; real-account flow unexercised"
+    }
+  ],
+  "changedFiles": [
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planning.test.ts",
+      "sha256": "84ec06314da69a6657e06650c1903964714509110093fa30e1561500dac272e2",
+      "changedThisGoal": true
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planningTimeline.ts",
+      "sha256": "e61be30023f555e7196e0f9e3e63cce8e1bca0a0c026cf445bef7d81d4b0532e",
+      "changedThisGoal": true
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/reconciliation.ts",
+      "sha256": "f43c7f84cd408d95c7cc89fad545f05c41c8f69beae03f13f1188e2ed50ab69d",
+      "changedThisGoal": true
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/reconciliation.test.ts",
+      "sha256": "7a83a334e68ca83b4b24b0fb8adab2d8a7f9cfbfb4e3f7a7b0a3fa5981784ec5",
+      "changedThisGoal": true
+    }
+  ],
+  "retainedBaselineHead": "a8f58de6178e282acd3a71851c66f4a56b119f14",
+  "functionalManifestSHA256": "cd7e1ab8e5fa624d9fecd8ea0830441a14364e83caad49f9b1148175d27693fe",
+  "visualManifest": "../rso-mockup-match-2026-10-14/candidate.sha256",
+  "visualManifestSHA256": "af454cf0cd68ecd57594af715bb84ce5244ec0e76d728c1eb27d9f89fe625f00",
+  "compiler": {
+    "status": "passed",
+    "exitCode": 0,
+    "completedAt": "2026-10-14T03:08:03.994056+00:00",
+    "receipt": "/tmp/rso-combined-typecheck-20261014-final-8gb-030715/completion.json",
+    "receiptSHA256": "0f8cf73fa800270dd891ce23cc9d93488b29ac14726f8dd2564050f1e2ff7b37",
+    "log": "/tmp/rso-combined-typecheck-20261014-final-8gb-030715/tsc.log",
+    "logBytes": 0,
+    "sourceDrift": [],
+    "addedSourcePaths": [],
+    "removedSourcePaths": [],
+    "scope": "Full web nonincremental TypeScript with8GiB heap; no build, deployment, provider or account action",
+    "owner": "01a135c8-567b-71d2-b610-6b78f3cc40d7",
+    "sourceHold": "FORGE owner notified release after completion",
+    "attempts": [
+      {
+        "exitCode": -6,
+        "result": "Default4GiB heap aborted; no TypeScript result; private source drift recorded",
+        "receipt": "/tmp/rso-combined-typecheck-20261014-025514/completion.json"
+      },
+      {
+        "exitCode": 2,
+        "result": "One new visual-test getByRole exact-option diagnostic; corrected by owner and reviewed",
+        "receipt": "/tmp/rso-combined-typecheck-20261014-8gb-030025/completion.json"
+      },
+      {
+        "exitCode": 0,
+        "result": "Corrected final candidate passed; no source drift",
+        "receipt": "/tmp/rso-combined-typecheck-20261014-final-8gb-030715/completion.json"
+      }
+    ]
+  },
+  "browser": {
+    "owner": "01a136d9-2f60-768c-aadf-bb4d1600b0d6",
+    "status": "passed; owner and independent-review evidence accepted; parent final hashes and desktop/mobile pixels inspected",
+    "receipt": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-mockup-match-2026-10-14/cohort-shell/receipt.json",
+    "receiptSHA256": "11d5328cb22911af02415c700f971e58ae302b1471a9f00af300efc10753c357",
+    "contexts": 13,
+    "screenshots": 38,
+    "applicationInputs": 80,
+    "currentApplicationInputDrift": [],
+    "defects": [],
+    "outboundRequests": 0,
+    "screenshotsForHandoff": {
+      "desktop": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-mockup-match-2026-10-14/cohort-shell/fixture-manual-complete-1536x1024.png",
+      "mobile": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-mockup-match-2026-10-14/cohort-shell/fixture-manual-complete-390x844-itinerary.png"
+    },
+    "testOnlyCorrection": "Subsequent main-test option correction changes no captured application input; original browser receipt preserved"
+  },
+  "remainingLiveAcceptance": [
+    {
+      "owner": "TJ/manual acceptance",
+      "missing": "real roster and manager-confirmed slots, scoring, eligible positions, protections, locks, transaction timing/cost, availability and allowance; actual manual workflow receipt"
+    },
+    {
+      "owner": "Provider/RSO owner and TJ",
+      "missing": "fresh bounded owned-team roster/settings/eligibility/lock/waiver receipt with source times; approved read-only connected scope"
+    },
+    {
+      "owner": "Workspace/RSO owner and TJ",
+      "missing": "verified principal, preservation baseline and explicit bounded save/reopen/conflict/restore authorization; no clearing storage"
+    },
+    {
+      "owner": "FORGE issuance and consumer owners",
+      "missing": "qualified original-issued forecasts, participation support, all relevant scoring heads and exact consumer readback; private17-skater BLK pilot does not qualify"
+    },
+    {
+      "owner": "TJ/release owner",
+      "missing": "separate release/deployment authorization after local acceptance; no remote build or deployment performed"
+    }
+  ],
+  "deployment": "No deployed behavior established by this task",
+  "coordination": "Scout direct message returned Not Found; current accepted status relayed through visual/compiler owners. Existing quota watcher owns60%-remaining stop; no duplicate.",
+  "preservation": "Initial dirty changes retained; six audited unchanged files byte-identical to baseline. Main/test/CSS remained visual-owned; no functional edits to those files.",
+  "releaseCandidateManifestSHA256": "9df8082c5c07fc25fa15f2264a76351f6b765ebb8934f9dc695bc0256c4e1c6e",
+  "visualTestCorrection": {
+    "path": "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+    "sha256": "a791d16bd2ed863891cc260569e28f6bc7c426d8f16dc12953022046a7b8bea3",
+    "review": "Minimal exact:true removal independently inspected by parent;3 focused tests passed",
+    "receipt": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-mockup-match-2026-10-14/compiler-correction/verification.json"
+  },
+  "localCandidateScopeComplete": true,
+  "fullRSOOrPublicReleaseComplete": false,
+  "remoteBuilds": 0,
+  "deployments": 0,
+  "productionApplicationRequests": 0
+}

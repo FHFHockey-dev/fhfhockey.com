@@ -1,0 +1,24 @@
+--- accepted148/web/lib/sources/lineSourceIftttReceiver.test.ts
++++ web/lib/sources/lineSourceIftttReceiver.test.ts
+@@ -11,7 +11,11 @@
+ vi.mock("lib/supabase/server", () => ({
+   default: {
+     from: fromMock,
+-    rpc: rpcMock,
++    rpc: (...args: unknown[]) => {
++      const query = { abortSignal: (_signal: AbortSignal) => query,
++        then: (resolve: any, reject: any) => Promise.resolve(rpcMock(...args)).then(resolve, reject) };
++      return query;
++    },
+   },
+ }));
+ vi.mock("lib/projections/starterBoardQueue", () => ({ dispatchStarterBoardJobs: dispatchMock }));
+@@ -93,7 +97,7 @@
+     const handler = createLineSourceIftttReceiver({ sourceGroup: "gdl_suite", sourceKey: "gamedaygoalies",
+       sourceAccount: "GameDayGoalies", secretEnvVar: "IFTTT_GAMEDAYGOALIES_WEBHOOK_SECRET" });
+     const res = createMockRes(); await handler(createMockReq(), res);
+-    expect(res.statusCode).toBe(500); expect(rpcMock).toHaveBeenCalledOnce(); expect(fromMock).not.toHaveBeenCalled();
++    expect(res.statusCode).toBe(500); expect(res.body.outcome).toBe("unknown"); expect(rpcMock).toHaveBeenCalledTimes(2); expect(fromMock).not.toHaveBeenCalled();
+   });
+   it("rejects missing post IDs without a legacy write in controlled intake", async () => {
+     enableIntake();

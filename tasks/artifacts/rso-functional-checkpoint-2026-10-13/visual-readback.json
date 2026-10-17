@@ -1,0 +1,17 @@
+{
+  "scope": "Independent readback of retained fixture receipt and inspected desktop/mobile pixels; no browser rerun",
+  "receiptSHA256": "1355fdca080d43d28f4572a31d2f72171c2c4a309b86d9cbcdc7f3b101167fba",
+  "contexts": 13,
+  "recordedDefects": [],
+  "outboundRequests": 0,
+  "providerOrAccountRequests": 0,
+  "errors": 0,
+  "reloadAndKeyboardChecks": true,
+  "currentVisualPinsMatch": true,
+  "currentApplicationInputDrift": [
+    "web/lib/rosterScheduleOptimizer/planningTimeline.ts",
+    "web/lib/rosterScheduleOptimizer/reconciliation.ts"
+  ],
+  "finalCombinedUIAcceptance": false,
+  "actualAccountParity": false
+}

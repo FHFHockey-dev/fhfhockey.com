@@ -1,0 +1,16 @@
+{
+  "captured_at_utc": "2026-10-15T05:55:06.451671+00:00",
+  "head": "a8f58de6178e282acd3a71851c66f4a56b119f14",
+  "branch": "octoberBranch",
+  "status": "checkpointed after failing regression reproduction; production fix not applied",
+  "files": {
+    "web/components/PlayerStats/PlayerRadarChart.tsx": "bc20900709ff07447f6078dcf0fda7de7b62b18a5f365cc1136f429baa1a2954",
+    "web/components/PlayerStats/PlayerRadarChart.test.tsx": "d04cf8932ed0b795fedf5b71aa76474c53af874b813c698a66cecb412ae556a6"
+  },
+  "artifacts": {
+    "PlayerRadarChart.before.tsx": "bc20900709ff07447f6078dcf0fda7de7b62b18a5f365cc1136f429baa1a2954",
+    "PlayerRadarChart.before.test.tsx": "c4e267f530e2635ed8276c11ea6410fcc48267b4a6d404eed13a23d69278780f",
+    "red.log": "2d4c6d935ff367f87becadbff8fd0018f0d018979051e23c516cd68cbb33bac6",
+    "radar-direction-tests.patch": "f355f537ca2dc776fbfb37a66f0afc399b7e433d5e529532845a7c6e2eb97620"
+  }
+}

@@ -1,0 +1,255 @@
+--- a/web/components/RosterScheduleOptimizer/CandidateBrowser.tsx
++++ b/web/components/RosterScheduleOptimizer/CandidateBrowser.tsx
+@@ -9,6 +9,7 @@
+ import type { CanonicalSchedule } from "./canonicalSchedule";
+ 
+ type Candidate = { player: PlanningPlayer; activeGames: number | null; points: number | null; activePoints: number | null;
++  eligibilityKnown?: boolean; availabilityKnown?: boolean;
+   plan?: CandidatePlan; comparison?: CandidateComparison; diagnostic?: CandidateDiagnostic; upcomingGames?: number | null };
+ type Props = {
+   searchQuery?: string;
+@@ -29,6 +30,9 @@
+ const metric = (value: number | null) => value === null ? "unavailable" : Number.isInteger(value) ? String(value) : value.toFixed(1);
+ const byName = (a: Candidate, b: Candidate) => a.player.name.localeCompare(b.player.name) || a.player.id.localeCompare(b.player.id);
+ const byFit = (a: Candidate, b: Candidate) => (b.activeGames ?? -Infinity) - (a.activeGames ?? -Infinity) || byName(a, b);
++const knownInputs = (row: Candidate) => row.eligibilityKnown === true && row.availabilityKnown === true;
++const compareDiscovery = (a: Candidate, b: Candidate) => Number(knownInputs(b)) - Number(knownInputs(a))
++  || (b.upcomingGames ?? -Infinity) - (a.upcomingGames ?? -Infinity) || byName(a, b);
+ export const compareCandidateFits = (a: Candidate, b: Candidate, sort: "points" | "schedule") => sort === "schedule"
+   ? byFit(a, b) : (b.activePoints ?? -Infinity) - (a.activePoints ?? -Infinity) || byFit(a, b);
+ 
+@@ -55,6 +59,9 @@
+     return [...new Map(players.map(player => [player.id, player])).values()]
+       .filter(player => !rosterIds.has(player.id) && player.availability !== "rostered")
+       .map(player => {
++        const eligibility = normalizeEligibility(player.eligiblePositions);
++        const eligibilityKnown = player.eligibilityVerified === true && eligibility.valid && eligibility.playerClass === player.playerClass;
++        const availabilityKnown = ["free_agent", "manager_available", "waivers"].includes(player.availability);
+         const comparison = metrics?.candidates?.find(row => row.playerId === player.id);
+         const plan = comparison ? candidatePlanForSort(comparison.plans, categories ? "schedule" : sort) : undefined;
+         const teamKnown = Number.isSafeInteger(player.nhlTeamId) && player.nhlTeamId! > 0
+@@ -65,7 +72,7 @@
+         const statesKnown = teamGames.every(game => typeof game.gameState === "string" && game.gameState.trim().length > 0);
+         const upcomingGames = calendar?.complete && clocksKnown && statesKnown && teamKnown && Number.isFinite(discoveryAsOf)
+           ? teamGames.filter(game => Date.parse(game.startTimeUTC ?? "") > discoveryAsOf && !["LIVE", "CRIT", "OFF", "FINAL", "CNCL", "POST"].includes(game.gameState ?? "")).length : null;
+-        return { player, comparison, plan, diagnostic: diagnostics.get(player.id), upcomingGames, activeGames: plan?.netAGP ?? null, points: plan?.netPoints ?? null, activePoints: plan?.netPoints ?? null };
++        return { player, eligibilityKnown, availabilityKnown, comparison, plan, diagnostic: diagnostics.get(player.id), upcomingGames, activeGames: plan?.netAGP ?? null, points: plan?.netPoints ?? null, activePoints: plan?.netPoints ?? null };
+       });
+   }, [players, rosterIds, metrics, sort, categories, calendar, discoveryAsOf]);
+   const teams = [...new Set(candidates.map(row => row.player.teamAbbreviation).filter((value): value is string => Boolean(value)))].sort();
+@@ -74,6 +81,10 @@
+     && (!position || normalizeEligibility(player.eligiblePositions).positions.includes(position as typeof positions[number]))
+     && `${player.name} ${player.teamAbbreviation ?? ""}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
+   const hasEvaluatedFit = filtered.some(item => item.activeGames !== null || item.activePoints !== null);
++  const bothKnown = filtered.filter(knownInputs).length;
++  const eligibilityOnly = filtered.filter(row => row.eligibilityKnown && !row.availabilityKnown).length;
++  const availabilityOnly = filtered.filter(row => !row.eligibilityKnown && row.availabilityKnown).length;
++  const neitherKnown = filtered.length - bothKnown - eligibilityOnly - availabilityOnly;
+   const discoveryReasons: string[] = [];
+   if (!snapshot) discoveryReasons.push("Load a planning roster and schedule to evaluate acquisition plans.");
+   else {
+@@ -85,19 +96,17 @@
+       snapshot.rules.acquisitionCost === null && "cost per add",
+       (!snapshot.rules.periods.length || snapshot.rules.periods.some(period => period.remaining === null)) && "remaining moves and reset periods"].filter(Boolean);
+     if (acquisitionGaps.length) discoveryReasons.push(`Acquisition inputs need review: ${acquisitionGaps.join(", ")}.`);
+-    const unverifiedEligibility = filtered.filter(({ player }) => {
+-      const eligibility = normalizeEligibility(player.eligiblePositions);
+-      return player.eligibilityVerified !== true || !eligibility.valid || eligibility.playerClass !== player.playerClass;
+-    }).length;
++    const unverifiedEligibility = filtered.filter(row => !row.eligibilityKnown).length;
+     const unknownAvailability = filtered.filter(({ player }) => player.availability === "unknown").length;
+     if (unverifiedEligibility) discoveryReasons.push(`${unverifiedEligibility} matching candidate(s) lack usable verified league eligibility.`);
+     if (unknownAvailability) discoveryReasons.push(`${unknownAvailability} matching candidate(s) have unknown league availability.`);
+     if (metrics && !filtered.some(item => item.comparison?.plans.length)) discoveryReasons.push("No legal acquisition plan with a verified move budget was retained. Review availability, waiver clearance, timing, locks, roster capacity and drop restrictions.");
+   }
++  const compareGroups = (a: Candidate, b: Candidate) => a.activeGames !== null || a.activePoints !== null || b.activeGames !== null || b.activePoints !== null
++    ? compareCandidateFits(a, b, categories ? "schedule" : sort) : compareDiscovery(a, b);
+   const grouped = [...new Set(filtered.map(row => row.player.teamAbbreviation ?? "Team unknown"))]
+     .map(name => ({ name, rows: filtered.filter(row => (row.player.teamAbbreviation ?? "Team unknown") === name) }))
+-    .sort((a, b) => compareCandidateFits([...a.rows].sort((x, y) => compareCandidateFits(x, y, categories ? "schedule" : sort))[0],
+-      [...b.rows].sort((x, y) => compareCandidateFits(x, y, categories ? "schedule" : sort))[0], categories ? "schedule" : sort) || a.name.localeCompare(b.name));
++    .sort((a, b) => compareGroups([...a.rows].sort(compareGroups)[0], [...b.rows].sort(compareGroups)[0]) || a.name.localeCompare(b.name));
+   const nameOf = (id: string) => players.find(player => player.id === id)?.name ?? id;
+   const when = (at: string) => new Date(at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: snapshot?.context?.timeZone ?? "UTC" });
+   const planDetail = (plan: CandidatePlan) => <>
+@@ -116,13 +125,13 @@
+     const forecasted = pointsFirst ? rows.filter(item => item.activePoints !== null).sort((a, b) => compareCandidateFits(a, b, "points")) : [];
+     const schedule = rows.filter(item => item.activeGames !== null && (!pointsFirst || item.activePoints === null)).sort(byFit);
+     const unranked = rows.filter(item => item.activeGames === null && (!pointsFirst || item.activePoints === null))
+-      .sort((a, b) => (b.upcomingGames ?? -Infinity) - (a.upcomingGames ?? -Infinity) || byName(a, b));
++      .sort(compareDiscovery);
+     const visibleForecasted = forecasted.slice(0, limit);
+     const visibleSchedule = schedule.slice(0, limit - visibleForecasted.length);
+     const visibleUnranked = unranked.slice(0, limit - visibleForecasted.length - visibleSchedule.length);
+     return <>{visibleForecasted.length > 0 && <><h4>Net points · gains and tradeoffs</h4>{visibleForecasted.map((item, index) => row(item, index))}</>}
+       {visibleSchedule.length > 0 && <><h4>{pointsFirst ? "Net AGP · points unavailable" : "Net active games"}</h4>{visibleSchedule.map((item, index) => row(item, visibleForecasted.length + index))}</>}
+-      {visibleUnranked.length > 0 && <><details open className={styles.unrankedDisclosure}><summary><h4>Unranked players</h4><span> · Team schedule only</span></summary><p className={styles.limitation}>{unranked.some(item => item.upcomingGames !== null)
++      {visibleUnranked.length > 0 && <><details open className={styles.unrankedDisclosure}><summary><h4>Unranked players</h4><span> · Team schedule only</span></summary><p className={styles.limitation}>Known eligibility and availability first. Within each input group: {unranked.some(item => item.upcomingGames !== null)
+         ? "Upcoming NHL games first; this is team schedule context, not net roster fit or player participation. Unknown teams follow."
+         : "Alphabetical browsing; verified upcoming NHL schedule counts are unavailable."} Net comparisons require verified schedule, eligibility, availability and acquisition rules; changing the sort does not supply missing evidence.</p></details>
+         {visibleUnranked.map((item, index) => row(item, index, false))}</>}
+@@ -130,6 +139,7 @@
+   };
+   return <section aria-label="Candidate browser" aria-busy={loading}>
+     <h3>{hasEvaluatedFit ? "Evaluated fit results" : "Player discovery"}</h3>
++    <p className={styles.limitation} aria-label="Candidate input coverage">{`${filtered.length} matching candidate${filtered.length === 1 ? "" : "s"} · ${bothKnown} with known eligibility and availability · ${filtered.length - bothKnown} with inputs to verify.`}</p>
+     {!hasEvaluatedFit && <><p role="status">{loading ? "Candidate comparisons are being calculated. Discovery order is not a projection or roster-fit ranking."
+       : "No evaluated fit ranking is available. This is a player discovery list; its order is not a projection or roster-fit score."}</p>
+       {!loading && discoveryReasons.length > 0 && <ul aria-label="Missing comparison inputs">{discoveryReasons.map((reason, index) => <li key={`${index}:${reason}`}>{reason}</li>)}</ul>}</>}
+@@ -145,7 +155,11 @@
+       <label className={styles.field}>Find candidate<input id="rso-candidate-search" type="search" value={query} onChange={event => { setQuery(event.target.value); resetExpansion(); }} /></label>
+       <label className={styles.field}>Team<select value={team} onChange={event => { setTeam(event.target.value); resetExpansion(); }}><option value="">All teams</option>{teams.map(value => <option key={value}>{value}</option>)}</select></label>
+       <label className={styles.field}>Position<select value={position} onChange={event => { setPosition(event.target.value); resetExpansion(); }}><option value="">All positions</option>{positions.map(value => <option key={value}>{value}</option>)}</select></label>
+-    </div></details>      <InfoTooltip label="About best-fit comparisons">
++    </div><p className={styles.limitation}>{`${filtered.length} matching candidate${filtered.length === 1 ? "" : "s"} from ${candidates.length} in the discovery pool.`}</p>
++      <p className={styles.limitation}>{bothKnown} both known · {eligibilityOnly} eligibility only · {availabilityOnly} availability only · {neitherKnown} neither known.</p>
++      <p className={styles.limitation}>Known eligibility and availability are player facts. Legal plans also require verified schedule, timing, move budget, locks and roster capacity; waivers require clearance.</p>
++      {metrics?.search && <p className={styles.limitation}>Bounded search selected {metrics.search.candidates} of {metrics.search.eligibleCandidates} candidates passing player checks, up to {metrics.search.maxCandidates}. Filters and Show more adjust the displayed list. The search keeps its candidate selection.</p>}
++    </details>      <InfoTooltip label="About best-fit comparisons">
+         <p>{categories ? "Category leagues: sort by net legal active games. Review category gains on the selected plan and alternatives; no points blend is inferred."
+           : "Best Fit Available compares complete timed plans against the optimized original roster. Net AGP and points are separate; choose the ordering and review tradeoffs."}</p>
+         <p>Compared plans include lost drop contribution, reserve prerequisites and positional reshuffling. Future availability may require rechecking. No hypothetical extra roster place is credited.</p>
+@@ -154,7 +168,7 @@
+       </InfoTooltip></div>
+     {categories && <p className={styles.limitation}>Category leagues · net AGP order; review category tradeoffs.</p>}
+ 
+-    {loading && <p aria-live="polite">Calculating candidate metrics across all eligible players…</p>}
++    {loading && <p aria-live="polite">Calculating candidate metrics within the bounded search…</p>}
+     {error && <p aria-live="polite">{error}</p>}
+     {filtered.length === 0 ? <p>No candidates match these filters.</p> : view === "all" ? lists(filtered) : grouped.map(group => <details key={group.name} className={styles.alternative}><summary>{group.name} · {group.rows.length} players</summary>{lists(group.rows)}</details>)}
+   </section>;
+--- a/web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx
++++ b/web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx
+@@ -94,6 +94,57 @@
+     roster: [], lockedAssignments: [], forecasts: [], realized: {}, opponent: null, evidence: { schedule: { source: "fixture", asOf: null, seasonId: workspace.context.seasonId, completeness: "partial", limitations: [] } } };
+   return { players, rosterIds: new Set<string>(), snapshot, intent: workspace.intent, fits: [], manual: false, select: vi.fn(), add: vi.fn(), markAvailable: vi.fn() };
+ }
++it("shows652knownand197unknownof849 and puts known inputs first without hiding unknown players", () => {
++  const props = discoveryFixture(), template = props.players[0];
++  const known = Array.from({ length: 652 }, (_, index) => ({ ...template, id: `known-${index}`, name: `Zulu Known ${String(index).padStart(3, "0")}`,
++    nhlTeamId: 2, teamAbbreviation: "ZZZ", eligibilityVerified: true, availability: "free_agent" as const }));
++  const unknown = Array.from({ length: 197 }, (_, index) => ({ ...template, id: `unknown-${index}`, name: `Alpha Unverified ${String(index).padStart(3, "0")}`,
++    nhlTeamId: 1, eligibilityVerified: false }));
++  props.players = [...unknown, ...known]; props.snapshot.players = props.players;
++  props.intent = { ...props.intent, alternativeCount: 5 };
++  const game = (id: number, day: string, teamId: number) => ({ id, gameDate: day, startTimeUTC: `${day}T23:00:00Z`, homeTeam: { id: teamId }, awayTeam: { id: 9 }, gameState: "FUT", season: 20262027, gameType: 2 });
++  const calendar = { complete: true, error: null, teams: [], games: [game(1, "2026-10-14", 1), game(2, "2026-10-15", 1), game(3, "2026-10-16", 2)] } as import("./canonicalSchedule").CanonicalSchedule;
++  const before = JSON.stringify({ snapshot: props.snapshot, intent: props.intent });
++  render(<CandidateBrowser {...props} calendar={calendar} />);
++  expect(screen.getByLabelText("Candidate input coverage").textContent).toBe("849 matching candidates · 652 with known eligibility and availability · 197 with inputs to verify.");
++  expect(screen.getAllByRole("article").map(row => row.getAttribute("data-rso-candidate-id"))).toEqual(known.slice(0, 5).map(row => row.id));
++  expect(screen.getByText("197 matching candidate(s) lack usable verified league eligibility.")).toBeTruthy();
++  expect(screen.getByText("197 matching candidate(s) have unknown league availability.")).toBeTruthy();
++  fireEvent.click(screen.getByRole("button", { name: "By Team" }));
++  expect(screen.getAllByText(/^(AAA|ZZZ) · \d+ players$/).map(row => row.textContent)).toEqual(["ZZZ · 652 players", "AAA · 197 players"]);
++  fireEvent.click(screen.getByRole("button", { name: "All players" }));
++  fireEvent.click(screen.getByText("Find & filter"));
++  expect(screen.getByText("652 both known · 0 eligibility only · 0 availability only · 197 neither known.")).toBeTruthy();
++  fireEvent.change(screen.getByRole("searchbox", { name: "Find candidate" }), { target: { value: "Alpha Unverified" } });
++  expect(screen.getByLabelText("Candidate input coverage").textContent).toBe("197 matching candidates · 0 with known eligibility and availability · 197 with inputs to verify.");
++  expect(screen.getByText("197 matching candidates from 849 in the discovery pool.")).toBeTruthy();
++  expect(screen.getAllByRole("article").map(row => row.getAttribute("data-rso-candidate-id"))).toEqual(unknown.slice(0, 5).map(row => row.id));
++  fireEvent.click(screen.getByRole("button", { name: "Show more players" }));
++  expect(screen.getAllByRole("article")).toHaveLength(10);
++  expect(JSON.stringify({ snapshot: props.snapshot, intent: props.intent })).toBe(before);
++});
++it("separates known, partly known and unusable input facts without granting waiver or plan readiness", () => {
++  const props = discoveryFixture(), template = props.players[0];
++  props.players = [
++    { ...template, id: "free", name: "Free Agent", eligibilityVerified: true, availability: "free_agent" },
++    { ...template, id: "manager", name: "Manager Confirmed", eligibilityVerified: true, availability: "manager_available" },
++    { ...template, id: "waiver", name: "Waiver Player", eligibilityVerified: true, availability: "waivers", waiverClearsAt: null },
++    { ...template, id: "eligibility", name: "Positions Only", eligibilityVerified: true },
++    { ...template, id: "availability", name: "Class Mismatch", eligibilityVerified: true, eligiblePositions: ["G"], availability: "free_agent" },
++    { ...template, id: "neither", name: "Neither Known", eligibilityVerified: false },
++  ];
++  props.snapshot.players = props.players;
++  const before = JSON.stringify({ snapshot: props.snapshot, intent: props.intent });
++  render(<CandidateBrowser {...props} />);
++  expect(screen.getByLabelText("Candidate input coverage").textContent).toBe("6 matching candidates · 3 with known eligibility and availability · 3 with inputs to verify.");
++  fireEvent.click(screen.getByText("Find & filter"));
++  expect(screen.getByText("3 both known · 1 eligibility only · 1 availability only · 1 neither known.")).toBeTruthy();
++  expect(screen.getByText(/Legal plans also require verified schedule, timing, move budget, locks and roster capacity; waivers require clearance/)).toBeTruthy();
++  expect(screen.getByText("2 matching candidate(s) lack usable verified league eligibility.")).toBeTruthy();
++  expect(screen.getByText("2 matching candidate(s) have unknown league availability.")).toBeTruthy();
++  expect(screen.queryAllByLabelText(/^Result /)).toHaveLength(0);
++  expect(JSON.stringify({ snapshot: props.snapshot, intent: props.intent })).toBe(before);
++});
+ it("leaves unavailable comparisons unranked and names alphabetical browsing for either selected net sort", () => {
+   const props = discoveryFixture();
+   props.snapshot.rules.unsupported = ["Retained roster inputs are unverified; this is provisional schedule analysis."];
+--- a/web/components/RosterScheduleOptimizer/CandidateBrowser.integration.test.tsx
++++ b/web/components/RosterScheduleOptimizer/CandidateBrowser.integration.test.tsx
+@@ -1,4 +1,4 @@
+-import { cleanup, render, screen, within } from "@testing-library/react";
++import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+ import { afterEach, beforeEach, expect, it, vi } from "vitest";
+ import { candidatePlanMetrics } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
+ import type { PlanIntent, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
+@@ -58,6 +58,35 @@
+   for (const method of ["getItem", "setItem", "removeItem", "clear"] as const) expect(Storage.prototype[method]).not.toHaveBeenCalled();
+ }
+ 
++it("carries the652known197unknown pool through the worker and keeps browsing separate from the40candidate search", async () => {
++  const props = fixture(), template = props.snapshot.players[2];
++  const known = Array.from({ length: 652 }, (_, index) => ({ ...template, id: `known-${String(index).padStart(3, "0")}`,
++    nhlId: 10000 + index, name: `Zulu Known ${String(index).padStart(3, "0")}` }));
++  const unknown = Array.from({ length: 197 }, (_, index) => ({ ...template, id: `0-unknown-${String(index).padStart(3, "0")}`,
++    nhlId: 20000 + index, name: `Alpha Unknown ${index}`, eligibilityVerified: false, availability: "unknown" as const }));
++  props.players = [...props.players.slice(0, 2), ...unknown, ...known]; props.snapshot.players = props.players;
++  props.snapshot.rules.acquisitionTiming = "unknown"; props.snapshot.rules.acquisitionCost = null; props.snapshot.rules.periods = [];
++  props.snapshot.evidence.schedule!.completeness = "partial";
++  props.intent = { ...props.intent, alternativeCount: 5 };
++  const before = JSON.stringify({ snapshot: props.snapshot, intent: props.intent });
++  render(<CandidateBrowser {...props} />);
++  await screen.findByText(/Bounded search selected 40 of 652 candidates passing player checks/);
++  expect(screen.getByLabelText("Candidate input coverage").textContent).toBe("849 matching candidates · 652 with known eligibility and availability · 197 with inputs to verify.");
++  expect(screen.getAllByRole("article").map(row => row.getAttribute("data-rso-candidate-id"))).toEqual(known.slice(0, 5).map(row => row.id));
++  expect(screen.getAllByText("No timed acquisition option could be generated from the current inputs.")).toHaveLength(5);
++  fireEvent.click(screen.getByText("Find & filter"));
++  fireEvent.change(screen.getByRole("searchbox", { name: "Find candidate" }), { target: { value: "Zulu Known 651" } });
++  expect(screen.getByLabelText("Candidate input coverage").textContent).toBe("1 matching candidate · 1 with known eligibility and availability · 0 with inputs to verify.");
++  expect(screen.getByText("This player is outside the bounded candidate evaluation set.")).toBeTruthy();
++  expect(screen.getByText(/Bounded search selected 40 of 652 candidates passing player checks/)).toBeTruthy();
++  expect(LocalCandidateWorker.instances).toHaveLength(1);
++  expect(LocalCandidateWorker.instances[0].postMessage).toHaveBeenCalledTimes(1);
++  expect(LocalCandidateWorker.instances[0].postMessage.mock.calls[0][0].snapshot.players).toHaveLength(851);
++  expect(props.add).not.toHaveBeenCalled(); expect(props.selectPlan).not.toHaveBeenCalled();
++  expect(JSON.stringify({ snapshot: props.snapshot, intent: props.intent })).toBe(before);
++  expectNoExternalInteractions();
++});
++
+ it("automatically renders full-roster schedule-only swaps before any plan selection, ordered by net AGP", async () => {
+   const props = fixture();
+   const before = JSON.stringify({ snapshot: props.snapshot, intent: props.intent });
+--- a/web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts
++++ b/web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts
+@@ -34,6 +34,28 @@
+ }
+ 
+ describe("complete timed candidate metrics", () => {
++  it.each([false, true])("admits the known652of849 pool before the40candidate cap (timing reviewed: %s)", reviewed => {
++    const snapshot = fixture(), intent = defaultIntent();
++    const template = snapshot.players[2];
++    const known = Array.from({ length: 652 }, (_, index) => ({ ...template, id: `known-${String(index).padStart(3, "0")}`,
++      nhlId: 10000 + index, name: `Known ${index}` }));
++    const unknown = Array.from({ length: 197 }, (_, index) => ({ ...template, id: `0-unknown-${String(index).padStart(3, "0")}`,
++      nhlId: 20000 + index, name: `Unknown ${index}`, eligibilityVerified: false, availability: "unknown" as const }));
++    snapshot.players = [...snapshot.players.slice(0, 2), ...unknown, ...known]; snapshot.forecasts = [];
++    if (!reviewed) { snapshot.rules.acquisitionTiming = "unknown"; snapshot.rules.acquisitionCost = null; snapshot.rules.periods = []; }
++    const before = JSON.stringify({ snapshot, intent });
++    const result = candidateMetrics(snapshot, intent);
++    expect(result.search).toMatchObject({ candidates: 40, eligibleCandidates: 652, maxCandidates: 40, maxEvaluations: 160, complete: false });
++    expect(result.candidates.map(row => row.playerId)).toEqual(known.slice(0, 40).map(row => row.id));
++    expect(result.diagnostics.filter(row => row.playerId.startsWith("0-unknown-") && row.status === "filtered")).toHaveLength(197);
++    expect(result.diagnostics.filter(row => row.playerId.startsWith("known-") && row.status === "not_selected")).toHaveLength(612);
++    const selected = result.diagnostics.filter(row => result.candidates.some(candidate => candidate.playerId === row.playerId));
++    expect(selected).toHaveLength(40);
++    expect(selected.every(row => row.status === (reviewed ? "evaluated" : "no_proposals"))).toBe(true);
++    expect(reviewed ? selected.every(row => row.evaluated > 0 && row.retained > 0) : selected.every(row => row.generated === 0 && row.evaluated === 0)).toBe(true);
++    expect(result.search.evaluated).toBeLessThanOrEqual(160);
++    expect(JSON.stringify({ snapshot, intent })).toBe(before);
++  });
+   it("automatically proposes legal full-roster swaps from empty intent without forecasts", () => {
+     const snapshot = fixture(); snapshot.forecasts = [];
+     const intent = defaultIntent();

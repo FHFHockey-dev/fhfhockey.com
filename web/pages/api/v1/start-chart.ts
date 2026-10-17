@@ -3,13 +3,14 @@ import { starterBoardCanaryGameIds, starterBoardFlags } from "lib/projections/st
 import { loadPlanningInputs } from "lib/rosterScheduleData/planningInputs";
 import { admitConsumerGameRevisions, type AdmittedConsumerSource } from "lib/projections/consumerRevisionAdmission";
 import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
+import { loadGameExpectations } from "lib/player-forecasts/gameExpectationReader";
 import type { ForecastDiscoveryExclusion, ForecastExclusionReason, GameForecast } from "lib/rosterScheduleOptimizer/planningTypes";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
 import { getLatestStartedSeasonForDate } from "lib/NHL/server";
 import { teamsInfo } from "lib/teamsInfo";
-import { evaluateForgeCalibrationEligibility } from "lib/projections/calibrationEligibility";
+import { evaluateForgeCalibrationEligibility, FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
 import { buildStartChartCompatibility } from "lib/projections/compatibilityInventory";
 import {
   extractDegradedProjectionContext,
@@ -21,6 +22,8 @@ import { buildGoalieStarterMixtureRows } from "lib/projections/goalieStarterMixt
 import { boardSkaterForecast, admittedBoardGoalieForecast, parseBoardScoringRequest, scoreStarterBoardPayload, type BoardScoringRequest } from "lib/projections/starterBoardScoring";
 import {
   normalizeStartChartResponse,
+  startChartFromGameExpectations,
+  scoreStartChartPayload,
   type StartChartPlayerContext,
   type StartChartSourceStatus,
 } from "lib/projections/startChartContract";
@@ -903,7 +906,9 @@ async function fetchSlate(
     ? null
     : ((runResponse.data as unknown as ForgeRunWithProjectionsRow | null) ??
       null);
-  const forgeRun = selectedRun?.git_sha?.startsWith("local:") ? null : selectedRun;
+  const forgeRun = selectedRun?.git_sha?.startsWith("local:")
+    || (selectedRun?.metrics as any)?.input_provenance?.external_fantasy_input_contract !== FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT
+    ? null : selectedRun;
   let projections = (forgeRun?.forge_player_projections ?? []).filter(
     (row) =>
       row.as_of_date === targetDate &&
@@ -1072,7 +1077,7 @@ async function fetchCtpiRows(
   return rows;
 }
 
-function cachePayload(key: string, payload: unknown): void {
+function cachePayload(key: string, payload: any): void {
   const now = Date.now();
   for (const [cachedKey, entry] of responseCache) {
     if (entry.expiresAt <= now) responseCache.delete(cachedKey);
@@ -1082,7 +1087,9 @@ function cachePayload(key: string, payload: unknown): void {
     if (typeof oldest !== "string") break;
     responseCache.delete(oldest);
   }
-  responseCache.set(key, { payload, expiresAt: now + RESPONSE_TTL_MS });
+  const sourceExpiry = Date.parse(payload.gameExpectations?.expiresAt ?? "");
+  responseCache.set(key, { payload, expiresAt: Math.min(now + RESPONSE_TTL_MS,
+    Number.isFinite(sourceExpiry) ? sourceExpiry : Infinity) });
 }
 
 export function clearStartChartCache(): void {
@@ -1123,8 +1130,10 @@ export default async function handler(
   const sendPayload = (payload: any) => {
     // Cache the shared hockey forecast only. Account/league weights never enter
     // the shared cache and POST responses cannot be stored by a CDN.
-    res.setHeader("Cache-Control", scoring ? "private, no-store" : "s-maxage=15, stale-while-revalidate=0");
-    return res.status(200).json(scoring ? scoreStarterBoardPayload(payload, scoring) : payload);
+    const expiry = Date.parse(payload.gameExpectations?.expiresAt ?? "");
+    const maxAge = Number.isFinite(expiry) ? Math.max(0, Math.min(15, Math.floor((expiry - Date.now()) / 1000))) : 15;
+    res.setHeader("Cache-Control", scoring ? "private, no-store" : `s-maxage=${maxAge}, stale-while-revalidate=0`);
+    return res.status(200).json(scoring ? scoreStartChartPayload(payload, scoring) : payload);
   };
 
   const parsedRequest = parseStartChartRequest(req.query, easternDate());
@@ -1134,10 +1143,16 @@ export default async function handler(
   }
 
   const request = parsedRequest.value;
+  if (req.query.forecast_source !== undefined && req.query.forecast_source !== "game_expectations") {
+    return res.status(400).json({ error: { code: "invalid_parameter", field: "forecast_source",
+      message: "forecast_source must be game_expectations when provided" } });
+  }
+  const useGameExpectations = req.query.forecast_source === "game_expectations";
   const today = easternDate();
   const requestedDate = request.date < today ? today : request.date;
   const cacheKey = [
     `date:${requestedDate}`,
+    `source:${useGameExpectations ? "game_expectations" : "revisions"}`,
     `revisions:${starterBoardFlags().serving}`,
     `canary:${starterBoardFlags().serving ? process.env.STARTER_BOARD_CANARY_GAME_IDS ?? "all" : "off"}`,
     `position:${request.position ?? "all"}`,
@@ -1160,6 +1175,17 @@ export default async function handler(
     }
 
     const loadPromise = (async () => {
+      if (useGameExpectations) {
+        const season = await getLatestStartedSeasonForDate(requestedDate, supabase);
+        const seasonId = Number(season?.id);
+        if (!Number.isSafeInteger(seasonId) || seasonId <= 0) throw new Error("Unable to resolve Start Chart season");
+        const response = await loadGameExpectations(supabase, { seasonId, startDate: requestedDate, endDate: requestedDate,
+          timeZone: "America/New_York", mode: "calendar", games: 1 }, new Date());
+        const board = scoreStartChartPayload(startChartFromGameExpectations(response), parseBoardScoringRequest({}));
+        const eligible = board.players.filter(player => !request.position || player.positions.includes(request.position));
+        return { ...board, players: request.paginationRequested
+          ? eligible.slice((request.page - 1) * request.pageSize, request.page * request.pageSize) : eligible };
+      }
       const requestedSlate = await fetchSlate(requestedDate);
       let slate = requestedSlate;
       let resolvedDate = requestedDate;

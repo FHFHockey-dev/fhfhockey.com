@@ -1,0 +1,150 @@
+{
+  "sourceManifest": "tasks/ifttt-integration-2026-10-16/parent-recovery-increment/owned-source-v1-sha256.json",
+  "sourceManifestSha256": "827c373d5fb4dc80d2dbe5b5b5c624ff6d62a78e4f826c6aad7abaa123697863",
+  "sourcePinsVerified": 63,
+  "accepted59Unchanged": true,
+  "priorReviewFilesVerified": 579,
+  "priorStatusAddendumUnchanged": true,
+  "copiedOriginalHarnessByteIdentical": true,
+  "tests": {
+    "originalHarness": {
+      "passed": 5,
+      "failed": 0
+    },
+    "independent": {
+      "passed": 3,
+      "failed": 0,
+      "inheritedTestsSkipped": 5
+    },
+    "totalDistinctPassed": 8,
+    "unchangedOriginalAssertionsPassed": 8,
+    "scopedTsc": "passed exit 0"
+  },
+  "cases": [
+    {
+      "id": "CR037",
+      "result": {
+        "eachListedConflictVariantRejected": true,
+        "originalImmutableBytesUnchanged": true,
+        "newChildCount": 0,
+        "downstreamCallsAfterConflict": 0
+      },
+      "assertions": [
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.eachListedConflictVariantRejected",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.originalImmutableBytesUnchanged",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.newChildCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.downstreamCallsAfterConflict",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "id": "CR041",
+      "result": {
+        "parentCountAfterRetry": 1,
+        "exactParentReadbackBeforeChildren": true,
+        "originalImmutableBytesUnchanged": true,
+        "duplicateEvidenceVersionCount": 0
+      },
+      "assertions": [
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.parentCountAfterRetry",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.exactParentReadbackBeforeChildren",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.originalImmutableBytesUnchanged",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.duplicateEvidenceVersionCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        }
+      ],
+      "firstTrace": [
+        "upsert:tweet_projection_reports",
+        "upsert:tweet_player_events",
+        "read:tweet_projection_reports",
+        "read:line_source_snapshots",
+        "read:lines_ccc",
+        "parent_insert",
+        "parent_ack_lost"
+      ],
+      "secondTrace": [
+        "upsert:tweet_projection_reports",
+        "upsert:tweet_player_events",
+        "read:tweet_projection_reports",
+        "read:line_source_snapshots",
+        "read:lines_ccc",
+        "parent_insert",
+        "parent_readback",
+        "consumer_fixture"
+      ],
+      "evidenceVersionMapping": "legacy projection report_key; no claim about r3 evidenceVersions or real consumer receipts"
+    }
+  ],
+  "independentChecks": [
+    "exact retained original/relay identities and raw source; parent/report/event/child inventory",
+    "committed parent plus missing readback suppresses children",
+    "committed parent plus conflicting readback suppresses children"
+  ],
+  "fullOriginalAcceptance": false,
+  "realForecastConsumerAccepted": false,
+  "sourceHoldReleasedForParentReview": true,
+  "overlapping67TransportFreezeRemains": true,
+  "runningTestsOrCompilers": false,
+  "hostedActions": 0
+}

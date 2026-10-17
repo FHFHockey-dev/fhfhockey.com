@@ -1,5 +1,7 @@
 import { claimTweetEvents, finishTweetEvents, failTweetEvents } from "lib/sources/tweetProcessingJobs";
 import { persistTweetProjectionReports, enrichTweetInjuryHistory } from "lib/sources/tweetProjectionStorage";
+import { admitTweetClaimEvaluationIntake, tweetClaimEvaluationIntakeWindow } from "lib/sources/tweetClaimEvaluationIntake";
+import { processTweetClaimShadowBatch } from "lib/sources/tweetClaimRegistry";
 import { processLineSnapshotEvidence } from "lib/lines/processor";
 import { rosterSeasonForDate } from "lib/sources/playerIdentity";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
@@ -94,22 +96,24 @@ async function fetchPendingLineSourceEvents(args: {
     query = query.in("source_key", args.sourceKeys);
   }
 
+  const cohort = tweetClaimEvaluationIntakeWindow();
+  if (cohort) query = query.eq("processing_status","pending").gte("received_at",cohort.startsAt).lt("received_at",cohort.endsAt);
   if (args.tweetId) {
     query = query.eq("tweet_id", args.tweetId);
-  } else if (args.reprocess) {
+  } else if (!cohort && args.reprocess) {
     query = query.in("processing_status", [
       "pending",
       "processed",
       "rejected",
       "failed",
     ]);
-  } else {
+  } else if (!cohort) {
     query = query.eq("processing_status", "pending");
   }
 
   const { data, error } = await query
     .order("received_at", { ascending: true })
-    .limit(args.limit);
+    .limit(cohort ? Math.min(args.limit,25) : args.limit);
 
   if (error) throw error;
 
@@ -331,7 +335,7 @@ export default withCronJobAudit(
     const sourceGroup =
       parseStringQueryValue(req.query.sourceGroup) ?? "gdl_suite";
     const sourceKeys = parseOptionalSourceKeys(req.query.sourceKey);
-    const eventRows = await fetchPendingLineSourceEvents({
+    let eventRows = await fetchPendingLineSourceEvents({
       supabase: req.supabase,
       limit: batchSize,
       reprocess,
@@ -340,6 +344,10 @@ export default withCronJobAudit(
       sourceKeys,
       currentDateOnly: parseBooleanFlag(req.query.currentDayOnly) ? requestedDate : null,
     });
+    const intake = await admitTweetClaimEvaluationIntake(req.supabase,"line_source_ifttt_events",eventRows);
+    if (intake.active && !intake.events.length) return res.json({ success: true,mode: "claim_shadow_stopped",reason: intake.reason,
+      delivery: "not_requested",summary: { eventsLoaded: 0,eventsProcessed: 0 } });
+    eventRows = intake.events;
     const currentSeason = await getCurrentSeason();
     const teamDirectory = eventRows.length ? buildTeamDirectory(
       await getTeams(currentSeason.seasonId, { mode: "current-canonical" }),
@@ -645,6 +653,13 @@ export default withCronJobAudit(
     parsedEvents.splice(0, parsedEvents.length, ...claimSources.map(({ event }) => event));
 
     reviewTweetApplicability(parsedCandidates, requestedDate);
+
+    if (process.env.TWEET_CLAIMS_MODE === "shadow") {
+      processingStage = "claim_shadow";
+      const shadow = await processTweetClaimShadowBatch({ supabase: req.supabase, table: "line_source_ifttt_events",
+        sources: parsedCandidates, events: parsedEvents, pendingEvents, deferredUpdates: deferredEventUpdates });
+      return res.json({ success: true, route: "/api/v1/db/update-line-sources", date: requestedDate, ...shadow });
+    }
 
     processingStage = "injury_history";
     await enrichTweetInjuryHistory(req.supabase, parsedCandidates);

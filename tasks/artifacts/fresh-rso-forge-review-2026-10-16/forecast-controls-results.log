@@ -1,0 +1,13 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/tasks/artifacts/fresh-rso-forge-review-2026-10-16
+
+stdout | synthetic.test.ts > Independent synthetic product audit — source behavior, no empirical forecast claims > broad baseline drops current-season-only targets when no previous-season or projection prior exists
+NO_PRIOR_BASELINE {"currentSeasonAppearances":20,"returnedTargets":0}
+
+ ✓ synthetic.test.ts (8 tests | 6 skipped) 5ms
+
+ Test Files  1 passed (1)
+      Tests  2 passed | 6 skipped (8)
+   Start at  20:54:28
+   Duration  309ms (transform 138ms, setup 13ms, collect 178ms, tests 5ms, environment 0ms, prepare 32ms)
+

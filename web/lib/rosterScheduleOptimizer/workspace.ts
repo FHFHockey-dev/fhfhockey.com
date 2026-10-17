@@ -1,5 +1,6 @@
 import type { LeagueRules, PlanIntent, PlanningContext, PlanningData, PlanningPlayer, PlanningSnapshot, PlanningWorkspace, ProviderCapabilities, RevisionProposal } from "./planningTypes";
 import { saveWorkspaceSchema, snapshotSchema, workspaceSchema } from "lib/in-season/workspaceSchema";
+import { localDate } from "./planningDates";
 
 export const WORKSPACE_KEY = "fhfh:rso:workspace:v1";
 export const WORKSPACE_HISTORY_LIMIT = 20;
@@ -146,13 +147,34 @@ export async function acquirePreservationWriter(locks: LockManager | undefined):
   });
 }
 
-export function defaultContext(now = new Date()): PlanningContext {
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-  const localDate = (date: Date) => { const parts = new Intl.DateTimeFormat("en-US", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date); const part = (type: string) => parts.find((item) => item.type === type)?.value ?? ""; return `${part("year")}-${part("month")}-${part("day")}`; };
-  const start = localDate(now);
-  const end = new Date(`${start}T12:00:00Z`); end.setUTCDate(end.getUTCDate() + 13);
-  const year = Number(start.slice(0, 4)) - (Number(start.slice(5, 7)) < 8 ? 1 : 0);
-  return { provider: "manual", seasonId: year * 10000 + year + 1, leagueId: "manual", teamId: "manual", startDate: start, endDate: end.toISOString().slice(0, 10), timeZone, asOf: now.toISOString() };
+export function currentPlanningRange(now: Date, timeZone: string, period?: { startDate: string | null; endDate: string | null }) {
+  const today = localDate(now.toISOString(), timeZone);
+  const valid = (date: string | null): date is string => Boolean(date && /^\d{4}-\d{2}-\d{2}$/.test(date)
+    && Number.isFinite(Date.parse(`${date}T12:00:00Z`)) && new Date(`${date}T12:00:00Z`).toISOString().slice(0, 10) === date);
+  if (period && valid(period.startDate) && valid(period.endDate) && period.startDate <= today && today <= period.endDate)
+    return { startDate: period.startDate, endDate: period.endDate, source: "provider" as const };
+  const weekday = new Date(`${today}T12:00:00Z`).getUTCDay();
+  const monday = Date.parse(`${today}T12:00:00Z`) - ((weekday + 6) % 7) * 86400000;
+  return { startDate: new Date(monday).toISOString().slice(0, 10), endDate: new Date(monday + 6 * 86400000).toISOString().slice(0, 10), source: "calendar" as const };
+}
+
+export function currentProviderPeriod(snapshot: PlanningSnapshot | null, context: PlanningContext, now: Date) {
+  const evidence = snapshot?.acquisitionEvidence;
+  if (!snapshot || snapshot.context.provider !== "yahoo" || context.provider !== "yahoo"
+    || snapshot.context.teamId !== context.teamId || snapshot.context.leagueId !== context.leagueId || snapshot.context.seasonId !== context.seasonId
+    || snapshot.evidence.roster?.completeness !== "complete" || !evidence?.asOf
+    || evidence.source !== "Yahoo team roster_adds and league current_week" || evidence.counter.coverageType !== "week"
+    || evidence.counter.used === null || !evidence.period.containsHorizon
+    || !evidence.period.week || evidence.counter.coverageWeek !== evidence.period.week
+    || !Number.isFinite(Date.parse(evidence.asOf)) || Math.abs(now.getTime() - Date.parse(evidence.asOf)) > 120000) return undefined;
+  return evidence.period;
+}
+
+export function defaultContext(now = new Date(), timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"): PlanningContext {
+  const range = currentPlanningRange(now, timeZone);
+  const today = localDate(now.toISOString(), timeZone);
+  const year = Number(today.slice(0, 4)) - (Number(today.slice(5, 7)) < 8 ? 1 : 0);
+  return { provider: "manual", seasonId: year * 10000 + year + 1, leagueId: "manual", teamId: "manual", startDate: range.startDate, endDate: range.endDate, timeZone, asOf: now.toISOString() };
 }
 
 export function defaultRules(): LeagueRules {
@@ -259,7 +281,7 @@ export function retainedScheduleSnapshot(workspace: PlanningWorkspace, data: Pla
   })).values()];
   return {
     id: `retained:${workspace.context.teamId}:${workspace.context.startDate}:${workspace.context.endDate}:${asOf}`,
-    context: { ...workspace.context, asOf }, players, roster: workspace.roster, games: data.games, forecasts: data.forecasts, baselineSources: data.baselineSources, forecastManifest: data.forecastManifest,
+    context: { ...workspace.context, asOf }, players, roster: workspace.roster, games: data.games, forecasts: data.forecasts, baselineSources: data.baselineSources, participationSources: data.participationSources, forecastManifest: data.forecastManifest,
     rules: { ...workspace.rules, acquisitionTiming: "unknown", acquisitionCost: null, periods: [], goalieMinimum: { ...workspace.rules.goalieMinimum, credited: null }, unsupported: [...workspace.rules.unsupported, "Retained roster inputs are unverified; this is provisional schedule analysis."] },
     lockedAssignments: workspace.lockedAssignments ?? [], realized: {}, opponent: null,
     evidence: { ...data.evidence, roster: { source: "Retained local roster", asOf: workspace.context.asOf, seasonId: workspace.context.seasonId, completeness: "partial", limitations: ["Yahoo has not verified this roster, its locks or player availability for the current analysis."] } },

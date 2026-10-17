@@ -1,0 +1,12 @@
+{
+  "web/lib/player-forecasts/contributions.ts": "491db8c3d3d8cb774f9a985584a74036be2713f0bcff5e13b2a5d3a35295f7c5",
+  "web/lib/player-forecasts/contributions.test.ts": "3e2f478b7c606d857104e1fca042199c78f509788ef7cb4580b8b1cbdc581bbd",
+  "web/lib/player-forecasts/planningContributions.ts": "ddd44f8b62097b293f3514ea4d0ab8439be6157277b7a9569eba42367c4001de",
+  "web/lib/player-forecasts/planningContributions.test.ts": "95a409468a29f9f37f5f8ffefc78aa27a6c4721b30a453be30bbce3beb3d8a9d",
+  "web/lib/player-forecasts/resolvedPlanningForecast.ts": "f620ddf7579d3be3c99e21317de912460c1db4a1c37fa26eff5557e938cd6940",
+  "web/lib/player-forecasts/gameExpectations.ts": "e93300248d3e40eec27e1a9c3aa3ddda7e64579bb97a9a99bc714b6b471dd23e",
+  "web/lib/player-forecasts/gameExpectations.test.ts": "306ba77bdac1a05e56c51a54ab240608193ce9797e17a8a494a55501502563df",
+  "web/lib/rosterScheduleData/planning.ts": "5586c264c7cddc62b47f59682dcaa495d6951654172042379526fdcf10245ca5",
+  "web/lib/rosterScheduleData/planning.test.ts": "a826f3a4a62e8d2a0c02e164cf2d54f90001f09ae47eca579ed435875a6a00d6",
+  "web/lib/rosterScheduleOptimizer/planningTypes.ts": "169a0380e71204e68d81da3a315366d6bf15e99c84316e35d36cc4c3250e863e"
+}

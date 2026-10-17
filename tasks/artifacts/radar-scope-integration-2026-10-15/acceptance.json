@@ -1,0 +1,17 @@
+{
+  "status": "ACCEPT \u2014 no findings in the frozen four-file increment",
+  "reviewer_thread": "01a135cf-dda8-7599-896b-ca48cede00da",
+  "review_receipt": "independent-review.md",
+  "source_manifest": "pins.json",
+  "source_manifest_sha256": "0e2cd84a4921f7d6fe6e2fd236fb54dd98c25fa2ae558c069f52348c65958a60",
+  "source_changed_after_review": false,
+  "patch_sha256": "234f40f7a95b0a3d4f157fccdc6a12d983f123f744267d34e74fad2a6e8e4669",
+  "artifact_sha256": {
+    "independent-review.md": "67bc1183f1b4cf24a3e16ce5b9b6a4680e147d7c3da253f657f99e6b3dd8b537",
+    "candidate.patch": "234f40f7a95b0a3d4f157fccdc6a12d983f123f744267d34e74fad2a6e8e4669",
+    "README.md": "b4582f114a9e280654b8b7952f2c21480e42de3ac242bf5a38785fdf825d9fba",
+    "typecheck-scope.json": "a045b74c98eba30a131fe1bf94cc1a775c9eb78a55087c0d6b6cf1e9a8ff3eff",
+    "verification.json": "9e0c6aa333dcde3ada8a0ada3e26b293e30fb9bc31681f032c07ecbc2e56469d",
+    "pins.json": "0e2cd84a4921f7d6fe6e2fd236fb54dd98c25fa2ae558c069f52348c65958a60"
+  }
+}

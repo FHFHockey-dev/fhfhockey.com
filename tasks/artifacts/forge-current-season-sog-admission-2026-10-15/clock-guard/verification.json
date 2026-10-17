@@ -1,0 +1,23 @@
+{
+  "status": "frozen_pending_independent_review",
+  "authority": "Scout direct delegation: reproduce and repair inherited invalid-clock admission locally if truthful admission affected",
+  "reproduction": {
+    "command": "npm test -- lib/player-forecasts/contributions.test.ts -t 'invalid read clock'",
+    "exit": 1,
+    "failed": 3,
+    "expectedFailure": true,
+    "observed": "baseline source remained selected for each malformed read clock",
+    "log": "reproduction.log"
+  },
+  "fix": "One finite-clock guard in assessSource; invalid clocks add existing future_input exclusion before selecting any source. No change to valid legacy/scoped clock parsing.",
+  "verification": {
+    "command": "npm test -- lib/player-forecasts/contributions.test.ts lib/player-forecasts/currentSeasonSogContribution.test.ts",
+    "exit": 0,
+    "passed": 130,
+    "log": "fixed-tests.log",
+    "eslintFiles": 2,
+    "eslintExit": 0
+  },
+  "externalActions": 0,
+  "sourceOrOutcomeBodyReads": 0
+}

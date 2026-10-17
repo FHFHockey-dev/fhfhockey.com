@@ -1,0 +1,35 @@
+--- a/web/lib/player-forecasts/contributions.ts
++++ b/web/lib/player-forecasts/contributions.ts
+@@ -156,7 +156,7 @@
+       || time(source.expiresAt) <= time(source.issuedAt))) reasons.push("identity_conflict");
+   if (source.targetKey !== targetKey || !Number.isFinite(source.mean)
+     || (targetKey !== "PLUS_MINUS" && source.mean < 0)) reasons.push("missing_target");
+-  if (!validTime(source.cutoffAt) || !validTime(source.issuedAt)
++  if (!Number.isFinite(time(now)) || !validTime(source.cutoffAt) || !validTime(source.issuedAt)
+     || !Number.isFinite(time(source.cutoffAt)) || !Number.isFinite(time(source.issuedAt))
+     || time(source.cutoffAt) > time(source.issuedAt)
+     || time(source.cutoffAt) > time(game.scheduledAt)
+--- a/web/lib/player-forecasts/contributions.test.ts
++++ b/web/lib/player-forecasts/contributions.test.ts
+@@ -37,6 +37,21 @@
+   issuedAt: "2026-09-29T00:00:00Z" };
+ 
+ describe("shared contribution resolver", () => {
++  it.each(["", "not-a-clock", "2026-99-99T00:00:00Z"])("withholds every source for invalid read clock %j", (now) => {
++    for (const kind of ["baseline", "detailed"] as const) {
++      for (const participationIntegrated of [false, true]) {
++        const candidate: ContributionSource = { ...source, kind, participationIntegrated,
++          basis: participationIntegrated ? "unconditional_game" : "per_appearance" };
++        const resolved = resolveContribution({ game, targetKey: "GOALS", now, [kind]: candidate });
++        expect(resolved.sourceKind).toBeNull();
++        expect(resolved.conditionalMean).toBeNull();
++        expect(resolved.unconditionalMean).toBeNull();
++        expect(resolved.sourceIds).toEqual([]);
++        expect(Object.values(resolved.allowedUses)).toEqual([false, false, false, false]);
++        expect(resolved.exclusionReasons).toContain("future_input");
++      }
++    }
++  });
+   it.each([7, 14, 21])("retains the %i-day UTC policy and measures its discrete overlap boundary", (days) => {
+     const policy = forecastCalendarPolicy(days);
+     const baseline = { ...source, kind: "baseline" as const, sourceId: "rate", mean: 1,

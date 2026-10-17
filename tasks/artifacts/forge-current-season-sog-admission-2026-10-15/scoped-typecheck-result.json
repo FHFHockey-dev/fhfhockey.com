@@ -1,0 +1,7 @@
+{
+  "scope": "eight changed files plus two ambient roots and their transitive imports; not a full-tree compiler",
+  "diagnostics": 0,
+  "projectInputs": 41,
+  "programInputs": 831,
+  "drift": []
+}

@@ -1,0 +1,47 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts --config ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/vitest.config.mjs
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts (15 tests | 1 failed) 3766ms
+   ✓ forecast consumer default > does no work unless explicitly enabled 1ms
+   ✓ real forecast capture, queue and retained action binding > CR042 original clocks recover the real retained binding and proof without a new identity or expired dispatch 217ms
+   ✓ real forecast capture, queue and retained action binding > CR043 original clocks keep actual partial consumer history unknown without a send or new identity 205ms
+   ✓ real forecast capture, queue and retained action binding > CR044 original clocks adopt verified real native capture and queue receipts then suppress replay after caller loss 232ms
+   ✓ real forecast capture, queue and retained action binding > atomically captures actual native snapshot, assignments, both queue scopes, news trigger and receipt 241ms
+   ✓ real forecast capture, queue and retained action binding > recovers exact receipt after actual consumer commit acknowledgement loss 218ms
+   ✓ real forecast capture, queue and retained action binding > retains receipt and suppresses replay after outbox settlement reply is lost 220ms
+   ✓ real forecast capture, queue and retained action binding > rolls back snapshot, assignments, first queue and news trigger when the second queue fails 244ms
+   ✓ real forecast capture, queue and retained action binding > rejects same-action changed parent/assignments and incomplete delivered adoption without adding bindings 191ms
+   ✓ real forecast capture, queue and retained action binding > serializes two actual consumer workers 209ms
+   ✓ real forecast capture, queue and retained action binding > fences stale apply ownership before any native side effect 200ms
+   ✓ real forecast capture, queue and retained action binding > leaves uncertain acknowledgement/readback failure recoverable without another native application 217ms
+   ✓ real forecast capture, queue and retained action binding > rejects forged native receipts and immutable receipt/binding changes; denies public RPC access 205ms
+   ✓ real forecast capture, queue and retained action binding > holds unknown coverage and changed retained payload without invoking consumers 205ms
+   × real forecast capture, queue and retained action binding > retains real r3 effect and transition IDs separately from the delivery carrier key 164ms
+     → [{"observationId":"tweet-observation-v2:c77407e38ba903f18b33801ee1c003da7f502ee01687d22c1cb04c3e59b16101","reason":"source_time_team_not_explicit"}]: expected [] to have a length of 1 but got +0
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts > real forecast capture, queue and retained action binding > retains real r3 effect and transition IDs separately from the delivery carrier key
+AssertionError: [{"observationId":"tweet-observation-v2:c77407e38ba903f18b33801ee1c003da7f502ee01687d22c1cb04c3e59b16101","reason":"source_time_team_not_explicit"}]: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts:227:76
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+   Start at  01:22:35
+   Duration  4.21s (transform 170ms, setup 16ms, collect 272ms, tests 3.77s, environment 0ms, prepare 33ms)
+

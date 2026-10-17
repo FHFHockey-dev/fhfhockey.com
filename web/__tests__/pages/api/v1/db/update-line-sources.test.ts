@@ -1,4 +1,5 @@
 // @vitest-environment node
+import * as claimIntake from "lib/sources/tweetClaimEvaluationIntake";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -8,6 +9,14 @@ function paginatedRoster(result: { data: any[]; error: null }) {
     in: vi.fn(() => query), eq: vi.fn(() => query), order: vi.fn(() => query),
     range: vi.fn((from: number, to: number) => Promise.resolve({ ...result, data: result.data.slice(from, to + 1) })),
   };
+  return query;
+}
+
+function matchedJobUpdate(values: Record<string, unknown>) {
+  const filters: Record<string, unknown> = {};
+  const query: any = { eq: (key: string, value: unknown) => { filters[key] = value; return query; },
+    gt: () => query, select: () => query,
+    maybeSingle: async () => ({ data: { ...values, job_key: filters.job_key, owner: filters.owner }, error: null }) };
   return query;
 }
 
@@ -63,6 +72,7 @@ import { projectionInputHash } from "lib/projections/inputCapture";
 import { ForecastScheduleError, type ForecastScheduleRejection } from "lib/player-forecasts/scopeReads";
 import * as tweetProjectionStorage from "lib/sources/tweetProjectionStorage";
 import * as lineProcessor from "lib/lines/processor";
+import * as tweetClaimRegistry from "lib/sources/tweetClaimRegistry";
 
 type LineSourceEventFixture = {
   id: string;
@@ -231,12 +241,12 @@ function createSupabaseMocks(eventRows: LineSourceEventFixture[]) {
               {
                 teamId: 8,
                 playerId: 8480018,
-                players: { fullName: "Cole Caufield", lastName: "Caufield" },
+                players: { fullName: "Cole Caufield", lastName: "Caufield", position: "F" },
               },
               {
                 teamId: 8,
                 playerId: 8480019,
-                players: { fullName: "Nick Suzuki", lastName: "Suzuki" },
+                players: { fullName: "Nick Suzuki", lastName: "Suzuki", position: "F" },
               },
               {
                 teamId: 8,
@@ -244,12 +254,13 @@ function createSupabaseMocks(eventRows: LineSourceEventFixture[]) {
                 players: {
                   fullName: "Juraj Slafkovsky",
                   lastName: "Slafkovsky",
+                  position: "F",
                 },
               },
               {
                 teamId: 8,
                 playerId: 8482487,
-                players: { fullName: "Jakub Dobes", lastName: "Dobes" },
+                players: { fullName: "Jakub Dobes", lastName: "Dobes", position: "G" },
               },
               {
                 teamId: 14,
@@ -257,87 +268,88 @@ function createSupabaseMocks(eventRows: LineSourceEventFixture[]) {
                 players: {
                   fullName: "Andrei Vasilevskiy",
                   lastName: "Vasilevskiy",
+                  position: "G",
                 },
               },
               {
                 teamId: 14,
                 playerId: 8477404,
-                players: { fullName: "Nikita Kucherov", lastName: "Kucherov" },
+                players: { fullName: "Nikita Kucherov", lastName: "Kucherov", position: "F" },
               },
               {
                 teamId: 14,
                 playerId: 8476453,
-                players: { fullName: "Brayden Point", lastName: "Point" },
+                players: { fullName: "Brayden Point", lastName: "Point", position: "F" },
               },
               {
                 teamId: 14,
                 playerId: 8482201,
-                players: { fullName: "Gage Goncalves", lastName: "Goncalves" },
+                players: { fullName: "Gage Goncalves", lastName: "Goncalves", position: "F" },
               },
               {
                 teamId: 54,
                 playerId: 8474565,
-                players: { fullName: "Ivan Barbashev", lastName: "Barbashev" },
+                players: { fullName: "Ivan Barbashev", lastName: "Barbashev", position: "F" },
               },
               {
                 teamId: 54,
                 playerId: 8478403,
-                players: { fullName: "Jack Eichel", lastName: "Eichel" },
+                players: { fullName: "Jack Eichel", lastName: "Eichel", position: "F" },
               },
               {
                 teamId: 54,
                 playerId: 8479353,
-                players: { fullName: "Brett Howden", lastName: "Howden" },
+                players: { fullName: "Brett Howden", lastName: "Howden", position: "F" },
               },
               {
                 teamId: 54,
                 playerId: 8475191,
-                players: { fullName: "Reilly Smith", lastName: "Smith" },
+                players: { fullName: "Reilly Smith", lastName: "Smith", position: "F" },
               },
               {
                 teamId: 54,
                 playerId: 8478483,
-                players: { fullName: "Mitch Marner", lastName: "Marner" },
+                players: { fullName: "Mitch Marner", lastName: "Marner", position: "F" },
               },
               {
                 teamId: 54,
                 playerId: 8475913,
-                players: { fullName: "Mark Stone", lastName: "Stone" },
+                players: { fullName: "Mark Stone", lastName: "Stone", position: "F" },
               },
               {
                 teamId: 54,
                 playerId: 8479394,
-                players: { fullName: "Carter Hart", lastName: "Hart" },
+                players: { fullName: "Carter Hart", lastName: "Hart", position: "G" },
               },
               {
                 teamId: 24,
                 playerId: 8478873,
-                players: { fullName: "Troy Terry", lastName: "Terry" },
+                players: { fullName: "Troy Terry", lastName: "Terry", position: "F" },
               },
               {
                 teamId: 24,
                 playerId: 8482745,
-                players: { fullName: "Lukas Dostal", lastName: "Dostal" },
+                players: { fullName: "Lukas Dostal", lastName: "Dostal", position: "G" },
               },
               {
                 teamId: 59,
                 playerId: 8479979,
-                players: { fullName: "Karel Vejmelka", lastName: "Vejmelka" },
+                players: { fullName: "Karel Vejmelka", lastName: "Vejmelka", position: "G" },
               },
               {
                 teamId: 7,
                 playerId: 8479312,
-                players: { fullName: "Alex Lyon", lastName: "Lyon" },
+                players: { fullName: "Alex Lyon", lastName: "Lyon", position: "G" },
               },
               {
                 teamId: 30,
                 playerId: 8476958,
-                players: { fullName: "Nico Sturm", lastName: "Sturm" },
+                players: { fullName: "Nico Sturm", lastName: "Sturm", position: "F" },
               },
               {
                 teamId: 25,
                 playerId: 8477504,
-                players: { fullName: "Michael Bunting", lastName: "Bunting" },
+                players: { fullName: "Michael Bunting", lastName: "Bunting", position: "F" },
               },
               {
                 teamId: 25,
@@ -345,6 +357,7 @@ function createSupabaseMocks(eventRows: LineSourceEventFixture[]) {
                 players: {
                   fullName: "Alexander Petrovic",
                   lastName: "Petrovic",
+                  position: "D",
                 },
               },
             ].filter((row) => teamIds.includes(row.teamId)),
@@ -547,6 +560,35 @@ describe("/api/v1/db/update-line-sources", () => {
     } finally { reconcile.mockRestore(); }
   });
 
+  it("stops a closed prospective intake budget before roster or enrichment work", async () => {
+    createSupabaseMocks([buildEvent({ id: "budget-stop",sourceKey: "gamedaylines",sourceAccount: "GameDayLines",tweetId: "100",text: "Caufield starts tonight." })]);
+    const intake = vi.spyOn(claimIntake,"admitTweetClaimEvaluationIntake").mockResolvedValue({ active: true,events: [],reason: "ended" });
+    try {
+      const res = createMockRes();await handler(createMockReq(),res);
+      expect(res.body).toMatchObject({ mode: "claim_shadow_stopped",delivery: "not_requested",reason: "ended" });
+      expect(mocks.getCurrentSeason).not.toHaveBeenCalled();expect(mocks.getTeams).not.toHaveBeenCalled();
+    } finally { intake.mockRestore(); }
+  });
+
+  it("isolates shadow capture before snapshot/forecast/line/review publishers even when their flags are enabled", async () => {
+    const events = [buildEvent({ id: "shadow-event", sourceKey: "gamedaylines", sourceAccount: "GameDayLines", tweetId: "100", text: "#GoHabsGo Caufield starts tonight." })];
+    const db = createSupabaseMocks(events);
+    vi.stubEnv("TWEET_CLAIMS_MODE", "shadow");
+    vi.stubEnv("TWEET_PIPELINE_PUBLISHING_ENABLED", "true"); vi.stubEnv("STARTER_BOARD_CAPTURE_ENABLED", "true");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 503 }));
+    const shadow = vi.spyOn(tweetClaimRegistry, "processTweetClaimShadowBatch").mockResolvedValue({ mode: "claim_shadow", capture: { skipped: false, scopes: [] }, eventsProcessed: 1, eventsDeferred: 0, delivery: "not_requested" });
+    const legacy = vi.spyOn(tweetProjectionStorage, "persistTweetProjectionReports");
+    const reconcile = vi.spyOn(lineProcessor, "processLineSnapshotEvidence");
+    try {
+      const res = createMockRes(); await handler(createMockReq(), res);
+      expect(res.statusCode).toBe(200); expect(res.body).toMatchObject({ mode: "claim_shadow", delivery: "not_requested" });
+      expect(shadow).toHaveBeenCalledWith(expect.objectContaining({ table: "line_source_ifttt_events", events: expect.arrayContaining([expect.objectContaining({ id: "shadow-event" })]) }));
+      expect(db.lineSourceSnapshotsUpsertMock).not.toHaveBeenCalled(); expect(db.unresolvedNamesUpsertMock).not.toHaveBeenCalled();
+      expect(mocks.capturePlayerForecastSourceRows).not.toHaveBeenCalled(); expect(mocks.syncLineCombinationSourceWinners).not.toHaveBeenCalled();
+      expect(legacy).not.toHaveBeenCalled(); expect(reconcile).not.toHaveBeenCalled();
+    } finally { shadow.mockRestore(); legacy.mockRestore(); reconcile.mockRestore(); }
+  });
+
   it("leaves a concurrent arrival pending for the next unchanged scheduler cycle", async () => {
     const events: LineSourceEventFixture[] = [];
     const { lineSourceEventsQuery, eventUpdateMock } = createSupabaseMocks(events);
@@ -583,8 +625,7 @@ describe("/api/v1/db/update-line-sources", () => {
       tweetId: "2049626619221008663", text: "#Habs lines\nCaufield - Suzuki - Slafkovsky" });
     const { eventUpdateMock } = createSupabaseMocks([event]);
     const baseFrom = mocks.from.getMockImplementation()!;
-    const jobQuery: any = { eq: () => jobQuery, then: (resolve: any) => Promise.resolve({ error: null }).then(resolve) };
-    const jobUpdate = vi.fn(() => jobQuery);
+    const jobUpdate = vi.fn(matchedJobUpdate);
     mocks.from.mockImplementation((table: string) => {
       if (table === "tweet_pipeline_jobs") return { update: jobUpdate };
       if (["rosters", "tweet_player_memberships", "fhfh_player_identities", "fhfh_player_identity_aliases"].includes(table)) {
@@ -724,7 +765,7 @@ describe("/api/v1/db/update-line-sources", () => {
           if (table === "games") return { select: () => ({ eq: (_column: string, date: string) => ({ order: async () => ({ data: frozenGames.filter((game: any) => game.date === date), error: null }) }) }) };
           if (table === "rosters") return { select: () => paginatedRoster({ data: rosterRows, error: null }) };
           if (["tweet_player_memberships", "fhfh_player_identities", "fhfh_player_identity_aliases", "player_status_history"].includes(table)) return { select: emptyQuery };
-          if (table === "tweet_pipeline_jobs") return { update: emptyQuery };
+          if (table === "tweet_pipeline_jobs") return { update: matchedJobUpdate };
           if (table === "tweet_projection_reports") return { upsert: reportUpsert, select: () => {
             const filters: Record<string, unknown> = {};
             const query: any = { eq: (key: string, value: unknown) => { filters[key] = value; return query; }, order: () => query,
@@ -802,7 +843,7 @@ describe("/api/v1/db/update-line-sources", () => {
         { teamId: 4, playerId: 8478435, players: { fullName: "Dan Vladar", lastName: "Vladar", position: "G" } },
       ], error: null }) };
       if (["tweet_player_memberships", "fhfh_player_identities", "fhfh_player_identity_aliases"].includes(table)) return { select: emptyQuery };
-      if (table === "tweet_pipeline_jobs") return { update: emptyQuery };
+      if (table === "tweet_pipeline_jobs") return { update: matchedJobUpdate };
       if (table === "lines_ccc_ifttt_events") return originalFrom("line_source_ifttt_events");
       if (table === "lines_ccc") return originalFrom("line_source_snapshots");
       return originalFrom(table);

@@ -1,0 +1,25 @@
+{
+  "recordedAtUTC": "2026-10-15T14:53:03.537449+00:00",
+  "supersedes": "excluded-rso-diagnostic-scope.json",
+  "ownerThreadId": "01a13df3-0374-727c-a8bd-a932723c2032",
+  "ownedProposedPaths": [
+    "web/pages/api/v1/roster-schedule-optimizer/diagnostic.ts",
+    "web/pages/api/v1/roster-schedule-optimizer/diagnostic-context.ts",
+    "web/lib/rosterScheduleOptimizer/diagnostic.ts",
+    "web/lib/rosterScheduleOptimizer/diagnostic.test.ts",
+    "web/__tests__/pages/api/v1/roster-schedule-optimizer/diagnostic-context.test.ts"
+  ],
+  "withdrawnProposedPath": "web/pages/rso-diagnostic.tsx",
+  "isolationDesign": "Standalone development-only HTML served by an API route, avoiding _app/AuthProvider mounting.",
+  "authorClaimsPendingIndependentReview": [
+    "Existing same-origin cached auth session read without refresh or storage writes",
+    "diagnostic-context API reuses requireApiUser",
+    "Reports are allowlisted",
+    "No auth/persistence/optimizer source edits"
+  ],
+  "overlapWithFrozenManifest": [],
+  "includedInReleaseProposal": false,
+  "frozenReleaseManifestSha256": "2508ace04d717022633b0129cddb2bc219a731117bd66045869f4828baf9e496",
+  "combinedCompiler": "Completed pass applies to its recorded pre-diagnostic tree; revised diagnostic is not covered.",
+  "nextGate": "Review exact frozen implementation and focused offline evidence; explicit inclusion and execution authorization remain separate."
+}

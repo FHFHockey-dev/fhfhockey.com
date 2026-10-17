@@ -1,0 +1,1924 @@
+
+> web@0.1.0 test
+> vitest components/RosterScheduleOptimizer/CandidateCard.test.tsx __tests__/pages/forge/forecasts.test.tsx __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx -t category drop plan|manual matchup totals|invalidates an expired|20-team-game
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:46870) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:46869) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:46868) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ components/RosterScheduleOptimizer/CandidateCard.test.tsx (13 tests | 1 failed | 12 skipped) 33ms
+   ↓ complete acquisition card presentation > keeps conditional status visible and selects the exact compared steps
+   ↓ complete acquisition card presentation > separates unavailable metric labels in text readback and omits an unranked ordinal
+   ↓ complete acquisition card presentation > explains filtered without an invented score or automatic selection
+   ↓ complete acquisition card presentation > explains not_selected without an invented score or automatic selection
+   ↓ complete acquisition card presentation > explains no_proposals without an invented score or automatic selection
+   ↓ complete acquisition card presentation > explains rejected without an invented score or automatic selection
+   ↓ complete acquisition card presentation > explains partial without an invented score or automatic selection
+   ↓ complete acquisition card presentation > separates loading from rejected acquisition proposals
+   ↓ complete acquisition card presentation > separates error from rejected acquisition proposals
+   ↓ complete acquisition card presentation > separates no_snapshot from rejected acquisition proposals
+   ↓ complete acquisition card presentation > never substitutes zero for missing comparison evidence or enables unsupported drop advice
+   × complete acquisition card presentation > allows a category drop plan without a points utility 33ms
+     → expected "spy" to be called with arguments: [ [ { id: 'swap', …(7) } ] ]
+
+Number of calls: 0
+
+   ↓ complete acquisition card presentation > retains AGP/points tradeoffs and reserve prerequisites
+ ❯ __tests__/pages/forge/forecasts.test.tsx (8 tests | 2 failed | 6 skipped) 119ms
+   ↓ FORGE forecast page synthetic API readback > shows a conditional-only head immediately without multiplying it into next-N totals
+   ↓ FORGE forecast page synthetic API readback > labels explicit modeled participation independently of source means and confirmation
+   ↓ FORGE forecast page synthetic API readback > loads only on request and displays conditional lineage without inventing appearances or totals
+   ↓ FORGE forecast page synthetic API readback > requests next-N and selected-week modes explicitly, without multiplying any page value
+   ↓ FORGE forecast page synthetic API readback > renders unavailable coverage and retryable read errors without fabricated rows
+   × FORGE forecast page synthetic API readback > invalidates an expired read and recovers only after loading a fresh revision 64ms
+     → Found multiple elements with the role "table"
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<table>[39m
+  [36m<caption>[39m
+    [0mConditional category values for admitted games[0m
+  [36m</caption>[39m
+  [36m<thead>[39m
+    [36m<tr>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mPlayer[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mGame[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mCategory[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mConditional value[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mBasis[0m
+      [36m</th>[39m
+    [36m</tr>[39m
+  [36m</thead>[39m
+  [36m<tbody>[39m
+    [36m<tr>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"row"[39m
+      [36m>[39m
+        [0mSynthetic Baseline Skater[0m
+      [36m</th>[39m
+      [36m<td>[39m
+        [0mTOR[0m
+        [0m at [0m
+        [0mMIN[0m
+        [0m · [0m
+        [0m2026-10-16[0m
+        [0m · Game [0m
+        [0m30[0m
+      [36m</td>[39m
+      [36m<td>[39m
+        [0mSOG[0m
+      [36m</td>[39m
+      [36m<td>[39m
+        [0m4[0m
+      [36m</td>[39m
+      [36m<td>[39m
+        [0mPer appearance[0m
+      [36m</td>[39m
+    [36m</tr>[39m
+  [36m</tbody>[39m
+[36m</table>[39m
+
+Ignored nodes: comments, script, style
+[36m<table>[39m
+  [36m<caption>[39m
+    [0mExpected totals for [0m
+    [0mthe next 1 scheduled team games[0m
+  [36m</caption>[39m
+  [36m<thead>[39m
+    [36m<tr>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mPlayer[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mSchedule opportunities[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mExpected appearances[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mG[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mA[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mPPP[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mSOG[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mHIT[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mBLK[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mPIM[0m
+      [36m</th>[39m
+    [36m</tr>[39m
+  [36m</thead>[39m
+  [36m<tbody>[39m
+    [36m<tr>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"row"[39m
+      [36m>[39m
+        [36m<a[39m
+          [33mhref[39m=[32m"#player-7"[39m
+        [36m>[39m
+          [0mSynthetic Baseline Skater[0m
+        [36m</a>[39m
+        [36m<small>[39m
+          [0mMIN[0m
+        [36m</small>[39m
+      [36m</th>[39m
+      [36m<td>[39m
+        [0m1[0m
+      [36m</td>[39m
+      [36m<td>[39m
+        [0mUnavailable[0m
+      [36m</td>[39m
+      [36m<td[39m
+        [33mtitle[39m=[32m"0/1 games covered"[39m
+      [36m>[39m
+        [0mUnavailable[0m
+      [36m</td>[39m
+      [36m<td[39m
+        [33mtitle[39m=[32m"0/1 games covered"[39m
+      [36m>[39m
+        [0mUnavailable[0m
+      [36m</td>[39m
+      [36m<td[39m
+        [33mtitle[39m=[32m"0/1 games covered"[39m
+      [36m>[39m
+        [0mUnavailable[0m
+      [36m</td>[39m
+      [36m<td[39m
+        [33mtitle[39m=[32m"0/1 games covered"[39m
+      [36m>[39m
+        [0mUnavailable[0m
+      [36m</td>[39m
+      [36m<td[39m
+        [33mtitle[39m=[32m"0/1 games covered"[39m
+      [36m>[39m
+        [0mUnavailable[0m
+      [36m</td>[39m
+      [36m<td[39m
+        [33mtitle[39m=[32m"0/1 games covered"[39m
+      [36m>[39m
+        [0mUnavailable[0m
+      [36m</td>[39m
+      [36m<td[39m
+        [33mtitle[39m=[32m"0/1 games covered"[39m
+      [36m>[39m
+        [0mUnavailable[0m
+      [36m</td>[39m
+    [36m</tr>[39m
+  [36m</tbody>[39m
+[36m</table>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"_page_0ac5ad"[39m
+    [36m>[39m
+      [36m<nav[39m
+        [33maria-label[39m=[32m"FORGE navigation"[39m
+      [36m>[39m
+        [36m<a[39m
+          [33mhref[39m=[32m"/forge/command-center"[39m
+        [36m>[39m
+          [0mCommand Center[0m
+        [36m</a>[39m
+        [0m · [0m
+        [36m<a[39m
+          [33mhref[39m=[32m"/start-chart"[39m
+        [36m>[39m
+          [0mStart Chart[0m
+        [36m</a>[39m
+        [0m · [0m
+        [36m<a[39m
+          [33mhref[39m=[32m"/roster-schedule-optimizer"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</a>[39m
+      [36m</nav>[39m
+      [36m<h1>[39m
+        [0mGame forecasts[0m
+      [36m</h1>[39m
+      [36m<p>[39m
+        [0mNext-game, next-N and selected-date expectations use the same released game-level forecasts.[0m
+      [36m</p>[39m
+      [36m<form[39m
+        [33mclass[39m=[32m"_controls_0ac5ad"[39m
+      [36m>[39m
+        [36m<label>[39m
+          [0mWindow[0m
+          [36m<select>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"next_n"[39m
+            [36m>[39m
+              [0mNext scheduled team games[0m
+            [36m</option>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"calendar"[39m
+            [36m>[39m
+              [0mSelected dates / week[0m
+            [36m</option>[39m
+          [36m</select>[39m
+        [36m</label>[39m
+        [36m<label>[39m
+          [0mFrom (UTC)[0m
+          [36m<input[39m
+            [33mrequired[39m=[32m""[39m
+            [33mtype[39m=[32m"date"[39m
+            [33mvalue[39m=[32m"2026-10-15"[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<label>[39m
+          [0mTeam games[0m
+          [36m<select>[39m
+            [36m<option>[39m
+              [0m1[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m2[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m3[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m4[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m5[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m6[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m7[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m8[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m9[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m10[0m
+            [36m</option>[39m
+          [36m</select>[39m
+        [36m</label>[39m
+        [36m<button[39m
+          [33mtype[39m=[32m"submit"[39m
+        [36m>[39m
+          [0mLoad released forecasts[0m
+        [36m</button>[39m
+      [36m</form>[39m
+      [36m<p>[39m
+        [0mScheduled games describe opportunities. Actual appearances and starts depend on participation evidence. Missing categories and incomplete totals remain unavailable.[0m
+      [36m</p>[39m
+      [36m<p>[39m
+        [0mRead as of [0m
+        [36m<time[39m
+          [33mdatetime[39m=[32m"2026-10-15T12:00:00.000Z"[39m
+        [36m>[39m
+          [0m2026-10-15T12:00:00.000Z[0m
+        [36m</time>[39m
+        [0m. Forecast issuance times appear with each game.[0m
+      [36m</p>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_controls_0ac5ad"[39m
+      [36m>[39m
+        [36m<label>[39m
+          [0mPlayers[0m
+          [36m<select>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"skater"[39m
+            [36m>[39m
+              [0mSkaters[0m
+            [36m</option>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"goalie"[39m
+            [36m>[39m
+              [0mGoalies[0m
+            [36m</option>[39m
+          [36m</select>[39m
+        [36m</label>[39m
+        [36m<label>[39m
+          [0mFind player or team[0m
+          [36m<input[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+      [36m</div>[39m
+      [36m<section[39m
+        [33maria-labelledby[39m=[32m"conditional-values-heading"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mid[39m=[32m"conditional-values-heading"[39m
+        [36m>[39m
+          [0mConditional category values[0m
+        [36m</h2>[39m
+        [36m<p>[39m
+          [0mThese values apply if the player appears or starts. They are not expected game totals or a participation estimate, and are not multiplied across the selected window. Missing categories remain unavailable.[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Conditional forecast values"[39m
+          [33mclass[39m=[32m"_tableScroll_0ac5ad"[39m
+          [33mrole[39m=[32m"region"[39m
+          [33mtabindex[39m=[32m"0"[39m
+        [36m>[39m
+          [36m<table>[39m
+            [36m<caption>[39m
+              [0mConditional category values for admitted games[0m
+            [36m</caption>[39m
+            [36m<thead>[39m
+              [36m<tr>[39m
+                [36m<th[39m
+                  [33mscope[39m=[32m"col"[39m
+                [36m>[39m
+                  [0mPlayer[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mscope[39m=[32m"col"[39m
+                [36m>[39m
+                  [0mGame[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mscope[39m=[32m"col"[39m
+                [36m>[39m
+                  [0mCategory[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mscope[39m=[32m"col"[39m
+                [36m>[39m
+                  [0mConditional value[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mscope[39m=[32m"col"[39m
+                [36m>[39m
+                  [0mBasis[0m
+                [36m</th>[39m
+              [36m</tr>[39m
+            [36m</thead>[39m
+            [36m<tbody>[39m
+              [36m<tr>[39m
+                [36m<th[39m
+                  [33mscope[39m=[32m"row"[39m
+                [36m>[39m
+                  [0mSynthetic Baseline Skater[0m
+                [36m</th>[39m
+                [36m<td>[39m
+                  [0mTOR[0m
+                  [0m at [0m
+                  [0mMIN[0m
+                  [0m · [0m
+                  [0m2026-10-16[0m
+                  [0m · Game [0m
+                  [0m30[0m
+                [36m</td>[39m
+                [36m<td>[39m
+                  [0mSOG[0m
+                [36m</td>[39m
+                [36m<td>[39m
+                  [0m4[0m
+                [36m</td>[39m
+                [36m<td>[39m
+                  [0mPer appearance[0m
+                [36m</td>[39m
+              [36m</tr>[39m
+            [36m</tbody>[39m
+          [36m</table>[39m
+        [36m</div>[39m
+        [36m<p>[39m
+          [0mOriginal source clocks and available sample coverage and limitations appear in each player’s game values and sources below.[0m
+        [36m</p>[39m
+      [36m</section>[39m
+      [36m<div[39m
+        [33maria-label[39m=[32m"Forecast totals"[39m
+        [33mclass[39m=[32m"_tableScroll_0ac5ad"[39m
+        [33mrole[39m=[32m"region"[39m
+        [33mtabindex[39m=[32m"0"[39m
+      [36m>[39m
+        [36m<table>[39m
+          [36m<caption>[39m
+            [0mExpected totals for [0m
+            [0mthe next 1 scheduled team games[0m
+          [36m</caption>[39m
+          [36m<thead>[39m
+            [36m<tr>[39m
+              [36m<th[39m
+                [33mscope[39m=[32m"col"[39m
+              [36m>[39m
+                [0mPlayer[0m
+              [36m</th>[39m
+              [36m<th[39m
+                [33mscope[39m=[32m"col"[39m
+              [36m>[39m
+                [0mSchedule opportunities[0m
+              [36m</th>[39m
+              [36m<th[39m
+                [33mscope[39m=[32m"col"[39m
+              [36m>[39m
+                [0mExpected appearances[0m
+              [36m</th>[39m
+              [36m<th[39m
+                [33mscope[39m=[32m"col"[39m
+              [36m>[39m
+                [0mG[0m
+              [36m</th>[39m
+              [36m<th[39m
+                [33mscope[39m=[32m"col"[39m
+              [36m>[39m
+                [0mA[0m
+              [36m</th>[39m
+              [36m<th[39m
+                [33mscope[39m=[32m"col"[39m
+              [36m>[39m
+                [0mPPP[0m
+              [36m</th>[39m
+              [36m<th[39m
+                [33mscope[39m=[32m"col"[39m
+              [36m>[39m
+                [0mSOG[0m
+              [36m</th>[39m
+              [36m<th[39m
+                [33mscope[39m=[32m"col"[39m
+              [36m>[39m
+                [0mHIT[0m
+              [36m</th>[39m
+              [36m<th[39m
+                [33mscope[39m=[32m"col"[39m
+              [36m>[39m
+                [0mBLK[0m
+              [36m</th>[39m
+              [36m<th[39m
+                [33mscope[39m=[32m"col"[39m
+              [36m>[39m
+                [0mPIM[0m
+              [36m</th>[39m
+            [36m</tr>[39m
+          [36m</thead>[39m
+          [36m<tbody>[39m
+            [36m<tr>[39m
+              [36m<th[39m
+                [33mscope[39m=[32m"row"[39m
+              [36m>[39m
+                [36m<a[39m
+                  [33mhref[39m=[32m"#player-7"[39m
+                [36m>[39m
+                  [0mSynthetic Baseline Skater[0m
+                [36m</a>[39m
+                [36m<small>[39m
+                  [0mMIN[0m
+                [36m</small>[39m
+              [36m</th>[39m
+              [36m<td>[39m
+                [0m1[0m
+              [36m</td>[39m
+              [36m<td>[39m
+                [0mUnavailable[0m
+              [36m</td>[39m
+              [36m<td[39m
+                [33mtitle[39m=[32m"0/1 games covered"[39m
+              [36m>[39m
+                [0mUnavailable[0m
+              [36m</td>[39m
+              [36m<td[39m
+                [33mtitle[39m=[32m"0/1 games covered"[39m
+              [36m>[39m
+                [0mUnavailable[0m
+              [36m</td>[39m
+              [36m<td[39m
+                [33mtitle[39m=[32m"0/1 games covered"[39m
+              [36m>[39m
+                [0mUnavailable[0m
+              [36m</td>[39m
+              [36m<td[39m
+                [33mtitle[39m=[32m"0/1 games covered"[39m
+              [36m>[39m
+                [0mUnavailable[0m
+              [36m</td>[39m
+              [36m<td[39m
+                [33mtitle[39m=[32m"0/1 games covered"[39m
+              [36m>[39m
+                [0mUnavailable[0m
+              [36m</td>[39m
+              [36m<td[39m
+                [33mtitle[39m=[32m"0/1 games covered"[39m
+              [36m>[39m
+                [0mUnavailable[0m
+              [36m</td>[39m
+              [36m<td[39m
+                [33mtitle[39m=[32m"0/1 games covered"[39m
+              [36m>[39m
+                [0mUnavailable[0m
+              [36m</td>[39m
+            [36m</tr>[39m
+          [36m</tbody>[39m
+        [36m</table>[39m
+      [36m</div>[39m
+      [36m<details[39m
+        [33mclass[39m=[32m"_player_0ac5ad"[39m
+        [33mid[39m=[32m"player-7"[39m
+      [36m>[39m
+        [36m<summary>[39m
+          [0mSynthetic Baseline Skater[0m
+          [0m · game values and sources[0m
+        [36m</summary>[39m
+      [36m</details>[39m
+      [36m<details>[39m
+        [36m<summary>[39m
+          [0mCoverage and method limitations[0m
+        [36m</summary>[39m
+        [36m<ul>[39m
+          [36m<li>[39m
+            [0mScheduled opportunities are not expected appearances. Unknown participation remains unavailable.[0m
+          [36m</li>[39m
+          [36m<li>[39m
+            [0mConditional values are per appearance/start and permitted only for the stated conditional use; they are not horizon totals.[0m
+          [36m</li>[39m
+          [36m<li>[39m
+            [0mTotals sum distinct admitted game-level expectations; incomplete heads or horizons remain unavailable.[0m
+          [36m</li>[39m
+          [36m<li>[39m
+            [0mRatios use summed expected primitives, not the expected value of a realized ratio. No calibrated uncertainty is implied.[0m
+          [36m</li>[39m
+        [36m</ul>[39m
+      [36m</details>[39m
+    [36m</main>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × FORGE forecast page synthetic API readback > offers a 20-team-game horizon 54ms
+     → Unable to find an accessible element with the role "option" and name "20"
+
+Here are the accessible roles:
+
+  main:
+
+  Name "":
+  [36m<main[39m
+    [33mclass[39m=[32m"_page_0ac5ad"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  navigation:
+
+  Name "FORGE navigation":
+  [36m<nav[39m
+    [33maria-label[39m=[32m"FORGE navigation"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  link:
+
+  Name "Command Center":
+  [36m<a[39m
+    [33mhref[39m=[32m"/forge/command-center"[39m
+  [36m/>[39m
+
+  Name "Start Chart":
+  [36m<a[39m
+    [33mhref[39m=[32m"/start-chart"[39m
+  [36m/>[39m
+
+  Name "Roster Schedule Optimizer":
+  [36m<a[39m
+    [33mhref[39m=[32m"/roster-schedule-optimizer"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  heading:
+
+  Name "Game forecasts":
+  [36m<h1 />[39m
+
+  --------------------------------------------------
+  combobox:
+
+  Name "Window":
+  [36m<select />[39m
+
+  Name "Team games":
+  [36m<select />[39m
+
+  --------------------------------------------------
+  option:
+
+  Name "Next scheduled team games":
+  [36m<option[39m
+    [33mvalue[39m=[32m"next_n"[39m
+  [36m/>[39m
+
+  Name "Selected dates / week":
+  [36m<option[39m
+    [33mvalue[39m=[32m"calendar"[39m
+  [36m/>[39m
+
+  Name "1":
+  [36m<option />[39m
+
+  Name "2":
+  [36m<option />[39m
+
+  Name "3":
+  [36m<option />[39m
+
+  Name "4":
+  [36m<option />[39m
+
+  Name "5":
+  [36m<option />[39m
+
+  Name "6":
+  [36m<option />[39m
+
+  Name "7":
+  [36m<option />[39m
+
+  Name "8":
+  [36m<option />[39m
+
+  Name "9":
+  [36m<option />[39m
+
+  Name "10":
+  [36m<option />[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Load released forecasts":
+  [36m<button[39m
+    [33mtype[39m=[32m"submit"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"_page_0ac5ad"[39m
+    [36m>[39m
+      [36m<nav[39m
+        [33maria-label[39m=[32m"FORGE navigation"[39m
+      [36m>[39m
+        [36m<a[39m
+          [33mhref[39m=[32m"/forge/command-center"[39m
+        [36m>[39m
+          [0mCommand Center[0m
+        [36m</a>[39m
+        [0m · [0m
+        [36m<a[39m
+          [33mhref[39m=[32m"/start-chart"[39m
+        [36m>[39m
+          [0mStart Chart[0m
+        [36m</a>[39m
+        [0m · [0m
+        [36m<a[39m
+          [33mhref[39m=[32m"/roster-schedule-optimizer"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</a>[39m
+      [36m</nav>[39m
+      [36m<h1>[39m
+        [0mGame forecasts[0m
+      [36m</h1>[39m
+      [36m<p>[39m
+        [0mNext-game, next-N and selected-date expectations use the same released game-level forecasts.[0m
+      [36m</p>[39m
+      [36m<form[39m
+        [33mclass[39m=[32m"_controls_0ac5ad"[39m
+      [36m>[39m
+        [36m<label>[39m
+          [0mWindow[0m
+          [36m<select>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"next_n"[39m
+            [36m>[39m
+              [0mNext scheduled team games[0m
+            [36m</option>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"calendar"[39m
+            [36m>[39m
+              [0mSelected dates / week[0m
+            [36m</option>[39m
+          [36m</select>[39m
+        [36m</label>[39m
+        [36m<label>[39m
+          [0mFrom (UTC)[0m
+          [36m<input[39m
+            [33mrequired[39m=[32m""[39m
+            [33mtype[39m=[32m"date"[39m
+            [33mvalue[39m=[32m"2026-10-16"[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<label>[39m
+          [0mTeam games[0m
+          [36m<select>[39m
+            [36m<option>[39m
+              [0m1[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m2[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m3[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m4[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m5[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m6[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m7[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m8[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m9[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m10[0m
+            [36m</option>[39m
+          [36m</select>[39m
+        [36m</label>[39m
+        [36m<button[39m
+          [33mtype[39m=[32m"submit"[39m
+        [36m>[39m
+          [0mLoad released forecasts[0m
+        [36m</button>[39m
+      [36m</form>[39m
+      [36m<p>[39m
+        [0mScheduled games describe opportunities. Actual appearances and starts depend on participation evidence. Missing categories and incomplete totals remain unavailable.[0m
+      [36m</p>[39m
+      [36m<p>[39m
+        [0mSelect a window to read released forecasts.[0m
+      [36m</p>[39m
+    [36m</main>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   ↓ FORGE forecast page synthetic API readback > keeps calendar controls usable when the date field is cleared
+stderr | __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > active provider refresh scheduling > applies manual matchup totals to the connected category snapshot without replacing its roster
+Error: Uncaught [TypeError: Cannot convert undefined or null to object]
+    at reportException (/Users/tim/Code/fhfhockey.com/web/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Users/tim/Code/fhfhockey.com/web/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Users/tim/Code/fhfhockey.com/web/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Users/tim/Code/fhfhockey.com/web/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Users/tim/Code/fhfhockey.com/web/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Users/tim/Code/fhfhockey.com/web/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Users/tim/Code/fhfhockey.com/web/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Users/tim/Code/fhfhockey.com/web/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Users/tim/Code/fhfhockey.com/web/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Users/tim/Code/fhfhockey.com/web/node_modules/react-dom/cjs/react-dom.development.js:26599:12) TypeError: Cannot convert undefined or null to object
+    at Function.entries (<anonymous>)
+    at ExtraRules (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:1139:35)
+    at renderWithHooks (/Users/tim/Code/fhfhockey.com/web/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at updateFunctionComponent (/Users/tim/Code/fhfhockey.com/web/node_modules/react-dom/cjs/react-dom.development.js:19617:20)
+    at beginWork (/Users/tim/Code/fhfhockey.com/web/node_modules/react-dom/cjs/react-dom.development.js:21640:16)
+    at HTMLUnknownElement.callCallback (/Users/tim/Code/fhfhockey.com/web/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Users/tim/Code/fhfhockey.com/web/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Users/tim/Code/fhfhockey.com/web/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Users/tim/Code/fhfhockey.com/web/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Users/tim/Code/fhfhockey.com/web/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+Error: Uncaught [TypeError: Cannot convert undefined or null to object]
+    at reportException (/Users/tim/Code/fhfhockey.com/web/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Users/tim/Code/fhfhockey.com/web/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Users/tim/Code/fhfhockey.com/web/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Users/tim/Code/fhfhockey.com/web/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Users/tim/Code/fhfhockey.com/web/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Users/tim/Code/fhfhockey.com/web/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Users/tim/Code/fhfhockey.com/web/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Users/tim/Code/fhfhockey.com/web/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Users/tim/Code/fhfhockey.com/web/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Users/tim/Code/fhfhockey.com/web/node_modules/react-dom/cjs/react-dom.development.js:26599:12) TypeError: Cannot convert undefined or null to object
+    at Function.entries (<anonymous>)
+    at ExtraRules (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:1139:35)
+    at renderWithHooks (/Users/tim/Code/fhfhockey.com/web/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at updateFunctionComponent (/Users/tim/Code/fhfhockey.com/web/node_modules/react-dom/cjs/react-dom.development.js:19617:20)
+    at beginWork (/Users/tim/Code/fhfhockey.com/web/node_modules/react-dom/cjs/react-dom.development.js:21640:16)
+    at HTMLUnknownElement.callCallback (/Users/tim/Code/fhfhockey.com/web/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Users/tim/Code/fhfhockey.com/web/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Users/tim/Code/fhfhockey.com/web/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Users/tim/Code/fhfhockey.com/web/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Users/tim/Code/fhfhockey.com/web/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+The above error occurred in the <ExtraRules> component:
+
+    at ExtraRules (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:4201:23)
+    at div
+    at section
+    at div
+    at div
+    at RosterScheduleOptimizer (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:132:71)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+
+ ❯ __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx (201 tests | 1 failed | 200 skipped) 98ms
+   × active provider refresh scheduling > applies manual matchup totals to the connected category snapshot without replacing its roster 97ms
+     → Cannot convert undefined or null to object
+   ↓ active provider refresh scheduling > reloads a connected roster's shared forecasts without refreshing provider authority or changing intent
+   ↓ active provider refresh scheduling > passes the shared participation catalog through manual evaluation and save validation
+   ↓ active provider refresh scheduling > saves a shared-reloaded connected workspace with coherent evaluation time and unchanged manager/provider state
+   ↓ active provider refresh scheduling > keeps connected and saved snapshot schedules outside the shared-cache reload action
+   ↓ active provider refresh scheduling > makes no offline provider calls, pauses hidden polling and refreshes only a stale return
+   ↓ active provider refresh scheduling > honors a Retry-After longer than the backoff across explicit refresh and visibility returns
+   ↓ active provider refresh scheduling > keeps partial facts and nonzero intent without treating a throttled partial response as fresh
+   ↓ active provider refresh scheduling > backs off partial discovery without inventing a rate-limit value
+   ↓ active provider refresh scheduling > pauses automatic permission retries and resumes polling after an explicit successful retry
+   ↓ active provider refresh scheduling > shares one in-flight request across return events and keeps deliberate Undo intent
+   ↓ active provider refresh scheduling > does not let an old account response impose a cooldown on the current account
+   ↓ active provider refresh scheduling > does not schedule zero-delay refreshes after clearing the team to ""
+   ↓ active provider refresh scheduling > does not schedule zero-delay refreshes after clearing the team to "   "
+   ↓ active provider refresh scheduling > keeps the current context's 429 block when a retired refresh settles
+   ↓ active provider refresh scheduling > keeps the current context's 401 block when a retired refresh settles
+   ↓ active provider refresh scheduling > keeps the current context's 403 block when a retired refresh settles
+   ↓ active provider refresh scheduling > does not refresh an account snapshot opened read-only even when sync access is active
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: 2026-10-10T09:00:00Z
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: 2026-10-10T08:59:59Z
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: 2026-10-10T13:00:00Z
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: null
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: invalid
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: 2026-10-10T15:00:01Z
+   ↓ provisional schedule freshness warnings > does not infer receipt age from a different source or invalid evaluation time
+   ↓ provisional similar projected points display > compares startable plan totals 95 and 100 safely
+   ↓ provisional similar projected points display > compares startable plan totals 94 and 100 safely
+   ↓ provisional similar projected points display > compares startable plan totals 0 and 0 safely
+   ↓ provisional similar projected points display > compares startable plan totals 0 and 1 safely
+   ↓ provisional similar projected points display > compares startable plan totals -100 and -95 safely
+   ↓ provisional similar projected points display > compares startable plan totals -100 and 100 safely
+   ↓ provisional similar projected points display > compares startable plan totals 1e-300 and 9.6e-301 safely
+   ↓ provisional similar projected points display > compares startable plan totals 1e-300 and 5e-301 safely
+   ↓ provisional similar projected points display > compares startable plan totals 1.7976931348623157e+308 and 1.7437623408164462e+308 safely
+   ↓ provisional similar projected points display > compares startable plan totals 1.7976931348623157e+308 and -1.7976931348623157e+308 safely
+   ↓ provisional similar projected points display > withholds unsupported or mismatched comparison null / 0
+   ↓ provisional similar projected points display > withholds unsupported or mismatched comparison NaN / 0
+   ↓ provisional similar projected points display > withholds unsupported or mismatched comparison Infinity / 0
+   ↓ provisional similar projected points display > withholds unsupported or mismatched comparison 95 / 100
+   ↓ provisional similar projected points display > withholds unsupported or mismatched comparison 95 / 100
+   ↓ RosterScheduleOptimizer workspace > loads planning data and settles access after development effect replay
+   ↓ RosterScheduleOptimizer workspace > keeps an existing preservation journal held during development effect replay
+   ↓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different owner or rewriting the plan
+   ↓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different league or rewriting the plan
+   ↓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different team or rewriting the plan
+   ↓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different horizon or rewriting the plan
+   ↓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different timezone or rewriting the plan
+   ↓ RosterScheduleOptimizer workspace > keeps display-preference corrupt separate from the working plan
+   ↓ RosterScheduleOptimizer workspace > keeps display-preference out-of-horizon separate from the working plan
+   ↓ RosterScheduleOptimizer workspace > keeps display-preference read-failure separate from the working plan
+   ↓ RosterScheduleOptimizer workspace > keeps display-preference write-failure separate from the working plan
+   ↓ RosterScheduleOptimizer workspace > qualifies plan aggregate counters and ratios under partial schedule coverage
+   ↓ RosterScheduleOptimizer workspace > qualifies plan aggregate counters and ratios under complete schedule coverage
+   ↓ RosterScheduleOptimizer workspace > shows upstream stale and disabled evidence in manual readiness independently of reader time
+   ↓ RosterScheduleOptimizer workspace > shows a provisional schedule warning without changing complete coverage or manager intent
+   ↓ RosterScheduleOptimizer workspace > updates the provisional schedule 2-hour warning after an edit without a new read
+   ↓ RosterScheduleOptimizer workspace > updates the provisional schedule 6-hour warning after an edit without a new read
+   ↓ RosterScheduleOptimizer workspace > shows confirmed Yahoo zero usage independently from unknown allowance and planned adds
+   ↓ RosterScheduleOptimizer workspace > distinguishes projected fit from schedule-first order for unequal games and quality
+   ↓ RosterScheduleOptimizer workspace > separates planned adds from allowance 'Week: 0 remaining (manager)'
+   ↓ RosterScheduleOptimizer workspace > separates planned adds from allowance 'Week: Allowance unknown'
+   ↓ RosterScheduleOptimizer workspace > separates planned adds from allowance 'Week: Allowance unknown'
+   ↓ RosterScheduleOptimizer workspace > renders verified zero AGP separately from unavailable metrics
+   ↓ RosterScheduleOptimizer workspace > reads and selects the exact compared timed swap, keeping AGP/points tradeoffs paired
+   ↓ RosterScheduleOptimizer workspace > keeps compared-drop selection disabled for no gain
+   ↓ RosterScheduleOptimizer workspace > keeps compared-drop selection disabled for missing points
+   ↓ RosterScheduleOptimizer workspace > uses schedule ordering and category-plan guidance instead of points claims in category leagues
+   ↓ RosterScheduleOptimizer workspace > groups candidates by team without changing eligibility, filters and deduplicates All players
+   ↓ RosterScheduleOptimizer workspace > reviews manual candidate positions explicitly without replacing selected moves or leaking another candidate's positions
+   ↓ RosterScheduleOptimizer workspace > keeps the manager exclusion control read-only for retained connected inputs
+   ↓ RosterScheduleOptimizer workspace > preserves API warnings without converting structured errors to object text
+   ↓ RosterScheduleOptimizer workspace > renders the structured planning-data failure as its actual warning
+   ↓ RosterScheduleOptimizer workspace > shows the actual bench tradeoff and public assumptions within the selected date
+   ↓ RosterScheduleOptimizer workspace > keeps unsupported bench decisions unresolved and separates locks from scoring reasons
+   ↓ RosterScheduleOptimizer workspace > shows category results and projected goalie assumptions without claiming a satisfied minimum
+   ↓ RosterScheduleOptimizer workspace > guides an empty manual workspace to existing inputs without implying acquisition readiness
+   ↓ RosterScheduleOptimizer workspace > requires input review and renews it after rule changes without certifying unknown scoring
+   ↓ RosterScheduleOptimizer workspace > uses eligible full-team evidence for goalie starts without capping conflicts or reviving legacy rows
+   ↓ RosterScheduleOptimizer workspace > separates remaining goalie windows by the selected split without hiding unknown timing or availability
+   ↓ RosterScheduleOptimizer workspace > labels the selected statistical source and its permitted uses without implying a total
+   ↓ RosterScheduleOptimizer workspace > shows only each target's selected source timestamps across mixed inputs and replay
+   ↓ RosterScheduleOptimizer workspace > labels unverified lineups as schedule capacity
+   ↓ RosterScheduleOptimizer workspace > distinguishes category comparison availability (true) from a recommended winner
+   ↓ RosterScheduleOptimizer workspace > distinguishes category comparison availability (false) from a recommended winner
+   ↓ RosterScheduleOptimizer workspace > withholds category gains when the no-move lineup cannot satisfy a selected-player lock
+   ↓ RosterScheduleOptimizer workspace > distinguishes identically named Yahoo teams by league and selects the matching context
+   ↓ RosterScheduleOptimizer workspace > counts only acquired players' future games before their next drop
+   ↓ RosterScheduleOptimizer workspace > keeps exact canonical selections and unresolved pasted names across remount
+   ↓ RosterScheduleOptimizer workspace > reports already-rostered pasted names without changing selected moves or unresolved names
+   ↓ RosterScheduleOptimizer workspace > resolves explicit unresolved-name choices without clobbering intent or existing inputs (rostered=false)
+   ↓ RosterScheduleOptimizer workspace > resolves explicit unresolved-name choices without clobbering intent or existing inputs (rostered=true)
+   ↓ RosterScheduleOptimizer workspace > reveals and focuses existing player detail from 'roster' at 390 without editing the plan
+   ↓ RosterScheduleOptimizer workspace > reveals and focuses existing player detail from 'compact' at 1440 without editing the plan
+   ↓ RosterScheduleOptimizer workspace > reveals and focuses existing player detail from 'candidate' at 1440 without editing the plan
+   ↓ RosterScheduleOptimizer workspace > reloads shared schedule data for manual without changing the selected plan or refreshing a provider
+   ↓ RosterScheduleOptimizer workspace > reloads shared schedule data for yahoo without changing the selected plan or refreshing a provider
+   ↓ RosterScheduleOptimizer workspace > undoes local roster edits without changing the public snapshot
+   ↓ RosterScheduleOptimizer workspace > retains local undo when the workspace is reopened
+   ↓ RosterScheduleOptimizer workspace > resumes each league's local working plan when switching contexts and reopening
+   ↓ RosterScheduleOptimizer workspace > marks a future selected add conditional until the provider confirms it
+   ↓ RosterScheduleOptimizer workspace > shows selected acquisition cost 0 with its drop and sequence prerequisite
+   ↓ RosterScheduleOptimizer workspace > shows selected acquisition cost 2 with its drop and sequence prerequisite
+   ↓ RosterScheduleOptimizer workspace > shows selected acquisition cost null with its drop and sequence prerequisite
+   ↓ RosterScheduleOptimizer workspace > identifies the next selected action without promoting an unresolved plan (mistimed prerequisite: false)
+   ↓ RosterScheduleOptimizer workspace > identifies the next selected action without promoting an unresolved plan (mistimed prerequisite: true)
+   ↓ RosterScheduleOptimizer workspace > keeps the next selected action review-only after confirmation with unsupported rules
+   ↓ RosterScheduleOptimizer workspace > uses a saved manager null lock through refresh, undo, save and reopen (provider conflict: false)
+   ↓ RosterScheduleOptimizer workspace > uses a saved manager null lock through refresh, undo, save and reopen (provider conflict: true)
+   ↓ RosterScheduleOptimizer workspace > uses a saved manager 'C#1' lock through refresh, undo, save and reopen (provider conflict: false)
+   ↓ RosterScheduleOptimizer workspace > uses a saved manager 'C#1' lock through refresh, undo, save and reopen (provider conflict: true)
+   ↓ RosterScheduleOptimizer workspace > selects an add using next-day rules and 'manager_available' clearance
+   ↓ RosterScheduleOptimizer workspace > selects an add using next-day rules and 'waivers' clearance
+   ↓ RosterScheduleOptimizer workspace > leaves acquisition intent unresolved for 'unknown'/'manager_available'
+   ↓ RosterScheduleOptimizer workspace > leaves acquisition intent unresolved for 'same_day'/'waivers'
+   ↓ RosterScheduleOptimizer workspace > shows provider refresh feedback immediately, prevents duplicate requests and reports unchanged inputs
+   ↓ RosterScheduleOptimizer workspace > explains unavailable provider refresh for user null, sync false and team ''team''
+   ↓ RosterScheduleOptimizer workspace > explains unavailable provider refresh for user { id: 'manager' }, sync false and team ''team''
+   ↓ RosterScheduleOptimizer workspace > explains unavailable provider refresh for user { id: 'manager' }, sync true and team ''manual''
+   ↓ RosterScheduleOptimizer workspace > explains unavailable provider refresh for user { id: 'manager' }, sync true and team '' ''
+   ↓ RosterScheduleOptimizer workspace > explains unavailable provider inputs without reporting success or replacing saved inputs: 'Connected refresh is unavailable for …'
+   ↓ RosterScheduleOptimizer workspace > explains unavailable provider inputs without reporting success or replacing saved inputs: 'Provider refresh returned no inputs. …'
+   ↓ RosterScheduleOptimizer workspace > renders an unknown range ledger without inventing zero contribution or a unique replacement
+   ↓ RosterScheduleOptimizer workspace > keeps supported active points visible in the collapsed metric row and reserve separate from bench
+   ↓ RosterScheduleOptimizer workspace > keeps unmatched roster contributions explicitly unknown without changing persistence
+   ↓ RosterScheduleOptimizer workspace > reads back legal crowded-day assignments through nonzero plan refresh, Undo and reopen
+   ↓ RosterScheduleOptimizer workspace > keeps refreshed provider authority through undo and reopen without replacing selected moves
+   ↓ RosterScheduleOptimizer workspace > refreshes the selected 'leagueId' and ignores a late response for the previous scope
+   ↓ RosterScheduleOptimizer workspace > refreshes the selected 'teamId' and ignores a late response for the previous scope
+   ↓ RosterScheduleOptimizer workspace > refreshes the selected 'endDate' and ignores a late response for the previous scope
+   ↓ RosterScheduleOptimizer workspace > refreshes the selected 'timeZone' and ignores a late response for the previous scope
+   ↓ RosterScheduleOptimizer workspace > adopts Yahoo's league timezone without losing the selected team, horizon or intent
+   ↓ RosterScheduleOptimizer workspace > keeps the selected context when provider evidence belongs to another league
+   ↓ RosterScheduleOptimizer workspace > uses the signed-in session for access and account reads, then refreshes after account switch
+   ↓ RosterScheduleOptimizer workspace > ignores an older same-account 'eligible' access response after a newer refresh
+   ↓ RosterScheduleOptimizer workspace > ignores an older same-account 'failed' access response after a newer refresh
+   ↓ RosterScheduleOptimizer workspace > ignores an older same-account 'eligible after failed revalidation' access response after a newer refresh
+   ↓ RosterScheduleOptimizer workspace > explains access-service failures instead of silently disabling provider sync
+   ↓ RosterScheduleOptimizer workspace > reports account-save failure, allows retry and preserves the submitted snapshot while local edits continue
+   ↓ RosterScheduleOptimizer workspace > reports checking access before explaining a missing provider team
+   ↓ RosterScheduleOptimizer workspace > explains disabled manual controls and invalid rule-window dates using visible descriptions
+   ↓ RosterScheduleOptimizer workspace > explains empty manual continuation without enabling an unavailable action
+   ↓ RosterScheduleOptimizer workspace > explains first, last and custom matchup-week navigation boundaries
+   ↓ RosterScheduleOptimizer workspace > explains the 'input' Select plan gate and acknowledges selection when summaries match
+   ↓ RosterScheduleOptimizer workspace > explains the 'scoring' Select plan gate and acknowledges selection when summaries match
+   ↓ RosterScheduleOptimizer workspace > explains the 'legal' Select plan gate and acknowledges selection when summaries match
+   ↓ RosterScheduleOptimizer workspace > explains the 'budget' Select plan gate and acknowledges selection when summaries match
+   ↓ RosterScheduleOptimizer workspace > explains the 'hold' Select plan gate and acknowledges selection when summaries match
+   ↓ RosterScheduleOptimizer workspace > explains the 'ready' Select plan gate and acknowledges selection when summaries match
+   ↓ RosterScheduleOptimizer workspace > keeps the local plan on a stale-version save and ignores a late save after account switching
+   ↓ RosterScheduleOptimizer workspace > does not attach an old account save to a newly selected timeframe
+   ↓ RosterScheduleOptimizer workspace > keeps invalid zone and cleared period dates out of committed rules
+   ↓ RosterScheduleOptimizer workspace > opens a saved manual snapshot read-only until the manager explicitly forks it
+   ↓ compact RSO schedule > defaults future horizons to their first valid day while retaining today and past-week behavior
+   ↓ compact RSO schedule > reads range metrics from the supplied contribution ledger rather than treating the displayed week as the horizon
+   ↓ compact RSO schedule > accounts for 19 players without duplicating dual eligibility and preserves configured vacancies
+   ↓ compact RSO schedule > accounts for 20 players without duplicating dual eligibility and preserves configured vacancies
+   ↓ compact RSO schedule > accounts for 25 players without duplicating dual eligibility and preserves configured vacancies
+   ↓ compact RSO schedule > retains a non-playing lock and weekly window occupant instead of inventing an open slot
+   ↓ compact RSO schedule > places all unstarted McDavid, Panarin and Batherson in local Bench after 13 filled slots
+   ↓ compact RSO schedule > keeps eligibility, team and source warnings on unstarted Bench rows
+   ↓ compact RSO schedule > preserves active and Bench locks while warning on unsupported and conflicting slot claims
+   ↓ compact RSO schedule > retains local Bench membership and collapse counts with configured capacity 0
+   ↓ compact RSO schedule > retains local Bench membership and collapse counts with configured capacity undefined
+   ↓ compact RSO schedule > retains local Bench membership and collapse counts with configured capacity -1
+   ↓ compact RSO schedule > keeps unclaimed slots pending when active membership or schedule coverage is unresolved
+   ↓ compact RSO schedule > counts verified active capacity and distinct roster and NHL games for the selected day
+   ↓ compact RSO schedule > keeps unknown eligibility, unsupported reserves and conflicting locks honest
+   ↓ compact RSO schedule > changes view state and bench visibility without editing intent, and distinguishes unknown goalie starts
+   ↓ compact RSO schedule > bounds range keyboard navigation and synchronizes the selected header and day label
+   ↓ compact RSO schedule > preserves collapsed Bench membership as the selected day changes and honors controlled visibility
+   ↓ compact RSO schedule > labels partial positive game evidence as known and missing partial evidence as unknown
+   ↓ compact RSO schedule > marks an engine assignment conflicting with a held slot and an unknown weekly window as unresolved
+   ↓ compact RSO schedule > labels effective planned additions and reserve capacity conflicts without losing current roster players
+   ↓ compact RSO schedule > keeps missing team null schedules unknown despite complete shared coverage
+   ↓ compact RSO schedule > keeps missing team  schedules unknown despite complete shared coverage
+   ↓ compact RSO schedule > preserves the selected weekday during week navigation and falls back inside clipped weeks
+   ↓ compact RSO schedule > labels a confirmed goalie only when eligible full-team evidence supports it
+   ↓ owner plan preservation > drains a dispatched account save before capturing the actual remote state
+   ↓ owner plan preservation > keeps nonzero intent/Undo, restores after reopen, and verifies original local and remote payloads
+   ↓ owner plan preservation > restores original provider authority including absence without remount (absent=false)
+   ↓ owner plan preservation > restores original provider authority including absence without remount (absent=true)
+   ↓ owner plan preservation > serializes a protected account acknowledgement before persisting and acknowledging a local edit
+   ↓ owner plan preservation > rejects a legacy storage writer instead of adopting its fresh values for restore
+   ↓ owner plan preservation > keeps rehydration and requests paused when another writer changed storage before reopen
+   ↓ owner plan preservation > rejects substituted journal expectations against the server's last-own local hash
+   ↓ owner plan preservation > rejects an outside journal change before dispatching restoration
+   ↓ owner plan preservation > holds admission when a dispatched account write has an uncertain outcome
+   ↓ owner plan preservation > holds account-save testing for original absence and rejects rehashed backup substitution
+   ↓ current-week date controls > starts with local current Mon–Sun and rederives a fresh range when the manager changes timezone
+   ↓ current-week date controls > retains legacy saved ranges until an explicit Current week action and preserves manager intent
+   ↓ current-week date controls > retains a custom date range across timezone edits and reopen
+   ↓ stored Yahoo eligibility while provider verification is pending > merges known per-player facts from a partial provider snapshot without treating the whole catalogue as unknown
+   ↓ stored Yahoo eligibility while provider verification is pending > requests stored positions for a 1-candidate catalogue and retained roster without promoting availability
+   ↓ stored Yahoo eligibility while provider verification is pending > requests stored positions for a 241-candidate catalogue and retained roster without promoting availability
+   ↓ stored Yahoo eligibility while provider verification is pending > recomputes provisional assignments from a fresh database receipt before Yahoo returns, then uses live league positions
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  components/RosterScheduleOptimizer/CandidateCard.test.tsx > complete acquisition card presentation > allows a category drop plan without a points utility
+AssertionError: expected "spy" to be called with arguments: [ [ { id: 'swap', …(7) } ] ]
+
+Number of calls: 0
+
+ ❯ components/RosterScheduleOptimizer/CandidateCard.test.tsx:71:24
+     69|     render(<CandidateCard {...props} categories plan={{ ...plan, netPo…
+     70|     fireEvent.click(screen.getByRole("button", { name: "Select compare…
+     71|     expect(selectPlan).toHaveBeenCalledWith(plan.steps);
+       |                        ^
+     72|   });
+     73|   it("retains AGP/points tradeoffs and reserve prerequisites", () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > active provider refresh scheduling > applies manual matchup totals to the connected category snapshot without replacing its roster
+TypeError: Cannot convert undefined or null to object
+ ❯ ExtraRules components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:1139:35
+
+ ❯ renderWithHooks node_modules/react-dom/cjs/react-dom.development.js:15486:18
+ ❯ updateFunctionComponent node_modules/react-dom/cjs/react-dom.development.js:19617:20
+ ❯ beginWork node_modules/react-dom/cjs/react-dom.development.js:21640:16
+ ❯ beginWork$1 node_modules/react-dom/cjs/react-dom.development.js:27465:14
+ ❯ performUnitOfWork node_modules/react-dom/cjs/react-dom.development.js:26599:12
+ ❯ workLoopSync node_modules/react-dom/cjs/react-dom.development.js:26505:5
+ ❯ renderRootSync node_modules/react-dom/cjs/react-dom.development.js:26473:7
+ ❯ recoverFromConcurrentError node_modules/react-dom/cjs/react-dom.development.js:25889:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  __tests__/pages/forge/forecasts.test.tsx > FORGE forecast page synthetic API readback > invalidates an expired read and recovers only after loading a fresh revision
+TestingLibraryElementError: Found multiple elements with the role "table"
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<table>[39m
+  [36m<caption>[39m
+    [0mConditional category values for admitted games[0m
+  [36m</caption>[39m
+  [36m<thead>[39m
+    [36m<tr>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mPlayer[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mGame[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mCategory[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mConditional value[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mBasis[0m
+      [36m</th>[39m
+    [36m</tr>[39m
+  [36m</thead>[39m
+  [36m<tbody>[39m
+    [36m<tr>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"row"[39m
+      [36m>[39m
+        [0mSynthetic Baseline Skater[0m
+      [36m</th>[39m
+      [36m<td>[39m
+        [0mTOR[0m
+        [0m at [0m
+        [0mMIN[0m
+        [0m · [0m
+        [0m2026-10-16[0m
+        [0m · Game [0m
+        [0m30[0m
+      [36m</td>[39m
+      [36m<td>[39m
+        [0mSOG[0m
+      [36m</td>[39m
+      [36m<td>[39m
+        [0m4[0m
+      [36m</td>[39m
+      [36m<td>[39m
+        [0mPer appearance[0m
+      [36m</td>[39m
+    [36m</tr>[39m
+  [36m</tbody>[39m
+[36m</table>[39m
+
+Ignored nodes: comments, script, style
+[36m<table>[39m
+  [36m<caption>[39m
+    [0mExpected totals for [0m
+    [0mthe next 1 scheduled team games[0m
+  [36m</caption>[39m
+  [36m<thead>[39m
+    [36m<tr>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mPlayer[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mSchedule opportunities[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mExpected appearances[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mG[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mA[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mPPP[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mSOG[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mHIT[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mBLK[0m
+      [36m</th>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"col"[39m
+      [36m>[39m
+        [0mPIM[0m
+      [36m</th>[39m
+    [36m</tr>[39m
+  [36m</thead>[39m
+  [36m<tbody>[39m
+    [36m<tr>[39m
+      [36m<th[39m
+        [33mscope[39m=[32m"row"[39m
+      [36m>[39m
+        [36m<a[39m
+          [33mhref[39m=[32m"#player-7"[39m
+        [36m>[39m
+          [0mSynthetic Baseline Skater[0m
+        [36m</a>[39m
+        [36m<small>[39m
+          [0mMIN[0m
+        [36m</small>[39m
+      [36m</th>[39m
+      [36m<td>[39m
+        [0m1[0m
+      [36m</td>[39m
+      [36m<td>[39m
+        [0mUnavailable[0m
+      [36m</td>[39m
+      [36m<td[39m
+        [33mtitle[39m=[32m"0/1 games covered"[39m
+      [36m>[39m
+        [0mUnavailable[0m
+      [36m</td>[39m
+      [36m<td[39m
+        [33mtitle[39m=[32m"0/1 games covered"[39m
+      [36m>[39m
+        [0mUnavailable[0m
+      [36m</td>[39m
+      [36m<td[39m
+        [33mtitle[39m=[32m"0/1 games covered"[39m
+      [36m>[39m
+        [0mUnavailable[0m
+      [36m</td>[39m
+      [36m<td[39m
+        [33mtitle[39m=[32m"0/1 games covered"[39m
+      [36m>[39m
+        [0mUnavailable[0m
+      [36m</td>[39m
+      [36m<td[39m
+        [33mtitle[39m=[32m"0/1 games covered"[39m
+      [36m>[39m
+        [0mUnavailable[0m
+      [36m</td>[39m
+      [36m<td[39m
+        [33mtitle[39m=[32m"0/1 games covered"[39m
+      [36m>[39m
+        [0mUnavailable[0m
+      [36m</td>[39m
+      [36m<td[39m
+        [33mtitle[39m=[32m"0/1 games covered"[39m
+      [36m>[39m
+        [0mUnavailable[0m
+      [36m</td>[39m
+    [36m</tr>[39m
+  [36m</tbody>[39m
+[36m</table>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"_page_0ac5ad"[39m
+    [36m>[39m
+      [36m<nav[39m
+        [33maria-label[39m=[32m"FORGE navigation"[39m
+      [36m>[39m
+        [36m<a[39m
+          [33mhref[39m=[32m"/forge/command-center"[39m
+        [36m>[39m
+          [0mCommand Center[0m
+        [36m</a>[39m
+        [0m · [0m
+        [36m<a[39m
+          [33mhref[39m=[32m"/start-chart"[39m
+        [36m>[39m
+          [0mStart Chart[0m
+        [36m</a>[39m
+        [0m · [0m
+        [36m<a[39m
+          [33mhref[39m=[32m"/roster-schedule-optimizer"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</a>[39m
+      [36m</nav>[39m
+      [36m<h1>[39m
+        [0mGame forecasts[0m
+      [36m</h1>[39m
+      [36m<p>[39m
+        [0mNext-game, next-N and selected-date expectations use the same released game-level forecasts.[0m
+      [36m</p>[39m
+      [36m<form[39m
+        [33mclass[39m=[32m"_controls_0ac5ad"[39m
+      [36m>[39m
+        [36m<label>[39m
+          [0mWindow[0m
+          [36m<select>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"next_n"[39m
+            [36m>[39m
+              [0mNext scheduled team games[0m
+            [36m</option>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"calendar"[39m
+            [36m>[39m
+              [0mSelected dates / week[0m
+            [36m</option>[39m
+          [36m</select>[39m
+        [36m</label>[39m
+        [36m<label>[39m
+          [0mFrom (UTC)[0m
+          [36m<input[39m
+            [33mrequired[39m=[32m""[39m
+            [33mtype[39m=[32m"date"[39m
+            [33mvalue[39m=[32m"2026-10-15"[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<label>[39m
+          [0mTeam games[0m
+          [36m<select>[39m
+            [36m<option>[39m
+              [0m1[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m2[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m3[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m4[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m5[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m6[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m7[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m8[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m9[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m10[0m
+            [36m</option>[39m
+          [36m</select>[39m
+        [36m</label>[39m
+        [36m<button[39m
+          [33mtype[39m=[32m"submit"[39m
+        [36m>[39m
+          [0mLoad released forecasts[0m
+        [36m</button>[39m
+      [36m</form>[39m
+      [36m<p>[39m
+        [0mScheduled games describe opportunities. Actual appearances and starts depend on participation evidence. Missing categories and incomplete totals remain unavailable.[0m
+      [36m</p>[39m
+      [36m<p>[39m
+        [0mRead as of [0m
+        [36m<time[39m
+          [33mdatetime[39m=[32m"2026-10-15T12:00:00.000Z"[39m
+        [36m>[39m
+          [0m2026-10-15T12:00:00.000Z[0m
+        [36m</time>[39m
+        [0m. Forecast issuance times appear with each game.[0m
+      [36m</p>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_controls_0ac5ad"[39m
+      [36m>[39m
+        [36m<label>[39m
+          [0mPlayers[0m
+          [36m<select>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"skater"[39m
+            [36m>[39m
+              [0mSkaters[0m
+            [36m</option>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"goalie"[39m
+            [36m>[39m
+              [0mGoalies[0m
+            [36m</option>[39m
+          [36m</select>[39m
+        [36m</label>[39m
+        [36m<label>[39m
+          [0mFind player or team[0m
+          [36m<input[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+      [36m</div>[39m
+      [36m<section[39m
+        [33maria-labelledby[39m=[32m"conditional-values-heading"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mid[39m=[32m"conditional-values-heading"[39m
+        [36m>[39m
+          [0mConditional category values[0m
+        [36m</h2>[39m
+        [36m<p>[39m
+          [0mThese values apply if the player appears or starts. They are not expected game totals or a participation estimate, and are not multiplied across the selected window. Missing categories remain unavailable.[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Conditional forecast values"[39m
+          [33mclass[39m=[32m"_tableScroll_0ac5ad"[39m
+          [33mrole[39m=[32m"region"[39m
+          [33mtabindex[39m=[32m"0"[39m
+        [36m>[39m
+          [36m<table>[39m
+            [36m<caption>[39m
+              [0mConditional category values for admitted games[0m
+            [36m</caption>[39m
+            [36m<thead>[39m
+              [36m<tr>[39m
+                [36m<th[39m
+                  [33mscope[39m=[32m"col"[39m
+                [36m>[39m
+                  [0mPlayer[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mscope[39m=[32m"col"[39m
+                [36m>[39m
+                  [0mGame[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mscope[39m=[32m"col"[39m
+                [36m>[39m
+                  [0mCategory[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mscope[39m=[32m"col"[39m
+                [36m>[39m
+                  [0mConditional value[0m
+                [36m</th>[39m
+                [36m<th[39m
+                  [33mscope[39m=[32m"col"[39m
+                [36m>[39m
+                  [0mBasis[0m
+                [36m</th>[39m
+              [36m</tr>[39m
+            [36m</thead>[39m
+            [36m<tbody>[39m
+              [36m<tr>[39m
+                [36m<th[39m
+                  [33mscope[39m=[32m"row"[39m
+                [36m>[39m
+                  [0mSynthetic Baseline Skater[0m
+                [36m</th>[39m
+                [36m<td>[39m
+                  [0mTOR[0m
+                  [0m at [0m
+                  [0mMIN[0m
+                  [0m · [0m
+                  [0m2026-10-16[0m
+                  [0m · Game [0m
+                  [0m30[0m
+                [36m</td>[39m
+                [36m<td>[39m
+                  [0mSOG[0m
+                [36m</td>[39m
+                [36m<td>[39m
+                  [0m4[0m
+                [36m</td>[39m
+                [36m<td>[39m
+                  [0mPer appearance[0m
+                [36m</td>[39m
+              [36m</tr>[39m
+            [36m</tbody>[39m
+          [36m</table>[39m
+        [36m</div>[39m
+        [36m<p>[39m
+          [0mOriginal source clocks and available sample coverage and limitations appear in each player’s game values and sources below.[0m
+        [36m</p>[39m
+      [36m</section>[39m
+      [36m<div[39m
+        [33maria-label[39m=[32m"Forecast totals"[39m
+        [33mclass[39m=[32m"_tableScroll_0ac5ad"[39m
+        [33mrole[39m=[32m"region"[39m
+        [33mtabindex[39m=[32m"0"[39m
+      [36m>[39m
+        [36m<table>[39m
+          [36m<caption>[39m
+            [0mExpected totals for [0m
+            [0mthe next 1 scheduled team games[0m
+          [36m</caption>[39m
+          [36m<thead>[39m
+            [36m<tr>[39m
+              [36m<th[39m
+                [33mscope[39m=[32m"col"[39m
+              [36m>[39m
+                [0mPlayer[0m
+              [36m</th>[39m
+              [36m<th[39m
+                [33mscope[39m=[32m"col"[39m
+              [36m>[39m
+                [0mSchedule opportunities[0m
+              [36m</th>[39m
+              [36m<th[39m
+                [33mscope[39m=[32m"col"[39m
+              [36m>[39m
+                [0mExpected appearances[0m
+              [36m</th>[39m
+              [36m<th[39m
+                [33mscope[39m=[32m"col"[39m
+              [36m>[39m
+                [0mG[0m
+              [36m</th>[39m
+              [36m<th[39m
+                [33mscope[39m=[32m"col"[39m
+              [36m>[39m
+                [0mA[0m
+              [36m</th>[39m
+              [36m<th[39m
+                [33mscope[39m=[32m"col"[39m
+              [36m>[39m
+                [0mPPP[0m
+              [36m</th>[39m
+              [36m<th[39m
+                [33mscope[39m=[32m"col"[39m
+              [36m>[39m
+                [0mSOG[0m
+              [36m</th>[39m
+              [36m<th[39m
+                [33mscope[39m=[32m"col"[39m
+              [36m>[39m
+                [0mHIT[0m
+              [36m</th>[39m
+              [36m<th[39m
+                [33mscope[39m=[32m"col"[39m
+              [36m>[39m
+                [0mBLK[0m
+              [36m</th>[39m
+              [36m<th[39m
+                [33mscope[39m=[32m"col"[39m
+              [36m>[39m
+                [0mPIM[0m
+              [36m</th>[39m
+            [36m</tr>[39m
+          [36m</thead>[39m
+          [36m<tbody>[39m
+            [36m<tr>[39m
+              [36m<th[39m
+                [33mscope[39m=[32m"row"[39m
+              [36m>[39m
+                [36m<a[39m
+                  [33mhref[39m=[32m"#player-7"[39m
+                [36m>[39m
+                  [0mSynthetic Baseline Skater[0m
+                [36m</a>[39m
+                [36m<small>[39m
+                  [0mMIN[0m
+                [36m</small>[39m
+              [36m</th>[39m
+              [36m<td>[39m
+                [0m1[0m
+              [36m</td>[39m
+              [36m<td>[39m
+                [0mUnavailable[0m
+              [36m</td>[39m
+              [36m<td[39m
+                [33mtitle[39m=[32m"0/1 games covered"[39m
+              [36m>[39m
+                [0mUnavailable[0m
+              [36m</td>[39m
+              [36m<td[39m
+                [33mtitle[39m=[32m"0/1 games covered"[39m
+              [36m>[39m
+                [0mUnavailable[0m
+              [36m</td>[39m
+              [36m<td[39m
+                [33mtitle[39m=[32m"0/1 games covered"[39m
+              [36m>[39m
+                [0mUnavailable[0m
+              [36m</td>[39m
+              [36m<td[39m
+                [33mtitle[39m=[32m"0/1 games covered"[39m
+              [36m>[39m
+                [0mUnavailable[0m
+              [36m</td>[39m
+              [36m<td[39m
+                [33mtitle[39m=[32m"0/1 games covered"[39m
+              [36m>[39m
+                [0mUnavailable[0m
+              [36m</td>[39m
+              [36m<td[39m
+                [33mtitle[39m=[32m"0/1 games covered"[39m
+              [36m>[39m
+                [0mUnavailable[0m
+              [36m</td>[39m
+              [36m<td[39m
+                [33mtitle[39m=[32m"0/1 games covered"[39m
+              [36m>[39m
+                [0mUnavailable[0m
+              [36m</td>[39m
+            [36m</tr>[39m
+          [36m</tbody>[39m
+        [36m</table>[39m
+      [36m</div>[39m
+      [36m<details[39m
+        [33mclass[39m=[32m"_player_0ac5ad"[39m
+        [33mid[39m=[32m"player-7"[39m
+      [36m>[39m
+        [36m<summary>[39m
+          [0mSynthetic Baseline Skater[0m
+          [0m · game values and sources[0m
+        [36m</summary>[39m
+      [36m</details>[39m
+      [36m<details>[39m
+        [36m<summary>[39m
+          [0mCoverage and method limitations[0m
+        [36m</summary>[39m
+        [36m<ul>[39m
+          [36m<li>[39m
+            [0mScheduled opportunities are not expected appearances. Unknown participation remains unavailable.[0m
+          [36m</li>[39m
+          [36m<li>[39m
+            [0mConditional values are per appearance/start and permitted only for the stated conditional use; they are not horizon totals.[0m
+          [36m</li>[39m
+          [36m<li>[39m
+            [0mTotals sum distinct admitted game-level expectations; incomplete heads or horizons remain unavailable.[0m
+          [36m</li>[39m
+          [36m<li>[39m
+            [0mRatios use summed expected primitives, not the expected value of a realized ratio. No calibrated uncertainty is implied.[0m
+          [36m</li>[39m
+        [36m</ul>[39m
+      [36m</details>[39m
+    [36m</main>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getElementError node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:20:35
+ ❯ getMultipleElementsFoundError node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:23:10
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ __tests__/pages/forge/forecasts.test.tsx:117:19
+    115|     expect(screen.getByRole("table", { name: "Conditional category val…
+    116|     await act(async () => vi.advanceTimersByTimeAsync(1000));
+    117|     expect(screen.queryByRole("table")).toBeNull();
+       |                   ^
+    118|     expect(screen.getByRole("alert").textContent).toContain("expired");
+    119|     await act(async () => fireEvent.click(screen.getByRole("button", {…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  __tests__/pages/forge/forecasts.test.tsx > FORGE forecast page synthetic API readback > offers a 20-team-game horizon
+TestingLibraryElementError: Unable to find an accessible element with the role "option" and name "20"
+
+Here are the accessible roles:
+
+  main:
+
+  Name "":
+  [36m<main[39m
+    [33mclass[39m=[32m"_page_0ac5ad"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  navigation:
+
+  Name "FORGE navigation":
+  [36m<nav[39m
+    [33maria-label[39m=[32m"FORGE navigation"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  link:
+
+  Name "Command Center":
+  [36m<a[39m
+    [33mhref[39m=[32m"/forge/command-center"[39m
+  [36m/>[39m
+
+  Name "Start Chart":
+  [36m<a[39m
+    [33mhref[39m=[32m"/start-chart"[39m
+  [36m/>[39m
+
+  Name "Roster Schedule Optimizer":
+  [36m<a[39m
+    [33mhref[39m=[32m"/roster-schedule-optimizer"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  heading:
+
+  Name "Game forecasts":
+  [36m<h1 />[39m
+
+  --------------------------------------------------
+  combobox:
+
+  Name "Window":
+  [36m<select />[39m
+
+  Name "Team games":
+  [36m<select />[39m
+
+  --------------------------------------------------
+  option:
+
+  Name "Next scheduled team games":
+  [36m<option[39m
+    [33mvalue[39m=[32m"next_n"[39m
+  [36m/>[39m
+
+  Name "Selected dates / week":
+  [36m<option[39m
+    [33mvalue[39m=[32m"calendar"[39m
+  [36m/>[39m
+
+  Name "1":
+  [36m<option />[39m
+
+  Name "2":
+  [36m<option />[39m
+
+  Name "3":
+  [36m<option />[39m
+
+  Name "4":
+  [36m<option />[39m
+
+  Name "5":
+  [36m<option />[39m
+
+  Name "6":
+  [36m<option />[39m
+
+  Name "7":
+  [36m<option />[39m
+
+  Name "8":
+  [36m<option />[39m
+
+  Name "9":
+  [36m<option />[39m
+
+  Name "10":
+  [36m<option />[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Load released forecasts":
+  [36m<button[39m
+    [33mtype[39m=[32m"submit"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"_page_0ac5ad"[39m
+    [36m>[39m
+      [36m<nav[39m
+        [33maria-label[39m=[32m"FORGE navigation"[39m
+      [36m>[39m
+        [36m<a[39m
+          [33mhref[39m=[32m"/forge/command-center"[39m
+        [36m>[39m
+          [0mCommand Center[0m
+        [36m</a>[39m
+        [0m · [0m
+        [36m<a[39m
+          [33mhref[39m=[32m"/start-chart"[39m
+        [36m>[39m
+          [0mStart Chart[0m
+        [36m</a>[39m
+        [0m · [0m
+        [36m<a[39m
+          [33mhref[39m=[32m"/roster-schedule-optimizer"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</a>[39m
+      [36m</nav>[39m
+      [36m<h1>[39m
+        [0mGame forecasts[0m
+      [36m</h1>[39m
+      [36m<p>[39m
+        [0mNext-game, next-N and selected-date expectations use the same released game-level forecasts.[0m
+      [36m</p>[39m
+      [36m<form[39m
+        [33mclass[39m=[32m"_controls_0ac5ad"[39m
+      [36m>[39m
+        [36m<label>[39m
+          [0mWindow[0m
+          [36m<select>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"next_n"[39m
+            [36m>[39m
+              [0mNext scheduled team games[0m
+            [36m</option>[39m
+            [36m<option[39m
+              [33mvalue[39m=[32m"calendar"[39m
+            [36m>[39m
+              [0mSelected dates / week[0m
+            [36m</option>[39m
+          [36m</select>[39m
+        [36m</label>[39m
+        [36m<label>[39m
+          [0mFrom (UTC)[0m
+          [36m<input[39m
+            [33mrequired[39m=[32m""[39m
+            [33mtype[39m=[32m"date"[39m
+            [33mvalue[39m=[32m"2026-10-16"[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<label>[39m
+          [0mTeam games[0m
+          [36m<select>[39m
+            [36m<option>[39m
+              [0m1[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m2[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m3[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m4[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m5[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m6[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m7[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m8[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m9[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0m10[0m
+            [36m</option>[39m
+          [36m</select>[39m
+        [36m</label>[39m
+        [36m<button[39m
+          [33mtype[39m=[32m"submit"[39m
+        [36m>[39m
+          [0mLoad released forecasts[0m
+        [36m</button>[39m
+      [36m</form>[39m
+      [36m<p>[39m
+        [0mScheduled games describe opportunities. Actual appearances and starts depend on participation evidence. Missing categories and incomplete totals remain unavailable.[0m
+      [36m</p>[39m
+      [36m<p>[39m
+        [0mSelect a window to read released forecasts.[0m
+      [36m</p>[39m
+    [36m</main>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ __tests__/pages/forge/forecasts.test.tsx:125:19
+    123|   it("offers a 20-team-game horizon", () => {
+    124|     render(<ForgeForecastsPage />);
+    125|     expect(screen.getByRole("option", { name: "20", exact: true })).to…
+       |                   ^
+    126|   });
+    127|   it("keeps calendar controls usable when the date field is cleared", …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  3 failed (3)
+      Tests  4 failed | 218 skipped (222)
+   Start at  21:26:23
+   Duration  1.21s (transform 647ms, setup 6ms, collect 1.55s, tests 250ms, environment 525ms, prepare 104ms)
+

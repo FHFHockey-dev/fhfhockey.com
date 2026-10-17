@@ -1,0 +1,12 @@
+{
+  "executed": false,
+  "verification": "ASTcompile/static assertions only",
+  "sha256": "ca244dabfeaeabde90e381981e884d15c55221c558eb14458ed1933a71af65f0",
+  "expectedScopeHash": "eab29c8c1413bc553908a01f0f5e6d760565ee58675d336931f7420b174e8b7c",
+  "requestsMade": 0,
+  "credentialsRead": false,
+  "automaticRetries": 0,
+  "independentReview": "ACCEPT corrected hash; no remaining blocking findings",
+  "reviewCorrection": "Catch UnicodeError from captured response decoding; preserve UNKNOWN/no-retry/readback path",
+  "reviewReport": "independent-write-script-review.md"
+}

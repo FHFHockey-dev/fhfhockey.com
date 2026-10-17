@@ -1,0 +1,40 @@
+
+> web@0.1.0 test
+> vitest --run lib/sources/tweetClaimEvidence.test.ts lib/sources/tweetClaimLineage.test.ts lib/sources/tweetClaimSourceHints.test.ts lib/sources/tweetClaimEvaluationIntake.test.ts lib/sources/tweetClaimEvaluationBounds.test.ts lib/sources/tweetClaimExtraction.test.ts lib/newsFeed.test.ts lib/lines/service.test.ts components/NewsFeed/NewsCard.test.tsx __tests__/pages/api/v1/db/update-line-sources.test.ts __tests__/pages/api/v1/db/update-lines-ccc.test.ts ../tasks/ifttt-integration-2026-10-16/review/independent-regressions.test.ts ../tasks/ifttt-integration-2026-10-16/review-v3/independent-lineage.test.ts ../tasks/ifttt-integration-2026-10-16/review-v3/independent-hint-provenance.test.ts --config ../tasks/ifttt-integration-2026-10-16/review-v3/vitest.review.config.mjs
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:95080) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:95081) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:95079) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/sources/tweetClaimEvaluationBounds.test.ts (1 test) 2ms
+ ✓ lib/sources/tweetClaimEvaluationIntake.test.ts (1 test) 2ms
+ ✓ lib/sources/tweetClaimEvidence.test.ts (3 tests) 19ms
+ ✓ lib/newsFeed.test.ts (30 tests) 11ms
+ ✓ lib/sources/tweetClaimExtraction.test.ts (13 tests) 20ms
+ ✓ lib/sources/tweetClaimSourceHints.test.ts (3 tests) 27ms
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-v3/independent-hint-provenance.test.ts (5 tests) 27ms
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-v3/independent-lineage.test.ts (3 tests) 32ms
+ ✓ lib/sources/tweetClaimLineage.test.ts (7 tests) 46ms
+ ✓ ../tasks/ifttt-integration-2026-10-16/review/independent-regressions.test.ts (7 tests) 22ms
+ ✓ lib/lines/service.test.ts (10 tests) 24ms
+ ✓ components/NewsFeed/NewsCard.test.tsx (18 tests) 88ms
+ ✓ __tests__/pages/api/v1/db/update-lines-ccc.test.ts (10 tests) 45ms
+stdout | __tests__/pages/api/v1/db/update-line-sources.test.ts > /api/v1/db/update-line-sources > replays the frozen 11 regression and 24 candidate records equivalently through GDL and CCC with mocked enrichment and storage
+Frozen gdl equivalent-route evaluation {"development_regression":{"posts":11,"accepted":6,"review":5,"emittedEvents":4,"confirmedFacts":0},"semantic_holdout_candidate":{"posts":19,"accepted":13,"review":6,"emittedEvents":5,"confirmedFacts":1},"quarantined_related":{"posts":5,"accepted":4,"review":1,"emittedEvents":0,"confirmedFacts":0}}
+
+stdout | __tests__/pages/api/v1/db/update-line-sources.test.ts > /api/v1/db/update-line-sources > replays the frozen 11 regression and 24 candidate records equivalently through GDL and CCC with mocked enrichment and storage
+Frozen ccc equivalent-route evaluation {"development_regression":{"posts":11,"accepted":6,"review":5,"emittedEvents":4,"confirmedFacts":0},"semantic_holdout_candidate":{"posts":19,"accepted":13,"review":6,"emittedEvents":5,"confirmedFacts":1},"quarantined_related":{"posts":5,"accepted":4,"review":1,"emittedEvents":0,"confirmedFacts":0}}
+
+ ✓ __tests__/pages/api/v1/db/update-line-sources.test.ts (31 tests) 1653ms
+   ✓ /api/v1/db/update-line-sources > replays the frozen 11 regression and 24 candidate records equivalently through GDL and CCC with mocked enrichment and storage  1527ms
+
+ Test Files  14 passed (14)
+      Tests  142 passed (142)
+   Start at  23:06:49
+   Duration  2.80s (transform 1.69s, setup 440ms, collect 5.71s, tests 2.02s, environment 925ms, prepare 1.33s)
+

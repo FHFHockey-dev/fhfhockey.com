@@ -1,0 +1,9 @@
+{
+  "jobid": null,
+  "jobname": "refresh-roster-optimizer-schedule",
+  "schedule": "50 9,21 * * *",
+  "run_time_utc": "09:50 UTC, 21:50 UTC",
+  "active": true,
+  "method": "POST",
+  "route": "/api/v1/db/refresh-roster-optimizer-schedule?profile=current-next-v1&dryRun=false"
+}

@@ -1,0 +1,16 @@
+[
+  {
+    "source": "ifttt-claim-identity-repair-2026-10-15/source/web/lib/sources/tweetSourceClaimRegistry.ts",
+    "target": "web/lib/sources/tweetSourceClaimRegistry.ts",
+    "sourceSha256": "03f58f5793b5083dd48935ab525f869205e338798b45d768c9008c0b55004468",
+    "localSha256": "03f58f5793b5083dd48935ab525f869205e338798b45d768c9008c0b55004468",
+    "adaptation": "byte-identical"
+  },
+  {
+    "source": "ifttt-claim-reducer-adapter-2026-10-15/source/tweetClaimReducerAdapter.ts",
+    "target": "web/lib/sources/tweetClaimReducerAdapter.ts",
+    "sourceSha256": "030e76f44ee3541260450bdaae6e62ea16968287248ae729654a0248b5b725b0",
+    "localSha256": "78a0e2cce23be93a07f781477657dad6bfa1cd74dfb6a73ffe68a082724b2332",
+    "adaptation": "relative imports only"
+  }
+]

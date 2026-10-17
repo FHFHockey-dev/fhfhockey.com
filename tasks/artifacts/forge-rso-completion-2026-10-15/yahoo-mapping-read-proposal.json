@@ -1,0 +1,31 @@
+{
+  "status": "prepared_not_executed",
+  "projectRef": "fyhftlxokyjtpndbkfse",
+  "calls": 1,
+  "retries": 0,
+  "readOnly": true,
+  "requestedKeys": 69,
+  "ownedKeys": 19,
+  "candidateKeys": 50,
+  "maximumReturnedRows": 138,
+  "sqlLimit": 139,
+  "statementTimeout": "8s",
+  "wallClockTimeout": "Tool transport overhead is not bounded by SET LOCAL statement_timeout; no retry if timeout or uncertain outcome.",
+  "scope": [
+    "fhfh_player_external_identities: exact captured Yahoo keys, exact game/season context, verified mappings only",
+    "fhfh_player_identities: canonical identity metadata, verified and not merged; duplicate NHL identity count"
+  ],
+  "acceptance": "For each key require exactly one nonnull returned mapping, positive canonical/NHL IDs, reverse_owner_count=1, forward_mapping_count=1, canonical_nhl_owner_count=1 and exact context/season. Missing/ambiguous stays unknown. No name-derived fallback.",
+  "clubMetadata": "Excluded. This query establishes identities only; canonical current club membership for 50 candidates remains a separate scoped input.",
+  "privateSqlPath": "/Users/tim/Documents/FHFH-private/forge-rso-completion-20261016-v1/yahoo-mapping-read-proposal-v1/query.sql",
+  "sqlSHA256": "ff6ae6aeb164e095fc1854d3f19a68e2b7f9acf5f74b84bc1378e605262b72e1",
+  "privateExactToolArgsPath": "/Users/tim/Documents/FHFH-private/forge-rso-completion-20261016-v1/yahoo-mapping-read-proposal-v1/execute-sql-args.json",
+  "toolArgsSHA256": "9ded0e7dad970b3dc759076b386ece5bb6062e55c94a45f6d5048422db8f8627",
+  "sourceReconciliationSHA256": "eb19eb79465c0afb74d5eabd2d7711dcec3a7e177a97909ef86f1303e5a99a31",
+  "localSourceEvidence": [
+    "web/lib/integrations/yahoo/liveDraftServer.ts:614-650 (provider/context/season identity lookup)",
+    "web/lib/integrations/yahoo/rosterPlanning.ts:202-220 (bidirectional singleton requirement)",
+    "tasks/artifacts/forge-rso-completion-2026-10-15/next-input-read-queries.json:yahoo_fiala_cached_injury (existing schema/verified/unmerged/reverse-count contract)"
+  ],
+  "execution": "Not executed. Requires separate approval of exact private SQL/tool-args hashes. No credentials, cached Yahoo player fields, outcomes, form, or writes."
+}

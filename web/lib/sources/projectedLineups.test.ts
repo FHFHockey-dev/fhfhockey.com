@@ -116,6 +116,11 @@ describe("projected unit publishing", () => {
     await persistTweetProjectionReports(database.db, fixtures.map(({ source }) => source));
     const parent = [...database.tables.get("line_source_snapshots")!.values()].find((row) => row.metadata.derived);
     expect(parent).toBeDefined(); expect(parent.source).toBe("tweet_projection");
+    if (kind === "injury") {
+      expect(parent.goalie_1_player_id).toBeNull(); expect(parent.goalie_1_name).toBeNull();
+      expect(parent.goalie_2_player_id).toBeNull(); expect(parent.goalie_2_name).toBeNull();
+      expect(parent.metadata.interpretation.events).toMatchObject([{ kind: "injury", playerId: 2 }]);
+    }
     expect(parent.tweet_id).toBeNull(); expect(parent.quoted_tweet_id).toBeNull();
     expect(parent.source_handle).toBeNull(); expect(parent.author_name).toBeNull();
     expect(parent.metadata.sourceAccountKind).toBe("internal_derivation");

@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run __tests__/components/RosterScheduleOptimizer/AcquisitionRules.integration.test.tsx --reporter=dot
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:18237) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+··
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  19:24:09
+   Duration  1.95s (transform 399ms, setup 4ms, collect 712ms, tests 722ms, environment 301ms, prepare 35ms)
+

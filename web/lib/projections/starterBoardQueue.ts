@@ -2,10 +2,58 @@ import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { runProjectionV2ForDate } from "./run-forge-projections";
 import { starterBoardCanaryGameIds, starterBoardFlags, starterBoardScopeAllowed } from "./starterBoardFlags";
+import { prepareForecastCadence, type ForecastCadenceInput } from "lib/fantasy-projections/seasonJobs";
 
 export const STARTER_BOARD_LATENCY = { coalescingMs: 30_000, dispatchMs: 60_000, computeMs: 150_000, visibleMs: 60_000 } as const;
 
 export type StarterBoardJob = { game_id: number; claimed_version: number; first_accepted_at: string };
+
+/** Opt-in coordinator only. Existing news dispatch remains unchanged. Source
+ * receipts must come from the bounded upstream completion check, not a clock. */
+export async function enqueueStarterBoardCadence(db: SupabaseClient<any>, input: ForecastCadenceInput) {
+  const flags = starterBoardFlags();
+  if (!flags.capture || !flags.compute || !flags.scheduler) throw new Error("Starter Board cadence is not enabled");
+  if (!starterBoardScopeAllowed(input.games.map(game => game.gameId))) throw new Error("Game is outside the Starter Board canary scope");
+  // Per-game durable SQL receipts are authoritative. A caller's stale or
+  // global morning receipt must not accidentally suppress another game.
+  const plan = prepareForecastCadence({ ...input, previous: [] });
+  const deadlineMs = Date.now() + 30_000;
+  const results: Array<{ gameId: number; key: string; outcome: string; reasons?: string[] }> = [];
+  for (const slot of plan.slots) {
+    const games = slot.gameId === null ? input.games : input.games.filter(game => game.gameId === slot.gameId);
+    for (const game of games) {
+      const reasons = [...slot.reasons];
+      if (Date.parse(game.startsAt) <= input.now.getTime()) reasons.push("game_started");
+      if (reasons.length) { results.push({ gameId: game.gameId, key: slot.key, outcome: "held", reasons }); continue; }
+      if (Date.now() >= deadlineMs) {
+        results.push({ gameId: game.gameId, key: slot.key, outcome: "held", reasons: ["coordinator_deadline"] });
+        return { ...plan, results, stopped: true };
+      }
+      const controller = new AbortController();
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        const request = db.rpc("enqueue_forge_cadence_slot", {
+          p_game_id: game.gameId, p_date: input.date, p_kind: slot.kind,
+          p_start_time: new Date(game.startsAt).toISOString(),
+          p_required_sources: input.requiredSources, p_sources: input.sources,
+        }).abortSignal(controller.signal);
+        const { data, error } = await Promise.race([request, new Promise<never>((_, reject) => {
+          timer = setTimeout(() => { controller.abort(); reject(new Error("Cadence enqueue deadline exceeded")); }, Math.min(5000, deadlineMs - Date.now()));
+        })]);
+        if (error || controller.signal.aborted || !data || !["enqueued", "deduplicated", "held"].includes(data.outcome)) {
+          results.push({ gameId: game.gameId, key: slot.key, outcome: "unknown", reasons: ["enqueue_readback_required"] });
+          return { ...plan, results, stopped: true };
+        }
+        results.push({ gameId: game.gameId, key: slot.key, outcome: data.outcome,
+          ...(data.reason ? { reasons: [data.reason] } : {}) });
+      } catch {
+        results.push({ gameId: game.gameId, key: slot.key, outcome: "unknown", reasons: ["enqueue_readback_required"] });
+        return { ...plan, results, stopped: true };
+      } finally { clearTimeout(timer); controller.abort(); }
+    }
+  }
+  return { ...plan, results, stopped: false };
+}
 
 export async function claimStarterBoardJobs(db: SupabaseClient<any>, limit = 16) {
   if (!starterBoardFlags().compute || !starterBoardFlags().capture) throw new Error("Starter Board computation and capture are not enabled");
@@ -59,12 +107,15 @@ export async function drainStarterBoardQueue(db: SupabaseClient<any>, limit = 4)
 }
 
 /** Each game receives its own function budget; the dispatcher awaits all receipts. */
-export async function dispatchStarterBoardJobs(db: SupabaseClient<any>, origin: string, secret: string, request = fetch) {
+export async function dispatchStarterBoardJobs(db: SupabaseClient<any>, origin: string, secret: string, request = fetch,
+  cadenceInput?: ForecastCadenceInput) {
   const url = new URL("/api/v1/db/drain-starter-board", origin);
   if (url.protocol !== "https:" && !(process.env.NODE_ENV !== "production" && ["localhost", "127.0.0.1"].includes(url.hostname))) {
     throw new Error("A trusted HTTPS worker origin is required");
   }
   if (!secret.trim()) throw new Error("Scheduler authentication is missing");
+  const cadence = cadenceInput ? await enqueueStarterBoardCadence(db, cadenceInput) : null;
+  if (cadence?.stopped) return { dispatched: 0, failed: 1, results: [], cadence };
   const { owner, jobs } = await claimStarterBoardJobs(db);
   const results = await Promise.all(jobs.map(async (job) => {
     const controller = new AbortController();
@@ -81,5 +132,6 @@ export async function dispatchStarterBoardJobs(db: SupabaseClient<any>, origin: 
       clearTimeout(timeout);
     }
   }));
-  return { dispatched: jobs.length, failed: results.filter((item) => !item.ok).length, results };
+  return { dispatched: jobs.length, failed: results.filter((item) => !item.ok).length, results,
+    ...(cadence ? { cadence } : {}) };
 }

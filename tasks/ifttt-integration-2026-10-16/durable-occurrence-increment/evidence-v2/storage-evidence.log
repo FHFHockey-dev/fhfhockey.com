@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-persistence.test.ts lib/sources/tweetClaimQualificationStorage.test.ts lib/sources/tweetClaimRegistry.test.ts --config ../tasks/ifttt-integration-2026-10-16/durable-occurrence-increment/vitest.config.mjs
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-persistence.test.ts (4 tests) 1481ms
+ ✓ lib/sources/tweetClaimRegistry.test.ts (17 tests) 1536ms
+ ✓ lib/sources/tweetClaimQualificationStorage.test.ts (23 tests) 2688ms
+
+ Test Files  3 passed (3)
+      Tests  44 passed (44)
+   Start at  00:29:41
+   Duration  3.16s (transform 243ms, setup 37ms, collect 765ms, tests 5.71s, environment 0ms, prepare 97ms)
+

@@ -4,6 +4,7 @@ import { buildEndpointScanSummary } from "lib/api/scanSummary";
 import { resolveLatestStartedSeasonIdForDate } from "lib/NHL/server";
 import { resolveProjectionTeamIdentity } from "lib/NHL/seasonAwareScheduleTeam";
 import supabase from "lib/supabase/server";
+import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { buildRequestedDateServingState } from "lib/dashboard/freshness";
 import { buildCanonicalReaderCompatibility } from "lib/projections/compatibilityInventory";
@@ -138,7 +139,7 @@ async function fetchFallbackRunWithPlayerData(
   const scanCandidates = async (includeFutureDates: boolean) => {
     let query = supabase
       .from("forge_runs")
-      .select("run_id,as_of_date")
+      .select("run_id,as_of_date,metrics")
       .eq("status", "succeeded")
       .order("as_of_date", { ascending: false })
       .order("created_at", { ascending: false })
@@ -154,8 +155,10 @@ async function fetchFallbackRunWithPlayerData(
     const rows = (candidates ?? []) as Array<{
       run_id: string;
       as_of_date: string;
+      metrics?: { input_provenance?: { external_fantasy_input_contract?: string } };
     }>;
     for (const row of rows) {
+      if (row.metrics?.input_provenance?.external_fantasy_input_contract !== FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT) continue;
       const { count, error } = await supabase
         .from("forge_player_projections")
         .select("player_id", { count: "exact", head: true })

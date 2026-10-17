@@ -1,0 +1,4 @@
+{
+ "extends":"../parent-recovery-increment/tsconfig.json",
+ "include":["../../../web/next-bootstrap.d.ts","../../../web/yahoo-fantasy.d.ts","../../../web/lib/sources/tweetClaimForecastDelivery.ts","./consumer-binding.test.ts"]
+}

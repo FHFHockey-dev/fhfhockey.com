@@ -1,0 +1,130 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v2/independent-fixture-contract.test.ts ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v2/independent-applicability-negatives.test.ts --config ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v2/vitest.review.config.mjs --reporter=default --reporter=json --outputFile=../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v2/focused-results.json
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+stdout | ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v2/independent-fixture-contract.test.ts > independent corrected game fixture contract > 'CR011-POSITIVE-v2' keeps all supplied scope dates consistent with its explicit source applicability
+fixture dates {"id":"CR011-POSITIVE-v2","record":"a","declared":"2026-10-16","applicability":"2026-10-16","effectiveAt":"2026-10-16T23:00:00Z"}
+fixture dates {"id":"CR011-POSITIVE-v2","record":"b","declared":"2026-10-17","applicability":"2026-10-17","effectiveAt":"2026-10-17T23:00:00Z"}
+
+stdout | ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v2/independent-fixture-contract.test.ts > independent corrected game fixture contract > 'CR051-POSITIVE-v2' keeps all supplied scope dates consistent with its explicit source applicability
+fixture dates {"id":"CR051-POSITIVE-v2","record":"a","declared":"2026-10-16","applicability":"2026-10-16","effectiveAt":"2026-10-16T17:00:00Z"}
+fixture dates {"id":"CR051-POSITIVE-v2","record":"b","declared":"2026-10-16","applicability":"2026-10-16","effectiveAt":"2026-10-16T23:00:00Z"}
+
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v2/independent-fixture-contract.test.ts (3 tests) 10ms
+stdout | ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v2/independent-applicability-negatives.test.ts > independent explicit applicability safety negatives > holds a proof when raw effectiveAt 2026-10-16T23:00:00Z differs from its exact start
+applicability clock result {"effectiveAt":"2026-10-16T23:00:00Z","proofStart":"2026-10-17T23:00:00Z","result":{"status":"verified","basis":"retained official game roster 9a78a1409b175235dd72d9401958b1c5202b32e8a12690f1f41780f925031cff; known before source publication","playerId":8478499,"teamId":6,"league":"NHL","role":"goalie","scopeDate":"2026-10-17","governingPredicateBasis":"exact lexical predicate 2ee7541484e401a620ff30c1affa497f8951c065c72627bfba68dac76c49b815"}}
+
+stdout | ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v2/independent-applicability-negatives.test.ts > independent explicit applicability safety negatives > holds a proof when raw effectiveAt 2026-10-17T22:00:00Z differs from its exact start
+applicability clock result {"effectiveAt":"2026-10-17T22:00:00Z","proofStart":"2026-10-17T23:00:00Z","result":{"status":"verified","basis":"retained official game roster 9a78a1409b175235dd72d9401958b1c5202b32e8a12690f1f41780f925031cff; known before source publication","playerId":8478499,"teamId":6,"league":"NHL","role":"goalie","scopeDate":"2026-10-17","governingPredicateBasis":"exact lexical predicate 2ee7541484e401a620ff30c1affa497f8951c065c72627bfba68dac76c49b815"}}
+
+stdout | ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v2/independent-applicability-negatives.test.ts > independent explicit applicability safety negatives > rejects an oversized governing span even when slice clamps to the matching text
+oversized applicability span {"version":"explicit-game-date-v1","gameId":2026020010,"teamId":6,"date":"2026-10-17","startTime":"2026-10-17T23:00:00Z","publishedAt":"2026-10-16T15:00:00Z","governingClause":{"start":0,"end":999,"text":"BOS Jeremy Swayman starts on 2026-10-17."}}
+
+stdout | ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v2/independent-applicability-negatives.test.ts > independent explicit applicability safety negatives > rejects timezone-less publication clocks in source-date receipts
+timezone-less applicability {"field":"publication","proof":{"version":"explicit-game-date-v1","gameId":2026020010,"teamId":6,"date":"2026-10-17","startTime":"2026-10-17T23:00:00Z","publishedAt":"2026-10-16T15:00:00","governingClause":{"start":0,"end":40,"text":"BOS Jeremy Swayman starts on 2026-10-17."}}}
+
+stdout | ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v2/independent-applicability-negatives.test.ts > independent explicit applicability safety negatives > rejects timezone-less start clocks in source-date receipts
+timezone-less applicability {"field":"start","proof":null}
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v2/independent-applicability-negatives.test.ts (5 tests | 4 failed) 23ms
+   × independent explicit applicability safety negatives > holds a proof when raw effectiveAt 2026-10-16T23:00:00Z differs from its exact start 17ms
+     → expected 'verified' to be 'pending' // Object.is equality
+   × independent explicit applicability safety negatives > holds a proof when raw effectiveAt 2026-10-17T22:00:00Z differs from its exact start 3ms
+     → expected 'verified' to be 'pending' // Object.is equality
+   × independent explicit applicability safety negatives > rejects an oversized governing span even when slice clamps to the matching text 1ms
+     → expected { …(7) } to be null
+   × independent explicit applicability safety negatives > rejects timezone-less publication clocks in source-date receipts 1ms
+     → expected { …(7) } to be null
+   ✓ independent explicit applicability safety negatives > rejects timezone-less start clocks in source-date receipts 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v2/independent-applicability-negatives.test.ts > independent explicit applicability safety negatives > holds a proof when raw effectiveAt 2026-10-16T23:00:00Z differs from its exact start
+ FAIL  ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v2/independent-applicability-negatives.test.ts > independent explicit applicability safety negatives > holds a proof when raw effectiveAt 2026-10-17T22:00:00Z differs from its exact start
+AssertionError: expected 'verified' to be 'pending' // Object.is equality
+
+Expected: "pending"
+Received: "verified"
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v2/independent-applicability-negatives.test.ts:27:27
+     25|     const result = datedTweetClaimBinding(claim, evidence);
+     26|     console.log("applicability clock result", JSON.stringify({ effecti…
+     27|     expect(result.status).toBe("pending");
+       |                           ^
+     28|   });
+     29|   it("rejects an oversized governing span even when slice clamps to th…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v2/independent-applicability-negatives.test.ts > independent explicit applicability safety negatives > rejects an oversized governing span even when slice clamps to the matching text
+AssertionError: expected { …(7) } to be null
+
+- Expected: 
+null
+
++ Received: 
+{
+  "date": "2026-10-17",
+  "gameId": 2026020010,
+  "governingClause": {
+    "end": 999,
+    "start": 0,
+    "text": "BOS Jeremy Swayman starts on 2026-10-17.",
+  },
+  "publishedAt": "2026-10-16T15:00:00Z",
+  "startTime": "2026-10-17T23:00:00Z",
+  "teamId": 6,
+  "version": "explicit-game-date-v1",
+}
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v2/independent-applicability-negatives.test.ts:33:19
+     31|     const proof = explicitTweetClaimGameApplicability({ ...args, gover…
+     32|     console.log("oversized applicability span", JSON.stringify(proof));
+     33|     expect(proof).toBeNull();
+       |                   ^
+     34|   });
+     35|   it.each(["publication", "start"] as const)("rejects timezone-less %s…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v2/independent-applicability-negatives.test.ts > independent explicit applicability safety negatives > rejects timezone-less publication clocks in source-date receipts
+AssertionError: expected { …(7) } to be null
+
+- Expected: 
+null
+
++ Received: 
+{
+  "date": "2026-10-17",
+  "gameId": 2026020010,
+  "governingClause": {
+    "end": 40,
+    "start": 0,
+    "text": "BOS Jeremy Swayman starts on 2026-10-17.",
+  },
+  "publishedAt": "2026-10-16T15:00:00",
+  "startTime": "2026-10-17T23:00:00Z",
+  "teamId": 6,
+  "version": "explicit-game-date-v1",
+}
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v2/independent-applicability-negatives.test.ts:41:19
+     39|     const proof = explicitTweetClaimGameApplicability(altered);
+     40|     console.log("timezone-less applicability", JSON.stringify({ field,…
+     41|     expect(proof).toBeNull();
+       |                   ^
+     42|   });
+     43| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  4 failed | 4 passed (8)
+   Start at  00:35:04
+   Duration  370ms (transform 104ms, setup 29ms, collect 175ms, tests 33ms, environment 0ms, prepare 62ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v2/focused-results.json

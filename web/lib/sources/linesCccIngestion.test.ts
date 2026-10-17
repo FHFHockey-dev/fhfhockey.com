@@ -1,7 +1,10 @@
 // @vitest-environment node
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { buildTeamDirectory } from "./lineupSourceIngestion";
+import { edmontonSectionRoster, edmontonSectionText, explicit11F7DText, seattleSectionRoster, seattleSectionText } from "../../__tests__/fixtures/lineupSectionFixtures";
+import { completeEvenStrengthUnits, interpretTweetUnits, type TweetInterpretation } from "./tweetInterpretation";
+import { reviewTweetApplicability } from "./lineSourceProcessing";
 import {
   applyLinesCccWrapperOEmbed,
   applyQuotedTweetPreference,
@@ -65,7 +68,7 @@ const canadiensRoster = [
   { playerId: 19, fullName: "Jacob Fowler", lastName: "Fowler" },
   { playerId: 20, fullName: "Alexandre Carrier", lastName: "Carrier" },
   { playerId: 31, fullName: "Alexandre Texier", lastName: "Texier" },
-];
+].map((player) => ({ ...player, teamId: 8, position: [9, 19].includes(player.playerId) ? "G" : [7, 8, 16, 17, 18, 20].includes(player.playerId) ? "D" : "F" }));
 const lightningRoster = [
   { playerId: 21, fullName: "Gage Goncalves", lastName: "Goncalves" },
   { playerId: 22, fullName: "Brayden Point", lastName: "Point" },
@@ -77,11 +80,76 @@ const lightningRoster = [
   { playerId: 28, fullName: "Erik Cernak", lastName: "Cernak" },
   { playerId: 29, fullName: "Andrei Vasilevskiy", lastName: "Vasilevskiy" },
   { playerId: 30, fullName: "Jonas Johansson", lastName: "Johansson" },
-];
+].map((player) => ({ ...player, teamId: 14, position: [29, 30].includes(player.playerId) ? "G" : [27, 28].includes(player.playerId) ? "D" : "F" }));
 const utahRoster = [
   { playerId: 40, fullName: "Karel Vejmelka", lastName: "Vejmelka" },
   { playerId: 41, fullName: "Clayton Keller", lastName: "Keller" },
 ];
+
+describe("IFTTT section boundaries and role-safe storage", () => {
+  const sourceFor = (text: string, roster: typeof seattleSectionRoster, teamId: number, enabled: boolean) => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", String(enabled));
+    const [team] = buildTeamDirectory([{ id: teamId, name: teamId === 55 ? "Seattle Kraken" : "Edmonton Oilers", abbreviation: teamId === 55 ? "SEA" : "EDM", logo: "" }]);
+    return buildLinesCccSourceFromIftttEvent({ event: { id: "section-fixture", source: "gamedaylines", source_account: "fixture", username: "fixture", text, link_to_tweet: null, tweet_id: null, tweet_created_at: null, created_at_label: null, raw_payload: { text }, received_at: "2026-10-13T16:00:00Z" }, snapshotDate: "2026-10-13", teams: [team], rosterByTeam: new Map([[teamId, roster]]) });
+  };
+  afterEach(() => vi.unstubAllEnvs());
+  it.each([false, true])("stores the exact Seattle slash fixture without inventing goalies or confirmed absence: interpretation %s", (enabled) => {
+    const source = sourceFor(seattleSectionText, seattleSectionRoster, 55, enabled);
+    expect(source.rawText).toBe(seattleSectionText);
+    expect(source.rawPayload).toEqual({ text: seattleSectionText });
+    expect(source.forwards).toHaveLength(4); expect(source.defensePairs).toHaveLength(3);
+    expect(source.scratches).toEqual(["Fixture Douglas", "Fixture Fleury"]);
+    expect(source.goalies).toEqual([]); expect(source.injuries).toEqual([]);
+    const observations = enabled ? (source.metadata!.interpretation as TweetInterpretation).events : source.metadata!.participationObservations;
+    expect(observations).toMatchObject([{ playerId: 1, kind: "participation", state: "observed", availability: "unknown", modality: "negated", times: { applicability: "unresolved", observation: null } }]);
+    const row = toLinesCccRow({ source, rosterEntries: seattleSectionRoster });
+    expect(row.goalie_1_player_id).toBeNull(); expect(row.goalie_2_player_id).toBeNull();
+    expect(row.pair_1_player_ids).toEqual([201, 200]);
+  });
+  it.each([false, true])("does not shift Edmonton defense or goalie columns: interpretation %s", (enabled) => {
+    const source = sourceFor(edmontonSectionText, edmontonSectionRoster, 22, enabled);
+    expect(source.classification).toBe("practice_lines");
+    expect(source.defensePairs).toEqual([["Fixture Ekholm", "Fixture Bouchard"], ["Fixture Shea", "Fixture Murphy"], ["Fixture Mukhamadullin", "Fixture Emberson"]]);
+    expect(source.goalies).toEqual(["Fixture Levi", "Fixture Jarry"]);
+    const row = toLinesCccRow({ source, rosterEntries: edmontonSectionRoster });
+    expect(row.pair_1_player_ids).toEqual([201, 200]);
+    expect(row.pair_3_player_ids).toEqual([205, 204]);
+    expect(row.goalie_1_player_id).toBe(300); expect(row.goalie_2_player_id).toBe(301);
+    if (enabled) expect((source.metadata!.interpretation as TweetInterpretation).events).toEqual([]);
+  });
+  it.each([false, true])("withholds all role columns when positions are unknown: interpretation %s", (enabled) => {
+    const source = sourceFor(edmontonSectionText, edmontonSectionRoster.map((player) => ({ ...player, position: null })), 22, enabled);
+    expect(source.forwards).toEqual([]); expect(source.defensePairs).toEqual([]); expect(source.goalies).toEqual([]);
+    if (enabled) expect(completeEvenStrengthUnits(source.metadata!.interpretation as TweetInterpretation)).toEqual([]);
+  });
+  it("retains the full explicitly declared 11F-7D formation in interpretation metadata", () => {
+    const source = sourceFor(explicit11F7DText, edmontonSectionRoster, 22, true);
+    expect(source.forwards?.map((line) => line.length)).toEqual([3, 3, 3, 2]);
+    expect(source.defensePairs?.map((line) => line.length)).toEqual([2, 2, 2, 1]);
+    expect(completeEvenStrengthUnits(source.metadata!.interpretation as TweetInterpretation)).toHaveLength(8);
+    expect(source.goalies).toEqual(["Fixture Levi", "Fixture Jarry"]);
+  });
+  it("filters a labelled position contradiction before serializing any unit", () => {
+    const text = "@EdmontonOilers\nDefense:\nJones-Hyman\n\nD1: Ekholm-Bouchard\nGoalies:\nWalman";
+    const source = sourceFor(text, edmontonSectionRoster, 22, true);
+    expect(source.defensePairs).toEqual([["Fixture Ekholm", "Fixture Bouchard"]]);
+    expect(source.goalies).toEqual([]);
+    expect(toLinesCccRow({ source, rosterEntries: edmontonSectionRoster }).pair_1_player_ids).toEqual([201, 200]);
+  });
+  it.each(["unknown position", "conflicting team", "headed contradiction", "numbered contradiction"])("leaves invalid source line 1 empty and stores source line 2 in its own slot: %s", (condition) => {
+    const players = edmontonSectionRoster.map((player, index) => ({ ...player,
+      position: condition === "unknown position" && index === 0 ? null : player.position,
+      teamId: condition === "conflicting team" && index === 0 ? 30 : player.teamId }));
+    const text = condition.endsWith("contradiction")
+      ? `@EdmontonOilers\n${condition === "numbered contradiction" ? "F1:" : "Forwards:"}\nEkholm-McDavid-Draisaitl\nHallander-Dickinson-Kapanen`
+      : edmontonSectionText;
+    const source = sourceFor(text, players, 22, true);
+    const row = toLinesCccRow({ source, rosterEntries: players });
+    expect(row.line_1_player_names).toBeNull(); expect(row.line_1_player_ids).toBeNull();
+    expect(row.line_2_player_names).toEqual(["Fixture Kapanen", "Fixture Dickinson", "Fixture Hallander"]);
+    expect(row.line_2_player_ids).toEqual([105, 104, 103]);
+  });
+});
 
 describe("linesCccIngestion", () => {
   it("normalizes only explicit-timezone X API created-at timestamps", async () => {
@@ -832,7 +900,7 @@ describe("linesCccIngestion", () => {
       { playerId: 17, fullName: "Ben Hutton", lastName: "Hutton" },
       { playerId: 18, fullName: "Kaedan Korczak", lastName: "Korczak" },
       { playerId: 19, fullName: "Carter Hart", lastName: "Hart" },
-    ];
+    ].map((player) => ({ ...player, teamId: 54, position: player.playerId === 19 ? "G" : player.playerId >= 13 ? "D" : "F" }));
     const parsed = buildLinesCccSourceFromIftttEvent({
       event: {
         id: "vegas-keywordless-lines",
@@ -982,7 +1050,7 @@ describe("linesCccIngestion", () => {
       detectedLeague: "AHL",
       nhlFilterStatus: "rejected_non_nhl",
       nhlFilterReason: "explicit_non_nhl_league_marker",
-      goalies: ["Jon Gillies"],
+      goalies: [],
     });
   });
 
@@ -1336,6 +1404,23 @@ describe("linesCccIngestion", () => {
 });
 
 describe("tweet publication timing", () => {
+  it("preserves current row ordinals after temporal review and never stores incomplete rows", () => {
+    const players = canadiensRoster.slice(0, 3);
+    const text = "Tomorrow's lines\nCaufield-Suzuki-Slafkovsky\nTonight's lines\nSlafkovsky-Suzuki-Caufield";
+    const source = { snapshotDate: "2026-09-30", tweetPostedAt: "2026-10-01T03:30:00Z", nhlFilterStatus: "accepted" as const,
+      rawText: text, metadata: { interpretation: interpretTweetUnits(text, players) } };
+    expect(source.metadata.interpretation.units.map((unit) => ({ number: unit.number, complete: unit.complete }))).toEqual([{ number: 1, complete: true }, { number: 2, complete: true }]);
+    reviewTweetApplicability([source], "2026-09-30");
+    const row = toLinesCccRow({ source, rosterEntries: players });
+    expect(row.line_1_player_names).toBeNull();
+    expect(row.line_2_player_names).toEqual(["Cole Caufield", "Nick Suzuki", "Juraj Slafkovsky"]);
+    const unknownPlayers = players.map((player) => ({ ...player, position: null }));
+    const unknownSource = { ...source, metadata: { interpretation: interpretTweetUnits(text, unknownPlayers) } };
+    reviewTweetApplicability([unknownSource], "2026-09-30");
+    const unknownRow = toLinesCccRow({ source: unknownSource, rosterEntries: unknownPlayers });
+    expect(unknownRow.line_1_player_names).toBeNull();
+    expect(unknownRow.line_2_player_names).toBeNull();
+  });
   it("decodes exact publication without rounding the tweet ID", () => {
     expect(tweetPublicationFromUrl("https://x.com/reporter/status/2047808467969220779")).toBe("2026-04-24T22:42:39.862Z");
     expect(tweetPublicationFromUrl("https://twitter.com/i/web/status/2047808467969220779")).toBe("2026-04-24T22:42:39.862Z");

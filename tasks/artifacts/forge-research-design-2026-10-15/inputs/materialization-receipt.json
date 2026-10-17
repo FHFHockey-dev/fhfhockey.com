@@ -1,0 +1,25 @@
+{
+  "scope": "Scout planning artifacts only; no execution authority",
+  "files": [
+    {
+      "library_file_id": "libfile_3e31e6ad31348191a64826d20701cbf2",
+      "file_id": "file_0000000075c88211827c6ce38c30bebb",
+      "file_name": "FORGE-experiment-design-working-package-2026-10-15.zip",
+      "version": 0,
+      "expected_bytes": 41717,
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-research-design-2026-10-15/inputs/FORGE-experiment-design-working-package-2026-10-15.zip",
+      "sha256": "7c0d9e7a232c345d91bf7c7040f5c055c600fad98b38edf1e4ab626753050941",
+      "bytes": 41717
+    },
+    {
+      "library_file_id": "libfile_64a423eb0a2c81918d6e6d955684c822",
+      "file_id": "file_000000002fd081f5b576dc079e4c0a26",
+      "file_name": "FORGE-research-to-experiment-design-2026-10-15.pdf",
+      "version": 0,
+      "expected_bytes": 88771,
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-research-design-2026-10-15/inputs/FORGE-research-to-experiment-design-2026-10-15.pdf",
+      "sha256": "ccf0428ad3d727fff4b42d98c5c493d72f7096a8b93dea8b4cc554c2140f65cc",
+      "bytes": 88771
+    }
+  ]
+}

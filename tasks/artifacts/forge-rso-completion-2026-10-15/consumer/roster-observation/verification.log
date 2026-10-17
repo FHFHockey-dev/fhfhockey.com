@@ -1,0 +1,15 @@
+
+> web@0.1.0 test
+> vitest lib/player-forecasts/modeledSkaterParticipation.test.ts lib/player-forecasts/modeledGoalieParticipation.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ lib/player-forecasts/modeledSkaterParticipation.test.ts (67 tests) 21ms
+ ✓ lib/player-forecasts/modeledGoalieParticipation.test.ts (44 tests) 46ms
+
+ Test Files  2 passed (2)
+      Tests  111 passed (111)
+   Start at  00:11:09
+   Duration  288ms (transform 68ms, setup 16ms, collect 103ms, tests 66ms, environment 0ms, prepare 76ms)
+

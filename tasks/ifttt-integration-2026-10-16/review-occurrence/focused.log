@@ -1,0 +1,109 @@
+
+> web@0.1.0 test
+> vitest --run lib/sources/tweetClaimOccurrenceIdentity.test.ts ../tasks/ifttt-integration-2026-10-16/review-occurrence/independent-regressions.test.ts --config ../tasks/ifttt-integration-2026-10-16/review-occurrence/vitest.review.config.mjs --reporter=default --reporter=json --outputFile=../tasks/ifttt-integration-2026-10-16/review-occurrence/focused-results.json
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+stdout | ../tasks/ifttt-integration-2026-10-16/review-occurrence/independent-regressions.test.ts > independent occurrence safety regressions > holds overlapping same-text anchor changes instead of allocating a second lexical occurrence
+overlap result {"accepted":true,"reason":null,"occurrenceId":"review:overlap:occurrence:2","nextState":{"bindings":[{"occurrenceId":"review:overlap:occurrence:1","original":{"author":"fixture_a","publishedAt":"2026-10-15T12:00:00Z","tweetId":"9900000000000000001"},"proof":null},{"occurrenceId":"review:overlap:occurrence:2","original":{"tweetId":"9900000000000000001","author":"fixture_a","publishedAt":"2026-10-15T12:00:00Z"},"proof":null}],"derivations":[{"id":"review:first","occurrenceId":"review:overlap:occurrence:1","payloadHash":"4627fa2641c3b4ba1023bf94bf5741fdfe923c706256249ac65c20030d782fcf"},{"id":"review:narrower","payloadHash":"e21190ca735cb187b656cbde4003c3f3798db58eba46107383fdd0315e8dd78c","occurrenceId":"review:overlap:occurrence:2"}],"namespace":"review:overlap","nextToken":3,"occurrences":[{"anchors":[{"predicateSpan":{"end":26,"start":13,"text":"will not play"},"receiptId":"review:receipt-a","subjectSpan":{"end":12,"start":0,"text":"Jordan Staal"},"textHash":"3ef00de6c496b4dc712f5feb3739cd9b2bc08f6d32f14f57dc10352542343dee"}],"id":"review:overlap:occurrence:1","token":1},{"id":"review:overlap:occurrence:2","token":2,"anchors":[{"receiptId":"review:receipt-a","textHash":"3ef00de6c496b4dc712f5feb3739cd9b2bc08f6d32f14f57dc10352542343dee","subjectSpan":{"end":12,"start":0,"text":"Jordan Staal"},"predicateSpan":{"end":26,"start":18,"text":"not play"}}]}],"version":"tweet-occurrence-identity-v1"}}
+
+stdout | ../tasks/ifttt-integration-2026-10-16/review-occurrence/independent-regressions.test.ts > independent occurrence safety regressions > holds different text of the same bound original even when the receipt changes
+cross-receipt result {"accepted":true,"reason":null,"occurrenceId":"review:cross-receipt:occurrence:2","nextState":{"bindings":[{"occurrenceId":"review:cross-receipt:occurrence:1","original":{"author":"fixture_a","publishedAt":"2026-10-15T12:00:00Z","tweetId":"9900000000000000001"},"proof":null},{"occurrenceId":"review:cross-receipt:occurrence:2","original":{"tweetId":"9900000000000000001","author":"fixture_a","publishedAt":"2026-10-15T12:00:00Z"},"proof":null}],"derivations":[{"id":"review:first","occurrenceId":"review:cross-receipt:occurrence:1","payloadHash":"4627fa2641c3b4ba1023bf94bf5741fdfe923c706256249ac65c20030d782fcf"},{"id":"review:different-text","payloadHash":"d67a3e8057090efb8d73d0123a889ac56ecbf438ba91b9e30ce78fb327446fe4","occurrenceId":"review:cross-receipt:occurrence:2"}],"namespace":"review:cross-receipt","nextToken":3,"occurrences":[{"anchors":[{"predicateSpan":{"end":26,"start":13,"text":"will not play"},"receiptId":"review:receipt-a","subjectSpan":{"end":12,"start":0,"text":"Jordan Staal"},"textHash":"3ef00de6c496b4dc712f5feb3739cd9b2bc08f6d32f14f57dc10352542343dee"}],"id":"review:cross-receipt:occurrence:1","token":1},{"id":"review:cross-receipt:occurrence:2","token":2,"anchors":[{"receiptId":"review:receipt-b","textHash":"8fd9db83a8a9c5548233717285dbd50d4c49d65cd4a201b9bb4be0733a65ee8b","subjectSpan":{"end":12,"start":0,"text":"Jordan Staal"},"predicateSpan":{"end":26,"start":13,"text":"will not play"}}]}],"version":"tweet-occurrence-identity-v1"}}
+
+stdout | ../tasks/ifttt-integration-2026-10-16/review-occurrence/independent-regressions.test.ts > independent occurrence safety regressions > rejects a document proof when the input subjectSpan end is 0
+malformed span result {"field":"subjectSpan","end":0,"accepted":true}
+
+stdout | ../tasks/ifttt-integration-2026-10-16/review-occurrence/independent-regressions.test.ts > independent occurrence safety regressions > rejects a document proof when the input subjectSpan end is 999
+malformed span result {"field":"subjectSpan","end":999,"accepted":true}
+
+stdout | ../tasks/ifttt-integration-2026-10-16/review-occurrence/independent-regressions.test.ts > independent occurrence safety regressions > rejects a document proof when the input predicateSpan end is 0
+malformed span result {"field":"predicateSpan","end":0,"accepted":true}
+
+stdout | ../tasks/ifttt-integration-2026-10-16/review-occurrence/independent-regressions.test.ts > independent occurrence safety regressions > rejects a document proof when the input predicateSpan end is 999
+malformed span result {"field":"predicateSpan","end":999,"accepted":true}
+
+ ✓ lib/sources/tweetClaimOccurrenceIdentity.test.ts (10 tests) 5ms
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-occurrence/independent-regressions.test.ts (6 tests | 6 failed) 6ms
+   × independent occurrence safety regressions > holds overlapping same-text anchor changes instead of allocating a second lexical occurrence 4ms
+     → expected true to be false // Object.is equality
+   × independent occurrence safety regressions > holds different text of the same bound original even when the receipt changes 1ms
+     → expected true to be false // Object.is equality
+   × independent occurrence safety regressions > rejects a document proof when the input subjectSpan end is 0 0ms
+     → expected true to be false // Object.is equality
+   × independent occurrence safety regressions > rejects a document proof when the input subjectSpan end is 999 0ms
+     → expected true to be false // Object.is equality
+   × independent occurrence safety regressions > rejects a document proof when the input predicateSpan end is 0 0ms
+     → expected true to be false // Object.is equality
+   × independent occurrence safety regressions > rejects a document proof when the input predicateSpan end is 999 0ms
+     → expected true to be false // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/review-occurrence/independent-regressions.test.ts > independent occurrence safety regressions > holds overlapping same-text anchor changes instead of allocating a second lexical occurrence
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-occurrence/independent-regressions.test.ts:25:29
+     23|     }, asOf);
+     24|     console.log("overlap result", JSON.stringify(second));
+     25|     expect(second.accepted).toBe(false);
+       |                             ^
+     26|     expect(second.nextState).toEqual(first.nextState);
+     27|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/review-occurrence/independent-regressions.test.ts > independent occurrence safety regressions > holds different text of the same bound original even when the receipt changes
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-occurrence/independent-regressions.test.ts:36:29
+     34|     }, asOf);
+     35|     console.log("cross-receipt result", JSON.stringify(second));
+     36|     expect(second.accepted).toBe(false);
+       |                             ^
+     37|     expect(second.nextState).toEqual(first.nextState);
+     38|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/review-occurrence/independent-regressions.test.ts > independent occurrence safety regressions > rejects a document proof when the input subjectSpan end is 0
+ FAIL  ../tasks/ifttt-integration-2026-10-16/review-occurrence/independent-regressions.test.ts > independent occurrence safety regressions > rejects a document proof when the input subjectSpan end is 999
+ FAIL  ../tasks/ifttt-integration-2026-10-16/review-occurrence/independent-regressions.test.ts > independent occurrence safety regressions > rejects a document proof when the input predicateSpan end is 0
+ FAIL  ../tasks/ifttt-integration-2026-10-16/review-occurrence/independent-regressions.test.ts > independent occurrence safety regressions > rejects a document proof when the input predicateSpan end is 999
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-occurrence/independent-regressions.test.ts:60:22
+     58|     const accepted = verifyDistinctOccurrenceDocument(proof, malformed…
+     59|     console.log("malformed span result", JSON.stringify({ field, end, …
+     60|     expect(accepted).toBe(false);
+       |                      ^
+     61|   });
+     62| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  6 failed | 10 passed (16)
+   Start at  23:38:51
+   Duration  226ms (transform 32ms, setup 31ms, collect 41ms, tests 12ms, environment 0ms, prepare 74ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/review-occurrence/focused-results.json

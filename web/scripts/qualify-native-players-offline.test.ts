@@ -16,7 +16,13 @@ vi.mock("@supabase/supabase-js", () => ({ createClient: backend.createClient }))
 vi.mock("lib/supabase/public-client", () => ({ default: {} }));
 vi.mock("lib/supabase/client", () => ({ default: {} }));
 vi.mock("lib/supabase", () => ({ default: {} }));
-const input = () => JSON.parse(JSON.stringify(fixture)) as OfflinePlayerInputs;
+const input = () => {
+  const inputs = JSON.parse(JSON.stringify(fixture)) as OfflinePlayerInputs;
+  inputs.tables.rolling_player_metric_support_payloads = structuredClone(inputs.tables.wgo_skater_stats);
+  inputs.tables.rolling_player_metric_support_payloads.receipt.revision = "synthetic-v1:rolling_player_metric_support_payloads";
+  inputs.tables.rolling_player_metric_support_payloads.receipt.scope = "Fictional empty aligned-count support for the current native reader";
+  return inputs;
+};
 function updateRows(inputs: OfflinePlayerInputs, table: string, rows: any[]) {
   inputs.tables[table].rows = rows;
   inputs.tables[table].receipt.rowCount = rows.length;
@@ -48,7 +54,7 @@ describe("offline current native player qualification", () => {
     expect(skater.admission.acceptedByUnchangedConsumer).toBe(true);
     for (const key of ["G", "A", "SOG"]) expect(skater.categories.find(row => row.category === key)).toMatchObject({
       modeledStatus: "missing", status: "blocked", reasons: expect.arrayContaining(["missing_pk_heads_and_fullgame_bridge"]) });
-    expect(skater.categories.find(row => row.category === "PPP")).toMatchObject({ modeledStatus: "present_native_diagnostic", status: "blocked",
+    expect(skater.categories.find(row => row.category === "PPP")).toMatchObject({ modeledStatus: "missing", status: "blocked",
       reasons: expect.arrayContaining(["synthetic_fixture_is_not_forecast_evidence"]) });
     expect(skater.categories.find(row => row.category === "HIT")?.reasons).toContain("full_strength_exposure_unproven");
     expect(goalie.categories.find(row => row.category === "SO")?.reasons).toContain("official_individual_shutout_credit_unproven");
@@ -350,15 +356,14 @@ describe("offline current native player qualification", () => {
     expect(ppp?.status).toBe("blocked"); expect(ppp?.reasons).toContain("missing_pp_counts_or_exposure_denominators");
   });
 
-  it("retains a native PPP diagnostic but blocks source support when PP rows are absent", async () => {
+  it("keeps PPP missing and blocked when PP rows and aligned count support are absent", async () => {
     const inputs = input();
     updateRows(inputs, "rolling_player_game_metrics", inputs.tables.rolling_player_game_metrics.rows.filter(row => row.strength_state !== "pp"));
     const result = (await qualifyNativePlayersOffline(inputs, asOf)).result;
     expect(result.blockers).toEqual([]);
     const target = result.categoryCoverage[0], ppp = target.categories.find(row => row.category === "PPP");
     expect(target.inputCoverage.retainedRollingRowsByStrength.pp).toBe(0);
-    expect(ppp).toMatchObject({ modeledStatus: "present_native_diagnostic", status: "blocked" });
-    expect(ppp?.modeledValue).toBeGreaterThan(0);
+    expect(ppp).toMatchObject({ modeledStatus: "missing", modeledValue: null, status: "blocked" });
     expect(ppp?.reasons).toContain("missing_retained_pp_history");
     expect(ppp?.reasons).toContain("pp_event_exposure_coverage_unproven");
   });

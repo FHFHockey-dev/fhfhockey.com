@@ -1,0 +1,1258 @@
+[
+  {
+    "path": "patch_layout.js",
+    "exists": true,
+    "bytes": 26927,
+    "incoming": [],
+    "references": [
+      {
+        "path": "docs/repository-audit/tools/initialize_audit.py",
+        "line": 72,
+        "needles": [
+          "patch_layout.js",
+          "patch_layout.js"
+        ]
+      }
+    ]
+  },
+  {
+    "path": "find_templates.py",
+    "exists": true,
+    "bytes": 276,
+    "incoming": [],
+    "references": [
+      {
+        "path": "docs/repository-audit/tools/initialize_audit.py",
+        "line": 69,
+        "needles": [
+          "find_templates.py",
+          "find_templates.py"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+        "line": 161,
+        "needles": [
+          "find_templates.py",
+          "find_templates.py"
+        ]
+      }
+    ]
+  },
+  {
+    "path": "fix_templates.py",
+    "exists": true,
+    "bytes": 3204,
+    "incoming": [],
+    "references": [
+      {
+        "path": "docs/repository-audit/tools/initialize_audit.py",
+        "line": 70,
+        "needles": [
+          "fix_templates.py",
+          "fix_templates.py"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+        "line": 161,
+        "needles": [
+          "fix_templates.py",
+          "fix_templates.py"
+        ]
+      }
+    ]
+  },
+  {
+    "path": "safe_properties.py",
+    "exists": true,
+    "bytes": 804,
+    "incoming": [],
+    "references": [
+      {
+        "path": "docs/repository-audit/tools/initialize_audit.py",
+        "line": 73,
+        "needles": [
+          "safe_properties.py",
+          "safe_properties.py"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+        "line": 161,
+        "needles": [
+          "safe_properties.py",
+          "safe_properties.py"
+        ]
+      }
+    ]
+  },
+  {
+    "path": "update_game_page.py",
+    "exists": true,
+    "bytes": 1528,
+    "incoming": [],
+    "references": [
+      {
+        "path": "docs/repository-audit/tools/initialize_audit.py",
+        "line": 74,
+        "needles": [
+          "update_game_page.py",
+          "update_game_page.py"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+        "line": 161,
+        "needles": [
+          "update_game_page.py",
+          "update_game_page.py"
+        ]
+      }
+    ]
+  },
+  {
+    "path": "fix_terminal.sh",
+    "exists": true,
+    "bytes": 83,
+    "incoming": [],
+    "references": [
+      {
+        "path": "docs/repository-audit/tools/initialize_audit.py",
+        "line": 71,
+        "needles": [
+          "fix_terminal.sh",
+          "fix_terminal.sh"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+        "line": 161,
+        "needles": [
+          "fix_terminal.sh",
+          "fix_terminal.sh"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/v1/prd/prd-run-forge-projections-modularization.md",
+        "line": 37,
+        "needles": [
+          "fix_terminal.sh",
+          "fix_terminal.sh"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/v1/prd/prd-run-forge-projections-modularization.md",
+        "line": 113,
+        "needles": [
+          "fix_terminal.sh",
+          "fix_terminal.sh"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md",
+        "line": 25,
+        "needles": [
+          "fix_terminal.sh",
+          "fix_terminal.sh"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md",
+        "line": 43,
+        "needles": [
+          "fix_terminal.sh",
+          "fix_terminal.sh"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md",
+        "line": 46,
+        "needles": [
+          "fix_terminal.sh",
+          "fix_terminal.sh"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md",
+        "line": 73,
+        "needles": [
+          "fix_terminal.sh",
+          "fix_terminal.sh"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md",
+        "line": 96,
+        "needles": [
+          "fix_terminal.sh",
+          "fix_terminal.sh"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+        "line": 2533,
+        "needles": [
+          "fix_terminal.sh",
+          "fix_terminal.sh"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+        "line": 2536,
+        "needles": [
+          "fix_terminal.sh",
+          "fix_terminal.sh"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+        "line": 2558,
+        "needles": [
+          "fix_terminal.sh",
+          "fix_terminal.sh"
+        ]
+      }
+    ]
+  },
+  {
+    "path": "check_db.js",
+    "exists": true,
+    "bytes": 377,
+    "incoming": [],
+    "references": [
+      {
+        "path": "docs/repository-audit/tools/initialize_audit.py",
+        "line": 68,
+        "needles": [
+          "check_db.js",
+          "check_db.js"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+        "line": 161,
+        "needles": [
+          "check_db.js",
+          "check_db.js"
+        ]
+      }
+    ]
+  },
+  {
+    "path": "web/debug-goalies.ts",
+    "exists": true,
+    "bytes": 795,
+    "incoming": [],
+    "references": [
+      {
+        "path": "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+        "line": 158,
+        "needles": [
+          "web/debug-goalies.ts",
+          "debug-goalies.ts"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/cleanup-reconciliation.md",
+        "line": 23,
+        "needles": [
+          "web/debug-goalies.ts",
+          "debug-goalies.ts"
+        ]
+      }
+    ]
+  },
+  {
+    "path": "web/npm",
+    "exists": true,
+    "bytes": 0,
+    "incoming": [],
+    "references": [
+      {
+        "path": "tasks/TASKS/dead-code-cleanup/prd-file-inventory.md",
+        "line": 1539,
+        "needles": [
+          "web/npm"
+        ]
+      }
+    ]
+  },
+  {
+    "path": "web/components/TeamLandingPage/teamLandingPage.css",
+    "exists": true,
+    "bytes": 290,
+    "incoming": [],
+    "references": [
+      {
+        "path": "docs/repository-audit/stylesheet-cleanup-plan.md",
+        "line": 17,
+        "needles": [
+          "teamLandingPage.css"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/dead-code-cleanup/prd-file-inventory.md",
+        "line": 399,
+        "needles": [
+          "teamLandingPage.css"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/dead-code-cleanup/prd-file-inventory.md",
+        "line": 1356,
+        "needles": [
+          "web/components/TeamLandingPage/teamLandingPage.css",
+          "teamLandingPage.css"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+        "line": 1392,
+        "needles": [
+          "web/components/TeamLandingPage/teamLandingPage.css",
+          "teamLandingPage.css"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+        "line": 1438,
+        "needles": [
+          "teamLandingPage.css"
+        ]
+      }
+    ]
+  },
+  {
+    "path": "web/pages/stats/game/[gameId].module.scss",
+    "exists": true,
+    "bytes": 81,
+    "incoming": [
+      {
+        "path": "web/pages/stats/game/[gameId].tsx",
+        "line": 5,
+        "kind": "import"
+      }
+    ],
+    "references": [
+      {
+        "path": "docs/repository-audit/stylesheet-cleanup-plan.md",
+        "line": 15,
+        "needles": [
+          "web/pages/stats/game/[gameId].module.scss",
+          "[gameId].module.scss"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+        "line": 1332,
+        "needles": [
+          "web/pages/stats/game/[gameId].module.scss",
+          "[gameId].module.scss"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+        "line": 1361,
+        "needles": [
+          "[gameId].module.scss"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+        "line": 1365,
+        "needles": [
+          "web/pages/stats/game/[gameId].module.scss",
+          "[gameId].module.scss"
+        ]
+      },
+      {
+        "path": "web/pages/stats/game/[gameId].tsx",
+        "line": 5,
+        "needles": [
+          "[gameId].module.scss"
+        ]
+      }
+    ]
+  },
+  {
+    "path": "web/components/GamePreview/GamePreview.module.scss",
+    "exists": true,
+    "bytes": 875,
+    "incoming": [
+      {
+        "path": "web/components/GamePreview/GamePreview.tsx",
+        "line": 3,
+        "kind": "import"
+      }
+    ],
+    "references": [
+      {
+        "path": "docs/repository-audit/stylesheet-cleanup-plan.md",
+        "line": 15,
+        "needles": [
+          "web/components/GamePreview/GamePreview.module.scss",
+          "GamePreview.module.scss"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+        "line": 398,
+        "needles": [
+          "web/components/GamePreview/GamePreview.module.scss",
+          "GamePreview.module.scss"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+        "line": 1332,
+        "needles": [
+          "web/components/GamePreview/GamePreview.module.scss",
+          "GamePreview.module.scss"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+        "line": 1361,
+        "needles": [
+          "GamePreview.module.scss"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+        "line": 1365,
+        "needles": [
+          "web/components/GamePreview/GamePreview.module.scss",
+          "GamePreview.module.scss"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+        "line": 1378,
+        "needles": [
+          "GamePreview.module.scss"
+        ]
+      },
+      {
+        "path": "web/components/GamePreview/GamePreview.tsx",
+        "line": 3,
+        "needles": [
+          "GamePreview.module.scss"
+        ]
+      }
+    ]
+  },
+  {
+    "path": "cms/sanity.json",
+    "exists": true,
+    "bytes": 550,
+    "incoming": [],
+    "references": [
+      {
+        "path": "cms/README.md",
+        "line": 18,
+        "needles": [
+          "sanity.json"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/dead-code-cleanup/prd-file-inventory.md",
+        "line": 65,
+        "needles": [
+          "sanity.json"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/dead-code-cleanup/prd-file-inventory.md",
+        "line": 84,
+        "needles": [
+          "sanity.json"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/dead-code-cleanup/prd-file-inventory.md",
+        "line": 1093,
+        "needles": [
+          "sanity.json"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/dead-code-cleanup/prd-file-inventory.md",
+        "line": 1096,
+        "needles": [
+          "cms/sanity.json",
+          "sanity.json"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+        "line": 1572,
+        "needles": [
+          "cms/sanity.json",
+          "sanity.json"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+        "line": 1582,
+        "needles": [
+          "sanity.json"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+        "line": 1611,
+        "needles": [
+          "sanity.json"
+        ]
+      },
+      {
+        "path": "web/lib/sanity/config.js",
+        "line": 4,
+        "needles": [
+          "sanity.json"
+        ]
+      }
+    ]
+  },
+  {
+    "path": "web/rules/super-goal.md",
+    "exists": true,
+    "bytes": 49528,
+    "incoming": [],
+    "references": [
+      {
+        "path": "tasks/TASKS/repository-audit-remediation/document-reference-working-set.md",
+        "line": 146,
+        "needles": [
+          "web/rules/super-goal.md",
+          "super-goal.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/completion-gate-reconciliation.md",
+        "line": 59,
+        "needles": [
+          "web/rules/super-goal.md",
+          "super-goal.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/prd/prd-fhfh-comprehensive-completion-audit-optimization.md",
+        "line": 258,
+        "needles": [
+          "web/rules/super-goal.md",
+          "super-goal.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/prd/prd-fhfh-comprehensive-completion-audit-optimization.md",
+        "line": 341,
+        "needles": [
+          "web/rules/super-goal.md",
+          "super-goal.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/super-goal-context-diary.md",
+        "line": 5,
+        "needles": [
+          "web/rules/super-goal.md",
+          "super-goal.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/super-goal-context-diary.md",
+        "line": 14,
+        "needles": [
+          "web/rules/super-goal.md",
+          "super-goal.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/super-goal-context-diary.md",
+        "line": 2152,
+        "needles": [
+          "web/rules/super-goal.md",
+          "super-goal.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/super-goal-context-diary.md",
+        "line": 2613,
+        "needles": [
+          "web/rules/super-goal.md",
+          "super-goal.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/super-goal-context-diary.md",
+        "line": 3635,
+        "needles": [
+          "super-goal.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/super-goal-context-diary.md",
+        "line": 4873,
+        "needles": [
+          "web/rules/super-goal.md",
+          "super-goal.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/super-goal-context-diary.md",
+        "line": 5411,
+        "needles": [
+          "web/rules/super-goal.md",
+          "super-goal.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/super-goal-context-diary.md",
+        "line": 5458,
+        "needles": [
+          "web/rules/super-goal.md",
+          "super-goal.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/super-goal-context-diary.md",
+        "line": 6678,
+        "needles": [
+          "web/rules/super-goal.md",
+          "super-goal.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+        "line": 283,
+        "needles": [
+          "web/rules/super-goal.md",
+          "super-goal.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+        "line": 402,
+        "needles": [
+          "web/rules/super-goal.md",
+          "super-goal.md"
+        ]
+      }
+    ]
+  },
+  {
+    "path": "tasks/TASKS/cron-operations/cron-schedule.md",
+    "exists": true,
+    "bytes": 100152,
+    "incoming": [],
+    "references": [
+      {
+        "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-contextual-hockey-rankings.md",
+        "line": 538,
+        "needles": [
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/cron-operations/prd/prd-cron-audit-and-schedule-optimization.md",
+        "line": 51,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/cron-operations/prd/prd-cron-audit-and-schedule-optimization.md",
+        "line": 60,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/cron-operations/prd/prd-cron-audit-and-schedule-optimization.md",
+        "line": 80,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/cron-operations/prd/prd-cron-audit-and-schedule-optimization.md",
+        "line": 150,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md",
+        "line": 40,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md",
+        "line": 90,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md",
+        "line": 110,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md",
+        "line": 148,
+        "needles": [
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md",
+        "line": 5,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md",
+        "line": 19,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md",
+        "line": 68,
+        "needles": [
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md",
+        "line": 89,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md",
+        "line": 90,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md",
+        "line": 115,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md",
+        "line": 130,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md",
+        "line": 136,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/cron-operations/tasks-prd-cron-failed-jobs-remediation.md",
+        "line": 15,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md",
+        "line": 103,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+        "line": 46,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/dashboard-health/prd/prd-forge-dashboard-component-health.md",
+        "line": 130,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/dashboard-health/prd/prd-forge-dashboard-component-health.md",
+        "line": 212,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/dashboard-health/tasks-forge-dashboard-component-remediation.md",
+        "line": 60,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/dashboard-health/tasks-forge-dashboard-component-remediation.md",
+        "line": 131,
+        "needles": [
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard-component-health.md",
+        "line": 75,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard-component-health.md",
+        "line": 99,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md",
+        "line": 230,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md",
+        "line": 433,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md",
+        "line": 443,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md",
+        "line": 456,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md",
+        "line": 469,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md",
+        "line": 492,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md",
+        "line": 542,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md",
+        "line": 569,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md",
+        "line": 22,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md",
+        "line": 77,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/prediction-engine/tasks-prd-forge-prediction-engine-super-task-list.md",
+        "line": 172,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/repository-audit-remediation/document-reference-working-set.md",
+        "line": 29,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/cross-initiative-ownership-reconciliation.md",
+        "line": 22,
+        "needles": [
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/cross-initiative-ownership-reconciliation.md",
+        "line": 43,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/prd/prd-fhfh-comprehensive-completion-audit-optimization.md",
+        "line": 730,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/super-goal-context-diary.md",
+        "line": 612,
+        "needles": [
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/super-goal-context-diary.md",
+        "line": 3264,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/super-goal-context-diary.md",
+        "line": 3273,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/super-goal-context-diary.md",
+        "line": 3275,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/super-goal-context-diary.md",
+        "line": 3343,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/super-goal-context-diary.md",
+        "line": 8311,
+        "needles": [
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+        "line": 159,
+        "needles": [
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+        "line": 330,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+        "line": 1142,
+        "needles": [
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+        "line": 1480,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+        "line": 1548,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+        "line": 1549,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+        "line": 1571,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+        "line": 1584,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+        "line": 1590,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+        "line": 1948,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+        "line": 2297,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+        "line": 2314,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+        "line": 4850,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/three-pillars-analytics/tasks-prd-three-pillars-analytics.md",
+        "line": 68,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/variance/v2/variance-runbook.md",
+        "line": 67,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/xg-model/nst-migration/nst-route-ownership-decisions.md",
+        "line": 17,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/xg-model/nst-migration/nst-route-ownership-decisions.md",
+        "line": 35,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/xg-model/trending-model/tasks-xg-trending-model-completion.md",
+        "line": 107,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/xg-model/trending-model/tasks-xg-trending-model-completion.md",
+        "line": 135,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "tasks/TASKS/xg-model/trending-model/tasks-xg-trending-model-completion.md",
+        "line": 173,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "web/README.md",
+        "line": 298,
+        "needles": [
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts",
+        "line": 16,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "web/lib/cron/cronInventory.test.ts",
+        "line": 75,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "web/lib/cron/cronInventory.test.ts",
+        "line": 76,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "web/lib/cron/cronInventory.ts",
+        "line": 31,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "web/next.config.js",
+        "line": 23,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "web/rules/super-goal.md",
+        "line": 688,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "web/scripts/cron-audit-runner.ts",
+        "line": 379,
+        "needles": [
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "web/scripts/vercel-ignore.test.ts",
+        "line": 50,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      },
+      {
+        "path": "web/vercel.json",
+        "line": 3,
+        "needles": [
+          "tasks/TASKS/cron-operations/cron-schedule.md",
+          "cron-schedule.md"
+        ]
+      }
+    ]
+  }
+]

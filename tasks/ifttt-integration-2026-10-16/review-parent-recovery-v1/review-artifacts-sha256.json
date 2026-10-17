@@ -1,0 +1,328 @@
+{
+  "ownerThreadId": "01a142bb-decf-77fe-ac88-1dc20c8ed0f2",
+  "stableForCombinedVerification": true,
+  "reviewedSourceManifest": "tasks/ifttt-integration-2026-10-16/parent-recovery-increment/owned-source-v1-sha256.json",
+  "reviewedSourceManifestSha256": "827c373d5fb4dc80d2dbe5b5b5c624ff6d62a78e4f826c6aad7abaa123697863",
+  "sourceHoldReleasedForParentReview": true,
+  "overlapping67TransportFreezeRemains": true,
+  "previous579ReviewFilesUnchanged": true,
+  "status": "bounded local CR037/CR041 legacy producer projection accepted; real consumer/original full-52 not accepted",
+  "files": [
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/REVIEW.md",
+      "sha256": "98cc6cc9fe18aeca8ea6056d7c814c67d8fba4a84e1698a322e281bdf0c2f644"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/evidence-summary.json",
+      "sha256": "0eae53745960656f19cb7c634ff09b94c32dabfdb31fbbf915a2bfad274ec9e6"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/exact-parent-persistence-results.json",
+      "sha256": "f835d15a0063b3f6f74adf562e8a31ed341dafb6fe775243156b8fcbdc915bd7"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/exact-parent-persistence.test.ts",
+      "sha256": "ece31cb73db63bc01ca3c6936cfbeaf795498ecfd4333719dbed3b28606752aa"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-owned-source-sha256.json",
+      "sha256": "827c373d5fb4dc80d2dbe5b5b5c624ff6d62a78e4f826c6aad7abaa123697863"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/supabase/migrations/20260716112908_production_schema_baseline.sql",
+      "sha256": "27067d2221516be147d5cf71492b1fee3f0fd377d0ccd14e49557931ad1b791d"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/supabase/migrations/20260919005608_tweet_pipeline_reports_and_review.sql",
+      "sha256": "114e48167426f464f20116c51b017f07fb721797118a5ff28412ed7d4f6abd27"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/tasks/ifttt-integration-2026-10-16/durable-occurrence-increment/20261016044953_tweet_claim_occurrence_identity.sql",
+      "sha256": "3a8815e5f8f9d6d49038dfa77c0ba7dfc09014b1775efffb70bf1f268c3ae16a"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/tasks/ifttt-integration-2026-10-16/durable-occurrence-increment/tsconfig.v2.json",
+      "sha256": "d94f20591cdd34d18c10f0c7492888bd4d843dcc25f1804d7c7d34b890c4cead"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/tasks/ifttt-integration-2026-10-16/durable-occurrence-increment/vitest.config.mjs",
+      "sha256": "397a469e99410e8b0ea0d2b550899b6e193b655cab3b0c0d3e5fdb4f1908dbb2"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/tasks/ifttt-integration-2026-10-16/game-scope-fixtures-v2/cases.json",
+      "sha256": "f4643f2bcf2487fc0575745a61345f9e04341cad4e143d97809dbfe67101da04"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/tasks/ifttt-integration-2026-10-16/game-scope-fixtures-v2/game-scope.test.ts",
+      "sha256": "61fcd2bae4621a70779096e32786a90105a89c329c285bd7875277f2083870e2"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-claim-replay-tests-2026-10-15/acceptance-cases.json",
+      "sha256": "d9fe45ca44042673ff0381cd0f1981074b196da99fb6fdf9da573ac5df84fd8b"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/tasks/ifttt-integration-2026-10-16/migrations/20261016024711_tweet_claim_registry.sql",
+      "sha256": "7570300e3e6dfc6a899e2296fa20483ee02ad206c1e0e1f3a966ba1d29847ea7"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/tasks/ifttt-integration-2026-10-16/next-increment/20261016073000_tweet_claim_qualification.sql",
+      "sha256": "510eae121f939ffe4e2c3ebd953df1d5206f5e423cdbd014c88e43812a4906bb"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/tasks/ifttt-integration-2026-10-16/occurrence-increment/immutable-registry-audit.test.ts",
+      "sha256": "d416c4e696793894162315669d771fe3cc802fa43d85d65981898fd6dfc4e482"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/tasks/ifttt-integration-2026-10-16/occurrence-increment/vitest.config.mjs",
+      "sha256": "84527a2713b016f4cd8f1ee575a11063ea31a48f01b7c1d0d336488e2a914401"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/tasks/ifttt-integration-2026-10-16/offline-completion/exact-parent-persistence.test.ts",
+      "sha256": "ece31cb73db63bc01ca3c6936cfbeaf795498ecfd4333719dbed3b28606752aa"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/tasks/ifttt-integration-2026-10-16/offline-completion/exact-persistence.test.ts",
+      "sha256": "b17164801e1c0a952bfd0b758368533a2c5846cfe1124240e8dffc4b3e809bda"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/tasks/ifttt-integration-2026-10-16/offline-completion/immutable-registry-audit.ts",
+      "sha256": "f1af089b7d5d60f6e3c2e90ca3a49bd6a8ffcfdbe11cfd258592f3ce418e080e"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/tasks/ifttt-integration-2026-10-16/offline-completion/metadata-package.test.ts",
+      "sha256": "1d7e393a5751b35e72669a3218b860f094dcba28844c9813a8721e49fb6ded33"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/tasks/ifttt-integration-2026-10-16/offline-completion/run-acceptance.ts",
+      "sha256": "07cab25bc5704af9848b0289d2e982da43278ae7f7405e838f62cf6c92d2ea4f"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/tasks/ifttt-integration-2026-10-16/offline-completion/schema-presence-v2.sql",
+      "sha256": "d1781ffff8b36046129c81ff0910c0762a38c21a08fab85b20b1095991665248"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/tasks/ifttt-integration-2026-10-16/parent-recovery-increment/tsconfig.json",
+      "sha256": "385b5948b92fd6649f624204b9afa0b6108aa53a3951023919ea48a6c9a7b537"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/__tests__/pages/api/v1/db/update-line-sources.test.ts",
+      "sha256": "e2d3e319a791a62dd24060710ace781ec39615917f93d73e412849cd55d3c304"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/__tests__/pages/api/v1/db/update-lines-ccc.test.ts",
+      "sha256": "cd6a64c8bc4397d344db37e258fc349cb00b89f77c944a8735ca259696c1736b"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/components/NewsFeed/NewsCard.test.tsx",
+      "sha256": "4ef4b7adf05abd67a9a12d7dd95fccc7f1fc8c95bb87a47ab431c18e7b769031"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/lines/service.test.ts",
+      "sha256": "d5ce4cca0d066eba5a2eb5d93fdcfd958c24f05d7bd12ff48ad49f8dbc533f66"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/lines/service.ts",
+      "sha256": "bde1b3b012df923cd9fb05f0bb4e8b5148c5aec941a9c1ed06cbdcbd7852e03f"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/newsFeed.test.ts",
+      "sha256": "ee8963100f43cef662af318ad091c27c95f38315730f34f4b83ad08014e53e08"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/newsFeed.ts",
+      "sha256": "bca7e485757f4555f395b9aeabfdef7676f930a019e6f3aabf8bb3b8e76e2d6c"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/fixtures/claimContextCases.json",
+      "sha256": "a9ebc8de647914cec6f9639f0b91f8b208821dcc62631cd5c9293c1712ae7d36"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/fixtures/tweetClaimQualificationFixture.ts",
+      "sha256": "82555df4e3643e551f266a1d42b9d83b30e87eadab62669db3fc84c649e2405a"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/linesCccIngestion.ts",
+      "sha256": "3b9a29f70d9a95f6657f62b9154459e801d8cb3eb0d96f6a143ca2956f7080c0"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/projectedLineups.test.ts",
+      "sha256": "096b9df26f93fd55012bc342c3f653230ef252977ee14642f478e9131e3934f2"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetClaimApplicability.ts",
+      "sha256": "ce35b6a326cb3bad5ce4a560b7b4664d97de2e43421200b04be2f4b98ea43a94"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetClaimCompatibility.ts",
+      "sha256": "1dc6d0036c09db09318187a1754db9514c3193c8b423b025efcc5c8f3588aee1"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetClaimEvaluation.ts",
+      "sha256": "b9ea1340a4660daad29b42572f80c1d422d654ea9d1d1ba6438dbdc9411da633"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetClaimEvaluationBounds.test.ts",
+      "sha256": "6e445891dd7bfed3f5c1d12aca9cd9a8e806521452b093b8d59a2492ab33455d"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetClaimEvaluationBounds.ts",
+      "sha256": "006147fbf246adb99e861ed39867eb4a86f3310ff406751b4e588c91da195593"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetClaimEvaluationIntake.test.ts",
+      "sha256": "2da9e84ae79344359522d83346d20451e8328f803bf9a02493f7b31a353e0478"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetClaimEvaluationIntake.ts",
+      "sha256": "774d814693771a5d0dbaa8fe7ba7a00df7501dc663ec246ae1379b397db907d3"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetClaimEvidence.test.ts",
+      "sha256": "b9003b93d1d444f6ab4ad5097e812dd22789f23a0f09a111795f3d8570f5fb6b"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetClaimEvidence.ts",
+      "sha256": "131e85075d980ce68ad364868a65c67e8f62cde4b04668fcf007464ca013ddb9"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetClaimExtraction.test.ts",
+      "sha256": "7532d92566fe5b72ae13b5c08d55a4df6d1f54d1b4336cdeb7df6b7a6a3cb978"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetClaimExtraction.ts",
+      "sha256": "e5cfd481dcf357ddbc36ef4b09f8ac45c2dad0a368acdbddb7f3800bb72660fe"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetClaimLineage.test.ts",
+      "sha256": "c6ddc848a3ecd8ecaab9d04c074bd7518d410203b6de02264e6359545937cdcd"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetClaimLineage.ts",
+      "sha256": "27df49c52b1b18a0a0b0b6529837b9f5cec5b43a80759df776c0049275828a7e"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetClaimOccurrenceIdentity.test.ts",
+      "sha256": "ef788a88e95bfd1f9fdbb7dc0e63cacb4ff0cb3ae0fef23e9d04652776b4e3b0"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetClaimOccurrenceIdentity.ts",
+      "sha256": "26626585fe7567b8e82b440b45861ea90b4c1813181d28a9b134bec515a90971"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetClaimOccurrenceStorage.ts",
+      "sha256": "1e69896afa5cf669f188039af5bade516727cecaeeed9967c69a37ec360093ea"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetClaimQualificationStorage.test.ts",
+      "sha256": "50545e9fb4cfaf8c6b847c2c837ced8a01d1fc96d1746506b8ad01d9ef6dca52"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetClaimQualificationStorage.ts",
+      "sha256": "82468764b68c85a2979015cdba615d1a4133672256a96f991de7e5ced0398d75"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetClaimReducerAdapter.ts",
+      "sha256": "78a0e2cce23be93a07f781477657dad6bfa1cd74dfb6a73ffe68a082724b2332"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetClaimRegistry.test.ts",
+      "sha256": "f43c29ce44d96964c3cabb01fbfc7067b6f121714b74660485da021c9127644d"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetClaimRegistry.ts",
+      "sha256": "5abf16d2eb722f92d219aafd28d90ea5e2356fc60099856bf41b19c63cfed1d3"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetClaimSourceHints.test.ts",
+      "sha256": "5f083086571427ea989dc8765f929db381a0602906bdb6a9a5a5b2d726d30f89"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetClaimSourceHints.ts",
+      "sha256": "31b5b180aa0d43a173f99593c24a1210192c0966118101c81f19cd63b62213b6"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetInterpretation.test.ts",
+      "sha256": "d1703752a02cf6ce469aef69565599031bb2dc2d28bf126db9c04f43d55213c2"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetPlayerEvents.ts",
+      "sha256": "14c421d37506f33df08cac5914e30c38a578b2588ae46f3c6e461b70efadc88c"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetProjectionStorage.ts",
+      "sha256": "a3987dd70356e5b96016a19b28286700ec1fa46aa0ea7911eaedbb7e4f4f73b6"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetSemanticEvents.ts",
+      "sha256": "fd043fee124efd23285770e982182c0d6d7b64bb59d61126d1b7dc4e71395df2"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetSourceClaimRegistry.ts",
+      "sha256": "03f58f5793b5083dd48935ab525f869205e338798b45d768c9008c0b55004468"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetSourceDirectory.test.ts",
+      "sha256": "a790743e19f0e65f501f9497afe8615ecc8c118e864be76e6e3c7b5c24fdf7af"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/lib/sources/tweetSourceDirectory.ts",
+      "sha256": "499b5ffe8727342346ec6e16336140c1e38f4c89bbaebf1c799426bdd0041684"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/pages/api/v1/db/update-line-sources.ts",
+      "sha256": "3730aa17e7140b10815bf9d044acc502cbb616de720c12c95a091f06e051890e"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/pages/api/v1/db/update-lines-ccc.ts",
+      "sha256": "a7777315823ff655e2625faa531cf39ca23bdf0c544f5b1ba7d8a4715d850084"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/frozen-source/web/scripts/evaluate-tweet-claims.ts",
+      "sha256": "672af9835b481682066cd10d919b12073bc089da5804400f478ac9b75baf1849"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/independent-parent-persistence-results.json",
+      "sha256": "5705c34d476b0da84bac495c60905954dc30baa3a43121c316d695499cba9790"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/independent-parent-recovery.test.ts",
+      "sha256": "f65bb372328c1918465f6db3aefcd28b96d754e9eaa8bbc099e6d14ba7167c8a"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/independent-parent-results.json",
+      "sha256": "f0b73ab9e63d7a3881d7f257fc7b44181ae9e6355746925e00df993d2e1b14ec"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/independent-parent.log",
+      "sha256": "d8642a3dda4f523abac707135521508f90878eb974b4bc8b032e5583d4ac7951"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/original-parent-results.json",
+      "sha256": "f323333bff2ad0988cfadde7b75cb810837bfc67e4ec3cc1f7c27514799be998"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/original-parent.log",
+      "sha256": "74175d4f8970f4542f5c5df6185e290e0a6eeb9d37d49753ad792e99be7babca"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/owner-CANDIDATE-V1.md",
+      "sha256": "2ff0c347162b016d37ee2a76a522a26f3b117311041391dcc2fcc28f7e3169e7"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/pin-check-after.json",
+      "sha256": "e73ebbe07971c9c0fcac78cf2f5cfb6da35b9bf19ab673be39974ba5727bcce8"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/pin-check-before.json",
+      "sha256": "f1ceee8f934b613c7b6a6d783674cfbb01c33d96b3f0e8cb1793ef739fef56a3"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/scoped-tsc.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1/vitest.review.config.mjs",
+      "sha256": "12090f3c9f6514121dceaf5faec272a0a4e3592b55bd087504bb8175fa1754b4"
+    }
+  ]
+}

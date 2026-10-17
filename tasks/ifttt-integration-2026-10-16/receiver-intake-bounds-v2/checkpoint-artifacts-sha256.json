@@ -1,0 +1,73 @@
+{
+  "sourceManifestSha256": "81b41d7841a72c12cdb2824a7483cb81a0a13a61d40b916c4b218447cbd0b9fb",
+  "files": [
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v2/CHECKPOINT.md",
+      "sha256": "1cc311a1c3456db6848bbf0bcc9992b39bce834aa4c6f945bde0c041fd959df7"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v2/evidence/R19-changed-variant.json",
+      "sha256": "cd32dbadcfe03b6be8b87efea96f64dca4bc975763a4943d0bbc2d51f0122edc"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v2/evidence/R19-exact-retry.json",
+      "sha256": "20ee6b05dac7c1c7da19aaa8cfd84aeb29425882252cfc4bb50910c0c927d8c9"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v2/evidence/R20-receipt-cap-refusal.json",
+      "sha256": "e21606266e088f7b263df5cf41fd907ea0029599e49bfcfede9001b59c8ad74d"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v2/evidence/R20-successful-retry.json",
+      "sha256": "f1cec27578ef002371a6d60ada3d1d63a0b963fff1a524168b04ab680513197e"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v2/evidence/absent-race-line_source_ifttt_events.json",
+      "sha256": "e18024f63c9218375fd0c6d75fc3704722cc3ee05f514040aff343bb86726fcd"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v2/evidence/absent-race-lines_ccc_ifttt_events.json",
+      "sha256": "9fd311296711a3f382f365ab74b59c635da17d87fcba768bd723fd870f7709a3"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v2/evidence/check-summary.json",
+      "sha256": "79b0b064f92a64c754567e1ae448f3644a95e94038db549227d6c80acc219c8d"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v2/evidence/final109-results.json",
+      "sha256": "f4bcc66448faab7166ee0db121a3d890cc408b82a9236ae90f2310ba0ee6b142"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v2/evidence/final109.log",
+      "sha256": "d5368f0b01c4e8beaafe616b4bb7bab132915b89ad272a3e6f5c90c39719e69e"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v2/evidence/integrity.json",
+      "sha256": "aeebcb8f9d53d18d04f3fae23444cc6f483321198c395184ea51ab30de144636"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v2/evidence/rpc-diagnostic-error.json",
+      "sha256": "73db6495d79d836bd2568480b728142b4f8eb0e48e4320594b7e5558bce2aa20"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v2/evidence/same-key-variant-retained.json",
+      "sha256": "e401556fb20e59ec058184eae7915a464aa6935ee1139c1bb77cb582de613a00"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v2/evidence/scoped-tsc.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v2/evidence/sql7-R20-correction.diff",
+      "sha256": "f429ef2d43ee32bcbf5f78519e1858959a96dcd8e1831f71a380f07f97f683a1"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v2/evidence/unchanged-R20-block.txt",
+      "sha256": "8728478b484b54055651f1aa5e1c9d8d300f5d6a7557054684af5fdb60986e34"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v2/supabase/.temp/cli-latest",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "createdAt": "2026-10-15T21:01:33.624287+00:00",
+  "files": {
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx": "c0bf57577c2102b720979d00c2a0aafc3601934a9cc3227c9802d501695095c9",
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx": "8c63fa3f847041b078de6c7771ea9bfdc548b01c94ab562943576395933a5268"
+  },
+  "patchSha256": "3c50fbb222f6a5a33e0169e1d7f5d3f17afd8caec0cf03961a7d2822e983c174",
+  "scope": "Two presentation files only; incremental patch starts at dirty intake copies, preserving all preexisting changes. CandidateCard, main component, engine and forecast cohort untouched.",
+  "tests": {
+    "command": "npm test -- --run components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx",
+    "passed": 17,
+    "failed": 0,
+    "durationMs": 1140,
+    "isolated": "mocked hook, fixtures only; no browser or network"
+  },
+  "lint": {
+    "command": "npx eslint components/RosterScheduleOptimizer/CandidateBrowser.tsx components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx",
+    "exitCode": 0,
+    "outputBytes": 0
+  },
+  "whitespace": "owned pair passed",
+  "forecastCohort": {
+    "pins": 27,
+    "unchanged": true,
+    "manifestSha256": "42929006a75dea1de6d6d158720c4f8886b69c74b27bfdf636415105654bf191"
+  },
+  "engineAdmission": "unchanged; no demonstrated basis for relaxing the AGP gates",
+  "compiler": "not run; no new coverage claimed from earlier cohort compiler",
+  "liveRequests": 0,
+  "browserStorageReads": 0,
+  "browserStorageWrites": 0,
+  "providerRequests": 0,
+  "databaseWrites": 0,
+  "modelRuns": 0,
+  "builds": 0,
+  "deadlineUTC": "2026-10-15T21:10:00Z",
+  "review": "pending exact frozen increment review"
+}

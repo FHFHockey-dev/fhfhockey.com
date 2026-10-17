@@ -22,9 +22,12 @@ it("delegates without synchronous fallback, reuses irrelevant-intent work, and c
     { initialProps: { data: snapshot as PlanningSnapshot | null, plan: intent } });
   const first = MockWorker.instances[0];
   expect(first.postMessage).toHaveBeenCalledOnce();
+  expect(first.postMessage).toHaveBeenCalledWith({ snapshot, intent: { ...intent, steps: [], revision: 0, alternativeCount: 5 } });
+  expect(intent.steps).toEqual([]);
   expect(result.current.loading).toBe(true);
   rerender({ data: snapshot, plan: { ...intent, revision: 20, alternativeCount: 20, steps: [{ id: "s" } as PlanIntent["steps"][number]] } });
   expect(MockWorker.instances).toHaveLength(1);
+  expect(first.postMessage).toHaveBeenCalledOnce();
   const changed = { ...snapshot, id: "other-account" };
   rerender({ data: changed, plan: intent });
   expect(first.terminate).toHaveBeenCalledOnce();

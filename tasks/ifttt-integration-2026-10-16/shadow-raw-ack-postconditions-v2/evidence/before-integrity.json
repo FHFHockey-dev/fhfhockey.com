@@ -1,0 +1,16 @@
+{
+  "priorCheckpoints": [
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/shadow-raw-ack-increment/owned-source-v1-sha256.json",
+      "sha256": "72e36e2e1ea8b405222f5f9d9517f60c6406265df2caa19e16ce66f82106ea23",
+      "files": 103
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/shadow-raw-ack-increment/checkpoint-artifacts-sha256.json",
+      "sha256": "3e7c12361962d554537abcb8cd9aded6ee6b067c6ebcd8b397b188228e7b201b",
+      "files": 69
+    }
+  ],
+  "snapshotCount": 15,
+  "prior103and69Unchanged": true
+}

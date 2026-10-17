@@ -1,0 +1,42 @@
+[
+  {
+    "path": "web/lib/integrations/yahoo/rosterPlanning.ts",
+    "sha256": "7e309fa65a4acc4ef7f7b932f475a4f56ec6feafd524ab376064fa6ae2edfebc"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+    "sha256": "0541f0cc9abca9d8753cfbc41feda2cc0936c90677ec624c8499082b84dbf061"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/providerClient.ts",
+    "sha256": "8b9285f9f0803c85256d5e31db09f503582befff646e30c8798b06efe6636f67"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/tokenManager.ts",
+    "sha256": "4c905ede3ee15f1bce3a2fb6fe4aced506a0527c3d01a85270c5372893aab009"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+    "sha256": "faee5d21dc2df01ed47fbf1da2ebb811ca99109a8bd2c23e9be4906a5318d14e"
+  },
+  {
+    "path": "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+    "sha256": "b06810f3a1150aba29740cdfd059618b60b105abccd6c275f93e9b49cc235c9c"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx",
+    "sha256": "2bb760eea783a1ab93c20900322f362deba449099d0f6c3562c2d2509e0958bd"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.ts",
+    "sha256": "0be1217d4a20ad3581a33b9455a65e6dce72e260d46a6a7ff8cd86aacecd8ee0"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/CompactSchedule.tsx",
+    "sha256": "5afb93882b1647951a2fc2e3778fc9cd7baad24943271e82b049bb8053e9cd97"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/RosterContribution.tsx",
+    "sha256": "b217dc9f03df5862241150f4a9c01f5b6b6045acb3ac2e92f37815a8a6db828b"
+  }
+]

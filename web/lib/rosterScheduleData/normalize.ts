@@ -1,5 +1,6 @@
 import type {
   MatchupWeekMapping,
+  FetchedNhlScheduleGame,
   NhlScheduleGame,
   RosterOptimizerTeamGameUpsert,
   YahooMatchupWeekRow,
@@ -133,6 +134,7 @@ export function normalizeNhlGameToTeamRows(args: {
   gameKey: string;
   mapping: MatchupWeekMapping;
   sourceUrl: string;
+  scheduleCoverage?: FetchedNhlScheduleGame["scheduleCoverage"];
   yahooSeason: string;
 }): [RosterOptimizerTeamGameUpsert, RosterOptimizerTeamGameUpsert] {
   const { game, mapping } = args;
@@ -183,6 +185,7 @@ export function normalizeNhlGameToTeamRows(args: {
       "game.lastUpdatedUTC",
     ),
     source_metadata: {
+      ...(args.scheduleCoverage ? { scheduleCoverage: args.scheduleCoverage } : {}),
       canonicalDateSource: "gameDate",
       mappingReason: mapping.status === "unmapped" ? mapping.reason : null,
       venue: game.venue?.default ?? null,

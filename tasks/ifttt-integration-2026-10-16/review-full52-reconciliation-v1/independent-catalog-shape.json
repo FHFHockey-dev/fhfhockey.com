@@ -1,0 +1,535 @@
+{
+  "before": {
+    "data": {
+      "version": "ifttt-prerequisite-catalog-v1",
+      "functions": [
+        {
+          "args": "",
+          "name": "append_line_decisions",
+          "definer": false,
+          "acl_hash": "344b0d0a2f313f3bd6dbe90305fca6f9",
+          "volatility": "v",
+          "config_hash": "d41d8cd98f00b204e9800998ecf8427e",
+          "definition_hash": "47572dae896568a0d640711aae6736c7"
+        },
+        {
+          "args": "",
+          "name": "capture_starter_board_goalies",
+          "definer": false,
+          "acl_hash": "344b0d0a2f313f3bd6dbe90305fca6f9",
+          "volatility": "v",
+          "config_hash": "d41d8cd98f00b204e9800998ecf8427e",
+          "definition_hash": "586d0e61fe155678f658d2529a0add2c"
+        },
+        {
+          "args": "",
+          "name": "capture_starter_board_lineup",
+          "definer": false,
+          "acl_hash": "344b0d0a2f313f3bd6dbe90305fca6f9",
+          "volatility": "v",
+          "config_hash": "d41d8cd98f00b204e9800998ecf8427e",
+          "definition_hash": "8b3018ed4f9be8964378648ea185da4c"
+        },
+        {
+          "args": "",
+          "name": "claim_tweet_pipeline_job",
+          "definer": false,
+          "acl_hash": "344b0d0a2f313f3bd6dbe90305fca6f9",
+          "volatility": "v",
+          "config_hash": "d41d8cd98f00b204e9800998ecf8427e",
+          "definition_hash": "3fa01d904b84851d44b30d2468c3c240"
+        },
+        {
+          "args": "",
+          "name": "enqueue_player_forecast_job",
+          "definer": false,
+          "acl_hash": "344b0d0a2f313f3bd6dbe90305fca6f9",
+          "volatility": "v",
+          "config_hash": "d41d8cd98f00b204e9800998ecf8427e",
+          "definition_hash": "633e8bbf13c010e4e739300c205e073d"
+        }
+      ],
+      "relations": [
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "forge_game_update_queue",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "6377a4203e3fb7677c404449e8ac8b35"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "games",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "ab40e8626285448a0d7c52e7a9190426"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "line_claim_relations",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "b230c006633d6fa9b240d4798904a004"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "line_claim_revisions",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "3640e4d882165de1cee5bb5fc558dfd7"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "line_entry_revisions",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "20b496c167cd5e1e5f9f01eab7d66170"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "line_pp_decisions",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "b21d7be89d87cecc1f00217dfc468c71"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "line_source_captures",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "f41c1fd311ae9614ef53c26c725a50f1"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "line_source_ifttt_events",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "5100d2419b8e57706ebe0095b7669936"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "line_source_snapshots",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "5bd2c068c052b229e366d49daff17a67"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "lines_ccc",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "bc8cecafe90c38037aeb08469ee27a49"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "lines_ccc_ifttt_events",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "6a911e70258686e07528239f16c3e882"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "news_feed_items",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "2e4c638b7566b67d80cc71146740752f"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "nhl_api_game_normalization_status",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "43533f179a25e576498810638d09ac67"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "nhl_api_game_payloads_raw",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "e6b0db24622d2736e82321ec984b0055"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "nhl_api_game_roster_spots",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "2a6c7226b8d613e9ba27429146dfd9ef"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "player_forecast_goalie_start_observations",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "e9648714ee0ae45bd530c3a16e2a3f2b"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "player_forecast_inference_queue",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "2702f4ca9dfe33623f51c6ba9dc123c9"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "player_forecast_lineup_assignments",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "9622d733c6e712da235eb61f52706487"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "player_forecast_lineup_snapshots",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "3d4838b7d0607d3f10f012504dd9b669"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "roster_optimizer_team_games",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "302a89b706c42771155eef13d58e3119"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "tweet_pipeline_jobs",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "82efa0530b18d9ca2a5390cda2e99229"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "tweet_player_events",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "ce36cde53d63657b603b4abf5e55a68c"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "tweet_projection_reports",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "b2526e2571aaf5d60b751b12ea392637"
+        }
+      ],
+      "missingCount": 0,
+      "functionCount": 5,
+      "relationCount": 23
+    },
+    "guard": null,
+    "dataBytes": 5830
+  },
+  "after": {
+    "data": {
+      "version": "ifttt-prerequisite-catalog-v1",
+      "functions": [
+        {
+          "args": "",
+          "name": "append_line_decisions",
+          "definer": false,
+          "acl_hash": "344b0d0a2f313f3bd6dbe90305fca6f9",
+          "volatility": "v",
+          "config_hash": "d41d8cd98f00b204e9800998ecf8427e",
+          "definition_hash": "47572dae896568a0d640711aae6736c7"
+        },
+        {
+          "args": "",
+          "name": "capture_starter_board_goalies",
+          "definer": false,
+          "acl_hash": "344b0d0a2f313f3bd6dbe90305fca6f9",
+          "volatility": "v",
+          "config_hash": "d41d8cd98f00b204e9800998ecf8427e",
+          "definition_hash": "586d0e61fe155678f658d2529a0add2c"
+        },
+        {
+          "args": "",
+          "name": "capture_starter_board_lineup",
+          "definer": false,
+          "acl_hash": "344b0d0a2f313f3bd6dbe90305fca6f9",
+          "volatility": "v",
+          "config_hash": "d41d8cd98f00b204e9800998ecf8427e",
+          "definition_hash": "bd8260b0f91d779a287297d590efe15f"
+        },
+        {
+          "args": "",
+          "name": "claim_tweet_pipeline_job",
+          "definer": false,
+          "acl_hash": "344b0d0a2f313f3bd6dbe90305fca6f9",
+          "volatility": "v",
+          "config_hash": "d41d8cd98f00b204e9800998ecf8427e",
+          "definition_hash": "3fa01d904b84851d44b30d2468c3c240"
+        },
+        {
+          "args": "",
+          "name": "enqueue_player_forecast_job",
+          "definer": false,
+          "acl_hash": "344b0d0a2f313f3bd6dbe90305fca6f9",
+          "volatility": "v",
+          "config_hash": "d41d8cd98f00b204e9800998ecf8427e",
+          "definition_hash": "633e8bbf13c010e4e739300c205e073d"
+        }
+      ],
+      "relations": [
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "forge_game_update_queue",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "6377a4203e3fb7677c404449e8ac8b35"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "games",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "ab40e8626285448a0d7c52e7a9190426"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "line_claim_relations",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "b230c006633d6fa9b240d4798904a004"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "line_claim_revisions",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "3640e4d882165de1cee5bb5fc558dfd7"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "line_entry_revisions",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "20b496c167cd5e1e5f9f01eab7d66170"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "line_pp_decisions",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "b21d7be89d87cecc1f00217dfc468c71"
+        },
+        {
+          "rls": true,
+          "kind": "r",
+          "name": "line_source_captures",
+          "exists": true,
+          "aclHash": "847f3f94765889994cb0b959cb6bea88",
+          "forceRls": false,
+          "shapeHash": "7471fa47c871b5c2b9bc75a0f6040999"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "line_source_ifttt_events",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "5100d2419b8e57706ebe0095b7669936"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "line_source_snapshots",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "5bd2c068c052b229e366d49daff17a67"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "lines_ccc",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "bc8cecafe90c38037aeb08469ee27a49"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "lines_ccc_ifttt_events",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "6a911e70258686e07528239f16c3e882"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "news_feed_items",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "2e4c638b7566b67d80cc71146740752f"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "nhl_api_game_normalization_status",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "43533f179a25e576498810638d09ac67"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "nhl_api_game_payloads_raw",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "e6b0db24622d2736e82321ec984b0055"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "nhl_api_game_roster_spots",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "2a6c7226b8d613e9ba27429146dfd9ef"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "player_forecast_goalie_start_observations",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "e9648714ee0ae45bd530c3a16e2a3f2b"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "player_forecast_inference_queue",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "2702f4ca9dfe33623f51c6ba9dc123c9"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "player_forecast_lineup_assignments",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "9622d733c6e712da235eb61f52706487"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "player_forecast_lineup_snapshots",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "3d4838b7d0607d3f10f012504dd9b669"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "roster_optimizer_team_games",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "302a89b706c42771155eef13d58e3119"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "tweet_pipeline_jobs",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "82efa0530b18d9ca2a5390cda2e99229"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "tweet_player_events",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "ce36cde53d63657b603b4abf5e55a68c"
+        },
+        {
+          "rls": false,
+          "kind": "r",
+          "name": "tweet_projection_reports",
+          "exists": true,
+          "aclHash": "d548c78bd533a4fd0bb4d2caa2aebb87",
+          "forceRls": false,
+          "shapeHash": "b2526e2571aaf5d60b751b12ea392637"
+        }
+      ],
+      "missingCount": 0,
+      "functionCount": 5,
+      "relationCount": 23
+    },
+    "guard": null,
+    "dataBytes": 5829
+  },
+  "noHelperInvocations": true
+}

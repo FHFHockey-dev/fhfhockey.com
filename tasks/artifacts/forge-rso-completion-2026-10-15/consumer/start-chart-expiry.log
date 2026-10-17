@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest __tests__/pages/start-chart.test.tsx -t source deadline|expiry timer|already-expired
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:48581) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/start-chart.test.tsx (63 tests | 59 skipped) 256ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed | 59 skipped (63)
+   Start at  21:27:47
+   Duration  1.01s (transform 273ms, setup 3ms, collect 374ms, tests 256ms, environment 149ms, prepare 38ms)
+

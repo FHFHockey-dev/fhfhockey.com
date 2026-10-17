@@ -1,7 +1,7 @@
 import type { TweetPlayerEvent } from "./tweetPlayerEvents";
 import { normalizeIdentityName, resolvePlayerIdentity, type PlayerIdentity } from "./playerIdentity";
 
-export const TWEET_INTERPRETATION_VERSION = "2026-10-11.1";
+export const TWEET_INTERPRETATION_VERSION = "2026-10-13.1";
 export type EvidenceSpan = { start: number; end: number; text: string };
 export type TweetUnit = {
   situation: "es_forward" | "es_defense" | "pp" | "pk" | "goalie" | "scratch" | "injury";
@@ -45,6 +45,11 @@ export function tweetPipelineFlags() {
 const PROSE = /\b(?:news|gm|president|montreal|montréal|nashville|edmonton|colorado|los angeles|utah|vegas|toronto|islanders|all|star|so not|babes)\b/i;
 
 type EvenStrengthRow = "es_forward" | "es_defense";
+
+export function playerPositionRole(player: Pick<PlayerIdentity, "position">): EvenStrengthRow | "goalie" | null {
+  const position = player.position?.toUpperCase();
+  return ["C", "L", "R", "LW", "RW", "F"].includes(position ?? "") ? "es_forward" : position === "D" ? "es_defense" : position === "G" ? "goalie" : null;
+}
 
 function resolveRowIdentity(rawName: string, roster: PlayerIdentity[], row?: EvenStrengthRow | null): ReturnType<typeof resolvePlayerIdentity> {
   const key = normalizeIdentityName(rawName);
@@ -103,48 +108,85 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
   let number: number | null = null;
   let explicitNumber = false;
   let group: string | null = null;
+  let sectionRole: EvenStrengthRow | "goalie" | null = null;
+  let explicitEsHeading = false;
   let pending: TweetUnit | null = null;
   let offset = 0;
   const ordinals = new Map<string, number>();
-  let sawStructure = /\b(lines?|lineup|pairings?|units?|rushes|camp)\b/i.test(text);
+  let sawStructure = /\b(lines?|lineup|pairings?|units?|rushes|camp|morning skate)\b/i.test(text)
+    || text.split("\n").filter((line) => /^[\p{L}.'’\s–—/-]+$/u.test(line) && /[-–—/]/.test(line)).length > 1;
   const flush = () => { if (pending) result.units.push(pending); pending = null; };
   for (const rawLine of text.split("\n")) {
     const lineStart = offset;
     offset += rawLine.length + 1;
     let line = rawLine.trim();
-    if (!line) { flush(); number = null; explicitNumber = false; continue; }
+    if (!line) {
+      flush(); number = null; explicitNumber = false; sectionRole = null; explicitEsHeading = false;
+      if (situation !== "pp" && situation !== "pk") situation = null;
+      continue;
+    }
     const groupMatch = line.match(/\b(?:group|squad)\b\s+([a-z0-9]+)\b/i);
-    if (groupMatch) { flush(); group = groupMatch[1]!.toLowerCase(); number = null; explicitNumber = false; situation = initialSituation; }
+    if (groupMatch) { flush(); group = groupMatch[1]!.toLowerCase(); number = null; explicitNumber = false; situation = initialSituation; sectionRole = null; explicitEsHeading = false; }
     // Parse the relay body without changing original evidence positions.
     line = line.replace(/^RT\s+@[^:]+:\s*/i, "");
     const inlineHeading = line.match(/^(?:[\p{L}#@]+\s+)+(pp\s*[12]\s*:)/iu);
     if (inlineHeading) line = line.slice(inlineHeading[0].indexOf(inlineHeading[1]!));
-    const heading = line.match(/^(?:(pp|power[ -]?play|pk|penalty kill|forwards?|defen[cs]e(?: pairs?)?|goalies?|scratches?|injur(?:ed|ies)|even[ -]strength)\s*([12])?\s*[:–—-]?\s*)/i);
-    if (heading) {
+    const heading = line.match(/^(?:(pp|power[ -]?play|pk|penalty kill|forwards?|defen[cs]e(?: pairs?)?|goalies?|scratches?|extras?|injur(?:ed|ies)|even[ -]strength|[fdg](?=\s*\d?\s*:))\s*([1-9])?\s*[:–—-]?\s*)/i);
+    if (heading && !/\b(?:rotation|rotating|correction|corrected|contradictory|contradicting)\b/i.test(line)) {
       flush(); sawStructure = true;
       const label = heading[1]!.toLowerCase();
-      situation = /^(pp|power)/.test(label) ? "pp" : /^(pk|penalty)/.test(label) ? "pk" : /^goal/.test(label) ? "goalie" : /^scratch/.test(label) ? "scratch" : /^injur/.test(label) ? "injury" : /^defen/.test(label) ? "es_defense" : "es_forward";
+      situation = /^(pp|power)/.test(label) ? "pp" : /^(pk|penalty)/.test(label) ? "pk" : /^goal|^g$/.test(label) ? "goalie" : /^(scratch|extra)/.test(label) ? "scratch" : /^injur/.test(label) ? "injury" : /^defen|^d$/.test(label) ? "es_defense" : "es_forward";
+      explicitEsHeading = situation === "es_forward" || situation === "es_defense";
+      sectionRole = explicitEsHeading ? situation as EvenStrengthRow : null;
       number = heading[2] ? Number(heading[2]) : null;
       explicitNumber = number != null;
       line = line.slice(heading[0].length).trim();
       if (!line) continue;
     }
     line = line.replace(/^🥅\s*/u, "");
-    if (/^(?:RT\s+@|#|https?:)/i.test(line)) { flush(); continue; }
-    let hits = line.includes("/") ? null : segmentPlayerRow(line, roster);
-    let rowKind: EvenStrengthRow | null = situation !== "pp" && situation !== "pk" && sawStructure && /[-–—]/.test(line)
-      ? (hits?.length === 2 ? "es_defense" : hits?.length === 3 ? "es_forward" : line.split(/[-–—]/).length >= 3 ? "es_forward" : "es_defense") : null;
-    if (result.formation && hits?.every((hit) => ["C", "L", "R", "LW", "RW", "F"].includes(hit.player.position?.toUpperCase() ?? "")) && hits.length === 2) rowKind = "es_forward";
-    if (result.formation && hits?.length === 1 && hits[0]!.player.position === "D") rowKind = "es_defense";
-    const identityRow = rowKind ?? (situation === "es_forward" || situation === "es_defense" ? situation : null);
-    if (identityRow && !line.includes("/")) hits = segmentPlayerRow(line, roster, identityRow);
+    if (/^(?:RT\s+@|#|@|https?:)/i.test(line)) { flush(); continue; }
+    const extras = line.match(/^(.+?)\s+(?:are|is)\s+(?:the\s+)?extras?[.!]?$/i);
+    if (extras) line = extras[1]!.trim();
+    const lineSituation = extras ? "scratch" : situation;
+    const slashParts = line.includes("/") ? line.split(/\s*\/\s*/).map((part) => segmentPlayerRow(part, roster)) : null;
+    // One resolved player per slash slot is a row delimiter. Multiple players in
+    // one slot remain alternatives, rather than being merged into a full unit.
+    const simpleSlash = slashParts?.every((part) => part?.length === 1);
+    let hits = !slashParts || simpleSlash ? segmentPlayerRow(line, roster) : null;
+    const roles = hits?.map((hit) => playerPositionRole(hit.player)) ?? [];
+    const positiveRole = roles.length && roles.every((role) => role === roles[0]) ? roles[0] : null;
+    const reviewShape: EvenStrengthRow | null = sawStructure && /[-–—/]/.test(line)
+      ? line.split(/[-–—/]/).length >= 3 ? "es_forward" : "es_defense" : null;
+    let rowKind: EvenStrengthRow | null = null;
+    if (lineSituation !== "pp" && lineSituation !== "pk" && lineSituation !== "scratch" && lineSituation !== "injury") {
+      if (explicitEsHeading) rowKind = sectionRole as EvenStrengthRow;
+      else if (positiveRole === "es_forward" || positiveRole === "es_defense") rowKind = positiveRole;
+      else if (positiveRole !== "goalie") rowKind = sectionRole === "es_forward" || sectionRole === "es_defense" ? sectionRole : reviewShape;
+    }
+    const identityRow = rowKind ?? (lineSituation === "es_forward" || lineSituation === "es_defense" ? lineSituation : null);
+    if (identityRow && (!slashParts || simpleSlash)) hits = segmentPlayerRow(line, roster, identityRow);
+    if (lineSituation === "goalie") rowKind = null;
+    // Positions and explicit sections govern admission; length only locates a
+    // review row. Rejected short rows cannot consume the other section's slots.
+    const rowRole = hits?.length && hits.every((hit) => playerPositionRole(hit.player) === playerPositionRole(hits![0]!.player)) ? playerPositionRole(hits[0]!.player) : null;
+    if (!explicitEsHeading && hits?.length === 1 && rowRole === "es_forward" && lineSituation !== "pp" && lineSituation !== "pk" && lineSituation !== "scratch" && lineSituation !== "injury") continue;
+    const kind: EvenStrengthRow | "goalie" | null = lineSituation === "goalie" ? "goalie" : rowKind ?? (hits?.length === 1 && rowRole === "goalie" ? "goalie" : null);
+    const scopedTeams = new Set(hits?.map((hit) => hit.player.teamId).filter((team) => team != null));
+    const positionValid = hits?.every((hit) => Number.isSafeInteger(hit.player.playerId) && hit.player.playerId > 0
+      && (lineSituation === "pp" || lineSituation === "pk" ? ["es_forward", "es_defense"].includes(playerPositionRole(hit.player) ?? "") : lineSituation === "scratch" || lineSituation === "injury" ? true : playerPositionRole(hit.player) === kind)) && scopedTeams.size <= 1;
+    const shortRow = hits && kind && (kind === "es_forward" ? hits.length !== 3 && !(result.formation && hits.length === 2) : kind === "es_defense" ? hits.length !== 2 && !(result.formation && hits.length === 1) : hits.length !== 1);
     if (rowKind) {
       const key = `${group}:${rowKind}`;
-      ordinals.set(key, (ordinals.get(key) ?? 0) + 1);
+      if ((!shortRow || explicitNumber) && (hits || reviewShape || heading && explicitEsHeading)) ordinals.set(key, explicitNumber && number != null ? number : (ordinals.get(key) ?? 0) + 1);
     }
+    const sourceRowNumber = rowKind ? (!shortRow || explicitNumber ? ordinals.get(`${group}:${rowKind}`) ?? null : null) : number;
     if (!hits) {
       flush();
-      if (sawStructure && line.includes("/") && line.length < 90) {
+      if (sawStructure && lineSituation === "goalie" && /^[\p{L}.'’\s-]+$/u.test(line) && line.length < 90) {
+        const start = lineStart + rawLine.indexOf(line);
+        result.unresolved.push({ start, end: start + line.length, text: line, situation: "goalie", reason: "missing_player", candidates: [] });
+      }
+      if (sawStructure && slashParts && !simpleSlash && lineSituation !== "scratch" && line.length < 90) {
         result.relationships ??= [];
         result.relationships.push({ kind: "alternatives", playerIds: [], situation: situation === "pp" ? "pp" : null, number: rowKind ? ordinals.get(`${group}:${rowKind}`)! : number,
           certainty: "projected", evidence: { start: lineStart + rawLine.indexOf(line), end: lineStart + rawLine.indexOf(line) + line.length, text: line }, reviewReason: "ambiguous_identity" });
@@ -169,8 +211,8 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
           result.unresolved.push({ start: lineStart + rawLine.indexOf(line), end: lineStart + rawLine.indexOf(line) + line.length, text: line, number: rowKind ? ordinals.get(`${group}:${rowKind}`) : number, situation: rowKind ?? situation, reason: "invalid_extraction" });
           continue;
         }
-        if (line.includes("/")) {
-          const relation = result.relationships!.at(-1)!;
+        if (line.includes("/") && result.relationships?.at(-1)?.evidence.text === line) {
+          const relation = result.relationships.at(-1)!;
           relation.subjects = tokens.map((token) => {
             const resolution = resolvePlayerIdentity(token, roster);
             return { text: token, start: lineStart + rawLine.indexOf(token), end: lineStart + rawLine.indexOf(token) + token.length,
@@ -179,43 +221,51 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
           });
           relation.playerIds = relation.subjects.flatMap((subject) => subject.playerId == null ? [] : [subject.playerId]);
         }
+        let tokenOffset = 0;
         for (const token of tokens) {
           const resolution = resolvePlayerIdentity(token, roster);
-          if (resolution.status !== "matched") result.unresolved.push({ start: lineStart + rawLine.indexOf(token), end: lineStart + rawLine.indexOf(token) + token.length, text: token, number: rowKind ? ordinals.get(`${group}:${rowKind}`) : number, situation: rowKind ?? situation, candidates: resolution.candidates.map((candidate) => candidate.playerId), reason: resolution.status === "ambiguous" ? "ambiguous" : "missing_player" });
+          const tokenStart = line.indexOf(token, tokenOffset); tokenOffset = tokenStart + token.length;
+          if (resolution.status !== "matched") result.unresolved.push({ start: lineStart + rawLine.indexOf(line) + tokenStart, end: lineStart + rawLine.indexOf(line) + tokenStart + token.length, text: token, number: rowKind ? ordinals.get(`${group}:${rowKind}`) : number, situation: rowKind ?? lineSituation, candidates: resolution.candidates.map((candidate) => candidate.playerId), reason: resolution.status === "ambiguous" ? "ambiguous" : "missing_player" });
         }
       }
       continue;
     }
     const players = hits.map((hit) => ({ playerId: hit.player.playerId, name: hit.player.fullName }));
     const evidence = hits.map(({ start, end, text: value }) => ({ start: lineStart + rawLine.indexOf(line) + start, end: lineStart + rawLine.indexOf(line) + end, text: value }));
-    if (situation === "pp" || situation === "pk") {
-      const count = situation === "pp" ? 5 : 4;
+    if ((kind || lineSituation === "pp" || lineSituation === "pk") && (!positionValid || shortRow)) {
+      flush();
+      const rejectedSituation = lineSituation === "pp" || lineSituation === "pk" ? lineSituation : kind ?? lineSituation!;
+      result.unresolved.push({ start: lineStart + rawLine.indexOf(line), end: lineStart + rawLine.indexOf(line) + line.length, text: line, situation: rejectedSituation, number: sourceRowNumber, candidates: players.map((player) => player.playerId), reason: "invalid_extraction" });
+      const rejected: TweetUnit = { situation: rejectedSituation, number: sourceRowNumber, explicitNumber, players, evidence, group, complete: false };
+      if (shortRow) (result.excludedUnits ??= []).push(rejected); else result.units.push(rejected);
+      if (rowKind) { number = null; explicitNumber = false; }
+      continue;
+    }
+    if (lineSituation === "pp" || lineSituation === "pk") {
+      const count = lineSituation === "pp" ? 5 : 4;
       if (pending && pending.players.length + players.length > count) flush();
-      pending ??= { situation, number, explicitNumber, players: [], evidence: [], group, complete: false };
+      pending ??= { situation: lineSituation, number, explicitNumber, players: [], evidence: [], group, complete: false };
       pending.players.push(...players); pending.evidence.push(...evidence);
       pending.complete = pending.players.length === count && new Set(pending.players.map((player) => player.playerId)).size === count;
       if (pending.players.length >= count) { flush(); number = null; explicitNumber = false; }
       continue;
     }
-    if (situation === "scratch" || situation === "injury") {
-      result.units.push({ situation, number: null, explicitNumber: false, players, evidence, group, complete: true });
+    if (lineSituation === "scratch" || lineSituation === "injury") {
+      result.units.push({ situation: lineSituation, number: null, explicitNumber: false, players, evidence, group, complete: scopedTeams.size <= 1 });
       continue;
     }
-    const kind = hits.length === 1 && hits[0]!.player.position === "G" ? "goalie"
-      : result.formation && rowKind ? rowKind : hits.length === 3 ? "es_forward" : hits.length === 2 ? "es_defense" : null;
-    if (kind && (kind === "es_forward" || kind === "es_defense") && hits.some((hit) => hit.player.position &&
-      (kind === "es_defense" ? hit.player.position.toUpperCase() !== "D" : !["C", "L", "R", "LW", "RW", "F"].includes(hit.player.position.toUpperCase())))) {
-      result.unresolved.push({ start: lineStart + rawLine.indexOf(line), end: lineStart + rawLine.indexOf(line) + line.length, text: line, situation: kind, number: null, reason: "invalid_extraction" });
-      result.units.push({ situation: kind, number: rowKind === kind ? ordinals.get(`${group}:${kind}`)! : null, explicitNumber: false, players, evidence, group, complete: false });
+    if (!kind) {
+      if (hits.some((hit) => !playerPositionRole(hit.player))) result.unresolved.push({ start: evidence[0]!.start, end: evidence.at(-1)!.end, text: line, reason: "invalid_extraction", candidates: players.map((player) => player.playerId) });
       continue;
     }
-    if (!kind) continue;
     if (!rowKind && (kind === "es_forward" || kind === "es_defense")) {
       ordinals.set(`${group}:${kind}`, result.units.filter((unit) => unit.situation === kind && unit.group === group).length + 1);
     }
     sawStructure = true;
+    if (!explicitEsHeading) sectionRole = kind;
     result.units.push({ situation: kind, number: rowKind === kind ? ordinals.get(`${group}:${kind}`)! : result.units.filter((unit) => unit.situation === kind && unit.group === group).length + 1,
-      explicitNumber: false, players, evidence, group, complete: true });
+      explicitNumber, players, evidence, group, complete: true });
+    if (rowKind) { number = null; explicitNumber = false; }
   }
   flush();
   const relations: Array<{ kind: "substitution" | "swap" | "continuity"; match: RegExpMatchArray | null }> = [

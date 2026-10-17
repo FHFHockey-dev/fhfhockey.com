@@ -1,0 +1,22 @@
+{
+  "id": "CR051-POSITIVE-v2",
+  "scopes": [
+    {
+      "scope": "tweet-scope-v1:28b9724897d3e90489ea3d335142276a96bd3435902e9c6bfbb64a7558645e17",
+      "effects": 1,
+      "holds": [],
+      "ledgerOccurrences": 1
+    },
+    {
+      "scope": "tweet-scope-v1:7fe6deb730ad6246d55e16f8e7bb4dac373979d6bb08c7ec74873dd63096811b",
+      "effects": 1,
+      "holds": [
+        {
+          "reason": "dated_official_game_roster_missing_at_source_time",
+          "observationId": "tweet-observation-v2:b3dfba6d662dfab059702e2c9faca8dcd514235ec2d978a339cc101bc4778aaa"
+        }
+      ],
+      "ledgerOccurrences": 2
+    }
+  ]
+}

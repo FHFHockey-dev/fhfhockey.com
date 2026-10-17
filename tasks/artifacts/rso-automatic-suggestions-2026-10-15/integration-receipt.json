@@ -1,0 +1,25 @@
+{
+  "createdAt": "2026-10-15T22:18:41.680898+00:00",
+  "file": "web/components/RosterScheduleOptimizer/CandidateBrowser.integration.test.tsx",
+  "sha256": "10660c3b0a47c5cceb242e5be54b82524730a873c4722812d583eb783019a025",
+  "patchSha256": "1d031e85a261b0c17a6c6d761594edd347d919803d4e44adc148983989a9b1e9",
+  "accepted7SourcePinsStillMatch": true,
+  "tests": {
+    "command": "npm test -- --run components/RosterScheduleOptimizer/CandidateBrowser.integration.test.tsx",
+    "passed": 2,
+    "failed": 0,
+    "durationMs": 1020
+  },
+  "lint": {
+    "command": "npx eslint components/RosterScheduleOptimizer/CandidateBrowser.integration.test.tsx",
+    "exitCode": 0,
+    "outputBytes": 0
+  },
+  "whitespace": "new test has no trailing whitespace",
+  "path": "real CandidateBrowser and useCandidateMetrics, cloned Worker-message transport stand-in invoking actual candidatePlanMetrics, real card rendering",
+  "positive": "No selected steps; full C1/BN1 roster; real drop/add plans; +1AGP/nullpoints card ahead of alphabetically earlier0AGP/nullpoints card. No callback or input mutation.",
+  "negative": "Unknown effective acquisition timing gives actual no_proposals state, visible specific message/reason, no ordinal and no callback/input mutation.",
+  "externalGuards": "fetch and Storage getItem/setItem/removeItem/clear stubbed to throw and asserted never called",
+  "limits": "Synthetic in-process integration. Native browser Worker packaging, full app mount/autosave and TJ exact roster not exercised. No live/account/provider/browser/storage/DB actions or compiler/build.",
+  "review": "pending one-file test follow-up review"
+}

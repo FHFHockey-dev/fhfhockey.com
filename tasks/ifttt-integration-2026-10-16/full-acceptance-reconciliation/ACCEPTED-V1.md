@@ -1,0 +1,19 @@
+# Independently accepted reconciliation checkpoint
+
+Independent review `../review-full52-reconciliation-v1/REVIEW.md` accepts this increment as a faithful heterogeneous evidence ledger and a bounded **unexecuted** metadata proposal. It does not accept an integrated full52 run, the current combined runtime, production or genuine future performance.
+
+The accepted source85 manifest SHA256 is `7af1f2199fc997238057164b769f4cc21d52a7404c93ecccd386634da02ae531`; owner artifact51 manifest SHA256 is `24b5c47501c3bc08a2ace727888ca769357df688e49083a9700591227d380b71`. The independent review200-file manifest SHA256 is `865335fe1a2110fe96e9e02501f185655d8203be0ebf255a3ae1132bdf816f05`. The implementation owner verified all85/51/200 again after the verdict. All source holds are released; accepted bytes and original results remain stable. This acceptance addendum was created afterward and is not part of the historical51 artifact manifest.
+
+The independent audit re-evaluated every original assertion: **52 rows,227 assertions;225 match across50 fully matching rows**. This is194/196 pure plus31/31 separately reviewed persistence assertions. Original CR011[0] and CR051[1] still fail; separate approved explicit-clause positives pass12 and retain all7 original game-separation assertions. Both ambiguous originals hold in pure and real RPC checks: two review-only raw carriers, one canonical occurrence and one existing native allocation, with no additional actionable effect. Normal/mutation rows equal owner and historical accepted rows; expected exit1 remains unchanged. No original row was rescored using its replacement.
+
+The23 frozen tests and two independent catalog probes pass: **25 distinct focused cases,10 private-PG and15 pure**, plus scoped TypeScript. The independently recalculated ledger and copied CLI output match byte-for-byte. No active test/compiler/database or hosted action remains.
+
+All11 accepted dependency snapshots match. Live10 match; the disclosed root-owned `contributions.ts` change is preserved and is not accepted as combined runtime compatibility. `DEPENDENCY-COMPATIBILITY-HANDOFF.md` prepares the precise owner handoff. No root-owned application file was changed by this increment.
+
+## Catalog ACL scope clarification
+
+Keep the accepted SQL proposal SHA256 `761fa7e4b69efd41f56bde3b99fa52d4211e9150319cb1e08de11c2a5c40ffe6` unchanged. Its privilege fingerprints cover standard-role table SELECT/INSERT/UPDATE/DELETE and named RPC EXECUTE. The independent probe proved that column SELECT and table TRUNCATE grants leave its aclHash and shapeHash unchanged. See `../review-full52-reconciliation-v1/independent-catalog-privilege-scope.json`.
+
+Therefore the proposal cannot close complete ACL/security acceptance. A separately bounded, authorized inventory must cover relevant column grants, TRUNCATE/REFERENCES/TRIGGER and version-specific privileges, schema USAGE/CREATE, owned sequence privileges, ownership/grant options, default privileges, role inheritance/bypass and effective caller/definer rights. Unknown or unmeasured privilege classes leave that gate open. Fingerprints are comparison metadata, not writer fencing or complete security proof. No extra query is authorized by this clarification; the previous completed metadata attempts remain terminal.
+
+The remaining hosted/data/operational sequence is in `HOSTED-ACCEPTANCE-PACKAGES.md`, interpreted with this narrower privilege scope. Missing schema and migration authority/order, authentic IDs/history/all-writer fencing, raw receiver/external acknowledgment, genuine future metrics and separate operational approvals remain open. New executable exact-key history SQL still requires genuine keys and compatible schema; no fixture IDs were substituted. The next independent local implementation boundary is receiver-job acknowledgment/recovery, outside this original52 ledger.

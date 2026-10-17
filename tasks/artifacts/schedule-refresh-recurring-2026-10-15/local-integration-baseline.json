@@ -1,0 +1,31 @@
+{
+  "recordedAtUTC": "2026-10-16T01:42:39.453957+00:00",
+  "branch": "octoberBranch",
+  "head": "a8f58de6178e282acd3a71851c66f4a56b119f14",
+  "candidateManifestSha256": "2515e4b9e1391484656cf6a0a81d8f74c3ed6589d6309532df95edee2e8ebc41",
+  "patchSha256": "c8ff0740e81dd0760da2a5a6588e1dfe3fed5205bc9f1ce9e95916452c67e276",
+  "targetBeforeSha256": {
+    "web/lib/cron/cronInventory.ts": "09913069eb4c0a01004de2750a6291d6346eb8fe1e74a9eee324cfe1f5f8f874",
+    "web/lib/rosterScheduleData/recurring.ts": null,
+    "web/lib/rosterScheduleData/source.ts": "062d925308086f2cd63682a68e9ce1991ea9432692c5e85c222b0e2a56094c1a",
+    "web/pages/api/v1/db/cron-report.ts": "f32b78a8c29b2aea2e715587f014968e9b391fe9022cbd745fd40a19610dff93",
+    "web/pages/api/v1/db/refresh-roster-optimizer-schedule.ts": null
+  },
+  "expectedAfterSha256": {
+    "web/lib/cron/cronInventory.ts": "7ce3f8cd67c3dc5749018591899f88885e724d17352247c5bab770b145b9d8eb",
+    "web/lib/rosterScheduleData/recurring.ts": "e876ef82ec720744588bbc4dc3e984db8669b1861229666b6637d6de1ae46136",
+    "web/lib/rosterScheduleData/source.ts": "1aad10ae23f6a3585900b79f918d71872db3fbe28c9a9c2233011c02797406c5",
+    "web/pages/api/v1/db/cron-report.ts": "04db8f08d9cc86bc1ad474cc3aaa33971905a33dfd747966a4e8e01ea0048b55",
+    "web/pages/api/v1/db/refresh-roster-optimizer-schedule.ts": "f93de7aa936a36d2274330fdd3fa5d30cb4888e63a5f8135f21c4b25ec4282d8"
+  },
+  "preserveSha256": {
+    "web/pages/api/v1/db/update-roster-optimizer-schedule.ts": "04c91b0b33693b241207f41b094c1d4215b241955b89c9fe6d82f6ce5caa12e1",
+    "web/lib/rosterScheduleData/refreshGuard.ts": "4b5cdd04b3688ccc528d28148ac60cc1ed2c38a6010d662fce7c9e87bfcbcc78",
+    "web/vercel.json": "57a9c5f6ec90097e9a8f669bd7287fbf5366718407fc8a447c1d4c035efef782",
+    "tasks/TASKS/cron-operations/cron-schedule.md": "a6bcacf7281947c76da48b3f3f31daa0315350769be9988471d30895a27406fe"
+  },
+  "targetDiffBefore": "",
+  "sourcePinReconciliation": "all15 original reviewed source pins matched before integration",
+  "FORGEownership": "owner01a135c8-567b-71d2-b610-6b78f3cc40d7 explicitly confirmed no conflict on exact5paths",
+  "RSOownership": "exact5path ownership notification sent to active owner01a13df3-0374-727c-a8bd-a932723c2032; awaiting reply before application"
+}

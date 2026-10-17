@@ -1,0 +1,134 @@
+{
+  "scope": "FORGE native provenance/input eligibility; local candidate only",
+  "branch": "octoberBranch",
+  "head": "5c28f7e8b525449a61cb0e2a7a55b48ffc65ed4e",
+  "ownedFiles": [
+    {
+      "path": "web/lib/projections/stages/skater-stage.ts",
+      "sha256": "f44feb8db443221bc259b985d6c7f512655dce42f3205622efccb04c73d6894d"
+    },
+    {
+      "path": "web/lib/projections/stages/goalie-stage.ts",
+      "sha256": "7eb6abfcdef2505dc8743ce53dd8c2224198a8245da719573c7df594dec972a5"
+    },
+    {
+      "path": "web/lib/projections/calibrationEligibility.ts",
+      "sha256": "65749b0a1e4fe8c1c7fa70b7c199767d4ec50a6ea53ec0430b6b94bb81f5acd7"
+    },
+    {
+      "path": "web/lib/projections/gameRevisions.ts",
+      "sha256": "2b16ffb05973d007798e46329720579bf12b25c409daaf750d2cca8cf0841e95"
+    },
+    {
+      "path": "web/pages/api/v1/db/run-projection-accuracy.ts",
+      "sha256": "16aadd34dc6d61b93bda8a151511ac5f2b219396a360e3c3f8a0e1414f9ec1d4"
+    },
+    {
+      "path": "web/lib/projections/apiHelpers.test.ts",
+      "sha256": "030fbb1e0a400f6d6f4384f51f00062ab9d6d853606fe5919a5990e8d692b5f7"
+    },
+    {
+      "path": "web/lib/projections/nativeInputEligibility.test.ts",
+      "sha256": "1093a650ba05f4911c3792e30ff39b8493ce21e66a65eab8956269b4096427c6"
+    }
+  ],
+  "coreContractInspectedFiles": [
+    "web/lib/projections/run-forge-projections.ts",
+    "web/lib/projections/goalieModel.ts",
+    "web/lib/projections/calibrationEligibility.ts",
+    "web/lib/projections/promotionGates.ts",
+    "web/lib/projections/stages/goalie-stage.ts",
+    "web/lib/projections/stages/metrics-finalization-stage.ts",
+    "web/lib/projections/stages/persistence-stage.ts",
+    "web/lib/projections/stages/preflight-stage.ts",
+    "web/lib/projections/stages/skater-stage.ts",
+    "web/lib/projections/queries/goalie-queries.ts",
+    "web/lib/projections/queries/line-combo-queries.ts",
+    "web/lib/projections/queries/market-queries.ts",
+    "web/lib/projections/queries/run-lifecycle-queries.ts",
+    "web/lib/projections/queries/skater-queries.ts",
+    "web/lib/projections/queries/team-context-queries.ts",
+    "web/lib/projections/calculators/goalie-save-pct-context.ts",
+    "web/lib/projections/calculators/goalie-starter.ts",
+    "web/lib/projections/calculators/scenario-blending.ts",
+    "web/lib/projections/calculators/skater-adjustments.ts",
+    "web/lib/projections/calculators/team-context-adjustments.ts"
+  ],
+  "additionalInspectedPaths": [
+    "AGENTS.md",
+    "web/package.json",
+    "web/.nvmrc",
+    "web/vitest.config.mts",
+    "web/tsconfig.json",
+    "web/__tests__/vitest.setup.js",
+    "web/lib/projections/seasonBootstrap.ts",
+    "web/lib/projections/inputCapture.ts",
+    "web/lib/projections/module-imports.test.ts",
+    "web/lib/projections/runProjectionV2.test.ts",
+    "web/lib/projections/nativeGoalAccounting.test.ts",
+    "web/lib/projections/consumerRevisionAdmission.ts",
+    "web/lib/projections/apiHelpers.ts",
+    "web/pages/api/v1/forge/players.ts",
+    "web/__tests__/pages/api/v1/db/run-projection-accuracy.test.ts",
+    "web/lib/projectionsConfig/projectionSourcesConfig.ts",
+    "web/lib/player-forecasts/baselinePolicy.ts",
+    "web/lib/player-forecasts/baselineRates.ts",
+    "web/lib/player-forecasts/goalieBaselineRates.ts",
+    "web/lib/player-forecasts/baselineGeneration.ts",
+    "web/lib/player-forecasts/goalieBaselineInputCapture.ts",
+    "docs/player-projections/implementation-handoff.md",
+    "docs/player-projections/subsystem-decisions.md",
+    "docs/player-projections/existing-system-data-flow.md",
+    "docs/player-projections/model-inventory.md",
+    "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md"
+  ],
+  "savedHandoffsRead": [
+    "/Users/tim/Documents/Codex/2026-10-11/task/private-participation-intake-v1/correction-v2/HANDOFF-v2.json",
+    "/Users/tim/Documents/Codex/2026-10-11/task/player-consumer-checkpoint-v1/REVIEW-HANDOFF.md",
+    "/Users/tim/Documents/Codex/2026-10-11/task/player-consumer-checkpoint-v1/minimal-rso-readiness-v1/PLAYER-CRITICAL-PATH-HANDOFF-v1.json"
+  ],
+  "skillRead": "skill://plugin_asdk_app_69d3e5ee6a708191baa733f7b8931995/supabase/SKILL.md",
+  "missingSkillDirectories": [
+    "/Users/tim/Code/fhfhockey.com/.agents/skills",
+    "/Users/tim/.agents/skills",
+    "/Users/tim/Code/.agents"
+  ],
+  "nativeBoundaryBefore": [
+    {
+      "path": "web/lib/projections/stages/skater-stage.ts",
+      "line": 1460,
+      "allowCurrentFantasy": true
+    },
+    {
+      "path": "web/lib/projections/stages/skater-stage.ts",
+      "line": 1592,
+      "allowCurrentFantasy": true
+    },
+    {
+      "path": "web/lib/projections/stages/goalie-stage.ts",
+      "line": 166,
+      "allowCurrentFantasy": true
+    }
+  ],
+  "nativeBoundaryAfter": "false at all three calls; native history and existing coefficients unchanged",
+  "checks": {
+    "boundaryAndEligibility": "16/16 passed; final boundary test rerun 6/6 after forbidding external baseline imports",
+    "existingNativeAndAccuracyCohort": "144/144 passed",
+    "scopedEslint": "passed all seven owned paths; final boundary test lint passed",
+    "typeCheckDefaultHeap": "failed exit134:4GB heap exhausted",
+    "typeCheck8GB": "passed exit0: NODE_OPTIONS=--max-old-space-size=8192 npx tsc --noEmit --incremental false",
+    "ownedDiffWhitespace": "passed"
+  },
+  "externalActions": {
+    "producerRuns": 0,
+    "databaseReads": 0,
+    "databaseWrites": 0,
+    "endpointRuns": 0,
+    "deployments": 0,
+    "commits": 0,
+    "pushes": 0,
+    "branchSwitches": 0,
+    "directParentMessages": 0
+  },
+  "environmentRecovery": "One exec retry failed before process creation during a temporary transport disconnection. Shell access verified; candidate edits preserved; retry completed."
+}

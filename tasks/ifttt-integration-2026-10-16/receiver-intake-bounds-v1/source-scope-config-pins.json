@@ -1,0 +1,30 @@
+{
+  "files": [
+    {
+      "path": "web/pages/api/v1/sources/ifttt/DFOFantasy-tweet.ts",
+      "sha256": "9ec7741a360ae4c351d7b1f4659d87e87dd3b7e1d927c46cea825ca89e6fd799"
+    },
+    {
+      "path": "web/pages/api/v1/sources/ifttt/NHL-Rosters-tweet.ts",
+      "sha256": "4b60c09c93c94b261891847c7c29e4bd8636c03db2431c7f1b02573e3e24ae5e"
+    },
+    {
+      "path": "web/pages/api/v1/sources/ifttt/ccc-tweet.ts",
+      "sha256": "c3004ed5f405b6e3a226d8cbe9b56523fa17299761951bfd81eacc144f6f7bfd"
+    },
+    {
+      "path": "web/pages/api/v1/sources/ifttt/gamedaylines-tweet.ts",
+      "sha256": "d32c4faf5a073545e502b056f40aa9b26069376e2f47a1d5974b25a39f041859"
+    },
+    {
+      "path": "web/pages/api/v1/sources/ifttt/gamedaygoalies-tweet.ts",
+      "sha256": "89d554fec38517f69450fa7a8f851954423391da9111e53f6b268f4d3ebdd726"
+    },
+    {
+      "path": "web/pages/api/v1/sources/ifttt/gamedaynewsnhl-tweet.ts",
+      "sha256": "a0f36ef0de4d574d6785fe54d648a6a8ccca2ff74167627041b4f9b291069fbb"
+    }
+  ],
+  "readOnlyLocalInspection": true,
+  "notActivationEvidence": true
+}

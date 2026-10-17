@@ -670,8 +670,9 @@
     margin-top: 3px;
     color: v.$text-secondary;
     font-family: v.$font-family-primary, sans-serif;
-    font-size: 0.62rem;
+    font-size: 0.75rem;
     font-weight: 600;
+    line-height: 1.4;
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
@@ -708,8 +709,9 @@
 
   small {
     color: v.$text-secondary;
-    font-size: 0.62rem;
+    font-size: 0.75rem;
     font-weight: 600;
+    line-height: 1.4;
     letter-spacing: 0.05em;
     text-transform: uppercase;
   }
@@ -717,9 +719,9 @@
   strong {
     color: v.$text-primary;
     font-family: v.$font-family-numbers, monospace;
-    font-size: 0.72rem;
+    font-size: 0.875rem;
     font-weight: 600;
-    white-space: nowrap;
+    line-height: 1.4;
   }
 }
 
@@ -756,7 +758,7 @@
   display: grid;
   gap: 4px;
   color: v.$text-secondary;
-  font-size: 0.7rem;
+  font-size: 0.8125rem;
   line-height: 1.4;
 }
 
@@ -927,6 +929,7 @@
 
   .powerLeader {
     flex: 0 0 min(82vw, 380px);
+    max-width: 100%;
     scroll-snap-align: start;
   }
 

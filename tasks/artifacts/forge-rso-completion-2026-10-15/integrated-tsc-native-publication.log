@@ -1,0 +1,13 @@
+lib/player-forecasts/nativeBaselinePublication.ts(160,18): error TS2345: Argument of type '() => Promise<{ inserted: boolean; payloadHash: string; }> | Promise<{ dryRun: boolean; payloadHash: string; snapshotId: string | null; }>' is not assignable to parameter of type '() => PromiseLike<{ inserted: boolean; payloadHash: string; }>'.
+  Type 'Promise<{ inserted: boolean; payloadHash: string; }> | Promise<{ dryRun: boolean; payloadHash: string; snapshotId: string | null; }>' is not assignable to type 'PromiseLike<{ inserted: boolean; payloadHash: string; }>'.
+    Type 'Promise<{ dryRun: boolean; payloadHash: string; snapshotId: string | null; }>' is not assignable to type 'PromiseLike<{ inserted: boolean; payloadHash: string; }>'.
+      Types of property 'then' are incompatible.
+        Type '<TResult1 = { dryRun: boolean; payloadHash: string; snapshotId: string | null; }, TResult2 = never>(onfulfilled?: ((value: { dryRun: boolean; payloadHash: string; snapshotId: string | null; }) => TResult1 | PromiseLike<...>) | null | undefined, onrejected?: ((reason: any) => TResult2 | PromiseLike<...>) | ... 1 more...' is not assignable to type '<TResult1 = { inserted: boolean; payloadHash: string; }, TResult2 = never>(onfulfilled?: ((value: { inserted: boolean; payloadHash: string; }) => TResult1 | PromiseLike<TResult1>) | null | undefined, onrejected?: ((reason: any) => TResult2 | PromiseLike<...>) | ... 1 more ... | undefined) => PromiseLike<...>'.
+          Types of parameters 'onfulfilled' and 'onfulfilled' are incompatible.
+            Types of parameters 'value' and 'value' are incompatible.
+              Property 'inserted' is missing in type '{ dryRun: boolean; payloadHash: string; snapshotId: string | null; }' but required in type '{ inserted: boolean; payloadHash: string; }'.
+lib/sources/tweetClaimQualificationStorage.test.ts(380,115): error TS2345: Argument of type '(c: any) => Promise<void>' is not assignable to parameter of type '(...args: any[] | [any]) => Awaitable<void>'.
+  Types of parameters 'c' and 'args' are incompatible.
+    Type 'any[] | [any]' is not assignable to type '[c: any]'.
+      Type 'any[]' is not assignable to type '[c: any]'.
+        Target requires 1 element(s) but source may have fewer.

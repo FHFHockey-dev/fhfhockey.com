@@ -1,9 +1,12 @@
-import { CONTRIBUTION_RESOLVER_POLICY_VERSION, resolveContribution, type ContributionGame, type ContributionSource, type ResolvedContribution } from "./contributions";
+import { CONTRIBUTION_RESOLVER_POLICY_VERSION, admittedModeledStart, catalogParticipation, resolveContribution, type ContributionGame, type ContributionParticipation, type ContributionSource, type ResolvedContribution } from "./contributions";
 import type { ContributionPlanningSnapshot, GameForecast, StatLine } from "../rosterScheduleOptimizer/planningTypes";
 
 type Contributions = NonNullable<GameForecast["contributions"]>;
 const denied = { assignment: false, totals: false, comparison: false, conditionalTieBreak: false };
 const sameInstant = (left: string, right: string) => Number.isFinite(Date.parse(left)) && Date.parse(left) === Date.parse(right);
+const unavailablePowerPlayRole = (goalie: boolean): NonNullable<GameForecast["powerPlayRole"]> => goalie
+  ? { value: null, status: "not_applicable", reason: "not_applicable", source: null }
+  : { value: null, status: "unavailable", reason: "current_role_evidence_unavailable", source: null };
 
 function matchingGame(left: ContributionGame, right: ContributionGame): boolean {
   return left.playerId === right.playerId && left.nhlPlayerId === right.nhlPlayerId
@@ -13,7 +16,8 @@ function matchingGame(left: ContributionGame, right: ContributionGame): boolean 
 }
 
 /** Rebuild every displayed value and timestamp from the same selected target inputs. */
-export function forecastFromContributions(original: GameForecast, contributions: Contributions, goalie: boolean): GameForecast {
+export function forecastFromContributions(original: GameForecast, contributions: Contributions, goalie: boolean,
+  modeledStart?: ContributionParticipation): GameForecast {
   if (goalie) {
     const volumeTargets = ["SAVES_GOALIE", "GOALS_AGAINST_GOALIE", "SHOTS_AGAINST_GOALIE", "GOALIE_MINUTES"];
     const appearanceBased = (row: ResolvedContribution | undefined) => row?.sourceKind === "baseline"
@@ -47,13 +51,16 @@ export function forecastFromContributions(original: GameForecast, contributions:
   }
   const kinds = new Set(Object.values(contributions).flatMap(row => row.sourceKind ? [row.sourceKind] : []));
   const detailUsed = sources.some(source => source.kind === "detailed");
-  const times = [...sources, ...participation];
+  const times = [...sources, ...sources.flatMap(source => source.catalogExpiresAt
+    ? [{ ...source, expiresAt: source.catalogExpiresAt }] : []),
+  ...participation, ...(modeledStart ? [modeledStart] : [])];
   const orderedTimes = (key: "issuedAt" | "cutoffAt" | "expiresAt") => times.map(row => row[key])
     .filter(value => Number.isFinite(Date.parse(value))).sort((a, b) => Date.parse(a) - Date.parse(b));
   const start = participation.find(row => row.basis === "start");
   const appearance = participation.find(row => row.basis === "appearance");
   const sourceIds = [...new Set(sources.map(source => source.sourceId))].sort();
   return { ...original, stats, assignmentStats, tieBreakStats, contributions,
+    powerPlayRole: unavailablePowerPlayRole(goalie),
     allowedUses: { ...denied },
     sourceKind: kinds.has("blended") || kinds.size > 1 ? "blended" : kinds.has("detailed") ? "detailed" : "baseline",
     revisionId: sourceIds.join(":") || original.revisionId,
@@ -63,13 +70,62 @@ export function forecastFromContributions(original: GameForecast, contributions:
     issuedContext: detailUsed || participation.length ? original.issuedContext : undefined,
     sourceWatermark: detailUsed || participation.length ? original.sourceWatermark : undefined,
     conditionalStats: undefined,
-    startProbability: start?.probability ?? (detailUsed ? original.startProbability : null),
+    startProbability: start?.probability ?? (detailUsed ? original.startProbability : modeledStart?.probability ?? null),
+    startParticipation: modeledStart,
     appearanceProbability: appearance?.probability ?? null,
     // Preserve admitted confirmation independently of the issued model weight.
     // Rejected or expired source/participation inputs cannot retain that claim.
     confirmedStart: original.confirmedStart && (detailUsed || start !== undefined),
     modelVersion: sources.find(source => source.kind === "detailed")?.policyVersion ?? sources[0]?.policyVersion ?? original.modelVersion,
-    limitations: [...new Set([...original.limitations, ...Object.values(contributions).flatMap(row => row.limitations)])] };
+    limitations: [...new Set([...original.limitations, ...Object.values(contributions).flatMap(row => row.limitations),
+      ...(modeledStart?.model?.limitations ?? [])])] };
+}
+
+function retainedModeledStart(forecast: GameForecast | undefined, snapshot: ContributionPlanningSnapshot,
+  identity: ContributionGame): ContributionParticipation | undefined {
+  if (forecast?.contributions && Object.values(forecast.contributions).some(row => row.sourceKind === "detailed"
+    || row.sourceKind === "blended" || row.participationRevisionId && row.inputs?.participation?.basis === "start")) return undefined;
+  const candidate = snapshot.participationSources === undefined ? forecast?.startParticipation
+    : catalogParticipation(snapshot.participationSources, identity, "start");
+  const approved = snapshot.forecastManifest?.participationRevisionIds;
+  return candidate && (!approved || approved.includes(candidate.revisionId))
+    ? admittedModeledStart(candidate, identity, snapshot.context.asOf) : undefined;
+}
+
+/** Check all available teammates before selecting players. Conflicting start metadata
+ * is withheld without reweighting independent appearance-conditioned expectations. */
+export function applyModeledStartMetadata<T extends ContributionPlanningSnapshot>(snapshot: T): T {
+  const selected = new Map<string, ContributionParticipation>(), mass = new Map<string, number>();
+  const forecasts = new Map(snapshot.forecasts.map(row => [`${row.playerId}:${row.gameId}`, row]));
+  for (const player of snapshot.players) {
+    if (player.playerClass !== "goalie" || !player.nhlId || !player.nhlTeamId || !player.rosterRevision) continue;
+    for (const game of snapshot.games) {
+      if (game.teamAbbreviation !== player.teamAbbreviation || game.status !== "scheduled" || !game.startsAt || !game.scheduleRevision) continue;
+      const key = `${player.id}:${game.id}`, forecast = forecasts.get(key);
+      const identity = { playerId: Number(player.id), nhlPlayerId: player.nhlId, teamId: player.nhlTeamId,
+        seasonId: snapshot.context.seasonId, gameId: Number(game.id), scheduledAt: game.startsAt,
+        rosterRevision: player.rosterRevision, scheduleRevision: game.scheduleRevision };
+      const candidate = retainedModeledStart(forecast, snapshot, identity);
+      if (candidate) selected.set(key, candidate);
+      const existing = forecast?.startProbability;
+      const probability = forecast?.confirmedStart ? 1
+        : forecast?.startParticipation || existing == null ? candidate?.probability : existing;
+      if (probability != null && Number.isFinite(probability)) {
+        const group = `${game.id}:${player.nhlTeamId}`;
+        mass.set(group, (mass.get(group) ?? 0) + probability);
+      }
+    }
+  }
+  return { ...snapshot, forecasts: snapshot.forecasts.map(forecast => {
+    if (!forecast.contributions) return { ...forecast, powerPlayRole: unavailablePowerPlayRole(
+      snapshot.players.find(player => player.id === forecast.playerId)?.playerClass === "goalie") };
+    const candidate = selected.get(`${forecast.playerId}:${forecast.gameId}`);
+    const conflict = candidate && (mass.get(`${candidate.gameId}:${candidate.teamId}`) ?? 0) > 1.000001;
+    return forecastFromContributions(conflict ? { ...forecast, limitations: [...new Set([...forecast.limitations,
+      "Modeled start probabilities conflict within this team-game; start metadata is unavailable."])] } : forecast,
+    forecast.contributions, snapshot.players.find(player => player.id === forecast.playerId)?.playerClass === "goalie",
+    conflict ? undefined : candidate);
+  }) };
 }
 
 export function revalidateResolvedForecast(forecast: GameForecast, snapshot: ContributionPlanningSnapshot,
@@ -88,6 +144,14 @@ export function revalidateResolvedForecast(forecast: GameForecast, snapshot: Con
   const listed = snapshot.forecastManifest?.issuedRevisionIds;
   const retainedParticipation = (row: ResolvedContribution) => {
     const evidence = row.inputs?.participation;
+    if (identity && row.resolverVersion === CONTRIBUTION_RESOLVER_POLICY_VERSION && matchingGame(row.game, identity)) {
+      const candidate = snapshot.participationSources === undefined ? evidence?.model ? evidence : undefined
+        : catalogParticipation(snapshot.participationSources, identity, evidence?.basis ?? "appearance");
+      const approved = snapshot.forecastManifest?.participationRevisionIds;
+      if ((evidence?.model || !evidence) && candidate?.model
+        && (!approved || approved.includes(candidate.revisionId))) return candidate;
+      if (evidence?.model) return undefined;
+    }
     return identity && issuedIdentity && row.resolverVersion === CONTRIBUTION_RESOLVER_POLICY_VERSION
       && matchingGame(row.game, identity) && evidence
       && (!listed || listed.some(id => evidence.revisionId === `${id}:participation`
@@ -155,5 +219,6 @@ export function revalidateResolvedForecast(forecast: GameForecast, snapshot: Con
       contributions[target] = resolveContribution({ ...input, baseline, participation });
     }
   }
-  return forecastFromContributions(forecast, contributions, player?.playerClass === "goalie");
+  return forecastFromContributions(forecast, contributions, player?.playerClass === "goalie",
+    player?.playerClass === "goalie" && validGoalieMass && identity ? retainedModeledStart(forecast, snapshot, identity) : undefined);
 }

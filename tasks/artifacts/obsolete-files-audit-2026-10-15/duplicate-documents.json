@@ -1,0 +1,167 @@
+[
+  {
+    "sha256": "a562057b2cafcce30a58dacaee995a372d8409ca243d2b8d126dd896cc38e855",
+    "bytes_each": 28167,
+    "paths": [
+      "tasks/TASKS/contextual-hockey-rankings/research/deep-research-report.md",
+      "tasks/TASKS/contextual-hockey-rankings/workstation/deep-research-report.md"
+    ],
+    "references": [
+      {
+        "path": "tasks/TASKS/contextual-hockey-rankings/research/deep-research-report.md",
+        "references": [
+          {
+            "path": "tasks/TASKS/contextual-hockey-rankings/prd-rankings-post-alignment-gap-audit.md",
+            "line": 24,
+            "needles": [
+              "deep-research-report.md"
+            ]
+          },
+          {
+            "path": "tasks/TASKS/contextual-hockey-rankings/prd-rankings-post-alignment-gap-audit.md",
+            "line": 25,
+            "needles": [
+              "tasks/TASKS/contextual-hockey-rankings/research/deep-research-report.md",
+              "deep-research-report.md"
+            ]
+          },
+          {
+            "path": "tasks/TASKS/contextual-hockey-rankings/workstation/context.md",
+            "line": 6,
+            "needles": [
+              "deep-research-report.md"
+            ]
+          },
+          {
+            "path": "tasks/TASKS/contextual-hockey-rankings/workstation/goal.md",
+            "line": 5,
+            "needles": [
+              "deep-research-report.md"
+            ]
+          },
+          {
+            "path": "tasks/TASKS/nhl-game-prediction-model/tasks-prd-nhl-game-prediction-model.md",
+            "line": 4,
+            "needles": [
+              "deep-research-report.md"
+            ]
+          },
+          {
+            "path": "tasks/TASKS/super-goal/prd/prd-fhfh-comprehensive-completion-audit-optimization.md",
+            "line": 719,
+            "needles": [
+              "tasks/TASKS/contextual-hockey-rankings/research/deep-research-report.md",
+              "deep-research-report.md"
+            ]
+          },
+          {
+            "path": "tasks/TASKS/super-goal/prd/prd-fhfh-comprehensive-completion-audit-optimization.md",
+            "line": 728,
+            "needles": [
+              "deep-research-report.md"
+            ]
+          },
+          {
+            "path": "tasks/TASKS/super-goal/prd/prd-fhfh-comprehensive-completion-audit-optimization.md",
+            "line": 808,
+            "needles": [
+              "deep-research-report.md"
+            ]
+          },
+          {
+            "path": "tasks/TASKS/super-goal/prd/prd-fhfh-comprehensive-completion-audit-optimization.md",
+            "line": 861,
+            "needles": [
+              "deep-research-report.md"
+            ]
+          },
+          {
+            "path": "web/rules/super-goal.md",
+            "line": 622,
+            "needles": [
+              "deep-research-report.md"
+            ]
+          }
+        ]
+      },
+      {
+        "path": "tasks/TASKS/contextual-hockey-rankings/workstation/deep-research-report.md",
+        "references": [
+          {
+            "path": "tasks/TASKS/contextual-hockey-rankings/prd-rankings-post-alignment-gap-audit.md",
+            "line": 24,
+            "needles": [
+              "tasks/TASKS/contextual-hockey-rankings/workstation/deep-research-report.md",
+              "deep-research-report.md"
+            ]
+          },
+          {
+            "path": "tasks/TASKS/contextual-hockey-rankings/prd-rankings-post-alignment-gap-audit.md",
+            "line": 25,
+            "needles": [
+              "deep-research-report.md"
+            ]
+          },
+          {
+            "path": "tasks/TASKS/contextual-hockey-rankings/workstation/context.md",
+            "line": 6,
+            "needles": [
+              "deep-research-report.md"
+            ]
+          },
+          {
+            "path": "tasks/TASKS/contextual-hockey-rankings/workstation/goal.md",
+            "line": 5,
+            "needles": [
+              "tasks/TASKS/contextual-hockey-rankings/workstation/deep-research-report.md",
+              "deep-research-report.md"
+            ]
+          },
+          {
+            "path": "tasks/TASKS/nhl-game-prediction-model/tasks-prd-nhl-game-prediction-model.md",
+            "line": 4,
+            "needles": [
+              "deep-research-report.md"
+            ]
+          },
+          {
+            "path": "tasks/TASKS/super-goal/prd/prd-fhfh-comprehensive-completion-audit-optimization.md",
+            "line": 719,
+            "needles": [
+              "deep-research-report.md"
+            ]
+          },
+          {
+            "path": "tasks/TASKS/super-goal/prd/prd-fhfh-comprehensive-completion-audit-optimization.md",
+            "line": 728,
+            "needles": [
+              "tasks/TASKS/contextual-hockey-rankings/workstation/deep-research-report.md",
+              "deep-research-report.md"
+            ]
+          },
+          {
+            "path": "tasks/TASKS/super-goal/prd/prd-fhfh-comprehensive-completion-audit-optimization.md",
+            "line": 808,
+            "needles": [
+              "deep-research-report.md"
+            ]
+          },
+          {
+            "path": "tasks/TASKS/super-goal/prd/prd-fhfh-comprehensive-completion-audit-optimization.md",
+            "line": 861,
+            "needles": [
+              "deep-research-report.md"
+            ]
+          },
+          {
+            "path": "web/rules/super-goal.md",
+            "line": 622,
+            "needles": [
+              "deep-research-report.md"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

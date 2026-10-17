@@ -1,0 +1,12 @@
+{
+  "source_files_scanned": 1705,
+  "environment_name_occurrences": 425,
+  "unique_environment_names": 142,
+  "public_prefixed_sensitive_names": [],
+  "cron_audit_compositions": {
+    "manual_composition_review": 2,
+    "audit_outside_admin": 92
+  },
+  "browser_server_import_indicators": 0,
+  "note": "Pattern triage; absence of matches is not a bundled-client or deployed-state guarantee."
+}

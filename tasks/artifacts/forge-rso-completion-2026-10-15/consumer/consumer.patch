@@ -1,0 +1,297 @@
+--- tasks/artifacts/forge-rso-completion-2026-10-15/consumer/before/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx	2026-10-15 21:25:30
++++ web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx	2026-10-15 21:33:31
+@@ -571,7 +571,19 @@
+   const snapshot = useMemo<PlanningSnapshot | null>(() => {
+     if (viewingSaved) return account?.snapshot ?? null;
+     if (workspace.context.provider !== "manual") {
+-      if (supplemented) return sharedForecastRead ? refreshForecastInputs(supplemented.snapshot, sharedForecastRead) : supplemented.snapshot;
++      if (supplemented) {
++        const provider = supplemented.snapshot;
++        const opponent = workspace.opponent ? {
++          roster: provider.opponent?.roster ?? workspace.opponent.roster,
++          realized: { ...provider.opponent?.realized, ...workspace.opponent.realized },
++          remaining: workspace.opponent.remaining === null ? provider.opponent?.remaining ?? null
++            : { ...provider.opponent?.remaining, ...workspace.opponent.remaining },
++        } : provider.opponent;
++        const manualTotals = { realized: { ...provider.realized, ...workspace.realized }, opponent };
++        const changed = fingerprint(manualTotals) !== fingerprint({ realized: provider.realized, opponent: provider.opponent });
++        const combined = changed ? { ...provider, ...manualTotals, id: `${provider.id}:matchup:${fingerprint(manualTotals)}` } : provider;
++        return sharedForecastRead ? refreshForecastInputs(combined, sharedForecastRead) : combined;
++      }
+       const retained = data ? retainedScheduleSnapshot(workspace, data, lastUpdated ?? workspace.context.asOf) : null;
+       return retained ? withCachedYahooEligibility({ ...retained, id: `${retained.id}:${fingerprint(workspace)}` }, yahooEligibility.receipt) : null;
+     }
+--- tasks/artifacts/forge-rso-completion-2026-10-15/consumer/before/web/components/RosterScheduleOptimizer/CandidateCard.tsx	2026-10-15 21:25:30
++++ web/components/RosterScheduleOptimizer/CandidateCard.tsx	2026-10-15 21:26:57
+@@ -83,7 +83,7 @@
+           Net AGP {metric(option.netAGP)}{!categories && ` · Net points ${metric(option.netPoints)}`} · {details(option)}
+         </li>)}</ul>}
+       </details>
+-      {plan && selectPlan ? <button className={styles.action} disabled={!canSelectPlan || plan.netAGP === null || plan.dropped.length > 0 && plan.netPoints === null || !gain}
++      {plan && selectPlan ? <button className={styles.action} disabled={!canSelectPlan || plan.netAGP === null || !categories && plan.dropped.length > 0 && plan.netPoints === null || !gain}
+         onClick={() => selectPlan(plan.steps)}>Select compared plan</button>
+         : ["free_agent", "manager_available", "waivers"].includes(player.availability) && <button className={styles.action} onClick={() => add(player)}>Select add</button>}
+       {manual && player.availability === "unknown" && <button onClick={() => markAvailable(player)}>Mark available</button>}
+--- tasks/artifacts/forge-rso-completion-2026-10-15/consumer/before/web/components/RosterScheduleOptimizer/CandidateCard.test.tsx	2026-10-15 21:25:30
++++ web/components/RosterScheduleOptimizer/CandidateCard.test.tsx	2026-10-15 21:26:15
+@@ -64,6 +64,12 @@
+     expect(screen.getByText(/Missing comparison evidence/)).toBeTruthy();
+     expect((screen.getByRole("button", { name: "Select compared plan" }) as HTMLButtonElement).disabled).toBe(true);
+   });
++  it("allows a category drop plan without a points utility", () => {
++    const selectPlan = vi.fn();
++    render(<CandidateCard {...props} categories plan={{ ...plan, netPoints: null }} selectPlan={selectPlan} />);
++    fireEvent.click(screen.getByRole("button", { name: "Select compared plan" }));
++    expect(selectPlan).toHaveBeenCalledWith(plan.steps);
++  });
+   it("retains AGP/points tradeoffs and reserve prerequisites", () => {
+     render(<CandidateCard {...props} plan={{ ...plan, netPoints: -3, steps: [
+       { id: "reserve", type: "reserve", playerId: "injured", reservePosition: "IR", at: plan.steps[0].at, effectiveAt: plan.steps[0].at, conditional: false, dependsOn: [] },
+--- tasks/artifacts/forge-rso-completion-2026-10-15/consumer/before/web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx	2026-10-15 21:25:30
++++ web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx	2026-10-15 21:34:36
+@@ -51,7 +51,7 @@
+ describe("active provider refresh scheduling", () => {
+   const success = (snapshot: PlanningSnapshot) => ({ ok: true, status: 200, json: async () => ({ success: true, snapshot,
+     capabilities: { roster: true, availability: true, limitations: [] } }) });
+-  function setup(reply: (snapshot: PlanningSnapshot, read: number) => Promise<unknown> = async snapshot => success(snapshot), initiallyOnline = true, accountSnapshot = false, sharedData: (read: number) => PlanningData = () => data, accountSaves = false) {
++  function setup(reply: (snapshot: PlanningSnapshot, read: number) => Promise<unknown> = async snapshot => success(snapshot), initiallyOnline = true, accountSnapshot = false, sharedData: (read: number) => PlanningData = () => data, accountSaves = false, manualOpponent: PlanningSnapshot["opponent"] = null) {
+     vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-11T12:00:00Z"));
+     const network = vi.spyOn(navigator, "onLine", "get").mockReturnValue(initiallyOnline);
+     const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+@@ -60,6 +60,7 @@
+     workspace.context = { ...workspace.context, provider: "yahoo", teamId: "fixture-team", leagueId: "fixture-league" };
+     workspace.roster = [{ playerId: player.id, position: "active" }];
+     workspace.manualPlayers = [player]; workspace.intent.protectedPlayerIds = [player.id];
++    workspace.opponent = manualOpponent;
+     workspace.intent.steps = [{ id: "fixture-selected-add", type: "add", playerId: "fixture-candidate", at: `${workspace.context.startDate}T00:00:00Z`, effectiveAt: `${workspace.context.startDate}T00:00:00Z`, conditional: false, dependsOn: [] }];
+     const snapshot: PlanningSnapshot = { id: "fixture-provider", context: workspace.context, players: [player], roster: workspace.roster,
+       rules: workspace.rules, lockedAssignments: [], games: [], forecasts: [], realized: {}, opponent: null, evidence: {} };
+@@ -81,6 +82,43 @@
+   }
+   const advance = (ms = 0) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
+   const returned = async () => { fireEvent(document, new Event("visibilitychange")); await advance(); };
++
++  it.each([null, { GOALS: 3 }])("preserves provider remaining %j when manual opponent remaining has no override", async remaining => {
++    const evaluated: PlanningSnapshot[] = [];
++    planningState.evaluate = (snapshot, intent) => { evaluated.push(snapshot); return planRoster(snapshot, intent); };
++    setup(async snapshot => {
++      snapshot.opponent = { roster: [], realized: {}, remaining };
++      return success(snapshot);
++    }, true, false, () => data, false, { roster: [], realized: {}, remaining: null });
++    await advance();
++    expect(evaluated.at(-1)?.opponent?.remaining).toEqual(remaining);
++  });
++
++  it("applies manual matchup totals to the connected category snapshot without replacing its roster", async () => {
++    const evaluated: PlanningSnapshot[] = [];
++    planningState.evaluate = (snapshot, intent) => { evaluated.push(snapshot); return planRoster(snapshot, intent); };
++    const state = setup(async snapshot => {
++      snapshot.rules.scoring = { mode: "categories", weights: {}, categories: [{ key: "GOALS", direction: "higher" }] };
++      snapshot.opponent = { roster: [{ playerId: "provider-opponent", position: "active" }], realized: { GOALS: 2 }, remaining: { GOALS: 3 } };
++      return success(snapshot);
++    });
++    await advance();
++    const beforeId = evaluated.at(-1)!.id;
++    fireEvent.click(screen.getAllByRole("button", { name: "Matchup" })[0]);
++    fireEvent.click(screen.getByText("Manual matchup totals"));
++    fireEvent.click(screen.getByRole("button", { name: "Add opponent totals" }));
++    const editors = screen.getAllByRole("button", { name: "Add statistic" });
++    fireEvent.click(editors[0]);
++    fireEvent.change(screen.getByLabelText("Own realized STAT total"), { target: { value: "5" } });
++    fireEvent.click(screen.getAllByRole("button", { name: "Add statistic" })[1]);
++    fireEvent.change(screen.getByLabelText("Opponent realized STAT total"), { target: { value: "8" } });
++    await advance();
++    expect(evaluated.at(-1)?.realized).toEqual({ STAT: 5 });
++    expect(evaluated.at(-1)?.opponent).toEqual({ roster: state.snapshot.opponent!.roster, realized: { GOALS: 2, STAT: 8 }, remaining: { GOALS: 3 } });
++    expect(evaluated.at(-1)?.id).not.toBe(beforeId);
++    expect(state.snapshot.realized).toEqual({});
++    expect(state.snapshot.opponent!.realized).toEqual({ GOALS: 2 });
++  });
+ 
+   it("reloads a connected roster's shared forecasts without refreshing provider authority or changing intent", async () => {
+     const evaluated: PlanningSnapshot[] = [];
+@@ -616,7 +654,7 @@
+       postMessage() {}
+       terminate() {}
+     });
+-    render(<CandidateBrowser players={[player]} rosterIds={new Set()} snapshot={{ id: "zero" } as PlanningSnapshot}
++    render(<CandidateBrowser players={[player]} rosterIds={new Set()} snapshot={{ id: "zero", evidence: {}, rules: defaultWorkspace().rules, games: [], players: [] } as unknown as PlanningSnapshot}
+       intent={defaultWorkspace().intent} fits={[]} manual select={vi.fn()} add={vi.fn()} markAvailable={vi.fn()} />);
+     expect(screen.getByText(/Calculating candidate metrics/)).toBeTruthy();
+     act(() => worker.onmessage?.({ data: { metrics: { candidates: [{ playerId: player.id, complete: false,
+@@ -643,7 +681,7 @@
+       dropped: [{ playerId: "drop", lostAGP: 1, lostPoints: 10 }], displacedPlayerIds: ["drop"] };
+     const agp = { ...points, objective: "agp", steps: [{ ...step, id: "agp-plan" }], netAGP: 2, netPoints: -3 };
+     render(<CandidateBrowser players={[candidate, { ...player, id: "drop", name: "Dropped Player" }]} rosterIds={new Set(["drop"])}
+-      snapshot={{ id: "compared-plan", context: { timeZone: "UTC" }, rules: { scoring: { mode: "points" } } } as PlanningSnapshot}
++      snapshot={{ id: "compared-plan", context: { ...defaultWorkspace().context, timeZone: "UTC" }, evidence: {}, games: [], players: [], roster: [], forecasts: [], lockedAssignments: [], realized: {}, opponent: null, rules: { ...defaultWorkspace().rules, scoring: { mode: "points", weights: {}, categories: [] } } } as PlanningSnapshot}
+       intent={defaultWorkspace().intent} fits={[]} manual select={vi.fn()} add={vi.fn()} markAvailable={vi.fn()} selectPlan={selectPlan} canSelectPlan />);
+     act(() => worker.onmessage?.({ data: { metrics: { candidates: [{ playerId: candidate.id, plans: [agp, points], complete: false }] } } }));
+     fireEvent.click(screen.getByRole("button", { name: "All players" }));
+@@ -667,7 +705,7 @@
+       terminate() {}
+     });
+     render(<CandidateBrowser players={[{ ...player, availability: "free_agent" }]} rosterIds={new Set()}
+-      snapshot={{ id: "unavailable-drop" } as PlanningSnapshot} intent={defaultWorkspace().intent} fits={[]} manual
++      snapshot={{ id: "unavailable-drop", evidence: {}, rules: defaultWorkspace().rules, games: [], players: [] } as unknown as PlanningSnapshot} intent={defaultWorkspace().intent} fits={[]} manual
+       select={vi.fn()} add={vi.fn()} markAvailable={vi.fn()} selectPlan={vi.fn()} canSelectPlan />);
+     act(() => worker.onmessage?.({ data: { metrics: { candidates: [{ playerId: player.id, complete: true, plans: [{
+       objective: "agp", steps: [], netAGP: mode === "no gain" ? 0 : 1, netPoints: mode === "no gain" ? 0 : null,
+@@ -679,8 +717,8 @@
+   it("uses schedule ordering and category-plan guidance instead of points claims in category leagues", () => {
+     vi.stubGlobal("Worker", undefined);
+     const candidate = { ...player, availability: "manager_available" as const };
+-    render(<CandidateBrowser players={[candidate]} rosterIds={new Set()} snapshot={{ id: "categories",
+-      rules: { scoring: { mode: "categories" } } } as PlanningSnapshot}
++    render(<CandidateBrowser players={[candidate]} rosterIds={new Set()} snapshot={{ id: "categories", evidence: {}, games: [], players: [],
++      rules: { ...defaultWorkspace().rules, scoring: { mode: "categories", weights: {}, categories: [] } } } as unknown as PlanningSnapshot}
+       intent={defaultWorkspace().intent} fits={[]} manual select={vi.fn()} add={vi.fn()} markAvailable={vi.fn()} />);
+     fireEvent.click(screen.getByRole("button", { name: "All players" }));
+     expect(screen.getByText("Unranked players")).toBeTruthy();
+@@ -1535,7 +1573,7 @@
+           observedAt: workspace.context.asOf, scheduleSourceUpdatedAt: null, scheduleFetchedAt: null, identityUpdatedAt: null, membershipCreatedAt: [] } };
+     });
+     const initial: PlanningSnapshot = { id: "connected-locks-old", context: workspace.context, players: members, roster: workspace.roster,
+-      games, forecasts, rules: workspace.rules, lockedAssignments: [], realized: {}, opponent: null, evidence: {} };
++      games, forecasts, rules: workspace.rules, lockedAssignments: [], realized: {}, opponent: null, evidence: { schedule: { source: "synthetic complete schedule", asOf: workspace.context.asOf, seasonId: workspace.context.seasonId, completeness: "complete", limitations: [] } } };
+     const refreshed: PlanningSnapshot = { ...initial, id: "connected-locks-new", context: { ...initial.context, asOf: "2026-10-08T13:00:00Z" },
+       rules: { ...initial.rules, periods: [{ ...initial.rules.periods[0], remaining: 1 }] },
+       lockedAssignments: [{ date: providerConflict ? workspace.context.endDate : workspace.context.startDate, playerId: player.id, slotId: "C#1" }] };
+--- tasks/artifacts/forge-rso-completion-2026-10-15/consumer/before/web/pages/forge/forecasts.tsx	2026-10-15 21:25:30
++++ web/pages/forge/forecasts.tsx	2026-10-15 21:29:40
+@@ -25,6 +25,25 @@
+   const controller = useRef<AbortController | null>(null);
+   useEffect(() => () => controller.current?.abort(), []);
+ 
++  const [expiryClock, setExpiryClock] = useState(() => Date.now());
++  const expiries = data?.players.flatMap(player => player.games.flatMap(game => Object.values(game.targets)
++    .filter(target => target.expected !== null || target.conditional !== null || target.participation?.probability != null)
++    .flatMap(target => [target.expiresAt, target.participation?.expiresAt, ...target.sources.map(source => source.expiresAt)])))
++    .map(value => Date.parse(value ?? "")).filter(Number.isFinite) ?? [];
++  const expiresAt = expiries.reduce<number | null>((earliest, value) => earliest === null || value < earliest ? value : earliest, null);
++  const expired = expiresAt !== null && expiresAt <= Date.now();
++  useEffect(() => {
++    if (expiresAt === null || expiresAt <= Date.now()) return;
++    const timer = window.setTimeout(() => setExpiryClock(Date.now()), Math.min(expiresAt - Date.now(), 2_147_483_647));
++    return () => window.clearTimeout(timer);
++  }, [expiresAt, expiryClock]);
++  useEffect(() => {
++    const check = () => setExpiryClock(Date.now());
++    window.addEventListener("focus", check);
++    document.addEventListener("visibilitychange", check);
++    return () => { window.removeEventListener("focus", check); document.removeEventListener("visibilitychange", check); };
++  }, []);
++
+   async function load(event: FormEvent) {
+     event.preventDefault(); controller.current?.abort();
+     const pending = new AbortController(); controller.current = pending;
+@@ -67,7 +86,7 @@
+       {mode === "calendar" ? <label>Through (UTC)<input required type="date" value={endDate} min={startDate}
+         max={addDays(startDate, 20)} onChange={event => setEndDate(event.target.value)} /></label>
+         : <label>Team games<select value={games} onChange={event => setGames(event.target.value)}>
+-          {Array.from({ length: 10 }, (_, index) => <option key={index + 1}>{index + 1}</option>)}
++          {Array.from({ length: 20 }, (_, index) => <option key={index + 1}>{index + 1}</option>)}
+         </select></label>}
+       <button type="submit" disabled={loading}>{loading ? "Loading…" : "Load released forecasts"}</button>
+     </form>
+@@ -76,7 +95,8 @@
+     {error && <p role="alert">{error}</p>}
+     {loading && <p role="status">Loading released forecast coverage…</p>}
+     {!data && !loading && !error && <p>Select a window to read released forecasts.</p>}
+-    {data && <>
++    {expired && <p role="alert">Forecast values expired. Load released forecasts to read the latest revision.</p>}
++    {data && !expired && <>
+       <p>Read as of <time dateTime={data.readAsOf}>{data.readAsOf}</time>. Forecast issuance times appear with each game.</p>
+       <div className={styles.controls}>
+         <label>Players<select value={playerClass} onChange={event => setPlayerClass(event.target.value)}>
+--- tasks/artifacts/forge-rso-completion-2026-10-15/consumer/before/web/__tests__/pages/forge/forecasts.test.tsx	2026-10-15 21:25:30
++++ web/__tests__/pages/forge/forecasts.test.tsx	2026-10-15 21:34:36
+@@ -1,5 +1,5 @@
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
++import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+ import ForgeForecastsPage from "pages/forge/forecasts";
+ import { buildGameExpectations, type GameExpectationScope } from "lib/player-forecasts/gameExpectations";
+ import type { PlanningData } from "lib/rosterScheduleOptimizer/planningTypes";
+@@ -19,8 +19,8 @@
+     evidence: { schedule: { source: "synthetic", asOf: now.toISOString(), seasonId: 20262027, completeness: "complete", limitations: [] } } };
+   return buildGameExpectations(fixture, scope, now);
+ }
+-beforeEach(() => vi.restoreAllMocks());
+-afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
++beforeEach(() => { vi.restoreAllMocks(); vi.spyOn(Date, "now").mockReturnValue(now.getTime()); });
++afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); });
+ describe("FORGE forecast page synthetic API readback", () => {
+   it("shows a conditional-only head immediately without multiplying it into next-N totals", async () => {
+     const data = payload(), player = data.players[0];
+@@ -103,6 +103,46 @@
+     expect((await screen.findByRole("alert")).textContent).toContain("Released forecasts are temporarily unavailable.");
+     expect(screen.queryByRole("table")).toBeNull();
+   });
++  it("invalidates an expired read and recovers only after loading a fresh revision", async () => {
++    vi.useFakeTimers(); vi.setSystemTime(now);
++    const original = payload();
++    original.players[0].games[0].targets.SHOTS_ON_GOAL.expiresAt = "2026-10-15T12:00:01Z";
++    const fresh = payload(); fresh.manifestId = "fresh-revision";
++    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, data: original }) })
++      .mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, data: fresh }) }));
++    render(<ForgeForecastsPage />);
++    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Load released forecasts" })));
++    expect(screen.getByRole("table", { name: "Conditional category values for admitted games" })).toBeTruthy();
++    await act(async () => vi.advanceTimersByTimeAsync(1000));
++    expect(screen.queryByRole("table")).toBeNull();
++    expect(screen.getByRole("alert").textContent).toContain("expired");
++    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Load released forecasts" })));
++    expect(screen.getByRole("table", { name: "Conditional category values for admitted games" })).toBeTruthy();
++    expect(screen.queryByRole("alert")).toBeNull();
++  });
++  it("withholds an already expired participation receipt even when contribution clocks are fresh", async () => {
++    const original = payload(), target = original.players[0].games[0].targets.SHOTS_ON_GOAL;
++    target.participation = { revisionId: "expired-participation", probability: 0.5, basis: "appearance",
++      cutoffAt: "2026-10-15T09:00:00Z", issuedAt: "2026-10-15T10:00:00Z", expiresAt: now.toISOString() };
++    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true, data: original }) }));
++    render(<ForgeForecastsPage />);
++    fireEvent.click(screen.getByRole("button", { name: "Load released forecasts" }));
++    expect((await screen.findByRole("alert")).textContent).toContain("expired");
++    expect(screen.queryByRole("table")).toBeNull();
++  });
++  it("keeps a fresh revision usable when an unavailable target retains an expired original receipt", async () => {
++    const fresh = payload();
++    fresh.players[0].games[0].targets.GOALS.expiresAt = "2026-10-15T11:00:00Z";
++    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true, data: fresh }) }));
++    render(<ForgeForecastsPage />);
++    fireEvent.click(screen.getByRole("button", { name: "Load released forecasts" }));
++    expect(await screen.findByRole("table", { name: "Conditional category values for admitted games" })).toBeTruthy();
++    expect(screen.queryByRole("alert")).toBeNull();
++  });
++  it("offers a 20-team-game horizon", () => {
++    render(<ForgeForecastsPage />);
++    expect(screen.getByRole("option", { name: "20" })).toBeTruthy();
++  });
+   it("keeps calendar controls usable when the date field is cleared", () => {
+     render(<ForgeForecastsPage />);
+     fireEvent.change(screen.getByLabelText("Window"), { target: { value: "calendar" } });
+diff --git a/web/components/RosterScheduleOptimizer/CategoryGains.tsx b/web/components/RosterScheduleOptimizer/CategoryGains.tsx
+index 11f386cc0..fa135d1a4 100644
+--- a/web/components/RosterScheduleOptimizer/CategoryGains.tsx
++++ b/web/components/RosterScheduleOptimizer/CategoryGains.tsx
+@@ -46,7 +46,10 @@ export default function CategoryGains({ baseline, plan, scoring, label, reviewed
+         ? "Category gains unavailable: the no-move lineup cannot satisfy the current lineup locks."
+         : "Category gains unavailable: the no-move plan fails current league or roster rules."
+       : "Category gains unavailable. Review forecast coverage, opponent inputs, acquisition rules and goalie minimums."}</p>}
+-    {scoring.categories.map(category => {
++    {[...scoring.categories].sort((a, b) => {
++      const losing = (key: string) => comparable && baseline?.categoryResults.find(row => row.key === key)?.result === "loss" ? 1 : 0;
++      return losing(b.key) - losing(a.key);
++    }).map(category => {
+       const before = baseline?.categoryResults.find(row => row.key === category.key);
+       const after = plan?.categoryResults.find(row => row.key === category.key);
+       const available = comparable && !!before && !!after && finite(before.own) && finite(after.own)
+@@ -61,6 +64,6 @@ export default function CategoryGains({ baseline, plan, scoring, label, reviewed
+         </>}
+       </article>;
+     })}
+-    <p>Provisional estimates; category changes are not win probabilities.{!reviewed && " Review planning inputs before acting."}</p>
++    <p>Losing categories appear first using provisional mean comparisons. Category changes are not win probabilities; a matchup win-probability model is unavailable. Review the category tradeoffs and choose the plan.{!reviewed && " Review planning inputs before acting."}</p>
+   </details>;
+ }

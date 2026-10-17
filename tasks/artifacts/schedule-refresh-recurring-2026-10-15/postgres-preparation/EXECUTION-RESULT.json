@@ -1,0 +1,38 @@
+{
+  "status": "blocked_by_security_environment",
+  "recordedAtUTC": "2026-10-16T01:19:26.386968+00:00",
+  "candidateManifestSha256": "2515e4b9e1391484656cf6a0a81d8f74c3ed6589d6309532df95edee2e8ebc41",
+  "executionPinsSha256": "64e789bbd994ee8fb3608317e6e632923b9a4dcd2ecd3c8993a49b3239a96ba6",
+  "exactAction": "initdb -D /tmp/fhfh-schedule-pg-n9e0zqj1/data -U fixture_owner --auth-local=trust --auth-host=reject --no-locale --no-instructions",
+  "target": "new owned synthetic PostgreSQL17 cluster only",
+  "setupExitCode": 1,
+  "reason": "initdb bootstrap postgres failed to create SysV shared memory: shmget Operation not permitted",
+  "casesPrepared": 12,
+  "casesRun": 0,
+  "casesPassed": 0,
+  "casesFailed": 0,
+  "casesBlocked": 12,
+  "persistentServerStartupAttempted": false,
+  "databaseClientConnections": 0,
+  "proposedSqlExecuted": false,
+  "existingOrSharedDatabaseContacted": false,
+  "credentialsLoaded": false,
+  "installations": 0,
+  "permissionEscalations": 0,
+  "retries": 0,
+  "cleanup": {
+    "target": "/tmp/fhfh-schedule-pg-n9e0zqj1",
+    "bootstrapChildExited": true,
+    "ownedTemporaryDirectoryAbsent": true,
+    "persistentServerStopNeeded": false,
+    "unrelatedDataDeleted": false,
+    "logsRetained": "tasks/artifacts/schedule-refresh-recurring-2026-10-15/postgres-preparation/execution-evidence/fhfh-schedule-pg-n9e0zqj1"
+  },
+  "evidenceSha256": {
+    "authorized-execution.log": "ec0873ef088547aa44931611ff45f27916c67d9b6d79171ffd73e582d23543ae",
+    "execution-evidence/fhfh-schedule-pg-n9e0zqj1/step-1.log": "b9f4a0e0e57823b788fae4ae9f36e40cd9b28bb1cf60e042cfba5a7432cb0321",
+    "execution-evidence/fhfh-schedule-pg-n9e0zqj1/isolation-preflight.json": "6b7c37448666d8b361eac8361956ea218cd3a20ba47940b9a9d49ffdece7b2d5"
+  },
+  "frozenCandidateUnchanged": true,
+  "remainingBlocker": "An environment permitting initialization of a new isolated PostgreSQL cluster is required; current instruction requires stopping after denial, so no bypass or alternative launch was attempted."
+}

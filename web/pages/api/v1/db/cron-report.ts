@@ -65,6 +65,7 @@ const SCHEDULE_ALIAS_MAP: Record<string, string[]> = {
     "/api/v1/db/update-shifts",
   ],
   "update-yahoo-matchup-dates": ["/api/v1/db/update-yahoo-weeks"],
+  "refresh-roster-optimizer-schedule": ["/api/v1/db/refresh-roster-optimizer-schedule"],
   "update-roster-optimizer-schedule": [
     "/api/v1/db/update-roster-optimizer-schedule",
   ],
@@ -87,6 +88,7 @@ const SCHEDULE_ALIAS_MAP: Record<string, string[]> = {
 };
 
 const ROUTE_TARGET_TABLE_MAP: Record<string, string> = {
+  "/api/v1/db/refresh-roster-optimizer-schedule": "roster_optimizer_team_games",
   "/api/v1/db/update-teams": "teams",
   "/api/v1/db/update-seasons": "seasons",
   "/api/v1/db/update-players": "players, rosters",

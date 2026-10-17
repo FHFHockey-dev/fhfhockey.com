@@ -1198,6 +1198,75 @@ export async function drainSeasonProjectionJobs(args: {
   return { claimed: jobs.length, results };
 }
 
+export type ForecastCadenceInput = {
+  now: Date;
+  date: string;
+  requiredSources: string[];
+  sources: Array<{ key: string; date: string; status: "complete" | "partial" | "failed";
+    revision: string; completedAt: string | null; expectedItems: number | null; completedItems: number }>;
+  games: Array<{ gameId: number; startsAt: string }>;
+  previous: Array<{ key: string; status: "pending" | "running" | "succeeded" | "failed" | "unknown"; attempts: number }>;
+};
+
+/** Preparation only: neither enqueue nor publish. Activation must use atomic
+ * slot deduplication; the legacy watermark-refresh enqueue RPC is unsuitable. */
+export function prepareForecastCadence(input: ForecastCadenceInput) {
+  const timeZone = "America/New_York";
+  const parts = (date: Date) => new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", hourCycle: "h23" }).formatToParts(date);
+  const localDate = (date: Date) => {
+    const values = Object.fromEntries(parts(date).map(part => [part.type, part.value]));
+    return `${values.year}-${values.month}-${values.day}`;
+  };
+  if (!Number.isFinite(input.now.getTime()) || !/^\d{4}-\d{2}-\d{2}$/.test(input.date)
+    || !Number.isFinite(Date.parse(input.date)) || new Date(`${input.date}T12:00:00Z`).toISOString().slice(0, 10) !== input.date
+    || !input.requiredSources.length || new Set(input.requiredSources).size !== input.requiredSources.length
+    || input.requiredSources.some(key => !key.trim()) || input.games.length > 16
+    || new Set(input.games.map(game => game.gameId)).size !== input.games.length
+    || new Set(input.previous.map(slot => slot.key)).size !== input.previous.length
+    || input.previous.some(slot => !Number.isSafeInteger(slot.attempts) || slot.attempts < 0)) {
+    throw new Error("FORECAST_CADENCE_INPUT_INVALID");
+  }
+  // At 08:00 New York neither DST transition is ambiguous. Verify the local
+  // clock with Intl instead of freezing a UTC cron hour for the whole year.
+  const morning = [12, 13].map(hour => new Date(`${input.date}T${hour}:00:00Z`)).find(date =>
+    localDate(date) === input.date && parts(date).find(part => part.type === "hour")?.value === "08")!;
+  const sourceProblems: string[] = [];
+  const sourceRevisions: Record<string, string> = {};
+  for (const key of input.requiredSources) {
+    const matches = input.sources.filter(source => source.key === key && source.date === input.date);
+    const source = matches[0];
+    if (matches.length !== 1 || source.status !== "complete" || !source.revision?.trim()
+      || !source.completedAt || !Number.isFinite(Date.parse(source.completedAt))
+      || Date.parse(source.completedAt) > input.now.getTime()
+      || !Number.isSafeInteger(source.expectedItems) || Number(source.expectedItems) < 0
+      || source.completedItems !== source.expectedItems) sourceProblems.push(`source_incomplete:${key}`);
+    else sourceRevisions[key] = source.revision;
+  }
+  const slots = [{ key: `morning:${input.date}`, kind: "morning" as const, dueAt: morning.toISOString(), startsAt: null as string | null,
+    gameId: null as number | null }, ...input.games.map(game => {
+    const starts = Date.parse(game.startsAt);
+    if (!Number.isSafeInteger(game.gameId) || game.gameId <= 0 || !Number.isFinite(starts)
+      || localDate(new Date(starts)) !== input.date) throw new Error("FORECAST_CADENCE_GAME_INVALID");
+    const startsAt = new Date(starts).toISOString();
+    return { key: `news:${game.gameId}:${startsAt}`, kind: "news_revision" as const,
+      dueAt: new Date(starts - 15 * 60000).toISOString(), startsAt, gameId: game.gameId };
+  })].map(slot => {
+    const previous = input.previous.find(value => value.key === slot.key);
+    const due = Date.parse(slot.dueAt) <= input.now.getTime();
+    const reasons = [...sourceProblems];
+    if (localDate(input.now) > input.date) reasons.push("cadence_date_expired");
+    if (!due) reasons.push("not_due");
+    if (slot.startsAt && Date.parse(slot.startsAt) <= input.now.getTime()) reasons.push("game_started");
+    if (previous && previous.status !== "failed") reasons.push(`slot_${previous.status}`);
+    if (previous?.status === "failed" && previous.attempts >= 3) reasons.push("recovery_exhausted");
+    return { ...slot, action: reasons.length ? "hold" as const : previous ? "recover_failed" as const : "enqueue" as const,
+      reasons, late: due && input.now.getTime() > Date.parse(slot.dueAt),
+      decisionAsOf: input.now.toISOString(), sourceRevisions };
+  });
+  return { timeZone, morningLocalTime: "08:00", revisionLeadMinutes: 15, maxAttempts: 3,
+    activationApproved: false as const, slots };
+}
+
 export async function enqueueDailySeasonProjectionJobs(args: {
   supabase: SupabaseClient<any>;
   now?: Date;

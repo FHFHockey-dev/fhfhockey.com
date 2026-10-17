@@ -1,0 +1,132 @@
+{
+  "sourceMainSha256": "5ed85bddd01141f253168c659363700ba2d742d2854ca8ccaa39e23a95040098",
+  "findings": [
+    {
+      "state": "pending-provider",
+      "viewport": [
+        2048,
+        1101
+      ],
+      "deviceScale": 1,
+      "headerHeight": 68,
+      "panelTop": 555.59375,
+      "panelHeight": 541.40625,
+      "metricHeight": 114,
+      "qualifier": {
+        "x": 4,
+        "y": 350.59375,
+        "width": 284.5625,
+        "height": 28,
+        "bottom": 378.59375
+      },
+      "fontLoaded": true,
+      "outsideMobileViewport": false
+    },
+    {
+      "state": "pending-provider",
+      "viewport": [
+        1440,
+        900
+      ],
+      "deviceScale": 1,
+      "headerHeight": 68,
+      "panelTop": 555.59375,
+      "panelHeight": 340.40625,
+      "metricHeight": 114,
+      "qualifier": {
+        "x": 4,
+        "y": 350.59375,
+        "width": 197.703125,
+        "height": 28,
+        "bottom": 378.59375
+      },
+      "fontLoaded": true,
+      "outsideMobileViewport": false
+    },
+    {
+      "state": "pending-provider",
+      "viewport": [
+        390,
+        844
+      ],
+      "deviceScale": 1,
+      "headerHeight": 56,
+      "panelTop": 823.828125,
+      "panelHeight": 1004,
+      "metricHeight": 136,
+      "qualifier": {
+        "x": 1324,
+        "y": 475.828125,
+        "width": 58.375,
+        "height": 112,
+        "bottom": 587.828125
+      },
+      "fontLoaded": true,
+      "outsideMobileViewport": true
+    },
+    {
+      "state": "partial-warning",
+      "viewport": [
+        2048,
+        1101
+      ],
+      "deviceScale": 1,
+      "headerHeight": 68,
+      "panelTop": 555.59375,
+      "panelHeight": 541.40625,
+      "metricHeight": 114,
+      "qualifier": {
+        "x": 4,
+        "y": 350.59375,
+        "width": 284.5625,
+        "height": 28,
+        "bottom": 378.59375
+      },
+      "fontLoaded": true,
+      "outsideMobileViewport": false
+    },
+    {
+      "state": "partial-warning",
+      "viewport": [
+        1440,
+        900
+      ],
+      "deviceScale": 1,
+      "headerHeight": 68,
+      "panelTop": 555.59375,
+      "panelHeight": 340.40625,
+      "metricHeight": 114,
+      "qualifier": {
+        "x": 4,
+        "y": 350.59375,
+        "width": 197.703125,
+        "height": 28,
+        "bottom": 378.59375
+      },
+      "fontLoaded": true,
+      "outsideMobileViewport": false
+    },
+    {
+      "state": "partial-warning",
+      "viewport": [
+        390,
+        844
+      ],
+      "deviceScale": 1,
+      "headerHeight": 56,
+      "panelTop": 840.625,
+      "panelHeight": 1004,
+      "metricHeight": 136,
+      "qualifier": {
+        "x": 1324,
+        "y": 492.625,
+        "width": 58.375,
+        "height": 112,
+        "bottom": 604.625
+      },
+      "fontLoaded": true,
+      "outsideMobileViewport": true
+    }
+  ],
+  "decision": "Place the persistent partial qualifier outside the metrics grid/carousel. Production edit owned by the RSO functional owner; no production edit by QA."
+}

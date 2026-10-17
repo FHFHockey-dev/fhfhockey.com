@@ -1,0 +1,7 @@
+{
+  "initialStorageCases": "39/39 pass",
+  "nearestSuite": "failed collection: captured scheduler outside web alias context could not resolve its explicitly mocked starterBoardQueue import",
+  "correction": "Add exact canonical alias for the mocked module. No scheduler/queue/test/source body edited.",
+  "rerun": "Only the previously uncollected12 nearest cases; successful39 PG cases not repeated.",
+  "externalIo": false
+}

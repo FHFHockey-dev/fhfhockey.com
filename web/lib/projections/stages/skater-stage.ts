@@ -1457,7 +1457,7 @@ export async function runPerGameSkaterStage(args: {
     const seasonYear = Math.floor(game.id / 1_000_000);
     const bootstrapSeasonId = seasonYear * 10000 + seasonYear + 1;
     let bootstrap = args.seasonBootstrap
-      ? await loadSeasonBootstrap(teamPositionFilteredSkaterIds, bootstrapSeasonId, asOfDate, "skater", true)
+      ? await loadSeasonBootstrap(teamPositionFilteredSkaterIds, bootstrapSeasonId, asOfDate, "skater", false)
       : new Map<number, SeasonBootstrap>();
     const bootstrapEligible = () => new Set([...bootstrap].filter(([, prior]) => prior.currentSeasonGames === 0
       && (prior.historyGames > 0 || prior.sourceIds.length > 0)).map(([id]) => id));
@@ -1589,7 +1589,7 @@ export async function runPerGameSkaterStage(args: {
           return meta.position !== "G" && meta.team_id === teamId;
         });
 
-        if (args.seasonBootstrap) bootstrap = await loadSeasonBootstrap(teamPositionFilteredSkaterIds, bootstrapSeasonId, asOfDate, "skater", true);
+        if (args.seasonBootstrap) bootstrap = await loadSeasonBootstrap(teamPositionFilteredSkaterIds, bootstrapSeasonId, asOfDate, "skater", false);
         evRows = await fetchRollingRows(
           teamPositionFilteredSkaterIds,
           "ev",

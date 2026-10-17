@@ -1,0 +1,2447 @@
+{
+  "scope": "Native browser Worker and served local UI; intercepted synthetic inputs, not genuine feed acceptance",
+  "metrics": {
+    "candidates": [
+      {
+        "playerId": "fhfh:140",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:140:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:140",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 999,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:1",
+              "fhfh:2",
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:100",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:100:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:100",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:101",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:101:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:101",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:102",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:102:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:102",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:103",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:103:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:103",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:104",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:104:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:104",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:105",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:105:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:105",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:106",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:106:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:106",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:107",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:107:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:107",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:108",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:108:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:108",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:109",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:109:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:109",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:110",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:110:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:110",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:111",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:111:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:111",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:112",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:112:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:112",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:113",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:113:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:113",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:114",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:114:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:114",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:115",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:115:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:115",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:116",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:116:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:116",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:117",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:117:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:117",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:118",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:118:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:118",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:119",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:119:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:119",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:120",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:120:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:120",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:121",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:121:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:121",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:122",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:122:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:122",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:123",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:123:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:123",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:124",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:124:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:124",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:125",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:125:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:125",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:126",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:126:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:126",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:127",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:127:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:127",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:128",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:128:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:128",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:129",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:129:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:129",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:130",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:130:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:130",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:131",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:131:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:131",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:132",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:132:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:132",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:133",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:133:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:133",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:134",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:134:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:134",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:135",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:135:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:135",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:136",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:136:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:136",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:137",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:137:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:137",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      },
+      {
+        "playerId": "fhfh:138",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:fhfh:138:0:2026-10-05:drop:fhfh:3",
+                "type": "add",
+                "playerId": "fhfh:138",
+                "at": "2026-10-05T00:00:00.000Z",
+                "effectiveAt": "2026-10-05T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": [],
+                "dropPlayerId": "fhfh:3"
+              }
+            ],
+            "netAGP": 0,
+            "netPoints": 9,
+            "dropped": [
+              {
+                "playerId": "fhfh:3",
+                "lostAGP": 1,
+                "lostPoints": 1
+              }
+            ],
+            "displacedPlayerIds": [
+              "fhfh:3"
+            ]
+          }
+        ],
+        "complete": false
+      }
+    ],
+    "diagnostics": [
+      {
+        "playerId": "fhfh:1",
+        "status": "filtered",
+        "stopReason": "filtered",
+        "generated": 0,
+        "skipped": 0,
+        "evaluated": 0,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 0,
+        "reasons": [
+          "Player is already on the original roster."
+        ]
+      },
+      {
+        "playerId": "fhfh:100",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:101",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:102",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:103",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:104",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:105",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:106",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:107",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:108",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:109",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:110",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:111",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:112",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:113",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:114",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:115",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:116",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:117",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:118",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:119",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:120",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:121",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:122",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:123",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:124",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:125",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:126",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:127",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:128",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:129",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:130",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:131",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:132",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:133",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:134",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:135",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:136",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:137",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:138",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 2,
+        "skipped": 1,
+        "evaluated": 2,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:139",
+        "status": "not_selected",
+        "stopReason": "candidate_limit",
+        "generated": 0,
+        "skipped": 0,
+        "evaluated": 0,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 0,
+        "reasons": [
+          "Outside the bounded candidate evaluation set."
+        ]
+      },
+      {
+        "playerId": "fhfh:140",
+        "status": "partial",
+        "stopReason": "evaluation_limit",
+        "generated": 3,
+        "skipped": 1,
+        "evaluated": 4,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Evaluation limit reached; other candidate options may remain unevaluated."
+        ]
+      },
+      {
+        "playerId": "fhfh:2",
+        "status": "filtered",
+        "stopReason": "filtered",
+        "generated": 0,
+        "skipped": 0,
+        "evaluated": 0,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 0,
+        "reasons": [
+          "Player is already on the original roster."
+        ]
+      },
+      {
+        "playerId": "fhfh:3",
+        "status": "filtered",
+        "stopReason": "filtered",
+        "generated": 0,
+        "skipped": 0,
+        "evaluated": 0,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 0,
+        "reasons": [
+          "Player is already on the original roster."
+        ]
+      }
+    ],
+    "points": [
+      [
+        "fhfh:140",
+        999
+      ],
+      [
+        "fhfh:100",
+        9
+      ],
+      [
+        "fhfh:101",
+        9
+      ],
+      [
+        "fhfh:102",
+        9
+      ],
+      [
+        "fhfh:103",
+        9
+      ],
+      [
+        "fhfh:104",
+        9
+      ],
+      [
+        "fhfh:105",
+        9
+      ],
+      [
+        "fhfh:106",
+        9
+      ],
+      [
+        "fhfh:107",
+        9
+      ],
+      [
+        "fhfh:108",
+        9
+      ],
+      [
+        "fhfh:109",
+        9
+      ],
+      [
+        "fhfh:110",
+        9
+      ],
+      [
+        "fhfh:111",
+        9
+      ],
+      [
+        "fhfh:112",
+        9
+      ],
+      [
+        "fhfh:113",
+        9
+      ],
+      [
+        "fhfh:114",
+        9
+      ],
+      [
+        "fhfh:115",
+        9
+      ],
+      [
+        "fhfh:116",
+        9
+      ],
+      [
+        "fhfh:117",
+        9
+      ],
+      [
+        "fhfh:118",
+        9
+      ],
+      [
+        "fhfh:119",
+        9
+      ],
+      [
+        "fhfh:120",
+        9
+      ],
+      [
+        "fhfh:121",
+        9
+      ],
+      [
+        "fhfh:122",
+        9
+      ],
+      [
+        "fhfh:123",
+        9
+      ],
+      [
+        "fhfh:124",
+        9
+      ],
+      [
+        "fhfh:125",
+        9
+      ],
+      [
+        "fhfh:126",
+        9
+      ],
+      [
+        "fhfh:127",
+        9
+      ],
+      [
+        "fhfh:128",
+        9
+      ],
+      [
+        "fhfh:129",
+        9
+      ],
+      [
+        "fhfh:130",
+        9
+      ],
+      [
+        "fhfh:131",
+        9
+      ],
+      [
+        "fhfh:132",
+        9
+      ],
+      [
+        "fhfh:133",
+        9
+      ],
+      [
+        "fhfh:134",
+        9
+      ],
+      [
+        "fhfh:135",
+        9
+      ],
+      [
+        "fhfh:136",
+        9
+      ],
+      [
+        "fhfh:137",
+        9
+      ],
+      [
+        "fhfh:138",
+        9
+      ]
+    ],
+    "activePoints": [
+      [
+        "fhfh:140",
+        999
+      ],
+      [
+        "fhfh:100",
+        9
+      ],
+      [
+        "fhfh:101",
+        9
+      ],
+      [
+        "fhfh:102",
+        9
+      ],
+      [
+        "fhfh:103",
+        9
+      ],
+      [
+        "fhfh:104",
+        9
+      ],
+      [
+        "fhfh:105",
+        9
+      ],
+      [
+        "fhfh:106",
+        9
+      ],
+      [
+        "fhfh:107",
+        9
+      ],
+      [
+        "fhfh:108",
+        9
+      ],
+      [
+        "fhfh:109",
+        9
+      ],
+      [
+        "fhfh:110",
+        9
+      ],
+      [
+        "fhfh:111",
+        9
+      ],
+      [
+        "fhfh:112",
+        9
+      ],
+      [
+        "fhfh:113",
+        9
+      ],
+      [
+        "fhfh:114",
+        9
+      ],
+      [
+        "fhfh:115",
+        9
+      ],
+      [
+        "fhfh:116",
+        9
+      ],
+      [
+        "fhfh:117",
+        9
+      ],
+      [
+        "fhfh:118",
+        9
+      ],
+      [
+        "fhfh:119",
+        9
+      ],
+      [
+        "fhfh:120",
+        9
+      ],
+      [
+        "fhfh:121",
+        9
+      ],
+      [
+        "fhfh:122",
+        9
+      ],
+      [
+        "fhfh:123",
+        9
+      ],
+      [
+        "fhfh:124",
+        9
+      ],
+      [
+        "fhfh:125",
+        9
+      ],
+      [
+        "fhfh:126",
+        9
+      ],
+      [
+        "fhfh:127",
+        9
+      ],
+      [
+        "fhfh:128",
+        9
+      ],
+      [
+        "fhfh:129",
+        9
+      ],
+      [
+        "fhfh:130",
+        9
+      ],
+      [
+        "fhfh:131",
+        9
+      ],
+      [
+        "fhfh:132",
+        9
+      ],
+      [
+        "fhfh:133",
+        9
+      ],
+      [
+        "fhfh:134",
+        9
+      ],
+      [
+        "fhfh:135",
+        9
+      ],
+      [
+        "fhfh:136",
+        9
+      ],
+      [
+        "fhfh:137",
+        9
+      ],
+      [
+        "fhfh:138",
+        9
+      ]
+    ],
+    "activeGames": [
+      [
+        "fhfh:140",
+        0
+      ],
+      [
+        "fhfh:100",
+        0
+      ],
+      [
+        "fhfh:101",
+        0
+      ],
+      [
+        "fhfh:102",
+        0
+      ],
+      [
+        "fhfh:103",
+        0
+      ],
+      [
+        "fhfh:104",
+        0
+      ],
+      [
+        "fhfh:105",
+        0
+      ],
+      [
+        "fhfh:106",
+        0
+      ],
+      [
+        "fhfh:107",
+        0
+      ],
+      [
+        "fhfh:108",
+        0
+      ],
+      [
+        "fhfh:109",
+        0
+      ],
+      [
+        "fhfh:110",
+        0
+      ],
+      [
+        "fhfh:111",
+        0
+      ],
+      [
+        "fhfh:112",
+        0
+      ],
+      [
+        "fhfh:113",
+        0
+      ],
+      [
+        "fhfh:114",
+        0
+      ],
+      [
+        "fhfh:115",
+        0
+      ],
+      [
+        "fhfh:116",
+        0
+      ],
+      [
+        "fhfh:117",
+        0
+      ],
+      [
+        "fhfh:118",
+        0
+      ],
+      [
+        "fhfh:119",
+        0
+      ],
+      [
+        "fhfh:120",
+        0
+      ],
+      [
+        "fhfh:121",
+        0
+      ],
+      [
+        "fhfh:122",
+        0
+      ],
+      [
+        "fhfh:123",
+        0
+      ],
+      [
+        "fhfh:124",
+        0
+      ],
+      [
+        "fhfh:125",
+        0
+      ],
+      [
+        "fhfh:126",
+        0
+      ],
+      [
+        "fhfh:127",
+        0
+      ],
+      [
+        "fhfh:128",
+        0
+      ],
+      [
+        "fhfh:129",
+        0
+      ],
+      [
+        "fhfh:130",
+        0
+      ],
+      [
+        "fhfh:131",
+        0
+      ],
+      [
+        "fhfh:132",
+        0
+      ],
+      [
+        "fhfh:133",
+        0
+      ],
+      [
+        "fhfh:134",
+        0
+      ],
+      [
+        "fhfh:135",
+        0
+      ],
+      [
+        "fhfh:136",
+        0
+      ],
+      [
+        "fhfh:137",
+        0
+      ],
+      [
+        "fhfh:138",
+        0
+      ]
+    ],
+    "baseline": {
+      "objective": "outcome",
+      "activeGames": 3,
+      "projectedPoints": 191
+    },
+    "search": {
+      "evaluated": 160,
+      "maxEvaluations": 160,
+      "candidates": 40,
+      "eligibleCandidates": 41,
+      "maxCandidates": 40,
+      "maxProposalsPerCandidate": 12,
+      "complete": false
+    }
+  }
+}

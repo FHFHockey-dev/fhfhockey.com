@@ -1,0 +1,24 @@
+{
+  "branch": "octoberBranch",
+  "head": "a8f58de6178e282acd3a71851c66f4a56b119f14",
+  "captured_at_utc": "2026-10-15T05:31:39.765104+00:00",
+  "api_directory_source_files": 360,
+  "api_source_kinds": {
+    "python_handler_module": 5,
+    "next_api_export": 351,
+    "python_script_not_next_route": 4
+  },
+  "supported_migrations": 82,
+  "route_guard_counts": {
+    "adminOnly": 120,
+    "requireApiUser": 73,
+    "requireDraftProServerCapability": 14,
+    "withOperationalRouteAuth": 16,
+    "mockHandler": 5,
+    "playerForecastAdminOnly": 16,
+    "playerForecastSeasonEditorOnly": 9,
+    "createLineSourceIftttReceiver": 6,
+    "constructEvent": 1
+  },
+  "note": "Static indicators are triage, not proof of protection or vulnerability."
+}

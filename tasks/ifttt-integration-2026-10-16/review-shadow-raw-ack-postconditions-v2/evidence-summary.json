@@ -1,0 +1,38 @@
+{
+  "verdict": "accept R18 correction for bounded local shadow raw/job transaction; no operational/full52 acceptance",
+  "selectedSql5Path": "tasks/ifttt-integration-2026-10-16/shadow-raw-ack-postconditions-v2/20261016073503_tweet_claim_shadow_raw_ack.sql",
+  "selectedSql5Sha256": "be0d24b025d1b83d294b0f20c7cca40510b5ef6c712a2ad71586ad1c754df59d",
+  "replacementOnlyNeverApplyOldAndNewTogether": true,
+  "unchangedCases": {
+    "passed": 54,
+    "failed": 0,
+    "actualPostgres": 53,
+    "defaultOff": 1
+  },
+  "independentDistinctCases": {
+    "passed": 4,
+    "failedAfterFixtureRepair": 0,
+    "actualPostgres": 4
+  },
+  "totalDistinctPassingCases": 58,
+  "actualPostgresCases": 57,
+  "scopedTypeScriptExitCode": 0,
+  "reviewerHarnessInitialFailures": {
+    "count": 2,
+    "reason": "Minimal disposable fixture lacked DELETE privilege for injected trigger; no runtime defect. Original logs/results/source preserved.",
+    "correctedRerunCount": 2
+  },
+  "allProcessesFinished": true,
+  "privateClustersStoppedAndRemoved": true,
+  "sourcePinsReleased": 110,
+  "readOnlySnapshotsReleased": 15,
+  "remainingGates": [
+    "Deferred commit-time or subsequent writers remain unaccepted; deployed trigger/schema/ACL/writer inventory required.",
+    "Exact future approved migration package must select replacement SQL5 only in explicit prerequisite order; no production migration run.",
+    "HTTP raw receiver/external queue/legacy-deferred atomicity, authentic identity/history/fence evidence, genuine future metrics and operational approvals remain open.",
+    "Historical heterogeneous 225/227 over50/52 original rows unchanged; original ambiguous CR011/51 failures and separate positives retain prior boundaries."
+  ],
+  "noRuntimeEdits": true,
+  "noHostedActions": true,
+  "noAggregateCompilerOrBuild": true
+}

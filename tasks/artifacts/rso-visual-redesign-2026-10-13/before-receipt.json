@@ -1,0 +1,30 @@
+[
+  {
+    "width": 1440,
+    "height": 900,
+    "frame": {
+      "width": 1440,
+      "height": 900,
+      "documentWidth": 1440,
+      "documentHeight": 900
+    },
+    "errors": [],
+    "requests": [
+      "http://127.0.0.1:47999/roster-schedule-optimizer"
+    ]
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "frame": {
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 4098
+    },
+    "errors": [],
+    "requests": [
+      "http://127.0.0.1:47999/roster-schedule-optimizer"
+    ]
+  }
+]

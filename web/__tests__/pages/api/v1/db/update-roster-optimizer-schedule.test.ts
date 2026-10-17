@@ -237,6 +237,18 @@ describe("update roster optimizer schedule route", () => {
     );
   });
 
+  it("forwards captured source-day coverage into both persisted team sides", async () => {
+    const source = await fetchFullSeasonMock();
+    const scheduleCoverage = { version: "nhl-source-days-v1", date: "2026-10-05", gameIds: [2026020001], emptyDates: ["2026-10-06"] };
+    source.games[0].scheduleCoverage = scheduleCoverage;
+    const res = response();
+    await handler({ method: "POST", headers: { authorization: "Bearer schedule-secret" },
+      query: { mode: "full", gameKey: "477" } } as never, res as never);
+    expect(res.statusCode).toBe(200);
+    expect(upsertMock.mock.calls[0][0]).toHaveLength(2);
+    for (const row of upsertMock.mock.calls[0][0]) expect(row.source_metadata.scheduleCoverage).toEqual(scheduleCoverage);
+  });
+
   it("removes stale cache identities only after a complete full refresh", async () => {
     tableData.roster_optimizer_team_games = [
       {

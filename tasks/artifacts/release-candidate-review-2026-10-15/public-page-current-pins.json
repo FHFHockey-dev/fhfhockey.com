@@ -1,0 +1,19 @@
+{
+  "originalPatchSha256": "dfc5744addb9c351f72856f6288d69d95a550ad0631c684eaae28f4b08c8c6cf",
+  "reconstructedPatchSha256": "dfc5744addb9c351f72856f6288d69d95a550ad0631c684eaae28f4b08c8c6cf",
+  "allOriginalSourcePinsMatch": true,
+  "files": {
+    "web/pages/stats/index.tsx": "ecfb482e898e3529ae7c590ef82e85704af03316255c985938d512db1105f10a",
+    "web/lib/NHL/statsPageFetch.ts": "896756cc6f8f892693189818393d29ec62b62d6af6c8d008eeab072a268ee25d",
+    "web/lib/NHL/statsPageTypes.ts": "207bc7e50966ff9e54061a21f64cd2a8b76790099147d383274ca0f5a4a65d0f",
+    "web/components/StatsPage/MobileTabInterface.tsx": "fb73fa26500c57ed2da2474491d53731b09065c46c64ab0894844ae8f1cc4117",
+    "web/styles/Stats.module.scss": "66596f49ac1246ea9911df5cf607fa8cf4a1b2e7f90775becb9d74da6cd12312",
+    "web/pages/lines/index.tsx": "0a964b47a1712ac92e75d613d1e8a639720a2fc18e881e7e6eaa477331815acc",
+    "web/styles/Lines.module.scss": "f09fc5f2fd2e7c717393a2ff13f7f52e4b4788364dbde91fa9c615dbc010ffd5",
+    "web/components/underlying-stats/UnderlyingStatsDashboard.module.scss": "47454f23dde232ecd98a4270dd79abe514277339ee46a6c803f9d63084babc08",
+    "web/lib/NHL/statsPageFetch.test.ts": "a4deea7bd6d546252df360d4ab10bb8ca9d0666c5258d3d349badd5a542342c3",
+    "web/__tests__/pages/stats/index.test.tsx": "2ff130d4b25f5e25190d5bdc16fca12c6a41a0da07998a9cace564d23cc6dc4c",
+    "web/__tests__/pages/lines/index.test.tsx": "49157af828313e4a1e899b675364377bae389a9704d42cc998e8af5802bf5fe4"
+  },
+  "originalTemporaryArtifactsMissing": true
+}

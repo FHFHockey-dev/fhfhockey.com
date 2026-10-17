@@ -1,0 +1,16 @@
+{
+  "sourceManifestSha256": "81b41d7841a72c12cdb2824a7483cb81a0a13a61d40b916c4b218447cbd0b9fb",
+  "sourceFilesVerified": 148,
+  "reviewSourceCopiesVerified": 148,
+  "ownerSnapshotsVerified": 15,
+  "reviewSnapshotsVerified": 15,
+  "liveDependenciesVerified": 15,
+  "ownerArtifactManifestSha256": "a36323d17b96d47a28ef59f63220b523f48e3a91b55e97f38a04eec461fdb719",
+  "ownerArtifactsVerified": 17,
+  "priorReviewFilesVerified": 2443,
+  "prior139Verified": 139,
+  "prior25OwnerArtifactsVerified": 25,
+  "additionalCapturedSchedulerMatchesLive": true,
+  "priorStatusAddendumUnchanged": true,
+  "sourceSnapshotHoldReleasedAfterThisCheck": true
+}

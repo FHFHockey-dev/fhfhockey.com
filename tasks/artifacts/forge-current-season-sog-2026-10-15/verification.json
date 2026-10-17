@@ -1,0 +1,71 @@
+{
+  "scope": "offline new current-season conditional SOG initializer only",
+  "tests": {
+    "command": "npm test -- lib/player-forecasts/currentSeasonSogBaseline.test.ts scripts/capture-current-season-sog-baseline.test.ts",
+    "exit": 0,
+    "passed": 36,
+    "syntheticOnly": true
+  },
+  "sourceCollection": 0,
+  "genuineNumericReads": 0,
+  "producerExecutions": 0,
+  "databaseWrites": 0,
+  "publicActivation": false,
+  "fullTreeCompiler": "not run; pilot boundary held",
+  "independentReview": "v1 rejected on precise expiry; corrected same-peer re-review pending",
+  "files": [
+    "web/lib/player-forecasts/currentSeasonSogBaseline.ts",
+    "web/lib/player-forecasts/currentSeasonSogBaseline.test.ts",
+    "web/scripts/capture-current-season-sog-baseline.ts",
+    "web/scripts/capture-current-season-sog-baseline.test.ts"
+  ],
+  "eslint": {
+    "files": 4,
+    "exit": 0,
+    "errors": 0,
+    "warnings": 0
+  },
+  "candidatePinsVerified": true,
+  "whitespace": [
+    {
+      "path": "web/lib/player-forecasts/currentSeasonSogBaseline.ts",
+      "passed": true,
+      "rawExit": 1,
+      "output": ""
+    },
+    {
+      "path": "web/lib/player-forecasts/currentSeasonSogBaseline.test.ts",
+      "passed": true,
+      "rawExit": 1,
+      "output": ""
+    },
+    {
+      "path": "web/scripts/capture-current-season-sog-baseline.ts",
+      "passed": true,
+      "rawExit": 1,
+      "output": ""
+    },
+    {
+      "path": "web/scripts/capture-current-season-sog-baseline.test.ts",
+      "passed": true,
+      "rawExit": 1,
+      "output": ""
+    }
+  ],
+  "correctedExpiryRegressionCount": 5,
+  "pilotReadiness": {
+    "source": "owner chat acknowledgment only",
+    "dispatcherCheckedAtUTC": "2026-10-15T20:46:39Z",
+    "childCheckedAtUTC": "2026-10-15T20:47:26Z",
+    "status": "ACTIVE unchanged; owner/channel/readiness pins reported intact",
+    "resourceStopUTC": "2026-10-15T21:10:00Z",
+    "captureWindowUTC": [
+      "2026-10-15T21:20:00Z",
+      "2026-10-15T21:45:00Z"
+    ],
+    "issuanceBeforeUTC": "2026-10-15T22:00:00Z",
+    "actualFutureExecutionGuaranteed": false,
+    "runnerInvoked": false,
+    "schedulingChanged": false
+  }
+}

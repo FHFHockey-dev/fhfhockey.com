@@ -417,6 +417,92 @@ describe("player forecast schedule", () => {
   });
 });
 
+describe("next-ten schedule reconciliation", () => {
+  const now = new Date("2026-10-13T12:00:00Z");
+  const gamesFor = (count = 60) => Array.from({ length: count }, (_, index) => {
+    const date = new Date(Date.parse("2026-10-13T00:00:00Z") + index * 86400000).toISOString().slice(0, 10);
+    return { id: index + 1, seasonId: 20262027, date, startTime: `${date}T20:00:00Z`, homeTeamId: 10, awayTeamId: 20, type: 2 };
+  });
+  const read = (db: any) => readForecastSchedule({ db, now, teamId: 10, mode: "next_ten_team_games" });
+  it("discovers the entire team schedule but does not reconcile unrelated future games 14 and 56", async () => {
+    const games = gamesFor();
+    const rows = scheduleRows(games).map(row => [14, 56].includes(row.source_game_id)
+      ? { ...row, start_time: `${row.game_date}T21:00:00Z` } : row);
+    const query = scopeQuery(games, { cap: 2 });
+    const statusReads: number[][] = [];
+    const db = scheduleDb(games, query, rows);
+    db.from.mockImplementation((table: string) => {
+      if (table === "games") return query;
+      const status = scopeQuery(rows, { cap: 2 });
+      status.in.mockImplementation((_key: string, ids: number[]) => { statusReads.push(ids); return scopeQuery(rows.filter(row => ids.includes(row.source_game_id)), { cap: 2 }); });
+      return status;
+    });
+    expect((await read(db)).map(game => game.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(query.range.mock.calls.at(-1)?.[0]).toBe(58);
+    expect(statusReads.every(ids => ids.every(id => id <= 10))).toBe(true);
+    await expect(readForecastSchedule({ db: scheduleDb(games, scopeQuery(games), rows), now, teamId: 10 })).rejects.toMatchObject({
+      receipt: { rejectedGames: [{ gameId: 14, reasons: ["start_time_mismatch"] }, { gameId: 56, reasons: ["start_time_mismatch"] }] },
+    });
+    expect(db.rpc).not.toHaveBeenCalled();
+  });
+  it("expands the required prefix around cancelled and postponed games, while excluding already-started games", async () => {
+    const games = gamesFor(14);
+    games.unshift({ ...games[0], id: 70, date: "2026-10-12", startTime: "2026-10-12T20:00:00Z" });
+    const rows = scheduleRows(games).map(row => ({ ...row,
+      schedule_status: ["CANCELLED", "PPD", "SUSPENDED"][row.source_game_id - 1] ?? "OK",
+      start_time: [14, 70].includes(row.source_game_id) ? `${row.game_date}T21:00:00Z` : row.start_time,
+    }));
+    const verified = await read(scheduleDb(games, scopeQuery(games), rows));
+    expect(verified.map(game => game.id)).toEqual(Array.from({ length: 13 }, (_, index) => index + 1));
+    expect(buildNextTenGameScopes({ games: verified, now, teamId: 10 }).map(scope => scope.gameId)).toEqual([4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
+    const invalidReplacement = rows.map(row => row.source_game_id === 13 ? { ...row, start_time: `${row.game_date}T21:00:00Z` } : row);
+    await expect(read(scheduleDb(games, scopeQuery(games), invalidReplacement))).rejects.toMatchObject({
+      receipt: { rejectedGames: [{ gameId: 13, reasons: ["start_time_mismatch"] }] },
+    });
+  });
+  it.each(["start_time_mismatch", "unknown_status", "invalid_receipt", "conflicting_sides", "missing_sides"])("rejects an invalid required candidate rather than filling around it: %s", async (reason) => {
+    const games = gamesFor(12);
+    let rows = scheduleRows(games).map(row => row.source_game_id !== 5 ? row
+      : reason === "start_time_mismatch" ? { ...row, start_time: `${row.game_date}T21:00:00Z` }
+      : reason === "unknown_status" ? { ...row, schedule_status: "UNKNOWN" }
+      : reason === "invalid_receipt" ? { ...row, fetched_at: "2026-10-13T13:00:00Z" }
+      : reason === "conflicting_sides" && row.team_id === 20 ? { ...row, schedule_status: "PPD" } : row);
+    if (reason === "missing_sides") rows = rows.filter(row => row.source_game_id !== 5 || row.team_id !== 20);
+    await expect(read(scheduleDb(games, scopeQuery(games), rows))).rejects.toMatchObject({
+      receipt: { scope: { mode: "next_ten_team_games" }, checkedGames: 10, rejectedGames: [{ gameId: 5, reasons: [reason] }] },
+    });
+  });
+  it("does not skip a candidate with an unknown canonical start", async () => {
+    const games = gamesFor(12).map(game => game.id === 5 ? { ...game, startTime: null } : game);
+    const rows = scheduleRows(games);
+    await expect(read(scheduleDb(games, scopeQuery(games), rows))).rejects.toMatchObject({
+      receipt: { rejectedGames: [{ gameId: 5, reasons: ["invalid_start"] }] },
+    });
+  });
+  it.each(["missing_count", "null_data", "drift", "late_error", "duplicate", "no_progress", "overflow"])("requires complete canonical discovery even after ten apparently valid rows: %s", async (failure) => {
+    const games = gamesFor(12), db = scheduleDb(games, scopeQuery(games, { cap: 10, failure }));
+    await expect(read(db)).rejects.toMatchObject({ receipt: { stage: "canonical_games", readStatus: "incomplete", reasons: ["incomplete_read"] } });
+    expect(db.from.mock.calls.every(([table]: [string]) => table === "games")).toBe(true);
+  });
+  it.each(["missing_count", "null_data", "drift", "late_error", "duplicate", "no_progress", "overflow"])("requires complete status coverage for the selected prefix: %s", async (failure) => {
+    const games = gamesFor(12), db = scheduleDb(games, scopeQuery(games), scheduleRows(games), { cap: 2, failure });
+    await expect(read(db)).rejects.toMatchObject({ receipt: { stage: "team_game_status", readStatus: "incomplete", reasons: ["incomplete_read"] } });
+  });
+  it("retains a genuinely complete season tail shorter than ten without hiding missing evidence", async () => {
+    const games = gamesFor(3), rows = scheduleRows(games);
+    expect((await read(scheduleDb(games, scopeQuery(games), rows))).map(game => game.id)).toEqual([1, 2, 3]);
+    await expect(read(scheduleDb(games, scopeQuery(games), rows.filter(row => row.source_game_id !== 3)))).rejects.toMatchObject({
+      receipt: { rejectedGames: [{ gameId: 3, reasons: ["missing_sides"] }] },
+    });
+  });
+  it("requires a single team and forbids combining next-ten mode with a calendar cutoff", async () => {
+    const db = scheduleDb([], scopeQuery([]), []);
+    await expect(readForecastSchedule({ db, now, mode: "next_ten_team_games" })).rejects.toThrow("requires one team");
+    await expect(readForecastSchedule({ db, now, teamId: 10, throughDate: "2026-10-21", mode: "next_ten_team_games" })).rejects.toThrow("requires one team");
+    expect(db.from).not.toHaveBeenCalled();
+  });
+});
+
 describe("player forecast accountability", () => {
   it("uses only pregame revisions for candle OHLC and overlays the outcome", () => {
     const revisions = [
@@ -455,11 +541,13 @@ describe("source semantics", () => {
       raw_text: "Player is day-to-day" };
     const games = Array.from({ length: 12 }, (_, index) => ({ id: index + 1, seasonId: 20262027,
       date: `2026-10-${index + 11}`, startTime: `2026-10-${index + 11}T20:00:00Z`, homeTeamId: 10, awayTeamId: 20, type: 2 }));
-    for (const failure of [undefined, "missing_count"]) {
-      const query = scopeQuery(games, { cap: 2, failure });
+    for (const failure of [undefined, "missing_count", "in_horizon_mismatch"]) {
+      const query = scopeQuery(games, { cap: 2, failure: failure === "missing_count" ? failure : undefined });
       const rpc = vi.fn(async (_name: string, _args: unknown) => ({ data: { insertedSnapshot: true, insertedAssignments: 1 }, error: null }));
-      const pending = capturePlayerForecastSourceRows({ supabase: { ...scheduleDb(games, query), rpc } as any, rows: [row] });
-      if (failure) await expect(pending).rejects.toThrow("incomplete");
+      const evidence = scheduleRows(games).map(value => value.source_game_id === 12 || failure === "in_horizon_mismatch" && value.source_game_id === 5
+        ? { ...value, start_time: `${value.game_date}T21:00:00Z` } : value);
+      const pending = capturePlayerForecastSourceRows({ supabase: { ...scheduleDb(games, query, evidence), rpc } as any, rows: [row] });
+      if (failure) await expect(pending).rejects.toThrow(/incomplete|schedule/);
       else expect((await pending).jobsQueued).toBe(10);
       const jobs = rpc.mock.calls.filter(([name]) => name === "enqueue_player_forecast_job").map(([, value]) => value as any);
       expect(jobs.map(job => job.p_team_game_horizon)).toEqual(failure ? [] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);

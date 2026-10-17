@@ -1,0 +1,247 @@
+{
+  "createdAtUTC": "2026-10-15T14:05:46.647770+00:00",
+  "purpose": "Scout-owned cloud research input; existing evidence only, no execution authority",
+  "currentIdentityAdmission": {
+    "status": "historically accepted_current_identity_snapshot_for_planning_only; temporary original receipt currently missing",
+    "missingPath": "/tmp/forge-identity-mapping-review-20261015/evaluator-admission-v1.json",
+    "historicallyVerifiedSha256": "6c78676e1c819928a6c38c7c107c601e083339b3638c9bdaf32dbde8ea6016f7",
+    "recoveryRequired": true
+  },
+  "sourceFiles": [
+    {
+      "packagePath": "protocol/PROPOSAL.md",
+      "originalPath": "/Users/tim/Documents/FHFH-private/forge-broader-benchmark-approval-20261015-v1/PROPOSAL.md",
+      "sha256": "65f400289152eaae563868659bf9e5f8368ab817b2680a461808623a9565916b",
+      "bytes": 16269
+    },
+    {
+      "packagePath": "protocol/proposal-review-v1.json",
+      "originalPath": "/Users/tim/Documents/FHFH-private/forge-broader-benchmark-approval-20261015-v1/proposal-review-v1.json",
+      "sha256": "835f5b7303a2f273b43755c30e256aa5c277b27cbfe7c65001657c97a92fb9af",
+      "bytes": 12045
+    },
+    {
+      "packagePath": "reports/v3-development.md",
+      "originalPath": "/Users/tim/Documents/FHFH-private/forge-full-development-20261014-v3/reports/DEVELOPMENT-REPORT.md",
+      "sha256": "37fa74072fbab158377eab38b9740618b6fbd2cac0fb211ff95203c6093b0a2e",
+      "bytes": 6626
+    },
+    {
+      "packagePath": "reports/v4-goalie-comparison.md",
+      "originalPath": "/Users/tim/Documents/FHFH-private/forge-goalie-comparison-20261014-v4/REPORT.md",
+      "sha256": "8e9c75240f38285eef72bd275e0af372915986fc9ba69208950333c145ddd5fb",
+      "bytes": 6017
+    },
+    {
+      "packagePath": "reports/jan8-13-adaptive-development.md",
+      "originalPath": "/Users/tim/Documents/FHFH-private/forge-adaptive-development-20260108-13-v1/REPORT.md",
+      "sha256": "8366ab60380d05697966524bc5d1526fab4e30a651bb7c0ff67512c12320a668",
+      "bytes": 9394
+    },
+    {
+      "packagePath": "coverage/metadata-feasibility.md",
+      "originalPath": "/Users/tim/Documents/FHFH-private/forge-metadata-feasibility-20251007-20260113-v1/REPORT.md",
+      "sha256": "b9f33605cd9975b90821e8c3eefd7e2f35db3b618cf64520f055358f2e897703",
+      "bytes": 7373
+    }
+  ],
+  "implementationPins": [
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/web/lib/player-forecasts/baselineSourceLineage.ts",
+      "sha256": "c1d492523843b103aafcdb081fe6aafe31651f2a5117a2b77ef60e4e2e604223",
+      "matchesReviewedProposal": true
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/web/lib/player-forecasts/nativeGoalieOutcomes.ts",
+      "sha256": "8c893885c52eb2ef95d3b0a2adfd825169469b2fca23175e62de4f1f3876aa33",
+      "matchesReviewedProposal": true
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/web/lib/player-forecasts/nativePowerPlayPoints.ts",
+      "sha256": "cff770331a39d7f3884c0877ac58dce61a7db06e117b43cef1887ef27b542018",
+      "matchesReviewedProposal": true
+    },
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-adaptive-development-20260108-13-v1/code/adaptive.py",
+      "sha256": "b27897e1d3a84fb67c511f01877f4430cc65d3f4c186cf515c1e6b8e2769fa59",
+      "matchesReviewedProposal": true
+    },
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-adaptive-development-20260108-13-v1/code/daily_materialize.py",
+      "sha256": "64d88e3a1666bef5d06b0906261ce1f7dafea7970989acec94ef67ea7939abb3",
+      "matchesReviewedProposal": true
+    },
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-full-development-20261014-v3/code/fit_families.py",
+      "sha256": "abbc97e7d8cf575f05b76ba76473d2da777036bf71b2a8618efdad3f1288fee4",
+      "matchesReviewedProposal": true
+    },
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-full-development-20261014-v3/code/native-components.ts",
+      "sha256": "212029855c7b9d78a8d6013c6a50c709380b2648feb65f204adc1a4069d17ed4",
+      "matchesReviewedProposal": true
+    },
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-full-development-20261014-v3/code/research_models.py",
+      "sha256": "734fa6195c9fe0d3d9acef09c64c9c2607e79d2766a32dff289f3a5ffdc4e516",
+      "matchesReviewedProposal": true
+    },
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-historical-walk-forward-20261014-v2/protocol/code/source_spans.py",
+      "sha256": "c2b6d500181d7722207cbde4ce382c5ec91b0c94f332c823127d2e609aa44850",
+      "matchesReviewedProposal": true
+    }
+  ],
+  "existingAcceptanceReceipts": [
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-full-development-20261014-v3/protocol/reviews/selected-research-acceptance-v1.json",
+      "sha256": "a0d74f8622a2ab5b1bb399563e037b11c58853f979fa65865b5aab31b09bd656",
+      "status": "accepted_research_only"
+    },
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-goalie-comparison-20261014-v4/reviews/research-comparison-acceptance-v1.json",
+      "sha256": "749dd703f71690b23085e34119ba5d031b31933cb2c52da576ea7edb72b5e15b",
+      "status": "accepted_research_comparison_only"
+    },
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-adaptive-development-20260108-13-v1/protocol/reviews/completed-adaptive-development-acceptance-v1.json",
+      "sha256": "1cd304124778f68c01bf71baaaa625e5c5abab5cbe96a5751dba33aad81d0da3",
+      "status": "accepted_completed_adaptive_development_only"
+    },
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-metadata-feasibility-20251007-20260113-v1/protocol/reviews/completed-metadata-feasibility-acceptance-v1.json",
+      "sha256": "052250b0c0385b8c8c1ecd338218828d6da04a60ebd9d540068c527d0d3528da",
+      "status": "accepted_metadata_only_feasibility_and_exact_cohort_proposal"
+    }
+  ],
+  "proposedAllocation": {
+    "path": "/Users/tim/Documents/FHFH-private/forge-broader-benchmark-approval-20261015-v1/proposed-allocation.json",
+    "sha256": "736701557baa29c25af7bfce63dc5f16d3aabe6450f50ec75708d5a669aeebbc",
+    "status": "PROPOSED_NOT_ALLOCATED_NO_EXECUTION_AUTHORITY",
+    "candidateBudget": {
+      "goalieCube": {
+        "g000": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "g001": [
+          0.0,
+          0.0,
+          0.25
+        ],
+        "g010": [
+          0.0,
+          0.25,
+          0.0
+        ],
+        "g011": [
+          0.0,
+          0.25,
+          0.25
+        ],
+        "g100": [
+          0.25,
+          0.0,
+          0.0
+        ],
+        "g101": [
+          0.25,
+          0.0,
+          0.25
+        ],
+        "g110": [
+          0.25,
+          0.25,
+          0.0
+        ],
+        "g111": [
+          0.25,
+          0.25,
+          0.25
+        ]
+      },
+      "goalieCubeOrder": [
+        "SA",
+        "minutes",
+        "save_fraction"
+      ],
+      "maximumRecipeHeadSlots": 73,
+      "maximumScoredCalendarDates": 58,
+      "oldThreePolicyBlendComparisonIncluded": false,
+      "passes": 1,
+      "representedScoringDates": 53,
+      "skaterMinutes": [
+        "season_rate",
+        "recent_.25",
+        "recent_.5",
+        "recent_.75",
+        "role_aware",
+        "EB180"
+      ],
+      "skaterPerTotalHead": [
+        "season_rate",
+        "recent_.25",
+        "recent_.5",
+        "recent_.75",
+        "role_aware",
+        "EB60",
+        "EB180",
+        "EB360"
+      ],
+      "skaterTotals": [
+        "GOALS",
+        "ASSISTS",
+        "PP_POINTS",
+        "SHOTS_ON_GOAL",
+        "HITS",
+        "BLOCKED_SHOTS",
+        "PENALTY_MINUTES"
+      ],
+      "weightSearch": false,
+      "wins": [
+        "expanding",
+        "pool5",
+        "pool20"
+      ]
+    },
+    "proposedSpanScope": {
+      "distinctDates": 93,
+      "distinctGames": 484,
+      "exactReferences": 829,
+      "extraReadsOrAcquisitions": 0,
+      "manifestPath": "/Users/tim/Documents/FHFH-private/forge-metadata-feasibility-20251007-20260113-v1/span-manifest.json",
+      "manifestSha256": "387c4aaac7ba27554fdb7dfd74b9008657627ed579ea9d5723e61aeee939435d",
+      "maxBodyBytes": 28509016,
+      "newTargetValidationRequired": true,
+      "rule": "Only exact already-indexed body spans, never whole mixed archives, discovery-facts, or unindexed adjacent bytes. Each span at most once in materialization; retain exact span digests and actual clocks; original whole-file hashes remain inherited.",
+      "selectedArray": "spans",
+      "sourceHashesFreshlyVerified": false
+    },
+    "owners": {
+      "evaluator": "/root/evaluator / 01a1383f-d550-72d1-a674-cd9e977b7118",
+      "implementation_training": "/root / 01a13822-4d3f-7380-9609-f38bf25ce46e",
+      "live_capture_unchanged": "/root/capture_owner",
+      "private_native_adapter": "/root/native_adapter"
+    }
+  },
+  "routeCheck": {
+    "thread": "01a13822-4d3f-7380-9609-f38bf25ce46e",
+    "localReadSucceeded": true,
+    "returnedStatus": "active",
+    "placementErrorReproduced": false
+  },
+  "boundaries": {
+    "newFits": 0,
+    "scoringRuns": 0,
+    "newAllocations": 0,
+    "databaseCalls": 0,
+    "rawOutcomeSourcesOpened": 0,
+    "protectedRunnerModified": false,
+    "codeExecutedOrImported": false,
+    "AApproved": false,
+    "BApproved": false,
+    "Jan14OnwardClosed": true,
+    "blendHeld": true
+  }
+}

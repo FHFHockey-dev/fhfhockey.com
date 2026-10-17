@@ -1,0 +1,17 @@
+failed to load config from /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/raw-receiver-local-probes-v1/vitest.config.mjs
+
+⎯⎯⎯⎯⎯⎯⎯ Startup Error ⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'alias')
+    at file:///Users/tim/Code/fhfhockey.com/node_modules/.vite-temp/vitest.config.mjs.timestamp-1792138521538-b0078aee6a8c2.mjs:44:45
+    at ModuleJob.run (node:internal/modules/esm/module_job:268:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:543:26)
+    at async loadConfigFromBundledFile (file:///Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:49590:15)
+    at async bundleAndLoadConfigFile (file:///Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:49433:22)
+    at async loadConfigFromFile (file:///Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:49396:44)
+    at async resolveConfig (file:///Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:48891:24)
+    at async _createServer (file:///Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:38478:66)
+    at async createViteServer (file:///Users/tim/Code/fhfhockey.com/web/node_modules/vitest/dist/chunks/cli-api.DVe0nWUx.js:6921:17)
+    at async createVitest (file:///Users/tim/Code/fhfhockey.com/web/node_modules/vitest/dist/chunks/cli-api.DVe0nWUx.js:10212:17)
+
+
+

@@ -1,0 +1,17 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/offline-completion/metadata-package.test.ts --config ../tasks/ifttt-integration-2026-10-16/durable-occurrence-increment/vitest.config.mjs
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+stdout | ../tasks/ifttt-integration-2026-10-16/offline-completion/metadata-package.test.ts > proposed catalog reads on private disposable storage > identifies five missing allowlisted relations within 8 KiB despite wide schemas, without values or helper calls
+presence-v2-local-bytes 2932 sql-reported-dataBytes 3139
+
+ ✓ ../tasks/ifttt-integration-2026-10-16/offline-completion/metadata-package.test.ts (4 tests) 1144ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  00:07:37
+   Duration  1.37s (transform 19ms, setup 16ms, collect 17ms, tests 1.14s, environment 0ms, prepare 32ms)
+

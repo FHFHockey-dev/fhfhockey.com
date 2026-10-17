@@ -1,0 +1,317 @@
+--- a/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
++++ b/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+@@ -21,6 +21,7 @@
+ import ForecastEvidence, { forecastSummary } from "./ForecastEvidence";
+ import BenchDecisions from "./BenchDecisions";
+ import CandidateBrowser from "./CandidateBrowser";
++import AcquisitionPeriodTimes from "./AcquisitionPeriodTimes";
+ import CategoryGains from "./CategoryGains";
+ import CompactSchedule, { defaultScheduleDate } from "./CompactSchedule";
+ import RosterContribution from "./RosterContribution";
+@@ -1118,7 +1119,7 @@
+     <div className={styles.ruleFields}>
+     <label>Acquisition timing<select value={rules.acquisitionTiming} onChange={(event) => updateRules((rules) => ({ ...rules, acquisitionTiming: event.target.value as LeagueRules["acquisitionTiming"] }))}><option value="unknown">Unknown</option><option value="same_day">Same day</option><option value="next_day">Next day</option></select></label>
+     <label>Acquisition cost<input type="number" min="0" value={rules.acquisitionCost ?? ""} onChange={(event) => updateRules((current) => ({ ...current, acquisitionCost: event.target.value ? Number(event.target.value) : null }))} /></label>
+-    <h4>Acquisition periods</h4>{periods.map((period, index) => <div className={styles.ruleRow} key={index}><label>Period<input value={period.id} onChange={(event) => updateRules((current) => ({ ...current, periods: current.periods.map((row, i) => i === index ? { ...row, id: event.target.value } : row) }))} /></label><label>Start<input type="date" value={leagueDate(period.start, timeZone)} onChange={(event) => { if (event.target.value) updateRules((current) => ({ ...current, periods: current.periods.map((row, i) => i === index ? { ...row, start: leagueDayBoundary(event.target.value, timeZone) } : row) })); }} /></label><label>End<input type="date" value={leagueDate(new Date(Date.parse(period.end) - 1).toISOString(), timeZone)} onChange={(event) => { if (event.target.value) updateRules((current) => ({ ...current, periods: current.periods.map((row, i) => i === index ? { ...row, end: leagueDayBoundary(event.target.value, timeZone, true) } : row) })); }} /></label><label>Moves left<input type="number" min="0" value={period.remaining ?? ""} onChange={(event) => updateRules((current) => ({ ...current, periods: current.periods.map((row, i) => i === index ? { ...row, remaining: event.target.value === "" ? null : Number(event.target.value), source: "manager" } : row) }))} /></label><button aria-label={`Remove period ${period.id}`} onClick={() => updateRules((current) => ({ ...current, periods: current.periods.filter((_, i) => i !== index) }))}>×</button></div>)}<button disabled={Boolean(windowUnavailable)} aria-describedby={windowUnavailable ? "rso-period-reason" : undefined} onClick={() => updateRules((current) => ({ ...current, periods: [...current.periods, { id: `Period ${current.periods.length + 1}`, start: leagueDayBoundary(startDate, timeZone), end: leagueDayBoundary(endDate, timeZone, true), remaining: null, source: "manager" }] }))}>Add acquisition period</button>{windowUnavailable && <small id="rso-period-reason">{windowUnavailable}</small>}
++    <h4>Acquisition periods</h4>{periods.map((period, index) => <div className={styles.ruleRow} key={index}><label>Period<input value={period.id} onChange={(event) => updateRules((current) => ({ ...current, periods: current.periods.map((row, i) => i === index ? { ...row, id: event.target.value } : row) }))} /></label>{!period.timeZone && <><label>Start<input type="date" value={leagueDate(period.start, timeZone)} onChange={(event) => { if (event.target.value) updateRules((current) => ({ ...current, periods: current.periods.map((row, i) => i === index ? { ...row, start: leagueDayBoundary(event.target.value, timeZone) } : row) })); }} /></label><label>End<input type="date" value={leagueDate(new Date(Date.parse(period.end) - 1).toISOString(), timeZone)} onChange={(event) => { if (event.target.value) updateRules((current) => ({ ...current, periods: current.periods.map((row, i) => i === index ? { ...row, end: leagueDayBoundary(event.target.value, timeZone, true) } : row) })); }} /></label></>}<AcquisitionPeriodTimes key={`${period.start}:${period.end}:${period.timeZone ?? timeZone}`} period={period} leagueTimeZone={timeZone} onApply={period => updateRules(current => ({ ...current, periods: current.periods.map((row, i) => i === index ? period : row) }))} /><label>Moves left<input type="number" min="0" value={period.remaining ?? ""} onChange={(event) => updateRules((current) => ({ ...current, periods: current.periods.map((row, i) => i === index ? { ...row, remaining: event.target.value === "" ? null : Number(event.target.value), source: "manager" } : row) }))} /></label><button aria-label={`Remove period ${period.id}`} onClick={() => updateRules((current) => ({ ...current, periods: current.periods.filter((_, i) => i !== index) }))}>×</button></div>)}<button disabled={Boolean(windowUnavailable)} aria-describedby={windowUnavailable ? "rso-period-reason" : undefined} onClick={() => updateRules((current) => ({ ...current, periods: [...current.periods, { id: `Period ${current.periods.length + 1}`, start: leagueDayBoundary(startDate, timeZone), end: leagueDayBoundary(endDate, timeZone, true), remaining: null, source: "manager" }] }))}>Add acquisition period</button>{windowUnavailable && <small id="rso-period-reason">{windowUnavailable}</small>}
+     </div>
+   </fieldset>;
+ }
+--- a/web/lib/rosterScheduleOptimizer/planningTypes.ts
++++ b/web/lib/rosterScheduleOptimizer/planningTypes.ts
+@@ -105,6 +105,8 @@
+   end: string;
+   remaining: number | null;
+   source: "provider" | "manager" | "unknown";
++  /** Optional display/edit zone; start/end remain exact instants used by the planner. */
++  timeZone?: string;
+   /** Weekly lineup lock, independently specified from acquisition resets. */
+   lineupLockAt?: string | null;
+ };
+--- a/web/lib/in-season/workspaceSchema.ts
++++ b/web/lib/in-season/workspaceSchema.ts
+@@ -9,6 +9,7 @@
+ const id = z.string().trim().min(1).max(200);
+ const seasonId = z.number().int().refine((value) => { const first = Math.floor(value / 10000); return first >= 2000 && first <= 2199 && value % 10000 === first + 1; }, "Expected an NHL season ID such as 20262027.");
+ const timeZone = id.refine((value) => { try { new Intl.DateTimeFormat("en", { timeZone: value }); return true; } catch { return false; } }, "Invalid time zone.");
++const periodTimeZone = timeZone.refine(value => value === "UTC" || value.includes("/"), "Use an explicit IANA time zone.");
+ const nullableNumber = z.number().finite().nullable();
+ const positiveInteger = z.number().int().positive();
+ const stringArray = z.array(id).max(1000);
+@@ -100,7 +101,7 @@
+   baselineChecksum: id.nullable(), participationRevisionIds: z.array(id).max(15000).optional(), participationChecksum: hash.nullable().optional(), requiredOpportunities: z.number().int().nonnegative(),
+   forecastedOpportunities: z.number().int().nonnegative(),
+   exclusionCounts: z.record(z.string().min(1).max(50), z.number().int().nonnegative()) }).strict();
+-const period = z.object({ id, start: instant, end: instant, remaining: z.number().int().nonnegative().nullable(), source: z.enum(["provider", "manager", "unknown"]), lineupLockAt: instant.nullable().optional() }).strict().refine((value) => Date.parse(value.start) < Date.parse(value.end) && (!value.lineupLockAt || Date.parse(value.lineupLockAt) <= Date.parse(value.end)), "Invalid acquisition period bounds.");
++const period = z.object({ id, start: instant, end: instant, remaining: z.number().int().nonnegative().nullable(), source: z.enum(["provider", "manager", "unknown"]), timeZone: periodTimeZone.optional(), lineupLockAt: instant.nullable().optional() }).strict().refine((value) => Date.parse(value.start) < Date.parse(value.end) && (!value.lineupLockAt || Date.parse(value.lineupLockAt) <= Date.parse(value.end)), "Invalid acquisition period bounds.");
+ const goalieMinimum = z.object({ required: z.number().int().nonnegative().nullable(), credited: z.number().int().nonnegative().nullable(), periodStart: date.nullable().optional(), periodEnd: date.nullable().optional(), counts: z.enum(["starts", "appearances", "unknown"]), penalty: z.enum(["lose_goalie_categories", "none", "unknown"]) }).strict();
+ const goaliePeriodOrdered = (value: { periodStart?: string | null; periodEnd?: string | null }) => !value.periodStart || !value.periodEnd || value.periodStart <= value.periodEnd;
+ const rules = z.object({
+--- a/web/lib/in-season/workspaceSchema.test.ts
++++ b/web/lib/in-season/workspaceSchema.test.ts
+@@ -11,6 +11,30 @@
+ const snapshot = { id: "snapshot", context, players: [], roster: [], games: [], forecasts: [], rules, lockedAssignments: [], realized: {}, opponent: null, evidence: {} };
+ 
+ describe("saved in-season workspace validation", () => {
++  it("round-trips optional period zones across rules, manager overrides and account snapshots without adding legacy defaults", () => {
++    const period = { id: "Current week", start: "2026-10-12T07:00:00.000Z", end: "2026-10-19T07:00:00.000Z",
++      timeZone: "America/New_York", remaining: 2, source: "manager" };
++    const exactRules = { ...rules, periods: [period] };
++    const parsed = saveWorkspaceSchema.parse({ workspace: { ...workspace, rules: exactRules,
++      managerRuleOverrides: { ...workspace.managerRuleOverrides, periods: [period] } },
++      snapshot: { ...snapshot, rules: exactRules }, expectedVersion: null });
++    expect(parsed.workspace.rules.periods).toEqual([period]);
++    expect(parsed.workspace.managerRuleOverrides?.periods).toEqual([period]);
++    expect(parsed.snapshot?.rules.periods).toEqual([period]);
++    const { timeZone: _zone, ...legacy } = period;
++    const unknown = { ...legacy, remaining: null };
++    const reopened = saveWorkspaceSchema.parse({ workspace: { ...workspace, rules: { ...rules, periods: [unknown] },
++      managerRuleOverrides: { periods: [unknown] } }, snapshot: null, expectedVersion: null });
++    expect(reopened.workspace.rules.periods).toEqual([unknown]);
++    expect(reopened.workspace.managerRuleOverrides?.periods).toEqual([unknown]);
++    expect(reopened.workspace.rules.periods[0]).not.toHaveProperty("timeZone");
++  });
++  it.each(["", "EST", "PST", "Not/AZone"])("rejects an invalid or ambiguous saved period zone %s", timeZone => {
++    const period = { id: "week", start: "2026-10-12T07:00:00Z", end: "2026-10-19T07:00:00Z", remaining: null, source: "manager", timeZone };
++    expect(saveWorkspaceSchema.safeParse({ workspace: { ...workspace, rules: { ...rules, periods: [period] } }, snapshot: null, expectedVersion: null }).success).toBe(false);
++    expect(saveWorkspaceSchema.safeParse({ workspace: { ...workspace, managerRuleOverrides: { periods: [period] } }, snapshot: null, expectedVersion: null }).success).toBe(false);
++    expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...snapshot, rules: { ...rules, periods: [period] } }, expectedVersion: null }).success).toBe(false);
++  });
+   it("retains acquisition presence, raw values, provider time and date scope through an account snapshot", () => {
+     const acquisitionEvidence = {
+       source: "Yahoo team roster_adds and league current_week", fetchedAt: context.asOf, asOf: context.asOf,
+--- a/web/__tests__/components/RosterScheduleOptimizer/AcquisitionRules.integration.test.tsx
++++ b/web/__tests__/components/RosterScheduleOptimizer/AcquisitionRules.integration.test.tsx
+@@ -139,3 +139,52 @@
+   expect(saved(state.workspace.context).intent).toEqual(originalIntent);
+   expect(LocalPlanningWorker.packets.every(row => row.packet.intent.steps.length === 0)).toBe(true);
+ });
++
++it.each(["manual", "yahoo"] as const)("saves and reopens explicit Monday 03:00 %s periods without applying drafts or supplying unknown future allowances", async provider => {
++  const state = fixture(provider), originalIntent = structuredClone(state.workspace.intent);
++  const first = render(<RosterScheduleOptimizer />);
++  await waitFor(() => expect(candidate()).toBeTruthy());
++  const initialRequests = state.fetch.mock.calls.length;
++  fireEvent.click(screen.getByRole("button", { name: /^League settings/ }));
++  fireEvent.click(screen.getByRole("button", { name: "Add acquisition period" }));
++  const before = saved(state.workspace.context).rules.periods[0];
++  expect(before.remaining).toBeNull(); expect(before).not.toHaveProperty("timeZone");
++  fireEvent.click(screen.getByText("Exact period times", { selector: "summary" }));
++  fireEvent.change(screen.getByLabelText("Boundary time zone"), { target: { value: "America/New_York" } });
++  fireEvent.change(screen.getByLabelText("Exact start"), { target: { value: "2026-10-05T03:00" } });
++  fireEvent.change(screen.getByLabelText("Exact end"), { target: { value: "2026-10-12T03:00" } });
++  expect(saved(state.workspace.context).rules.periods).toEqual([before]);
++  fireEvent.click(screen.getByRole("button", { name: "Apply exact boundaries" }));
++  const exact = { ...before, start: "2026-10-05T07:00:00.000Z", end: "2026-10-12T07:00:00.000Z", timeZone: "America/New_York", source: "manager" };
++  expect(saved(state.workspace.context).rules.periods).toEqual([exact]);
++  expect(saved(state.workspace.context).rules.acquisitionTiming).toBe("unknown");
++  expect(saved(state.workspace.context).rules.acquisitionCost).toBe(provider === "yahoo" ? 2 : null);
++  expect(screen.queryByLabelText("Start")).toBeNull(); expect(screen.queryByLabelText("End")).toBeNull();
++  // A rejected draft never replaces the last valid persisted exact bounds.
++  fireEvent.change(screen.getByLabelText("Exact end"), { target: { value: "2026-10-04T03:00" } });
++  fireEvent.click(screen.getByRole("button", { name: "Apply exact boundaries" }));
++  expect(screen.getByRole("alert").textContent).toContain("end must be after");
++  expect(saved(state.workspace.context).rules.periods).toEqual([exact]);
++  fireEvent.change(screen.getByLabelText("Acquisition timing"), { target: { value: "same_day" } });
++  if (provider === "manual") fireEvent.change(screen.getByLabelText("Acquisition cost"), { target: { value: "1" } });
++  fireEvent.change(screen.getByLabelText("Moves left"), { target: { value: "2" } });
++  const persisted = saved(state.workspace.context);
++  expect(persisted.rules.periods).toEqual([{ ...exact, remaining: 2 }]);
++  expect(persisted.managerRuleOverrides?.periods).toEqual(persisted.rules.periods);
++  expect(persisted.rules.acquisitionCost).toBe(provider === "yahoo" ? 2 : 1);
++  if (provider === "yahoo") expect(persisted.managerRuleOverrides).not.toHaveProperty("acquisitionCost");
++  expect(persisted.intent).toEqual(originalIntent);
++  expect(readWorkspaceHistory(window.localStorage, persisted).length).toBeGreaterThan(0);
++  expect(state.fetch).toHaveBeenCalledTimes(initialRequests);
++  expect(state.fetch.mock.calls.some(([, init]) => init?.method === "PUT")).toBe(false);
++  first.unmount(); render(<RosterScheduleOptimizer />);
++  await waitFor(() => expect(candidate()).toBeTruthy());
++  fireEvent.click(screen.getByRole("button", { name: /^League settings/ }));
++  expect(screen.getByLabelText("Exact start")).toHaveProperty("value", "2026-10-05T03:00");
++  expect(screen.getByLabelText("Exact end")).toHaveProperty("value", "2026-10-12T03:00");
++  expect(screen.getByLabelText("Boundary time zone")).toHaveProperty("value", "America/New_York");
++  expect(screen.getByLabelText("Moves left")).toHaveProperty("value", "2");
++  expect(saved(state.workspace.context).managerRuleOverrides).toEqual(persisted.managerRuleOverrides);
++  expect(saved(state.workspace.context).intent).toEqual(originalIntent);
++  expect(LocalPlanningWorker.packets.every(row => row.packet.intent.steps.length === 0)).toBe(true);
++});
+--- /dev/null
++++ b/web/components/RosterScheduleOptimizer/AcquisitionPeriodTimes.tsx
+@@ -0,0 +1,41 @@
++import { useId, useState } from "react";
++import type { AcquisitionPeriod } from "lib/rosterScheduleOptimizer/planningTypes";
++import { periodLocalTime, resolvePeriodBoundary } from "lib/rosterScheduleOptimizer/periodBoundaries";
++import styles from "./RosterScheduleOptimizer.module.scss";
++
++/** Exact boundary edits are applied together; incomplete drafts leave the saved period intact. */
++export default function AcquisitionPeriodTimes({ period, leagueTimeZone, onApply }: {
++  period: AcquisitionPeriod; leagueTimeZone: string; onApply: (period: AcquisitionPeriod) => void;
++}) {
++  const zone = period.timeZone ?? leagueTimeZone;
++  const [draft, setDraft] = useState(() => ({ timeZone: zone, start: periodLocalTime(period.start, zone), end: periodLocalTime(period.end, zone) }));
++  const [error, setError] = useState<string | null>(null);
++  const errorId = useId();
++  const edit = (field: keyof typeof draft, value: string) => { setDraft(current => ({ ...current, [field]: value })); setError(null); };
++  const apply = () => {
++    const timeZone = draft.timeZone.trim();
++    const start = resolvePeriodBoundary(draft.start, timeZone), end = resolvePeriodBoundary(draft.end, timeZone);
++    if (!start.instant) { setError(`Exact start: ${start.error}`); return; }
++    if (!end.instant) { setError(`Exact end: ${end.error}`); return; }
++    if (Date.parse(start.instant) >= Date.parse(end.instant)) { setError("Exact end must be after exact start."); return; }
++    if (period.lineupLockAt && Date.parse(period.lineupLockAt) > Date.parse(end.instant)) { setError("Exact end must not precede the existing lineup lock."); return; }
++    setError(null);
++    onApply({ ...period, start: start.instant, end: end.instant, timeZone, source: "manager" });
++  };
++  return <details className={styles.settings} open={Boolean(period.timeZone)}>
++    <summary>Exact period times</summary>
++    <p>Start is included; end is excluded. Changes stay in this form until you apply them. The allowance stays unchanged.</p>
++    <div className={styles.ruleFields}>
++      <label>Boundary time zone<input value={draft.timeZone} onChange={event => edit("timeZone", event.target.value)} maxLength={200}
++        spellCheck={false} aria-invalid={Boolean(error)} aria-describedby={error ? errorId : undefined} /></label>
++      <label>Exact start<input type="datetime-local" step="0.001" value={draft.start} onChange={event => edit("start", event.target.value)}
++        aria-invalid={Boolean(error)} aria-describedby={error ? errorId : undefined} /></label>
++      <label>Exact end<input type="datetime-local" step="0.001" value={draft.end} onChange={event => edit("end", event.target.value)}
++        aria-invalid={Boolean(error)} aria-describedby={error ? errorId : undefined} /></label>
++      <button type="button" onClick={apply}>Apply exact boundaries</button>
++    </div>
++    <p>Use an IANA zone such as America/New_York for daylight saving or Etc/GMT+5 for fixed UTC−05:00. Repeated or nonexistent local times require a different unambiguous entry.</p>
++    {period.timeZone && <p>Saved boundary time zone: {period.timeZone}. Exact instants are retained when you reopen this period.</p>}
++    {error && <p id={errorId} role="alert">{error}</p>}
++  </details>;
++}
+--- /dev/null
++++ b/web/components/RosterScheduleOptimizer/AcquisitionPeriodTimes.test.tsx
+@@ -0,0 +1,59 @@
++import { cleanup, fireEvent, render, screen } from "@testing-library/react";
++import { afterEach, expect, it, vi } from "vitest";
++import type { AcquisitionPeriod } from "lib/rosterScheduleOptimizer/planningTypes";
++import AcquisitionPeriodTimes from "./AcquisitionPeriodTimes";
++
++afterEach(cleanup);
++const period: AcquisitionPeriod = { id: "Current week", start: "2026-10-12T00:00:00Z", end: "2026-10-19T00:00:00Z",
++  remaining: null, source: "unknown", lineupLockAt: "2026-10-18T23:00:00Z" };
++function edit(start = "2026-10-12T03:00", end = "2026-10-19T03:00", timeZone = "America/New_York") {
++  fireEvent.change(screen.getByLabelText("Boundary time zone"), { target: { value: timeZone } });
++  fireEvent.change(screen.getByLabelText("Exact start"), { target: { value: start } });
++  fireEvent.change(screen.getByLabelText("Exact end"), { target: { value: end } });
++}
++function apply() { fireEvent.click(screen.getByRole("button", { name: "Apply exact boundaries" })); }
++
++it("applies both Monday 03:00 boundaries together without inventing an allowance or losing the lock", () => {
++  const onApply = vi.fn();
++  render(<AcquisitionPeriodTimes period={period} leagueTimeZone="UTC" onApply={onApply} />);
++  fireEvent.click(screen.getByText("Exact period times", { selector: "summary" }));
++  edit();
++  expect(onApply).not.toHaveBeenCalled();
++  apply();
++  expect(onApply).toHaveBeenCalledExactlyOnceWith({ ...period, start: "2026-10-12T07:00:00.000Z",
++    end: "2026-10-19T07:00:00.000Z", timeZone: "America/New_York", source: "manager" });
++});
++
++it.each([
++  ["", "2026-10-19T03:00", "America/New_York", /complete local date and time/],
++  ["2026-10-12T03:00", "", "America/New_York", /complete local date and time/],
++  ["2026-10-12T03:00", "2026-10-19T03:00", "EST", /explicit IANA time zone/],
++  ["2026-03-08T02:30", "2026-03-09T03:00", "America/New_York", /does not exist/],
++  ["2026-11-01T01:30", "2026-11-02T03:00", "America/New_York", /occurs twice/],
++  ["2026-10-19T03:00", "2026-10-12T03:00", "America/New_York", /end must be after/],
++  ["2026-10-12T03:00", "2026-10-12T03:00", "America/New_York", /end must be after/],
++  ["2026-10-12T03:00", "2026-10-18T03:00", "America/New_York", /existing lineup lock/],
++] as const)("keeps the saved period intact for an invalid boundary draft %s / %s / %s", (start, end, zone, message) => {
++  const onApply = vi.fn();
++  render(<AcquisitionPeriodTimes period={period} leagueTimeZone="UTC" onApply={onApply} />);
++  fireEvent.click(screen.getByText("Exact period times", { selector: "summary" }));
++  edit(start, end, zone); apply();
++  expect(screen.getByRole("alert").textContent).toMatch(message);
++  expect(onApply).not.toHaveBeenCalled();
++  expect(screen.getByLabelText("Exact start").getAttribute("aria-describedby")).toBe(screen.getByRole("alert").id);
++});
++
++it("reopens exact instants in their saved zone independently of the league display zone", () => {
++  const saved: AcquisitionPeriod = { ...period, start: "2026-10-26T07:00:00.000Z", end: "2026-11-02T08:00:00.000Z",
++    timeZone: "America/New_York", remaining: 2, source: "manager" };
++  const onApply = vi.fn();
++  const first = render(<AcquisitionPeriodTimes period={saved} leagueTimeZone="UTC" onApply={onApply} />);
++  expect(screen.getByLabelText("Boundary time zone")).toHaveProperty("value", "America/New_York");
++  expect(screen.getByLabelText("Exact start")).toHaveProperty("value", "2026-10-26T03:00");
++  expect(screen.getByLabelText("Exact end")).toHaveProperty("value", "2026-11-02T03:00");
++  expect(screen.getByText("Exact period times").closest("details")?.open).toBe(true);
++  first.unmount();
++  render(<AcquisitionPeriodTimes period={JSON.parse(JSON.stringify(saved))} leagueTimeZone="America/Chicago" onApply={onApply} />);
++  apply();
++  expect(onApply).toHaveBeenCalledExactlyOnceWith(saved);
++});
+--- /dev/null
++++ b/web/lib/rosterScheduleOptimizer/periodBoundaries.ts
+@@ -0,0 +1,34 @@
++import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
++
++/** Avoid ambiguous abbreviations such as EST; exact period bounds still store instants. */
++export function explicitPeriodTimeZone(zone: string): boolean {
++  if (zone !== "UTC" && !zone.includes("/")) return false;
++  try { new Intl.DateTimeFormat("en", { timeZone: zone }); return true; } catch { return false; }
++}
++
++export function periodLocalTime(instant: string, zone: string): string {
++  try { return formatInTimeZone(instant, zone, "yyyy-MM-dd'T'HH:mm:ss.SSS"); } catch { return ""; }
++}
++
++/** Resolve only a single, exactly round-tripping local time; never guess across a DST gap/fold. */
++export function resolvePeriodBoundary(value: string, zone: string): { instant: string | null; error: string | null } {
++  if (!explicitPeriodTimeZone(zone)) return { instant: null, error: "Use an explicit IANA time zone, such as America/New_York or UTC." };
++  const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?$/.exec(value);
++  if (!match) return { instant: null, error: "Enter a complete local date and time." };
++  const normalized = `${match[1]}T${match[2]}:${match[3]}:${match[4] ?? "00"}.${(match[5] ?? "").padEnd(3, "0")}`;
++  const wall = Date.parse(`${normalized}Z`);
++  if (!Number.isFinite(wall) || new Date(wall).toISOString() !== `${normalized}Z`) return { instant: null, error: "Enter a valid calendar date and time." };
++  const seed = fromZonedTime(normalized, zone).getTime();
++  const offsets = new Set<number>();
++  // Neighboring days expose the offsets on each side of a daylight-saving transition.
++  for (const days of [-2, -1, 0, 1, 2]) {
++    const probe = seed + days * 86400000;
++    offsets.add(Date.parse(`${periodLocalTime(new Date(probe).toISOString(), zone)}Z`) - probe);
++  }
++  const matches = [...offsets].map(offset => wall - offset)
++    .filter(instant => Number.isFinite(instant) && periodLocalTime(new Date(instant).toISOString(), zone) === normalized);
++  if (matches.length !== 1) return { instant: null, error: matches.length
++    ? "This local time occurs twice during a clock change. Choose an unambiguous time or an explicit fixed-offset IANA zone."
++    : "This local time does not exist during a clock change. Choose a valid local time." };
++  return { instant: new Date(matches[0]).toISOString(), error: null };
++}
+--- /dev/null
++++ b/web/lib/rosterScheduleOptimizer/periodBoundaries.test.ts
+@@ -0,0 +1,34 @@
++import { describe, expect, it } from "vitest";
++import { explicitPeriodTimeZone, periodLocalTime, resolvePeriodBoundary } from "./periodBoundaries";
++
++describe("explicit acquisition-period boundaries", () => {
++  it.each([
++    ["2026-10-12T03:00", "2026-10-12T07:00:00.000Z"],
++    ["2026-10-19T03:00", "2026-10-19T07:00:00.000Z"],
++    ["2026-03-02T03:00", "2026-03-02T08:00:00.000Z"],
++    ["2026-03-09T03:00", "2026-03-09T07:00:00.000Z"],
++    ["2026-10-26T03:00", "2026-10-26T07:00:00.000Z"],
++    ["2026-11-02T03:00", "2026-11-02T08:00:00.000Z"],
++  ])("preserves Monday03:00 New York for %s", (local, instant) => {
++    expect(resolvePeriodBoundary(local, "America/New_York")).toEqual({ instant, error: null });
++    expect(periodLocalTime(instant, "America/New_York")).toBe(`${local}:00.000`);
++  });
++  it("uses exact instants across167and169hour weeks and preserves sub-minute precision", () => {
++    const at = (local: string) => Date.parse(resolvePeriodBoundary(local, "America/New_York").instant!);
++    expect((at("2026-03-09T03:00") - at("2026-03-02T03:00")) / 3600000).toBe(167);
++    expect((at("2026-11-02T03:00") - at("2026-10-26T03:00")) / 3600000).toBe(169);
++    expect(resolvePeriodBoundary("2026-10-12T03:01:02.123", "America/New_York").instant).toBe("2026-10-12T07:01:02.123Z");
++    expect(resolvePeriodBoundary("2026-10-12T03:00", "Etc/GMT+5").instant).toBe("2026-10-12T08:00:00.000Z");
++  });
++  it.each(["", "2026-02-30T03:00", "2026-10-12T25:00", "2026-10-12T03:61", "2026-10-12", "2026-10-12T03:00Z"])("rejects invalid local input %s", value => {
++    expect(resolvePeriodBoundary(value, "America/New_York")).toMatchObject({ instant: null, error: expect.any(String) });
++  });
++  it.each(["", "EST", "PST", "Not/AZone"])("does not guess ambiguous/invalid zone %s", zone => {
++    expect(explicitPeriodTimeZone(zone)).toBe(false);
++    expect(resolvePeriodBoundary("2026-10-12T03:00", zone).instant).toBeNull();
++  });
++  it("rejects nonexistent and repeated local times rather than selecting an offset", () => {
++    expect(resolvePeriodBoundary("2026-03-08T02:30", "America/New_York")).toMatchObject({ instant: null, error: expect.stringContaining("does not exist") });
++    expect(resolvePeriodBoundary("2026-11-01T01:30", "America/New_York")).toMatchObject({ instant: null, error: expect.stringContaining("occurs twice") });
++  });
++});

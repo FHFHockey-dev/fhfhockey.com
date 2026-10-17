@@ -1,0 +1,14 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-parent-persistence.test.ts --config ../tasks/ifttt-integration-2026-10-16/durable-occurrence-increment/vitest.config.mjs
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-parent-persistence.test.ts (5 tests) 1039ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  00:49:25
+   Duration  1.48s (transform 146ms, setup 16ms, collect 233ms, tests 1.04s, environment 0ms, prepare 31ms)
+

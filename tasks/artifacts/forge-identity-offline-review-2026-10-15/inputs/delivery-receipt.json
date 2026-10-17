@@ -1,0 +1,16 @@
+{
+  "status": "exact_bytes_verified_delivery_only",
+  "verified_at": "2026-10-15T15:02:11.818632+00:00",
+  "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-identity-offline-review-2026-10-15/inputs/fhfh-identity-read-results-2026-10-15.zip",
+  "library_file_id": "libfile_25810906e36c819180a6a94e6b629b9c",
+  "file_id": "file_0000000051a8824380efad7ed9e209dd",
+  "version": 0,
+  "bytes": 53535,
+  "sha256": "8e1c0ae10c0ef50251bd3b93ad443e1663adcd63e198219a55b574643357c47d",
+  "download_attempts_this_authorization": 1,
+  "source": "Scout-provided signed Library transfer; no new coordinator prepare call",
+  "archive_extracted": false,
+  "identity_rows_decoded": false,
+  "identity_review": "pending existing evaluator",
+  "authority": "fresh identity-only review; no A/B/model execution"
+}

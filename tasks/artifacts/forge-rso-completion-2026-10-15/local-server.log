@@ -1,0 +1,698 @@
+
+> web@0.1.0 dev:stable
+> node scripts/dev-stable.mjs -p 3108
+
+   ▲ Next.js 15.5.22
+   - Local:        http://localhost:3108
+   - Network:      http://0.0.0.0:3108
+   - Environments: .env.development.local, .env.local, .env.development
+   - Experiments (use with caution):
+     ✓ externalDir
+
+ ✓ Starting...
+ ✓ Ready in 1150ms
+ ○ Compiling /roster-schedule-optimizer ...
+ ⚠ ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/CandidateCard.module.scss
+Warning
+
+(49:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/CandidateCard.module.scss
+Warning
+
+(215:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+Deprecation Warning on line 35, column 12 of file:///Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/InfoTooltip.module.scss:35:12:
+Using / for division outside of calc() is deprecated and will be removed in Dart Sass 2.0.0.
+
+Recommendation: math.div(v.$font-size-sm, 1.5) or calc(v.$font-size-sm / 1.5)
+
+More info and automated migrator: https://sass-lang.com/d/slash-div
+
+35 |   font: 400 v.$font-size-sm/1.5 v.$font-family-primary;
+
+components/RosterScheduleOptimizer/InfoTooltip.module.scss 36:13  root stylesheet
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+./components/RosterScheduleOptimizer/InfoTooltip.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+Warning
+
+(218:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+Warning
+
+(1951:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+Warning
+
+(49:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+Warning
+
+(215:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+
+./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+Deprecation Warning on line 35, column 12 of file:///Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/InfoTooltip.module.scss:35:12:
+Using / for division outside of calc() is deprecated and will be removed in Dart Sass 2.0.0.
+
+Recommendation: math.div(v.$font-size-sm, 1.5) or calc(v.$font-size-sm / 1.5)
+
+More info and automated migrator: https://sass-lang.com/d/slash-div
+
+35 |   font: 400 v.$font-size-sm/1.5 v.$font-family-primary;
+
+components/RosterScheduleOptimizer/InfoTooltip.module.scss 36:13  root stylesheet
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+./components/RosterScheduleOptimizer/InfoTooltip.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+Warning
+
+(218:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+Warning
+
+(1951:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+<w> [webpack.cache.PackFileCacheStrategy] Skipped not serializable cache item 'Compilation/modules|javascript/auto|/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss|pages-dir-browser': No serializer registered for Warning
+<w> while serializing webpack/lib/cache/PackFileCacheStrategy.PackContentItems -> webpack/lib/NormalModule -> Array { 2 items } -> webpack/lib/ModuleWarning -> Warning
+<w> [webpack.cache.PackFileCacheStrategy] Skipped not serializable cache item 'Compilation/modules|javascript/auto|/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/CandidateCard.module.scss|pages-dir-browser': No serializer registered for Warning
+<w> while serializing webpack/lib/cache/PackFileCacheStrategy.PackContentItems -> webpack/lib/NormalModule -> Array { 2 items } -> webpack/lib/ModuleWarning -> Warning
+ GET /roster-schedule-optimizer 200 in 2805ms
+<w> [webpack.cache.PackFileCacheStrategy] Skipped not serializable cache item 'Compilation/modules|javascript/auto|/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[7].oneOf[9].use[0]!/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[7].oneOf[9].use[1]!/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[7].oneOf[9].use[2]!/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[7].oneOf[9].use[3]!/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss|pages-dir-node': No serializer registered for Warning
+<w> while serializing webpack/lib/cache/PackFileCacheStrategy.PackContentItems -> webpack/lib/NormalModule -> Array { 2 items } -> webpack/lib/ModuleWarning -> Warning
+<w> [webpack.cache.PackFileCacheStrategy] Skipped not serializable cache item 'Compilation/modules|javascript/auto|/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[7].oneOf[9].use[0]!/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[7].oneOf[9].use[1]!/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[7].oneOf[9].use[2]!/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[7].oneOf[9].use[3]!/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/CandidateCard.module.scss|pages-dir-node': No serializer registered for Warning
+<w> while serializing webpack/lib/cache/PackFileCacheStrategy.PackContentItems -> webpack/lib/NormalModule -> Array { 2 items } -> webpack/lib/ModuleWarning -> Warning
+ ⚠ Cross origin request detected from 127.0.0.1 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+ GET /roster-schedule-optimizer 200 in 217ms
+ ⚠ ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/CandidateCard.module.scss
+Warning
+
+(49:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/CandidateCard.module.scss
+Warning
+
+(215:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+Deprecation Warning on line 35, column 12 of file:///Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/InfoTooltip.module.scss:35:12:
+Using / for division outside of calc() is deprecated and will be removed in Dart Sass 2.0.0.
+
+Recommendation: math.div(v.$font-size-sm, 1.5) or calc(v.$font-size-sm / 1.5)
+
+More info and automated migrator: https://sass-lang.com/d/slash-div
+
+35 |   font: 400 v.$font-size-sm/1.5 v.$font-family-primary;
+
+components/RosterScheduleOptimizer/InfoTooltip.module.scss 36:13  root stylesheet
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+./components/RosterScheduleOptimizer/InfoTooltip.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+Warning
+
+(218:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+Warning
+
+(1951:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+Warning
+
+(49:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+Warning
+
+(215:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+
+./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+Deprecation Warning on line 35, column 12 of file:///Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/InfoTooltip.module.scss:35:12:
+Using / for division outside of calc() is deprecated and will be removed in Dart Sass 2.0.0.
+
+Recommendation: math.div(v.$font-size-sm, 1.5) or calc(v.$font-size-sm / 1.5)
+
+More info and automated migrator: https://sass-lang.com/d/slash-div
+
+35 |   font: 400 v.$font-size-sm/1.5 v.$font-family-primary;
+
+components/RosterScheduleOptimizer/InfoTooltip.module.scss 36:13  root stylesheet
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+./components/RosterScheduleOptimizer/InfoTooltip.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+Warning
+
+(218:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+Warning
+
+(1951:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+ ⚠ ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/CandidateCard.module.scss
+Warning
+
+(49:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/CandidateCard.module.scss
+Warning
+
+(215:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+Deprecation Warning on line 35, column 12 of file:///Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/InfoTooltip.module.scss:35:12:
+Using / for division outside of calc() is deprecated and will be removed in Dart Sass 2.0.0.
+
+Recommendation: math.div(v.$font-size-sm, 1.5) or calc(v.$font-size-sm / 1.5)
+
+More info and automated migrator: https://sass-lang.com/d/slash-div
+
+35 |   font: 400 v.$font-size-sm/1.5 v.$font-family-primary;
+
+components/RosterScheduleOptimizer/InfoTooltip.module.scss 36:13  root stylesheet
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+./components/RosterScheduleOptimizer/InfoTooltip.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+Warning
+
+(218:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+Warning
+
+(1951:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+Warning
+
+(49:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+Warning
+
+(215:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+
+./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+Deprecation Warning on line 35, column 12 of file:///Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/InfoTooltip.module.scss:35:12:
+Using / for division outside of calc() is deprecated and will be removed in Dart Sass 2.0.0.
+
+Recommendation: math.div(v.$font-size-sm, 1.5) or calc(v.$font-size-sm / 1.5)
+
+More info and automated migrator: https://sass-lang.com/d/slash-div
+
+35 |   font: 400 v.$font-size-sm/1.5 v.$font-family-primary;
+
+components/RosterScheduleOptimizer/InfoTooltip.module.scss 36:13  root stylesheet
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+./components/RosterScheduleOptimizer/InfoTooltip.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+Warning
+
+(218:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+Warning
+
+(1951:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+ ⚠ ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/CandidateCard.module.scss
+Warning
+
+(49:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/CandidateCard.module.scss
+Warning
+
+(215:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+Deprecation Warning on line 35, column 12 of file:///Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/InfoTooltip.module.scss:35:12:
+Using / for division outside of calc() is deprecated and will be removed in Dart Sass 2.0.0.
+
+Recommendation: math.div(v.$font-size-sm, 1.5) or calc(v.$font-size-sm / 1.5)
+
+More info and automated migrator: https://sass-lang.com/d/slash-div
+
+35 |   font: 400 v.$font-size-sm/1.5 v.$font-family-primary;
+
+components/RosterScheduleOptimizer/InfoTooltip.module.scss 36:13  root stylesheet
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+./components/RosterScheduleOptimizer/InfoTooltip.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+Warning
+
+(218:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+Warning
+
+(1951:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+Warning
+
+(49:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+Warning
+
+(215:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+
+./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+Deprecation Warning on line 35, column 12 of file:///Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/InfoTooltip.module.scss:35:12:
+Using / for division outside of calc() is deprecated and will be removed in Dart Sass 2.0.0.
+
+Recommendation: math.div(v.$font-size-sm, 1.5) or calc(v.$font-size-sm / 1.5)
+
+More info and automated migrator: https://sass-lang.com/d/slash-div
+
+35 |   font: 400 v.$font-size-sm/1.5 v.$font-family-primary;
+
+components/RosterScheduleOptimizer/InfoTooltip.module.scss 36:13  root stylesheet
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+./components/RosterScheduleOptimizer/InfoTooltip.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+Warning
+
+(218:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+Warning
+
+(1951:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+ ⚠ ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/CandidateCard.module.scss
+Warning
+
+(49:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/CandidateCard.module.scss
+Warning
+
+(215:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+Deprecation Warning on line 35, column 12 of file:///Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/InfoTooltip.module.scss:35:12:
+Using / for division outside of calc() is deprecated and will be removed in Dart Sass 2.0.0.
+
+Recommendation: math.div(v.$font-size-sm, 1.5) or calc(v.$font-size-sm / 1.5)
+
+More info and automated migrator: https://sass-lang.com/d/slash-div
+
+35 |   font: 400 v.$font-size-sm/1.5 v.$font-family-primary;
+
+components/RosterScheduleOptimizer/InfoTooltip.module.scss 36:13  root stylesheet
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+./components/RosterScheduleOptimizer/InfoTooltip.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+Warning
+
+(218:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+Warning
+
+(1951:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[1]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[8].oneOf[9].use[2]!./node_modules/next/dist/build/webpack/loaders/resolve-url-loader/index.js??ruleSet[1].rules[8].oneOf[9].use[3]!./node_modules/next/dist/compiled/sass-loader/cjs.js??ruleSet[1].rules[8].oneOf[9].use[4]!./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+Warning
+
+(49:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+Warning
+
+(215:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/CandidateCard.module.scss
+./components/RosterScheduleOptimizer/CandidateCard.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+
+./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+Deprecation Warning on line 35, column 12 of file:///Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/InfoTooltip.module.scss:35:12:
+Using / for division outside of calc() is deprecated and will be removed in Dart Sass 2.0.0.
+
+Recommendation: math.div(v.$font-size-sm, 1.5) or calc(v.$font-size-sm / 1.5)
+
+More info and automated migrator: https://sass-lang.com/d/slash-div
+
+35 |   font: 400 v.$font-size-sm/1.5 v.$font-family-primary;
+
+components/RosterScheduleOptimizer/InfoTooltip.module.scss 36:13  root stylesheet
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/InfoTooltip.module.scss
+./components/RosterScheduleOptimizer/InfoTooltip.tsx
+./components/RosterScheduleOptimizer/CandidateBrowser.tsx
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+Warning
+
+(218:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+Warning
+
+(1951:3) autoprefixer: start value has mixed support, consider using flex-start instead
+
+Import trace for requested module:
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+./components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+./components/RosterScheduleOptimizer/index.ts
+./pages/roster-schedule-optimizer.tsx
+[?25h

@@ -1,0 +1,197 @@
+{
+  "observed_at": "2026-10-15T05:43:20.071126+00:00",
+  "head": "a8f58de6178e282acd3a71851c66f4a56b119f14",
+  "master": "90d3d5963f47dccfe690d5582dae3d23a598e16d",
+  "limit": "Local Git refs; no fetch, deployment query or runtime verification.",
+  "files": [
+    {
+      "path": "web/components/PlayerStats/PlayerRadarChart.tsx",
+      "sha256": "bc20900709ff07447f6078dcf0fda7de7b62b18a5f365cc1136f429baa1a2954",
+      "worktree_blob": "3d52c645f1d2968a4d584f4e87acaafe59073abe",
+      "head_blob": "3d52c645f1d2968a4d584f4e87acaafe59073abe",
+      "master_blob": "3d52c645f1d2968a4d584f4e87acaafe59073abe",
+      "matches_local_master": true,
+      "matches_HEAD": true
+    },
+    {
+      "path": "web/components/PlayerStats/PlayerRadarChart.test.tsx",
+      "sha256": "c4e267f530e2635ed8276c11ea6410fcc48267b4a6d404eed13a23d69278780f",
+      "worktree_blob": "8f3bc3e4041b61adac61482e2addb6708a33be63",
+      "head_blob": "8f3bc3e4041b61adac61482e2addb6708a33be63",
+      "master_blob": "8f3bc3e4041b61adac61482e2addb6708a33be63",
+      "matches_local_master": true,
+      "matches_HEAD": true
+    },
+    {
+      "path": "web/pages/stats/player/[playerId].tsx",
+      "sha256": "255097f6289c49bc6e111bd0ba6c5705d29c21be8bdd57dcbe7d8321252d79f6",
+      "worktree_blob": "9eac5984ab17e6ac815b68671efdd7b803aea096",
+      "head_blob": "9eac5984ab17e6ac815b68671efdd7b803aea096",
+      "master_blob": "9eac5984ab17e6ac815b68671efdd7b803aea096",
+      "matches_local_master": true,
+      "matches_HEAD": true
+    },
+    {
+      "path": "web/components/GameStateAnalysis/GameStateAnalysis.tsx",
+      "sha256": "aeb1f7c8273d532c26cf58cfbbc3fa6129358d2a1e1269c35b772a6cb5b15ab8",
+      "worktree_blob": "c1599b1c85200df8ba8d8a14ab5a7f944089b171",
+      "head_blob": "c1599b1c85200df8ba8d8a14ab5a7f944089b171",
+      "master_blob": "c1599b1c85200df8ba8d8a14ab5a7f944089b171",
+      "matches_local_master": true,
+      "matches_HEAD": true
+    },
+    {
+      "path": "web/components/TeamTabNavigation/TeamTabNavigation.tsx",
+      "sha256": "ce601088433bdfa422dabc86df20fa53b6b611e8eb461aeb34ec963711a9bed4",
+      "worktree_blob": "a63ce32fc92fdd06bb6166ea9dbf4fa4f2da4e65",
+      "head_blob": "a63ce32fc92fdd06bb6166ea9dbf4fa4f2da4e65",
+      "master_blob": "a63ce32fc92fdd06bb6166ea9dbf4fa4f2da4e65",
+      "matches_local_master": true,
+      "matches_HEAD": true
+    },
+    {
+      "path": "web/pages/stats/team/[teamAbbreviation].tsx",
+      "sha256": "6348c1d621796f13d7beec0b9a152aeea436d947e2cffae256f5c057e45704bd",
+      "worktree_blob": "18b1f306cfbed8384c89eed94757d872534298df",
+      "head_blob": "18b1f306cfbed8384c89eed94757d872534298df",
+      "master_blob": "18b1f306cfbed8384c89eed94757d872534298df",
+      "matches_local_master": true,
+      "matches_HEAD": true
+    },
+    {
+      "path": "web/prep-chef/home.md",
+      "sha256": "3cfd2f7ad522d86212471b738af117d055ec2547dd362c065bd643fb288d9fbf",
+      "worktree_blob": "570bf8f774cee71668db42ab56548addf06704bb",
+      "head_blob": "570bf8f774cee71668db42ab56548addf06704bb",
+      "master_blob": "570bf8f774cee71668db42ab56548addf06704bb",
+      "matches_local_master": true,
+      "matches_HEAD": true
+    },
+    {
+      "path": "web/components/TeamStandingsChart/TeamStandingsChart.module.scss",
+      "sha256": "835089c7b103c865f6954d7ac2f14ec35287ed669520431ec9e3e174094d45a0",
+      "worktree_blob": "fc00039816196c7f6389280ac4ad7ce75dbc7286",
+      "head_blob": "fc00039816196c7f6389280ac4ad7ce75dbc7286",
+      "master_blob": "fc00039816196c7f6389280ac4ad7ce75dbc7286",
+      "matches_local_master": true,
+      "matches_HEAD": true
+    },
+    {
+      "path": "web/components/TeamStandingsChart/TeamStandingsChart.tsx",
+      "sha256": "b5047be20d427fa69165ca403798ac252638bde9b3b15e88599dff6a6d70efca",
+      "worktree_blob": "d4ea82b9652ae57fbbf36f2418197b98cd337a5f",
+      "head_blob": "d4ea82b9652ae57fbbf36f2418197b98cd337a5f",
+      "master_blob": "d4ea82b9652ae57fbbf36f2418197b98cd337a5f",
+      "matches_local_master": true,
+      "matches_HEAD": true
+    },
+    {
+      "path": "web/pages/index.tsx",
+      "sha256": "693b28a378935426864a01af658b306902b79bfd66d5cd7e96af2e34240dd4ef",
+      "worktree_blob": "7f56c4470c34e071866116eae963ae014bedcf8b",
+      "head_blob": "7f56c4470c34e071866116eae963ae014bedcf8b",
+      "master_blob": "7f56c4470c34e071866116eae963ae014bedcf8b",
+      "matches_local_master": true,
+      "matches_HEAD": true
+    },
+    {
+      "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+      "sha256": "8331d3c3efedea28b969c0adb05e14aeac4de4258f986a561088182d71099cc3",
+      "worktree_blob": "7d9a475890ac9947fcc330ea9a83a725ea6403c9",
+      "head_blob": "7d9a475890ac9947fcc330ea9a83a725ea6403c9",
+      "master_blob": "7d9a475890ac9947fcc330ea9a83a725ea6403c9",
+      "matches_local_master": true,
+      "matches_HEAD": true
+    },
+    {
+      "path": "tasks/TASKS/repository-audit-remediation/security-rpc-rollout-runbook.md",
+      "sha256": "ac7cc30f370d4933548333c18ed5f800a02fb6e64750000e8c58b31856910698",
+      "worktree_blob": "d10ea867d500a1fa994578a292e63d81973bb1cd",
+      "head_blob": "d10ea867d500a1fa994578a292e63d81973bb1cd",
+      "master_blob": "d10ea867d500a1fa994578a292e63d81973bb1cd",
+      "matches_local_master": true,
+      "matches_HEAD": true
+    },
+    {
+      "path": "tasks/draft-dashboard-youtube-outline.md",
+      "sha256": "13702fe82ea63f164d507f484fd8099ce0a4a7e4918214f08b02219f589dab04",
+      "worktree_blob": "a2f937f45d9ac70893cac528cb0f41771155e667",
+      "head_blob": "a2f937f45d9ac70893cac528cb0f41771155e667",
+      "master_blob": "a2f937f45d9ac70893cac528cb0f41771155e667",
+      "matches_local_master": true,
+      "matches_HEAD": true
+    },
+    {
+      "path": "tasks/draft-pro/LEDGER.md",
+      "sha256": "6d8f407817f03a0b24bf902e7878764eb975a2edee34b7fd8748add7ff2a1c03",
+      "worktree_blob": "1827f32096cba397313dafa6271c1a941f9964d3",
+      "head_blob": "1827f32096cba397313dafa6271c1a941f9964d3",
+      "master_blob": "1827f32096cba397313dafa6271c1a941f9964d3",
+      "matches_local_master": true,
+      "matches_HEAD": true
+    },
+    {
+      "path": "tasks/TASKS/wigo-charts/tasks-prd-wigo-charts-optimization.md",
+      "sha256": "967554e7bc10f282e17d53c082a51bdeb7945e0a3ee48a351cf0dcaeaf013f09",
+      "worktree_blob": "b7f7b477c7a072c1df6472d144180a906db6256c",
+      "head_blob": "b7f7b477c7a072c1df6472d144180a906db6256c",
+      "master_blob": "b7f7b477c7a072c1df6472d144180a906db6256c",
+      "matches_local_master": true,
+      "matches_HEAD": true
+    },
+    {
+      "path": "web/pages/api/v1/db/shift-charts.ts",
+      "sha256": "37a5d4a4143d3a383a986f7befcce9efa73337ff5af26a0f6325110dc332b5ed",
+      "worktree_blob": "f0bb1265bbbe32c6029c8ec0d63c71e453ff71d1",
+      "head_blob": "f0bb1265bbbe32c6029c8ec0d63c71e453ff71d1",
+      "master_blob": "f0bb1265bbbe32c6029c8ec0d63c71e453ff71d1",
+      "matches_local_master": true,
+      "matches_HEAD": true
+    },
+    {
+      "path": "web/pages/api/v1/projections.ts",
+      "sha256": "29f6bbcdbbbbaaa619ec866d2c61eb312e7d4266a5a2fac07f9f062cdb35790d",
+      "worktree_blob": "137e6ccfa5b4aa99ec96ed8f61d01b68e69e6be0",
+      "head_blob": "137e6ccfa5b4aa99ec96ed8f61d01b68e69e6be0",
+      "master_blob": "137e6ccfa5b4aa99ec96ed8f61d01b68e69e6be0",
+      "matches_local_master": true,
+      "matches_HEAD": true
+    },
+    {
+      "path": "web/lib/player-forecasts/baselineGeneration.ts",
+      "sha256": "08626f116ef9df45c50ab98ce39680d4b69b8c924b80db8742200d8155f46591",
+      "worktree_blob": "e9c27acbe96c7f8f4d3af6768bad6d03ae05e00b",
+      "head_blob": "487029b456125b7690f3ebf66b778a178f69c55f",
+      "master_blob": "487029b456125b7690f3ebf66b778a178f69c55f",
+      "matches_local_master": false,
+      "matches_HEAD": false
+    },
+    {
+      "path": "web/pages/underlying-stats/index.tsx",
+      "sha256": "e18bbeaa7ca96eb5d7ea0c0dfb73abfaf72a5e33e14f00afb3ab411294e1f3e9",
+      "worktree_blob": "f8074a535353afa33665f503fcbfdbe132db9dbe",
+      "head_blob": "f8074a535353afa33665f503fcbfdbe132db9dbe",
+      "master_blob": "f8074a535353afa33665f503fcbfdbe132db9dbe",
+      "matches_local_master": true,
+      "matches_HEAD": true
+    },
+    {
+      "path": "web/__tests__/pages/underlying-stats/index.test.tsx",
+      "sha256": "5fbc6863a3acba97646c3e7c86ce9e1788b6a5579a4a87721ba81b558d495732",
+      "worktree_blob": "86ee4db9b256f656d151e07e984822c1a8e2ff52",
+      "head_blob": "86ee4db9b256f656d151e07e984822c1a8e2ff52",
+      "master_blob": "86ee4db9b256f656d151e07e984822c1a8e2ff52",
+      "matches_local_master": true,
+      "matches_HEAD": true
+    },
+    {
+      "path": ".github/workflows/rankings-e2e.yml",
+      "sha256": "9e96d8595ce6db6de13211209123cee0c2b351a2b54879a256d1e070a3d362d7",
+      "worktree_blob": "4e52abfc076ed95fd3ab37fc95fd79940d5cb787",
+      "head_blob": "4e52abfc076ed95fd3ab37fc95fd79940d5cb787",
+      "master_blob": "4e52abfc076ed95fd3ab37fc95fd79940d5cb787",
+      "matches_local_master": true,
+      "matches_HEAD": true
+    }
+  ]
+}

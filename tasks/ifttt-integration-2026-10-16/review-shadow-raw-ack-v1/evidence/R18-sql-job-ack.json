@@ -1,0 +1,48 @@
+{
+  "rejected": false,
+  "receipt": {
+    "owner": "00000000-0000-4000-8000-000000000002",
+    "table": "line_source_ifttt_events",
+    "jobKey": "ingest:line_source_ifttt_events:00000000-0000-4000-8000-000000000001",
+    "marker": {
+      "lane": "shadow",
+      "delivery": "not_requested",
+      "capturedAt": "2026-10-16T03:06:46.730529-05:00",
+      "acknowledgmentKey": "ingest:line_source_ifttt_events:00000000-0000-4000-8000-000000000001"
+    },
+    "eventId": "00000000-0000-4000-8000-000000000001",
+    "tweetId": "fixture-raw-post",
+    "version": "shadow-raw-ack-v1",
+    "delivery": "not_requested",
+    "receivedAt": "2026-10-16T03:05:46.673-05:00",
+    "beforePayload": {
+      "text": "isolated synthetic retained fixture",
+      "receipt": "local-only"
+    },
+    "acknowledgedAt": "2026-10-16T03:06:46.730529-05:00",
+    "observationIds": [
+      "observation-a"
+    ]
+  },
+  "after": {
+    "raw": {
+      "processing_status": "processed",
+      "raw_payload": {
+        "text": "isolated synthetic retained fixture",
+        "receipt": "local-only",
+        "tweetClaimShadow": {
+          "lane": "shadow",
+          "delivery": "not_requested",
+          "capturedAt": "2026-10-16T03:06:46.730529-05:00",
+          "acknowledgmentKey": "ingest:line_source_ifttt_events:00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    "job": {
+      "status": "complete",
+      "attempts": 1,
+      "payload": {}
+    },
+    "outbox": 0
+  }
+}

@@ -32,6 +32,9 @@ import StarterBoardPlayerDetails from "components/StarterBoardPlayerDetails";
 import { START_CHART_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
 import {
   normalizeStartChartResponse,
+  selectStartChartExpectationBasis,
+  scoreStartChartPayload,
+  type StartChartExpectationBasis,
   type StartChartGoalie,
   type StartChartPlayer,
   type StartChartResponse,
@@ -42,12 +45,36 @@ import {
   type StartChartPosition,
 } from "lib/projections/startChartFantasyScoring";
 import { teamsInfo } from "lib/teamsInfo";
-import { BOARD_CATEGORIES, DEFAULT_BOARD_SCORING, boardSkaterForecast, parseBoardScoringRequest, scoreStarterBoardPayload, type BoardScoringRequest } from "lib/projections/starterBoardScoring";
+import { BOARD_CATEGORIES, DEFAULT_BOARD_SCORING, boardSkaterForecast, parseBoardScoringRequest, type BoardScoringRequest } from "lib/projections/starterBoardScoring";
 
 import styles from "./start-chart.module.scss";
 
 const POSITION_ORDER = ["LW", "RW", "C", "D", "G"] as const;
 const INITIAL_POSITION_LIMIT = 5;
+const FORECAST_EXCLUSION_LABELS: Record<string, string> = {
+  serving_disabled: "Published forecasts disabled",
+  canary_excluded: "Game outside the forecast serving scope",
+  no_issued_revision: "No issued game forecast",
+  unreleased_source: "Forecast source not released",
+  identity_conflict: "Player, roster or schedule evidence does not match",
+  missing_target: "Some category values unavailable",
+  missing_participation: "Participation evidence unavailable",
+  stale_source: "Forecast source expired",
+  future_input: "Source evidence is later than the comparison time",
+  invalid_cutoff: "Forecast cutoff could not be verified",
+  outside_horizon: "Game outside the supported forecast window",
+  use_not_approved: "Forecast use not approved",
+  unsupported_conditioning: "Unconditional forecast unavailable",
+  incomplete_refresh: "Source coverage could not be verified",
+  discovery_timeout: "Forecast read timed out",
+  discovery_failed: "Forecast read failed",
+  eligibility_unverified: "Player eligibility unverified",
+  game_mismatch: "Game schedule evidence does not match",
+  no_usable_target: "No supported category values",
+  conflicting_forecast: "Conflicting forecast evidence",
+  incompatible_overlap: "Forecast sources overlap incompatibly",
+  incompatible_component_basis: "Forecast components use incompatible values",
+};
 
 function BoardImage({ sources, className, label }: { sources: string[]; className: string; label: string }) {
   const [index, setIndex] = useState(0);
@@ -356,6 +383,7 @@ export default function StartChartPage() {
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [scoring, setScoring] = useState<BoardScoringRequest>(() => parseBoardScoringRequest({}));
   const [scoringTouched, setScoringTouched] = useState(false);
+  const [expectationBasis, setExpectationBasis] = useState<StartChartExpectationBasis | null>(null);
   const selectedCategoryRef = useRef<string | null>(null);
   const [scoringError, setScoringError] = useState<string | null>(null);
   const [activePosition, setActivePosition] =
@@ -411,18 +439,30 @@ export default function StartChartPage() {
   ]);
 
   const { data: publishedData, error, isLoading, mutate } = useSWR<StartChartResponse>(
-    date ? `/api/v1/start-chart?date=${encodeURIComponent(date)}` : null,
+    date ? `/api/v1/start-chart?date=${encodeURIComponent(date)}&forecast_source=game_expectations` : null,
     fetcher,
     { refreshInterval: 30_000, dedupingInterval: 5_000, revalidateOnFocus: true },
   );
+  const [expiryClock, setExpiryClock] = useState(() => Date.now());
+  const sourceExpiresAt = Date.parse(publishedData?.gameExpectations?.expiresAt ?? "");
+  useEffect(() => {
+    if (!Number.isFinite(sourceExpiresAt) || sourceExpiresAt <= Date.now()) return;
+    const timer = window.setTimeout(() => setExpiryClock(Date.now()), Math.min(sourceExpiresAt - Date.now(), 2_147_483_647));
+    return () => window.clearTimeout(timer);
+  }, [sourceExpiresAt, expiryClock]);
+  const forecastsExpired = Number.isFinite(sourceExpiresAt) && sourceExpiresAt <= Date.now();
   const data = useMemo(() => {
+    if (publishedData && forecastsExpired) return { ...publishedData, players: [],
+      games: publishedData.games.map(game => ({ ...game, homeGoalies: [], awayGoalies: [] })) };
     if (!publishedData || (!scoringTouched && publishedData.contractVersion !== 2)) return publishedData;
-    return { ...publishedData, ...scoreStarterBoardPayload({ ...publishedData,
-      players: publishedData.players.map((player) => ({ ...player,
+    const board = publishedData.gameExpectations
+      ? selectStartChartExpectationBasis(publishedData, expectationBasis ?? publishedData.gameExpectations.basis) : publishedData;
+    return { ...board, ...scoreStartChartPayload({ ...board,
+      players: board.players.map((player) => ({ ...player,
         forecast: player.forecast ?? (player.positions.includes("G") ? null : boardSkaterForecast(player, null)),
       })),
     }, scoring) } as StartChartResponse;
-  }, [publishedData, scoring, scoringTouched]);
+  }, [publishedData, scoring, scoringTouched, expectationBasis, forecastsExpired]);
   const { ref: chartGraphicRef, size: chartSize } = useMeasuredChart(
     (data?.ctpi?.length ?? 0) > 0,
   );
@@ -534,7 +574,8 @@ export default function StartChartPage() {
       POSITION_ORDER.map((position) => [position, []]),
     );
     for (const player of filteredPlayers) {
-      const score = scoring.mode === "categories" ? player.boardScore?.categoryValue : player.proj_fantasy_points;
+      const score = player.boardScore ? player.boardScore.sortValue
+        : player.positions.includes("G") ? player.start_probability : player.proj_fantasy_points;
       const rankedPlayer = typeof score === "number" && Number.isFinite(score)
         ? player
         : { ...player, position_ranks: {} };
@@ -554,7 +595,7 @@ export default function StartChartPage() {
       );
     }
     return result;
-  }, [filteredPlayers, scoring.mode]);
+  }, [filteredPlayers]);
 
   useEffect(() => {
     if (validQueryPosition || !data?.players.length) return;
@@ -664,7 +705,7 @@ export default function StartChartPage() {
     ? "Upcoming slate"
     : "Adjusted slate";
   const isPartial = data?.serving?.mode === "partial";
-  const isDegraded = data?.sourceStatus?.overall === "degraded";
+  const isDegraded = forecastsExpired || data?.sourceStatus?.overall === "degraded";
   const servingMessage = data?.serving?.message;
   const statusMessages = Array.from(
     new Set(
@@ -711,7 +752,7 @@ export default function StartChartPage() {
           <div><dt>Input</dt><dd title={data?.sourceStatus.projection.inputVersion ?? undefined}>{data?.sourceStatus.projection.inputVersion ?? "Unverified"}</dd></div>
         </dl>
         <div className={`${styles.headerStatus} ${isFallback || isPartial || isDegraded ? styles.statusAmber : ""}`} role="status" aria-label="Starter Board status">
-          <strong><span aria-hidden="true">{isFallback || isPartial || isDegraded ? "◷" : "◉"}</span> {error ? "Unavailable" : !data ? "Loading" : data.serving.mode === "no_games" ? "No scheduled games" : isFallback ? fallbackStatus : isPartial || isDegraded || data.newsStatus?.freshnessBreachedGames || data.newsStatus?.unresolvedConflicts ? "Review coverage" : data.newsStatus?.available === false ? "News unavailable" : data.newsStatus?.pendingGames ? "Refreshing" : data.newsStatus?.available && data.serving.mode === "exact" && data.requestedDate === data.resolvedDate && data.resolvedDate === easternDate() && data.sourceStatus.projection.updatedAt ? "Up to date" : "Published slate"}</strong>
+          <strong><span aria-hidden="true">{isFallback || isPartial || isDegraded ? "◷" : "◉"}</span> {error ? "Unavailable" : forecastsExpired ? "Forecasts expired" : !data ? "Loading" : data.serving.mode === "no_games" ? "No scheduled games" : isFallback ? fallbackStatus : isPartial || isDegraded || data.newsStatus?.freshnessBreachedGames || data.newsStatus?.unresolvedConflicts ? "Review coverage" : data.newsStatus?.available === false ? "News unavailable" : data.newsStatus?.pendingGames ? "Refreshing" : data.newsStatus?.available && data.serving.mode === "exact" && data.requestedDate === data.resolvedDate && data.resolvedDate === easternDate() && data.sourceStatus.projection.updatedAt ? "Up to date" : "Published slate"}</strong>
           <span>Page refresh · 30 seconds</span>
         </div>
         <details className={styles.mobileProvenance}>
@@ -763,9 +804,14 @@ export default function StartChartPage() {
 
       {data?.contractVersion === 2 ? <div className={styles.statusBanner} aria-label="Slate news freshness"
         data-board-revisions={JSON.stringify((data.gameRevisions ?? []).map((revision) => revision.revisionId))}>
-        <strong>{data.newsStatus?.available === false ? "News freshness unavailable" : data.newsStatus?.pendingGames ? `${data.newsStatus.pendingGames} games refreshing` : "Latest published projections"}</strong>
-        <span>{data.sourceStatus.projection.updatedAt ? `Published ${data.sourceStatus.projection.updatedAt}` : "Publication pending"} · refreshes every 30 seconds</span>
-        {data.newsStatus?.freshnessBreachedGames ? <span role="status">Five-minute update target exceeded for {data.newsStatus.freshnessBreachedGames} games. Showing the last successful projections.</span> : null}
+        <strong>{data.gameExpectations ? "Daily game expectations" : data.newsStatus?.available === false ? "News freshness unavailable" : data.newsStatus?.pendingGames ? `${data.newsStatus.pendingGames} games refreshing` : data.gameRevisions?.length ? "Latest published projections" : "No admitted game forecasts"}</strong>
+        <span>{data.gameExpectations ? `Read ${data.gameExpectations.readAsOf} · original source clocks in player details`
+          : data.sourceStatus.projection.updatedAt ? `Published ${data.sourceStatus.projection.updatedAt}` : "Publication pending"} · refreshes every 30 seconds</span>
+        {data.gameExpectations ? <span>Conditional values apply if playing or starting. Unknown participation and missing categories remain unavailable.</span> : null}
+        {data.newsStatus?.freshnessBreachedGames ? <span role="status">Five-minute update target exceeded for {data.newsStatus.freshnessBreachedGames} games. {data.gameRevisions?.length
+          ? "Showing the last successful projections."
+          : data.newsStatus.pendingGames ? "No admitted forecasts are available while updates are pending."
+          : "No admitted forecasts are available."}</span> : null}
         {data.newsStatus?.unresolvedConflicts ? <span>{data.newsStatus.unresolvedConflicts} unresolved news conflicts</span> : null}
       </div> : null}
 
@@ -790,6 +836,15 @@ export default function StartChartPage() {
       ) : null}
 
       <section id="board-filters" className={styles.filters} aria-label="Starter Board controls">
+        {data?.gameExpectations ? <div className={styles.filterGroup}>
+          <label htmlFor="start-chart-expectation-basis">Comparison basis</label>
+          <select id="start-chart-expectation-basis" className={styles.selectInput}
+            value={data.gameExpectations.basis} onChange={event => setExpectationBasis(event.target.value as StartChartExpectationBasis)}>
+            <option value="expected">Expected game values</option>
+            <option value="per_appearance">If playing</option>
+            <option value="per_start">If starting (goalies)</option>
+          </select>
+        </div> : null}
         <div className={styles.filterGroup}>
           <label htmlFor="start-chart-search">Player</label>
           <input
@@ -980,6 +1035,11 @@ export default function StartChartPage() {
             </button>
           </div>
         ) : null}
+        {forecastsExpired ? <div className={styles.requestState} role="status" aria-label="Forecast validity">
+          <strong>Forecast values expired.</strong>
+          <span>Values and ranks are withheld until fresh inputs arrive. The board checks for updates every 30 seconds.</span>
+          {!error ? <button type="button" onClick={() => void mutate()}>Refresh forecasts</button> : null}
+        </div> : null}
         {!error && data?.publishedForecastsEnabled === false ? (
           <div className={styles.requestState} role="status">
             <strong>Published game forecasts are disabled.</strong>
@@ -992,13 +1052,24 @@ export default function StartChartPage() {
             <span>{data.serving.message}</span>
           </div>
         ) : null}
-        {!error && data?.games?.length && data.players.length === 0 ? (
+        {!error && data?.forecastAdmission && Object.keys(data.forecastAdmission.exclusionCounts).length ? (
+          <div className={styles.requestState} role="status" aria-label="Forecast exclusions">
+            <strong>Some forecast values are unavailable.</strong>
+            <ul>{Object.entries(data.forecastAdmission.exclusionCounts).map(([reason, count]) => (
+              <li key={reason}>{FORECAST_EXCLUSION_LABELS[reason] ?? "Forecast evidence could not be verified"}: {count}</li>
+            ))}</ul>
+            <span>Missing values do not disable comparisons for categories with a supported value.</span>
+          </div>
+        ) : null}
+        {!error && !forecastsExpired && data?.games?.length && data.players.length === 0 ? (
           <div className={styles.requestState} role="status">
             <strong>No player projections found.</strong>
-            <span>
+            <span>{data.forecastAdmission && Object.keys(data.forecastAdmission.exclusionCounts).length
+              ? "Scheduled forecasts were withheld. Review the forecast exclusions above."
+              : <>
               {data.games.length} game{data.games.length === 1 ? " is" : "s are"}
               scheduled, but canonical projection rows are not ready.
-            </span>
+              </>}</span>
           </div>
         ) : null}
 
@@ -1037,6 +1108,8 @@ export default function StartChartPage() {
               </div>
               {error ? (
                 <div className={styles.emptyState}>Projections unavailable.</div>
+              ) : forecastsExpired ? (
+                <div className={styles.emptyState}>Awaiting refreshed forecast inputs.</div>
               ) : isLoading || !date ? (
                 <div className={styles.emptyState} role="status">
                   Loading projections…
@@ -1048,6 +1121,9 @@ export default function StartChartPage() {
               ) : (
                 <ol className={styles.cardList}>
                   {visibleList.map((player) => {
+                    const confirmedOut = position !== "G" && player.forecast?.participationProbability === 0
+                      && player.forecast.probabilityStatus === "confirmed_evidence"
+                      && player.forecast.evidence.some(item => item.dimension === "availability" && item.value === "out");
                     const game = gamesById.get(player.game_id);
                     const opponentGoalie = game
                       ? player.team_id === game.homeTeamId
@@ -1079,6 +1155,15 @@ export default function StartChartPage() {
                           },
                         )
                       : null;
+                    const usesStartBasis = position === "G" && data?.gameExpectations?.basis !== "per_appearance";
+                    const conditionalLabel = usesStartBasis ? "if starting" : "if playing";
+                    const startMetadata = player.gameExpectation?.startParticipation;
+                    const participationModel = usesStartBasis && startMetadata && startMetadata.probability === player.forecast?.participationProbability
+                      ? startMetadata?.model : Object.values(player.gameExpectation?.targets ?? {}).find(target =>
+                      target.participation?.model?.probabilityStatus === "uncalibrated_model"
+                      && target.participation.revisionId === target.participationRevisionId
+                      && target.participation.basis === (usesStartBasis ? "start" : "appearance")
+                      && target.participation.probability === player.forecast?.participationProbability)?.participation?.model;
                     return (
                       <li className={styles.card} key={`${position}-${player.row_key}`}>
                         <div className={styles.playerIdentity}>
@@ -1096,7 +1181,14 @@ export default function StartChartPage() {
                           </Link>
                           <div className={styles.primaryProjection}>
                             <strong>{formatNumber(scoring.mode === "categories" ? player.boardScore?.categoryValue : player.proj_fantasy_points, 2)}</strong>
-                            <span>{scoring.mode === "categories" ? scoring.category?.replaceAll("_", " ") ?? "Category" : player.forecast?.conditioning === "conditional_playing" ? "FP if playing" : position === "G" ? "Expected FP" : "FP"}</span>
+                            <span>{scoring.mode === "categories" ? `${scoring.category?.replaceAll("_", " ") ?? "Category"}${player.forecast?.conditioning === "conditional_playing" ? ` ${conditionalLabel}` : ""}` : player.forecast?.conditioning === "conditional_playing" ? `FP ${conditionalLabel}` : position === "G" ? "Expected FP" : "FP"}</span>
+                            {data?.contractVersion === 2 && (scoring.mode === "categories" ? player.boardScore?.categoryValue == null : player.proj_fantasy_points == null) ? (
+                              <span>{scoring.mode === "categories"
+                                ? `${scoring.category?.replaceAll("_", " ") ?? "Category"} unavailable for this player.`
+                                : player.boardScore?.missingCategories.length
+                                  ? `Point total unavailable: missing ${player.boardScore.missingCategories.map(key => key.replaceAll("_", " ")).join(", ")}. Compare an available category.`
+                                  : "Point total unavailable for this player."}</span>
+                            ) : null}
                           </div>
                           <div className={styles.meta}>
                             <span>
@@ -1123,7 +1215,8 @@ export default function StartChartPage() {
                           {position !== "G" ? <span>{player.games_remaining_week == null ? "Games —" : `${player.games_remaining_week} GM`}</span> : null}
                           {position === "G" ? <span title="Goalie start probability">{formatPercent(player.start_probability)} {player.confirmed_status ? "confirmed" : player.start_probability == null ? "start unknown" : "projected"}</span>
                             : player.context?.unit_tier ? <span className={styles.positionBadge} title={player.context.pp_share != null ? `PP share ${formatPercent(player.context.pp_share)}` : undefined}>{player.context.unit_tier}</span> : null}
-                          {player.forecast?.participationProbability === 0 ? <span>Confirmed out</span> : null}
+                          {confirmedOut ? <span>Confirmed out</span> : null}
+                          {player.boardScore?.comparisonAllowed === false ? <span>Primary rank unavailable{player.forecast?.conditioning === "conditional_playing" ? " · conditional values are secondary context only" : ""}</span> : null}
                         </div>
                         <StarterBoardPlayerDetails
                           className={styles.playerDetails}
@@ -1164,15 +1257,18 @@ export default function StartChartPage() {
                         </div>
 
                         {player.forecast ? <div className={styles.uncertainty}>
-                          {position === "G" ? `Start ${formatPercent(player.forecast.participationProbability)}`
-                            : player.forecast.participationProbability === 0 ? "Confirmed out"
-                            : player.forecast.participationProbability == null ? "Participation unknown" : `Plays ${formatPercent(player.forecast.participationProbability)}`}
+                          {usesStartBasis ? `${participationModel ? "Start model estimate" : "Start"} ${formatPercent(player.forecast.participationProbability)}`
+                            : confirmedOut ? "Confirmed out"
+                            : player.forecast.participationProbability == null ? "Participation unknown"
+                            : `${participationModel ? "Participation model estimate" : !player.gameExpectation && player.forecast.probabilityStatus === "uncalibrated_model" ? "Modeled participation" : "Participation"} ${formatPercent(player.forecast.participationProbability)}`}
                           {player.boardScore?.change != null ? ` · ${player.boardScore.change >= 0 ? "+" : ""}${formatNumber(player.boardScore.change, 2)} since prior revision` : ""}
                         </div> : null}
                           {player.forecast ? <>
                             <p>{player.forecast.participationProbability == null
-                              ? "Participation probability unavailable. This is not an unconditional expectation."
-                              : `${position === "G" ? "Starting" : "Participation"} probability ${formatPercent(player.forecast.participationProbability)} · ${player.forecast.probabilityStatus.replaceAll("_", " ")}`}</p>
+                              ? player.forecast.conditioning === "unconditional"
+                                ? "Participation detail unavailable. Game expectations use the admitted source."
+                                : "Participation probability unavailable. This is not an unconditional expectation."
+                              : `${usesStartBasis ? "Starting" : "Participation"} probability ${formatPercent(player.forecast.participationProbability)} · ${participationModel ? "model estimate · calibration unavailable" : player.gameExpectation ? "calibration unavailable" : player.forecast.probabilityStatus.replaceAll("_", " ")}`}</p>
                             {player.forecast.previous?.changedInputs.length ? <p>Changed inputs: {player.forecast.previous.changedInputs.join(", ").replaceAll("_", " ")}</p> : null}
                             <p>{player.forecast.ppRole ? `${player.forecast.ppRole} · ` : ""}Fantasy intervals are unavailable pending calibration.</p>
                             {player.forecast.seasonBootstrap ? <p>
@@ -1187,12 +1283,33 @@ export default function StartChartPage() {
                               {item.dimension.toUpperCase()}: {item.value} · published <time dateTime={item.publishedAt}>{item.publishedAt}</time> · received <time dateTime={item.receivedAt}>{item.receivedAt}</time>
                             </p>)}
                             {position === "G" ? <dl className={styles.secondaryStats}>
-                              <StatTerm label="Expected saves" value={formatNumber(player.forecast.expected?.SAVES_GOALIE)} />
-                              <StatTerm label="Expected GA" value={formatNumber(player.forecast.expected?.GOALS_AGAINST_GOALIE)} />
-                              <StatTerm label="Win" value={formatPercent(player.forecast.expected?.WINS_GOALIE)} />
-                              <StatTerm label="Shutout" value={formatPercent(player.forecast.expected?.SHUTOUTS_GOALIE)} />
+                              <StatTerm label={player.forecast.conditioning === "conditional_playing" ? `Saves ${conditionalLabel}` : "Expected saves"} value={formatNumber((player.forecast.expected ?? player.forecast.conditional)?.SAVES_GOALIE)} />
+                              <StatTerm label={player.forecast.conditioning === "conditional_playing" ? `GA ${conditionalLabel}` : "Expected GA"} value={formatNumber((player.forecast.expected ?? player.forecast.conditional)?.GOALS_AGAINST_GOALIE)} />
+                              <StatTerm label="Win" value={formatPercent((player.forecast.expected ?? player.forecast.conditional)?.WINS_GOALIE)} />
+                              <StatTerm label="Shutout" value={formatPercent((player.forecast.expected ?? player.forecast.conditional)?.SHUTOUTS_GOALIE)} />
                             </dl> : null}
                           </> : null}
+                        {player.gameExpectation ? <details>
+                          <summary>Category sources and freshness</summary>
+                          <p>Power-play role: {player.gameExpectation.powerPlayRole?.status === "not_applicable"
+                            ? "Not applicable (goalie)." : "Unavailable. Current role evidence is unavailable."}</p>
+                          {player.gameExpectation.limitations.map((limitation, index) => <p key={index}>{limitation}</p>)}
+                          {Object.entries(player.gameExpectation.targets).map(([key, target]) => <p key={key}>
+                            {key.replaceAll("_", " ")}: {target.basis?.replaceAll("_", " ") ?? "unavailable"} · {target.unit}.
+                            {" "}Valid from cutoff {target.cutoffAt ?? "unavailable"}; composite issuance {target.issuedAt ?? "unavailable"}; expires {target.expiresAt ?? "unavailable"}.
+                            {" "}Sources: {target.sourceIds.join(", ") || "unavailable"}.
+                            {target.sources.map(source => <span key={source.sourceId}>
+                              {" "}Original {source.kind} cutoff {source.cutoffAt}; issued {source.issuedAt}; expires {source.expiresAt}.
+                            </span>)}
+                            {target.participation ? <span> Participation {target.participation.basis} {formatPercent(target.participation.probability)} · issued {target.participation.issuedAt}.</span> : null}
+                            {target.participation?.model ? <span> Participation model estimate · calibration unavailable.
+                              {" "}Event: positive minutes; sample size {target.participation.model.sampleSize ?? "unavailable"}.
+                              {target.participation.model.limitations.map((limitation, index) => <span key={index}> {limitation}</span>)}
+                            </span> : null}
+                            {target.reasons.length ? ` ${target.reasons.join(", ").replaceAll("_", " ")}.` : ""}
+                            {target.limitations.map((limitation, index) => <span key={index}> {limitation}</span>)}
+                          </p>)}
+                        </details> : null}
                         {position !== "G" ? (
                           <dl className={styles.secondaryStats}>
                             <StatTerm label="PPP" value={formatNumber(player.proj_pp_points)} />

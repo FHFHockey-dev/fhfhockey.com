@@ -1,0 +1,10 @@
+{
+  "inbound_symlinks": [],
+  "checked_roots": [
+    "web/node_modules",
+    "functions/node_modules",
+    "node_modules",
+    ".venv",
+    "web/.ms-playwright"
+  ]
+}

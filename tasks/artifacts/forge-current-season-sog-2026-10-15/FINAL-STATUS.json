@@ -1,0 +1,30 @@
+{
+  "status": "accepted_bounded_offline_implementation_only",
+  "finalSourcePinsVerified": true,
+  "newSourceFiles": 4,
+  "sharedFilesChanged": 0,
+  "modelVersion": "current-season-sog-appearance-mean-v1",
+  "syntheticTestsPassed": 36,
+  "eslint": {
+    "exit": 0,
+    "errors": 0,
+    "warnings": 0
+  },
+  "whitespace": "passed",
+  "compiler": "not run; older combined receipts do not qualify these new files",
+  "sourceCollection": 0,
+  "genuineNumericReads": 0,
+  "genuineProducerExecutions": 0,
+  "databaseWrites": 0,
+  "publicActivation": false,
+  "remaining": "one bounded genuine source collection/admission step, then separately authorized offline assembly; consumer/public admission remains separate",
+  "pilot": "owner-reported ACTIVE unchanged at20:46:39UTC; child ownership/readiness acknowledgment20:47:26UTC; stopheavywork21:10UTC, capture21:20\u201321:45UTC, issuancebefore22UTC; no guarantee of wake/execution",
+  "artifacts": {
+    "candidate.sha256": "fa24ec75b4fb0d0bee84b6176a7b0dde04e372316c43fae290109c3141eb1c65",
+    "change.patch": "5951637f85ddcbe8210d7e59e7f052dd49d4c4df2b00fcf469adf3ddd92a6b56",
+    "expiry-correction.patch": "5b6b48beef1ac44c6553cffc2c6a55096332ffc5fad51db54a1410e87ed51539",
+    "verification.json": "ce3f7c309f4acca1c8ff7ca740ff337c39f01263e1a50ec782b72a071100575d",
+    "independent-review-v2.md": "0c2cab4d0b1ad02b25918d0416cac23f61d6c268180cef08f785bb1646fd7c70"
+  },
+  "historicalStatusNote": "HANDOFF/verification pending-review text is preserved as reviewed historical evidence; independent-review-v2.md and this sidecar give final bounded implementation status."
+}

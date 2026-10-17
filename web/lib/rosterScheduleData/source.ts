@@ -106,6 +106,7 @@ export async function fetchBoundedNhlSchedule(args: {
   startDate: string;
   endDate: string;
   signal?: AbortSignal;
+  readSchedulePage?: (date: string) => ReturnType<typeof getScheduleDaily>;
 }): Promise<{
   complete: boolean;
   games: FetchedNhlScheduleGame[];
@@ -118,9 +119,10 @@ export async function fetchBoundedNhlSchedule(args: {
     throw new Error("Invalid bounded NHL schedule range.");
   }
   const fetched: FetchedNhlScheduleGame[] = [];
+  const observedDays = new Map<string, Set<number>>();
   for (let cursor = args.startDate; cursor <= args.endDate; cursor = addUtcDays(cursor, 7)) {
     if (args.signal?.aborted) throw args.signal.reason ?? new Error("NHL schedule read aborted.");
-    const payload = (await getScheduleDaily(cursor, args.signal)) as unknown as {
+    const payload = (await (args.readSchedulePage ? args.readSchedulePage(cursor) : getScheduleDaily(cursor, args.signal))) as unknown as {
       gameWeek?: Array<{ date?: string; games?: Array<Omit<NhlScheduleGame, "gameDate"> & { gameDate?: string | null }> }>;
     };
     if (args.signal?.aborted) throw args.signal.reason ?? new Error("NHL schedule read aborted.");
@@ -134,6 +136,12 @@ export async function fetchBoundedNhlSchedule(args: {
       }
       if (!Array.isArray(day.games)) throw new Error("NHL schedule day is incomplete.");
       seenDates.add(day.date);
+      const ids = new Set(day.games.filter(game => game.gameType === 2).map(game => game.id));
+      const prior = observedDays.get(day.date);
+      if (prior && JSON.stringify([...prior].sort()) !== JSON.stringify([...ids].sort())) {
+        throw new Error("Conflicting NHL source day coverage.");
+      }
+      observedDays.set(day.date, ids);
       for (const game of day.games) {
         if (game.gameDate != null && game.gameDate !== day.date) throw new Error("NHL game date conflicts with its schedule day.");
         fetched.push({ game: { ...game, gameDate: day.date }, sourceUrl });
@@ -144,6 +152,9 @@ export async function fetchBoundedNhlSchedule(args: {
     }
   }
   const deduped = dedupeFetchedGames(fetched);
+  const emptyDates = [...observedDays].filter(([, ids]) => !ids.size).map(([date]) => date).sort();
+  for (const entry of deduped.games) entry.scheduleCoverage = { version: "nhl-source-days-v1",
+    date: entry.game.gameDate, gameIds: [...observedDays.get(entry.game.gameDate)!].sort((a, b) => a - b), emptyDates };
   const warning = duplicateWarning(deduped.duplicateGameIds);
   return {
     complete: true,

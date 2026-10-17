@@ -1,0 +1,157 @@
+{
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "devicePixelRatio": 1,
+    "screenWidth": 390,
+    "screenHeight": 844,
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/148.0.7778.96 Safari/537.36",
+    "touchPoints": 1,
+    "coarsePointer": true
+  },
+  "document": {
+    "width": 390,
+    "height": 1973,
+    "scrollY": 0
+  },
+  "header": {
+    "x": 0,
+    "y": 0,
+    "width": 390,
+    "height": 56,
+    "bottom": 56
+  },
+  "panels": [
+    {
+      "label": "Roster and setup",
+      "x": 8,
+      "y": 698.03125,
+      "width": 374,
+      "height": 1004,
+      "bottom": 1702.03125
+    }
+  ],
+  "typography": {
+    "headingFamily": "\"Roboto Condensed\", sans-serif",
+    "headingSize": "23px",
+    "headingWeight": "700",
+    "bodyFamily": "Roboto, sans-serif",
+    "headerFamily": "\"Roboto Condensed\", sans-serif",
+    "fontStatus": "loaded",
+    "fontCheck400": true,
+    "fontCheck700": true,
+    "faces": [
+      {
+        "family": "Roboto Condensed",
+        "weight": "100 900",
+        "status": "loaded"
+      }
+    ]
+  },
+  "summaryMetrics": {
+    "bounds": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "bottom": 0
+    },
+    "display": "flex",
+    "columns": "repeat(12, minmax(0px, 1fr))",
+    "rows": "none",
+    "children": [
+      {
+        "tag": "ARTICLE",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "bottom": 0
+        }
+      },
+      {
+        "tag": "ARTICLE",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "bottom": 0
+        }
+      },
+      {
+        "tag": "ARTICLE",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "bottom": 0
+        }
+      },
+      {
+        "tag": "ARTICLE",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "bottom": 0
+        }
+      },
+      {
+        "tag": "ARTICLE",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "bottom": 0
+        }
+      },
+      {
+        "tag": "ARTICLE",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "bottom": 0
+        }
+      },
+      {
+        "tag": "ARTICLE",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "bottom": 0
+        }
+      }
+    ],
+    "qualifier": {
+      "text": "Partial schedule · known subtotals; full-range totals and percentages unavailable.",
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "bottom": 0
+      },
+      "gridColumn": "auto",
+      "fontSize": "12px",
+      "lineHeight": "normal",
+      "scrollWidth": 0,
+      "clientWidth": 0
+    }
+  },
+  "caption": {
+    "x": 195.921875,
+    "y": 728.5,
+    "width": 190.078125,
+    "height": 35.5,
+    "bottom": 764
+  }
+}

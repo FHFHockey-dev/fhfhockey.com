@@ -1,0 +1,33 @@
+{
+  "owned": [
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+    "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss",
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx",
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx",
+    "web/components/RosterScheduleOptimizer/CandidateCard.tsx",
+    "web/components/RosterScheduleOptimizer/CandidateCard.test.tsx",
+    "web/components/RosterScheduleOptimizer/CandidateCard.module.scss",
+    "web/components/RosterScheduleOptimizer/CompactSchedule.tsx",
+    "web/components/RosterScheduleOptimizer/RosterContribution.tsx",
+    "web/components/RosterScheduleOptimizer/TeamScheduleContext.tsx",
+    "web/components/RosterScheduleOptimizer/TeamScheduleContext.test.tsx",
+    "web/components/RosterScheduleOptimizer/RosterPlayerRow.tsx",
+    "web/components/RosterScheduleOptimizer/TeamScheduleContext.module.scss"
+  ],
+  "changed": [
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+    "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss",
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx",
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx",
+    "web/components/RosterScheduleOptimizer/CandidateCard.tsx",
+    "web/components/RosterScheduleOptimizer/CandidateCard.module.scss",
+    "web/components/RosterScheduleOptimizer/CompactSchedule.tsx",
+    "web/components/RosterScheduleOptimizer/TeamScheduleContext.tsx",
+    "web/components/RosterScheduleOptimizer/TeamScheduleContext.test.tsx",
+    "web/components/RosterScheduleOptimizer/RosterPlayerRow.tsx",
+    "web/components/RosterScheduleOptimizer/TeamScheduleContext.module.scss"
+  ],
+  "frozenForReview": true
+}

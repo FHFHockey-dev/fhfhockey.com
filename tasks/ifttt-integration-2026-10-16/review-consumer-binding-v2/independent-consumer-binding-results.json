@@ -1,0 +1,11 @@
+{
+  "originalOracleSha256": "d9fe45ca44042673ff0381cd0f1981074b196da99fb6fdf9da573ac5df84fd8b",
+  "candidateManifest": "owned-source-v2-sha256.json",
+  "candidateManifestSha256": "9cba26d4e4617532c14d784b2d39038dce3ba9a085a0c337a0c68345532deefb",
+  "noHostedActions": true,
+  "noProductionDispatch": true,
+  "actualProducerAndConsumer": true,
+  "fullOriginalAcceptance": false,
+  "independentReviewPending": true,
+  "results": []
+}

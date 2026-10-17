@@ -1,0 +1,52 @@
+{
+  "allocationPath": "/Users/tim/Documents/FHFH-private/forge-rso-completion-20261016-v1/candidate-participation-preparation-v1/missing-source-allocation-v1.json",
+  "allocationSHA256": "499ece8df6aaf1ff73f36d61112cdd52a52f7fb3a43f6b4bb0508e06ab0acead",
+  "collectorSHA256": "e2ffaaf29923353337daac3c47ae3502d4361bdf1dc508308b33eff1853abc41",
+  "testSHA256": "1c2cbab9e7d380d388b89decf490e48d14c4a10ab72222217f0a37d9450b04bc",
+  "sourcePins": [
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-rso-completion-2026-10-15/consumer/candidate-participation/capture-missing.py",
+      "sha256": "e2ffaaf29923353337daac3c47ae3502d4361bdf1dc508308b33eff1853abc41"
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-rso-completion-2026-10-15/consumer/candidate-participation/capture-missing.test.py",
+      "sha256": "1c2cbab9e7d380d388b89decf490e48d14c4a10ab72222217f0a37d9450b04bc"
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-rso-completion-2026-10-15/capture-native-sources.py",
+      "sha256": "d019774b2ca47fd17b571d009450d608a264f3e7f70af86fc86d9260711b56c5"
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-rso-completion-2026-10-15/capture-nhl-context.py",
+      "sha256": "863c29491e00264f15b0be2e16e359a01e68ee4a751e672dbe6767aaee696c61"
+    },
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-rso-completion-20261016-v1/candidate-participation-preparation-v1/coverage-matrix.json",
+      "sha256": "9a865ba1289259bd6ac82c300fbb531fb02638ecd27088c91d697ea58b8974ed"
+    },
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-rso-completion-20261016-v1/candidate-participation-preparation-v1/historical-manifest.json",
+      "sha256": "11fbfc4a9e753a0681f5a1dbfaefc7028ea476f96f6a4f873ab48813409a6feb"
+    },
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-walk-forward-20261014-v1/protocol/experiment.json",
+      "sha256": "2bad9c0416830896f75dc60940a8506a6556bd91b370cd34d84de4656d3ff166"
+    },
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-rso-completion-20261016-v1/candidate-development-reuse-allocation-v1.json",
+      "sha256": "7464a036b119d286629aafeba4b6fbbde1271093c6b21bb5eb83473852b4b078"
+    },
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-rso-completion-20261016-v1/nhl-context-continuation-v1/allocation.json",
+      "sha256": "5afc96bcbaf9ca3ee0e5a460dbcc342cfb6dfa4777d439995af6e37a2a189e98"
+    },
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-rso-completion-20261016-v1/nhl-context-capture-v1/01-historical.json",
+      "sha256": "4fe27cd075a3bcdd173253d4cb18362de28c6f221af7a6f112f9bdaf4a995135"
+    },
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-rso-completion-20261016-v1/nhl-context-capture-v1/02-historical.json",
+      "sha256": "e65140ba90e7323298fe36d63bec0921a21c147f5da7f5fdbefb6fe1a570e5d7"
+    }
+  ]
+}

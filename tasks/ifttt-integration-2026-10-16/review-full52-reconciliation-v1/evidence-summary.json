@@ -1,0 +1,120 @@
+{
+  "sourceManifestSha256": "7af1f2199fc997238057164b769f4cc21d52a7404c93ecccd386634da02ae531",
+  "sourceFilesVerified": 85,
+  "accepted73Unchanged": true,
+  "artifactManifestSha256": "24b5c47501c3bc08a2ace727888ca769357df688e49083a9700591227d380b71",
+  "artifactFilesVerified": 51,
+  "sealedHistoricalInputsVerified": 19,
+  "priorReviewFilesVerified": 976,
+  "priorStatusAddendumUnchanged": true,
+  "retainedDependencySnapshotsVerified": 11,
+  "liveMatches": 10,
+  "liveDrift": [
+    {
+      "path": "web/lib/player-forecasts/contributions.ts",
+      "accepted": "282c8b1e9c7362190c39a48b031e392afb6c2abaa45190d8f83d95d6319f9df7",
+      "live": "af6bbef4898cae4805c079deba37162269ee19bd648b6192a153bd3083c38f5b",
+      "matches": false
+    }
+  ],
+  "liveStateUnchangedDuringReview": true,
+  "currentCombinedRuntimeAccepted": false,
+  "verdict": "faithful heterogeneous original52 ledger and bounded local/unexecuted hosted-prerequisite package accepted; no integrated full52 or combined-runtime acceptance",
+  "independentAssertionAccounting": {
+    "cases": 52,
+    "assertions": 227,
+    "matchingAssertions": 225,
+    "fullyMatchingCases": 50,
+    "pureCases": 43,
+    "pureAssertions": 196,
+    "pureMatchingAssertions": 194,
+    "persistenceCases": 9,
+    "persistenceAssertions": 31,
+    "persistenceMatchingAssertions": 31
+  },
+  "preservedOriginalFailures": [
+    {
+      "case": "CR011",
+      "assertionIndex": 0,
+      "originalAssertion": {
+        "op": "pairwise_distinct",
+        "field": "sourceClaimId",
+        "records": [
+          "a",
+          "b"
+        ]
+      },
+      "actual": [
+        "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+        null
+      ]
+    },
+    {
+      "case": "CR051",
+      "assertionIndex": 1,
+      "originalAssertion": {
+        "op": "pairwise_distinct",
+        "field": "effectId",
+        "records": [
+          "a",
+          "b"
+        ]
+      },
+      "actual": [
+        "tweet-source-claim-v1:effect:6866cd289bf92ee06135297023944d40aee3ec651eb08f4165b0d0bc7dff1084",
+        null
+      ]
+    }
+  ],
+  "approvedSeparatePositives": {
+    "assertions": 12,
+    "originalAssertionsRetained": 7,
+    "pureAmbiguousHoldControls": 2,
+    "actualRpcAmbiguousHoldControls": 2,
+    "edit": "separate authenticated revision"
+  },
+  "freshNormalAndMutationRowsEqualAcceptedHistoricalRows": true,
+  "normalPureExpectedExit": 1,
+  "normalPure": {
+    "passed": 41,
+    "failed": 2,
+    "deferred": 9,
+    "assertionsMatching": 194,
+    "assertionsChecked": 196
+  },
+  "mutationExpectedExit": 1,
+  "mutationPure": {
+    "passed": 40,
+    "failed": 3,
+    "deferred": 9,
+    "assertionsMatching": 193,
+    "assertionsChecked": 196
+  },
+  "ledgerCliExit": 0,
+  "ledgerOutputByteIdenticalToOwner": true,
+  "focusedTestsPassed": 25,
+  "actualPrivatePgCases": 10,
+  "pureFocusedCases": 15,
+  "scopedTypeScript": "passed exit0 including independent catalog tests",
+  "catalogProposal": {
+    "sha256": "761fa7e4b69efd41f56bde3b99fa52d4211e9150319cb1e08de11c2a5c40ffe6",
+    "project": "fyhftlxokyjtpndbkfse",
+    "relationNames": 23,
+    "namedRpcFunctions": 5,
+    "overloadLimit": 16,
+    "statementTimeoutSeconds": 5,
+    "lockTimeoutSeconds": 2,
+    "sqlJsonByteLimit": 8192,
+    "dataGuardBytes": 7900,
+    "hostedCallsAuthorized": 0,
+    "hostedCallsExecuted": 0,
+    "permission": "future separately authorized proposal only",
+    "privilegeFingerprintScope": "standard-role table CRUD and named RPC EXECUTE; does not cover column grants, TRUNCATE or complete ACL/schema grants"
+  },
+  "full52IntegratedAccepted": false,
+  "productionAccepted": false,
+  "authenticFutureOutcomesRead": false,
+  "sourceHoldReleased": true,
+  "runningReviewChecks": false,
+  "hostedOrProductionActions": 0
+}

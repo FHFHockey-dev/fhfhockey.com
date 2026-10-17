@@ -1,0 +1,15 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/review-raw-job-ack-v1/nearby-job.test.ts -t nearby --no-file-parallelism --config ../tasks/ifttt-integration-2026-10-16/review-raw-job-ack-v1/vitest.review.config.mjs --reporter=default --reporter=json --outputFile=../tasks/ifttt-integration-2026-10-16/review-raw-job-ack-v1/nearby-job-results.json
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-raw-job-ack-v1/nearby-job.test.ts (16 tests | 10 skipped) 838ms
+
+ Test Files  1 passed (1)
+      Tests  6 passed | 10 skipped (16)
+   Start at  02:39:14
+   Duration  1.04s (transform 49ms, setup 18ms, collect 52ms, tests 838ms, environment 0ms, prepare 37ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/review-raw-job-ack-v1/nearby-job-results.json

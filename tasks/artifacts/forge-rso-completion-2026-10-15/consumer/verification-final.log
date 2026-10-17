@@ -1,0 +1,39 @@
+
+> web@0.1.0 test
+> vitest components/RosterScheduleOptimizer/CandidateCard.test.tsx __tests__/pages/forge/forecasts.test.tsx __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:49608) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:49607) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:49609) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/RosterScheduleOptimizer/CandidateCard.test.tsx (13 tests) 70ms
+ ✓ __tests__/pages/forge/forecasts.test.tsx (9 tests) 201ms
+ ✓ __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx (201 tests) 21827ms
+   ✓ active provider refresh scheduling > applies manual matchup totals to the connected category snapshot without replacing its roster  304ms
+   ✓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different owner or rewriting the plan  548ms
+   ✓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different league or rewriting the plan  512ms
+   ✓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different team or rewriting the plan  516ms
+   ✓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different horizon or rewriting the plan  508ms
+   ✓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different timezone or rewriting the plan  499ms
+   ✓ RosterScheduleOptimizer workspace > reviews manual candidate positions explicitly without replacing selected moves or leaking another candidate's positions  495ms
+   ✓ RosterScheduleOptimizer workspace > reloads shared schedule data for manual without changing the selected plan or refreshing a provider  341ms
+   ✓ RosterScheduleOptimizer workspace > reads back legal crowded-day assignments through nonzero plan refresh, Undo and reopen  597ms
+   ✓ RosterScheduleOptimizer workspace > keeps refreshed provider authority through undo and reopen without replacing selected moves  354ms
+   ✓ RosterScheduleOptimizer workspace > explains disabled manual controls and invalid rule-window dates using visible descriptions  442ms
+   ✓ RosterScheduleOptimizer workspace > opens a saved manual snapshot read-only until the manager explicitly forks it  361ms
+   ✓ owner plan preservation > drains a dispatched account save before capturing the actual remote state  346ms
+   ✓ owner plan preservation > keeps nonzero intent/Undo, restores after reopen, and verifies original local and remote payloads  531ms
+   ✓ owner plan preservation > restores original provider authority including absence without remount (absent=false)  420ms
+   ✓ owner plan preservation > restores original provider authority including absence without remount (absent=true)  415ms
+   ✓ owner plan preservation > serializes a protected account acknowledgement before persisting and acknowledging a local edit  518ms
+
+ Test Files  3 passed (3)
+      Tests  223 passed (223)
+   Start at  21:29:16
+   Duration  22.92s (transform 649ms, setup 5ms, collect 1.45s, tests 22.10s, environment 535ms, prepare 106ms)
+

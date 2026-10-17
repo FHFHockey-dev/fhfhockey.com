@@ -1,0 +1,15 @@
+{
+  "status": "pending_same_peer_review",
+  "reason": "own final guard check: preserve strict legacy rejection of explicit null gameId/scheduledAt keys",
+  "tests": {
+    "passed": 29,
+    "command": "npm test -- lib/player-forecasts/currentSeasonSogContribution.test.ts",
+    "exit": 0
+  },
+  "eslint": {
+    "files": 2,
+    "exit": 0
+  },
+  "initialAcceptedSnapshot": "accepted-v1",
+  "externalActions": 0
+}

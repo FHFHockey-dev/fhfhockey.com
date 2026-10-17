@@ -1,0 +1,9 @@
+{
+  "all139V1SourcePinsUnchanged": true,
+  "all15LiveAndCapturedMatch": true,
+  "all25V1ArtifactsUnchanged": true,
+  "all2224PriorReviewFilesUnchanged": true,
+  "unchangedR20BlockSha256": "8728478b484b54055651f1aa5e1c9d8d300f5d6a7557054684af5fdb60986e34",
+  "originalReviewerHarnessSha256": "1434e4e54e1d7d97039f4b6c625d72ca40b7389d1e0cacb52cc901f04ab27333",
+  "runtimeUnchangedFromV1": true
+}

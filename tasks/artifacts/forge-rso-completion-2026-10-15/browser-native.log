@@ -1,0 +1,32 @@
+
+Running 1 test using 1 worker
+
+  ✘  1 [chromium] › e2e/roster-schedule-optimizer.spec.ts:1565:5 › Audit1 native candidate Worker finds complete swaps before any plan is selected (1.2m)
+
+
+  1) [chromium] › e2e/roster-schedule-optimizer.spec.ts:1565:5 › Audit1 native candidate Worker finds complete swaps before any plan is selected 
+
+    [31mTest timeout of 60000ms exceeded.[39m
+
+    Error: page.goto: net::ERR_ABORTED; maybe frame was detached?
+    Call log:
+    [2m  - navigating to "http://127.0.0.1:3107/roster-schedule-optimizer", waiting until "load"[22m
+
+
+      1592 |     data: { players, games: [game], forecasts, evidence: { schedule: { source: "complete synthetic Audit1 universe",
+      1593 |       asOf: workspace.context.asOf, seasonId: 20262027, completeness: "complete", limitations: [] } } } } }));
+    > 1594 |   await page.goto("/roster-schedule-optimizer");
+           |              ^
+      1595 |   await expect.poll(() => page.evaluate(() => (window as any).__auditCandidateResults.length)).toBeGreaterThan(0);
+      1596 |   const metrics = await page.evaluate(() => (window as any).__auditCandidateResults.at(-1));
+      1597 |   expect(metrics.baseline.projectedPoints).toBe(191);
+        at /Users/tim/Code/fhfhockey.com/web/e2e/roster-schedule-optimizer.spec.ts:1594:14
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../tasks/artifacts/forge-rso-completion-2026-10-15/browser/roster-schedule-optimizer--ae298-before-any-plan-is-selected-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../tasks/artifacts/forge-rso-completion-2026-10-15/browser/roster-schedule-optimizer--ae298-before-any-plan-is-selected-chromium/error-context.md
+
+  1 failed
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:1565:5 › Audit1 native candidate Worker finds complete swaps before any plan is selected 

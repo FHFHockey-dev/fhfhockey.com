@@ -1,0 +1,230 @@
+
+> web@0.1.0 test
+> vitest __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx -t reveals and focuses existing player detail|opens a saved manual snapshot --run
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:55649) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx (194 tests | 1 failed | 190 skipped) 1000ms
+   ↓ active provider refresh scheduling > keeps connected and saved snapshot schedules outside the shared-cache reload action
+   ↓ active provider refresh scheduling > makes no offline provider calls, pauses hidden polling and refreshes only a stale return
+   ↓ active provider refresh scheduling > honors a Retry-After longer than the backoff across explicit refresh and visibility returns
+   ↓ active provider refresh scheduling > keeps partial facts and nonzero intent without treating a throttled partial response as fresh
+   ↓ active provider refresh scheduling > backs off partial discovery without inventing a rate-limit value
+   ↓ active provider refresh scheduling > pauses automatic permission retries and resumes polling after an explicit successful retry
+   ↓ active provider refresh scheduling > shares one in-flight request across return events and keeps deliberate Undo intent
+   ↓ active provider refresh scheduling > does not let an old account response impose a cooldown on the current account
+   ↓ active provider refresh scheduling > does not schedule zero-delay refreshes after clearing the team to ""
+   ↓ active provider refresh scheduling > does not schedule zero-delay refreshes after clearing the team to "   "
+   ↓ active provider refresh scheduling > keeps the current context's 429 block when a retired refresh settles
+   ↓ active provider refresh scheduling > keeps the current context's 401 block when a retired refresh settles
+   ↓ active provider refresh scheduling > keeps the current context's 403 block when a retired refresh settles
+   ↓ active provider refresh scheduling > does not refresh an account snapshot opened read-only even when sync access is active
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: 2026-10-10T09:00:00Z
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: 2026-10-10T08:59:59Z
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: 2026-10-10T13:00:00Z
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: null
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: invalid
+   ↓ provisional schedule freshness warnings > keeps input-age and near-game boundaries explicit: 2026-10-10T15:00:01Z
+   ↓ provisional schedule freshness warnings > does not infer receipt age from a different source or invalid evaluation time
+   ↓ provisional similar projected points display > compares startable plan totals 95 and 100 safely
+   ↓ provisional similar projected points display > compares startable plan totals 94 and 100 safely
+   ↓ provisional similar projected points display > compares startable plan totals 0 and 0 safely
+   ↓ provisional similar projected points display > compares startable plan totals 0 and 1 safely
+   ↓ provisional similar projected points display > compares startable plan totals -100 and -95 safely
+   ↓ provisional similar projected points display > compares startable plan totals -100 and 100 safely
+   ↓ provisional similar projected points display > compares startable plan totals 1e-300 and 9.6e-301 safely
+   ↓ provisional similar projected points display > compares startable plan totals 1e-300 and 5e-301 safely
+   ↓ provisional similar projected points display > compares startable plan totals 1.7976931348623157e+308 and 1.7437623408164462e+308 safely
+   ↓ provisional similar projected points display > compares startable plan totals 1.7976931348623157e+308 and -1.7976931348623157e+308 safely
+   ↓ provisional similar projected points display > withholds unsupported or mismatched comparison null / 0
+   ↓ provisional similar projected points display > withholds unsupported or mismatched comparison NaN / 0
+   ↓ provisional similar projected points display > withholds unsupported or mismatched comparison Infinity / 0
+   ↓ provisional similar projected points display > withholds unsupported or mismatched comparison 95 / 100
+   ↓ provisional similar projected points display > withholds unsupported or mismatched comparison 95 / 100
+   ↓ RosterScheduleOptimizer workspace > loads planning data and settles access after development effect replay
+   ↓ RosterScheduleOptimizer workspace > keeps an existing preservation journal held during development effect replay
+   ↓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different owner or rewriting the plan
+   ↓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different league or rewriting the plan
+   ↓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different team or rewriting the plan
+   ↓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different horizon or rewriting the plan
+   ↓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different timezone or rewriting the plan
+   ↓ RosterScheduleOptimizer workspace > keeps display-preference corrupt separate from the working plan
+   ↓ RosterScheduleOptimizer workspace > keeps display-preference out-of-horizon separate from the working plan
+   ↓ RosterScheduleOptimizer workspace > keeps display-preference read-failure separate from the working plan
+   ↓ RosterScheduleOptimizer workspace > keeps display-preference write-failure separate from the working plan
+   ↓ RosterScheduleOptimizer workspace > qualifies plan aggregate counters and ratios under partial schedule coverage
+   ↓ RosterScheduleOptimizer workspace > qualifies plan aggregate counters and ratios under complete schedule coverage
+   ↓ RosterScheduleOptimizer workspace > shows upstream stale and disabled evidence in manual readiness independently of reader time
+   ↓ RosterScheduleOptimizer workspace > shows a provisional schedule warning without changing complete coverage or manager intent
+   ↓ RosterScheduleOptimizer workspace > updates the provisional schedule 2-hour warning after an edit without a new read
+   ↓ RosterScheduleOptimizer workspace > updates the provisional schedule 6-hour warning after an edit without a new read
+   ↓ RosterScheduleOptimizer workspace > shows confirmed Yahoo zero usage independently from unknown allowance and planned adds
+   ↓ RosterScheduleOptimizer workspace > distinguishes projected fit from schedule-first order for unequal games and quality
+   ↓ RosterScheduleOptimizer workspace > separates planned adds from allowance 'Week: 0 remaining (manager)'
+   ↓ RosterScheduleOptimizer workspace > separates planned adds from allowance 'Week: Allowance unknown'
+   ↓ RosterScheduleOptimizer workspace > separates planned adds from allowance 'Week: Allowance unknown'
+   ↓ RosterScheduleOptimizer workspace > renders verified zero AGP separately from unavailable metrics
+   ↓ RosterScheduleOptimizer workspace > reads and selects the exact compared timed swap, keeping AGP/points tradeoffs paired
+   ↓ RosterScheduleOptimizer workspace > keeps compared-drop selection disabled for no gain
+   ↓ RosterScheduleOptimizer workspace > keeps compared-drop selection disabled for missing points
+   ↓ RosterScheduleOptimizer workspace > uses schedule ordering and category-plan guidance instead of points claims in category leagues
+   ↓ RosterScheduleOptimizer workspace > groups candidates by team without changing eligibility, filters and deduplicates All players
+   ↓ RosterScheduleOptimizer workspace > reviews manual candidate positions explicitly without replacing selected moves or leaking another candidate's positions
+   ↓ RosterScheduleOptimizer workspace > keeps the manager exclusion control read-only for retained connected inputs
+   ↓ RosterScheduleOptimizer workspace > preserves API warnings without converting structured errors to object text
+   ↓ RosterScheduleOptimizer workspace > renders the structured planning-data failure as its actual warning
+   ↓ RosterScheduleOptimizer workspace > shows the actual bench tradeoff and public assumptions within the selected date
+   ↓ RosterScheduleOptimizer workspace > keeps unsupported bench decisions unresolved and separates locks from scoring reasons
+   ↓ RosterScheduleOptimizer workspace > shows category results and projected goalie assumptions without claiming a satisfied minimum
+   ↓ RosterScheduleOptimizer workspace > guides an empty manual workspace to existing inputs without implying acquisition readiness
+   ↓ RosterScheduleOptimizer workspace > requires input review and renews it after rule changes without certifying unknown scoring
+   ↓ RosterScheduleOptimizer workspace > uses eligible full-team evidence for goalie starts without capping conflicts or reviving legacy rows
+   ↓ RosterScheduleOptimizer workspace > separates remaining goalie windows by the selected split without hiding unknown timing or availability
+   ↓ RosterScheduleOptimizer workspace > labels the selected statistical source and its permitted uses without implying a total
+   ↓ RosterScheduleOptimizer workspace > shows only each target's selected source timestamps across mixed inputs and replay
+   ↓ RosterScheduleOptimizer workspace > labels unverified lineups as schedule capacity
+   ↓ RosterScheduleOptimizer workspace > distinguishes category comparison availability (true) from a recommended winner
+   ↓ RosterScheduleOptimizer workspace > distinguishes category comparison availability (false) from a recommended winner
+   ↓ RosterScheduleOptimizer workspace > withholds category gains when the no-move lineup cannot satisfy a selected-player lock
+   ↓ RosterScheduleOptimizer workspace > distinguishes identically named Yahoo teams by league and selects the matching context
+   ↓ RosterScheduleOptimizer workspace > counts only acquired players' future games before their next drop
+   ↓ RosterScheduleOptimizer workspace > keeps exact canonical selections and unresolved pasted names across remount
+   ↓ RosterScheduleOptimizer workspace > reports already-rostered pasted names without changing selected moves or unresolved names
+   ↓ RosterScheduleOptimizer workspace > resolves explicit unresolved-name choices without clobbering intent or existing inputs (rostered=false)
+   ↓ RosterScheduleOptimizer workspace > resolves explicit unresolved-name choices without clobbering intent or existing inputs (rostered=true)
+   × RosterScheduleOptimizer workspace > reveals and focuses existing player detail from 'roster' at 390 without editing the plan 212ms
+     → expected '{"version":1,"context":{"provider":"m…' to be '{"version":1,"context":{"provider":"m…' // Object.is equality
+   ✓ RosterScheduleOptimizer workspace > reveals and focuses existing player detail from 'compact' at 1440 without editing the plan 215ms
+   ✓ RosterScheduleOptimizer workspace > reveals and focuses existing player detail from 'candidate' at 1440 without editing the plan 208ms
+   ↓ RosterScheduleOptimizer workspace > reloads shared schedule data for manual without changing the selected plan or refreshing a provider
+   ↓ RosterScheduleOptimizer workspace > reloads shared schedule data for yahoo without changing the selected plan or refreshing a provider
+   ↓ RosterScheduleOptimizer workspace > undoes local roster edits without changing the public snapshot
+   ↓ RosterScheduleOptimizer workspace > retains local undo when the workspace is reopened
+   ↓ RosterScheduleOptimizer workspace > resumes each league's local working plan when switching contexts and reopening
+   ↓ RosterScheduleOptimizer workspace > marks a future selected add conditional until the provider confirms it
+   ↓ RosterScheduleOptimizer workspace > shows selected acquisition cost 0 with its drop and sequence prerequisite
+   ↓ RosterScheduleOptimizer workspace > shows selected acquisition cost 2 with its drop and sequence prerequisite
+   ↓ RosterScheduleOptimizer workspace > shows selected acquisition cost null with its drop and sequence prerequisite
+   ↓ RosterScheduleOptimizer workspace > identifies the next selected action without promoting an unresolved plan (mistimed prerequisite: false)
+   ↓ RosterScheduleOptimizer workspace > identifies the next selected action without promoting an unresolved plan (mistimed prerequisite: true)
+   ↓ RosterScheduleOptimizer workspace > keeps the next selected action review-only after confirmation with unsupported rules
+   ↓ RosterScheduleOptimizer workspace > uses a saved manager null lock through refresh, undo, save and reopen (provider conflict: false)
+   ↓ RosterScheduleOptimizer workspace > uses a saved manager null lock through refresh, undo, save and reopen (provider conflict: true)
+   ↓ RosterScheduleOptimizer workspace > uses a saved manager 'C#1' lock through refresh, undo, save and reopen (provider conflict: false)
+   ↓ RosterScheduleOptimizer workspace > uses a saved manager 'C#1' lock through refresh, undo, save and reopen (provider conflict: true)
+   ↓ RosterScheduleOptimizer workspace > selects an add using next-day rules and 'manager_available' clearance
+   ↓ RosterScheduleOptimizer workspace > selects an add using next-day rules and 'waivers' clearance
+   ↓ RosterScheduleOptimizer workspace > leaves acquisition intent unresolved for 'unknown'/'manager_available'
+   ↓ RosterScheduleOptimizer workspace > leaves acquisition intent unresolved for 'same_day'/'waivers'
+   ↓ RosterScheduleOptimizer workspace > shows provider refresh feedback immediately, prevents duplicate requests and reports unchanged inputs
+   ↓ RosterScheduleOptimizer workspace > explains unavailable provider refresh for user null, sync false and team ''team''
+   ↓ RosterScheduleOptimizer workspace > explains unavailable provider refresh for user { id: 'manager' }, sync false and team ''team''
+   ↓ RosterScheduleOptimizer workspace > explains unavailable provider refresh for user { id: 'manager' }, sync true and team ''manual''
+   ↓ RosterScheduleOptimizer workspace > explains unavailable provider refresh for user { id: 'manager' }, sync true and team '' ''
+   ↓ RosterScheduleOptimizer workspace > explains unavailable provider inputs without reporting success or replacing saved inputs: 'Connected refresh is unavailable for …'
+   ↓ RosterScheduleOptimizer workspace > explains unavailable provider inputs without reporting success or replacing saved inputs: 'Provider refresh returned no inputs. …'
+   ↓ RosterScheduleOptimizer workspace > renders an unknown range ledger without inventing zero contribution or a unique replacement
+   ↓ RosterScheduleOptimizer workspace > keeps supported active points visible in the collapsed metric row and reserve separate from bench
+   ↓ RosterScheduleOptimizer workspace > keeps unmatched roster contributions explicitly unknown without changing persistence
+   ↓ RosterScheduleOptimizer workspace > reads back legal crowded-day assignments through nonzero plan refresh, Undo and reopen
+   ↓ RosterScheduleOptimizer workspace > keeps refreshed provider authority through undo and reopen without replacing selected moves
+   ↓ RosterScheduleOptimizer workspace > refreshes the selected 'leagueId' and ignores a late response for the previous scope
+   ↓ RosterScheduleOptimizer workspace > refreshes the selected 'teamId' and ignores a late response for the previous scope
+   ↓ RosterScheduleOptimizer workspace > refreshes the selected 'endDate' and ignores a late response for the previous scope
+   ↓ RosterScheduleOptimizer workspace > refreshes the selected 'timeZone' and ignores a late response for the previous scope
+   ↓ RosterScheduleOptimizer workspace > adopts Yahoo's league timezone without losing the selected team, horizon or intent
+   ↓ RosterScheduleOptimizer workspace > keeps the selected context when provider evidence belongs to another league
+   ↓ RosterScheduleOptimizer workspace > uses the signed-in session for access and account reads, then refreshes after account switch
+   ↓ RosterScheduleOptimizer workspace > ignores an older same-account 'eligible' access response after a newer refresh
+   ↓ RosterScheduleOptimizer workspace > ignores an older same-account 'failed' access response after a newer refresh
+   ↓ RosterScheduleOptimizer workspace > ignores an older same-account 'eligible after failed revalidation' access response after a newer refresh
+   ↓ RosterScheduleOptimizer workspace > explains access-service failures instead of silently disabling provider sync
+   ↓ RosterScheduleOptimizer workspace > reports account-save failure, allows retry and preserves the submitted snapshot while local edits continue
+   ↓ RosterScheduleOptimizer workspace > reports checking access before explaining a missing provider team
+   ↓ RosterScheduleOptimizer workspace > explains disabled manual controls and invalid rule-window dates using visible descriptions
+   ↓ RosterScheduleOptimizer workspace > explains empty manual continuation without enabling an unavailable action
+   ↓ RosterScheduleOptimizer workspace > explains first, last and custom matchup-week navigation boundaries
+   ↓ RosterScheduleOptimizer workspace > explains the 'input' Select plan gate and acknowledges selection when summaries match
+   ↓ RosterScheduleOptimizer workspace > explains the 'scoring' Select plan gate and acknowledges selection when summaries match
+   ↓ RosterScheduleOptimizer workspace > explains the 'legal' Select plan gate and acknowledges selection when summaries match
+   ↓ RosterScheduleOptimizer workspace > explains the 'budget' Select plan gate and acknowledges selection when summaries match
+   ↓ RosterScheduleOptimizer workspace > explains the 'hold' Select plan gate and acknowledges selection when summaries match
+   ↓ RosterScheduleOptimizer workspace > explains the 'ready' Select plan gate and acknowledges selection when summaries match
+   ↓ RosterScheduleOptimizer workspace > keeps the local plan on a stale-version save and ignores a late save after account switching
+   ↓ RosterScheduleOptimizer workspace > does not attach an old account save to a newly selected timeframe
+   ↓ RosterScheduleOptimizer workspace > keeps invalid zone and cleared period dates out of committed rules
+   ✓ RosterScheduleOptimizer workspace > opens a saved manual snapshot read-only until the manager explicitly forks it  364ms
+   ↓ compact RSO schedule > defaults future horizons to their first valid day while retaining today and past-week behavior
+   ↓ compact RSO schedule > reads range metrics from the supplied contribution ledger rather than treating the displayed week as the horizon
+   ↓ compact RSO schedule > accounts for 19 players without duplicating dual eligibility and preserves configured vacancies
+   ↓ compact RSO schedule > accounts for 20 players without duplicating dual eligibility and preserves configured vacancies
+   ↓ compact RSO schedule > accounts for 25 players without duplicating dual eligibility and preserves configured vacancies
+   ↓ compact RSO schedule > retains a non-playing lock and weekly window occupant instead of inventing an open slot
+   ↓ compact RSO schedule > places all unstarted McDavid, Panarin and Batherson in local Bench after 13 filled slots
+   ↓ compact RSO schedule > keeps eligibility, team and source warnings on unstarted Bench rows
+   ↓ compact RSO schedule > preserves active and Bench locks while warning on unsupported and conflicting slot claims
+   ↓ compact RSO schedule > retains local Bench membership and collapse counts with configured capacity 0
+   ↓ compact RSO schedule > retains local Bench membership and collapse counts with configured capacity undefined
+   ↓ compact RSO schedule > retains local Bench membership and collapse counts with configured capacity -1
+   ↓ compact RSO schedule > keeps unclaimed slots pending when active membership or schedule coverage is unresolved
+   ↓ compact RSO schedule > counts verified active capacity and distinct roster and NHL games for the selected day
+   ↓ compact RSO schedule > keeps unknown eligibility, unsupported reserves and conflicting locks honest
+   ↓ compact RSO schedule > changes view state and bench visibility without editing intent, and distinguishes unknown goalie starts
+   ↓ compact RSO schedule > bounds range keyboard navigation and synchronizes the selected header and day label
+   ↓ compact RSO schedule > preserves collapsed Bench membership as the selected day changes and honors controlled visibility
+   ↓ compact RSO schedule > labels partial positive game evidence as known and missing partial evidence as unknown
+   ↓ compact RSO schedule > marks an engine assignment conflicting with a held slot and an unknown weekly window as unresolved
+   ↓ compact RSO schedule > labels effective planned additions and reserve capacity conflicts without losing current roster players
+   ↓ compact RSO schedule > keeps missing team null schedules unknown despite complete shared coverage
+   ↓ compact RSO schedule > keeps missing team  schedules unknown despite complete shared coverage
+   ↓ compact RSO schedule > preserves the selected weekday during week navigation and falls back inside clipped weeks
+   ↓ compact RSO schedule > labels a confirmed goalie only when eligible full-team evidence supports it
+   ↓ owner plan preservation > drains a dispatched account save before capturing the actual remote state
+   ↓ owner plan preservation > keeps nonzero intent/Undo, restores after reopen, and verifies original local and remote payloads
+   ↓ owner plan preservation > restores original provider authority including absence without remount (absent=false)
+   ↓ owner plan preservation > restores original provider authority including absence without remount (absent=true)
+   ↓ owner plan preservation > serializes a protected account acknowledgement before persisting and acknowledging a local edit
+   ↓ owner plan preservation > rejects a legacy storage writer instead of adopting its fresh values for restore
+   ↓ owner plan preservation > keeps rehydration and requests paused when another writer changed storage before reopen
+   ↓ owner plan preservation > rejects substituted journal expectations against the server's last-own local hash
+   ↓ owner plan preservation > rejects an outside journal change before dispatching restoration
+   ↓ owner plan preservation > holds admission when a dispatched account write has an uncertain outcome
+   ↓ owner plan preservation > holds account-save testing for original absence and rejects rehashed backup substitution
+   ↓ current-week date controls > starts with local current Mon–Sun and rederives a fresh range when the manager changes timezone
+   ↓ current-week date controls > retains legacy saved ranges until an explicit Current week action and preserves manager intent
+   ↓ current-week date controls > retains a custom date range across timezone edits and reopen
+   ↓ stored Yahoo eligibility while provider verification is pending > recomputes provisional assignments from a fresh database receipt before Yahoo returns, then uses live league positions
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > RosterScheduleOptimizer workspace > reveals and focuses existing player detail from 'roster' at 390 without editing the plan
+AssertionError: expected '{"version":1,"context":{"provider":"m…' to be '{"version":1,"context":{"provider":"m…' // Object.is equality
+
+Expected: "{"version":1,"context":{"provider":"manual","seasonId":20262027,"leagueId":"manual","teamId":"manual","startDate":"2026-10-12","endDate":"2026-10-18","timeZone":"America/New_York","asOf":"2026-10-14T01:25:02.936Z"},"rules":{"lineupMode":"daily","rosterSlots":{"C":2,"LW":2,"RW":2,"D":4,"G":2,"UTIL":1,"BN":4},"lineupPeriods":[],"acquisitionTiming":"unknown","acquisitionCost":null,"periods":[],"scoring":{"mode":"points","weights":{},"categories":[]},"goalieMinimum":{"required":null,"credited":null,"periodStart":null,"periodEnd":null,"counts":"unknown","penalty":"unknown"},"unsupported":[]},"managerRuleOverrides":{},"roster":[{"playerId":"fhfh:1","position":"bench"}],"lockedAssignments":[],"intent":{"revision":0,"steps":[],"protectedPlayerIds":["fhfh:1"],"excludedPlayerIds":[],"goalieCoverage":"accept_risk","goalieWindow":"early","goalieSplit":"mon_thu","alternativeCount":10},"manualPlayers":[{"id":"fhfh:1","nhlId":1,"name":"Alpha Center","teamAbbreviation":"CAR","eligiblePositions":["C"],"playerClass":"skater","availability":"unknown","ownership":null,"canDrop":null,"holdValue":null,"reserveEligibility":[]},{"id":"fhfh:2","nhlId":2,"name":"Bravo Center","teamAbbreviation":"CAR","eligiblePositions":["C"],"playerClass":"skater","availability":"unknown","ownership":null,"canDrop":null,"holdValue":null,"reserveEligibility":[]}],"unresolvedNames":[],"realized":{},"opponent":null}"
+Received: "{"version":1,"context":{"provider":"manual","seasonId":20262027,"leagueId":"manual","teamId":"manual","startDate":"2026-10-12","endDate":"2026-10-18","timeZone":"America/New_York","asOf":"2026-10-14T01:25:03.040Z"},"rules":{"lineupMode":"daily","rosterSlots":{"C":2,"LW":2,"RW":2,"D":4,"G":2,"UTIL":1,"BN":4},"lineupPeriods":[],"acquisitionTiming":"unknown","acquisitionCost":null,"periods":[],"scoring":{"mode":"points","weights":{},"categories":[]},"goalieMinimum":{"required":null,"credited":null,"periodStart":null,"periodEnd":null,"counts":"unknown","penalty":"unknown"},"unsupported":[]},"managerRuleOverrides":{},"roster":[{"playerId":"fhfh:1","position":"bench"}],"lockedAssignments":[],"intent":{"revision":0,"steps":[],"protectedPlayerIds":["fhfh:1"],"excludedPlayerIds":[],"goalieCoverage":"accept_risk","goalieWindow":"early","goalieSplit":"mon_thu","alternativeCount":10},"manualPlayers":[{"id":"fhfh:1","nhlId":1,"name":"Alpha Center","teamAbbreviation":"CAR","eligiblePositions":["C"],"playerClass":"skater","availability":"unknown","ownership":null,"canDrop":null,"holdValue":null,"reserveEligibility":[]},{"id":"fhfh:2","nhlId":2,"name":"Bravo Center","teamAbbreviation":"CAR","eligiblePositions":["C"],"playerClass":"skater","availability":"unknown","ownership":null,"canDrop":null,"holdValue":null,"reserveEligibility":[]}],"unresolvedNames":[],"realized":{},"opponent":null}"
+
+ ❯ __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx:1187:56
+    1185|     expect(screen.getByRole("region", { name: "Candidates and detail" …
+    1186|     expect(screen.getByRole("region", { name: "Candidates and detail" …
+    1187|     expect(window.localStorage.getItem(WORKSPACE_KEY)).toBe(stored);
+       |                                                        ^
+    1188|   });
+    1189| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed | 190 skipped (194)
+   Start at  21:25:01
+   Duration  2.00s (transform 445ms, setup 3ms, collect 672ms, tests 1.00s, environment 140ms, prepare 32ms)
+

@@ -1,0 +1,48 @@
+
+> web@0.1.0 test
+> vitest --run lib/sources/tweetClaimOccurrenceIdentity.test.ts lib/sources/tweetClaimLineage.test.ts ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v1/game-scope.test.ts ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v1/independent-fixture-contract.test.ts --config ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v1/vitest.review.config.mjs --reporter=default --reporter=json --outputFile=../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v1/focused-results.json
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+stdout | ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v1/independent-fixture-contract.test.ts > independent corrected game fixture contract > 'CR011-POSITIVE-v2' keeps all supplied scope dates consistent with its explicit source applicability
+fixture dates {"id":"CR011-POSITIVE-v2","record":"a","applicability":"2026-10-16","effectiveAt":"2026-10-16T23:00:00Z"}
+fixture dates {"id":"CR011-POSITIVE-v2","record":"b","applicability":"2026-10-17","effectiveAt":"2026-10-17T23:00:00Z"}
+
+stdout | ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v1/independent-fixture-contract.test.ts > independent corrected game fixture contract > 'CR051-POSITIVE-v2' keeps all supplied scope dates consistent with its explicit source applicability
+fixture dates {"id":"CR051-POSITIVE-v2","record":"a","declared":"2026-10-15","applicability":"2026-10-16","effectiveAt":"2026-10-16T17:00:00Z"}
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v1/independent-fixture-contract.test.ts (3 tests | 1 failed) 13ms
+   ✓ independent corrected game fixture contract > 'CR011-POSITIVE-v2' keeps all supplied scope dates consistent with its explicit source applicability 9ms
+   × independent corrected game fixture contract > 'CR051-POSITIVE-v2' keeps all supplied scope dates consistent with its explicit source applicability 3ms
+     → expected '2026-10-15' to be '2026-10-16' // Object.is equality
+   ✓ independent corrected game fixture contract > has authentic complete-text digests and causal clocks for the new positive fixtures 0ms
+ ✓ lib/sources/tweetClaimOccurrenceIdentity.test.ts (15 tests) 8ms
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v1/game-scope.test.ts (6 tests) 28ms
+ ✓ lib/sources/tweetClaimLineage.test.ts (7 tests) 36ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v1/independent-fixture-contract.test.ts > independent corrected game fixture contract > 'CR051-POSITIVE-v2' keeps all supplied scope dates consistent with its explicit source applicability
+AssertionError: expected '2026-10-15' to be '2026-10-16' // Object.is equality
+
+Expected: "2026-10-16"
+Received: "2026-10-15"
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v1/independent-fixture-contract.test.ts:13:52
+     11|       const declared = r.interpretation.scope.date;
+     12|       console.log("fixture dates", JSON.stringify({ id: c.id, record: …
+     13|       if (declared !== undefined) expect(declared).toBe(r.sourceApplic…
+       |                                                    ^
+     14|       const eastern = new Intl.DateTimeFormat("en-CA", { timeZone: "Am…
+     15|       expect(eastern).toBe(r.sourceApplicability.date);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 30 passed (31)
+   Start at  00:19:31
+   Duration  426ms (transform 187ms, setup 54ms, collect 454ms, tests 85ms, environment 0ms, prepare 137ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v1/focused-results.json

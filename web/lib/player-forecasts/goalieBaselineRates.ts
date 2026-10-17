@@ -7,8 +7,38 @@ import { contributionBundleChecksum, persistContributionBundle,
 import type { ContributionSource } from "./contributions";
 import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
 import { persistCapturedGoalieBaselineInputs, type CapturedGoalieInput } from "./goalieBaselineInputCapture";
+import { deriveNativeGoalieOutcomes, deriveNativeGoalieShutoutCredit, deriveNativeGoalieSummaryWinCredit, type NativeGoalieWinSummary, type NativeGoalieShutoutSummary } from "./nativeGoalieOutcomes";
+import { verifyBaselineBoxscoreReceipt } from "./baselineSourceLineage";
 
 export const GOALIE_BASELINE_POLICY_VERSION = "goalie-baseline-rates-v1";
+export const NATIVE_GOALIE_WIN_POLICY_VERSION = "native-goalie-appearance-win-rates-v1";
+export const NATIVE_GOALIE_WIN_POLICY = Object.freeze({ version: NATIVE_GOALIE_WIN_POLICY_VERSION,
+  population: "verified_current_regular_season_positive_minutes", maximumAppearances: 20,
+  target: "WINS_GOALIE", basis: "per_appearance", weighting: "equal",
+  missingness: "any_missing_selected_outcome_withholds_rate", prior: "none",
+  participation: "not_supplied", populationCoverage: "unverified", shutouts: "unavailable_without_credited_outcome_receipt" });
+export const nativeGoalieWinDefinitionHash = (seasonId: number) => playerForecastSourcePayloadHash({ policy: NATIVE_GOALIE_WIN_POLICY, seasonId });
+export const NATIVE_GOALIE_SUMMARY_WIN_POLICY_VERSION = "native-goalie-appearance-summary-win-rates-v1";
+export const NATIVE_GOALIE_SUMMARY_WIN_POLICY = Object.freeze({ version: NATIVE_GOALIE_SUMMARY_WIN_POLICY_VERSION,
+  population: "verified_current_regular_season_positive_minutes", maximumAppearances: 20,
+  target: "WINS_GOALIE", basis: "per_appearance", weighting: "equal",
+  source: "official_per_game_summary_credited_wins_crosschecked_final_boxscore",
+  missingness: "any_missing_or_conflicting_selected_credit_withholds_rate", prior: "none",
+  participation: "not_supplied", populationCoverage: "unverified" });
+export const nativeGoalieSummaryWinDefinitionHash = (seasonId: number) => playerForecastSourcePayloadHash({ policy: NATIVE_GOALIE_SUMMARY_WIN_POLICY, seasonId });
+export const NATIVE_GOALIE_VOLUME_POLICY_VERSION = "native-goalie-appearance-volume-rates-v1";
+export const NATIVE_GOALIE_VOLUME_POLICY = Object.freeze({ version: NATIVE_GOALIE_VOLUME_POLICY_VERSION,
+  population: "verified_current_regular_season_positive_minutes", maximumAppearances: 20,
+  targets: ["SAVES_GOALIE", "GOALS_AGAINST_GOALIE", "SHOTS_AGAINST_GOALIE", "GOALIE_MINUTES"],
+  basis: "per_appearance", weighting: "equal", missingness: "all_four_components_required_on_every_selected_appearance",
+  maximumMinutes: 65, prior: "none", participation: "not_supplied", populationCoverage: "unverified" });
+export const nativeGoalieVolumeDefinitionHash = (seasonId: number) => playerForecastSourcePayloadHash({ policy: NATIVE_GOALIE_VOLUME_POLICY, seasonId });
+export const NATIVE_GOALIE_SHUTOUT_POLICY_VERSION = "native-goalie-appearance-shutout-rates-v1";
+export const NATIVE_GOALIE_SHUTOUT_POLICY = Object.freeze({ version: NATIVE_GOALIE_SHUTOUT_POLICY_VERSION,
+  maximumAppearances: 20, target: "SHUTOUTS_GOALIE", basis: "per_appearance", weighting: "equal",
+  source: "official_per_game_summary_credited_shutouts", missingness: "any_missing_or_ambiguous_selected_credit_withholds_rate",
+  summaryMaximumDays: 60, summaryMaximumGames: 60, participation: "not_supplied", prior: "none" });
+export const nativeGoalieShutoutDefinitionHash = (seasonId: number) => playerForecastSourcePayloadHash({ policy: NATIVE_GOALIE_SHUTOUT_POLICY, seasonId });
 const APPEARANCE_TARGETS = POLICY.goalieVolumeTargets;
 const START_TARGETS = POLICY.goalieStartTargets;
 const validCount = (value: number | null | undefined): value is number =>
@@ -37,7 +67,7 @@ export type GoalieTargetRate = {
   missingSourceIds: string[];
 };
 export type GoalieBaselineRateSnapshot = {
-  policyVersion: typeof GOALIE_BASELINE_POLICY_VERSION; validation: "unvalidated";
+  policyVersion: typeof GOALIE_BASELINE_POLICY_VERSION | typeof NATIVE_GOALIE_WIN_POLICY_VERSION | typeof NATIVE_GOALIE_VOLUME_POLICY_VERSION | typeof NATIVE_GOALIE_SHUTOUT_POLICY_VERSION | typeof NATIVE_GOALIE_SUMMARY_WIN_POLICY_VERSION; validation: "unvalidated";
   definitionHash: string;
   playerId: number; nhlPlayerId: number; seasonId: number; cutoffAt: string;
   sourceWatermark: string; targets: GoalieTargetRate[]; limitations: string[];
@@ -142,6 +172,141 @@ export function buildGoalieBaselineRates(input: {
       `Candidate definition: ${baselineDefinitionHash("goalie", input.seasonId)}.`, ...(input.limitations ?? [])] };
 }
 
+function currentGoalieAppearanceWindow(input: Parameters<typeof buildGoalieBaselineRates>[0], maximum: number) {
+  return input.appearances.filter(row => row.regularSeason && row.seasonId === input.seasonId
+    && validTime(row.availableAt) && Date.parse(row.availableAt) <= Date.parse(input.cutoffAt)
+    && /^\d{4}-\d{2}-\d{2}$/.test(row.gameDate) && row.gameDate <= input.cutoffAt.slice(0, 10))
+    .sort((a, b) => b.gameDate.localeCompare(a.gameDate) || b.gameId - a.gameId)
+    .slice(0, maximum);
+}
+
+/** Explicit native mean of observed win credits, including relief appearances. Never a start probability. */
+export function buildNativeGoalieWinRates(input: Parameters<typeof buildGoalieBaselineRates>[0]): GoalieBaselineRateSnapshot {
+  if (input.projections.length || input.appearances.length > 200) {
+    throw new Error("Native goalie win rates require bounded original appearances without projections.");
+  }
+  const base = buildGoalieBaselineRates(input);
+  const selected = currentGoalieAppearanceWindow(input, NATIVE_GOALIE_WIN_POLICY.maximumAppearances);
+  let wins = 0;
+  const missingGameIds: number[] = [];
+  for (const appearance of selected) {
+    // Identity, payload content, positive minutes and capture clocks must remain fatal.
+    verifyBaselineBoxscoreReceipt(appearance, input.nhlPlayerId, input.cutoffAt, "goalie");
+    try {
+      const receipt = deriveNativeGoalieOutcomes({ appearance, nhlPlayerId: input.nhlPlayerId, cutoffAt: input.cutoffAt });
+      if (receipt.winCredit === null) missingGameIds.push(appearance.gameId);
+      else wins += receipt.winCredit;
+    } catch (error) {
+      if (!(error instanceof Error) || ![
+        "Native goalie outcomes require matching final boxscore and explicit starter/decision evidence.",
+        "Incomplete or conflicting boxscore goalie components",
+      ].includes(error.message)) throw error;
+      missingGameIds.push(appearance.gameId);
+    }
+  }
+  const targets: GoalieTargetRate[] = selected.length && !missingGameIds.length ? [{
+    targetKey: "WINS_GOALIE", basis: "per_appearance", rate: wins / selected.length,
+    consensusRate: null, previousSeasonRate: null, sourceRows: [], previousGameIds: [],
+    recentGameIds: selected.map(row => row.gameId), missingSourceIds: [],
+  }] : [];
+  return { ...base, policyVersion: NATIVE_GOALIE_WIN_POLICY_VERSION,
+    definitionHash: nativeGoalieWinDefinitionHash(input.seasonId), targets, missingSourceIds: [],
+    missingTargetKeys: [...APPEARANCE_TARGETS, ...START_TARGETS].filter(key => !targets.some(row => row.targetKey === key)).sort(),
+    limitations: ["Unvalidated current-season observed win credits per positive-minute appearance, including relief; no start or appearance probability is inferred.",
+      `Equal-weight mean over ${selected.length} selected captured appearances; historical population coverage is unverified.`,
+      "Any missing selected win decision withholds the entire rate; missing decisions are never zero or omitted from the denominator.",
+      "Credited shutouts remain unavailable without an explicit credited-outcome source; zero goals against does not establish shutout credit.",
+      ...(missingGameIds.length ? [`Win evidence is unavailable for selected games: ${missingGameIds.join(", ")}.`] : []),
+      ...(input.limitations ?? [])] };
+}
+
+/** Joint appearance population preserves SA=SV+GA and minutes without requiring a prior or any future probability. */
+export function buildNativeGoalieVolumeRates(input: Parameters<typeof buildGoalieBaselineRates>[0]): GoalieBaselineRateSnapshot {
+  if (input.projections.length || input.appearances.length > 200) {
+    throw new Error("Native goalie volume rates require bounded original appearances without projections.");
+  }
+  const base = buildGoalieBaselineRates(input);
+  const selected = currentGoalieAppearanceWindow(input, NATIVE_GOALIE_VOLUME_POLICY.maximumAppearances);
+  const totals = { SAVES_GOALIE: 0, GOALS_AGAINST_GOALIE: 0, SHOTS_AGAINST_GOALIE: 0, GOALIE_MINUTES: 0 };
+  for (const appearance of selected) {
+    verifyBaselineBoxscoreReceipt(appearance, input.nhlPlayerId, input.cutoffAt, "goalie");
+    const { saves, goalsAgainst, shotsAgainst, toiMinutes } = appearance;
+    if (!validCount(saves) || !validCount(goalsAgainst) || !validCount(shotsAgainst)
+      || saves + goalsAgainst !== shotsAgainst || !validCount(toiMinutes)
+      || toiMinutes <= 0 || toiMinutes > NATIVE_GOALIE_VOLUME_POLICY.maximumMinutes) {
+      throw new Error("Native goalie appearance volume requires coherent counts and positive minutes at most 65.");
+    }
+    totals.SAVES_GOALIE += saves;
+    totals.GOALS_AGAINST_GOALIE += goalsAgainst;
+    totals.SHOTS_AGAINST_GOALIE += shotsAgainst;
+    totals.GOALIE_MINUTES += toiMinutes;
+  }
+  const targets: GoalieTargetRate[] = selected.length ? Object.entries(totals).map(([targetKey, total]) => ({
+    targetKey, basis: "per_appearance", rate: total / selected.length, consensusRate: null,
+    previousSeasonRate: null, sourceRows: [], previousGameIds: [], recentGameIds: selected.map(row => row.gameId), missingSourceIds: [],
+  })) : [];
+  return { ...base, policyVersion: NATIVE_GOALIE_VOLUME_POLICY_VERSION,
+    definitionHash: nativeGoalieVolumeDefinitionHash(input.seasonId), targets, missingSourceIds: [],
+    missingTargetKeys: [...APPEARANCE_TARGETS, ...START_TARGETS].filter(key => !targets.some(row => row.targetKey === key)).sort(),
+    limitations: ["Unvalidated joint current-season volume means per positive-minute appearance, including relief; no start or appearance probability is inferred.",
+      `Equal-weight means over the same ${selected.length} selected captured appearances; historical population coverage is unverified.`,
+      "Saves, goals against, shots against and positive TOI minutes require original final-boxscore support on every selected appearance.",
+      "Wins and credited shutouts are not volume observations; neither is inferred from goals against or TOI.",
+      ...(input.limitations ?? [])] };
+}
+
+/** Separate provenance policy; a missing boxscore decision is never interpreted as zero. */
+export function buildNativeGoalieSummaryWinRates(input: Parameters<typeof buildGoalieBaselineRates>[0] & {
+  winSummary?: NativeGoalieWinSummary;
+}): GoalieBaselineRateSnapshot {
+  if (input.projections.length || input.appearances.length > 200) throw new Error("Native summary W rates require bounded original appearances without projections.");
+  const base = buildGoalieBaselineRates(input), selected = currentGoalieAppearanceWindow(input, 20);
+  let wins = 0;
+  const missingGameIds: number[] = [];
+  for (const appearance of selected) {
+    verifyBaselineBoxscoreReceipt(appearance, input.nhlPlayerId, input.cutoffAt, "goalie");
+    const credit = input.winSummary ? deriveNativeGoalieSummaryWinCredit({ appearance, nhlPlayerId: input.nhlPlayerId,
+      cutoffAt: input.cutoffAt, summary: input.winSummary }).winCredit : null;
+    if (credit === null) missingGameIds.push(appearance.gameId); else wins += credit;
+  }
+  const targets: GoalieTargetRate[] = selected.length && !missingGameIds.length ? [{
+    targetKey: "WINS_GOALIE", basis: "per_appearance", rate: wins / selected.length,
+    consensusRate: null, previousSeasonRate: null, sourceRows: [], previousGameIds: [],
+    recentGameIds: selected.map(row => row.gameId), missingSourceIds: [],
+  }] : [];
+  return { ...base, policyVersion: NATIVE_GOALIE_SUMMARY_WIN_POLICY_VERSION,
+    definitionHash: nativeGoalieSummaryWinDefinitionHash(input.seasonId), targets, missingSourceIds: [],
+    missingTargetKeys: [...APPEARANCE_TARGETS, ...START_TARGETS].filter(key => !targets.some(row => row.targetKey === key)).sort(),
+    limitations: ["Unvalidated explicit official-summary W credits per positive-minute appearance, including relief; no participation or start probability inferred.",
+      "Every selected appearance requires exact original final-boxscore volume and summary identity/date/TOI/stat agreement; conflicting known decisions withhold the rate.",
+      ...(missingGameIds.length ? [`Missing or conflicting selected summary W credits: ${missingGameIds.join(", ")}.`] : []),
+      ...(input.limitations ?? [])] };
+}
+
+/** Credited SO means over the same positive-minute appearance population, including relief. */
+export function buildNativeGoalieShutoutRates(input: Parameters<typeof buildGoalieBaselineRates>[0] & {
+  shutoutSummary?: NativeGoalieShutoutSummary;
+}): GoalieBaselineRateSnapshot {
+  if (input.projections.length || input.appearances.length > 200) throw new Error("Native SO rates require bounded original appearances without projections.");
+  const base = buildGoalieBaselineRates(input), selected = currentGoalieAppearanceWindow(input, 20);
+  let credits = 0;
+  const missingGameIds: number[] = [];
+  for (const appearance of selected) {
+    verifyBaselineBoxscoreReceipt(appearance, input.nhlPlayerId, input.cutoffAt, "goalie");
+    const credit = input.shutoutSummary ? deriveNativeGoalieShutoutCredit({ appearance, nhlPlayerId: input.nhlPlayerId,
+      cutoffAt: input.cutoffAt, summary: input.shutoutSummary }).shutoutCredit : null;
+    if (credit === null) missingGameIds.push(appearance.gameId); else credits += credit;
+  }
+  const targets: GoalieTargetRate[] = selected.length && !missingGameIds.length ? [{ targetKey: "SHUTOUTS_GOALIE", basis: "per_appearance",
+    rate: credits / selected.length, consensusRate: null, previousSeasonRate: null, sourceRows: [], previousGameIds: [],
+    recentGameIds: selected.map(row => row.gameId), missingSourceIds: [] }] : [];
+  return { ...base, policyVersion: NATIVE_GOALIE_SHUTOUT_POLICY_VERSION, definitionHash: nativeGoalieShutoutDefinitionHash(input.seasonId),
+    targets, missingSourceIds: [], missingTargetKeys: [...APPEARANCE_TARGETS, ...START_TARGETS].filter(key => !targets.some(row => row.targetKey === key)).sort(),
+    limitations: ["Unvalidated explicit official credited shutouts per selected positive-minute appearance; no GA=0 inference or participation probability.",
+      "The original full summary page is exposed; only approved game IDs bound to original boxscore appearances enter this mean.",
+      ...(missingGameIds.length ? [`Missing or ambiguous credited SO for selected games: ${missingGameIds.join(",")}.`] : []), ...(input.limitations ?? [])] };
+}
+
 export function buildGoalieContributionBundle(input: {
   seasonId: number; cutoffAt: string; issuedAt: string; expiresAt: string; scheduleRevision: string;
   snapshots: Array<{ snapshot: GoalieBaselineRateSnapshot; teamId: number; rosterRevision: string }>;
@@ -155,10 +320,17 @@ export function buildGoalieContributionBundle(input: {
   }
   const sources: ContributionSource[] = [];
   const players = new Set<number>();
+  const policyVersion = input.snapshots[0].snapshot.policyVersion;
+  const nativeSummaryWins = policyVersion === NATIVE_GOALIE_SUMMARY_WIN_POLICY_VERSION;
+  const nativeWins = policyVersion === NATIVE_GOALIE_WIN_POLICY_VERSION || nativeSummaryWins;
+  const nativeVolumes = policyVersion === NATIVE_GOALIE_VOLUME_POLICY_VERSION;
+  const nativeShutouts = policyVersion === NATIVE_GOALIE_SHUTOUT_POLICY_VERSION;
   for (const { snapshot, teamId, rosterRevision } of input.snapshots) {
-    if (players.has(snapshot.playerId) || snapshot.policyVersion !== GOALIE_BASELINE_POLICY_VERSION
+    if (players.has(snapshot.playerId) || ![GOALIE_BASELINE_POLICY_VERSION, NATIVE_GOALIE_WIN_POLICY_VERSION, NATIVE_GOALIE_SUMMARY_WIN_POLICY_VERSION, NATIVE_GOALIE_VOLUME_POLICY_VERSION, NATIVE_GOALIE_SHUTOUT_POLICY_VERSION].includes(snapshot.policyVersion)
+      || snapshot.policyVersion !== policyVersion
       || snapshot.validation !== "unvalidated"
-      || snapshot.definitionHash !== baselineDefinitionHash("goalie", input.seasonId)
+      || snapshot.definitionHash !== (nativeSummaryWins ? nativeGoalieSummaryWinDefinitionHash(input.seasonId) : nativeWins ? nativeGoalieWinDefinitionHash(input.seasonId)
+        : nativeVolumes ? nativeGoalieVolumeDefinitionHash(input.seasonId) : nativeShutouts ? nativeGoalieShutoutDefinitionHash(input.seasonId) : baselineDefinitionHash("goalie", input.seasonId))
       || snapshot.seasonId !== input.seasonId || snapshot.cutoffAt !== input.cutoffAt
       || !Number.isSafeInteger(snapshot.playerId) || snapshot.playerId <= 0
       || !Number.isSafeInteger(snapshot.nhlPlayerId) || snapshot.nhlPlayerId <= 0
@@ -167,11 +339,13 @@ export function buildGoalieContributionBundle(input: {
     players.add(snapshot.playerId);
     const targetKeys = new Set<string>();
     for (const target of snapshot.targets) {
-      const expectedBasis = (START_TARGETS as readonly string[]).includes(target.targetKey) ? "per_start"
+      const expectedBasis = nativeShutouts ? target.targetKey === "SHUTOUTS_GOALIE" ? "per_appearance" : null : nativeWins ? target.targetKey === "WINS_GOALIE" ? "per_appearance" : null
+        : nativeVolumes ? (APPEARANCE_TARGETS as readonly string[]).includes(target.targetKey) ? "per_appearance" : null
+        : (START_TARGETS as readonly string[]).includes(target.targetKey) ? "per_start"
         : (APPEARANCE_TARGETS as readonly string[]).includes(target.targetKey) ? "per_appearance" : null;
       if (!expectedBasis || target.basis !== expectedBasis || targetKeys.has(target.targetKey)
         || !Number.isFinite(target.rate) || target.rate < 0
-        || target.basis === "per_start" && target.rate > 1
+        || (target.basis === "per_start" || nativeWins || nativeShutouts) && target.rate > 1
         || target.sourceRows.some((row) => !validTime(row.availableAt)
           || Date.parse(row.availableAt) > Date.parse(input.cutoffAt))) {
         throw new Error("Goalie bundle target is invalid or after cutoff.");
@@ -179,7 +353,7 @@ export function buildGoalieContributionBundle(input: {
       targetKeys.add(target.targetKey);
       sources.push({ kind: "baseline",
         sourceId: `baseline:${playerForecastSourcePayloadHash({ snapshot, teamId, rosterRevision, targetKey: target.targetKey })}`,
-        policyVersion: GOALIE_BASELINE_POLICY_VERSION, released: false,
+        policyVersion, released: false,
         playerId: snapshot.playerId, nhlPlayerId: snapshot.nhlPlayerId,
         seasonId: snapshot.seasonId, teamId, targetKey: target.targetKey,
         unit: target.targetKey === "GOALIE_MINUTES" ? "minutes" : "count",
@@ -191,7 +365,7 @@ export function buildGoalieContributionBundle(input: {
   }
   if (!sources.length) throw new Error("Goalie bundle contains no supported rates.");
   sources.sort((a, b) => a.playerId - b.playerId || a.targetKey.localeCompare(b.targetKey));
-  const unsigned = { seasonId: input.seasonId, policyVersion: GOALIE_BASELINE_POLICY_VERSION,
+  const unsigned = { seasonId: input.seasonId, policyVersion,
     inputCutoff: input.cutoffAt, issuedAt: input.issuedAt, expiresAt: input.expiresAt,
     sourceCount: sources.length,
     sourceWatermarks: [...new Set(sources.map((source) => source.sourceWatermark))].sort(),

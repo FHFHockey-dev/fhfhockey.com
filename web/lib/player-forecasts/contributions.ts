@@ -1,4 +1,7 @@
+import { timestampMicros } from "../projections/evidenceTime";
+
 export const CONTRIBUTION_RESOLVER_POLICY_VERSION = "contribution-resolver-v1";
+export const CURRENT_SEASON_SOG_CONTRIBUTION_VERSION = "current-season-sog-appearance-mean-v1";
 
 /** Calendar coverage/overlap policy; independent of next-N-team-games ordinals. */
 export type ForecastCalendarPolicy = { version: "forecast-calendar-v1"; calendarDays: number;
@@ -63,6 +66,8 @@ export type ContributionSource = {
   cutoffAt: string;
   issuedAt: string;
   expiresAt: string;
+  /** Admitted catalog validity; original producer expiry remains unchanged. */
+  catalogExpiresAt?: string;
   sourceWatermark: string;
   scheduleRevision: string;
   rosterRevision: string;
@@ -88,7 +93,25 @@ export type ContributionParticipation = {
   cutoffAt: string;
   expiresAt: string;
   competitionId?: string;
+  model?: {
+    version: "skater-participation-frequency-v1" | "goalie-appearance-frequency-v1"
+      | "skater-frozen-window-appearance-frequency-v1" | "goalie-frozen-window-appearance-frequency-v1"
+      | "goalie-frozen-window-start-frequency-v1"
+      | "skater-roster-observation-appearance-frequency-v1" | "goalie-roster-observation-appearance-frequency-v1"
+      | "goalie-roster-observation-start-frequency-v1"; event: "positive_minutes" | "official_starter";
+    probabilityStatus: "uncalibrated_model"; calibration: "unavailable";
+    inputHash: string; evidenceHashes: string[]; numerator: number; denominator: number;
+    selectedGameIds: number[]; limitations: string[];
+  };
 };
+
+/** Explicit empty catalogs revoke old modeled receipts. Conflicting player-game
+ * entries are withheld instead of selecting a convenient probability. */
+export function catalogParticipation(sources: ContributionParticipation[] | undefined,
+  game: ContributionGame, basis: ContributionParticipation["basis"] = "appearance"): ContributionParticipation | undefined {
+  const matches = sources?.filter(row => row.playerId === game.playerId && row.gameId === game.gameId && row.basis === basis);
+  return matches?.length === 1 ? matches[0] : undefined;
+}
 
 export type ResolvedContribution = {
   /** Sanitized inputs permit revalidation without treating a stored mean as new evidence. */
@@ -122,20 +145,35 @@ function assessSource(source: ContributionSource | undefined, game: Contribution
   now: string): ContributionExclusion[] {
   if (!source) return ["no_issued_revision"];
   const reasons: ContributionExclusion[] = [];
+  const scopedSog = source.policyVersion === CURRENT_SEASON_SOG_CONTRIBUTION_VERSION;
+  const time = (value: string) => scopedSog
+    ? timestampMicros(value) === null ? NaN : Number(timestampMicros(value)) : milliseconds(value);
   if (!source.released) reasons.push("unreleased_source");
   if (source.playerId !== game.playerId || source.nhlPlayerId !== game.nhlPlayerId
     || source.seasonId !== game.seasonId || source.teamId !== game.teamId
-    || (source.kind === "detailed" && source.gameId !== game.gameId)
-    || ((source.kind === "detailed" || source.participationIntegrated)
+    || ((source.kind === "detailed" || scopedSog) && source.gameId !== game.gameId)
+    || ((source.kind === "detailed" || source.participationIntegrated || scopedSog)
       && source.scheduleRevision !== game.scheduleRevision)
-    || source.rosterRevision !== game.rosterRevision) reasons.push("identity_conflict");
+    || source.rosterRevision !== game.rosterRevision
+    || scopedSog && (source.kind !== "baseline" || source.targetKey !== "SHOTS_ON_GOAL" || source.unit !== "count"
+      || source.basis !== "per_appearance" || source.participationIntegrated
+      || !Number.isFinite(time(source.scheduledAt ?? "")) || time(source.scheduledAt!) !== time(game.scheduledAt)
+      || !Number.isFinite(time(source.expiresAt)) || time(source.expiresAt) > time(game.scheduledAt)
+      || time(source.expiresAt) <= time(source.issuedAt))) reasons.push("identity_conflict");
   if (source.targetKey !== targetKey || !Number.isFinite(source.mean)
     || (targetKey !== "PLUS_MINUS" && source.mean < 0)) reasons.push("missing_target");
-  if (!validTime(source.cutoffAt) || !validTime(source.issuedAt)
-    || milliseconds(source.cutoffAt) > milliseconds(source.issuedAt)
-    || milliseconds(source.cutoffAt) > milliseconds(game.scheduledAt)
-    || milliseconds(source.issuedAt) > milliseconds(now)) reasons.push("future_input");
-  if (!validTime(source.expiresAt) || milliseconds(source.expiresAt) <= milliseconds(now)) reasons.push("stale_source");
+  if (!Number.isFinite(time(now)) || !validTime(source.cutoffAt) || !validTime(source.issuedAt)
+    || !Number.isFinite(time(source.cutoffAt)) || !Number.isFinite(time(source.issuedAt))
+    || time(source.cutoffAt) > time(source.issuedAt)
+    || time(source.cutoffAt) > time(game.scheduledAt)
+    || time(source.issuedAt) > time(now)) reasons.push("future_input");
+  if (!validTime(source.expiresAt) || !Number.isFinite(time(source.expiresAt)) || time(source.expiresAt) <= time(now)) reasons.push("stale_source");
+  if (source.catalogExpiresAt !== undefined) {
+    const catalogExpiry = timestampMicros(source.catalogExpiresAt), sourceExpiry = timestampMicros(source.expiresAt),
+      issued = timestampMicros(source.issuedAt), readAt = timestampMicros(now);
+    if (catalogExpiry === null || sourceExpiry === null || issued === null || readAt === null
+      || catalogExpiry <= readAt || catalogExpiry > sourceExpiry || catalogExpiry <= issued) reasons.push("stale_source");
+  }
   if (source.legacyAvailabilityAdjustment
     || (["unconditional_game", "per_team_game"].includes(source.basis) !== source.participationIntegrated)) {
     reasons.push("unsupported_conditioning");
@@ -143,10 +181,15 @@ function assessSource(source: ContributionSource | undefined, game: Contribution
   return reasons;
 }
 
-function participationFor(source: ContributionSource, participation: ContributionParticipation | undefined,
-  now: string, game: ContributionGame): number | null {
-  if (source.participationIntegrated) return 1;
-  const basis = source.basis === "per_start" ? "start" : "appearance";
+function participationProbability(participation: ContributionParticipation | undefined,
+  now: string, game: ContributionGame, basis: ContributionParticipation["basis"]): number | null {
+  const model = participation?.model;
+  // Preserve the original legacy clock contract; the versioned modeled branch
+  // uses the same microsecond identity/order checks as its receipt builder.
+  const clock = model ? (value: string) => {
+    const parsed = timestampMicros(value); return parsed === null ? NaN : Number(parsed);
+  } : milliseconds;
+  const validClock = (value: string) => Number.isFinite(clock(value));
   if (!participation || !participation.released || !participation.revisionId.trim()
     || participation.playerId !== game.playerId || participation.nhlPlayerId !== game.nhlPlayerId
     || participation.seasonId !== game.seasonId || participation.gameId !== game.gameId
@@ -154,14 +197,64 @@ function participationFor(source: ContributionSource, participation: Contributio
     || participation.scheduleRevision !== game.scheduleRevision || participation.rosterRevision !== game.rosterRevision
     || !Number.isFinite(participation.probability)
     || participation.probability < 0 || participation.probability > 1
-    || !validTime(participation.cutoffAt)
-    || !validTime(participation.issuedAt) || milliseconds(participation.cutoffAt) > milliseconds(participation.issuedAt)
-    || milliseconds(participation.issuedAt) > milliseconds(now)
-    || milliseconds(participation.cutoffAt) > milliseconds(game.scheduledAt)
-    || milliseconds(participation.cutoffAt) > milliseconds(now)
-    || !validTime(participation.expiresAt)
-    || milliseconds(participation.expiresAt) <= milliseconds(now)) return null;
+    || !validClock(participation.cutoffAt) || !validClock(now) || !validClock(game.scheduledAt)
+    || !validClock(participation.issuedAt) || clock(participation.cutoffAt) > clock(participation.issuedAt)
+    || clock(participation.issuedAt) > clock(now)
+    || clock(participation.cutoffAt) > clock(game.scheduledAt)
+    || clock(participation.cutoffAt) > clock(now)
+    || !validClock(participation.expiresAt)
+    || clock(participation.expiresAt) <= clock(now)) return null;
+  const startModel = model?.version === "goalie-frozen-window-start-frequency-v1"
+    || model?.version === "goalie-roster-observation-start-frequency-v1";
+  if (model && (model.event !== (startModel ? "official_starter" : "positive_minutes") || model.probabilityStatus !== "uncalibrated_model" || model.calibration !== "unavailable"
+    || !/^[a-f0-9]{64}$/.test(model.inputHash) || !Array.isArray(model.evidenceHashes) || !model.evidenceHashes.length
+    || model.evidenceHashes.length > (startModel ? 196 : model.version === "skater-participation-frequency-v1" ? 131 : 132) || model.evidenceHashes.some(value => !/^[a-f0-9]{64}$/.test(value))
+    || !Number.isInteger(model.numerator) || !Number.isInteger(model.denominator)
+    || model.numerator < 0 || model.denominator < 1 || model.denominator > 20 || model.numerator > model.denominator
+    || participation.probability !== model.numerator / model.denominator
+    || !Array.isArray(model.selectedGameIds) || model.selectedGameIds.length !== model.denominator
+    || new Set(model.selectedGameIds).size !== model.selectedGameIds.length
+    || model.selectedGameIds.some(value => !Number.isSafeInteger(value) || value <= 0 || value === game.gameId)
+    || !Array.isArray(model.limitations) || model.limitations.some(value => typeof value !== "string")
+    || !validClock(participation.scheduledAt ?? "") || clock(participation.scheduledAt!) !== clock(game.scheduledAt)
+    || clock(participation.issuedAt) >= clock(game.scheduledAt)
+    || clock(participation.expiresAt) > clock(game.scheduledAt)
+    || clock(participation.expiresAt) <= clock(participation.issuedAt)
+    || clock(participation.issuedAt) - clock(participation.cutoffAt) > DAY_MS * 1000
+    || clock(participation.expiresAt) - clock(participation.issuedAt) > DAY_MS * 1000)) return null;
   return participation.probability;
+}
+
+/** Independently admitted start metadata does not change appearance-conditioned means. */
+export function admittedModeledStart(participation: ContributionParticipation | undefined,
+  game: ContributionGame, now: string): ContributionParticipation | undefined {
+  return (participation?.model?.version === "goalie-frozen-window-start-frequency-v1"
+    || participation?.model?.version === "goalie-roster-observation-start-frequency-v1")
+    && participation.allowedUses?.totals === true
+    && participationProbability(participation, now, game, "start") !== null ? participation : undefined;
+}
+
+function participationFor(source: ContributionSource, participation: ContributionParticipation | undefined,
+  now: string, game: ContributionGame): number | null {
+  // This finite conditional canary has no admitted participation contract.
+  if (source.policyVersion === CURRENT_SEASON_SOG_CONTRIBUTION_VERSION) return null;
+  if (source.participationIntegrated) return 1;
+  const model = participation?.model;
+  const skaterModel = model?.version === "skater-participation-frequency-v1"
+    || model?.version === "skater-frozen-window-appearance-frequency-v1"
+    || model?.version === "skater-roster-observation-appearance-frequency-v1";
+  const goalieModel = model?.version === "goalie-appearance-frequency-v1"
+    || model?.version === "goalie-frozen-window-appearance-frequency-v1"
+    || model?.version === "goalie-roster-observation-appearance-frequency-v1";
+  const compatibleModel = skaterModel
+    ? ["skater-baseline-rates-v1", "current-appearance-skater-rates-v1", "native-prior-appearance-skater-rates-v1"].includes(source.policyVersion) && !source.targetKey.endsWith("_GOALIE") && source.targetKey !== "GOALIE_MINUTES"
+    : goalieModel && ["native-goalie-appearance-win-rates-v1", "native-goalie-appearance-summary-win-rates-v1",
+      "native-goalie-appearance-volume-rates-v1", "native-goalie-appearance-shutout-rates-v1"].includes(source.policyVersion)
+      && (source.targetKey.endsWith("_GOALIE") || source.targetKey === "GOALIE_MINUTES");
+  if (model && (source.kind !== "baseline" || !compatibleModel
+    || source.basis !== "per_appearance"
+    || model.event !== "positive_minutes")) return null;
+  return participationProbability(participation, now, game, source.basis === "per_start" ? "start" : "appearance");
 }
 
 /** Resolve one player/game/target. Source records must already be sanitized and release checked by the loader. */
@@ -204,7 +297,7 @@ export function resolveContribution(input: {
   let sourceKind: ResolvedContribution["sourceKind"] = selected?.kind ?? null;
   let sourceIds = selected ? [selected.sourceId] : [];
   let blendWeight: number | null = null;
-  if (detailed && baseline && horizonDays > 0) {
+  if (detailed && baseline && horizonDays > 0 && baseline.policyVersion !== CURRENT_SEASON_SOG_CONTRIBUTION_VERSION) {
     const weight = Math.min(1, Math.max(0, (horizonDays - lead) / calendarPolicy!.overlapDays));
     if (weight < 1) {
       if (detailed.unit === baseline.unit && detailed.basis === baseline.basis
@@ -262,6 +355,7 @@ export function resolveContribution(input: {
     limitations: [...new Set([
       ...(sourceKind === "blended" ? [...(detailed?.limitations ?? []), ...(baseline?.limitations ?? [])]
         : selected?.limitations ?? []),
+      ...(probability != null ? input.participation?.model?.limitations ?? [] : []),
       ...(unconditionalMean == null && mean != null ? ["Conditional ability only; participation unavailable."] : []),
     ])],
   };

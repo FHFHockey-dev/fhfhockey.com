@@ -165,10 +165,12 @@ export function resolveNstGamelogRequestPlan(options: {
   queuedDates: number;
   requestCount: number;
 }) {
-  return resolveSharedSmallDateBurstPlan({
-    jobName: "update-nst-gamelog",
-    queuedDates: options.queuedDates,
-    requestCount: options.requestCount,
-    safeIntervalMs: NST_SAFE_INTERVAL_MS
-  });
+  // Day count is the scheduled-date aperture, not a proxy derived from URL count.
+  // Actual rolling budgets (including retries/other workers) are enforced at dispatch.
+  const burstAllowed = options.queuedDates > 0 && options.queuedDates <= 2 && options.requestCount <= 40;
+  return {
+    ...options,
+    burstAllowed,
+    requestIntervalMs: burstAllowed ? 0 : NST_SAFE_INTERVAL_MS
+  };
 }

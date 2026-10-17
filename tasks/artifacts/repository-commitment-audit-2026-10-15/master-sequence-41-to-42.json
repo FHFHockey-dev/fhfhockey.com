@@ -1,0 +1,332 @@
+{
+  "observed_at": "2026-10-15T05:40:00Z",
+  "old_sequence": 41,
+  "new_sequence": 42,
+  "updated_at": "2026-10-15T05:25:48.078385Z",
+  "scope": "FHFH blocks only; unrelated Other Projects excluded",
+  "changed": [
+    {
+      "before": {
+        "id": "316a4377-4e59-41bf-b306-ce1ba073900f",
+        "kind": "markdown",
+        "markdown": "## Current priorities October 12 2026",
+        "hash": "f6139a4da1ad11dd7ef02c56605ffa2213173bb7638df8fb1fe6fd8fc95d1b39",
+        "metadata": {}
+      },
+      "after": {
+        "id": "316a4377-4e59-41bf-b306-ce1ba073900f",
+        "kind": "markdown",
+        "markdown": "## Current priorities October 15 2026",
+        "hash": "a39ea3648e7a0eefb85008821634f3dae14841d5b9a5b3d11326837f76ef6c42",
+        "metadata": {}
+      }
+    },
+    {
+      "before": {
+        "id": "f7ac88f3-95d0-4a76-a7da-c8b16b77622f",
+        "kind": "markdown",
+        "markdown": "**October 12 evening sprint status:** RSO remains the highest product priority, supported by FORGE and Start Chart. The Vercel cost-control release is production READY; the earlier mobile Game Grid and desktop sticky-header fixes remain complete. New RSO and FORGE corrections passed independent local review but are not deployed. Local `octoberBranch` synchronization is complete at `a8f58de6178e282acd3a71851c66f4a56b119f14`, containing production `90d3d596`; all 35 dirty-file hashes were preserved. No push or deployment was performed. Broader branch reconciliation remains open; final combined TypeScript/checkpoint evidence for the latest local corrections is still pending. Product readiness and measured cost savings remain open.",
+        "hash": "18d9d3af56e06f65a17de3a276ae78448c5fc42aafb10873604fc85c4ac11d65",
+        "metadata": {}
+      },
+      "after": {
+        "id": "f7ac88f3-95d0-4a76-a7da-c8b16b77622f",
+        "kind": "markdown",
+        "markdown": "**October 15 verified sprint status:** RSO remains the highest product priority, supported by FORGE and Start Chart. The Vercel cost-control release is production READY; the earlier mobile Game Grid and desktop sticky-header fixes remain complete. New RSO and FORGE corrections passed independent local review but are not deployed. The recorded local `octoberBranch` synchronization checkpoint is `a8f58de6178e282acd3a71851c66f4a56b119f14`, containing production `90d3d596`; all 35 dirty-file hashes were preserved. No push or deployment was performed. Broader branch reconciliation remains open. The October 13, 03:25:27 UTC combined TypeScript checkpoint passed with all 29 RSO/FORGE hashes matched; that dated receipt does not certify later edits. Product readiness and measured cost savings remain open.",
+        "hash": "873a719a6fc8b2208fb62310338742741b536a54382bcba7c368b275039a385c",
+        "metadata": {}
+      }
+    },
+    {
+      "before": {
+        "id": "3042ca9d-87fe-4688-a78d-728aea19c366",
+        "kind": "markdown",
+        "markdown": "**Vercel cost-control audit and scoped release complete; savings measurement remains high priority.** Automatic previews are disabled and verified on all four projects. The approved Yahoo draft background pause, empty-queue behavior, dependency-aware build filters and conservative `AGENTS.md` guidance are released. Measure actual savings over comparable periods and retain the unresolved historical route-cost attribution; deployment fan-out alone does not prove Codex caused the bill.",
+        "hash": "62895a5fc15a629069639edf17b9d1fd8e14a366b0b03f258cb8923fd9265736",
+        "metadata": {}
+      },
+      "after": {
+        "id": "3042ca9d-87fe-4688-a78d-728aea19c366",
+        "kind": "markdown",
+        "markdown": "**Vercel cost-control audit and scoped release complete; savings measurement remains open at low priority.** Automatic previews are disabled and verified on all four projects. The approved Yahoo draft background pause, empty-queue behavior, dependency-aware build filters and conservative `AGENTS.md` guidance are released. Measure actual savings over comparable periods and retain the unresolved historical route-cost attribution; deployment fan-out alone does not prove Codex caused the bill.",
+        "hash": "00e57173f7652038191b1916fa6714580ce414ab0624390167a788e4f5155615",
+        "metadata": {}
+      }
+    },
+    {
+      "before": {
+        "id": "51c6989f-cac9-4eb0-944f-696581c1a839",
+        "kind": "markdown",
+        "markdown": "**Source constraints:** NST requests require at least 21 seconds of spacing, protected across retries and workers; this is not a response-time target below 21 seconds. AG, Cullen, DtZ and similar external/crowdsourced estimates may be retained only for isolated comparisons after native forecasts are frozen. Exclude them from platform inputs, priors, training targets, calibration/model-selection targets, blends, fallbacks, served forecasts and RSO/Start Chart recommendation values. FORGE3 native-bootstrap external-fantasy exclusion and calibration-provenance corrections are independently accepted locally, with 160 owner tests and 16 review checks. The local separation increment now also covers the apiHelpers latest-run guard (26 tests), three explicit-ID compatibility routes (36 review tests), and 13 consumer paths including native-baseline admission, shared revisions, Start Chart raw-run handling and FORGE fallback guards. Independent review accepted these bounded patches after the goalie-fallback P2 correction passed seven tests; no review findings remain within that reviewed scope. All changes remain local, not deployed. Final combined TypeScript/checkpoint evidence is pending. Historical calibration lineage, the SQL atomic guard, genuine issuance, provider acceptance and beta acceptance remain open; the reviewed patches do not establish full platform qualification.",
+        "hash": "d0caaba96d4b274f62c6d213e833320e35a95966e296f037c19327afa9fb51df",
+        "metadata": {}
+      },
+      "after": {
+        "id": "51c6989f-cac9-4eb0-944f-696581c1a839",
+        "kind": "markdown",
+        "markdown": "**Source constraints:** NST requests require at least 21 seconds of spacing, protected across retries and workers; this is not a response-time target below 21 seconds. AG, Cullen, DtZ and similar external/crowdsourced estimates may be retained only for isolated comparisons after native forecasts are frozen. Exclude them from platform inputs, priors, training targets, calibration/model-selection targets, blends, fallbacks, served forecasts and RSO/Start Chart recommendation values. FORGE3 native-bootstrap external-fantasy exclusion and calibration-provenance corrections are independently accepted locally, with 160 owner tests and 16 review checks. The local separation increment now also covers the apiHelpers latest-run guard (26 tests), three explicit-ID compatibility routes (36 review tests), and 13 consumer paths including native-baseline admission, shared revisions, Start Chart raw-run handling and FORGE fallback guards. Independent review accepted these bounded patches after the goalie-fallback P2 correction passed seven tests; no review findings remain within that reviewed scope. All changes remain local, not deployed. The October 13, 03:25:27 UTC combined TypeScript checkpoint passed with all 17 RSO and 12 FORGE hashes matched; no tests were rerun at that checkpoint. Later source changes require their own scoped evidence. Historical calibration lineage, the SQL atomic guard, genuine issuance, provider acceptance and beta acceptance remain open; the reviewed patches do not establish full platform qualification.",
+        "hash": "714e3228a971227dd972ad5f3f9771d813276f3a4770afee37c3d214c3ba1566",
+        "metadata": {}
+      }
+    },
+    {
+      "before": {
+        "id": "3b53d0e8-697b-412c-a2b6-c7d8b2cba24c",
+        "kind": "markdown",
+        "markdown": "- [ ] Verify shared official NHL schedule freshness/completeness independently of Yahoo roster sync. October 12's diagnosis found 50 games for October 12–18, but an October 9 cache older than the 36-hour reader threshold; this left schedule coverage partial. Refresh/coverage repair remains planned, and unknown dates must not silently become confirmed off-days.",
+        "hash": "687b59ccbe6fbbc3d46e6852ab852a10de35a12f187ea925dfea645327a38830",
+        "metadata": {}
+      },
+      "after": {
+        "id": "3b53d0e8-697b-412c-a2b6-c7d8b2cba24c",
+        "kind": "markdown",
+        "markdown": "- [x] Complete the selected October 12–18 official NHL schedule refresh/readback independently of Yahoo roster sync. The later retained receipt verifies 114 stored rows/57 games exactly against the inspected hash and a persisted success audit; the selected week normalizes to 50 games/100 team-game cells. Freshness is verified at that receipt's timestamp, superseding the October 12 stale-cache diagnosis. Ongoing schedule freshness, broader roster completeness and qualified forecast acceptance remain separate; unknown dates must not become confirmed off-days.",
+        "hash": "395f83db73989b1c906db9d7d002a4fab00438810825e7f51755951a23bff31f",
+        "metadata": {}
+      }
+    },
+    {
+      "before": {
+        "id": "303b7d5b-44ce-467e-9aed-5a8d29406784",
+        "kind": "markdown",
+        "markdown": "- [x] Complete the reviewed local RSO consumer and engine corrections. Accepted checkpoint `db8e1bb2` retains rejected-move atomicity, usable-outcome ranking, acquisition/reserve handling, chronology, bench eligibility, goalie-window missingness and tiny-score fixes. Task 29 passed 107 planner tests and 10 independent probe groups; earlier 264-unit/five-browser evidence is retained. The new seven-file daily-beta checkpoint passed 360 deterministic tests, lint, full TypeScript and one intercepted-provider Chromium nonzero-plan refresh/Undo/reopen case; the same reviewer closed its runtime/harness findings. The frozen seven-file independent-engineering handoff is complete, with matching reviewed hashes in current HEAD; the whole 39-file commit disposition remains separate and pending. Authentic provider/account/forecast acceptance is still open. The last verified consolidated checklist remains 38/90, not a launch-readiness percentage. The October 12 evening five-file conditional-reconstruction bypass correction is independently accepted with 77 focused review tests; the owner reports 267 tests plus TypeScript and lint. This latest correction remains local and uncommitted, not production.",
+        "hash": "6ba54a0326e63441200131976ad561f11b403154fe78b4d9133d56efd663e5d0",
+        "metadata": {}
+      },
+      "after": {
+        "id": "303b7d5b-44ce-467e-9aed-5a8d29406784",
+        "kind": "markdown",
+        "markdown": "- [x] Complete the reviewed local RSO consumer and engine corrections. Accepted checkpoint `db8e1bb2` retains rejected-move atomicity, usable-outcome ranking, acquisition/reserve handling, chronology, bench eligibility, goalie-window missingness and tiny-score fixes. Task 29 passed 107 planner tests and 10 independent probe groups; earlier 264-unit/five-browser evidence is retained. The new seven-file daily-beta checkpoint passed 360 deterministic tests, lint, full TypeScript and one intercepted-provider Chromium nonzero-plan refresh/Undo/reopen case; the same reviewer closed its runtime/harness findings. The frozen seven-file independent-engineering handoff is complete, with matching reviewed hashes in current HEAD; the whole 39-file commit disposition remains separate and pending. Authentic provider/account/forecast acceptance is still open. The last verified consolidated checklist remains 38/90, not a launch-readiness percentage. The October 12 evening five-file conditional-reconstruction bypass correction is independently accepted with 77 focused review tests; the owner reports 267 tests plus TypeScript and lint. That correction remains a local milestone. The October 15 two-file waiver-timestamp correction is also independently accepted: out-of-range timestamps remain unknown without aborting roster loading; six regressions and 39 affected tests passed, with scoped lint/whitespace checks and all 24 frozen pins verified. The latest correction is uncommitted and not deployed; full TypeScript/browser/build checks were not rerun for it.",
+        "hash": "28caf0fdad484ee2a135d7844f190ce13f5095769aa983640cb3e5b6f3e70e75",
+        "metadata": {}
+      }
+    },
+    {
+      "before": {
+        "id": "845b5107-a98b-4947-a79e-ae927c4beff9",
+        "kind": "markdown",
+        "markdown": "- [ ] Complete connected Yahoo read-only acceptance for “2026-27 FHFH” / “FHFH TJ,” October 12–18. The saved import verifies league/team identity and 19 players; the selected shared schedule refresh is independently complete (100 sides/50 games, zero deletions, 14 neighbors unchanged). A later signed-in canonical RSO session completed a read-only refresh with zero selected moves. Remaining: actual rules/availability completeness, fresh native forecasts and nonzero selected-move continuity. No lineup changes or waiver submissions. TJ closed the original RSO tab at 22:28:37 UTC. Saved-state verification is ongoing; canonical integration and live-account testing remain held, without treating tab closure as verified preservation.",
+        "hash": "dc900feab9ccbacc34d45fbf5467057957c6ca818e72e2ba13ced4a8de5e02bf",
+        "metadata": {}
+      },
+      "after": {
+        "id": "845b5107-a98b-4947-a79e-ae927c4beff9",
+        "kind": "markdown",
+        "markdown": "- [ ] Complete connected Yahoo read-only acceptance for “2026-27 FHFH” / “FHFH TJ,” October 12–18. The saved import verifies league/team identity and 19 players; the selected shared schedule refresh is independently complete (100 sides/50 games, zero deletions, 14 neighbors unchanged). A later signed-in canonical RSO session completed a read-only refresh with zero selected moves. Remaining: actual rules/availability completeness, fresh native forecasts and nonzero selected-move continuity. No lineup changes or waiver submissions. TJ closed the original RSO tab at 22:28:37 UTC. The six-file persistence correction is integrated locally, superseding the canonical-integration hold. Authentic saved-state/principal/CAS, safe isolation/restoration and live-account acceptance remain open; tab closure is not verified preservation.",
+        "hash": "a8d213dddd8109ae9fd68af47eafa1d55ac9afe3c67b2ef71d1581a9d3d11827",
+        "metadata": {}
+      }
+    },
+    {
+      "before": {
+        "id": "09bff7c3-3b3b-4512-975f-8a3c7409e881",
+        "kind": "markdown",
+        "markdown": "- [x] Implement and locally verify resumable context-scoped plans, refresh, Undo and protection of manager-selected moves. A nonzero intercepted-provider fixture now passes refresh → Undo → reopen. Genuine connected-account continuity/context-switch acceptance remains open: preserve the user's original workspace, account for same-origin autosave shared across tabs, and establish safe isolation/restoration. Fixture evidence and the earlier zero-intent real refresh do not close that genuine gate. Independent preservation review of the new six-file bridge is admitted; authentic principal/CAS proof and Yahoo authorization remain open.",
+        "hash": "ca4afa08122b576647dccb95dec2550434459eb892395cbd377e2bd659789dd8",
+        "metadata": {}
+      },
+      "after": {
+        "id": "09bff7c3-3b3b-4512-975f-8a3c7409e881",
+        "kind": "markdown",
+        "markdown": "- [x] Implement and locally verify resumable context-scoped plans, refresh, Undo and protection of manager-selected moves. A nonzero intercepted-provider fixture now passes refresh → Undo → reopen. Genuine connected-account continuity/context-switch acceptance remains open: preserve the user's original workspace, account for same-origin autosave shared across tabs, and establish safe isolation/restoration. Fixture evidence and the earlier zero-intent real refresh do not close that genuine gate. The reviewed six-file preservation bridge is integrated locally, including protected account PUT/ACK versus local persistence ordering; authentic principal/CAS proof, safe account testing and genuine Yahoo continuity remain open.",
+        "hash": "7d8652a984e11de57ee858a6a3ac4d3854e115e37e610c404d0af5cb1620981a",
+        "metadata": {}
+      }
+    },
+    {
+      "before": {
+        "id": "d4fdbf0e-da1c-487c-96fb-e0b79c73de9f",
+        "kind": "markdown",
+        "markdown": "- [ ] Complete broad desktop/mobile workspace acceptance. The compact individual-player schedule, fixed slot order C/LW/RW/D/UTIL/G/BN/IR(+), visible vacancies, SuggestedPicks position colors, flat grouped borders with background-colored inset labels, maximum 20 visible roster rows, and immediate provider-refresh feedback have bounded local acceptance. Current roster left, schedule center, candidates right; preserve mobile Itinerary/Roster/Candidates/Matchup workspaces. Remaining real-account and full-product scenarios must use existing accepted UI rather than another redesign.",
+        "hash": "9c759536060f850ab95648c60f5d8d0e39009f154ed0c8083576f1d2ea3f841a",
+        "metadata": {}
+      },
+      "after": {
+        "id": "d4fdbf0e-da1c-487c-96fb-e0b79c73de9f",
+        "kind": "markdown",
+        "markdown": "- [ ] Complete broad desktop/mobile workspace acceptance. The compact individual-player schedule, fixed slot order C/LW/RW/D/UTIL/G/BN/IR(+), visible vacancies, SuggestedPicks position colors, flat grouped borders with background-colored inset labels, maximum 20 visible roster rows, and immediate provider-refresh feedback have bounded local acceptance. Current roster left, schedule center, candidates right; preserve mobile Itinerary/Roster/Candidates/Matchup workspaces. The later compact three-panel mockup match is locally accepted: combined browser QA passed 13 contexts/38 screenshots with zero defects, independent reviews accepted, and final TypeScript exited 0. No local visual blocker remains. Real-account/provider behavior, issued forecasts, production pixel parity and remaining full-product scenarios remain unverified; reuse the accepted UI.",
+        "hash": "b8c1b99e63f5a7ca63cd571507b647c216feefc8cb36e13e0a0066496df54272",
+        "metadata": {}
+      }
+    },
+    {
+      "before": {
+        "id": "f8ae2293-22b1-4619-9193-1090271de61e",
+        "kind": "markdown",
+        "markdown": "- [ ] Accept daily-lineup beta and full-launch weekly-lock behavior. Consolidated PRD/task list exists; last verified checklist is 38/90. The old thread has admitted read-only 10.4/preparation-only 10.5 work, while the new thread owns the seven-file engineering candidate; no broad UI-goal reactivation is established. Local weekly-lock fixes are reviewed, but actual rules, account concurrency/cross-device, forecast quality, performance, commercial and release gates remain open. Independent team-goals model acceptance is not an RSO prerequisite. Freshness/quality numbers are not presumed approved beta gates merely because an earlier prompt proposed them. Documentation follow-through: verify delivery of the refreshed RSO task-list attachment; the older record says delivery was pending, and no later delivery receipt was established in this consolidation.",
+        "hash": "eee22e501b651e1ecd3d45db2a518b5f07f4c9534b13cd0c9710ea092d9a2524",
+        "metadata": {}
+      },
+      "after": {
+        "id": "f8ae2293-22b1-4619-9193-1090271de61e",
+        "kind": "markdown",
+        "markdown": "- [ ] Accept daily-lineup beta and full-launch weekly-lock behavior. Consolidated PRD/task list exists; last verified checklist is 38/90. The historical old-thread/seven-file writer split has been superseded by completed local integration and later functional/visual handoffs. The October 15 acceptance checklist retains 11 outstanding cases and release gates. Local weekly-lock fixes are reviewed, but actual rules, account concurrency/cross-device, forecast quality, performance, commercial and release gates remain open. Independent team-goals model acceptance is not an RSO prerequisite. Freshness/quality numbers are not presumed approved beta gates merely because an earlier prompt proposed them. Documentation follow-through: verify delivery of the refreshed RSO task-list attachment; the older record says delivery was pending, and no later delivery receipt was established in this consolidation.",
+        "hash": "f0db8dc9492c3bb3696e9849e57173d33581c80fa335edfecfae356c77ced1f1",
+        "metadata": {}
+      }
+    },
+    {
+      "before": {
+        "id": "dd0ff7c7-063e-48bb-a482-020a1739bbc4",
+        "kind": "markdown",
+        "markdown": "- [x] Complete local scoring, conditional-statistics, partial/empty/error-state and goalie-probability fixes/tests. Category-choice correction `0e8040da` is independently accepted locally; it has not been deployed.",
+        "hash": "4e7878213cc5459c07fa8e45f3b485449e5077cb4ab312bc51ca4f546580df7f",
+        "metadata": {}
+      },
+      "after": {
+        "id": "dd0ff7c7-063e-48bb-a482-020a1739bbc4",
+        "kind": "markdown",
+        "markdown": "- [x] Complete local scoring, conditional-statistics, partial/empty/error-state and goalie-probability fixes/tests. Category-choice correction `0e8040da` is independently accepted locally; it has not been deployed. Both later review slices—the participation-label correction and full-page conditional-category slice—are accepted; the coordinated TypeScript run passed and all four owned hashes match. No additional independent consumer defect is demonstrated. Genuine original-issued participation/context/coverage evidence and matching dual-consumer readback remain open.",
+        "hash": "2308eb53ba02f86529cb694e4ba842c23e7a8c68814d49e0a1ad985580a69c06",
+        "metadata": {}
+      }
+    },
+    {
+      "before": {
+        "id": "928e4c6e-89e3-46a5-8d03-810dcc286963",
+        "kind": "markdown",
+        "markdown": "- [ ] Implement and evaluate graded slate crowding: progressively more opportunity on two-game versus seven-game nights and less on sixteen-game versus eight-game nights. Preserve the approved GP/off-night ranking guarantees unless TJ explicitly changes that policy. The retained binary OFF threshold is ≤8; grading does not require relabeling eight games as heavy. Planning's bounded ±0.25 grade applies once per selected horizon, alongside bounded matchup influence, not per game.",
+        "hash": "00f0d5b802e850eaa72cf9a1c5c62e6ed4438425ef193e4754972b99ea983404",
+        "metadata": {}
+      },
+      "after": {
+        "id": "928e4c6e-89e3-46a5-8d03-810dcc286963",
+        "kind": "markdown",
+        "markdown": "- [ ] Finish empirical evaluation and release acceptance for graded slate crowding: progressively more opportunity on two-game versus seven-game nights and less on sixteen-game versus eight-game nights. Preserve the approved GP/off-night ranking guarantees unless TJ explicitly changes that policy. The retained binary OFF threshold is ≤8; grading does not require relabeling eight games as heavy. The current local implementation already applies the documented bounded ±0.25 grade once per selected horizon, alongside bounded matchup influence, not per game. October 15 verification passed 36 tests and 1,824 exclusion-mask assertions without source changes. Local implementation/regression verification is complete; empirical evaluation, production inclusion and live acceptance are not established by those tests.",
+        "hash": "84c6531e5232d676003e93e581e8f90da328274261bacfb803c489c6e72bcaf2",
+        "metadata": {}
+      }
+    },
+    {
+      "before": {
+        "id": "e140e2d7-fc25-4aa3-b14e-3fc7290acca4",
+        "kind": "markdown",
+        "markdown": "- [x] Complete scoped game 0001, 0003 and 0023 repairs and bounded rolling publication. Game `2026010004` Stage 1 normalization-v1 production repair is also complete and independently post-verified: 40 roster rows, 302 events, 739 shifts and one complete manifest, with raw heads and 38 legacy rows unchanged. Stage 2 relationship/derived qualification remains separate.",
+        "hash": "60d70445a02e67531713bab422cf2e10657981a05a02d983d4728a7282853d09",
+        "metadata": {}
+      },
+      "after": {
+        "id": "e140e2d7-fc25-4aa3-b14e-3fc7290acca4",
+        "kind": "markdown",
+        "markdown": "- [x] Complete scoped game 0001, 0003 and 0023 repairs and bounded rolling publication. Game `2026010004` Stage 1 normalization-v1 production repair is also complete and independently post-verified: 40 roster rows, 302 events, 739 shifts and one complete manifest, with raw heads and 38 legacy rows unchanged. Stage 2 relationship/derived qualification remains separate. The October 14, 13:25:46 UTC receipt also closes the reported normalization gaps for games `2026020098`, `2026020099`, `2026020104` and `2026020105`: all have complete v1 manifests, exact counts and matching input heads. Their later raw-recapture failures did not invalidate the earlier normalized data; do not repeat those repairs.",
+        "hash": "4f18207ba5b4dd109396b469238930b1737225c532c1d4e06bc442ce2b12a6c7",
+        "metadata": {}
+      }
+    },
+    {
+      "before": {
+        "id": "2e0e628b-c47b-42c4-943c-fbef3240001b",
+        "kind": "markdown",
+        "markdown": "- [ ] Verify schedule/roster completeness and freshness. The selected October 12–18 shared-schedule freshness milestone is complete. The approved October 9, 15:44:31.111 UTC refresh for game key 477 / season 20262027 persisted all 100 sides for 50 games, with zero deletions, 14 neighboring rows unchanged and a durable audit. Independent review confirmed source fields, IDs, insertion times and complete readers. Scope hash: `2f0894b3dafdc0eef2416c56dbf78877373ff87d3703d99aa31aa0e058b6cba0`. Broader roster completeness and native forecast acceptance remain open. The correct separate game is `2026010004`: Stage 1 roster/events/shifts/manifest repair is complete; Stage 2 relationships and derived-history qualification remain pending.",
+        "hash": "67e113740821ed41063ba655b7454978a98af534109510b3453b16c37f1ef4e1",
+        "metadata": {}
+      },
+      "after": {
+        "id": "2e0e628b-c47b-42c4-943c-fbef3240001b",
+        "kind": "markdown",
+        "markdown": "- [ ] Verify schedule/roster completeness and freshness. The selected October 12–18 shared-schedule freshness milestone is complete. The approved October 9, 15:44:31.111 UTC refresh for game key 477 / season 20262027 persisted all 100 sides for 50 games, with zero deletions, 14 neighboring rows unchanged and a durable audit. Independent review confirmed source fields, IDs, insertion times and complete readers. Scope hash: `2f0894b3dafdc0eef2416c56dbf78877373ff87d3703d99aa31aa0e058b6cba0`. The later actual schedule receipt verifies 114 stored rows/57 games against the inspected hash and a persisted success audit; October 12–18 still normalizes to 50 games/100 cells. Freshness is limited to the recorded timestamp. Broader roster completeness and native forecast acceptance remain open. The correct separate game is `2026010004`: Stage 1 roster/events/shifts/manifest repair is complete; Stage 2 relationships and derived-history qualification remain pending.",
+        "hash": "50e984b6886bafa40d4cb362bdf7693220856bbf6d948124f4f3fae1ca7377f7",
+        "metadata": {}
+      }
+    },
+    {
+      "before": {
+        "id": "5bf7084e-c76b-4f3d-a15a-3aa8ce5f23e4",
+        "kind": "markdown",
+        "markdown": "- [ ] Finish NST identity, resumability, pagination, throughput and partial-table recovery. The bounded October 11 production repair is independently verified: one decimal-rate column widened, 75 missing rows inserted and two Jack Hughes keys corrected, committed once without retry. Readback is 73/288/288; all 572 protected rows, neighbors, dependencies and historical PK values were preserved. Backup and receipt-bound rollback proposal are retained; no rollback or Stage 2 ran. Mahura/Hughes parser corrections and bounded retry code are now deployed at `395282458dd1b22360ef9df52c39062eb09eb6fe`, production READY and live alias verified. `octoberBranch` is reconciled at `cfaac232e4`, with source/dirty work preserved. Next natural cron on October 12 at 07:25 UTC / 03:25 EDT / 02:25 CDT remains unverified; earlier Veleno/cross-run and historical SQL-exception evidence scopes remain open.",
+        "hash": "425a71eee5f05244a6c5a167c8069808f4a6cecebab348622e91f01942db5e08",
+        "metadata": {}
+      },
+      "after": {
+        "id": "5bf7084e-c76b-4f3d-a15a-3aa8ce5f23e4",
+        "kind": "markdown",
+        "markdown": "- [ ] Finish NST identity, resumability, pagination, throughput and partial-table recovery. The bounded October 11 production repair is independently verified: one decimal-rate column widened, 75 missing rows inserted and two Jack Hughes keys corrected, committed once without retry. Readback is 73/288/288; all 572 protected rows, neighbors, dependencies and historical PK values were preserved. Backup and receipt-bound rollback proposal are retained; no rollback or Stage 2 ran. Mahura/Hughes parser corrections and bounded retry code are now deployed at `395282458dd1b22360ef9df52c39062eb09eb6fe`, production READY and live alias verified. `octoberBranch` is reconciled at `cfaac232e4`, with source/dirty work preserved. The October 12 scheduled run was subsequently verified as partial execution/persistence, not full recovery: job 79/run 181081, six source-URL outcomes, 1,728 affected rows and 274 deferred, with coverage not verified. Later bounded repairs are complete for the four all-strengths datasets on October 9–12, with final readback on October 13 at 17:16:17 UTC. The separate October 13 repair is also complete: 575/575 supported skaters in each of counts, rates, counts OI and rates OI, 2,300 rows verified October 14 at 13:43:42 UTC. Do not repeat those repairs. Other families, older Veleno/cross-run and historical SQL-exception scopes remain unverified unless separately closed.",
+        "hash": "3366ebc94af933b34e3f3520c43bbe22adb14dad8c259a06a7ed7b49e089bdbc",
+        "metadata": {}
+      }
+    },
+    {
+      "before": {
+        "id": "ba011d7a-771c-45c7-b8c0-a55b1c8cd2b1",
+        "kind": "markdown",
+        "markdown": "### High priority Vercel cost and four project fan out audit",
+        "hash": "a2a3fc15aba7dfd485a349c8b098174d93c52509e6619de860e5cf2f229c5f4c",
+        "metadata": {}
+      },
+      "after": {
+        "id": "ba011d7a-771c-45c7-b8c0-a55b1c8cd2b1",
+        "kind": "markdown",
+        "markdown": "### Low priority Vercel cost follow-through",
+        "hash": "dbc2b259f1d76b63f9727af0498b6a5837e01287c44c59bf2546ad62ae9d9127",
+        "metadata": {}
+      }
+    },
+    {
+      "before": {
+        "id": "0d8a5b46-0ad0-4eec-9b76-69c169c5f4f8",
+        "kind": "markdown",
+        "markdown": "**Read-only audit started October 12.** The October 11 email reports $43.61 gross cycle-to-date usage less $20 credits, or $23.61 current on-demand usage, not a settled invoice. Fluid memory plus CPU totals $25.31; build CPU totals $10.63. October 1–12 history contains 134 deployment records across the four projects, not 134 full billable builds. October 12 releases cannot explain charges already reported October 11. Current root-directory/ignore settings and historical route-level cost attribution remain unverified. [Team usage](https://vercel.com/fhfhockeydevs-projects/~/usage).",
+        "hash": "d3412883889da22215a1de58307ae675991191d70b13ef280e31a47186d5cb3d",
+        "metadata": {}
+      },
+      "after": {
+        "id": "0d8a5b46-0ad0-4eec-9b76-69c169c5f4f8",
+        "kind": "markdown",
+        "markdown": "**Read-only audit started October 12.** The October 11 email reports $43.61 gross cycle-to-date usage less $20 credits, or $23.61 current on-demand usage, not a settled invoice. Fluid memory plus CPU totals $25.31; build CPU totals $10.63. October 1–12 history contains 134 deployment records across the four projects, not 134 full billable builds. October 12 releases cannot explain charges already reported October 11. The retained four-project configuration audit now documents roots, build/install settings, machine/concurrency settings and production tracking; the later release receipt verifies disabled preview tracking on all four. Legacy-root business purpose/dependencies, the recorded CMS/functions dashboard Node mismatch, exact email cutoff and historical route-level cost attribution remain unresolved. This is retained audit evidence, not a fresh platform-state check. [Team usage](https://vercel.com/fhfhockeydevs-projects/~/usage).",
+        "hash": "98ef940ba804ee4241a595f76c792430a99cf109db9966ae15412ebbfeefa8df",
+        "metadata": {}
+      }
+    },
+    {
+      "before": {
+        "id": "984441cf-2177-44db-ab7d-41d560058200",
+        "kind": "markdown",
+        "markdown": "- [ ] Inventory the four verified linked projects, `fhfhockey` (main), `fhfhockey.com`, `cms-fhfhockey` and `functions-fhfhockey`: owner, purpose, repository/root directory, production branch, preview/Git triggers, ignored-build commands, build commands, build-machine size and concurrency. Identify shared dependencies and essential web, CMS, functions and cron services before recommending changes.",
+        "hash": "7ea5f119b55c9680847bf3301059cd268f7502b6a4de25f15c751d698fd5bd97",
+        "metadata": {}
+      },
+      "after": {
+        "id": "984441cf-2177-44db-ab7d-41d560058200",
+        "kind": "markdown",
+        "markdown": "- [ ] Finish the remaining four-project owner/purpose/dependency and configuration dispositions. The retained audit has documented repository roots, production tracking, preview/Git behavior, build/install commands, machine size and concurrency for `fhfhockey` (main), `fhfhockey.com`, `cms-fhfhockey` and `functions-fhfhockey`; later release evidence verifies preview tracking disabled on all four. The empty-root legacy project's business purpose/dependencies and the recorded CMS/functions dashboard Node mismatch remain unresolved. Preserve essential web, CMS, functions and cron services; configuration inventory does not establish savings or authorize further changes.",
+        "hash": "9006b6ace56be1197ddeb21b6379091f3461acd5662a9e7a935c6ae994dcfc15",
+        "metadata": {}
+      }
+    },
+    {
+      "before": {
+        "id": "ccf4a193-3753-49db-904e-4f00d5d57dfc",
+        "kind": "markdown",
+        "markdown": "- [ ] Preserve older classifier/parser/goalie and other paused work; use newer accepted tweet fixes without resuming unrelated goals. The overnight sprint brake remains historical. Current RSO work is explicitly split between old-thread read-only preparation and the sole new seven-file writer. Old “Plan forecast improvements” remains held: next fitting is unauthorized and participation work belongs to the active FORGE/input owners.",
+        "hash": "98021643f5c91772e93cfcbe12d182f8cbbb1be2a00ebfae5af69615b4d60ef4",
+        "metadata": {}
+      },
+      "after": {
+        "id": "ccf4a193-3753-49db-904e-4f00d5d57dfc",
+        "kind": "markdown",
+        "markdown": "- [ ] Preserve older classifier/parser/goalie and other paused work; use newer accepted tweet fixes without resuming unrelated goals. The overnight sprint brake remains historical. The historical RSO old-thread/seven-file writer split is superseded by completed local integration and later functional/visual handoffs; genuine product acceptance remains open with the coordinated owners. Old “Plan forecast improvements” remains held: next fitting is unauthorized and participation work belongs to the active FORGE/input owners.",
+        "hash": "193f96058c41f248c291faf4a77a8dad1f9c43ffba852010cff0040fd6270558",
+        "metadata": {}
+      }
+    },
+    {
+      "before": {
+        "id": "916c2cd7-d6e3-412b-814a-d2423f58358c",
+        "kind": "markdown",
+        "markdown": "- **Audit follow-through:** **5** repository/ACL/task-026 follow-ups, **6** completed unfinished-work audit, **25** completed navigation/layout audit. Reuse evidence; no blanket re-audit.",
+        "hash": "e5b24496305b126d2f82f437505026d4cdbe09cb63501eee51268cc344f832af",
+        "metadata": {}
+      },
+      "after": {
+        "id": "916c2cd7-d6e3-412b-814a-d2423f58358c",
+        "kind": "markdown",
+        "markdown": "- **Audit follow-through:** **5** repository/ACL/task-026 follow-ups, **6** completed unfinished-work audit, **25** completed navigation/layout audit. The October 13 repository review adjudicated all 423 eligible source rows; its 19 grouped findings are refinements/blockers, not 19 newly authorized jobs. Review completion does not close the underlying tasks. Reuse evidence; no blanket re-audit.",
+        "hash": "8c165cd82de98c82e3a8255911a17e585dadb034134a291808241001b8d48cf0",
+        "metadata": {}
+      }
+    }
+  ],
+  "added": [],
+  "removed": []
+}
+

@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run lib/rosterScheduleOptimizer/periodBoundaries.test.ts --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:34941) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/rosterScheduleOptimizer/periodBoundaries.test.ts (18 tests) 7ms
+
+ Test Files  1 passed (1)
+      Tests  18 passed (18)
+   Start at  20:49:57
+   Duration  392ms (transform 20ms, setup 3ms, collect 97ms, tests 7ms, environment 148ms, prepare 31ms)
+

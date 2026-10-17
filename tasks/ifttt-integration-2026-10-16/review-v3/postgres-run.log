@@ -1,0 +1,264 @@
+
+> web@0.1.0 test
+> vitest --run lib/sources/tweetClaimRegistry.test.ts lib/sources/tweetClaimQualificationStorage.test.ts ../tasks/ifttt-integration-2026-10-16/review-v3/independent-postgres.test.ts -t independent:|claim rollout defaults|^disposable Postgres|^durable qualified --config ../tasks/ifttt-integration-2026-10-16/review-v3/vitest.review.config.mjs --reporter=default --reporter=json --outputFile=../tasks/ifttt-integration-2026-10-16/review-v3/postgres-results.json
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ❯ lib/sources/tweetClaimRegistry.test.ts (16 tests | 12 failed) 1268ms
+   ✓ claim rollout defaults > does not query a sink or claim work when delivery is disabled 1ms
+   × disposable Postgres claim integration and fault recovery > wires the actual projection-storage hook to durable evidence and held proposals, without legacy publication 66ms
+     → Cannot read properties of undefined (reading 'status')
+   × disposable Postgres claim integration and fault recovery > rolls back observations, aliases, state and outbox together on a mid-transaction failure 29ms
+     → promise resolved "{ …(6) }" instead of rejecting
+   × disposable Postgres claim integration and fault recovery > recovers a committed write whose acknowledgement was lost, preserving first admission and one outbox row 31ms
+     → expected [] to have a length of 1 but got +0
+   × disposable Postgres claim integration and fault recovery > serializes competing processors; differing starters block the proposal instead of dispatching a correction 36ms
+     → expected [ { source: { …(12) }, …(11) } ] to have a length of 2 but got 1
+   × disposable Postgres claim integration and fault recovery > never resends after an uncertain successful sink write; reconciliation supplies the durable receipt 21ms
+     → Cannot read properties of undefined (reading 'action_key')
+   × disposable Postgres claim integration and fault recovery > reconciles an expired worker lease and fences its late acknowledgement 21ms
+     → Cannot read properties of undefined (reading 'action_key')
+   × disposable Postgres claim integration and fault recovery > does not duplicate a sink write after delivery-state acknowledgement loss 21ms
+     → Cannot read properties of undefined (reading 'action_key')
+   × disposable Postgres claim integration and fault recovery > permits a bounded retry only after the sink proves that no effect was applied 20ms
+     → Cannot read properties of undefined (reading 'action_key')
+   × disposable Postgres claim integration and fault recovery > stops a repeatedly rejected send after three attempts 20ms
+     → Cannot read properties of undefined (reading 'action_key')
+   × disposable Postgres claim integration and fault recovery > bounds deterministic retry and uncertain reconciliation separately 20ms
+     → Cannot read properties of undefined (reading 'action_key')
+   ✓ disposable Postgres claim integration and fault recovery > enforces service-role-only RPCs and append-only observations 22ms
+   ✓ disposable Postgres claim integration and fault recovery > rejects same-ID changed payloads in both the adapter boundary and the SQL transaction 29ms
+   × disposable Postgres claim integration and fault recovery > retains provisional and verified provenance without mutating earlier evidence 46ms
+     → expected [] to have a length of 1 but got +0
+   × disposable Postgres claim integration and fault recovery > retains a verified cross-root relay alias with one held proposal and unchanged parent evidence 43ms
+     → expected [ { source: { …(12) }, …(11) } ] to have a length of 2 but got 1
+   ✓ disposable Postgres claim integration and fault recovery > rejects retrospective cohort registration and changed frozen parser versions 13ms
+ ✓ lib/sources/tweetClaimQualificationStorage.test.ts (14 tests) 1569ms
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-v3/independent-postgres.test.ts (17 tests | 1 failed) 1724ms
+   ✓ durable qualified IFTTT scope integration > atomically converges provisional/verified and cross-root receipts with one held action, including commit ack loss 112ms
+   ✓ durable qualified IFTTT scope integration > retains exact partial legacy effects and suppresses new reservations without replaying them 29ms
+   ✓ durable qualified IFTTT scope integration > preserves retained r3 occurrence allocations and first planning cutoff through the real RPC 26ms
+   ✓ durable qualified IFTTT scope integration > rejects same-ID changed raw payload and alias membership on the real integrated storage path 8ms
+   ✓ durable qualified IFTTT scope integration > recovers shadow raw-status acknowledgement loss after evidence committed without another action 60ms
+   ✓ durable qualified IFTTT scope integration > rolls back raw and qualification versions together when a later qualification write fails 39ms
+   ✓ durable qualified IFTTT scope integration > does not misclassify a failed refresh of already retained evidence as commit acknowledgement loss 33ms
+   ✓ durable qualified IFTTT scope integration > serializes finite evaluation budgets and stops on clock expiry without failing raw retention 31ms
+   ✓ durable qualified IFTTT scope integration > rejects the reviewer's invalid prospective clocks at the SQL boundary without retaining a sample 16ms
+   ✓ durable qualified IFTTT scope integration > uses a dated source-directory team hint through the actual storage hook and official-roster RPC 35ms
+   ✓ durable qualified IFTTT scope integration > blocks both game scopes on global material rebind in both arrival orders and under contention 189ms
+   ✓ durable qualified IFTTT scope integration > uses the newest incomplete audit as unknown through the real SQL evidence reader 33ms
+   ✓ durable qualified IFTTT scope integration > durably retains a canonical alignment exception instead of dropping its immutable observation 37ms
+   ✓ durable qualified IFTTT scope integration > bounds all raw pilot intake across both handlers and stops before more enrichment after expiry 19ms
+   ✓ durable qualified IFTTT scope integration > independent: preserves the original r3 planning cutoff in real qualification versions 58ms
+   ✓ durable qualified IFTTT scope integration > independent: blocks a cross-scope material rebind under the actual global context CAS 55ms
+   × durable qualified IFTTT scope integration > independent: does not promote the latest explicitly incomplete SQL history audit 41ms
+     → expected 'present' to be 'unknown' // Object.is equality
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 13 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/review-v3/independent-postgres.test.ts > durable qualified IFTTT scope integration > independent: does not promote the latest explicitly incomplete SQL history audit
+AssertionError: expected 'present' to be 'unknown' // Object.is equality
+
+Expected: "unknown"
+Received: "present"
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-v3/independent-postgres.test.ts:274:29
+    272|     await retainQualifiedTweetClaimScope({rpc},f.claims,f.asOf);
+    273|     const q = (await sql("select qualification_state from public.tweet…
+    274|     expect(q.legacy.status).toBe('unknown');
+       |                             ^
+    275|   });
+    276| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/13]⎯
+
+ FAIL  lib/sources/tweetClaimRegistry.test.ts > disposable Postgres claim integration and fault recovery > wires the actual projection-storage hook to durable evidence and held proposals, without legacy publication
+TypeError: Cannot read properties of undefined (reading 'status')
+ ❯ lib/sources/tweetClaimRegistry.test.ts:101:104
+     99|     await persistTweetProjectionReports(db, [value.source]); await per…
+    100|     const retained = (await rpc("read_tweet_claim_scope", { p_scope: v…
+    101|     expect(retained.observations).toHaveLength(1); expect((await actio…
+       |                                                                                                        ^
+    102|     expect(retained.reviewedState.derivations).toHaveLength(1);
+    103|     expect(retained.reviewedState.registry.claims).toHaveLength(1); ex…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/13]⎯
+
+ FAIL  lib/sources/tweetClaimRegistry.test.ts > disposable Postgres claim integration and fault recovery > rolls back observations, aliases, state and outbox together on a mid-transaction failure
+AssertionError: promise resolved "{ …(6) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "added": 1,
++   "exceptions": 1,
++   "proposals": 0,
++   "qualifiedProposals": 0,
++   "scope": "tweet-pending-v2:tweet-receipt-v2:1004",
++   "version": 1,
+  }
+
+ ❯ lib/sources/tweetClaimRegistry.test.ts:113:69
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/13]⎯
+
+ FAIL  lib/sources/tweetClaimRegistry.test.ts > disposable Postgres claim integration and fault recovery > recovers a committed write whose acknowledgement was lost, preserving first admission and one outbox row
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ lib/sources/tweetClaimRegistry.test.ts:124:117
+    122|     const result = (await rpc("read_tweet_claim_scope", { p_scope: cla…
+    123|     expect(result.observations).toHaveLength(1); expect(result.observa…
+    124|     expect(await sql("select action_key from public.tweet_claim_outbox…
+       |                                                                                                                     ^
+    125|   });
+    126|   it("serializes competing processors; differing starters block the pr…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/13]⎯
+
+ FAIL  lib/sources/tweetClaimRegistry.test.ts > disposable Postgres claim integration and fault recovery > serializes competing processors; differing starters block the proposal instead of dispatching a correction
+AssertionError: expected [ { source: { …(12) }, …(11) } ] to have a length of 2 but got 1
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ ❯ lib/sources/tweetClaimRegistry.test.ts:131:35
+    129|     await Promise.all([retainTweetClaimScope({ rpc }, first.claims, no…
+    130|     const snapshot = (await rpc("read_tweet_claim_scope", { p_scope: f…
+    131|     expect(snapshot.observations).toHaveLength(2);
+       |                                   ^
+    132|     const proposals = await sql("select status,requires_review from pu…
+    133|     expect(proposals).toEqual([{ status: "blocked", requires_review: t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/13]⎯
+
+ FAIL  lib/sources/tweetClaimRegistry.test.ts > disposable Postgres claim integration and fault recovery > never resends after an uncertain successful sink write; reconciliation supplies the durable receipt
+TypeError: Cannot read properties of undefined (reading 'action_key')
+ ❯ lib/sources/tweetClaimRegistry.test.ts:136:162
+    134|   });
+    135|   it("never resends after an uncertain successful sink write; reconcil…
+    136|     const { claims } = fixture(); await retainTweetClaimScope({ rpc },…
+       |                                                                                                                                                                  ^
+    137|     const losing: TweetClaimSink = { ...sink, send: async (key, payloa…
+    138|     expect(await deliverTweetClaim({ db: { rpc }, key: action.action_k…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/13]⎯
+
+ FAIL  lib/sources/tweetClaimRegistry.test.ts > disposable Postgres claim integration and fault recovery > reconciles an expired worker lease and fences its late acknowledgement
+TypeError: Cannot read properties of undefined (reading 'action_key')
+ ❯ lib/sources/tweetClaimRegistry.test.ts:145:162
+    143|   });
+    144|   it("reconciles an expired worker lease and fences its late acknowled…
+    145|     const { claims } = fixture(); await retainTweetClaimScope({ rpc },…
+       |                                                                                                                                                                  ^
+    146|     const owner = "00000000-0000-4000-8000-000000000001";
+    147|     expect((await rpc("claim_tweet_claim_delivery", { p_key: action.ac…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/13]⎯
+
+ FAIL  lib/sources/tweetClaimRegistry.test.ts > disposable Postgres claim integration and fault recovery > does not duplicate a sink write after delivery-state acknowledgement loss
+TypeError: Cannot read properties of undefined (reading 'action_key')
+ ❯ lib/sources/tweetClaimRegistry.test.ts:154:162
+    152|   });
+    153|   it("does not duplicate a sink write after delivery-state acknowledge…
+    154|     const { claims } = fixture(); await retainTweetClaimScope({ rpc },…
+       |                                                                                                                                                                  ^
+    155|     fault.settleAck = true;
+    156|     await expect(deliverTweetClaim({ db: { rpc }, key: action.action_k…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/13]⎯
+
+ FAIL  lib/sources/tweetClaimRegistry.test.ts > disposable Postgres claim integration and fault recovery > permits a bounded retry only after the sink proves that no effect was applied
+TypeError: Cannot read properties of undefined (reading 'action_key')
+ ❯ lib/sources/tweetClaimRegistry.test.ts:160:162
+    158|   });
+    159|   it("permits a bounded retry only after the sink proves that no effec…
+    160|     const { claims } = fixture(); await retainTweetClaimScope({ rpc },…
+       |                                                                                                                                                                  ^
+    161|     await rpc("claim_tweet_claim_delivery", { p_key: action.action_key…
+    162|     await due(action.action_key);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/13]⎯
+
+ FAIL  lib/sources/tweetClaimRegistry.test.ts > disposable Postgres claim integration and fault recovery > stops a repeatedly rejected send after three attempts
+TypeError: Cannot read properties of undefined (reading 'action_key')
+ ❯ lib/sources/tweetClaimRegistry.test.ts:169:162
+    167|   });
+    168|   it("stops a repeatedly rejected send after three attempts", async ()…
+    169|     const { claims } = fixture(); await retainTweetClaimScope({ rpc },…
+       |                                                                                                                                                                  ^
+    170|     const rejecting: TweetClaimSink = { ...sink, send: async () => { s…
+    171|     for (let i = 0; i < 5; i++) { await due(action.action_key); await …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/13]⎯
+
+ FAIL  lib/sources/tweetClaimRegistry.test.ts > disposable Postgres claim integration and fault recovery > bounds deterministic retry and uncertain reconciliation separately
+TypeError: Cannot read properties of undefined (reading 'action_key')
+ ❯ lib/sources/tweetClaimRegistry.test.ts:175:162
+    173|   });
+    174|   it("bounds deterministic retry and uncertain reconciliation separate…
+    175|     const { claims } = fixture(); await retainTweetClaimScope({ rpc },…
+       |                                                                                                                                                                  ^
+    176|     const unknown: TweetClaimSink = { idempotency: "durable_action_key…
+    177|       reconcile: async () => { reconciles++; return { status: "unknown…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/13]⎯
+
+ FAIL  lib/sources/tweetClaimRegistry.test.ts > disposable Postgres claim integration and fault recovery > retains provisional and verified provenance without mutating earlier evidence
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ lib/sources/tweetClaimRegistry.test.ts:209:118
+    207|     const after = (await rpc("read_tweet_claim_scope", { p_scope: pend…
+    208|     expect(after.observations).toHaveLength(2); expect(after.observati…
+    209|     expect(await sql("select action_key from public.tweet_claim_outbox…
+       |                                                                                                                      ^
+    210|   });
+    211|   it("retains a verified cross-root relay alias with one held proposal…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/13]⎯
+
+ FAIL  lib/sources/tweetClaimRegistry.test.ts > disposable Postgres claim integration and fault recovery > retains a verified cross-root relay alias with one held proposal and unchanged parent evidence
+AssertionError: expected [ { source: { …(12) }, …(11) } ] to have a length of 2 but got 1
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ ❯ lib/sources/tweetClaimRegistry.test.ts:221:32
+    219|     await retainTweetClaimScope({ rpc }, claims, now());
+    220|     const after = (await rpc("read_tweet_claim_scope", { p_scope: valu…
+    221|     expect(after.observations).toHaveLength(2); expect(after.observati…
+       |                                ^
+    222|     expect(await sql("select action_key from public.tweet_claim_outbox…
+    223|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/13]⎯
+
+
+ Test Files  2 failed | 1 passed (3)
+      Tests  13 failed | 34 passed (47)
+   Start at  23:00:54
+   Duration  2.20s (transform 192ms, setup 56ms, collect 777ms, tests 4.56s, environment 0ms, prepare 98ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/review-v3/postgres-results.json

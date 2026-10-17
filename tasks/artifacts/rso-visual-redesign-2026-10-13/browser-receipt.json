@@ -1,0 +1,337 @@
+{
+  "scope": "actual RSO page/Container/ClientOnly/styles and real planning/candidate workers; synthetic auth/API/calendar; header/Next wrappers substituted; remote fonts stripped",
+  "freshContexts": true,
+  "productionRequests": 0,
+  "externalRequests": 0,
+  "accountRequests": 0,
+  "observations": [
+    {
+      "scenario": "complete",
+      "width": 1440,
+      "height": 900,
+      "frame": {
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440,
+        "documentHeight": 900,
+        "panelRects": [
+          {
+            "width": 372.3125,
+            "top": 319,
+            "bottom": 896
+          },
+          {
+            "width": 700.015625,
+            "top": 319,
+            "bottom": 896
+          },
+          {
+            "width": 343.671875,
+            "top": 319,
+            "bottom": 896
+          }
+        ]
+      },
+      "errors": [],
+      "requests": [
+        "http://127.0.0.1:47999/roster-schedule-optimizer"
+      ],
+      "reads": [
+        {
+          "url": "/api/v1/roster-schedule-optimizer/access",
+          "method": "GET"
+        },
+        {
+          "url": "/api/v1/roster-schedule-optimizer/data?seasonId=20262027&startDate=2026-10-13&endDate=2026-10-19&timeZone=UTC",
+          "method": "GET"
+        },
+        {
+          "url": "/api/v1/roster-schedule-optimizer/workspace?provider=manual&seasonId=20262027&leagueId=manual&teamId=manual&startDate=2026-10-13&endDate=2026-10-19",
+          "method": "GET"
+        }
+      ]
+    },
+    {
+      "scenario": "complete",
+      "width": 390,
+      "height": 844,
+      "frame": {
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390,
+        "documentHeight": 1876,
+        "panelRects": [
+          {
+            "width": 374,
+            "top": 568.4375,
+            "bottom": 1640.4375
+          }
+        ]
+      },
+      "errors": [],
+      "requests": [
+        "http://127.0.0.1:47999/roster-schedule-optimizer"
+      ],
+      "reads": [
+        {
+          "url": "/api/v1/roster-schedule-optimizer/access",
+          "method": "GET"
+        },
+        {
+          "url": "/api/v1/roster-schedule-optimizer/data?seasonId=20262027&startDate=2026-10-13&endDate=2026-10-19&timeZone=UTC",
+          "method": "GET"
+        },
+        {
+          "url": "/api/v1/roster-schedule-optimizer/workspace?provider=manual&seasonId=20262027&leagueId=manual&teamId=manual&startDate=2026-10-13&endDate=2026-10-19",
+          "method": "GET"
+        }
+      ]
+    },
+    {
+      "scenario": "partial",
+      "width": 1440,
+      "height": 900,
+      "frame": {
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440,
+        "documentHeight": 900,
+        "panelRects": [
+          {
+            "width": 372.3125,
+            "top": 319,
+            "bottom": 896
+          },
+          {
+            "width": 700.015625,
+            "top": 319,
+            "bottom": 896
+          },
+          {
+            "width": 343.671875,
+            "top": 319,
+            "bottom": 896
+          }
+        ]
+      },
+      "errors": [],
+      "requests": [
+        "http://127.0.0.1:47999/roster-schedule-optimizer"
+      ],
+      "reads": [
+        {
+          "url": "/api/v1/roster-schedule-optimizer/access",
+          "method": "GET"
+        },
+        {
+          "url": "/api/v1/roster-schedule-optimizer/data?seasonId=20262027&startDate=2026-10-13&endDate=2026-10-19&timeZone=UTC",
+          "method": "GET"
+        },
+        {
+          "url": "/api/v1/roster-schedule-optimizer/workspace?provider=manual&seasonId=20262027&leagueId=manual&teamId=manual&startDate=2026-10-13&endDate=2026-10-19",
+          "method": "GET"
+        }
+      ]
+    },
+    {
+      "scenario": "partial",
+      "width": 390,
+      "height": 844,
+      "frame": {
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390,
+        "documentHeight": 1876,
+        "panelRects": [
+          {
+            "width": 374,
+            "top": 568.4375,
+            "bottom": 1640.4375
+          }
+        ]
+      },
+      "errors": [],
+      "requests": [
+        "http://127.0.0.1:47999/roster-schedule-optimizer"
+      ],
+      "reads": [
+        {
+          "url": "/api/v1/roster-schedule-optimizer/access",
+          "method": "GET"
+        },
+        {
+          "url": "/api/v1/roster-schedule-optimizer/data?seasonId=20262027&startDate=2026-10-13&endDate=2026-10-19&timeZone=UTC",
+          "method": "GET"
+        },
+        {
+          "url": "/api/v1/roster-schedule-optimizer/workspace?provider=manual&seasonId=20262027&leagueId=manual&teamId=manual&startDate=2026-10-13&endDate=2026-10-19",
+          "method": "GET"
+        }
+      ]
+    },
+    {
+      "scenario": "conditional",
+      "width": 1440,
+      "height": 900,
+      "frame": {
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440,
+        "documentHeight": 900,
+        "panelRects": [
+          {
+            "width": 372.3125,
+            "top": 332,
+            "bottom": 896
+          },
+          {
+            "width": 700.015625,
+            "top": 332,
+            "bottom": 896
+          },
+          {
+            "width": 343.671875,
+            "top": 332,
+            "bottom": 896
+          }
+        ]
+      },
+      "errors": [],
+      "requests": [
+        "http://127.0.0.1:47999/roster-schedule-optimizer"
+      ],
+      "reads": [
+        {
+          "url": "/api/v1/roster-schedule-optimizer/access",
+          "method": "GET"
+        },
+        {
+          "url": "/api/v1/roster-schedule-optimizer/data?seasonId=20262027&startDate=2026-10-13&endDate=2026-10-19&timeZone=UTC",
+          "method": "GET"
+        },
+        {
+          "url": "/api/v1/roster-schedule-optimizer/workspace?provider=manual&seasonId=20262027&leagueId=manual&teamId=manual&startDate=2026-10-13&endDate=2026-10-19",
+          "method": "GET"
+        }
+      ]
+    },
+    {
+      "scenario": "conditional",
+      "width": 390,
+      "height": 844,
+      "frame": {
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390,
+        "documentHeight": 1876,
+        "panelRects": [
+          {
+            "width": 374,
+            "top": 568.4375,
+            "bottom": 1640.4375
+          }
+        ]
+      },
+      "errors": [],
+      "requests": [
+        "http://127.0.0.1:47999/roster-schedule-optimizer"
+      ],
+      "reads": [
+        {
+          "url": "/api/v1/roster-schedule-optimizer/access",
+          "method": "GET"
+        },
+        {
+          "url": "/api/v1/roster-schedule-optimizer/data?seasonId=20262027&startDate=2026-10-13&endDate=2026-10-19&timeZone=UTC",
+          "method": "GET"
+        },
+        {
+          "url": "/api/v1/roster-schedule-optimizer/workspace?provider=manual&seasonId=20262027&leagueId=manual&teamId=manual&startDate=2026-10-13&endDate=2026-10-19",
+          "method": "GET"
+        }
+      ]
+    },
+    {
+      "scenario": "empty",
+      "width": 1440,
+      "height": 900,
+      "frame": {
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440,
+        "documentHeight": 900,
+        "panelRects": [
+          {
+            "width": 372.3125,
+            "top": 351.796875,
+            "bottom": 896
+          },
+          {
+            "width": 700.015625,
+            "top": 351.796875,
+            "bottom": 896
+          },
+          {
+            "width": 343.671875,
+            "top": 351.796875,
+            "bottom": 896
+          }
+        ]
+      },
+      "errors": [],
+      "requests": [
+        "http://127.0.0.1:47999/roster-schedule-optimizer"
+      ],
+      "reads": [
+        {
+          "url": "/api/v1/roster-schedule-optimizer/access",
+          "method": "GET"
+        },
+        {
+          "url": "/api/v1/roster-schedule-optimizer/data?seasonId=20262027&startDate=2026-10-13&endDate=2026-10-19&timeZone=UTC",
+          "method": "GET"
+        },
+        {
+          "url": "/api/v1/roster-schedule-optimizer/workspace?provider=manual&seasonId=20262027&leagueId=manual&teamId=manual&startDate=2026-10-13&endDate=2026-10-19",
+          "method": "GET"
+        }
+      ]
+    },
+    {
+      "scenario": "empty",
+      "width": 390,
+      "height": 844,
+      "frame": {
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390,
+        "documentHeight": 1322,
+        "panelRects": [
+          {
+            "width": 374,
+            "top": 622.03125,
+            "bottom": 1086.21875
+          }
+        ]
+      },
+      "errors": [],
+      "requests": [
+        "http://127.0.0.1:47999/roster-schedule-optimizer"
+      ],
+      "reads": [
+        {
+          "url": "/api/v1/roster-schedule-optimizer/access",
+          "method": "GET"
+        },
+        {
+          "url": "/api/v1/roster-schedule-optimizer/data?seasonId=20262027&startDate=2026-10-13&endDate=2026-10-19&timeZone=UTC",
+          "method": "GET"
+        },
+        {
+          "url": "/api/v1/roster-schedule-optimizer/workspace?provider=manual&seasonId=20262027&leagueId=manual&teamId=manual&startDate=2026-10-13&endDate=2026-10-19",
+          "method": "GET"
+        }
+      ]
+    }
+  ]
+}

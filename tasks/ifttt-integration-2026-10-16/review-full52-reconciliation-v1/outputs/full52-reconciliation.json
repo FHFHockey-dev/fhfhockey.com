@@ -1,0 +1,4025 @@
+{
+  "originalOracleSha256": "d9fe45ca44042673ff0381cd0f1981074b196da99fb6fdf9da573ac5df84fd8b",
+  "scope": "Heterogeneous bounded local evidence ledger; not one integrated full52 run or production acceptance.",
+  "original": {
+    "cases": 52,
+    "assertions": 227,
+    "caseRowsWithAllAssertionsMatching": 50,
+    "matchingAssertions": 225,
+    "nonmatchingAssertions": 2,
+    "pure": {
+      "cases": 43,
+      "passedCases": 41,
+      "failedCases": 2,
+      "assertions": 196,
+      "matchingAssertions": 194,
+      "persistenceDeferred": 9
+    },
+    "separatePersistence": {
+      "cases": 9,
+      "assertions": 31,
+      "matchingAssertions": 31
+    }
+  },
+  "approvedVersionedFixtures": {
+    "positiveCases": 2,
+    "positiveAssertions": 12,
+    "originalAssertionsRetained": 7,
+    "ambiguousOriginalNegativeControls": 2,
+    "authenticatedEditRevision": {
+      "id": "AUTHENTICATED-EDIT-REVISION-v2",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "same",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000103:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000103:fixture_a:occurrence:1"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "interpretationVersionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-source-claim-v1:interpretation:05049433970d0d2852db456d40340466c50b31a81dad00b75df9b533a500b584",
+            "tweet-source-claim-v1:interpretation:57d4946fa1003225af712fcc415cfdc773b44cb4b618b980c41e0d18c16ecbbc"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.sourceClaimCount",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.compensatingEffectCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        }
+      ]
+    },
+    "replacements": [
+      {
+        "originalCaseId": "CR011",
+        "approvedPositiveId": "CR011-POSITIVE-v2",
+        "originalAssertionsRetained": 4,
+        "positiveAssertions": [
+          {
+            "index": 0,
+            "assertion": {
+              "op": "pairwise_distinct",
+              "field": "sourceClaimId",
+              "records": [
+                "a",
+                "b"
+              ]
+            },
+            "actual": [
+              "dsl-original:9900000000000000101:fixture_a:occurrence:1",
+              "dsl-original:9900000000000000101:fixture_a:occurrence:2"
+            ],
+            "pass": true
+          },
+          {
+            "index": 1,
+            "assertion": {
+              "op": "pairwise_distinct",
+              "field": "scenarioId",
+              "records": [
+                "a",
+                "b"
+              ]
+            },
+            "actual": [
+              "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+              "tweet-semantic-v1:scenario:d812d7942140242570981fa00d2f86a745fdc138963326b6f1c1f430ed3fd606"
+            ],
+            "pass": true
+          },
+          {
+            "index": 2,
+            "assertion": {
+              "op": "pairwise_distinct",
+              "field": "scenarioRevisionId",
+              "records": [
+                "a",
+                "b"
+              ]
+            },
+            "actual": [
+              "tweet-semantic-v1:revision:38a94b2b08573f9d2bb1801acd93b290f172d67e7da43371aec76aa7e7a9ac16",
+              "tweet-semantic-v1:revision:bd43663f8038fb039bc74a9f9c889bf31e670091e43f53d43fc0d5b0a2c8b24c"
+            ],
+            "pass": true
+          },
+          {
+            "index": 3,
+            "assertion": {
+              "op": "equals",
+              "path": "result.scenarioCount",
+              "value": 2
+            },
+            "actual": 2,
+            "pass": true
+          },
+          {
+            "index": 4,
+            "assertion": {
+              "op": "pairwise_distinct",
+              "field": "effectId",
+              "records": [
+                "a",
+                "b"
+              ]
+            },
+            "actual": [
+              "tweet-source-claim-v1:effect:489a7ef03a1acbb8a772acdecc76026289497f0f106cf7f87d190c22c1695cae",
+              "tweet-source-claim-v1:effect:9d478654212e7ef6bdf00ec018a53906bc092a9800fd8e4a54967cd523ba5ede"
+            ],
+            "pass": true
+          },
+          {
+            "index": 5,
+            "assertion": {
+              "op": "equals",
+              "path": "result.newEffectProposalCount",
+              "value": 2
+            },
+            "actual": 2,
+            "pass": true
+          }
+        ],
+        "ambiguousOriginalNegative": {
+          "id": "CR011-AMBIGUOUS-NEGATIVE-v2",
+          "holds": [
+            {
+              "observationId": "dsl-derivation:305bdb84239099aa8c45890cd2e7f1de8842f8023690fe80de07438d283cdfca",
+              "reason": "original_lineage_evidence_conflict"
+            },
+            {
+              "observationId": "dsl-derivation:3be2d32f5acee0911e09407e290ea0ef9e92fbad96fd9f349b4b7e9bfa16983e",
+              "reason": "original_lineage_evidence_conflict"
+            }
+          ],
+          "effectProposals": 0,
+          "dispatchInstructions": 0
+        },
+        "durable": {
+          "source": "full-acceptance-reconciliation/outputs/game-storage-results.json",
+          "positiveAssertions": [
+            {
+              "index": 0,
+              "assertion": {
+                "op": "pairwise_distinct",
+                "field": "sourceClaimId",
+                "records": [
+                  "a",
+                  "b"
+                ]
+              },
+              "actual": [
+                "tweet-occurrence-component-v1:0:occurrence:1",
+                "tweet-occurrence-component-v1:0:occurrence:2"
+              ],
+              "pass": true
+            },
+            {
+              "index": 1,
+              "assertion": {
+                "op": "pairwise_distinct",
+                "field": "scenarioId",
+                "records": [
+                  "a",
+                  "b"
+                ]
+              },
+              "actual": [
+                "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+                "tweet-semantic-v1:scenario:d812d7942140242570981fa00d2f86a745fdc138963326b6f1c1f430ed3fd606"
+              ],
+              "pass": true
+            },
+            {
+              "index": 2,
+              "assertion": {
+                "op": "pairwise_distinct",
+                "field": "scenarioRevisionId",
+                "records": [
+                  "a",
+                  "b"
+                ]
+              },
+              "actual": [
+                "tweet-semantic-v1:revision:68baf257c386c540b9f8c838cd6f8503140e9e6057f11b389ed3f2eaff04a108",
+                "tweet-semantic-v1:revision:af42cf81a6a37b1c6d559055242e79c01475acbb9687311549ce7b1fdf4ff6cb"
+              ],
+              "pass": true
+            },
+            {
+              "index": 3,
+              "assertion": {
+                "op": "equals",
+                "path": "result.scenarioCount",
+                "value": 2
+              },
+              "actual": 2,
+              "pass": true
+            },
+            {
+              "index": 4,
+              "assertion": {
+                "op": "pairwise_distinct",
+                "field": "effectId",
+                "records": [
+                  "a",
+                  "b"
+                ]
+              },
+              "actual": [
+                "tweet-source-claim-v1:effect:64fb246b8fb069e85bdaba0227a3a3876f389696741c2151ae3c9b8b5ac66e85",
+                "tweet-source-claim-v1:effect:93dfa5b3710d12de4baddac3d9056b2f1b8ddeba22c23a97dcb491f83f45ab52"
+              ],
+              "pass": true
+            },
+            {
+              "index": 5,
+              "assertion": {
+                "op": "equals",
+                "path": "result.newEffectProposalCount",
+                "value": 2
+              },
+              "actual": 2,
+              "pass": true
+            }
+          ],
+          "ambiguousOriginal": {
+            "id": "CR011-AMBIGUOUS-NEGATIVE-durable",
+            "status": "passed_actual_rpc",
+            "holdReasons": [
+              {
+                "reason": "original_lineage_evidence_conflict",
+                "observationId": "tweet-observation-v2:075dbc9b50a7ef126b06584241d618aeb1d68bf368e33e8932cb1a64c948315f"
+              },
+              {
+                "reason": "original_lineage_evidence_conflict",
+                "observationId": "tweet-observation-v2:10e663de9d53537267ce1e5f96c317c4c6acd00d043ef749e69a2f262cb38eb5"
+              }
+            ],
+            "canonicalOccurrences": 1,
+            "nativeEffects": [
+              "tweet-source-claim-v1:effect:64fb246b8fb069e85bdaba0227a3a3876f389696741c2151ae3c9b8b5ac66e85"
+            ],
+            "outbox": [
+              {
+                "action_key": "tweet-semantic-v1:action:761a491893855137634ee94e894c029260d19819ef0257f0786cbc5fee0c08d5",
+                "status": "held",
+                "requires_review": true
+              },
+              {
+                "action_key": "tweet-semantic-v1:action:3cad99bc314d85a43af473dc596e93516278b9ba664b6c7c01525587b791cdbc",
+                "status": "held",
+                "requires_review": true
+              }
+            ],
+            "carrierMapping": "Review-only raw semantic carrier rows are not counted as native r3 effect identities."
+          }
+        },
+        "scope": "Separate user-approved version2 fixture and interpretation; original positive fixture/results remain unchanged."
+      },
+      {
+        "originalCaseId": "CR051",
+        "approvedPositiveId": "CR051-POSITIVE-v2",
+        "originalAssertionsRetained": 3,
+        "positiveAssertions": [
+          {
+            "index": 0,
+            "assertion": {
+              "op": "pairwise_distinct",
+              "field": "scenarioId",
+              "records": [
+                "a",
+                "b"
+              ]
+            },
+            "actual": [
+              "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+              "tweet-semantic-v1:scenario:d812d7942140242570981fa00d2f86a745fdc138963326b6f1c1f430ed3fd606"
+            ],
+            "pass": true
+          },
+          {
+            "index": 1,
+            "assertion": {
+              "op": "pairwise_distinct",
+              "field": "effectId",
+              "records": [
+                "a",
+                "b"
+              ]
+            },
+            "actual": [
+              "tweet-source-claim-v1:effect:ecd45d3769dfe33958bd291727f0d403a2800ceb258ed36a7f3fa78656deda0e",
+              "tweet-source-claim-v1:effect:5315a84baa0355237699caa412d17301b3b08bf9d914661b129b849c3db2f689"
+            ],
+            "pass": true
+          },
+          {
+            "index": 2,
+            "assertion": {
+              "op": "equals",
+              "path": "result.scenarioCount",
+              "value": 2
+            },
+            "actual": 2,
+            "pass": true
+          },
+          {
+            "index": 3,
+            "assertion": {
+              "op": "pairwise_distinct",
+              "field": "sourceClaimId",
+              "records": [
+                "a",
+                "b"
+              ]
+            },
+            "actual": [
+              "dsl-original:9900000000000000102:fixture_a:occurrence:1",
+              "dsl-original:9900000000000000102:fixture_a:occurrence:2"
+            ],
+            "pass": true
+          },
+          {
+            "index": 4,
+            "assertion": {
+              "op": "pairwise_distinct",
+              "field": "scenarioRevisionId",
+              "records": [
+                "a",
+                "b"
+              ]
+            },
+            "actual": [
+              "tweet-semantic-v1:revision:4f1e5b065d7fd02717c66957070d32df12d78a1f8e35b10a2ed0cc39b1e6b9d9",
+              "tweet-semantic-v1:revision:a8048b4b651d9cd3f36b474f5a9ff17354115044d26c787568f03507a080ce56"
+            ],
+            "pass": true
+          },
+          {
+            "index": 5,
+            "assertion": {
+              "op": "equals",
+              "path": "result.newEffectProposalCount",
+              "value": 2
+            },
+            "actual": 2,
+            "pass": true
+          }
+        ],
+        "ambiguousOriginalNegative": {
+          "id": "CR051-AMBIGUOUS-NEGATIVE-v2",
+          "holds": [
+            {
+              "observationId": "dsl-derivation:7663657b26a9a601db060a0c4c38834400e646e5d7535122ebed7b05d4cd07cf",
+              "reason": "original_lineage_evidence_conflict"
+            },
+            {
+              "observationId": "dsl-derivation:17ba8928fb9637f74d727bade24eef796c7492abaf7610d864d15e07956619b5",
+              "reason": "original_lineage_evidence_conflict"
+            }
+          ],
+          "effectProposals": 0,
+          "dispatchInstructions": 0
+        },
+        "durable": {
+          "source": "full-acceptance-reconciliation/outputs/game-storage-results.json",
+          "positiveAssertions": [
+            {
+              "index": 0,
+              "assertion": {
+                "op": "pairwise_distinct",
+                "field": "scenarioId",
+                "records": [
+                  "a",
+                  "b"
+                ]
+              },
+              "actual": [
+                "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+                "tweet-semantic-v1:scenario:d812d7942140242570981fa00d2f86a745fdc138963326b6f1c1f430ed3fd606"
+              ],
+              "pass": true
+            },
+            {
+              "index": 1,
+              "assertion": {
+                "op": "pairwise_distinct",
+                "field": "effectId",
+                "records": [
+                  "a",
+                  "b"
+                ]
+              },
+              "actual": [
+                "tweet-source-claim-v1:effect:64fb246b8fb069e85bdaba0227a3a3876f389696741c2151ae3c9b8b5ac66e85",
+                "tweet-source-claim-v1:effect:93dfa5b3710d12de4baddac3d9056b2f1b8ddeba22c23a97dcb491f83f45ab52"
+              ],
+              "pass": true
+            },
+            {
+              "index": 2,
+              "assertion": {
+                "op": "equals",
+                "path": "result.scenarioCount",
+                "value": 2
+              },
+              "actual": 2,
+              "pass": true
+            },
+            {
+              "index": 3,
+              "assertion": {
+                "op": "pairwise_distinct",
+                "field": "sourceClaimId",
+                "records": [
+                  "a",
+                  "b"
+                ]
+              },
+              "actual": [
+                "tweet-occurrence-component-v1:0:occurrence:1",
+                "tweet-occurrence-component-v1:0:occurrence:2"
+              ],
+              "pass": true
+            },
+            {
+              "index": 4,
+              "assertion": {
+                "op": "pairwise_distinct",
+                "field": "scenarioRevisionId",
+                "records": [
+                  "a",
+                  "b"
+                ]
+              },
+              "actual": [
+                "tweet-semantic-v1:revision:68baf257c386c540b9f8c838cd6f8503140e9e6057f11b389ed3f2eaff04a108",
+                "tweet-semantic-v1:revision:af42cf81a6a37b1c6d559055242e79c01475acbb9687311549ce7b1fdf4ff6cb"
+              ],
+              "pass": true
+            },
+            {
+              "index": 5,
+              "assertion": {
+                "op": "equals",
+                "path": "result.newEffectProposalCount",
+                "value": 2
+              },
+              "actual": 2,
+              "pass": true
+            }
+          ],
+          "ambiguousOriginal": {
+            "id": "CR051-AMBIGUOUS-NEGATIVE-durable",
+            "status": "passed_actual_rpc",
+            "holdReasons": [
+              {
+                "reason": "original_lineage_evidence_conflict",
+                "observationId": "tweet-observation-v2:075dbc9b50a7ef126b06584241d618aeb1d68bf368e33e8932cb1a64c948315f"
+              },
+              {
+                "reason": "original_lineage_evidence_conflict",
+                "observationId": "tweet-observation-v2:f08ab426333ad5217e3937fa554194ded5453a7736c937f290bf1eb6b03cf000"
+              }
+            ],
+            "canonicalOccurrences": 1,
+            "nativeEffects": [
+              "tweet-source-claim-v1:effect:64fb246b8fb069e85bdaba0227a3a3876f389696741c2151ae3c9b8b5ac66e85"
+            ],
+            "outbox": [
+              {
+                "action_key": "tweet-semantic-v1:action:761a491893855137634ee94e894c029260d19819ef0257f0786cbc5fee0c08d5",
+                "status": "held",
+                "requires_review": true
+              },
+              {
+                "action_key": "tweet-semantic-v1:action:3bf536f67d3b197bb8e666284fa75acd7464381c83dbf573d734e4775a819612",
+                "status": "held",
+                "requires_review": true
+              }
+            ],
+            "carrierMapping": "Review-only raw semantic carrier rows are not counted as native r3 effect identities."
+          }
+        },
+        "scope": "Separate user-approved version2 fixture and interpretation; original positive fixture/results remain unchanged."
+      }
+    ]
+  },
+  "mutationControl": {
+    "caseId": "CR019",
+    "normalImmutableReplacementCount": 0,
+    "injectedRewriteCount": 1,
+    "unchangedOriginalAssertionRejectedMutation": true
+  },
+  "dependencyStatus": {
+    "acceptedSnapshotsVerified": 11,
+    "liveDrift": [
+      {
+        "path": "web/lib/player-forecasts/contributions.ts",
+        "acceptedSha256": "282c8b1e9c7362190c39a48b031e392afb6c2abaa45190d8f83d95d6319f9df7",
+        "liveSha256": "af6bbef4898cae4805c079deba37162269ee19bd648b6192a153bd3083c38f5b",
+        "liveMatchesAccepted": false
+      }
+    ],
+    "interpretation": "Historical accepted evidence uses retained snapshots. Root-owned live dependency changes are reported separately and never overwritten or silently accepted."
+  },
+  "rows": [
+    {
+      "id": "CR001",
+      "title": "Frozen G005040 widens display evidence without changing semantic claim",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "same",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-retained:offline-fixture:retained:2109418141508149727:occurrence:1",
+            "dsl-retained:offline-fixture:retained:2109418141508149727:occurrence:1"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "evidenceVersionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-source-claim-v1:evidence:a54ccc5e811a87747825d3023dbec1a335f5f0dc4c9b5fd89e81f4e54beb16c5",
+            "tweet-source-claim-v1:evidence:a8f5c1d56ca8c7de60cc6e4dfa214070874c7739ff7d8a091d2ff5bd0ff19ef3"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "same",
+            "field": "resolvedSemantics",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-source-claim-v1:meaning:8d0b54d90771861909689a5c75c3af153d730b55a6cb0d9c61a113e1dc85b51e",
+            "tweet-source-claim-v1:meaning:8d0b54d90771861909689a5c75c3af153d730b55a6cb0d9c61a113e1dc85b51e"
+          ],
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "records.a.evidence.displaySpan.start",
+            "value": 73
+          },
+          "actual": 73,
+          "pass": true
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "records.b.evidence.displaySpan.start",
+            "value": 65
+          },
+          "actual": 65,
+          "pass": true
+        },
+        {
+          "index": 5,
+          "assertion": {
+            "op": "equals",
+            "path": "records.b.evidence.displaySpan.text",
+            "value": "without Jordan Staal (lower-body injury), tonight in Philly —"
+          },
+          "actual": "without Jordan Staal (lower-body injury), tonight in Philly —",
+          "pass": true
+        },
+        {
+          "index": 6,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 7,
+          "assertion": {
+            "op": "equals",
+            "path": "result.allEvidenceSpansExact",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        },
+        {
+          "index": 8,
+          "assertion": {
+            "op": "equals",
+            "path": "result.legacyKeysUnchanged",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR002",
+      "title": "Display-only expansion retains one bound scenario and one effect identity",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "same",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "evidenceVersionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-source-claim-v1:evidence:4f959d22d656fb5977910b40516a8a21dc260989a76bfc9f30faa580666d6464",
+            "tweet-source-claim-v1:evidence:42f83b943c82a8b1eae2dbcdeb3619a6b10e8931692425019a54fdbbaf40550f"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "same",
+            "field": "resolvedSemantics",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-source-claim-v1:meaning:c8c32b468ceaef96445ce8af6e1c83a49b5d340f6bd3244ca10be2f7df041eac",
+            "tweet-source-claim-v1:meaning:c8c32b468ceaef96445ce8af6e1c83a49b5d340f6bd3244ca10be2f7df041eac"
+          ],
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11"
+          ],
+          "pass": true
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd",
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd"
+          ],
+          "pass": true
+        },
+        {
+          "index": 5,
+          "assertion": {
+            "op": "equals",
+            "path": "result.sourceClaimCount",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        },
+        {
+          "index": 6,
+          "assertion": {
+            "op": "equals",
+            "path": "result.evidenceVersionCount",
+            "value": 2
+          },
+          "actual": 2,
+          "pass": true
+        },
+        {
+          "index": 7,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        },
+        {
+          "index": 8,
+          "assertion": {
+            "op": "equals",
+            "path": "result.allEvidenceSpansExact",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR003",
+      "title": "Known delivered legacy effect is reused across new evidence version",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "same",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "effectId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "fixture-effect-1",
+            "fixture-effect-1"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.effectId",
+            "value": "fixture-effect-1"
+          },
+          "actual": "fixture-effect-1",
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.legacyKeysUnchanged",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        },
+        {
+          "index": 5,
+          "assertion": {
+            "op": "equals",
+            "path": "result.immutableRowReplacementCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR004",
+      "title": "Legacy effect outcome unknown blocks a fresh effect",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "same",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.holdReasons",
+            "value": [
+              "legacy_delivery_unknown"
+            ]
+          },
+          "actual": [
+            "legacy_delivery_unknown"
+          ],
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.legacyKeysUnchanged",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR005",
+      "title": "New-first then old replay converges after persisted mapping",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "same",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd",
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.sourceClaimCount",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.evidenceVersionCount",
+            "value": 2
+          },
+          "actual": 2,
+          "pass": true
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.totalUniqueEffectIdentityCount",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        },
+        {
+          "index": 5,
+          "assertion": {
+            "op": "equals",
+            "path": "result.legacyKeysUnchanged",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR006",
+      "title": "Exact retry allocates no new occurrence or evidence version",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "same",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "evidenceVersionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-source-claim-v1:evidence:ddee926ea5c27afd6c2ae3c21f2b889bc540e0016f94ea6cb1c1237ea8afa03e",
+            "tweet-source-claim-v1:evidence:ddee926ea5c27afd6c2ae3c21f2b889bc540e0016f94ea6cb1c1237ea8afa03e"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "same",
+            "field": "interpretationVersionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-source-claim-v1:interpretation:bc1a47c70449f0ec667e6e707f1f6b366b0b52084815787d239b5478df7ee43b",
+            "tweet-source-claim-v1:interpretation:bc1a47c70449f0ec667e6e707f1f6b366b0b52084815787d239b5478df7ee43b"
+          ],
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.sourceClaimCount",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.evidenceVersionCount",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        },
+        {
+          "index": 5,
+          "assertion": {
+            "op": "equals",
+            "path": "result.totalUniqueEffectIdentityCount",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR007",
+      "title": "Rule-version-only replay keeps semantic revision and action identity",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "same",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "evidenceVersionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-source-claim-v1:evidence:ddee926ea5c27afd6c2ae3c21f2b889bc540e0016f94ea6cb1c1237ea8afa03e",
+            "tweet-source-claim-v1:evidence:38b111a29605b79c43757490b38fc11102d2a414a317eed496d3213fc0ca32ed"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "same",
+            "field": "resolvedSemantics",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-source-claim-v1:meaning:c8c32b468ceaef96445ce8af6e1c83a49b5d340f6bd3244ca10be2f7df041eac",
+            "tweet-source-claim-v1:meaning:c8c32b468ceaef96445ce8af6e1c83a49b5d340f6bd3244ca10be2f7df041eac"
+          ],
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd",
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd"
+          ],
+          "pass": true
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.totalUniqueEffectIdentityCount",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR008",
+      "title": "Different named players in one source never share an occurrence",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000001:fixture_a:occurrence:2"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+            "tweet-semantic-v1:scenario:8dfac8d8e92f943c847b26cf05c91f06542efbca12875902b294de34450c1cd7"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.sourceClaimCount",
+            "value": 2
+          },
+          "actual": 2,
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 2
+          },
+          "actual": 2,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR009",
+      "title": "Repeated independent same-player clauses keep occurrence multiplicity",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000001:fixture_a:occurrence:2"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd",
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd"
+          ],
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.sourceClaimCount",
+            "value": 2
+          },
+          "actual": 2,
+          "pass": true
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR010",
+      "title": "Opposing repeated same-player clauses remain unresolved",
+      "layer": "semantic_reducer",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000001:fixture_a:occurrence:2"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd",
+            "tweet-semantic-v1:revision:8ff8b6ae246d39a0427805ddddef1ea322afc6425ed8fe4e2fd10d99c9f78218"
+          ],
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.scenarioStatus",
+            "value": "unresolved"
+          },
+          "actual": "unresolved",
+          "pass": true
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR011",
+      "title": "Same player in separate games has separate scenarios",
+      "layer": "semantic_reducer",
+      "status": "original_positive_conflicts_with_approved_ambiguous_variant_policy",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            null
+          ],
+          "pass": false
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+            "tweet-semantic-v1:scenario:d812d7942140242570981fa00d2f86a745fdc138963326b6f1c1f430ed3fd606"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd",
+            "tweet-semantic-v1:revision:a8048b4b651d9cd3f36b474f5a9ff17354115044d26c787568f03507a080ce56"
+          ],
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.scenarioCount",
+            "value": 2
+          },
+          "actual": 2,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": "CR011-POSITIVE-v2"
+    },
+    {
+      "id": "CR012",
+      "title": "Repeated text requires unique occurrence alignment before aliasing",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.autoAliasCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.holdReasons",
+            "value": [
+              "occurrence_alignment_ambiguous"
+            ]
+          },
+          "actual": [
+            "occurrence_alignment_ambiguous"
+          ],
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR013",
+      "title": "Explicit correction is retained as a new occurrence and held transition",
+      "layer": "semantic_reducer",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000003:fixture_a:occurrence:2"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd",
+            "tweet-semantic-v1:revision:6858c59e3b2cba6fedffd49dd283dfb7e97c06ebe4ddae234f9c60606d8bb1dd"
+          ],
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.scenarioStatus",
+            "value": "unresolved"
+          },
+          "actual": "unresolved",
+          "pass": true
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 5,
+          "assertion": {
+            "op": "equals",
+            "path": "result.compensatingEffectCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR014",
+      "title": "Retraction has no synthesized replacement or inverse action",
+      "layer": "semantic_reducer",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000005:fixture_a:occurrence:2"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.scenarioStatus",
+            "value": "unresolved"
+          },
+          "actual": "unresolved",
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.compensatingEffectCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 5,
+          "assertion": {
+            "op": "equals",
+            "path": "result.retractionReplacementFact",
+            "value": null
+          },
+          "actual": null,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR015",
+      "title": "Missing or cross-game relation target never alters unrelated acceptance",
+      "layer": "semantic_reducer",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.unrelatedAcceptedScenarioChanged",
+            "value": false
+          },
+          "actual": false,
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.holdReasons",
+            "value": [
+              "relation_target_unresolved_or_scope_mismatch"
+            ]
+          },
+          "actual": [
+            "relation_target_unresolved_or_scope_mismatch"
+          ],
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR016",
+      "title": "Retraction delivered before target still prevents a batch initial action",
+      "layer": "semantic_reducer",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:2",
+            "dsl-original:9900000000000000005:fixture_a:occurrence:1"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.scenarioStatus",
+            "value": "unresolved"
+          },
+          "actual": "unresolved",
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.compensatingEffectCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR017",
+      "title": "Unknown-to-known identity binds a new interpretation to the same occurrence",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "same",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "evidenceVersionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-source-claim-v1:evidence:ddee926ea5c27afd6c2ae3c21f2b889bc540e0016f94ea6cb1c1237ea8afa03e",
+            "tweet-source-claim-v1:evidence:ddee926ea5c27afd6c2ae3c21f2b889bc540e0016f94ea6cb1c1237ea8afa03e"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "interpretationVersionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-source-claim-v1:interpretation:6c39451f520e804b50d768aa56de589da5ca977e847d0d5a08bbf70ffdb22b0c",
+            "tweet-source-claim-v1:interpretation:bc1a47c70449f0ec667e6e707f1f6b366b0b52084815787d239b5478df7ee43b"
+          ],
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "records.a.initialAcceptanceProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        },
+        {
+          "index": 5,
+          "assertion": {
+            "op": "equals",
+            "path": "result.sourceClaimCount",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR018",
+      "title": "Unknown-to-known game binding keeps source occurrence stable",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "same",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "evidenceVersionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-source-claim-v1:evidence:ddee926ea5c27afd6c2ae3c21f2b889bc540e0016f94ea6cb1c1237ea8afa03e",
+            "tweet-source-claim-v1:evidence:ddee926ea5c27afd6c2ae3c21f2b889bc540e0016f94ea6cb1c1237ea8afa03e"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "interpretationVersionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-source-claim-v1:interpretation:121ebef6a5d80c14e56f2287e39d4b8ab9fdb25e4d3a7847718a6684cea829e0",
+            "tweet-source-claim-v1:interpretation:bc1a47c70449f0ec667e6e707f1f6b366b0b52084815787d239b5478df7ee43b"
+          ],
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "records.a.initialAcceptanceProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR019",
+      "title": "Verified provenance enrichment keeps claim token and preserves held legacy row",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "same",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-identity:CR019:occurrence:1",
+            "dsl-identity:CR019:occurrence:1"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "interpretationVersionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-source-claim-v1:interpretation:74d69dd74e0fd5452b150fae3908c35d12a30dbe7a842c1c4b757b7cbdbfbc4f",
+            "tweet-source-claim-v1:interpretation:ab70ee4a98d9b3e354202a72171a48f578a52f2c69093776c153fe7d624908c4"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.immutableRowReplacementCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR020",
+      "title": "Post-action player rebinding is held rather than treated as fresh acceptance",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "same",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "interpretationVersionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-source-claim-v1:interpretation:bc1a47c70449f0ec667e6e707f1f6b366b0b52084815787d239b5478df7ee43b",
+            "tweet-source-claim-v1:interpretation:d56ad4219cced7eea0ec7d734d38172f4cba66865235b8f23cce249f50276487"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+            "tweet-semantic-v1:scenario:8dfac8d8e92f943c847b26cf05c91f06542efbca12875902b294de34450c1cd7"
+          ],
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.holdReasons",
+            "value": [
+              "material_rebind_after_effect"
+            ]
+          },
+          "actual": [
+            "material_rebind_after_effect"
+          ],
+          "pass": true
+        },
+        {
+          "index": 5,
+          "assertion": {
+            "op": "equals",
+            "path": "result.compensatingEffectCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR021",
+      "title": "Post-action game rebinding cannot escape dedupe through a new scope",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "same",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+            "tweet-semantic-v1:scenario:d812d7942140242570981fa00d2f86a745fdc138963326b6f1c1f430ed3fd606"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.holdReasons",
+            "value": [
+              "material_rebind_after_effect"
+            ]
+          },
+          "actual": [
+            "material_rebind_after_effect"
+          ],
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR022",
+      "title": "Independent agreeing originals corroborate one revision",
+      "layer": "semantic_reducer",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000007:fixture_b:occurrence:2"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd",
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd"
+          ],
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.supportedOriginCount",
+            "value": 2
+          },
+          "actual": 2,
+          "pass": true
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        },
+        {
+          "index": 5,
+          "assertion": {
+            "op": "equals",
+            "path": "result.firstAcceptanceClocksUnchanged",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR023",
+      "title": "Two verified relays of one original add no independent claim or vote",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "same",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd",
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.supportedOriginCount",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.firstAcceptanceClocksUnchanged",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR024",
+      "title": "Explicit independent contradiction remains unresolved regardless of certainty",
+      "layer": "semantic_reducer",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000007:fixture_b:occurrence:2"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd",
+            "tweet-semantic-v1:revision:8ff8b6ae246d39a0427805ddddef1ea322afc6425ed8fe4e2fd10d99c9f78218"
+          ],
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.scenarioStatus",
+            "value": "unresolved"
+          },
+          "actual": "unresolved",
+          "pass": true
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 5,
+          "assertion": {
+            "op": "equals",
+            "path": "result.conflictRetained",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR025",
+      "title": "Two agreeing originals cannot outvote one contrary explicit original",
+      "layer": "semantic_reducer",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.scenarioStatus",
+            "value": "unresolved"
+          },
+          "actual": "unresolved",
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.contraryEvidenceDiscarded",
+            "value": false
+          },
+          "actual": false,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR026",
+      "title": "Corroboration cannot refresh expired first-acceptance validity",
+      "layer": "semantic_reducer",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd",
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.scenarioStatus",
+            "value": "expired"
+          },
+          "actual": "expired",
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.firstAcceptanceValidUntil",
+            "value": "2026-10-16T04:00:00Z"
+          },
+          "actual": "2026-10-16T04:00:00Z",
+          "pass": true
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.firstAcceptanceClocksUnchanged",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR027",
+      "title": "Identical text with unknown originals never proves cross-wrapper equivalence",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.crossWrapperAutoAliasCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.holdReasons",
+            "value": [
+              "original_identity_unresolved"
+            ]
+          },
+          "actual": [
+            "original_identity_unresolved"
+          ],
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR028",
+      "title": "Original URL or author contradiction fails before downstream planning",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.parentPublishPlanCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.holdReasons",
+            "value": [
+              "retained_original_identity_conflict"
+            ]
+          },
+          "actual": [
+            "retained_original_identity_conflict"
+          ],
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR029",
+      "title": "Two retained source lineage matches are ambiguous even with identical bytes",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.autoAliasCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.holdReasons",
+            "value": [
+              "source_lineage_ambiguous"
+            ]
+          },
+          "actual": [
+            "source_lineage_ambiguous"
+          ],
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR030",
+      "title": "One-to-many split cannot silently reuse a legacy occurrence token",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.autoAliasCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.holdReasons",
+            "value": [
+              "occurrence_split_or_merge_ambiguous"
+            ]
+          },
+          "actual": [
+            "occurrence_split_or_merge_ambiguous"
+          ],
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR031",
+      "title": "Many-to-one merge cannot erase a distinct source occurrence",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.autoAliasCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.holdReasons",
+            "value": [
+              "occurrence_split_or_merge_ambiguous"
+            ]
+          },
+          "actual": [
+            "occurrence_split_or_merge_ambiguous"
+          ],
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR032",
+      "title": "Older agreeing original arriving later preserves clocks and effect identity",
+      "layer": "semantic_reducer",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd",
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.firstAcceptanceClocksUnchanged",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR033",
+      "title": "Contradiction delivery permutation yields unresolved batch in either order",
+      "layer": "semantic_reducer",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "permutations.a_then_b.scenarioStatus",
+            "value": "unresolved"
+          },
+          "actual": "unresolved",
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "permutations.b_then_a.scenarioStatus",
+            "value": "unresolved"
+          },
+          "actual": "unresolved",
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "permutations.a_then_b.initialAcceptanceProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "permutations.b_then_a.initialAcceptanceProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR034",
+      "title": "Late older contrary evidence cannot roll back an already delivered effect",
+      "layer": "semantic_reducer",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.scenarioStatus",
+            "value": "unresolved"
+          },
+          "actual": "unresolved",
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.compensatingEffectCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.historicalAcceptanceRetained",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR035",
+      "title": "Late receipt or interpretation cannot be retrofitted to an earlier cutoff",
+      "layer": "semantic_reducer",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.holdReasons",
+            "value": [
+              "outside_cutoff"
+            ]
+          },
+          "actual": [
+            "outside_cutoff"
+          ],
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR036",
+      "title": "Same evidence-version key with different immutable payload fails closed",
+      "layer": "future_persistence_gate",
+      "status": "passed_bounded_local_persistence_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.versionConflict",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.originalImmutableBytesUnchanged",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.downstreamCallsAfterConflict",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        }
+      ],
+      "source": "review-durable-occurrence-v3/exact-persistence-results.json",
+      "sourceSha256": "649ab6edf1a42fc1f06f3018ac377c234ff6e757a943ed7c0213714a9df97e1c",
+      "review": "review-durable-occurrence-v3/REVIEW.md",
+      "scope": "Actual occurrence/context/commit RPCs; held/reserved effects, not delivered effects.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR037",
+      "title": "Legacy same-key conflicts retain parent and suppress every new child",
+      "layer": "future_persistence_gate",
+      "status": "passed_bounded_local_persistence_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.eachListedConflictVariantRejected",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.originalImmutableBytesUnchanged",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.newChildCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.downstreamCallsAfterConflict",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        }
+      ],
+      "source": "review-parent-recovery-v1/exact-parent-persistence-results.json",
+      "sourceSha256": "f835d15a0063b3f6f74adf562e8a31ed341dafb6fe775243156b8fcbdc915bd7",
+      "review": "review-parent-recovery-v1/REVIEW.md",
+      "scope": "Actual legacy producer/parent readback; fixture children. CR041 evidence version metric is legacy report_key uniqueness, not native r3 evidenceVersions.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR038",
+      "title": "A source occurrence token reused for an unrelated original is a collision",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.identityCollision",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.autoAliasCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.originalOccurrenceRecordUnchanged",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR039",
+      "title": "Interrupted before registry commit retries with one durable occurrence",
+      "layer": "future_persistence_gate",
+      "status": "passed_bounded_local_persistence_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.durableOccurrenceCountAfterRetry",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.orphanEffectCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectProposalCountAfterRetry",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        }
+      ],
+      "source": "review-durable-occurrence-v3/exact-persistence-results.json",
+      "sourceSha256": "649ab6edf1a42fc1f06f3018ac377c234ff6e757a943ed7c0213714a9df97e1c",
+      "review": "review-durable-occurrence-v3/REVIEW.md",
+      "scope": "Actual occurrence/context/commit RPCs; held/reserved effects, not delivered effects.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR040",
+      "title": "Registry commit acknowledgement lost requires readback before reuse",
+      "layer": "future_persistence_gate",
+      "status": "passed_bounded_local_persistence_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.durableOccurrenceCountAfterRetry",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.registryReadbackRequired",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.duplicateAllocatedOccurrenceCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        }
+      ],
+      "source": "review-durable-occurrence-v3/exact-persistence-results.json",
+      "sourceSha256": "649ab6edf1a42fc1f06f3018ac377c234ff6e757a943ed7c0213714a9df97e1c",
+      "review": "review-durable-occurrence-v3/REVIEW.md",
+      "scope": "Actual occurrence/context/commit RPCs; held/reserved effects, not delivered effects.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR041",
+      "title": "Evidence-parent write acknowledgement lost verifies exact immutable readback",
+      "layer": "future_persistence_gate",
+      "status": "passed_bounded_local_persistence_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.parentCountAfterRetry",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.exactParentReadbackBeforeChildren",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.originalImmutableBytesUnchanged",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.duplicateEvidenceVersionCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        }
+      ],
+      "source": "review-parent-recovery-v1/exact-parent-persistence-results.json",
+      "sourceSha256": "f835d15a0063b3f6f74adf562e8a31ed341dafb6fe775243156b8fcbdc915bd7",
+      "review": "review-parent-recovery-v1/REVIEW.md",
+      "scope": "Actual legacy producer/parent readback; fixture children. CR041 evidence version metric is legacy report_key uniqueness, not native r3 evidenceVersions.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR042",
+      "title": "Action reservation before dispatch reuses its persisted transition/effect identity",
+      "layer": "future_persistence_gate",
+      "status": "passed_bounded_local_persistence_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.effectIdAfterRetry",
+            "value": "fixture-effect-1"
+          },
+          "actual": "fixture-effect-1",
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.transitionIdAfterRetry",
+            "value": "fixture-transition-1"
+          },
+          "actual": "fixture-transition-1",
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectIdentityCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        }
+      ],
+      "source": "review-consumer-binding-v2/correction-v2/consumer-binding-results.json",
+      "sourceSha256": "de7ece0899e1fc3056a46765213e7bfbde2e59c4e1f79865d2c882187c1e9d58",
+      "review": "review-consumer-binding-v2/REVIEW.md",
+      "scope": "Actual single injury-out native consumer and outbox; explicit synthetic retained history/fence. Original expired CR042 holds; CR043 partial history stays unknown; CR044 exact receipt suppresses replay. No external transport/receiver guarantee.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR043",
+      "title": "Dispatch acknowledgement lost is unknown outcome and blocks blind resend",
+      "layer": "future_persistence_gate",
+      "status": "passed_bounded_local_persistence_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.resendPlanCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectIdentityCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.holdReasons",
+            "value": [
+              "delivery_outcome_unknown"
+            ]
+          },
+          "actual": [
+            "delivery_outcome_unknown"
+          ],
+          "pass": true
+        }
+      ],
+      "source": "review-consumer-binding-v2/correction-v2/consumer-binding-results.json",
+      "sourceSha256": "de7ece0899e1fc3056a46765213e7bfbde2e59c4e1f79865d2c882187c1e9d58",
+      "review": "review-consumer-binding-v2/REVIEW.md",
+      "scope": "Actual single injury-out native consumer and outbox; explicit synthetic retained history/fence. Original expired CR042 holds; CR043 partial history stays unknown; CR044 exact receipt suppresses replay. No external transport/receiver guarantee.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR044",
+      "title": "Durable delivery acknowledgement suppresses replay even after queue failure",
+      "layer": "future_persistence_gate",
+      "status": "passed_bounded_local_persistence_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.resendPlanCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectIdentityCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.effectId",
+            "value": "fixture-effect-1"
+          },
+          "actual": "fixture-effect-1",
+          "pass": true
+        }
+      ],
+      "source": "review-consumer-binding-v2/correction-v2/consumer-binding-results.json",
+      "sourceSha256": "de7ece0899e1fc3056a46765213e7bfbde2e59c4e1f79865d2c882187c1e9d58",
+      "review": "review-consumer-binding-v2/REVIEW.md",
+      "scope": "Actual single injury-out native consumer and outbox; explicit synthetic retained history/fence. Original expired CR042 holds; CR043 partial history stays unknown; CR044 exact receipt suppresses replay. No external transport/receiver guarantee.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR045",
+      "title": "A rule bump cannot promote unchanged tentative language to actionable fact",
+      "layer": "semantic_reducer",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "same",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.holdReasons",
+            "value": [
+              "assertion_strength_not_verified"
+            ]
+          },
+          "actual": [
+            "assertion_strength_not_verified"
+          ],
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR046",
+      "title": "Unicode prefix shifts UTF-16 offsets without changing aligned occurrence",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "same",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "evidenceVersionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-source-claim-v1:evidence:ddee926ea5c27afd6c2ae3c21f2b889bc540e0016f94ea6cb1c1237ea8afa03e",
+            "tweet-source-claim-v1:evidence:db67b8689f7934bf2fabc523781bf8cf7072143f8daed22db98de3bb6045e53f"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd",
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd"
+          ],
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "records.b.occurrence.subjectSpan.start",
+            "value": 3
+          },
+          "actual": 3,
+          "pass": true
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.allEvidenceSpansExact",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        },
+        {
+          "index": 5,
+          "assertion": {
+            "op": "equals",
+            "path": "result.totalUniqueEffectIdentityCount",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR047",
+      "title": "A-to-B-to-A material transitions cannot collapse by value-only hash",
+      "layer": "semantic_reducer",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b",
+              "c"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b",
+              "c"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd",
+            "tweet-semantic-v1:revision:4164ac5a5c0369cebbda4f041418ff6b42524f3140f61732451ad935f48e43e7",
+            "tweet-semantic-v1:revision:be69431b8ada1a2c7eae7da0b1c32ef100272ce74132c37531686396b52bff9d"
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.compensatingEffectCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.requiresApprovedTransitionPolicy",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR048",
+      "title": "A status URL and author-looking text cannot invent verified reporting identity",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.supportedOriginCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.holdReasons",
+            "value": [
+              "original_identity_unresolved"
+            ]
+          },
+          "actual": [
+            "original_identity_unresolved"
+          ],
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR049",
+      "title": "Two players sharing one predicate retain distinct subject occurrences",
+      "layer": "offline_registry",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000001:fixture_a:occurrence:2"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "sharedPredicateSpan",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            {
+              "start": 33,
+              "end": 46,
+              "text": "will not play"
+            },
+            {
+              "start": 33,
+              "end": 46,
+              "text": "will not play"
+            }
+          ],
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+            "tweet-semantic-v1:scenario:8dfac8d8e92f943c847b26cf05c91f06542efbca12875902b294de34450c1cd7"
+          ],
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.sourceClaimCount",
+            "value": 2
+          },
+          "actual": 2,
+          "pass": true
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 2
+          },
+          "actual": 2,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR050",
+      "title": "Independent repetition never upgrades tentative assertion strength",
+      "layer": "semantic_reducer",
+      "status": "passed_pure_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.promotedAssertedClaimCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.evidenceRecordCount",
+            "value": 2
+          },
+          "actual": 2,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": null
+    },
+    {
+      "id": "CR051",
+      "title": "Two distinct games on the same team date never share a scenario",
+      "layer": "semantic_reducer",
+      "status": "original_positive_conflicts_with_approved_ambiguous_variant_policy",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+            "tweet-semantic-v1:scenario:d812d7942140242570981fa00d2f86a745fdc138963326b6f1c1f430ed3fd606"
+          ],
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "effectId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-source-claim-v1:effect:6866cd289bf92ee06135297023944d40aee3ec651eb08f4165b0d0bc7dff1084",
+            null
+          ],
+          "pass": false
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.scenarioCount",
+            "value": 2
+          },
+          "actual": 2,
+          "pass": true
+        }
+      ],
+      "source": "full-acceptance-reconciliation/outputs/acceptance-identity-candidate-results.json",
+      "sourceSha256": "9ae4cc7d3749cdeed9796652c20f28e51c600646ce18e169eeaa983f9af8c4bc",
+      "review": null,
+      "scope": "Pure registry/reducer/qualification projection with declared synthetic prebound inputs; no persistence or real-source extraction proof.",
+      "approvedReplacement": "CR051-POSITIVE-v2"
+    },
+    {
+      "id": "CR052",
+      "title": "Concurrent first claims require one committed transition and one effect identity",
+      "layer": "future_persistence_gate",
+      "status": "passed_bounded_local_persistence_projection",
+      "assertions": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.durableOccurrenceCount",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.committedTransitionCount",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.committedEffectIdentityCount",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.losingWriterReconcilesByReadback",
+            "value": true
+          },
+          "actual": true,
+          "pass": true
+        }
+      ],
+      "source": "review-durable-occurrence-v3/exact-persistence-results.json",
+      "sourceSha256": "649ab6edf1a42fc1f06f3018ac377c234ff6e757a943ed7c0213714a9df97e1c",
+      "review": "review-durable-occurrence-v3/REVIEW.md",
+      "scope": "Actual occurrence/context/commit RPCs; held/reserved effects, not delivered effects.",
+      "approvedReplacement": null
+    }
+  ],
+  "full52EndToEndAccepted": false,
+  "currentCombinedRuntimeAccepted": false,
+  "productionAccepted": false,
+  "authenticFutureOutcomesRead": false,
+  "reconciliationSourceManifest": "owned-source-sha256.json",
+  "reconciliationSourceManifestSha256": "7af1f2199fc997238057164b769f4cc21d52a7404c93ecccd386634da02ae531"
+}

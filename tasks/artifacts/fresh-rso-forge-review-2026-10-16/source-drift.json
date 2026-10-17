@@ -1,0 +1,22 @@
+{
+  "initial_time": "2026-10-16T01:50:06.572584+00:00",
+  "final_time": "2026-10-16T01:58:43.437169+00:00",
+  "head_changed": false,
+  "changed_files": [
+    {
+      "path": "web/__tests__/components/RosterScheduleOptimizer/AcquisitionRules.integration.test.tsx",
+      "initial_sha256": "a6ea6e10be148eac99d2f86cae1e05507420247459ce84f9f3f70e6dcfb3614b",
+      "final_sha256": "5fbe032b27cbe9b9b18f6800f3007da9c4980b0732de1b1cb628020066daef74"
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+      "initial_sha256": "faee5d21dc2df01ed47fbf1da2ebb811ca99109a8bd2c23e9be4906a5318d14e",
+      "final_sha256": "260806450b10cbf0bb6140692e524551dff7d1b17bbdb020deb8d7f275cb804d"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planningTypes.ts",
+      "initial_sha256": "23f919cf4661619cfa53e9b9d0fb41d67028d730dbf4ce6f2f3a3418e83c44f0",
+      "final_sha256": "3ac73ac55c3999ca4bfe448cca0d553f48db71bd2fe43dee7b9e957c8ae0e445"
+    }
+  ]
+}

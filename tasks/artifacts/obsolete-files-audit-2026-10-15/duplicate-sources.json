@@ -1,0 +1,22 @@
+[
+  {
+    "sha256": "d1ed55cd0d1c614fdfd2abdd4914d2800506f0f68d2592438064cdc573ddb0ce",
+    "bytes_each": 1228,
+    "paths": [
+      "web/pages/api/v1/game-predictions/debug.ts",
+      "web/pages/api/v1/game-predictions/debug/[predictionId].ts"
+    ],
+    "incoming": [
+      {
+        "path": "web/pages/api/v1/game-predictions/debug.ts",
+        "incoming": [],
+        "implicit_route": true
+      },
+      {
+        "path": "web/pages/api/v1/game-predictions/debug/[predictionId].ts",
+        "incoming": [],
+        "implicit_route": true
+      }
+    ]
+  }
+]

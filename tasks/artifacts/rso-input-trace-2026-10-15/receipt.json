@@ -1,0 +1,37 @@
+{
+  "createdAt": "2026-10-15T22:49:46.946790+00:00",
+  "mode": "read_only_application_investigation",
+  "sourceChanges": 0,
+  "composedFixtureCases": 9,
+  "fixtureStatus": "passed",
+  "passiveCapture": "proposal_only_not_executed_in_owner_browser",
+  "passiveCaptureSyntheticVerification": {
+    "status": "passed",
+    "syntheticDom": true,
+    "requests": 0,
+    "storageAccess": 0,
+    "mutations": 0,
+    "rawPlayerNamesExcluded": true
+  },
+  "actualNetworkRequests": 0,
+  "actualDatabaseQueries": 0,
+  "ownerStorageAccess": 0,
+  "compilerBuild": "not run; ts-node transpile-only used for isolated fixture execution",
+  "priorHarnessErrors": "v1 exhausted-status assumption and v2 retained-marker fixture provenance corrected; raw errors retained",
+  "artifacts": {
+    "reproduce.cjs": "37029a392e01a15615337d2700e41a37a5d0c87d0706f2f3162b66f577302fbc",
+    "reproduction-errors.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "reproduction-final.json": "fe206dcc92cade61c3f34df92340f108ba3a2cbe1d55153e566d32b78d30293b",
+    "reproduction.json": "f28d9f77a68d02fb7ffd9f2ee4a3a1ffabb7885cbf3a2092f46135e3e1be2774",
+    "passive-capture-errors.log": "af74a2735eec7f57c0a8ffb4987a5fa7bd11b7ea7bd1a606659fb3a33c85aaaf",
+    "reproduction-errors-v2.log": "5c24bee7281502e54b459c8690a952aabf0ac87d3cab2155d433071a2608b591",
+    "reproduction-errors-v1.log": "35df87664ef206a48369fa77b206de3d36bb98f71105af87d3cf73eff8098216",
+    "passive-capture.js": "19e5d25f01063431530d3ebbd4801ea7bbe7f006929f8c69122987b053b6a90e",
+    "unchanged-application-inputs.json": "6f8d89a6e485323a3cad3b1aa1d14f4a5b8af5c83ab9c2d63609f5ab8157302c",
+    "TRACE.md": "770469d4621b04f3fdeb65d43803537297d864aafec351b6713343f11ecc1044",
+    "reproduction-final-errors.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verify-passive-capture.cjs": "a5d5e2ae92c41c78bab6d03e7b8e3b89cdd9b6746ba4b378b49f6d9ba729c496",
+    "emitted-source-inspection.json": "e6a9562354b0f6308a6f32d91322c163726d79f77133a4b0f06d2f194974568c",
+    "passive-capture-verification.json": "5206493488a8eeb4b98e222f228127c36d005c5792d17fb8920b55a24e801d41"
+  }
+}

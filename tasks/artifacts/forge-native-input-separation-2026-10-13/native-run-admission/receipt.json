@@ -1,0 +1,62 @@
+{
+  "scope": "native apiHelpers admission increment only",
+  "head": "a8f58de6178e282acd3a71851c66f4a56b119f14",
+  "files": [
+    {
+      "path": "web/lib/projections/apiHelpers.ts",
+      "beforeSha256": "fdcf8181cc3ef345804afe2bfb37875e387c47b0d43188faf91e9011bd09a1e7",
+      "afterSha256": "206f69a271bd5d603568a99a4451dcbd166fa54c82b1714452efe39c1cfd4786"
+    },
+    {
+      "path": "web/lib/projections/apiHelpers.test.ts",
+      "beforeSha256": "030fbb1e0a400f6d6f4384f51f00062ab9d6d853606fe5919a5990e8d692b5f7",
+      "afterSha256": "af5afb0db55cb2659a90725a17641ab316ab190803a659cf37ea0877a8304308"
+    }
+  ],
+  "additionalDiffSha256": "204a6d05606344a65d7ac755a91b7b0a7fda9a8fcae03b19e7e2211deb98e457",
+  "preservedPriorReviewedFiles": [
+    {
+      "path": "web/lib/projections/stages/skater-stage.ts",
+      "originalSha256": "f44feb8db443221bc259b985d6c7f512655dce42f3205622efccb04c73d6894d",
+      "observedSha256": "f44feb8db443221bc259b985d6c7f512655dce42f3205622efccb04c73d6894d",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/projections/stages/goalie-stage.ts",
+      "originalSha256": "7eb6abfcdef2505dc8743ce53dd8c2224198a8245da719573c7df594dec972a5",
+      "observedSha256": "7eb6abfcdef2505dc8743ce53dd8c2224198a8245da719573c7df594dec972a5",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/projections/calibrationEligibility.ts",
+      "originalSha256": "65749b0a1e4fe8c1c7fa70b7c199767d4ec50a6ea53ec0430b6b94bb81f5acd7",
+      "observedSha256": "65749b0a1e4fe8c1c7fa70b7c199767d4ec50a6ea53ec0430b6b94bb81f5acd7",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/projections/gameRevisions.ts",
+      "originalSha256": "2b16ffb05973d007798e46329720579bf12b25c409daaf750d2cca8cf0841e95",
+      "observedSha256": "2b16ffb05973d007798e46329720579bf12b25c409daaf750d2cca8cf0841e95",
+      "unchanged": true
+    },
+    {
+      "path": "web/pages/api/v1/db/run-projection-accuracy.ts",
+      "originalSha256": "16aadd34dc6d61b93bda8a151511ac5f2b219396a360e3c3f8a0e1414f9ec1d4",
+      "observedSha256": "16aadd34dc6d61b93bda8a151511ac5f2b219396a360e3c3f8a0e1414f9ec1d4",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/projections/nativeInputEligibility.test.ts",
+      "originalSha256": "1093a650ba05f4911c3792e30ff39b8493ce21e66a65eab8956269b4096427c6",
+      "observedSha256": "1093a650ba05f4911c3792e30ff39b8493ce21e66a65eab8956269b4096427c6",
+      "unchanged": true
+    }
+  ],
+  "checks": {
+    "directTests": "26/26 passed (10 existing +16 admission tests)",
+    "scopedEslint": "passed",
+    "diffWhitespace": "passed",
+    "broadTestsAndTypecheck": "not run for this increment"
+  },
+  "externalActions": "none"
+}

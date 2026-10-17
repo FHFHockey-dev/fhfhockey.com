@@ -1,0 +1,76 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/review-v2/independent-postgres.test.ts -t independent: --config ../tasks/ifttt-integration-2026-10-16/review-v2/vitest.review.config.mjs --reporter=default --reporter=json --outputFile=../tasks/ifttt-integration-2026-10-16/review-v2/independent-postgres-results.json
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-v2/independent-postgres.test.ts (11 tests | 3 failed | 8 skipped) 872ms
+   ↓ durable qualified IFTTT scope integration > atomically converges provisional/verified and cross-root receipts with one held action, including commit ack loss
+   ↓ durable qualified IFTTT scope integration > retains exact partial legacy effects and suppresses new reservations without replaying them
+   ↓ durable qualified IFTTT scope integration > rejects same-ID changed raw payload and alias membership on the real integrated storage path
+   ↓ durable qualified IFTTT scope integration > recovers shadow raw-status acknowledgement loss after evidence committed without another action
+   ↓ durable qualified IFTTT scope integration > rolls back raw and qualification versions together when a later qualification write fails
+   ↓ durable qualified IFTTT scope integration > does not misclassify a failed refresh of already retained evidence as commit acknowledgement loss
+   ↓ durable qualified IFTTT scope integration > serializes finite evaluation budgets and stops on clock expiry without failing raw retention
+   ↓ durable qualified IFTTT scope integration > rejects the reviewer's invalid prospective clocks at the SQL boundary without retaining a sample
+   × durable qualified IFTTT scope integration > independent: preserves the original r3 planning cutoff in real qualification versions 49ms
+     → expected '2026-10-16T15:03:00Z' to be '2026-10-16T15:02:00Z' // Object.is equality
+   × durable qualified IFTTT scope integration > independent: blocks a cross-scope material rebind under the actual global context CAS 43ms
+     → expected 2 to be less than or equal to 1
+   × durable qualified IFTTT scope integration > independent: does not promote the latest explicitly incomplete SQL history audit 21ms
+     → expected 'known_clear' to be 'unknown' // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/review-v2/independent-postgres.test.ts > durable qualified IFTTT scope integration > independent: preserves the original r3 planning cutoff in real qualification versions
+AssertionError: expected '2026-10-16T15:03:00Z' to be '2026-10-16T15:02:00Z' // Object.is equality
+
+Expected: "2026-10-16T15:02:00Z"
+Received: "2026-10-16T15:03:00Z"
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-v2/independent-postgres.test.ts:171:67
+    169|     expect(first.plan.nextState.registry.effects).toHaveLength(1);
+    170|     expect(next.plan.nextState.registry.effects[0].effectKey).toBe(fir…
+    171|     expect(next.plan.nextState.registry.effects[0].plannedAtAsOf).toBe…
+       |                                                                   ^
+    172|   });
+    173|   it("independent: blocks a cross-scope material rebind under the actu…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/review-v2/independent-postgres.test.ts > durable qualified IFTTT scope integration > independent: blocks a cross-scope material rebind under the actual global context CAS
+AssertionError: expected 2 to be less than or equal to 1
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-v2/independent-postgres.test.ts:186:33
+    184|     expect(rows).toHaveLength(2);
+    185|     const reservations = rows.flatMap(r => r.qualification_state.plan.…
+    186|     expect(reservations.length).toBeLessThanOrEqual(1);
+       |                                 ^
+    187|   });
+    188|   it("independent: does not promote the latest explicitly incomplete S…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/review-v2/independent-postgres.test.ts > durable qualified IFTTT scope integration > independent: does not promote the latest explicitly incomplete SQL history audit
+AssertionError: expected 'known_clear' to be 'unknown' // Object.is equality
+
+Expected: "unknown"
+Received: "known_clear"
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-v2/independent-postgres.test.ts:193:29
+    191|     await retainQualifiedTweetClaimScope({rpc},f.claims,f.asOf);
+    192|     const q = (await sql("select qualification_state from public.tweet…
+    193|     expect(q.legacy.status).toBe('unknown');
+       |                             ^
+    194|   });
+    195| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 8 skipped (11)
+   Start at  22:44:49
+   Duration  1.33s (transform 155ms, setup 16ms, collect 250ms, tests 872ms, environment 0ms, prepare 33ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/review-v2/independent-postgres-results.json

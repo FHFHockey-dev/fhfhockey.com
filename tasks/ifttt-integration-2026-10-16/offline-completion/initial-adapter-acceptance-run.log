@@ -1,0 +1,1178 @@
+{
+  "counts": {
+    "passed": 4,
+    "failed": 31,
+    "unsupported_projection": 8,
+    "deferred_persistence": 9
+  },
+  "assertionsChecked": 170,
+  "failedCases": [
+    {
+      "id": "CR002",
+      "failed": [
+        {
+          "index": 3,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 7,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 1
+          },
+          "pass": false,
+          "actual": 0
+        }
+      ]
+    },
+    {
+      "id": "CR003",
+      "failed": [
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "effectId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.effectId",
+            "value": "fixture-effect-1"
+          },
+          "pass": false,
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "CR005",
+      "failed": [
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.totalUniqueEffectIdentityCount",
+            "value": 1
+          },
+          "pass": false,
+          "actual": 0
+        }
+      ]
+    },
+    {
+      "id": "CR006",
+      "failed": [
+        {
+          "index": 5,
+          "assertion": {
+            "op": "equals",
+            "path": "result.totalUniqueEffectIdentityCount",
+            "value": 1
+          },
+          "pass": false,
+          "actual": 0
+        }
+      ]
+    },
+    {
+      "id": "CR007",
+      "failed": [
+        {
+          "index": 3,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.totalUniqueEffectIdentityCount",
+            "value": 1
+          },
+          "pass": false,
+          "actual": 0
+        }
+      ]
+    },
+    {
+      "id": "CR008",
+      "failed": [
+        {
+          "index": 1,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 2
+          },
+          "pass": false,
+          "actual": 0
+        }
+      ]
+    },
+    {
+      "id": "CR009",
+      "failed": [
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 1
+          },
+          "pass": false,
+          "actual": 0
+        }
+      ]
+    },
+    {
+      "id": "CR010",
+      "failed": [
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.scenarioStatus",
+            "value": "unresolved"
+          },
+          "pass": false,
+          "actual": "pending"
+        }
+      ]
+    },
+    {
+      "id": "CR011",
+      "failed": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            null
+          ]
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.scenarioCount",
+            "value": 2
+          },
+          "pass": false,
+          "actual": 0
+        }
+      ]
+    },
+    {
+      "id": "CR013",
+      "failed": [
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.scenarioStatus",
+            "value": "unresolved"
+          },
+          "pass": false,
+          "actual": "pending"
+        },
+        {
+          "index": 5,
+          "assertion": {
+            "op": "equals",
+            "path": "result.compensatingEffectCount",
+            "value": 0
+          },
+          "pass": false,
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "CR014",
+      "failed": [
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.scenarioStatus",
+            "value": "unresolved"
+          },
+          "pass": false,
+          "actual": "pending"
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.compensatingEffectCount",
+            "value": 0
+          },
+          "pass": false,
+          "actual": null
+        },
+        {
+          "index": 5,
+          "assertion": {
+            "op": "equals",
+            "path": "result.retractionReplacementFact",
+            "value": null
+          },
+          "pass": false,
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "CR016",
+      "failed": [
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.scenarioStatus",
+            "value": "unresolved"
+          },
+          "pass": false,
+          "actual": "pending"
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.compensatingEffectCount",
+            "value": 0
+          },
+          "pass": false,
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "CR017",
+      "failed": [
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 1
+          },
+          "pass": false,
+          "actual": 0
+        }
+      ]
+    },
+    {
+      "id": "CR018",
+      "failed": [
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 1
+          },
+          "pass": false,
+          "actual": 0
+        }
+      ]
+    },
+    {
+      "id": "CR020",
+      "failed": [
+        {
+          "index": 2,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.holdReasons",
+            "value": [
+              "material_rebind_after_effect"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            "material_rebind_after_effect",
+            "semantic_association_pending"
+          ]
+        },
+        {
+          "index": 5,
+          "assertion": {
+            "op": "equals",
+            "path": "result.compensatingEffectCount",
+            "value": 0
+          },
+          "pass": false,
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "CR021",
+      "failed": [
+        {
+          "index": 1,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.holdReasons",
+            "value": [
+              "material_rebind_after_effect"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            "material_rebind_after_effect",
+            "semantic_association_pending"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CR022",
+      "failed": [
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.supportedOriginCount",
+            "value": 2
+          },
+          "pass": false,
+          "actual": 0
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 1
+          },
+          "pass": false,
+          "actual": 0
+        },
+        {
+          "index": 5,
+          "assertion": {
+            "op": "equals",
+            "path": "result.firstAcceptanceClocksUnchanged",
+            "value": true
+          },
+          "pass": false,
+          "actual": false
+        }
+      ]
+    },
+    {
+      "id": "CR023",
+      "failed": [
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            "tweet-semantic-v1:revision:6010640e0453716c4bd3b394ff143746adec30185d23480ebe09afac466c61dd"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CR024",
+      "failed": [
+        {
+          "index": 1,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.scenarioStatus",
+            "value": "unresolved"
+          },
+          "pass": false,
+          "actual": "pending"
+        },
+        {
+          "index": 5,
+          "assertion": {
+            "op": "equals",
+            "path": "result.conflictRetained",
+            "value": true
+          },
+          "pass": false,
+          "actual": false
+        }
+      ]
+    },
+    {
+      "id": "CR025",
+      "failed": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.scenarioStatus",
+            "value": "unresolved"
+          },
+          "pass": false,
+          "actual": "pending"
+        }
+      ]
+    },
+    {
+      "id": "CR026",
+      "failed": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.scenarioStatus",
+            "value": "expired"
+          },
+          "pass": false,
+          "actual": "pending"
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.firstAcceptanceValidUntil",
+            "value": "2026-10-16T04:00:00Z"
+          },
+          "pass": false,
+          "actual": null
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.firstAcceptanceClocksUnchanged",
+            "value": true
+          },
+          "pass": false,
+          "actual": false
+        }
+      ]
+    },
+    {
+      "id": "CR027",
+      "failed": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.crossWrapperAutoAliasCount",
+            "value": 0
+          },
+          "pass": false,
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "CR032",
+      "failed": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 1
+          },
+          "pass": false,
+          "actual": 0
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.firstAcceptanceClocksUnchanged",
+            "value": true
+          },
+          "pass": false,
+          "actual": false
+        }
+      ]
+    },
+    {
+      "id": "CR033",
+      "failed": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "permutations.a_then_b.scenarioStatus",
+            "value": "unresolved"
+          },
+          "pass": false,
+          "actual": "pending"
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "permutations.b_then_a.scenarioStatus",
+            "value": "unresolved"
+          },
+          "pass": false,
+          "actual": "pending"
+        }
+      ]
+    },
+    {
+      "id": "CR034",
+      "failed": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "equals",
+            "path": "result.scenarioStatus",
+            "value": "unresolved"
+          },
+          "pass": false,
+          "actual": "pending"
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.compensatingEffectCount",
+            "value": 0
+          },
+          "pass": false,
+          "actual": null
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.historicalAcceptanceRetained",
+            "value": true
+          },
+          "pass": false,
+          "actual": false
+        }
+      ]
+    },
+    {
+      "id": "CR045",
+      "failed": [
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.holdReasons",
+            "value": [
+              "assertion_strength_not_verified"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            "validation_not_supported"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CR046",
+      "failed": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "same",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            null
+          ]
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "evidenceVersionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            "tweet-source-claim-v1:evidence:ddee926ea5c27afd6c2ae3c21f2b889bc540e0016f94ea6cb1c1237ea8afa03e",
+            null
+          ]
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 5,
+          "assertion": {
+            "op": "equals",
+            "path": "result.totalUniqueEffectIdentityCount",
+            "value": 1
+          },
+          "pass": false,
+          "actual": 0
+        }
+      ]
+    },
+    {
+      "id": "CR047",
+      "failed": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "same",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b",
+              "c"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null,
+            null
+          ]
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b",
+              "c"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null,
+            null
+          ]
+        },
+        {
+          "index": 3,
+          "assertion": {
+            "op": "equals",
+            "path": "result.compensatingEffectCount",
+            "value": 0
+          },
+          "pass": false,
+          "actual": null
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.requiresApprovedTransitionPolicy",
+            "value": true
+          },
+          "pass": false,
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "CR049",
+      "failed": [
+        {
+          "index": 2,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 4,
+          "assertion": {
+            "op": "equals",
+            "path": "result.initialAcceptanceProposalCount",
+            "value": 2
+          },
+          "pass": false,
+          "actual": 0
+        }
+      ]
+    },
+    {
+      "id": "CR050",
+      "failed": [
+        {
+          "index": 1,
+          "assertion": {
+            "op": "equals",
+            "path": "result.promotedAssertedClaimCount",
+            "value": 0
+          },
+          "pass": false,
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "CR051",
+      "failed": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 1,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "effectId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            null,
+            null
+          ]
+        },
+        {
+          "index": 2,
+          "assertion": {
+            "op": "equals",
+            "path": "result.scenarioCount",
+            "value": 2
+          },
+          "pass": false,
+          "actual": 0
+        }
+      ]
+    }
+  ]
+}

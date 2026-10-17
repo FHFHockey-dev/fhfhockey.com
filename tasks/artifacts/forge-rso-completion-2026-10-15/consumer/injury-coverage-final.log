@@ -1,0 +1,14 @@
+
+> web@0.1.0 test
+> vitest scripts/capture-current-season-sog-baseline.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ scripts/capture-current-season-sog-baseline.test.ts (24 tests) 28ms
+
+ Test Files  1 passed (1)
+      Tests  24 passed (24)
+   Start at  22:51:38
+   Duration  404ms (transform 136ms, setup 3ms, collect 192ms, tests 28ms, environment 0ms, prepare 34ms)
+

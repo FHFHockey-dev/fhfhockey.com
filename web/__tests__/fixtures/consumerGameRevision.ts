@@ -74,6 +74,7 @@ export function consumerGameRevisionFixture() {
       inputCutoff: "2026-02-07T11:59:00Z", calculatedAt: "2026-02-07T12:00:30Z",
       inputProvenance: {
         rolling_player_history_contract: "full_selected_scope_through_end_date_v1",
+        external_fantasy_input_contract: "excluded_from_native_inputs_v1",
         capturedReads: { version: "forge-captured-reads-v1", hash: "a".repeat(64), readCount: 2,
           firstReceivedAt: "2026-02-07T11:59:00Z", lastReceivedAt: "2026-02-07T12:00:00Z" },
         issuedContexts: [issued],

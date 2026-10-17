@@ -1,0 +1,248 @@
+{
+  "rejected": true,
+  "result": null,
+  "after": {
+    "raw": {
+      "processing_status": "pending",
+      "raw_payload": {
+        "text": "BOS Jeremy Swayman starts tonight.",
+        "fixture": "local-shadow-only"
+      }
+    },
+    "job": {
+      "status": "running",
+      "attempts": 1,
+      "payload": {}
+    },
+    "observations": [
+      {
+        "observation_id": "tweet-observation-v2:d5a40a94e66cff459725d873cdd3af70bed54b2e8dd7a230ca4544ea108435cc",
+        "payload": {
+          "source": {
+            "team": {
+              "id": 6,
+              "name": "Boston Bruins",
+              "abbreviation": "BOS"
+            },
+            "gameId": 2026020010,
+            "rawText": "BOS Jeremy Swayman starts tonight.",
+            "tweetId": "880000",
+            "metadata": {
+              "iftttEventId": "00000000-0000-4000-8000-000000008800",
+              "interpretation": {
+                "units": [],
+                "events": [
+                  {
+                    "kind": "goalie",
+                    "state": "confirmed",
+                    "times": {
+                      "reference": null,
+                      "observation": "2026-10-16T15:00:00Z",
+                      "applicability": "unresolved"
+                    },
+                    "teamId": 6,
+                    "evidence": {
+                      "end": 34,
+                      "text": "Jeremy Swayman starts tonight.",
+                      "start": 4
+                    },
+                    "modality": "affirmative",
+                    "playerId": 8478499,
+                    "timeline": null,
+                    "timelines": [],
+                    "goalieRole": "starter",
+                    "playerName": "Jeremy Swayman",
+                    "claimAnchor": {
+                      "subjectSpan": {
+                        "end": 18,
+                        "text": "Jeremy Swayman",
+                        "start": 4
+                      },
+                      "predicateSpan": {
+                        "end": 25,
+                        "text": "starts",
+                        "start": 19
+                      }
+                    },
+                    "availability": "unknown",
+                    "resolutionBasis": "full_name"
+                  }
+                ],
+                "context": "game",
+                "version": "fixture",
+                "certainty": "confirmed",
+                "unresolved": [],
+                "identityContext": {
+                  "basis": "current_membership",
+                  "sourcePublishedAt": "2026-10-16T08:10:48.655Z"
+                }
+              }
+            },
+            "sourceUrl": "https://x.com/Reporter/status/880000",
+            "observedAt": "2026-10-16T08:11:48.655456Z",
+            "rawPayload": {
+              "text": "BOS Jeremy Swayman starts tonight.",
+              "fixture": "local-shadow-only"
+            },
+            "snapshotDate": "2026-10-16",
+            "sourceHandle": "Reporter",
+            "tweetPostedAt": "2026-10-16T08:10:48.655Z",
+            "detectedLeague": "NHL",
+            "nhlFilterStatus": "accepted"
+          },
+          "aliases": [
+            {
+              "key": "report:afc5d2837af1e203c109a90ad87e5058fa0d75d5f34562a6a84bb0624a6d9df5:6:fixture",
+              "version": 1
+            },
+            {
+              "key": "event:afc5d2837af1e203c109a90ad87e5058fa0d75d5f34562a6a84bb0624a6d9df5:6:fixture:8478499:4",
+              "version": 1
+            },
+            {
+              "key": "receipt:tweet-receipt-v2:880000:claim:0",
+              "version": 2
+            }
+          ],
+          "coverage": {
+            "status": "unresolved",
+            "leagues": [],
+            "teamIds": [],
+            "entryIds": [],
+            "bindingAuthority": false
+          },
+          "scopeKey": "tweet-scope-v1:f74bf2f49e8a7292a643c295b1c73b9b7b345974f126a0577d77e1f37670e782",
+          "semantic": {
+            "id": "tweet-observation-v2:d5a40a94e66cff459725d873cdd3af70bed54b2e8dd7a230ca4544ea108435cc",
+            "fact": {
+              "kind": "starter",
+              "playerId": 8478499
+            },
+            "scope": {
+              "kind": "game",
+              "group": null,
+              "phase": "entry",
+              "gameId": 2026020010,
+              "teamId": 6
+            },
+            "support": {
+              "basis": "explicit team and claim; fresh canonical identity; exact dated game",
+              "status": "supported",
+              "validUntil": "2026-10-16T23:00:00Z"
+            },
+            "wrapper": null,
+            "evidence": {
+              "end": 34,
+              "text": "Jeremy Swayman starts tonight.",
+              "start": 4
+            },
+            "modality": "asserted",
+            "original": {
+              "author": "reporter",
+              "tweetId": "880000",
+              "publishedAt": "2026-10-16T08:10:48.655Z"
+            },
+            "relation": null,
+            "reportId": "tweet-receipt-v2:880000",
+            "sourceKey": "Reporter",
+            "receivedAt": "2026-10-16T08:11:48.655456Z",
+            "effectiveAt": "2026-10-16T23:00:00Z",
+            "interpretedAt": "2026-10-16T08:12:48.665Z"
+          },
+          "lineageKey": "tweet-receipt-v2:880000",
+          "attribution": {
+            "relay": {
+              "handle": "reporter",
+              "accountId": null,
+              "accountKey": "x:handle:reporter"
+            },
+            "quoted": null,
+            "status": "resolved",
+            "original": {
+              "handle": "reporter",
+              "accountId": null,
+              "accountKey": "x:handle:reporter"
+            },
+            "originalUrl": "https://x.com/Reporter/status/880000",
+            "relationship": "direct",
+            "originalTweetId": "880000",
+            "quoteEndorsement": "not_asserted",
+            "originalPublishedAt": "2026-10-16T08:10:48.655Z"
+          },
+          "claimAnchor": {
+            "subjectSpan": {
+              "end": 18,
+              "text": "Jeremy Swayman",
+              "start": 4
+            },
+            "predicateSpan": {
+              "end": 25,
+              "text": "starts",
+              "start": 19
+            }
+          },
+          "contentHash": "d5a40a94e66cff459725d873cdd3af70bed54b2e8dd7a230ca4544ea108435cc",
+          "identityVersion": 2,
+          "directoryEvidence": [
+            {
+              "id": "source-context-v1:34cc0257dad66dd5fe7b256e8f9ba3e157cef08e50eeac2abd56fe1d2d265384",
+              "role": "relay",
+              "handle": "reporter",
+              "league": "NHL",
+              "status": "observed_context",
+              "teamIds": [
+                6
+              ],
+              "accountId": null,
+              "sourceUrl": "https://x.com/Reporter/status/880000",
+              "accountKey": "x:handle:reporter",
+              "publishedAt": "2026-10-16T08:10:48.655Z"
+            },
+            {
+              "id": "source-context-v1:372fcc47b92810297b9498717cc64bec1d25b12371241ae464bd032540bc4c4a",
+              "role": "original",
+              "handle": "reporter",
+              "league": "NHL",
+              "status": "observed_context",
+              "teamIds": [
+                6
+              ],
+              "accountId": null,
+              "sourceUrl": "https://x.com/Reporter/status/880000",
+              "accountKey": "x:handle:reporter",
+              "publishedAt": "2026-10-16T08:10:48.655Z"
+            }
+          ],
+          "extractionVersion": "2026-10-16.4"
+        }
+      }
+    ],
+    "deliveries": [
+      {
+        "status": "held",
+        "requires_review": true
+      }
+    ]
+  },
+  "raw": {
+    "id": "00000000-0000-4000-8000-000000008800",
+    "text": null,
+    "source": "ifttt",
+    "tweet_id": "880000",
+    "username": null,
+    "source_key": "fixture-00000000-0000-4000-8000-000000008800",
+    "updated_at": "2026-10-16T03:12:48.657545-05:00",
+    "raw_payload": {
+      "text": "BOS Jeremy Swayman starts tonight.",
+      "fixture": "local-shadow-only"
+    },
+    "received_at": "2026-10-16T03:11:48.655456-05:00",
+    "source_group": "fixture",
+    "link_to_tweet": null,
+    "source_account": "Reporter",
+    "created_at_label": null,
+    "tweet_created_at": null,
+    "tweet_embed_code": null,
+    "processing_status": "pending"
+  }
+}

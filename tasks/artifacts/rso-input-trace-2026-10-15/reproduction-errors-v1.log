@@ -1,0 +1,14 @@
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
++ actual - expected
+
++ 'partial'
+- 'rejected'
+    at /Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-input-trace-2026-10-15/reproduce.cjs:80:10
+    at Generator.next (<anonymous>)
+    at fulfilled (/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-input-trace-2026-10-15/reproduce.cjs:5:58) {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 'partial',
+  expected: 'rejected',
+  operator: 'strictEqual'
+}

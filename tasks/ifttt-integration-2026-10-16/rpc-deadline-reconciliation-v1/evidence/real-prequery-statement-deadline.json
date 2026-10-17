@@ -1,0 +1,144 @@
+{
+  "scope": "Actual PostgreSQL; fixture explicitly sets timeout BEFORE main query to model documented PostgREST hoisting, not an actual PostgREST run",
+  "elapsed": 5015.521457999999,
+  "error": {
+    "message": "canceling statement due to statement timeout",
+    "code": "57014",
+    "where": "SQL statement \"SELECT pg_sleep(6)\"\nPL/pgSQL function public.fixture_statement_sleep() line 1 at PERFORM\nSQL statement \"insert into public.ifttt_raw_receipt_variants select expected.*\"\nPL/pgSQL function public.retain_ifttt_raw_receipt(text,jsonb) line 71 at SQL statement\nPL/pgSQL function public.retain_bounded_ifttt_raw_receipt(jsonb,jsonb,jsonb) line 56 at assignment"
+  },
+  "before": {
+    "data": {
+      "raw": [],
+      "ccc": [],
+      "archive": []
+    },
+    "policy": [
+      {
+        "body": {
+          "attempts": 0,
+          "contract": {
+            "id": "synthetic-local-policy",
+            "endsAt": "2026-10-16T09:32:11.055Z",
+            "scopes": [
+              {
+                "table": "line_source_ifttt_events",
+                "sourceKey": "fixture-reporter",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              },
+              {
+                "table": "line_source_ifttt_events",
+                "sourceKey": "source-a",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              },
+              {
+                "table": "line_source_ifttt_events",
+                "sourceKey": "source-b",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              },
+              {
+                "table": "lines_ccc_ifttt_events",
+                "sourceKey": "fixture-reporter",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              },
+              {
+                "table": "lines_ccc_ifttt_events",
+                "sourceKey": "source-a",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              },
+              {
+                "table": "lines_ccc_ifttt_events",
+                "sourceKey": "source-b",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              }
+            ],
+            "version": "ifttt-intake-v1",
+            "startsAt": "2026-10-16T09:31:11.155Z",
+            "maxAttempts": 1000,
+            "maxReceipts": 1000
+          },
+          "policy_id": "synthetic-local-policy",
+          "created_at": "2026-10-16T04:31:11.058596-05:00",
+          "stopped_at": null,
+          "stop_reason": null
+        }
+      }
+    ],
+    "maps": []
+  },
+  "after": {
+    "data": {
+      "raw": [],
+      "ccc": [],
+      "archive": []
+    },
+    "policy": [
+      {
+        "body": {
+          "attempts": 0,
+          "contract": {
+            "id": "synthetic-local-policy",
+            "endsAt": "2026-10-16T09:32:11.055Z",
+            "scopes": [
+              {
+                "table": "line_source_ifttt_events",
+                "sourceKey": "fixture-reporter",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              },
+              {
+                "table": "line_source_ifttt_events",
+                "sourceKey": "source-a",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              },
+              {
+                "table": "line_source_ifttt_events",
+                "sourceKey": "source-b",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              },
+              {
+                "table": "lines_ccc_ifttt_events",
+                "sourceKey": "fixture-reporter",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              },
+              {
+                "table": "lines_ccc_ifttt_events",
+                "sourceKey": "source-a",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              },
+              {
+                "table": "lines_ccc_ifttt_events",
+                "sourceKey": "source-b",
+                "sourceGroup": "fixture",
+                "sourceAccount": "reporter"
+              }
+            ],
+            "version": "ifttt-intake-v1",
+            "startsAt": "2026-10-16T09:31:11.155Z",
+            "maxAttempts": 1000,
+            "maxReceipts": 1000
+          },
+          "policy_id": "synthetic-local-policy",
+          "created_at": "2026-10-16T04:31:11.058596-05:00",
+          "stopped_at": null,
+          "stop_reason": null
+        }
+      }
+    ],
+    "maps": []
+  },
+  "response": {
+    "success": false,
+    "error": "IFTTT retention outcome is unknown; read-only reconciliation is required",
+    "outcome": "unknown"
+  }
+}

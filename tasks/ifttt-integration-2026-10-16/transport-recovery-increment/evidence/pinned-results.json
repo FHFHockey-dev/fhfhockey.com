@@ -1,0 +1,1560 @@
+{
+  "originalOracleSha256": "d9fe45ca44042673ff0381cd0f1981074b196da99fb6fdf9da573ac5df84fd8b",
+  "candidateManifest": "owned-source-v1-sha256.json",
+  "candidateManifestSha256": "6f9bbe3654edae99a5f54d3605c16dc1c7a391235ee5511f0345fb6e81c602b1",
+  "parentCandidateManifestSha256": "827c373d5fb4dc80d2dbe5b5b5c624ff6d62a78e4f826c6aad7abaa123697863",
+  "noHostedActions": true,
+  "noProductionDispatch": true,
+  "originalExactContractsAccepted": false,
+  "fullOriginalAcceptance": false,
+  "consumer": "synthetic private durable transport adapter; production caller/legacy import not implemented",
+  "results": [
+    {
+      "id": "CR042",
+      "variant": "original_clocks_negative",
+      "status": "held_expired_no_dispatch",
+      "originalExactCaseScored": false,
+      "source": {
+        "recordId": "a",
+        "fixtureClass": "synthetic_already_bound",
+        "source": {
+          "namespace": "offline-fixture",
+          "originalId": "9900000000000000001",
+          "originalAuthor": "fixture_a",
+          "relayId": "9900000000000000002",
+          "primaryTextMode": "verified_original",
+          "provenanceVerification": "synthetic_verified",
+          "lineageCandidateCount": 1,
+          "retainedSourceId": "offline-fixture:retained:9900000000000000002"
+        },
+        "sourceText": {
+          "text": "Jordan Staal will not play tonight.",
+          "sha256": "190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66",
+          "sourceTextVersionId": "fixture-text:190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66"
+        },
+        "occurrence": {
+          "subjectSpan": {
+            "start": 0,
+            "end": 12,
+            "text": "Jordan Staal",
+            "offsetUnit": "UTF-16_code_unit"
+          },
+          "governingClauseSpan": {
+            "start": 0,
+            "end": 35,
+            "text": "Jordan Staal will not play tonight.",
+            "offsetUnit": "UTF-16_code_unit"
+          },
+          "alignmentProof": "unique_1_to_1_fixture_alignment",
+          "predicateSpan": {
+            "start": 13,
+            "end": 26,
+            "text": "will not play",
+            "offsetUnit": "UTF-16_code_unit"
+          },
+          "contextSpans": []
+        },
+        "evidence": {
+          "displaySpan": {
+            "start": 0,
+            "end": 35,
+            "text": "Jordan Staal will not play tonight.",
+            "offsetUnit": "UTF-16_code_unit"
+          },
+          "ruleVersion": "evidence-rule-1"
+        },
+        "interpretation": {
+          "ruleVersion": "interpretation-rule-1",
+          "subject": {
+            "status": "known",
+            "playerId": 8473533,
+            "teamId": 12
+          },
+          "scope": {
+            "status": "known",
+            "kind": "game",
+            "teamId": 12,
+            "gameId": 900012,
+            "phase": "entry",
+            "group": null
+          },
+          "fact": {
+            "kind": "availability",
+            "playerId": 8473533,
+            "status": "out"
+          },
+          "polarity": "affirmed",
+          "assertionStrength": "asserted",
+          "modality": "asserted",
+          "validation": {
+            "status": "supported",
+            "basis": "synthetic_explicit_local_clause"
+          },
+          "relation": null
+        },
+        "time": {
+          "originalPublishedAt": "2026-10-15T12:00:00Z",
+          "receivedAt": "2026-10-15T12:01:00Z",
+          "interpretedAt": "2026-10-15T12:02:00Z",
+          "effectiveAt": "2026-10-15T23:00:00Z",
+          "validUntil": "2026-10-16T04:00:00Z",
+          "wrapperPublishedAt": null
+        },
+        "legacy": null
+      },
+      "after": {
+        "action_key": "fixture-effect-1",
+        "scope_key": "retained-fixture-scope",
+        "scenario_key": "retained-fixture-scenario",
+        "revision_key": "retained-fixture-revision",
+        "payload": {
+          "action": {
+            "key": "fixture-effect-1",
+            "transitionId": "fixture-transition-1"
+          },
+          "parent": {
+            "sha256": "e594f9f0ccdc00b9bcccd852201bc9a8c6e96dfca45dad4cf48f28a25c64f8d9",
+            "captureKey": "original:retained-parent:f0141743a880501b2d36b012ebdf47f7edbb719c03d980d8553732ffb2226fc7:12:interpretation-rule-1:injury"
+          },
+          "source": {
+            "time": {
+              "receivedAt": "2026-10-15T12:01:00Z",
+              "validUntil": "2026-10-16T04:00:00Z",
+              "effectiveAt": "2026-10-15T23:00:00Z",
+              "interpretedAt": "2026-10-15T12:02:00Z",
+              "wrapperPublishedAt": null,
+              "originalPublishedAt": "2026-10-15T12:00:00Z"
+            },
+            "legacy": null,
+            "source": {
+              "relayId": "9900000000000000002",
+              "namespace": "offline-fixture",
+              "originalId": "9900000000000000001",
+              "originalAuthor": "fixture_a",
+              "primaryTextMode": "verified_original",
+              "retainedSourceId": "offline-fixture:retained:9900000000000000002",
+              "lineageCandidateCount": 1,
+              "provenanceVerification": "synthetic_verified"
+            },
+            "evidence": {
+              "displaySpan": {
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "ruleVersion": "evidence-rule-1"
+            },
+            "recordId": "a",
+            "occurrence": {
+              "subjectSpan": {
+                "end": 12,
+                "text": "Jordan Staal",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "contextSpans": [],
+              "predicateSpan": {
+                "end": 26,
+                "text": "will not play",
+                "start": 13,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "alignmentProof": "unique_1_to_1_fixture_alignment",
+              "governingClauseSpan": {
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              }
+            },
+            "sourceText": {
+              "text": "Jordan Staal will not play tonight.",
+              "sha256": "190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66",
+              "sourceTextVersionId": "fixture-text:190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66"
+            },
+            "fixtureClass": "synthetic_already_bound",
+            "interpretation": {
+              "fact": {
+                "kind": "availability",
+                "status": "out",
+                "playerId": 8473533
+              },
+              "scope": {
+                "kind": "game",
+                "group": null,
+                "phase": "entry",
+                "gameId": 900012,
+                "status": "known",
+                "teamId": 12
+              },
+              "subject": {
+                "status": "known",
+                "teamId": 12,
+                "playerId": 8473533
+              },
+              "modality": "asserted",
+              "polarity": "affirmed",
+              "relation": null,
+              "validation": {
+                "basis": "synthetic_explicit_local_clause",
+                "status": "supported"
+              },
+              "ruleVersion": "interpretation-rule-1",
+              "assertionStrength": "asserted"
+            }
+          },
+          "observation": {
+            "semantic": {
+              "support": {
+                "validUntil": "2026-10-16T04:00:00Z"
+              }
+            }
+          },
+          "clockFixture": "original"
+        },
+        "status": "pending",
+        "attempts": 0,
+        "reconciliations": 0,
+        "owner": null,
+        "lease_until": null,
+        "next_attempt_at": "2026-10-16T05:57:24.397Z",
+        "requires_review": true,
+        "last_error": "scope changed or expired",
+        "receipt": null,
+        "created_at": "2026-10-16T05:57:24.397Z",
+        "updated_at": "2026-10-16T05:57:24.397Z"
+      }
+    },
+    {
+      "id": "CR043",
+      "variant": "original_clocks_negative",
+      "status": "held_expired_no_dispatch",
+      "originalExactCaseScored": false,
+      "source": {
+        "recordId": "a",
+        "fixtureClass": "synthetic_already_bound",
+        "source": {
+          "namespace": "offline-fixture",
+          "originalId": "9900000000000000001",
+          "originalAuthor": "fixture_a",
+          "relayId": "9900000000000000002",
+          "primaryTextMode": "verified_original",
+          "provenanceVerification": "synthetic_verified",
+          "lineageCandidateCount": 1,
+          "retainedSourceId": "offline-fixture:retained:9900000000000000002"
+        },
+        "sourceText": {
+          "text": "Jordan Staal will not play tonight.",
+          "sha256": "190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66",
+          "sourceTextVersionId": "fixture-text:190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66"
+        },
+        "occurrence": {
+          "subjectSpan": {
+            "start": 0,
+            "end": 12,
+            "text": "Jordan Staal",
+            "offsetUnit": "UTF-16_code_unit"
+          },
+          "governingClauseSpan": {
+            "start": 0,
+            "end": 35,
+            "text": "Jordan Staal will not play tonight.",
+            "offsetUnit": "UTF-16_code_unit"
+          },
+          "alignmentProof": "unique_1_to_1_fixture_alignment",
+          "predicateSpan": {
+            "start": 13,
+            "end": 26,
+            "text": "will not play",
+            "offsetUnit": "UTF-16_code_unit"
+          },
+          "contextSpans": []
+        },
+        "evidence": {
+          "displaySpan": {
+            "start": 0,
+            "end": 35,
+            "text": "Jordan Staal will not play tonight.",
+            "offsetUnit": "UTF-16_code_unit"
+          },
+          "ruleVersion": "evidence-rule-1"
+        },
+        "interpretation": {
+          "ruleVersion": "interpretation-rule-1",
+          "subject": {
+            "status": "known",
+            "playerId": 8473533,
+            "teamId": 12
+          },
+          "scope": {
+            "status": "known",
+            "kind": "game",
+            "teamId": 12,
+            "gameId": 900012,
+            "phase": "entry",
+            "group": null
+          },
+          "fact": {
+            "kind": "availability",
+            "playerId": 8473533,
+            "status": "out"
+          },
+          "polarity": "affirmed",
+          "assertionStrength": "asserted",
+          "modality": "asserted",
+          "validation": {
+            "status": "supported",
+            "basis": "synthetic_explicit_local_clause"
+          },
+          "relation": null
+        },
+        "time": {
+          "originalPublishedAt": "2026-10-15T12:00:00Z",
+          "receivedAt": "2026-10-15T12:01:00Z",
+          "interpretedAt": "2026-10-15T12:02:00Z",
+          "effectiveAt": "2026-10-15T23:00:00Z",
+          "validUntil": "2026-10-16T04:00:00Z",
+          "wrapperPublishedAt": null
+        },
+        "legacy": null
+      },
+      "after": {
+        "action_key": "fixture-effect-1",
+        "scope_key": "retained-fixture-scope",
+        "scenario_key": "retained-fixture-scenario",
+        "revision_key": "retained-fixture-revision",
+        "payload": {
+          "action": {
+            "key": "fixture-effect-1",
+            "transitionId": "fixture-transition-1"
+          },
+          "parent": {
+            "sha256": "e594f9f0ccdc00b9bcccd852201bc9a8c6e96dfca45dad4cf48f28a25c64f8d9",
+            "captureKey": "original:retained-parent:f0141743a880501b2d36b012ebdf47f7edbb719c03d980d8553732ffb2226fc7:12:interpretation-rule-1:injury"
+          },
+          "source": {
+            "time": {
+              "receivedAt": "2026-10-15T12:01:00Z",
+              "validUntil": "2026-10-16T04:00:00Z",
+              "effectiveAt": "2026-10-15T23:00:00Z",
+              "interpretedAt": "2026-10-15T12:02:00Z",
+              "wrapperPublishedAt": null,
+              "originalPublishedAt": "2026-10-15T12:00:00Z"
+            },
+            "legacy": null,
+            "source": {
+              "relayId": "9900000000000000002",
+              "namespace": "offline-fixture",
+              "originalId": "9900000000000000001",
+              "originalAuthor": "fixture_a",
+              "primaryTextMode": "verified_original",
+              "retainedSourceId": "offline-fixture:retained:9900000000000000002",
+              "lineageCandidateCount": 1,
+              "provenanceVerification": "synthetic_verified"
+            },
+            "evidence": {
+              "displaySpan": {
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "ruleVersion": "evidence-rule-1"
+            },
+            "recordId": "a",
+            "occurrence": {
+              "subjectSpan": {
+                "end": 12,
+                "text": "Jordan Staal",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "contextSpans": [],
+              "predicateSpan": {
+                "end": 26,
+                "text": "will not play",
+                "start": 13,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "alignmentProof": "unique_1_to_1_fixture_alignment",
+              "governingClauseSpan": {
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              }
+            },
+            "sourceText": {
+              "text": "Jordan Staal will not play tonight.",
+              "sha256": "190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66",
+              "sourceTextVersionId": "fixture-text:190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66"
+            },
+            "fixtureClass": "synthetic_already_bound",
+            "interpretation": {
+              "fact": {
+                "kind": "availability",
+                "status": "out",
+                "playerId": 8473533
+              },
+              "scope": {
+                "kind": "game",
+                "group": null,
+                "phase": "entry",
+                "gameId": 900012,
+                "status": "known",
+                "teamId": 12
+              },
+              "subject": {
+                "status": "known",
+                "teamId": 12,
+                "playerId": 8473533
+              },
+              "modality": "asserted",
+              "polarity": "affirmed",
+              "relation": null,
+              "validation": {
+                "basis": "synthetic_explicit_local_clause",
+                "status": "supported"
+              },
+              "ruleVersion": "interpretation-rule-1",
+              "assertionStrength": "asserted"
+            }
+          },
+          "observation": {
+            "semantic": {
+              "support": {
+                "validUntil": "2026-10-16T04:00:00Z"
+              }
+            }
+          },
+          "clockFixture": "original"
+        },
+        "status": "pending",
+        "attempts": 0,
+        "reconciliations": 0,
+        "owner": null,
+        "lease_until": null,
+        "next_attempt_at": "2026-10-16T05:57:24.466Z",
+        "requires_review": true,
+        "last_error": "scope changed or expired",
+        "receipt": null,
+        "created_at": "2026-10-16T05:57:24.466Z",
+        "updated_at": "2026-10-16T05:57:24.466Z"
+      }
+    },
+    {
+      "id": "CR044",
+      "variant": "original_clocks_negative",
+      "status": "held_expired_no_dispatch",
+      "originalExactCaseScored": false,
+      "source": {
+        "recordId": "a",
+        "fixtureClass": "synthetic_already_bound",
+        "source": {
+          "namespace": "offline-fixture",
+          "originalId": "9900000000000000001",
+          "originalAuthor": "fixture_a",
+          "relayId": "9900000000000000002",
+          "primaryTextMode": "verified_original",
+          "provenanceVerification": "synthetic_verified",
+          "lineageCandidateCount": 1,
+          "retainedSourceId": "offline-fixture:retained:9900000000000000002"
+        },
+        "sourceText": {
+          "text": "Jordan Staal will not play tonight.",
+          "sha256": "190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66",
+          "sourceTextVersionId": "fixture-text:190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66"
+        },
+        "occurrence": {
+          "subjectSpan": {
+            "start": 0,
+            "end": 12,
+            "text": "Jordan Staal",
+            "offsetUnit": "UTF-16_code_unit"
+          },
+          "governingClauseSpan": {
+            "start": 0,
+            "end": 35,
+            "text": "Jordan Staal will not play tonight.",
+            "offsetUnit": "UTF-16_code_unit"
+          },
+          "alignmentProof": "unique_1_to_1_fixture_alignment",
+          "predicateSpan": {
+            "start": 13,
+            "end": 26,
+            "text": "will not play",
+            "offsetUnit": "UTF-16_code_unit"
+          },
+          "contextSpans": []
+        },
+        "evidence": {
+          "displaySpan": {
+            "start": 0,
+            "end": 35,
+            "text": "Jordan Staal will not play tonight.",
+            "offsetUnit": "UTF-16_code_unit"
+          },
+          "ruleVersion": "evidence-rule-1"
+        },
+        "interpretation": {
+          "ruleVersion": "interpretation-rule-1",
+          "subject": {
+            "status": "known",
+            "playerId": 8473533,
+            "teamId": 12
+          },
+          "scope": {
+            "status": "known",
+            "kind": "game",
+            "teamId": 12,
+            "gameId": 900012,
+            "phase": "entry",
+            "group": null
+          },
+          "fact": {
+            "kind": "availability",
+            "playerId": 8473533,
+            "status": "out"
+          },
+          "polarity": "affirmed",
+          "assertionStrength": "asserted",
+          "modality": "asserted",
+          "validation": {
+            "status": "supported",
+            "basis": "synthetic_explicit_local_clause"
+          },
+          "relation": null
+        },
+        "time": {
+          "originalPublishedAt": "2026-10-15T12:00:00Z",
+          "receivedAt": "2026-10-15T12:01:00Z",
+          "interpretedAt": "2026-10-15T12:02:00Z",
+          "effectiveAt": "2026-10-15T23:00:00Z",
+          "validUntil": "2026-10-16T04:00:00Z",
+          "wrapperPublishedAt": null
+        },
+        "legacy": null
+      },
+      "after": {
+        "action_key": "fixture-effect-1",
+        "scope_key": "retained-fixture-scope",
+        "scenario_key": "retained-fixture-scenario",
+        "revision_key": "retained-fixture-revision",
+        "payload": {
+          "action": {
+            "key": "fixture-effect-1",
+            "transitionId": "fixture-transition-1"
+          },
+          "parent": {
+            "sha256": "e594f9f0ccdc00b9bcccd852201bc9a8c6e96dfca45dad4cf48f28a25c64f8d9",
+            "captureKey": "original:retained-parent:f0141743a880501b2d36b012ebdf47f7edbb719c03d980d8553732ffb2226fc7:12:interpretation-rule-1:injury"
+          },
+          "source": {
+            "time": {
+              "receivedAt": "2026-10-15T12:01:00Z",
+              "validUntil": "2026-10-16T04:00:00Z",
+              "effectiveAt": "2026-10-15T23:00:00Z",
+              "interpretedAt": "2026-10-15T12:02:00Z",
+              "wrapperPublishedAt": null,
+              "originalPublishedAt": "2026-10-15T12:00:00Z"
+            },
+            "legacy": null,
+            "source": {
+              "relayId": "9900000000000000002",
+              "namespace": "offline-fixture",
+              "originalId": "9900000000000000001",
+              "originalAuthor": "fixture_a",
+              "primaryTextMode": "verified_original",
+              "retainedSourceId": "offline-fixture:retained:9900000000000000002",
+              "lineageCandidateCount": 1,
+              "provenanceVerification": "synthetic_verified"
+            },
+            "evidence": {
+              "displaySpan": {
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "ruleVersion": "evidence-rule-1"
+            },
+            "recordId": "a",
+            "occurrence": {
+              "subjectSpan": {
+                "end": 12,
+                "text": "Jordan Staal",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "contextSpans": [],
+              "predicateSpan": {
+                "end": 26,
+                "text": "will not play",
+                "start": 13,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "alignmentProof": "unique_1_to_1_fixture_alignment",
+              "governingClauseSpan": {
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              }
+            },
+            "sourceText": {
+              "text": "Jordan Staal will not play tonight.",
+              "sha256": "190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66",
+              "sourceTextVersionId": "fixture-text:190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66"
+            },
+            "fixtureClass": "synthetic_already_bound",
+            "interpretation": {
+              "fact": {
+                "kind": "availability",
+                "status": "out",
+                "playerId": 8473533
+              },
+              "scope": {
+                "kind": "game",
+                "group": null,
+                "phase": "entry",
+                "gameId": 900012,
+                "status": "known",
+                "teamId": 12
+              },
+              "subject": {
+                "status": "known",
+                "teamId": 12,
+                "playerId": 8473533
+              },
+              "modality": "asserted",
+              "polarity": "affirmed",
+              "relation": null,
+              "validation": {
+                "basis": "synthetic_explicit_local_clause",
+                "status": "supported"
+              },
+              "ruleVersion": "interpretation-rule-1",
+              "assertionStrength": "asserted"
+            }
+          },
+          "observation": {
+            "semantic": {
+              "support": {
+                "validUntil": "2026-10-16T04:00:00Z"
+              }
+            }
+          },
+          "clockFixture": "original"
+        },
+        "status": "pending",
+        "attempts": 0,
+        "reconciliations": 0,
+        "owner": null,
+        "lease_until": null,
+        "next_attempt_at": "2026-10-16T05:57:24.534Z",
+        "requires_review": true,
+        "last_error": "scope changed or expired",
+        "receipt": null,
+        "created_at": "2026-10-16T05:57:24.534Z",
+        "updated_at": "2026-10-16T05:57:24.534Z"
+      }
+    },
+    {
+      "id": "CR042",
+      "variant": "operational-v1",
+      "originalExactCaseScored": false,
+      "clockShiftMilliseconds": 43044596,
+      "result": {
+        "effectIdAfterRetry": "fixture-effect-1",
+        "transitionIdAfterRetry": "fixture-transition-1",
+        "newEffectIdentityCount": 0
+      },
+      "assertions": [
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.effectIdAfterRetry",
+            "value": "fixture-effect-1"
+          },
+          "actual": "fixture-effect-1",
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.transitionIdAfterRetry",
+            "value": "fixture-transition-1"
+          },
+          "actual": "fixture-transition-1",
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectIdentityCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        }
+      ],
+      "before": {
+        "action_key": "fixture-effect-1",
+        "scope_key": "retained-fixture-scope",
+        "scenario_key": "retained-fixture-scenario",
+        "revision_key": "retained-fixture-revision",
+        "payload": {
+          "action": {
+            "key": "fixture-effect-1",
+            "transitionId": "fixture-transition-1"
+          },
+          "parent": {
+            "sha256": "4db9bb14961c93dd3679a8ae9cee19bc7ef82631e1f5b0afb0e80bb0e0eee473",
+            "captureKey": "operational-v1:retained-parent:f0141743a880501b2d36b012ebdf47f7edbb719c03d980d8553732ffb2226fc7:12:interpretation-rule-1:injury"
+          },
+          "source": {
+            "time": {
+              "receivedAt": "2026-10-15T23:58:24.596Z",
+              "validUntil": "2026-10-16T15:57:24.596Z",
+              "effectiveAt": "2026-10-16T10:57:24.596Z",
+              "interpretedAt": "2026-10-15T23:59:24.596Z",
+              "wrapperPublishedAt": null,
+              "originalPublishedAt": "2026-10-15T23:57:24.596Z"
+            },
+            "legacy": null,
+            "source": {
+              "relayId": "9900000000000000002",
+              "namespace": "offline-fixture",
+              "originalId": "9900000000000000001",
+              "originalAuthor": "fixture_a",
+              "primaryTextMode": "verified_original",
+              "retainedSourceId": "offline-fixture:retained:9900000000000000002",
+              "lineageCandidateCount": 1,
+              "provenanceVerification": "synthetic_verified"
+            },
+            "evidence": {
+              "displaySpan": {
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "ruleVersion": "evidence-rule-1"
+            },
+            "recordId": "a",
+            "occurrence": {
+              "subjectSpan": {
+                "end": 12,
+                "text": "Jordan Staal",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "contextSpans": [],
+              "predicateSpan": {
+                "end": 26,
+                "text": "will not play",
+                "start": 13,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "alignmentProof": "unique_1_to_1_fixture_alignment",
+              "governingClauseSpan": {
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              }
+            },
+            "sourceText": {
+              "text": "Jordan Staal will not play tonight.",
+              "sha256": "190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66",
+              "sourceTextVersionId": "fixture-text:190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66"
+            },
+            "fixtureClass": "synthetic_already_bound",
+            "interpretation": {
+              "fact": {
+                "kind": "availability",
+                "status": "out",
+                "playerId": 8473533
+              },
+              "scope": {
+                "kind": "game",
+                "group": null,
+                "phase": "entry",
+                "gameId": 900012,
+                "status": "known",
+                "teamId": 12
+              },
+              "subject": {
+                "status": "known",
+                "teamId": 12,
+                "playerId": 8473533
+              },
+              "modality": "asserted",
+              "polarity": "affirmed",
+              "relation": null,
+              "validation": {
+                "basis": "synthetic_explicit_local_clause",
+                "status": "supported"
+              },
+              "ruleVersion": "interpretation-rule-1",
+              "assertionStrength": "asserted"
+            }
+          },
+          "observation": {
+            "semantic": {
+              "support": {
+                "validUntil": "2026-10-16T15:57:24.596Z"
+              }
+            }
+          },
+          "clockFixture": "operational-v1"
+        },
+        "status": "pending",
+        "attempts": 0,
+        "reconciliations": 0,
+        "owner": null,
+        "lease_until": null,
+        "next_attempt_at": "2026-10-16T05:57:24.603Z",
+        "requires_review": false,
+        "last_error": null,
+        "receipt": null,
+        "created_at": "2026-10-16T05:57:24.603Z",
+        "updated_at": "2026-10-16T05:57:24.603Z"
+      },
+      "after": {
+        "action_key": "fixture-effect-1",
+        "scope_key": "retained-fixture-scope",
+        "scenario_key": "retained-fixture-scenario",
+        "revision_key": "retained-fixture-revision",
+        "payload": {
+          "action": {
+            "key": "fixture-effect-1",
+            "transitionId": "fixture-transition-1"
+          },
+          "parent": {
+            "sha256": "4db9bb14961c93dd3679a8ae9cee19bc7ef82631e1f5b0afb0e80bb0e0eee473",
+            "captureKey": "operational-v1:retained-parent:f0141743a880501b2d36b012ebdf47f7edbb719c03d980d8553732ffb2226fc7:12:interpretation-rule-1:injury"
+          },
+          "source": {
+            "time": {
+              "receivedAt": "2026-10-15T23:58:24.596Z",
+              "validUntil": "2026-10-16T15:57:24.596Z",
+              "effectiveAt": "2026-10-16T10:57:24.596Z",
+              "interpretedAt": "2026-10-15T23:59:24.596Z",
+              "wrapperPublishedAt": null,
+              "originalPublishedAt": "2026-10-15T23:57:24.596Z"
+            },
+            "legacy": null,
+            "source": {
+              "relayId": "9900000000000000002",
+              "namespace": "offline-fixture",
+              "originalId": "9900000000000000001",
+              "originalAuthor": "fixture_a",
+              "primaryTextMode": "verified_original",
+              "retainedSourceId": "offline-fixture:retained:9900000000000000002",
+              "lineageCandidateCount": 1,
+              "provenanceVerification": "synthetic_verified"
+            },
+            "evidence": {
+              "displaySpan": {
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "ruleVersion": "evidence-rule-1"
+            },
+            "recordId": "a",
+            "occurrence": {
+              "subjectSpan": {
+                "end": 12,
+                "text": "Jordan Staal",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "contextSpans": [],
+              "predicateSpan": {
+                "end": 26,
+                "text": "will not play",
+                "start": 13,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "alignmentProof": "unique_1_to_1_fixture_alignment",
+              "governingClauseSpan": {
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              }
+            },
+            "sourceText": {
+              "text": "Jordan Staal will not play tonight.",
+              "sha256": "190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66",
+              "sourceTextVersionId": "fixture-text:190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66"
+            },
+            "fixtureClass": "synthetic_already_bound",
+            "interpretation": {
+              "fact": {
+                "kind": "availability",
+                "status": "out",
+                "playerId": 8473533
+              },
+              "scope": {
+                "kind": "game",
+                "group": null,
+                "phase": "entry",
+                "gameId": 900012,
+                "status": "known",
+                "teamId": 12
+              },
+              "subject": {
+                "status": "known",
+                "teamId": 12,
+                "playerId": 8473533
+              },
+              "modality": "asserted",
+              "polarity": "affirmed",
+              "relation": null,
+              "validation": {
+                "basis": "synthetic_explicit_local_clause",
+                "status": "supported"
+              },
+              "ruleVersion": "interpretation-rule-1",
+              "assertionStrength": "asserted"
+            }
+          },
+          "observation": {
+            "semantic": {
+              "support": {
+                "validUntil": "2026-10-16T15:57:24.596Z"
+              }
+            }
+          },
+          "clockFixture": "operational-v1"
+        },
+        "status": "delivered",
+        "attempts": 1,
+        "reconciliations": 0,
+        "owner": null,
+        "lease_until": null,
+        "next_attempt_at": "2026-10-16T05:58:24.639Z",
+        "requires_review": false,
+        "last_error": null,
+        "receipt": {
+          "actionKey": "fixture-effect-1",
+          "parentSha256": "4db9bb14961c93dd3679a8ae9cee19bc7ef82631e1f5b0afb0e80bb0e0eee473",
+          "payloadSha256": "8359185a13809ea117be93d71d56f0bcf86b2c827af4d07a71ca29099bf7339e"
+        },
+        "created_at": "2026-10-16T05:57:24.603Z",
+        "updated_at": "2026-10-16T05:57:24.639Z"
+      }
+    },
+    {
+      "id": "CR043",
+      "variant": "operational-v1",
+      "originalExactCaseScored": false,
+      "clockShiftMilliseconds": 43044698,
+      "result": {
+        "resendPlanCount": 0,
+        "newEffectIdentityCount": 0,
+        "holdReasons": [
+          "delivery_outcome_unknown"
+        ]
+      },
+      "assertions": [
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.resendPlanCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectIdentityCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.holdReasons",
+            "value": [
+              "delivery_outcome_unknown"
+            ]
+          },
+          "actual": [
+            "delivery_outcome_unknown"
+          ],
+          "pass": true
+        }
+      ],
+      "before": {
+        "action_key": "fixture-effect-1",
+        "scope_key": "retained-fixture-scope",
+        "scenario_key": "retained-fixture-scenario",
+        "revision_key": "retained-fixture-revision",
+        "payload": {
+          "action": {
+            "key": "fixture-effect-1",
+            "transitionId": "fixture-transition-1"
+          },
+          "parent": {
+            "sha256": "c2ce38378b222168595a835dc7a65968c228b823dff7fd19acadbf150c068fd3",
+            "captureKey": "operational-v1:retained-parent:f0141743a880501b2d36b012ebdf47f7edbb719c03d980d8553732ffb2226fc7:12:interpretation-rule-1:injury"
+          },
+          "source": {
+            "time": {
+              "receivedAt": "2026-10-15T23:58:24.698Z",
+              "validUntil": "2026-10-16T15:57:24.698Z",
+              "effectiveAt": "2026-10-16T10:57:24.698Z",
+              "interpretedAt": "2026-10-15T23:59:24.698Z",
+              "wrapperPublishedAt": null,
+              "originalPublishedAt": "2026-10-15T23:57:24.698Z"
+            },
+            "legacy": null,
+            "source": {
+              "relayId": "9900000000000000002",
+              "namespace": "offline-fixture",
+              "originalId": "9900000000000000001",
+              "originalAuthor": "fixture_a",
+              "primaryTextMode": "verified_original",
+              "retainedSourceId": "offline-fixture:retained:9900000000000000002",
+              "lineageCandidateCount": 1,
+              "provenanceVerification": "synthetic_verified"
+            },
+            "evidence": {
+              "displaySpan": {
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "ruleVersion": "evidence-rule-1"
+            },
+            "recordId": "a",
+            "occurrence": {
+              "subjectSpan": {
+                "end": 12,
+                "text": "Jordan Staal",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "contextSpans": [],
+              "predicateSpan": {
+                "end": 26,
+                "text": "will not play",
+                "start": 13,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "alignmentProof": "unique_1_to_1_fixture_alignment",
+              "governingClauseSpan": {
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              }
+            },
+            "sourceText": {
+              "text": "Jordan Staal will not play tonight.",
+              "sha256": "190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66",
+              "sourceTextVersionId": "fixture-text:190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66"
+            },
+            "fixtureClass": "synthetic_already_bound",
+            "interpretation": {
+              "fact": {
+                "kind": "availability",
+                "status": "out",
+                "playerId": 8473533
+              },
+              "scope": {
+                "kind": "game",
+                "group": null,
+                "phase": "entry",
+                "gameId": 900012,
+                "status": "known",
+                "teamId": 12
+              },
+              "subject": {
+                "status": "known",
+                "teamId": 12,
+                "playerId": 8473533
+              },
+              "modality": "asserted",
+              "polarity": "affirmed",
+              "relation": null,
+              "validation": {
+                "basis": "synthetic_explicit_local_clause",
+                "status": "supported"
+              },
+              "ruleVersion": "interpretation-rule-1",
+              "assertionStrength": "asserted"
+            }
+          },
+          "observation": {
+            "semantic": {
+              "support": {
+                "validUntil": "2026-10-16T15:57:24.698Z"
+              }
+            }
+          },
+          "clockFixture": "operational-v1"
+        },
+        "status": "pending",
+        "attempts": 0,
+        "reconciliations": 0,
+        "owner": null,
+        "lease_until": null,
+        "next_attempt_at": "2026-10-16T05:57:24.706Z",
+        "requires_review": false,
+        "last_error": null,
+        "receipt": null,
+        "created_at": "2026-10-16T05:57:24.706Z",
+        "updated_at": "2026-10-16T05:57:24.706Z"
+      },
+      "after": {
+        "action_key": "fixture-effect-1",
+        "scope_key": "retained-fixture-scope",
+        "scenario_key": "retained-fixture-scenario",
+        "revision_key": "retained-fixture-revision",
+        "payload": {
+          "action": {
+            "key": "fixture-effect-1",
+            "transitionId": "fixture-transition-1"
+          },
+          "parent": {
+            "sha256": "c2ce38378b222168595a835dc7a65968c228b823dff7fd19acadbf150c068fd3",
+            "captureKey": "operational-v1:retained-parent:f0141743a880501b2d36b012ebdf47f7edbb719c03d980d8553732ffb2226fc7:12:interpretation-rule-1:injury"
+          },
+          "source": {
+            "time": {
+              "receivedAt": "2026-10-15T23:58:24.698Z",
+              "validUntil": "2026-10-16T15:57:24.698Z",
+              "effectiveAt": "2026-10-16T10:57:24.698Z",
+              "interpretedAt": "2026-10-15T23:59:24.698Z",
+              "wrapperPublishedAt": null,
+              "originalPublishedAt": "2026-10-15T23:57:24.698Z"
+            },
+            "legacy": null,
+            "source": {
+              "relayId": "9900000000000000002",
+              "namespace": "offline-fixture",
+              "originalId": "9900000000000000001",
+              "originalAuthor": "fixture_a",
+              "primaryTextMode": "verified_original",
+              "retainedSourceId": "offline-fixture:retained:9900000000000000002",
+              "lineageCandidateCount": 1,
+              "provenanceVerification": "synthetic_verified"
+            },
+            "evidence": {
+              "displaySpan": {
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "ruleVersion": "evidence-rule-1"
+            },
+            "recordId": "a",
+            "occurrence": {
+              "subjectSpan": {
+                "end": 12,
+                "text": "Jordan Staal",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "contextSpans": [],
+              "predicateSpan": {
+                "end": 26,
+                "text": "will not play",
+                "start": 13,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "alignmentProof": "unique_1_to_1_fixture_alignment",
+              "governingClauseSpan": {
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              }
+            },
+            "sourceText": {
+              "text": "Jordan Staal will not play tonight.",
+              "sha256": "190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66",
+              "sourceTextVersionId": "fixture-text:190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66"
+            },
+            "fixtureClass": "synthetic_already_bound",
+            "interpretation": {
+              "fact": {
+                "kind": "availability",
+                "status": "out",
+                "playerId": 8473533
+              },
+              "scope": {
+                "kind": "game",
+                "group": null,
+                "phase": "entry",
+                "gameId": 900012,
+                "status": "known",
+                "teamId": 12
+              },
+              "subject": {
+                "status": "known",
+                "teamId": 12,
+                "playerId": 8473533
+              },
+              "modality": "asserted",
+              "polarity": "affirmed",
+              "relation": null,
+              "validation": {
+                "basis": "synthetic_explicit_local_clause",
+                "status": "supported"
+              },
+              "ruleVersion": "interpretation-rule-1",
+              "assertionStrength": "asserted"
+            }
+          },
+          "observation": {
+            "semantic": {
+              "support": {
+                "validUntil": "2026-10-16T15:57:24.698Z"
+              }
+            }
+          },
+          "clockFixture": "operational-v1"
+        },
+        "status": "uncertain",
+        "attempts": 1,
+        "reconciliations": 1,
+        "owner": null,
+        "lease_until": null,
+        "next_attempt_at": "2026-10-16T05:58:24.754Z",
+        "requires_review": false,
+        "last_error": null,
+        "receipt": null,
+        "created_at": "2026-10-16T05:57:24.706Z",
+        "updated_at": "2026-10-16T05:57:24.754Z"
+      }
+    },
+    {
+      "id": "CR044",
+      "variant": "operational-v1",
+      "originalExactCaseScored": false,
+      "clockShiftMilliseconds": 43044819,
+      "result": {
+        "resendPlanCount": 0,
+        "newEffectIdentityCount": 0,
+        "effectId": "fixture-effect-1"
+      },
+      "assertions": [
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.resendPlanCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectIdentityCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.effectId",
+            "value": "fixture-effect-1"
+          },
+          "actual": "fixture-effect-1",
+          "pass": true
+        }
+      ],
+      "before": {
+        "action_key": "fixture-effect-1",
+        "scope_key": "retained-fixture-scope",
+        "scenario_key": "retained-fixture-scenario",
+        "revision_key": "retained-fixture-revision",
+        "payload": {
+          "action": {
+            "key": "fixture-effect-1",
+            "transitionId": "fixture-transition-1"
+          },
+          "parent": {
+            "sha256": "b18591e106a7454ba9b2d5d2fc7e16a70b6f68e42cd0f653c0912b0f8d349e4d",
+            "captureKey": "operational-v1:retained-parent:f0141743a880501b2d36b012ebdf47f7edbb719c03d980d8553732ffb2226fc7:12:interpretation-rule-1:injury"
+          },
+          "source": {
+            "time": {
+              "receivedAt": "2026-10-15T23:58:24.819Z",
+              "validUntil": "2026-10-16T15:57:24.819Z",
+              "effectiveAt": "2026-10-16T10:57:24.819Z",
+              "interpretedAt": "2026-10-15T23:59:24.819Z",
+              "wrapperPublishedAt": null,
+              "originalPublishedAt": "2026-10-15T23:57:24.819Z"
+            },
+            "legacy": null,
+            "source": {
+              "relayId": "9900000000000000002",
+              "namespace": "offline-fixture",
+              "originalId": "9900000000000000001",
+              "originalAuthor": "fixture_a",
+              "primaryTextMode": "verified_original",
+              "retainedSourceId": "offline-fixture:retained:9900000000000000002",
+              "lineageCandidateCount": 1,
+              "provenanceVerification": "synthetic_verified"
+            },
+            "evidence": {
+              "displaySpan": {
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "ruleVersion": "evidence-rule-1"
+            },
+            "recordId": "a",
+            "occurrence": {
+              "subjectSpan": {
+                "end": 12,
+                "text": "Jordan Staal",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "contextSpans": [],
+              "predicateSpan": {
+                "end": 26,
+                "text": "will not play",
+                "start": 13,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "alignmentProof": "unique_1_to_1_fixture_alignment",
+              "governingClauseSpan": {
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              }
+            },
+            "sourceText": {
+              "text": "Jordan Staal will not play tonight.",
+              "sha256": "190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66",
+              "sourceTextVersionId": "fixture-text:190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66"
+            },
+            "fixtureClass": "synthetic_already_bound",
+            "interpretation": {
+              "fact": {
+                "kind": "availability",
+                "status": "out",
+                "playerId": 8473533
+              },
+              "scope": {
+                "kind": "game",
+                "group": null,
+                "phase": "entry",
+                "gameId": 900012,
+                "status": "known",
+                "teamId": 12
+              },
+              "subject": {
+                "status": "known",
+                "teamId": 12,
+                "playerId": 8473533
+              },
+              "modality": "asserted",
+              "polarity": "affirmed",
+              "relation": null,
+              "validation": {
+                "basis": "synthetic_explicit_local_clause",
+                "status": "supported"
+              },
+              "ruleVersion": "interpretation-rule-1",
+              "assertionStrength": "asserted"
+            }
+          },
+          "observation": {
+            "semantic": {
+              "support": {
+                "validUntil": "2026-10-16T15:57:24.819Z"
+              }
+            }
+          },
+          "clockFixture": "operational-v1"
+        },
+        "status": "delivered",
+        "attempts": 1,
+        "reconciliations": 0,
+        "owner": null,
+        "lease_until": null,
+        "next_attempt_at": "2026-10-16T05:58:24.846Z",
+        "requires_review": false,
+        "last_error": null,
+        "receipt": {
+          "actionKey": "fixture-effect-1",
+          "parentSha256": "b18591e106a7454ba9b2d5d2fc7e16a70b6f68e42cd0f653c0912b0f8d349e4d",
+          "payloadSha256": "9348127e3054fb2115d3283c107f3ab80dac0516fada52496b186e1a51b609ff"
+        },
+        "created_at": "2026-10-16T05:57:24.826Z",
+        "updated_at": "2026-10-16T05:57:24.846Z"
+      },
+      "after": {
+        "action_key": "fixture-effect-1",
+        "scope_key": "retained-fixture-scope",
+        "scenario_key": "retained-fixture-scenario",
+        "revision_key": "retained-fixture-revision",
+        "payload": {
+          "action": {
+            "key": "fixture-effect-1",
+            "transitionId": "fixture-transition-1"
+          },
+          "parent": {
+            "sha256": "b18591e106a7454ba9b2d5d2fc7e16a70b6f68e42cd0f653c0912b0f8d349e4d",
+            "captureKey": "operational-v1:retained-parent:f0141743a880501b2d36b012ebdf47f7edbb719c03d980d8553732ffb2226fc7:12:interpretation-rule-1:injury"
+          },
+          "source": {
+            "time": {
+              "receivedAt": "2026-10-15T23:58:24.819Z",
+              "validUntil": "2026-10-16T15:57:24.819Z",
+              "effectiveAt": "2026-10-16T10:57:24.819Z",
+              "interpretedAt": "2026-10-15T23:59:24.819Z",
+              "wrapperPublishedAt": null,
+              "originalPublishedAt": "2026-10-15T23:57:24.819Z"
+            },
+            "legacy": null,
+            "source": {
+              "relayId": "9900000000000000002",
+              "namespace": "offline-fixture",
+              "originalId": "9900000000000000001",
+              "originalAuthor": "fixture_a",
+              "primaryTextMode": "verified_original",
+              "retainedSourceId": "offline-fixture:retained:9900000000000000002",
+              "lineageCandidateCount": 1,
+              "provenanceVerification": "synthetic_verified"
+            },
+            "evidence": {
+              "displaySpan": {
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "ruleVersion": "evidence-rule-1"
+            },
+            "recordId": "a",
+            "occurrence": {
+              "subjectSpan": {
+                "end": 12,
+                "text": "Jordan Staal",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "contextSpans": [],
+              "predicateSpan": {
+                "end": 26,
+                "text": "will not play",
+                "start": 13,
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "alignmentProof": "unique_1_to_1_fixture_alignment",
+              "governingClauseSpan": {
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "start": 0,
+                "offsetUnit": "UTF-16_code_unit"
+              }
+            },
+            "sourceText": {
+              "text": "Jordan Staal will not play tonight.",
+              "sha256": "190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66",
+              "sourceTextVersionId": "fixture-text:190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66"
+            },
+            "fixtureClass": "synthetic_already_bound",
+            "interpretation": {
+              "fact": {
+                "kind": "availability",
+                "status": "out",
+                "playerId": 8473533
+              },
+              "scope": {
+                "kind": "game",
+                "group": null,
+                "phase": "entry",
+                "gameId": 900012,
+                "status": "known",
+                "teamId": 12
+              },
+              "subject": {
+                "status": "known",
+                "teamId": 12,
+                "playerId": 8473533
+              },
+              "modality": "asserted",
+              "polarity": "affirmed",
+              "relation": null,
+              "validation": {
+                "basis": "synthetic_explicit_local_clause",
+                "status": "supported"
+              },
+              "ruleVersion": "interpretation-rule-1",
+              "assertionStrength": "asserted"
+            }
+          },
+          "observation": {
+            "semantic": {
+              "support": {
+                "validUntil": "2026-10-16T15:57:24.819Z"
+              }
+            }
+          },
+          "clockFixture": "operational-v1"
+        },
+        "status": "delivered",
+        "attempts": 1,
+        "reconciliations": 0,
+        "owner": null,
+        "lease_until": null,
+        "next_attempt_at": "2026-10-16T05:58:24.846Z",
+        "requires_review": false,
+        "last_error": null,
+        "receipt": {
+          "actionKey": "fixture-effect-1",
+          "parentSha256": "b18591e106a7454ba9b2d5d2fc7e16a70b6f68e42cd0f653c0912b0f8d349e4d",
+          "payloadSha256": "9348127e3054fb2115d3283c107f3ab80dac0516fada52496b186e1a51b609ff"
+        },
+        "created_at": "2026-10-16T05:57:24.826Z",
+        "updated_at": "2026-10-16T05:57:24.846Z"
+      }
+    },
+    {
+      "id": "missing_no_attempt_coverage",
+      "status": "held_unknown",
+      "originalExactCaseScored": false
+    },
+    {
+      "id": "receipt_identity_mismatch",
+      "status": "held_unknown",
+      "originalExactCaseScored": false
+    },
+    {
+      "id": "parent_fingerprint_mismatch",
+      "status": "held_before_invocation",
+      "originalExactCaseScored": false
+    },
+    {
+      "id": "fixture_evidence_append_only",
+      "status": "four_delete_attempts_rejected",
+      "originalExactCaseScored": false
+    }
+  ]
+}

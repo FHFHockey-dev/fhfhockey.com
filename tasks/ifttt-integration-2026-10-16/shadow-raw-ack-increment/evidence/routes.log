@@ -1,0 +1,22 @@
+
+> web@0.1.0 test
+> vitest __tests__/pages/api/v1/db/update-line-sources.test.ts __tests__/pages/api/v1/db/update-lines-ccc.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ __tests__/pages/api/v1/db/update-lines-ccc.test.ts (10 tests) 41ms
+stdout | __tests__/pages/api/v1/db/update-line-sources.test.ts > /api/v1/db/update-line-sources > replays the frozen 11 regression and 24 candidate records equivalently through GDL and CCC with mocked enrichment and storage
+Frozen gdl equivalent-route evaluation {"development_regression":{"posts":11,"accepted":6,"review":5,"emittedEvents":4,"confirmedFacts":0},"semantic_holdout_candidate":{"posts":19,"accepted":13,"review":6,"emittedEvents":5,"confirmedFacts":1},"quarantined_related":{"posts":5,"accepted":4,"review":1,"emittedEvents":0,"confirmedFacts":0}}
+
+stdout | __tests__/pages/api/v1/db/update-line-sources.test.ts > /api/v1/db/update-line-sources > replays the frozen 11 regression and 24 candidate records equivalently through GDL and CCC with mocked enrichment and storage
+Frozen ccc equivalent-route evaluation {"development_regression":{"posts":11,"accepted":6,"review":5,"emittedEvents":4,"confirmedFacts":0},"semantic_holdout_candidate":{"posts":19,"accepted":13,"review":6,"emittedEvents":5,"confirmedFacts":1},"quarantined_related":{"posts":5,"accepted":4,"review":1,"emittedEvents":0,"confirmedFacts":0}}
+
+ ✓ __tests__/pages/api/v1/db/update-line-sources.test.ts (31 tests) 1601ms
+   ✓ /api/v1/db/update-line-sources > replays the frozen 11 regression and 24 candidate records equivalently through GDL and CCC with mocked enrichment and storage  1480ms
+
+ Test Files  2 passed (2)
+      Tests  41 passed (41)
+   Start at  02:47:19
+   Duration  2.19s (transform 331ms, setup 3ms, collect 778ms, tests 1.64s, environment 0ms, prepare 67ms)
+

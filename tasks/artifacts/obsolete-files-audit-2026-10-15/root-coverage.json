@@ -1,0 +1,298 @@
+[
+  {
+    "root": ".DS_Store",
+    "files": 1,
+    "symlinks": 0,
+    "apparent_bytes": 10244,
+    "tracked_files": 0,
+    "report_directory_excluded": false
+  },
+  {
+    "root": ".env",
+    "files": 1,
+    "symlinks": 0,
+    "apparent_bytes": 67,
+    "tracked_files": 0,
+    "report_directory_excluded": false
+  },
+  {
+    "root": ".env.local",
+    "files": 1,
+    "symlinks": 0,
+    "apparent_bytes": 1388,
+    "tracked_files": 0,
+    "report_directory_excluded": false
+  },
+  {
+    "root": ".git",
+    "files": 7371,
+    "symlinks": 0,
+    "apparent_bytes": 1229395533,
+    "tracked_files": 0,
+    "report_directory_excluded": false
+  },
+  {
+    "root": ".github",
+    "files": 1,
+    "symlinks": 0,
+    "apparent_bytes": 2895,
+    "tracked_files": 1,
+    "report_directory_excluded": false
+  },
+  {
+    "root": ".gitignore",
+    "files": 1,
+    "symlinks": 0,
+    "apparent_bytes": 1029,
+    "tracked_files": 1,
+    "report_directory_excluded": false
+  },
+  {
+    "root": ".npm-cache",
+    "files": 14370,
+    "symlinks": 62,
+    "apparent_bytes": 312307413,
+    "tracked_files": 0,
+    "report_directory_excluded": false
+  },
+  {
+    "root": ".pytest_cache",
+    "files": 6,
+    "symlinks": 0,
+    "apparent_bytes": 4677,
+    "tracked_files": 0,
+    "report_directory_excluded": false
+  },
+  {
+    "root": ".tmp",
+    "files": 0,
+    "symlinks": 0,
+    "apparent_bytes": 0,
+    "tracked_files": 0,
+    "report_directory_excluded": false
+  },
+  {
+    "root": ".venv",
+    "files": 19362,
+    "symlinks": 3,
+    "apparent_bytes": 552549419,
+    "tracked_files": 0,
+    "report_directory_excluded": false
+  },
+  {
+    "root": ".vercel",
+    "files": 2,
+    "symlinks": 0,
+    "apparent_bytes": 635,
+    "tracked_files": 0,
+    "report_directory_excluded": false
+  },
+  {
+    "root": ".vscode",
+    "files": 5,
+    "symlinks": 0,
+    "apparent_bytes": 1440,
+    "tracked_files": 5,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "AGENTS.md",
+    "files": 1,
+    "symlinks": 0,
+    "apparent_bytes": 16116,
+    "tracked_files": 1,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "README.md",
+    "files": 1,
+    "symlinks": 0,
+    "apparent_bytes": 2376,
+    "tracked_files": 1,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "SPRINT-MODE.md",
+    "files": 1,
+    "symlinks": 0,
+    "apparent_bytes": 10079,
+    "tracked_files": 0,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "check_db.js",
+    "files": 1,
+    "symlinks": 0,
+    "apparent_bytes": 377,
+    "tracked_files": 1,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "cms",
+    "files": 30,
+    "symlinks": 0,
+    "apparent_bytes": 160114,
+    "tracked_files": 30,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "docs",
+    "files": 105,
+    "symlinks": 0,
+    "apparent_bytes": 86580764,
+    "tracked_files": 105,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "find_templates.py",
+    "files": 1,
+    "symlinks": 0,
+    "apparent_bytes": 276,
+    "tracked_files": 1,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "fix_templates.py",
+    "files": 1,
+    "symlinks": 0,
+    "apparent_bytes": 3204,
+    "tracked_files": 1,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "fix_terminal.sh",
+    "files": 1,
+    "symlinks": 0,
+    "apparent_bytes": 83,
+    "tracked_files": 1,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "functions",
+    "files": 5341,
+    "symlinks": 27,
+    "apparent_bytes": 204405753,
+    "tracked_files": 61,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "migrations",
+    "files": 78,
+    "symlinks": 0,
+    "apparent_bytes": 321510,
+    "tracked_files": 78,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "mise-en-place.md",
+    "files": 1,
+    "symlinks": 0,
+    "apparent_bytes": 7140,
+    "tracked_files": 1,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "modeling",
+    "files": 91,
+    "symlinks": 0,
+    "apparent_bytes": 3056559,
+    "tracked_files": 40,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "node_modules",
+    "files": 1,
+    "symlinks": 0,
+    "apparent_bytes": 3524,
+    "tracked_files": 0,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "output",
+    "files": 243,
+    "symlinks": 0,
+    "apparent_bytes": 77824234,
+    "tracked_files": 243,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "patch_layout.js",
+    "files": 1,
+    "symlinks": 0,
+    "apparent_bytes": 26927,
+    "tracked_files": 1,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "safe_properties.py",
+    "files": 1,
+    "symlinks": 0,
+    "apparent_bytes": 804,
+    "tracked_files": 1,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "sql",
+    "files": 2,
+    "symlinks": 0,
+    "apparent_bytes": 23492,
+    "tracked_files": 2,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "supabase",
+    "files": 184,
+    "symlinks": 0,
+    "apparent_bytes": 3727113,
+    "tracked_files": 174,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "tasks",
+    "files": 1411,
+    "symlinks": 0,
+    "apparent_bytes": 92466157,
+    "tracked_files": 817,
+    "report_directory_excluded": true
+  },
+  {
+    "root": "tools",
+    "files": 2,
+    "symlinks": 0,
+    "apparent_bytes": 5691,
+    "tracked_files": 2,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "underlying-stats",
+    "files": 3,
+    "symlinks": 0,
+    "apparent_bytes": 1579,
+    "tracked_files": 3,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "update_game_page.py",
+    "files": 1,
+    "symlinks": 0,
+    "apparent_bytes": 1528,
+    "tracked_files": 1,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "vercel.json",
+    "files": 1,
+    "symlinks": 0,
+    "apparent_bytes": 86,
+    "tracked_files": 1,
+    "report_directory_excluded": false
+  },
+  {
+    "root": "web",
+    "files": 183194,
+    "symlinks": 196,
+    "apparent_bytes": 8136867365,
+    "tracked_files": 3520,
+    "report_directory_excluded": false
+  }
+]

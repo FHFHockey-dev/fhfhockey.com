@@ -196,6 +196,33 @@ beforeEach(() => {
 });
 
 describe("fetchStatsData", () => {
+  it("ranks the full season within each position before taking five, including NHL wing codes", async () => {
+    database.tables.wgo_skater_stats_totals = database.tables.wgo_skater_stats_totals.map((row) => ({
+      ...row,
+      hits: row.player_id,
+    }));
+    database.tables.players = database.tables.players.map((player) => ({
+      ...player,
+      position: player.id <= 6 ? "D" : player.id === 7 ? "L" : player.id === 8 ? "LW" : player.id === 9 ? "R" : player.id === 10 ? "RW" : player.id === 11 ? null : "C",
+    }));
+    const result = await fetchStatsData();
+
+    expect(result.pointsLeaders.map((player) => player.player_id)).toEqual([1001, 1000, 999, 998, 997]);
+    for (const metric of ["pointsLeaders", "goalsLeaders", "pppLeaders", "bshLeaders"] as const) {
+      expect(result.skaterLeadersByPosition.D?.[metric].map((player) => player.player_id)).toEqual([6, 5, 4, 3, 2]);
+      expect(result.skaterLeadersByPosition.LW?.[metric].map((player) => player.player_id)).toEqual([8, 7]);
+      expect(result.skaterLeadersByPosition.RW?.[metric].map((player) => player.player_id)).toEqual([10, 9]);
+      expect(result.skaterLeadersByPosition.C?.[metric]).toHaveLength(5);
+    }
+  });
+
+  it("leaves missing positions empty instead of reusing the overall leaders", async () => {
+    const result = await fetchStatsData();
+    expect(result.skaterLeadersByPosition.D).toEqual({
+      pointsLeaders: [], goalsLeaders: [], pppLeaders: [], bshLeaders: [],
+    });
+  });
+
   it("fully pages leaderboard inputs, chunks identities, and isolates the latest goalie season", async () => {
     const result = await fetchStatsData();
 

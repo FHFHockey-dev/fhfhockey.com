@@ -1,0 +1,72 @@
+{
+  "first": [
+    {
+      "body": {
+        "id": "15045d33-8b28-4072-9d40-02022969350e",
+        "text": "Player will not play tonight.",
+        "source": "ifttt",
+        "tweet_id": "6100",
+        "username": "Reporter",
+        "source_key": "fixture-reporter",
+        "updated_at": "2026-10-16T03:16:31.662-05:00",
+        "raw_payload": {
+          "text": "Player will not play tonight.",
+          "username": "Reporter",
+          "created_at": "2026-10-16T12:00:00Z",
+          "link_to_tweet": "https://x.com/Reporter/status/6100",
+          "source_account": "Reporter"
+        },
+        "received_at": "2026-10-16T03:16:31.663359-05:00",
+        "source_group": "fixture",
+        "link_to_tweet": "https://x.com/Reporter/status/6100",
+        "source_account": "Reporter",
+        "created_at_label": "2026-10-16T12:00:00Z",
+        "tweet_created_at": "2026-10-16T07:00:00-05:00",
+        "tweet_embed_code": null,
+        "processing_status": "pending"
+      }
+    }
+  ],
+  "changedRequest": {
+    "source_account": "Reporter",
+    "username": "Reporter",
+    "text": "Player will play tomorrow.",
+    "link_to_tweet": "https://x.com/Reporter/status/6100",
+    "created_at": "2026-10-16T12:00:00Z"
+  },
+  "result": {
+    "success": true,
+    "sourceKey": "fixture-reporter",
+    "tweetId": "6100",
+    "processingStatus": "pending"
+  },
+  "after": [
+    {
+      "body": {
+        "id": "15045d33-8b28-4072-9d40-02022969350e",
+        "text": "Player will not play tonight.",
+        "source": "ifttt",
+        "tweet_id": "6100",
+        "username": "Reporter",
+        "source_key": "fixture-reporter",
+        "updated_at": "2026-10-16T03:16:31.662-05:00",
+        "raw_payload": {
+          "text": "Player will not play tonight.",
+          "username": "Reporter",
+          "created_at": "2026-10-16T12:00:00Z",
+          "link_to_tweet": "https://x.com/Reporter/status/6100",
+          "source_account": "Reporter"
+        },
+        "received_at": "2026-10-16T03:16:31.663359-05:00",
+        "source_group": "fixture",
+        "link_to_tweet": "https://x.com/Reporter/status/6100",
+        "source_account": "Reporter",
+        "created_at_label": "2026-10-16T12:00:00Z",
+        "tweet_created_at": "2026-10-16T07:00:00-05:00",
+        "tweet_embed_code": null,
+        "processing_status": "pending"
+      }
+    }
+  ],
+  "scope": "Unchanged local handler + explicit SQL adapter, not hosted PostgREST"
+}

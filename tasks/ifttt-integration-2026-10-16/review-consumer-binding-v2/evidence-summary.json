@@ -1,0 +1,52 @@
+{
+  "manifestSha256": "9cba26d4e4617532c14d784b2d39038dce3ba9a085a0c337a0c68345532deefb",
+  "sourcePinsVerified": 73,
+  "accepted67AndRuntimeUnchanged": true,
+  "readOnlyLiveAndSnapshotDependenciesVerified": 11,
+  "dependenciesMoved": false,
+  "priorReviewFilesVerified": 854,
+  "priorStatusAddendumUnchanged": true,
+  "unchangedFiveContractBlockByteIdentical": true,
+  "ownerFiveBlockMatchesExceptEvidencePath": true,
+  "frozenOwnerTestCopyByteIdentical": true,
+  "correctionArtifactManifestSha256": "5af94df3451b5c514c88c24c1b02b3f74996560777882aa7379124041bc04a4c",
+  "ownerCorrectionArtifactFilesVerified": 23,
+  "verdict": "R16/R17 closed; bounded default-off local real consumer integration accepted",
+  "tests": {
+    "unchanged": {
+      "passed": 5,
+      "failed": 0,
+      "inheritedSkipped": 15
+    },
+    "frozen": {
+      "passed": 26,
+      "failed": 0,
+      "inheritedSkipped": 0
+    },
+    "nearby": {
+      "passed": 5,
+      "failed": 0,
+      "inheritedSkipped": 20
+    }
+  },
+  "testExecutions": 36,
+  "distinctCases": 31,
+  "distinctActualPgCases": 30,
+  "defaultOffCases": 1,
+  "unchangedFiveAlsoIncludedInFrozen26": true,
+  "unchangedOriginalCR042To044AssertionsPassed": 9,
+  "scopedTypeScript": "passed exit0",
+  "closedFindings": [
+    "R16",
+    "R17"
+  ],
+  "newFindings": [],
+  "consumerBoundary": "single retained confirmed injury-out player; exact original/report/parent/plan; at most ten future game scopes; two consistent FUT/PRE+OK sides; native consumer/outbox acknowledgment",
+  "fullOriginal52Acceptance": false,
+  "authenticFutureEvaluationAccepted": false,
+  "productionAcceptance": false,
+  "ownerEvidenceReplacementDisclosedAndVerified": "owner-evidence-disclosure-check.json; independent v1 all109 unchanged",
+  "sourceHoldReleased": true,
+  "runningReviewChecks": false,
+  "hostedOrProductionActions": 0
+}

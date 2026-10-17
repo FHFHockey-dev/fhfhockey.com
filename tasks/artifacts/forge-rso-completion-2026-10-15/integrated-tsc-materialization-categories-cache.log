@@ -1,0 +1,10 @@
+__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx(208,67): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions | undefined): HTMLElement', gave the following error.
+    Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions | undefined): HTMLElement', gave the following error.
+    Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+lib/sources/lineSourceIftttReceiver.ts(297,53): error TS2322: Type 'SupabaseClient<Database, "public", "public", { Tables: { draft_pro_drafts: { Row: { id: string; user_id: string; season: string; name: string; status: string; schema_version: number; lock_version: number; snapshot: Json; snapshot_bytes: number; created_at: string; updated_at: string; }; Insert: { ...; }; Update: { ....' is not assignable to type '{ rpc: (name: string, args: Record<string, unknown>) => PromiseLike<{ data: any; error: any; }>; }'.
+  Types of property 'rpc' are incompatible.
+    Type '<FnName extends "attach_draft_pro_stripe_checkout_session" | "acquire_lock" | "acquire_sko_prediction_run" | "acquire_xg_execution_lease" | "activate_sustainability_config" | "advance_draft_ranker_placement" | ... 112 more ... | "validate_draft_ranking_order", Args extends { ...; }[FnName]["Args"] = never, FilterBui...' is not assignable to type '(name: string, args: Record<string, unknown>) => PromiseLike<{ data: any; error: any; }>'.
+      Types of parameters 'fn' and 'name' are incompatible.
+        Type 'string' is not assignable to type '"attach_draft_pro_stripe_checkout_session" | "acquire_lock" | "acquire_sko_prediction_run" | "acquire_xg_execution_lease" | "activate_sustainability_config" | "advance_draft_ranker_placement" | ... 112 more ... | "validate_draft_ranking_order"'.

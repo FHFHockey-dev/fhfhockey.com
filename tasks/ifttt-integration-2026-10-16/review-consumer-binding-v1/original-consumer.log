@@ -1,0 +1,15 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/review-consumer-binding-v1/consumer-binding.test.ts --no-file-parallelism --config ../tasks/ifttt-integration-2026-10-16/review-consumer-binding-v1/vitest.review.config.mjs --reporter=default --reporter=json --outputFile=../tasks/ifttt-integration-2026-10-16/review-consumer-binding-v1/original-consumer-results.json
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-consumer-binding-v1/consumer-binding.test.ts (15 tests) 3724ms
+
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+   Start at  01:30:56
+   Duration  4.12s (transform 170ms, setup 15ms, collect 275ms, tests 3.72s, environment 0ms, prepare 27ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/review-consumer-binding-v1/original-consumer-results.json

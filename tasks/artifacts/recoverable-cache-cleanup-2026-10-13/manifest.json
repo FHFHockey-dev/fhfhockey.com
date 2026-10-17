@@ -1,0 +1,173 @@
+{
+  "version": 1,
+  "repo": "/Users/tim/Code/fhfhockey.com",
+  "created_utc": "20261013T142528Z",
+  "trash_root": "/Users/tim/.Trash/fhfh-cache-cleanup-20261013T142528Z",
+  "recovery_method": "same-volume rename; no unlink and no overwrite",
+  "state": "moved",
+  "moves": [
+    {
+      "original_path": "/Users/tim/Code/fhfhockey.com/web/.next-playwright",
+      "trash_path": "/Users/tim/.Trash/fhfh-cache-cleanup-20261013T142528Z/web/.next-playwright",
+      "relative_path": "web/.next-playwright",
+      "status": "moved",
+      "device": 16777229,
+      "inode": 190235260,
+      "file_count": 1473,
+      "apparent_bytes": 1232798677,
+      "allocated_bytes_unique_inodes": 1235697664,
+      "moved_utc": "2026-10-13T14:27:13.348456+00:00"
+    },
+    {
+      "original_path": "/Users/tim/Code/fhfhockey.com/web/.next-player-forecasts",
+      "trash_path": "/Users/tim/.Trash/fhfh-cache-cleanup-20261013T142528Z/web/.next-player-forecasts",
+      "relative_path": "web/.next-player-forecasts",
+      "status": "moved",
+      "device": 16777229,
+      "inode": 181907335,
+      "file_count": 163,
+      "apparent_bytes": 1084513582,
+      "allocated_bytes_unique_inodes": 1084907520,
+      "moved_utc": "2026-10-13T14:27:13.349334+00:00"
+    },
+    {
+      "original_path": "/Users/tim/Code/fhfhockey.com/web/.next-codex-verify",
+      "trash_path": "/Users/tim/.Trash/fhfh-cache-cleanup-20261013T142528Z/web/.next-codex-verify",
+      "relative_path": "web/.next-codex-verify",
+      "status": "moved",
+      "device": 16777229,
+      "inode": 175132004,
+      "file_count": 43,
+      "apparent_bytes": 71214451,
+      "allocated_bytes_unique_inodes": 71331840,
+      "moved_utc": "2026-10-13T14:27:13.349721+00:00"
+    },
+    {
+      "original_path": "/Users/tim/Code/fhfhockey.com/web/.next-codex-verify-2",
+      "trash_path": "/Users/tim/.Trash/fhfh-cache-cleanup-20261013T142528Z/web/.next-codex-verify-2",
+      "relative_path": "web/.next-codex-verify-2",
+      "status": "moved",
+      "device": 16777229,
+      "inode": 175330286,
+      "file_count": 43,
+      "apparent_bytes": 71952710,
+      "allocated_bytes_unique_inodes": 72065024,
+      "moved_utc": "2026-10-13T14:27:13.350073+00:00"
+    },
+    {
+      "original_path": "/Users/tim/Code/fhfhockey.com/web/.next-codex-auth-verify",
+      "trash_path": "/Users/tim/.Trash/fhfh-cache-cleanup-20261013T142528Z/web/.next-codex-auth-verify",
+      "relative_path": "web/.next-codex-auth-verify",
+      "status": "moved",
+      "device": 16777229,
+      "inode": 175743265,
+      "file_count": 62,
+      "apparent_bytes": 76712991,
+      "allocated_bytes_unique_inodes": 76861440,
+      "moved_utc": "2026-10-13T14:27:13.350462+00:00"
+    },
+    {
+      "original_path": "/Users/tim/Code/fhfhockey.com/.next",
+      "trash_path": "/Users/tim/.Trash/fhfh-cache-cleanup-20261013T142528Z/.next",
+      "relative_path": ".next",
+      "status": "moved",
+      "device": 16777229,
+      "inode": 173894203,
+      "file_count": 1,
+      "apparent_bytes": 137,
+      "allocated_bytes_unique_inodes": 4096,
+      "moved_utc": "2026-10-13T14:27:13.350679+00:00"
+    },
+    {
+      "original_path": "/Users/tim/Code/fhfhockey.com/.npm-cache/_cacache",
+      "trash_path": "/Users/tim/.Trash/fhfh-cache-cleanup-20261013T142528Z/.npm-cache/_cacache",
+      "relative_path": ".npm-cache/_cacache",
+      "status": "moved",
+      "device": 16777229,
+      "inode": 174171081,
+      "file_count": 1488,
+      "apparent_bytes": 204966505,
+      "allocated_bytes_unique_inodes": 208719872,
+      "moved_utc": "2026-10-13T14:27:13.375024+00:00"
+    },
+    {
+      "original_path": "/Users/tim/Code/fhfhockey.com/.pnpm-store",
+      "trash_path": "/Users/tim/.Trash/fhfh-cache-cleanup-20261013T142528Z/.pnpm-store",
+      "relative_path": ".pnpm-store",
+      "status": "moved",
+      "device": 16777229,
+      "inode": 174590545,
+      "file_count": 64576,
+      "apparent_bytes": 976679789,
+      "allocated_bytes_unique_inodes": 1164701696,
+      "moved_utc": "2026-10-13T14:27:13.820562+00:00"
+    }
+  ],
+  "diagnostics": "All Next traces, diagnostics and auth _events stay inside their recoverable moved directories. npm logs/_npx and test results remain at original locations.",
+  "apparent_bytes": 3718838842,
+  "allocated_bytes_unique_inodes": 3914289152,
+  "free_disk_before": 2298600026112,
+  "free_disk_after": 2298597359616,
+  "note": "Same-volume Trash moves do not reclaim free disk space. APFS st_blocks is not exclusive physical storage usage.",
+  "inventory_sha256": "aca6c7aad68563aa14c39c5f36e2c89732fd2dbe68e2a2fbf540fbc1f194a110",
+  "rename_probe_passed": true,
+  "observed_free_disk_change_bytes": -2666496,
+  "verification": {
+    "verified_utc": "2026-10-13T14:30:10.233531+00:00",
+    "filesystem_objects": 70327,
+    "regular_file_content_sha256": "all matched",
+    "symlink_targets": "all matched; not followed",
+    "device_inode_size_mtime": "all matched",
+    "original_paths_absent": "all eight",
+    "rename_probe": "same inode into Trash and back",
+    "restore_dry_run": "passed; no restoration performed",
+    "preservation_receipt": "final-preservation.json",
+    "head_branch_tracked_diff_and_51_dirty_hashes_unchanged": true
+  },
+  "held_paths": [
+    {
+      "path": "web/.next",
+      "reason": "running npm dev / Next server; PID 2945 trace FD 31 open before and after cleanup"
+    },
+    {
+      "path": ".pytest_cache",
+      "reason": "editor cloudcode_cli PID 65987 holds .gitignore open"
+    },
+    {
+      "path": "web/.pytest_cache",
+      "reason": "editor cloudcode_cli PID 65987 holds .gitignore open"
+    },
+    {
+      "path": ".npm-cache/_logs",
+      "reason": "retain installation diagnostics"
+    },
+    {
+      "path": ".npm-cache/_npx",
+      "reason": "retain cached installed executable dependencies"
+    },
+    {
+      "path": "web/test-results",
+      "reason": "retain existing failure/performance diagnostics"
+    },
+    {
+      "path": "web/.next-codex-reconcile",
+      "reason": "explicitly protected repository mirror; not a cache"
+    },
+    {
+      "path": "CACHE-03 roots",
+      "reason": "installed dependencies, .venv and Playwright binaries remain useful"
+    },
+    {
+      "path": "RET-NEW-01/02/03 scripts",
+      "reason": "manual/external use not disproven; documented historical references remain"
+    },
+    {
+      "path": "all task/PRD source and eleven owner decisions",
+      "reason": "canonical consolidation/reference preservation not yet verified; held by task instructions"
+    },
+    {
+      "path": "web/playwright-report",
+      "reason": "absent; no action"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "candidateSha256": "2515e4b9e1391484656cf6a0a81d8f74c3ed6589d6309532df95edee2e8ebc41",
+  "cluster": "/tmp/fhfh-schedule-pg-n9e0zqj1",
+  "resolvedCluster": "/private/tmp/fhfh-schedule-pg-n9e0zqj1",
+  "cleanupDataDirectory": "/tmp/fhfh-schedule-pg-n9e0zqj1/data",
+  "socketDirectory": "/tmp/fhfh-schedule-pg-n9e0zqj1/socket",
+  "tcpListenAddresses": "",
+  "environmentKeys": [
+    "PATH",
+    "LANG",
+    "LC_ALL",
+    "TZ",
+    "TMPDIR",
+    "PGPASSFILE",
+    "PGSERVICEFILE",
+    "PSQL_HISTORY"
+  ],
+  "onlyNewSyntheticCluster": true,
+  "existingDatabaseConnection": false
+}

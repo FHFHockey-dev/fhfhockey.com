@@ -1,0 +1,369 @@
+{
+  "sourceManifestSha256": "f5b5bba612889b5a7ffa8f1ba7c9547166965bc471522839659ce485172cd87a",
+  "all56MatchAfter": true,
+  "previousReviewFilesUnchanged": 340,
+  "focused": {
+    "passed": 30,
+    "failed": 1
+  },
+  "actualStorageSuite": {
+    "passed": 21,
+    "failed": 0
+  },
+  "independentProbes": {
+    "cr011-storage": {
+      "passed": 0,
+      "failed": 1,
+      "skipped": 22,
+      "summary": {
+        "id": "CR011-POSITIVE-v2",
+        "scopes": [
+          {
+            "scope": "tweet-scope-v1:28b9724897d3e90489ea3d335142276a96bd3435902e9c6bfbb64a7558645e17",
+            "effects": 1,
+            "holds": [],
+            "ledgerOccurrences": 1
+          },
+          {
+            "scope": "tweet-scope-v1:7fe6deb730ad6246d55e16f8e7bb4dac373979d6bb08c7ec74873dd63096811b",
+            "effects": 0,
+            "holds": [
+              {
+                "reason": "dated_official_game_roster_missing_at_source_time",
+                "observationId": "tweet-observation-v2:62d47050d969f14f97dc9ccf992709dd11deb41b5863dc56892e4613984b2488"
+              },
+              {
+                "reason": "dated_identity_team_league_or_role_conflict",
+                "observationId": "tweet-observation-v2:a50b4593aa23eb53024f2a45dcd5f1d7e9bba369f7d9b7ae0206f2b0e962944a"
+              }
+            ],
+            "ledgerOccurrences": 2
+          }
+        ]
+      },
+      "priorLedgerDerivationsPreserved": true,
+      "priorAllocationsPreserved": true
+    },
+    "cr051-storage": {
+      "passed": 1,
+      "failed": 0,
+      "skipped": 22,
+      "summary": {
+        "id": "CR051-POSITIVE-v2",
+        "scopes": [
+          {
+            "scope": "tweet-scope-v1:28b9724897d3e90489ea3d335142276a96bd3435902e9c6bfbb64a7558645e17",
+            "effects": 1,
+            "holds": [],
+            "ledgerOccurrences": 1
+          },
+          {
+            "scope": "tweet-scope-v1:7fe6deb730ad6246d55e16f8e7bb4dac373979d6bb08c7ec74873dd63096811b",
+            "effects": 1,
+            "holds": [
+              {
+                "reason": "dated_official_game_roster_missing_at_source_time",
+                "observationId": "tweet-observation-v2:b3dfba6d662dfab059702e2c9faca8dcd514235ec2d978a339cc101bc4778aaa"
+              }
+            ],
+            "ledgerOccurrences": 2
+          }
+        ]
+      },
+      "priorLedgerDerivationsPreserved": true,
+      "priorAllocationsPreserved": true
+    }
+  },
+  "originalOracle": {
+    "counts": {
+      "passed": 41,
+      "failed": 2,
+      "deferred_persistence": 9
+    },
+    "assertionsPassed": 194,
+    "assertionsChecked": 196,
+    "assertionsUnchanged": true
+  },
+  "pinChecks": [
+    {
+      "path": "web/lib/sources/tweetSourceClaimRegistry.ts",
+      "expected": "03f58f5793b5083dd48935ab525f869205e338798b45d768c9008c0b55004468",
+      "actual": "03f58f5793b5083dd48935ab525f869205e338798b45d768c9008c0b55004468"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimReducerAdapter.ts",
+      "expected": "78a0e2cce23be93a07f781477657dad6bfa1cd74dfb6a73ffe68a082724b2332",
+      "actual": "78a0e2cce23be93a07f781477657dad6bfa1cd74dfb6a73ffe68a082724b2332"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimCompatibility.ts",
+      "expected": "1dc6d0036c09db09318187a1754db9514c3193c8b423b025efcc5c8f3588aee1",
+      "actual": "1dc6d0036c09db09318187a1754db9514c3193c8b423b025efcc5c8f3588aee1"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimRegistry.ts",
+      "expected": "5abf16d2eb722f92d219aafd28d90ea5e2356fc60099856bf41b19c63cfed1d3",
+      "actual": "5abf16d2eb722f92d219aafd28d90ea5e2356fc60099856bf41b19c63cfed1d3"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimRegistry.test.ts",
+      "expected": "8d502b7e6b42100775f25ce5fc3ede6d11640fe726e6ff02dd6d78b6b74bcaf5",
+      "actual": "8d502b7e6b42100775f25ce5fc3ede6d11640fe726e6ff02dd6d78b6b74bcaf5"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimExtraction.ts",
+      "expected": "c11ff33867274c01e02f2b28749bc00c10f82b1a39bc44b34b354105fecaee95",
+      "actual": "c11ff33867274c01e02f2b28749bc00c10f82b1a39bc44b34b354105fecaee95"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimExtraction.test.ts",
+      "expected": "7532d92566fe5b72ae13b5c08d55a4df6d1f54d1b4336cdeb7df6b7a6a3cb978",
+      "actual": "7532d92566fe5b72ae13b5c08d55a4df6d1f54d1b4336cdeb7df6b7a6a3cb978"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimEvaluation.ts",
+      "expected": "b9ea1340a4660daad29b42572f80c1d422d654ea9d1d1ba6438dbdc9411da633",
+      "actual": "b9ea1340a4660daad29b42572f80c1d422d654ea9d1d1ba6438dbdc9411da633"
+    },
+    {
+      "path": "web/lib/sources/tweetSourceDirectory.ts",
+      "expected": "499b5ffe8727342346ec6e16336140c1e38f4c89bbaebf1c799426bdd0041684",
+      "actual": "499b5ffe8727342346ec6e16336140c1e38f4c89bbaebf1c799426bdd0041684"
+    },
+    {
+      "path": "web/lib/sources/tweetSourceDirectory.test.ts",
+      "expected": "a790743e19f0e65f501f9497afe8615ecc8c118e864be76e6e3c7b5c24fdf7af",
+      "actual": "a790743e19f0e65f501f9497afe8615ecc8c118e864be76e6e3c7b5c24fdf7af"
+    },
+    {
+      "path": "web/lib/sources/tweetPlayerEvents.ts",
+      "expected": "14c421d37506f33df08cac5914e30c38a578b2588ae46f3c6e461b70efadc88c",
+      "actual": "14c421d37506f33df08cac5914e30c38a578b2588ae46f3c6e461b70efadc88c"
+    },
+    {
+      "path": "web/lib/sources/linesCccIngestion.ts",
+      "expected": "3b9a29f70d9a95f6657f62b9154459e801d8cb3eb0d96f6a143ca2956f7080c0",
+      "actual": "3b9a29f70d9a95f6657f62b9154459e801d8cb3eb0d96f6a143ca2956f7080c0"
+    },
+    {
+      "path": "web/lib/sources/tweetInterpretation.test.ts",
+      "expected": "d1703752a02cf6ce469aef69565599031bb2dc2d28bf126db9c04f43d55213c2",
+      "actual": "d1703752a02cf6ce469aef69565599031bb2dc2d28bf126db9c04f43d55213c2"
+    },
+    {
+      "path": "web/lib/sources/fixtures/claimContextCases.json",
+      "expected": "a9ebc8de647914cec6f9639f0b91f8b208821dcc62631cd5c9293c1712ae7d36",
+      "actual": "a9ebc8de647914cec6f9639f0b91f8b208821dcc62631cd5c9293c1712ae7d36"
+    },
+    {
+      "path": "web/lib/sources/tweetProjectionStorage.ts",
+      "expected": "a3987dd70356e5b96016a19b28286700ec1fa46aa0ea7911eaedbb7e4f4f73b6",
+      "actual": "a3987dd70356e5b96016a19b28286700ec1fa46aa0ea7911eaedbb7e4f4f73b6"
+    },
+    {
+      "path": "web/lib/sources/projectedLineups.test.ts",
+      "expected": "096b9df26f93fd55012bc342c3f653230ef252977ee14642f478e9131e3934f2",
+      "actual": "096b9df26f93fd55012bc342c3f653230ef252977ee14642f478e9131e3934f2"
+    },
+    {
+      "path": "web/lib/newsFeed.ts",
+      "expected": "bca7e485757f4555f395b9aeabfdef7676f930a019e6f3aabf8bb3b8e76e2d6c",
+      "actual": "bca7e485757f4555f395b9aeabfdef7676f930a019e6f3aabf8bb3b8e76e2d6c"
+    },
+    {
+      "path": "web/lib/newsFeed.test.ts",
+      "expected": "ee8963100f43cef662af318ad091c27c95f38315730f34f4b83ad08014e53e08",
+      "actual": "ee8963100f43cef662af318ad091c27c95f38315730f34f4b83ad08014e53e08"
+    },
+    {
+      "path": "web/lib/lines/service.ts",
+      "expected": "bde1b3b012df923cd9fb05f0bb4e8b5148c5aec941a9c1ed06cbdcbd7852e03f",
+      "actual": "bde1b3b012df923cd9fb05f0bb4e8b5148c5aec941a9c1ed06cbdcbd7852e03f"
+    },
+    {
+      "path": "web/lib/lines/service.test.ts",
+      "expected": "d5ce4cca0d066eba5a2eb5d93fdcfd958c24f05d7bd12ff48ad49f8dbc533f66",
+      "actual": "d5ce4cca0d066eba5a2eb5d93fdcfd958c24f05d7bd12ff48ad49f8dbc533f66"
+    },
+    {
+      "path": "web/components/NewsFeed/NewsCard.test.tsx",
+      "expected": "4ef4b7adf05abd67a9a12d7dd95fccc7f1fc8c95bb87a47ab431c18e7b769031",
+      "actual": "4ef4b7adf05abd67a9a12d7dd95fccc7f1fc8c95bb87a47ab431c18e7b769031"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-line-sources.ts",
+      "expected": "3730aa17e7140b10815bf9d044acc502cbb616de720c12c95a091f06e051890e",
+      "actual": "3730aa17e7140b10815bf9d044acc502cbb616de720c12c95a091f06e051890e"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-lines-ccc.ts",
+      "expected": "a7777315823ff655e2625faa531cf39ca23bdf0c544f5b1ba7d8a4715d850084",
+      "actual": "a7777315823ff655e2625faa531cf39ca23bdf0c544f5b1ba7d8a4715d850084"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-line-sources.test.ts",
+      "expected": "e2d3e319a791a62dd24060710ace781ec39615917f93d73e412849cd55d3c304",
+      "actual": "e2d3e319a791a62dd24060710ace781ec39615917f93d73e412849cd55d3c304"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-lines-ccc.test.ts",
+      "expected": "cd6a64c8bc4397d344db37e258fc349cb00b89f77c944a8735ca259696c1736b",
+      "actual": "cd6a64c8bc4397d344db37e258fc349cb00b89f77c944a8735ca259696c1736b"
+    },
+    {
+      "path": "web/scripts/evaluate-tweet-claims.ts",
+      "expected": "672af9835b481682066cd10d919b12073bc089da5804400f478ac9b75baf1849",
+      "actual": "672af9835b481682066cd10d919b12073bc089da5804400f478ac9b75baf1849"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/migrations/20261016024711_tweet_claim_registry.sql",
+      "expected": "7570300e3e6dfc6a899e2296fa20483ee02ad206c1e0e1f3a966ba1d29847ea7",
+      "actual": "7570300e3e6dfc6a899e2296fa20483ee02ad206c1e0e1f3a966ba1d29847ea7"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimEvidence.ts",
+      "expected": "9f9188f471cd4e0b7e4ff2e88a6b978bf917e7a704bdb7beaac599331a10c89a",
+      "actual": "9f9188f471cd4e0b7e4ff2e88a6b978bf917e7a704bdb7beaac599331a10c89a"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimEvidence.test.ts",
+      "expected": "b2e4505c8cf9490262dfb571d697d97f185d5db28509a70a196ba57a9aa60f88",
+      "actual": "b2e4505c8cf9490262dfb571d697d97f185d5db28509a70a196ba57a9aa60f88"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimLineage.ts",
+      "expected": "27df49c52b1b18a0a0b0b6529837b9f5cec5b43a80759df776c0049275828a7e",
+      "actual": "27df49c52b1b18a0a0b0b6529837b9f5cec5b43a80759df776c0049275828a7e"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimLineage.test.ts",
+      "expected": "c6ddc848a3ecd8ecaab9d04c074bd7518d410203b6de02264e6359545937cdcd",
+      "actual": "c6ddc848a3ecd8ecaab9d04c074bd7518d410203b6de02264e6359545937cdcd"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimQualificationStorage.ts",
+      "expected": "82468764b68c85a2979015cdba615d1a4133672256a96f991de7e5ced0398d75",
+      "actual": "82468764b68c85a2979015cdba615d1a4133672256a96f991de7e5ced0398d75"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimQualificationStorage.test.ts",
+      "expected": "cd789249990694449b26a83fa721ac087223daecf7e6fa7e19f299945f7fecd8",
+      "actual": "cd789249990694449b26a83fa721ac087223daecf7e6fa7e19f299945f7fecd8"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimEvaluationBounds.ts",
+      "expected": "006147fbf246adb99e861ed39867eb4a86f3310ff406751b4e588c91da195593",
+      "actual": "006147fbf246adb99e861ed39867eb4a86f3310ff406751b4e588c91da195593"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimEvaluationBounds.test.ts",
+      "expected": "6e445891dd7bfed3f5c1d12aca9cd9a8e806521452b093b8d59a2492ab33455d",
+      "actual": "6e445891dd7bfed3f5c1d12aca9cd9a8e806521452b093b8d59a2492ab33455d"
+    },
+    {
+      "path": "web/lib/sources/fixtures/tweetClaimQualificationFixture.ts",
+      "expected": "82555df4e3643e551f266a1d42b9d83b30e87eadab62669db3fc84c649e2405a",
+      "actual": "82555df4e3643e551f266a1d42b9d83b30e87eadab62669db3fc84c649e2405a"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/next-increment/20261016073000_tweet_claim_qualification.sql",
+      "expected": "510eae121f939ffe4e2c3ebd953df1d5206f5e423cdbd014c88e43812a4906bb",
+      "actual": "510eae121f939ffe4e2c3ebd953df1d5206f5e423cdbd014c88e43812a4906bb"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimSourceHints.ts",
+      "expected": "31b5b180aa0d43a173f99593c24a1210192c0966118101c81f19cd63b62213b6",
+      "actual": "31b5b180aa0d43a173f99593c24a1210192c0966118101c81f19cd63b62213b6"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimSourceHints.test.ts",
+      "expected": "5f083086571427ea989dc8765f929db381a0602906bdb6a9a5a5b2d726d30f89",
+      "actual": "5f083086571427ea989dc8765f929db381a0602906bdb6a9a5a5b2d726d30f89"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimEvaluationIntake.ts",
+      "expected": "774d814693771a5d0dbaa8fe7ba7a00df7501dc663ec246ae1379b397db907d3",
+      "actual": "774d814693771a5d0dbaa8fe7ba7a00df7501dc663ec246ae1379b397db907d3"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimEvaluationIntake.test.ts",
+      "expected": "2da9e84ae79344359522d83346d20451e8328f803bf9a02493f7b31a353e0478",
+      "actual": "2da9e84ae79344359522d83346d20451e8328f803bf9a02493f7b31a353e0478"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimOccurrenceIdentity.ts",
+      "expected": "26626585fe7567b8e82b440b45861ea90b4c1813181d28a9b134bec515a90971",
+      "actual": "26626585fe7567b8e82b440b45861ea90b4c1813181d28a9b134bec515a90971"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimOccurrenceIdentity.test.ts",
+      "expected": "ef788a88e95bfd1f9fdbb7dc0e63cacb4ff0cb3ae0fef23e9d04652776b4e3b0",
+      "actual": "ef788a88e95bfd1f9fdbb7dc0e63cacb4ff0cb3ae0fef23e9d04652776b4e3b0"
+    },
+    {
+      "path": "web/lib/sources/tweetSemanticEvents.ts",
+      "expected": "fd043fee124efd23285770e982182c0d6d7b64bb59d61126d1b7dc4e71395df2",
+      "actual": "fd043fee124efd23285770e982182c0d6d7b64bb59d61126d1b7dc4e71395df2"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/run-acceptance.ts",
+      "expected": "4be96d6283c27ad7560aa6f4031fbe4507bc4799fc633e8ede4390cbecb9cbe9",
+      "actual": "4be96d6283c27ad7560aa6f4031fbe4507bc4799fc633e8ede4390cbecb9cbe9"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-claim-replay-tests-2026-10-15/acceptance-cases.json",
+      "expected": "d9fe45ca44042673ff0381cd0f1981074b196da99fb6fdf9da573ac5df84fd8b",
+      "actual": "d9fe45ca44042673ff0381cd0f1981074b196da99fb6fdf9da573ac5df84fd8b"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/immutable-registry-audit.ts",
+      "expected": "f1af089b7d5d60f6e3c2e90ca3a49bd6a8ffcfdbe11cfd258592f3ce418e080e",
+      "actual": "f1af089b7d5d60f6e3c2e90ca3a49bd6a8ffcfdbe11cfd258592f3ce418e080e"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/occurrence-increment/immutable-registry-audit.test.ts",
+      "expected": "d416c4e696793894162315669d771fe3cc802fa43d85d65981898fd6dfc4e482",
+      "actual": "d416c4e696793894162315669d771fe3cc802fa43d85d65981898fd6dfc4e482"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/occurrence-increment/vitest.config.mjs",
+      "expected": "84527a2713b016f4cd8f1ee575a11063ea31a48f01b7c1d0d336488e2a914401",
+      "actual": "84527a2713b016f4cd8f1ee575a11063ea31a48f01b7c1d0d336488e2a914401"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimOccurrenceStorage.ts",
+      "expected": "1e69896afa5cf669f188039af5bade516727cecaeeed9967c69a37ec360093ea",
+      "actual": "1e69896afa5cf669f188039af5bade516727cecaeeed9967c69a37ec360093ea"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/durable-occurrence-increment/20261016044953_tweet_claim_occurrence_identity.sql",
+      "expected": "da694a388bcf27e475d536f99ce189b62c50afc7a6a22cdfeca8636b83c2a613",
+      "actual": "da694a388bcf27e475d536f99ce189b62c50afc7a6a22cdfeca8636b83c2a613"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/durable-occurrence-increment/vitest.config.mjs",
+      "expected": "397a469e99410e8b0ea0d2b550899b6e193b655cab3b0c0d3e5fdb4f1908dbb2",
+      "actual": "397a469e99410e8b0ea0d2b550899b6e193b655cab3b0c0d3e5fdb4f1908dbb2"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/game-scope-fixtures-v2/cases.json",
+      "expected": "8cf1350ab9404f227b54c5db689aa4fd6ab23f7004b026d1d939c6eb55f873f0",
+      "actual": "8cf1350ab9404f227b54c5db689aa4fd6ab23f7004b026d1d939c6eb55f873f0"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/game-scope-fixtures-v2/game-scope.test.ts",
+      "expected": "66a23f35adfae891bc3ff26267fdbf9d631617b92578457e878c85215f4feaaa",
+      "actual": "66a23f35adfae891bc3ff26267fdbf9d631617b92578457e878c85215f4feaaa"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/schema-presence-v2.sql",
+      "expected": "d1781ffff8b36046129c81ff0910c0762a38c21a08fab85b20b1095991665248",
+      "actual": "d1781ffff8b36046129c81ff0910c0762a38c21a08fab85b20b1095991665248"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/metadata-package.test.ts",
+      "expected": "1d7e393a5751b35e72669a3218b860f094dcba28844c9813a8721e49fb6ded33",
+      "actual": "1d7e393a5751b35e72669a3218b860f094dcba28844c9813a8721e49fb6ded33"
+    }
+  ]
+}

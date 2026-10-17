@@ -1,0 +1,31 @@
+
+> web@0.1.0 test
+> vitest --run __tests__/pages/api/v1/db/update-roster-optimizer-schedule.test.ts lib/rosterScheduleData/source.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:34154) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:34153) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/rosterScheduleData/source.test.ts (7 tests) 6ms
+stdout | __tests__/pages/api/v1/db/update-roster-optimizer-schedule.test.ts > update roster optimizer schedule route > removes stale cache identities only after a complete full refresh
+Roster optimizer schedule removed stale cache rows. { gameKey: [32m'477'[39m, rowsDeleted: [33m1[39m }
+
+stderr | __tests__/pages/api/v1/db/update-roster-optimizer-schedule.test.ts > update roster optimizer schedule route > preserves stale rows when a full source refresh is incomplete
+Roster optimizer schedule skipped stale-row deletion because the source refresh was incomplete. { gameKey: [32m'477'[39m, warningCount: [33m1[39m }
+
+stdout | __tests__/pages/api/v1/db/update-roster-optimizer-schedule.test.ts > update roster optimizer schedule route > reads every page beyond a capped response before full reconciliation
+Roster optimizer schedule removed stale cache rows. { gameKey: [32m'477'[39m, rowsDeleted: [33m1100[39m }
+
+stdout | __tests__/pages/api/v1/db/update-roster-optimizer-schedule.test.ts > update roster optimizer schedule route > reconciles only the requested game key and season and never deletes in bounded mode
+Roster optimizer schedule removed stale cache rows. { gameKey: [32m'477'[39m, rowsDeleted: [33m1[39m }
+
+ ✓ __tests__/pages/api/v1/db/update-roster-optimizer-schedule.test.ts (43 tests) 37ms
+
+ Test Files  2 passed (2)
+      Tests  50 passed (50)
+   Start at  01:45:22
+   Duration  672ms (transform 120ms, setup 5ms, collect 178ms, tests 43ms, environment 571ms, prepare 78ms)
+

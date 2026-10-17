@@ -1,0 +1,2167 @@
+{
+  "version": "ifttt-game-scope-acceptance-v2",
+  "originalOracleSha256": "d9fe45ca44042673ff0381cd0f1981074b196da99fb6fdf9da573ac5df84fd8b",
+  "noNetwork": true,
+  "noDatabase": true,
+  "noDispatch": true,
+  "fullOriginalAcceptance": false,
+  "results": [
+    {
+      "id": "CR011-POSITIVE-v2",
+      "status": "passed",
+      "assertions": [
+        {
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000101:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000101:fixture_a:occurrence:2"
+          ],
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+            "tweet-semantic-v1:scenario:d812d7942140242570981fa00d2f86a745fdc138963326b6f1c1f430ed3fd606"
+          ],
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:revision:38a94b2b08573f9d2bb1801acd93b290f172d67e7da43371aec76aa7e7a9ac16",
+            "tweet-semantic-v1:revision:bd43663f8038fb039bc74a9f9c889bf31e670091e43f53d43fc0d5b0a2c8b24c"
+          ],
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.scenarioCount",
+            "value": 2
+          },
+          "actual": 2,
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "effectId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-source-claim-v1:effect:489a7ef03a1acbb8a772acdecc76026289497f0f106cf7f87d190c22c1695cae",
+            "tweet-source-claim-v1:effect:9d478654212e7ef6bdf00ec018a53906bc092a9800fd8e4a54967cd523ba5ede"
+          ],
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectProposalCount",
+            "value": 2
+          },
+          "actual": 2,
+          "pass": true
+        }
+      ],
+      "outcome": {
+        "records": {
+          "a": {
+            "recordId": "a",
+            "fixtureClass": "synthetic_already_bound",
+            "source": {
+              "namespace": "offline-fixture-v2",
+              "originalId": "9900000000000000101",
+              "originalAuthor": "fixture_a",
+              "relayId": null,
+              "primaryTextMode": "verified_original",
+              "provenanceVerification": "synthetic_verified",
+              "lineageCandidateCount": 1,
+              "retainedSourceId": "offline-fixture-v2:retained:9900000000000000101"
+            },
+            "sourceText": {
+              "text": "Jordan Staal will not play on 2026-10-16. Jordan Staal will not play on 2026-10-17.",
+              "sha256": "1011e4b337773ddca7c803d83ae86df47827a4b65ee1a6e3bcd756129782e62f",
+              "sourceTextVersionId": "fixture-text:1011e4b337773ddca7c803d83ae86df47827a4b65ee1a6e3bcd756129782e62f"
+            },
+            "occurrence": {
+              "subjectSpan": {
+                "start": 0,
+                "end": 12,
+                "text": "Jordan Staal",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "predicateSpan": {
+                "start": 13,
+                "end": 26,
+                "text": "will not play",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "governingClauseSpan": {
+                "start": 0,
+                "end": 41,
+                "text": "Jordan Staal will not play on 2026-10-16.",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "contextSpans": [],
+              "alignmentProof": "explicit_independent_disjoint_clause_in_one_synthetic_original_v2"
+            },
+            "evidence": {
+              "displaySpan": {
+                "start": 0,
+                "end": 41,
+                "text": "Jordan Staal will not play on 2026-10-16.",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "ruleVersion": "evidence-fixture-v2"
+            },
+            "interpretation": {
+              "ruleVersion": "interpretation-rule-1",
+              "subject": {
+                "status": "known",
+                "playerId": 8473533,
+                "teamId": 12
+              },
+              "scope": {
+                "status": "known",
+                "kind": "game",
+                "teamId": 12,
+                "gameId": 900012,
+                "phase": "entry",
+                "group": null,
+                "date": "2026-10-16"
+              },
+              "fact": {
+                "kind": "availability",
+                "playerId": 8473533,
+                "status": "out"
+              },
+              "polarity": "affirmed",
+              "assertionStrength": "asserted",
+              "modality": "asserted",
+              "validation": {
+                "status": "supported",
+                "basis": "synthetic_explicit_local_clause"
+              },
+              "relation": null
+            },
+            "time": {
+              "originalPublishedAt": "2026-10-16T12:00:00Z",
+              "receivedAt": "2026-10-16T12:01:00Z",
+              "interpretedAt": "2026-10-16T12:02:00Z",
+              "effectiveAt": "2026-10-16T23:00:00Z",
+              "validUntil": "2026-10-18T04:00:00Z",
+              "wrapperPublishedAt": null
+            },
+            "legacy": null,
+            "sourceApplicability": {
+              "date": "2026-10-16",
+              "gameNumber": 1,
+              "status": "explicit_synthetic_prebound_scope",
+              "independentClause": true
+            },
+            "sourceClaimId": "dsl-original:9900000000000000101:fixture_a:occurrence:1",
+            "nativeSourceClaimId": "dsl-original:9900000000000000101:fixture_a:occurrence:1",
+            "evidenceVersionId": "tweet-source-claim-v1:evidence:30ba9533e60420d7c4cd94793ce187daaab0fabd29515b69aadce722f89960ec",
+            "interpretationVersionId": "tweet-source-claim-v1:interpretation:6e78cbf0f2a70448ce569d95e38fa882ed99facbbdd7aefddad2d27620763753",
+            "resolvedSemantics": "tweet-source-claim-v1:meaning:ae8082943cae6f983ab381feee156f2f7e8ee200d1118029d3dfd77afbf71603",
+            "scenarioId": "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+            "scenarioRevisionId": "tweet-semantic-v1:revision:38a94b2b08573f9d2bb1801acd93b290f172d67e7da43371aec76aa7e7a9ac16",
+            "effectId": "tweet-source-claim-v1:effect:489a7ef03a1acbb8a772acdecc76026289497f0f106cf7f87d190c22c1695cae",
+            "sharedPredicateSpan": {
+              "start": 13,
+              "end": 26,
+              "text": "will not play"
+            },
+            "initialAcceptanceProposalCount": 1
+          },
+          "b": {
+            "recordId": "b",
+            "fixtureClass": "synthetic_already_bound",
+            "source": {
+              "namespace": "offline-fixture-v2",
+              "originalId": "9900000000000000101",
+              "originalAuthor": "fixture_a",
+              "relayId": null,
+              "primaryTextMode": "verified_original",
+              "provenanceVerification": "synthetic_verified",
+              "lineageCandidateCount": 1,
+              "retainedSourceId": "offline-fixture-v2:retained:9900000000000000101"
+            },
+            "sourceText": {
+              "text": "Jordan Staal will not play on 2026-10-16. Jordan Staal will not play on 2026-10-17.",
+              "sha256": "1011e4b337773ddca7c803d83ae86df47827a4b65ee1a6e3bcd756129782e62f",
+              "sourceTextVersionId": "fixture-text:1011e4b337773ddca7c803d83ae86df47827a4b65ee1a6e3bcd756129782e62f"
+            },
+            "occurrence": {
+              "subjectSpan": {
+                "start": 42,
+                "end": 54,
+                "text": "Jordan Staal",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "predicateSpan": {
+                "start": 55,
+                "end": 68,
+                "text": "will not play",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "governingClauseSpan": {
+                "start": 42,
+                "end": 83,
+                "text": "Jordan Staal will not play on 2026-10-17.",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "contextSpans": [],
+              "alignmentProof": "explicit_independent_disjoint_clause_in_one_synthetic_original_v2"
+            },
+            "evidence": {
+              "displaySpan": {
+                "start": 42,
+                "end": 83,
+                "text": "Jordan Staal will not play on 2026-10-17.",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "ruleVersion": "evidence-fixture-v2"
+            },
+            "interpretation": {
+              "ruleVersion": "interpretation-rule-1",
+              "subject": {
+                "status": "known",
+                "playerId": 8473533,
+                "teamId": 12
+              },
+              "scope": {
+                "status": "known",
+                "kind": "game",
+                "teamId": 12,
+                "gameId": 900013,
+                "phase": "entry",
+                "group": null,
+                "date": "2026-10-17"
+              },
+              "fact": {
+                "kind": "availability",
+                "playerId": 8473533,
+                "status": "out"
+              },
+              "polarity": "affirmed",
+              "assertionStrength": "asserted",
+              "modality": "asserted",
+              "validation": {
+                "status": "supported",
+                "basis": "synthetic_explicit_local_clause"
+              },
+              "relation": null
+            },
+            "time": {
+              "originalPublishedAt": "2026-10-16T12:00:00Z",
+              "receivedAt": "2026-10-16T12:01:00Z",
+              "interpretedAt": "2026-10-16T12:02:00Z",
+              "effectiveAt": "2026-10-17T23:00:00Z",
+              "validUntil": "2026-10-18T04:00:00Z",
+              "wrapperPublishedAt": null
+            },
+            "legacy": null,
+            "sourceApplicability": {
+              "date": "2026-10-17",
+              "gameNumber": 2,
+              "status": "explicit_synthetic_prebound_scope",
+              "independentClause": true
+            },
+            "sourceClaimId": "dsl-original:9900000000000000101:fixture_a:occurrence:2",
+            "nativeSourceClaimId": "dsl-original:9900000000000000101:fixture_a:occurrence:2",
+            "evidenceVersionId": "tweet-source-claim-v1:evidence:260c89fa55db691a0ec734015de3401b270fc5003028dcadd83025d6dd21fc9e",
+            "interpretationVersionId": "tweet-source-claim-v1:interpretation:4543e96e2553728c9eb80e41bf3889de1a95c47862904434dd9126ff2ce10e9c",
+            "resolvedSemantics": "tweet-source-claim-v1:meaning:dc48e875ea78b8ff0181c4a93663a7bdd6cbb0da6571504e3a923f2775890189",
+            "scenarioId": "tweet-semantic-v1:scenario:d812d7942140242570981fa00d2f86a745fdc138963326b6f1c1f430ed3fd606",
+            "scenarioRevisionId": "tweet-semantic-v1:revision:bd43663f8038fb039bc74a9f9c889bf31e670091e43f53d43fc0d5b0a2c8b24c",
+            "effectId": "tweet-source-claim-v1:effect:9d478654212e7ef6bdf00ec018a53906bc092a9800fd8e4a54967cd523ba5ede",
+            "sharedPredicateSpan": {
+              "start": 55,
+              "end": 68,
+              "text": "will not play"
+            },
+            "initialAcceptanceProposalCount": 1
+          }
+        },
+        "result": {
+          "sourceClaimCount": 2,
+          "evidenceVersionCount": 2,
+          "initialAcceptanceProposalCount": 2,
+          "newEffectProposalCount": 2,
+          "totalUniqueEffectIdentityCount": 2,
+          "effectId": null,
+          "immutableRowReplacementCount": 0,
+          "legacyKeysUnchanged": true,
+          "allEvidenceSpansExact": true,
+          "holdReasons": [],
+          "autoAliasCount": 0,
+          "identityCollision": false,
+          "originalOccurrenceRecordUnchanged": false,
+          "scenarioCount": 2,
+          "scenarioStatus": "accepted",
+          "supportedOriginCount": 1,
+          "firstAcceptanceClocksUnchanged": true,
+          "firstAcceptanceValidUntil": "2026-10-18T04:00:00Z",
+          "conflictRetained": false,
+          "contraryEvidenceDiscarded": false,
+          "historicalAcceptanceRetained": false,
+          "evidenceRecordCount": 2,
+          "crossWrapperAutoAliasCount": 0,
+          "compensatingEffectCount": 0,
+          "retractionReplacementFact": null,
+          "requiresApprovedTransitionPolicy": false,
+          "promotedAssertedClaimCount": 2
+        },
+        "rawHolds": [],
+        "identityState": null,
+        "changedImmutableRows": [],
+        "normalization": "Pure r3 registry plus complete-final semantic reducer; optional separately versioned occurrence-identity candidate projects its allocated stable ID and retains native r3 IDs. No persistence, parent publisher or compensator is invoked."
+      }
+    },
+    {
+      "id": "CR051-POSITIVE-v2",
+      "status": "passed",
+      "assertions": [
+        {
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+            "tweet-semantic-v1:scenario:d812d7942140242570981fa00d2f86a745fdc138963326b6f1c1f430ed3fd606"
+          ],
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "effectId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-source-claim-v1:effect:ecd45d3769dfe33958bd291727f0d403a2800ceb258ed36a7f3fa78656deda0e",
+            "tweet-source-claim-v1:effect:5315a84baa0355237699caa412d17301b3b08bf9d914661b129b849c3db2f689"
+          ],
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.scenarioCount",
+            "value": 2
+          },
+          "actual": 2,
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000102:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000102:fixture_a:occurrence:2"
+          ],
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "scenarioRevisionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-semantic-v1:revision:4f1e5b065d7fd02717c66957070d32df12d78a1f8e35b10a2ed0cc39b1e6b9d9",
+            "tweet-semantic-v1:revision:a8048b4b651d9cd3f36b474f5a9ff17354115044d26c787568f03507a080ce56"
+          ],
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectProposalCount",
+            "value": 2
+          },
+          "actual": 2,
+          "pass": true
+        }
+      ],
+      "outcome": {
+        "records": {
+          "a": {
+            "recordId": "a",
+            "fixtureClass": "synthetic_already_bound",
+            "source": {
+              "namespace": "offline-fixture-v2",
+              "originalId": "9900000000000000102",
+              "originalAuthor": "fixture_a",
+              "relayId": null,
+              "primaryTextMode": "verified_original",
+              "provenanceVerification": "synthetic_verified",
+              "lineageCandidateCount": 1,
+              "retainedSourceId": "offline-fixture-v2:retained:9900000000000000102"
+            },
+            "sourceText": {
+              "text": "Game one on 2026-10-16: Jordan Staal will not play. Game two on 2026-10-16: Jordan Staal will not play.",
+              "sha256": "292175509326b2df40cc94c3ad3ea73c62aecb0f3a51505b5c662198584da3c0",
+              "sourceTextVersionId": "fixture-text:292175509326b2df40cc94c3ad3ea73c62aecb0f3a51505b5c662198584da3c0"
+            },
+            "occurrence": {
+              "subjectSpan": {
+                "start": 24,
+                "end": 36,
+                "text": "Jordan Staal",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "predicateSpan": {
+                "start": 37,
+                "end": 50,
+                "text": "will not play",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "governingClauseSpan": {
+                "start": 0,
+                "end": 51,
+                "text": "Game one on 2026-10-16: Jordan Staal will not play.",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "contextSpans": [],
+              "alignmentProof": "explicit_independent_disjoint_clause_in_one_synthetic_original_v2"
+            },
+            "evidence": {
+              "displaySpan": {
+                "start": 0,
+                "end": 51,
+                "text": "Game one on 2026-10-16: Jordan Staal will not play.",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "ruleVersion": "evidence-fixture-v2"
+            },
+            "interpretation": {
+              "ruleVersion": "interpretation-rule-1",
+              "subject": {
+                "status": "known",
+                "playerId": 8473533,
+                "teamId": 12
+              },
+              "scope": {
+                "status": "known",
+                "kind": "game",
+                "teamId": 12,
+                "gameId": 900012,
+                "phase": "entry",
+                "group": null,
+                "date": "2026-10-16"
+              },
+              "fact": {
+                "kind": "availability",
+                "playerId": 8473533,
+                "status": "out"
+              },
+              "polarity": "affirmed",
+              "assertionStrength": "asserted",
+              "modality": "asserted",
+              "validation": {
+                "status": "supported",
+                "basis": "synthetic_explicit_local_clause"
+              },
+              "relation": null
+            },
+            "time": {
+              "originalPublishedAt": "2026-10-16T12:00:00Z",
+              "receivedAt": "2026-10-16T12:01:00Z",
+              "interpretedAt": "2026-10-16T12:02:00Z",
+              "effectiveAt": "2026-10-16T17:00:00Z",
+              "validUntil": "2026-10-17T04:00:00Z",
+              "wrapperPublishedAt": null
+            },
+            "legacy": null,
+            "sourceApplicability": {
+              "date": "2026-10-16",
+              "gameNumber": 1,
+              "status": "explicit_synthetic_prebound_scope",
+              "independentClause": true
+            },
+            "sourceClaimId": "dsl-original:9900000000000000102:fixture_a:occurrence:1",
+            "nativeSourceClaimId": "dsl-original:9900000000000000102:fixture_a:occurrence:1",
+            "evidenceVersionId": "tweet-source-claim-v1:evidence:fac321b57e4d73f56e703f5f11742a176a6fc4741eb84e010458f9c55288ac41",
+            "interpretationVersionId": "tweet-source-claim-v1:interpretation:52450716c4fac0368ae9073269c4b94494997fabd7ace0b65f4425165b600fd4",
+            "resolvedSemantics": "tweet-source-claim-v1:meaning:226c1a6d487f870682ad29f37fbabff5077a11f010005e2405729b6c0c4657b0",
+            "scenarioId": "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+            "scenarioRevisionId": "tweet-semantic-v1:revision:4f1e5b065d7fd02717c66957070d32df12d78a1f8e35b10a2ed0cc39b1e6b9d9",
+            "effectId": "tweet-source-claim-v1:effect:ecd45d3769dfe33958bd291727f0d403a2800ceb258ed36a7f3fa78656deda0e",
+            "sharedPredicateSpan": {
+              "start": 37,
+              "end": 50,
+              "text": "will not play"
+            },
+            "initialAcceptanceProposalCount": 1
+          },
+          "b": {
+            "recordId": "b",
+            "fixtureClass": "synthetic_already_bound",
+            "source": {
+              "namespace": "offline-fixture-v2",
+              "originalId": "9900000000000000102",
+              "originalAuthor": "fixture_a",
+              "relayId": null,
+              "primaryTextMode": "verified_original",
+              "provenanceVerification": "synthetic_verified",
+              "lineageCandidateCount": 1,
+              "retainedSourceId": "offline-fixture-v2:retained:9900000000000000102"
+            },
+            "sourceText": {
+              "text": "Game one on 2026-10-16: Jordan Staal will not play. Game two on 2026-10-16: Jordan Staal will not play.",
+              "sha256": "292175509326b2df40cc94c3ad3ea73c62aecb0f3a51505b5c662198584da3c0",
+              "sourceTextVersionId": "fixture-text:292175509326b2df40cc94c3ad3ea73c62aecb0f3a51505b5c662198584da3c0"
+            },
+            "occurrence": {
+              "subjectSpan": {
+                "start": 76,
+                "end": 88,
+                "text": "Jordan Staal",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "predicateSpan": {
+                "start": 89,
+                "end": 102,
+                "text": "will not play",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "governingClauseSpan": {
+                "start": 52,
+                "end": 103,
+                "text": "Game two on 2026-10-16: Jordan Staal will not play.",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "contextSpans": [],
+              "alignmentProof": "explicit_independent_disjoint_clause_in_one_synthetic_original_v2"
+            },
+            "evidence": {
+              "displaySpan": {
+                "start": 52,
+                "end": 103,
+                "text": "Game two on 2026-10-16: Jordan Staal will not play.",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "ruleVersion": "evidence-fixture-v2"
+            },
+            "interpretation": {
+              "ruleVersion": "interpretation-rule-1",
+              "subject": {
+                "status": "known",
+                "playerId": 8473533,
+                "teamId": 12
+              },
+              "scope": {
+                "status": "known",
+                "kind": "game",
+                "teamId": 12,
+                "gameId": 900013,
+                "phase": "entry",
+                "group": null,
+                "date": "2026-10-16"
+              },
+              "fact": {
+                "kind": "availability",
+                "playerId": 8473533,
+                "status": "out"
+              },
+              "polarity": "affirmed",
+              "assertionStrength": "asserted",
+              "modality": "asserted",
+              "validation": {
+                "status": "supported",
+                "basis": "synthetic_explicit_local_clause"
+              },
+              "relation": null
+            },
+            "time": {
+              "originalPublishedAt": "2026-10-16T12:00:00Z",
+              "receivedAt": "2026-10-16T12:01:00Z",
+              "interpretedAt": "2026-10-16T12:02:00Z",
+              "effectiveAt": "2026-10-16T23:00:00Z",
+              "validUntil": "2026-10-17T04:00:00Z",
+              "wrapperPublishedAt": null
+            },
+            "legacy": null,
+            "sourceApplicability": {
+              "date": "2026-10-16",
+              "gameNumber": 2,
+              "status": "explicit_synthetic_prebound_scope",
+              "independentClause": true
+            },
+            "sourceClaimId": "dsl-original:9900000000000000102:fixture_a:occurrence:2",
+            "nativeSourceClaimId": "dsl-original:9900000000000000102:fixture_a:occurrence:2",
+            "evidenceVersionId": "tweet-source-claim-v1:evidence:d1e3bfb4db88bf7bd3c50a4d4000d80f6a415e9dc4797d29302bccd7db680147",
+            "interpretationVersionId": "tweet-source-claim-v1:interpretation:2d3a1342a018f32b315cad119751bf938f1895c23651801b213ed73320102e34",
+            "resolvedSemantics": "tweet-source-claim-v1:meaning:95cdf43ff936d3f03eed91c9a78699a77cfadaa41f46b630af870547334fa672",
+            "scenarioId": "tweet-semantic-v1:scenario:d812d7942140242570981fa00d2f86a745fdc138963326b6f1c1f430ed3fd606",
+            "scenarioRevisionId": "tweet-semantic-v1:revision:a8048b4b651d9cd3f36b474f5a9ff17354115044d26c787568f03507a080ce56",
+            "effectId": "tweet-source-claim-v1:effect:5315a84baa0355237699caa412d17301b3b08bf9d914661b129b849c3db2f689",
+            "sharedPredicateSpan": {
+              "start": 89,
+              "end": 102,
+              "text": "will not play"
+            },
+            "initialAcceptanceProposalCount": 1
+          }
+        },
+        "result": {
+          "sourceClaimCount": 2,
+          "evidenceVersionCount": 2,
+          "initialAcceptanceProposalCount": 2,
+          "newEffectProposalCount": 2,
+          "totalUniqueEffectIdentityCount": 2,
+          "effectId": null,
+          "immutableRowReplacementCount": 0,
+          "legacyKeysUnchanged": true,
+          "allEvidenceSpansExact": true,
+          "holdReasons": [],
+          "autoAliasCount": 0,
+          "identityCollision": false,
+          "originalOccurrenceRecordUnchanged": false,
+          "scenarioCount": 2,
+          "scenarioStatus": "accepted",
+          "supportedOriginCount": 1,
+          "firstAcceptanceClocksUnchanged": true,
+          "firstAcceptanceValidUntil": "2026-10-17T04:00:00Z",
+          "conflictRetained": false,
+          "contraryEvidenceDiscarded": false,
+          "historicalAcceptanceRetained": false,
+          "evidenceRecordCount": 2,
+          "crossWrapperAutoAliasCount": 0,
+          "compensatingEffectCount": 0,
+          "retractionReplacementFact": null,
+          "requiresApprovedTransitionPolicy": false,
+          "promotedAssertedClaimCount": 2
+        },
+        "rawHolds": [],
+        "identityState": null,
+        "changedImmutableRows": [],
+        "normalization": "Pure r3 registry plus complete-final semantic reducer; optional separately versioned occurrence-identity candidate projects its allocated stable ID and retains native r3 IDs. No persistence, parent publisher or compensator is invoked."
+      }
+    },
+    {
+      "id": "CR011-AMBIGUOUS-NEGATIVE-v2",
+      "status": "passed",
+      "outcome": {
+        "version": "qualified-tweet-claims-v2",
+        "lineage": {
+          "links": [
+            {
+              "receipt": "offline-fixture:retained:9900000000000000002",
+              "originId": "9900000000000000001",
+              "author": "fixture_a",
+              "publishedAt": "2026-10-15T12:00:00Z",
+              "textHash": "3ef00de6c496b4dc712f5feb3739cd9b2bc08f6d32f14f57dc10352542343dee"
+            },
+            {
+              "receipt": "offline-fixture:retained:9900000000000000002",
+              "originId": "9900000000000000001",
+              "author": "fixture_a",
+              "publishedAt": "2026-10-15T12:00:00Z",
+              "textHash": "8fd9db83a8a9c5548233717285dbd50d4c49d65cd4a201b9bb4be0733a65ee8b"
+            }
+          ],
+          "resolved": [
+            {
+              "claim": {
+                "identityVersion": 2,
+                "extractionVersion": "2026-10-16.4",
+                "contentHash": "4ad2cc4672b7cd6330a321cb92efbc0d37dd7f91d3d07f5ac7cd5962d377aeca",
+                "lineageKey": "offline-fixture:retained:9900000000000000002",
+                "scopeKey": "fixture-game:900012",
+                "semantic": {
+                  "id": "dsl-derivation:305bdb84239099aa8c45890cd2e7f1de8842f8023690fe80de07438d283cdfca",
+                  "reportId": "dsl-report:2be3e09ca9c88e47c24270e6758584decfb8dce29a21984f0a5db1c0e9649c3d",
+                  "sourceKey": "offline-fixture",
+                  "original": {
+                    "tweetId": "9900000000000000001",
+                    "author": "fixture_a",
+                    "publishedAt": "2026-10-15T12:00:00Z"
+                  },
+                  "wrapper": null,
+                  "receivedAt": "2026-10-15T12:01:00Z",
+                  "interpretedAt": "2026-10-15T12:02:00Z",
+                  "evidence": {
+                    "start": 0,
+                    "end": 35,
+                    "text": "Jordan Staal will not play tonight."
+                  },
+                  "scope": {
+                    "kind": "game",
+                    "teamId": 12,
+                    "gameId": 900012,
+                    "phase": "entry",
+                    "group": null
+                  },
+                  "fact": {
+                    "kind": "availability",
+                    "playerId": 8473533,
+                    "status": "out"
+                  },
+                  "effectiveAt": "2026-10-15T23:00:00Z",
+                  "modality": "asserted",
+                  "support": {
+                    "status": "supported",
+                    "basis": "synthetic_explicit_local_clause",
+                    "validUntil": "2026-10-16T04:00:00Z"
+                  },
+                  "relation": null
+                },
+                "claimAnchor": {
+                  "subjectSpan": {
+                    "start": 0,
+                    "end": 12,
+                    "text": "Jordan Staal",
+                    "offsetUnit": "UTF-16_code_unit"
+                  },
+                  "predicateSpan": {
+                    "start": 13,
+                    "end": 26,
+                    "text": "will not play",
+                    "offsetUnit": "UTF-16_code_unit"
+                  }
+                },
+                "source": {
+                  "snapshotDate": "2026-10-16",
+                  "team": {
+                    "id": 6,
+                    "abbreviation": "BOS",
+                    "name": "Boston Bruins"
+                  },
+                  "gameId": 2026020010,
+                  "tweetId": "9900000000000000001",
+                  "sourceUrl": "https://x.com/fixture_a/status/9900000000000000001",
+                  "sourceHandle": "fixture_a",
+                  "rawText": "Jordan Staal will not play tonight.",
+                  "tweetPostedAt": "2026-10-15T12:00:00Z",
+                  "observedAt": "2026-10-15T12:01:00Z",
+                  "nhlFilterStatus": "accepted",
+                  "detectedLeague": "NHL",
+                  "metadata": {
+                    "interpretation": {
+                      "version": "fixture",
+                      "context": "game",
+                      "certainty": "confirmed",
+                      "units": [],
+                      "unresolved": [],
+                      "identityContext": {
+                        "basis": "current_membership",
+                        "sourcePublishedAt": "2026-10-16T15:00:00Z"
+                      },
+                      "events": [
+                        {
+                          "playerId": 8478499,
+                          "playerName": "Jeremy Swayman",
+                          "kind": "goalie",
+                          "state": "confirmed",
+                          "goalieRole": "starter",
+                          "evidence": {
+                            "start": 4,
+                            "end": 34,
+                            "text": "Jeremy Swayman starts tonight."
+                          },
+                          "timeline": null,
+                          "timelines": [],
+                          "availability": "unknown",
+                          "claimAnchor": {
+                            "subjectSpan": {
+                              "start": 4,
+                              "end": 18,
+                              "text": "Jeremy Swayman"
+                            },
+                            "predicateSpan": {
+                              "start": 19,
+                              "end": 25,
+                              "text": "starts"
+                            }
+                          },
+                          "teamId": 6,
+                          "modality": "affirmative",
+                          "resolutionBasis": "full_name",
+                          "times": {
+                            "observation": "2026-10-16T15:00:00Z",
+                            "reference": null,
+                            "applicability": "unresolved"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                "attribution": {
+                  "relay": {
+                    "accountKey": "x:handle:fixture_a",
+                    "accountId": null,
+                    "handle": "fixture_a"
+                  },
+                  "original": {
+                    "accountKey": "x:handle:fixture_a",
+                    "accountId": null,
+                    "handle": "fixture_a"
+                  },
+                  "quoted": null,
+                  "originalTweetId": "9900000000000000001",
+                  "originalUrl": "https://x.com/fixture_a/status/9900000000000000001",
+                  "status": "resolved",
+                  "originalPublishedAt": "2026-10-15T12:00:00Z",
+                  "relationship": "direct",
+                  "quoteEndorsement": "not_asserted"
+                },
+                "coverage": {
+                  "status": "unresolved",
+                  "teamIds": [],
+                  "leagues": [],
+                  "entryIds": [],
+                  "bindingAuthority": false
+                },
+                "directoryEvidence": [
+                  {
+                    "accountKey": "x:handle:reporter",
+                    "accountId": null,
+                    "handle": "reporter",
+                    "role": "relay",
+                    "status": "observed_context",
+                    "teamIds": [
+                      6
+                    ],
+                    "league": "NHL",
+                    "sourceUrl": "https://x.com/Reporter/status/1000",
+                    "publishedAt": "2026-10-16T15:00:00Z",
+                    "id": "source-context-v1:bf294b03f363656c88dbe63086235b31e4d0e3b527d990679ad84cccea7e7ffa"
+                  },
+                  {
+                    "accountKey": "x:handle:reporter",
+                    "accountId": null,
+                    "handle": "reporter",
+                    "role": "original",
+                    "status": "observed_context",
+                    "teamIds": [
+                      6
+                    ],
+                    "league": "NHL",
+                    "sourceUrl": "https://x.com/Reporter/status/1000",
+                    "publishedAt": "2026-10-16T15:00:00Z",
+                    "id": "source-context-v1:cf11283a37fccb4fbc7105511498074c4e8869cf54125bb3741f001cb5fca2fd"
+                  }
+                ],
+                "aliases": [
+                  {
+                    "key": "report:2d752d21f4c44fbd94c2c3b4470dc4c1c19f242230b37a6f337a59735b405302:6:fixture",
+                    "version": 1
+                  },
+                  {
+                    "key": "event:2d752d21f4c44fbd94c2c3b4470dc4c1c19f242230b37a6f337a59735b405302:6:fixture:8478499:4",
+                    "version": 1
+                  },
+                  {
+                    "key": "receipt:tweet-receipt-v2:1000:claim:0",
+                    "version": 2
+                  }
+                ]
+              },
+              "root": null,
+              "link": null,
+              "hold": "original_lineage_evidence_conflict"
+            },
+            {
+              "claim": {
+                "identityVersion": 2,
+                "extractionVersion": "2026-10-16.4",
+                "contentHash": "4ad2cc4672b7cd6330a321cb92efbc0d37dd7f91d3d07f5ac7cd5962d377aeca",
+                "lineageKey": "offline-fixture:retained:9900000000000000002",
+                "scopeKey": "fixture-game:900013",
+                "semantic": {
+                  "id": "dsl-derivation:3be2d32f5acee0911e09407e290ea0ef9e92fbad96fd9f349b4b7e9bfa16983e",
+                  "reportId": "dsl-report:b03c7b08f4ef540ee9e5dc593c1facc958e381ef7adc04772f0f1bb4bfef2e34",
+                  "sourceKey": "offline-fixture",
+                  "original": {
+                    "tweetId": "9900000000000000001",
+                    "author": "fixture_a",
+                    "publishedAt": "2026-10-15T12:00:00Z"
+                  },
+                  "wrapper": null,
+                  "receivedAt": "2026-10-15T12:01:00Z",
+                  "interpretedAt": "2026-10-15T12:02:00Z",
+                  "evidence": {
+                    "start": 0,
+                    "end": 36,
+                    "text": "Jordan Staal will not play tomorrow."
+                  },
+                  "scope": {
+                    "kind": "game",
+                    "teamId": 12,
+                    "gameId": 900013,
+                    "phase": "entry",
+                    "group": null
+                  },
+                  "fact": {
+                    "kind": "availability",
+                    "playerId": 8473533,
+                    "status": "out"
+                  },
+                  "effectiveAt": "2026-10-16T23:00:00Z",
+                  "modality": "asserted",
+                  "support": {
+                    "status": "supported",
+                    "basis": "synthetic_explicit_local_clause",
+                    "validUntil": "2026-10-16T04:00:00Z"
+                  },
+                  "relation": null
+                },
+                "claimAnchor": {
+                  "subjectSpan": {
+                    "start": 0,
+                    "end": 12,
+                    "text": "Jordan Staal",
+                    "offsetUnit": "UTF-16_code_unit"
+                  },
+                  "predicateSpan": {
+                    "start": 13,
+                    "end": 26,
+                    "text": "will not play",
+                    "offsetUnit": "UTF-16_code_unit"
+                  }
+                },
+                "source": {
+                  "snapshotDate": "2026-10-16",
+                  "team": {
+                    "id": 6,
+                    "abbreviation": "BOS",
+                    "name": "Boston Bruins"
+                  },
+                  "gameId": 2026020010,
+                  "tweetId": "9900000000000000001",
+                  "sourceUrl": "https://x.com/fixture_a/status/9900000000000000001",
+                  "sourceHandle": "fixture_a",
+                  "rawText": "Jordan Staal will not play tomorrow.",
+                  "tweetPostedAt": "2026-10-15T12:00:00Z",
+                  "observedAt": "2026-10-15T12:01:00Z",
+                  "nhlFilterStatus": "accepted",
+                  "detectedLeague": "NHL",
+                  "metadata": {
+                    "interpretation": {
+                      "version": "fixture",
+                      "context": "game",
+                      "certainty": "confirmed",
+                      "units": [],
+                      "unresolved": [],
+                      "identityContext": {
+                        "basis": "current_membership",
+                        "sourcePublishedAt": "2026-10-16T15:00:00Z"
+                      },
+                      "events": [
+                        {
+                          "playerId": 8478499,
+                          "playerName": "Jeremy Swayman",
+                          "kind": "goalie",
+                          "state": "confirmed",
+                          "goalieRole": "starter",
+                          "evidence": {
+                            "start": 4,
+                            "end": 34,
+                            "text": "Jeremy Swayman starts tonight."
+                          },
+                          "timeline": null,
+                          "timelines": [],
+                          "availability": "unknown",
+                          "claimAnchor": {
+                            "subjectSpan": {
+                              "start": 4,
+                              "end": 18,
+                              "text": "Jeremy Swayman"
+                            },
+                            "predicateSpan": {
+                              "start": 19,
+                              "end": 25,
+                              "text": "starts"
+                            }
+                          },
+                          "teamId": 6,
+                          "modality": "affirmative",
+                          "resolutionBasis": "full_name",
+                          "times": {
+                            "observation": "2026-10-16T15:00:00Z",
+                            "reference": null,
+                            "applicability": "unresolved"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                "attribution": {
+                  "relay": {
+                    "accountKey": "x:handle:fixture_a",
+                    "accountId": null,
+                    "handle": "fixture_a"
+                  },
+                  "original": {
+                    "accountKey": "x:handle:fixture_a",
+                    "accountId": null,
+                    "handle": "fixture_a"
+                  },
+                  "quoted": null,
+                  "originalTweetId": "9900000000000000001",
+                  "originalUrl": "https://x.com/fixture_a/status/9900000000000000001",
+                  "status": "resolved",
+                  "originalPublishedAt": "2026-10-15T12:00:00Z",
+                  "relationship": "direct",
+                  "quoteEndorsement": "not_asserted"
+                },
+                "coverage": {
+                  "status": "unresolved",
+                  "teamIds": [],
+                  "leagues": [],
+                  "entryIds": [],
+                  "bindingAuthority": false
+                },
+                "directoryEvidence": [
+                  {
+                    "accountKey": "x:handle:reporter",
+                    "accountId": null,
+                    "handle": "reporter",
+                    "role": "relay",
+                    "status": "observed_context",
+                    "teamIds": [
+                      6
+                    ],
+                    "league": "NHL",
+                    "sourceUrl": "https://x.com/Reporter/status/1000",
+                    "publishedAt": "2026-10-16T15:00:00Z",
+                    "id": "source-context-v1:bf294b03f363656c88dbe63086235b31e4d0e3b527d990679ad84cccea7e7ffa"
+                  },
+                  {
+                    "accountKey": "x:handle:reporter",
+                    "accountId": null,
+                    "handle": "reporter",
+                    "role": "original",
+                    "status": "observed_context",
+                    "teamIds": [
+                      6
+                    ],
+                    "league": "NHL",
+                    "sourceUrl": "https://x.com/Reporter/status/1000",
+                    "publishedAt": "2026-10-16T15:00:00Z",
+                    "id": "source-context-v1:cf11283a37fccb4fbc7105511498074c4e8869cf54125bb3741f001cb5fca2fd"
+                  }
+                ],
+                "aliases": [
+                  {
+                    "key": "report:2d752d21f4c44fbd94c2c3b4470dc4c1c19f242230b37a6f337a59735b405302:6:fixture",
+                    "version": 1
+                  },
+                  {
+                    "key": "event:2d752d21f4c44fbd94c2c3b4470dc4c1c19f242230b37a6f337a59735b405302:6:fixture:8478499:4",
+                    "version": 1
+                  },
+                  {
+                    "key": "receipt:tweet-receipt-v2:1000:claim:0",
+                    "version": 2
+                  }
+                ]
+              },
+              "root": null,
+              "link": null,
+              "hold": "original_lineage_evidence_conflict"
+            }
+          ]
+        },
+        "bindings": [],
+        "holds": [
+          {
+            "observationId": "dsl-derivation:305bdb84239099aa8c45890cd2e7f1de8842f8023690fe80de07438d283cdfca",
+            "reason": "original_lineage_evidence_conflict"
+          },
+          {
+            "observationId": "dsl-derivation:3be2d32f5acee0911e09407e290ea0ef9e92fbad96fd9f349b4b7e9bfa16983e",
+            "reason": "original_lineage_evidence_conflict"
+          }
+        ],
+        "legacy": {
+          "status": "unknown",
+          "reason": "legacy_retention_history_or_writer_fence_unattested",
+          "retained": [
+            {
+              "sink": "tweet_projection_reports",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "tweet_player_events",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "line_source_snapshots",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "lines_ccc",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "player_forecast_goalie_start_observations",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "player_forecast_lineup_snapshots",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "line_claim_revisions",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "line_entry_revisions",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "line_pp_decisions",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "line_source_captures",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "news_feed_items",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "player_forecast_inference_queue",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "player_forecast_lineup_assignments",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "line_claim_relations",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            }
+          ]
+        },
+        "plan": {
+          "accepted": true,
+          "noDispatch": true,
+          "nextState": {
+            "schemaVersion": "tweet-claim-reducer-adapter-v1",
+            "registry": {
+              "alignments": [],
+              "associations": [],
+              "claims": [],
+              "effects": [],
+              "evidenceVersions": [],
+              "interpretationVersions": [],
+              "legacyBindings": [],
+              "legacyCoverage": [],
+              "legacyRows": [],
+              "nextOccurrenceToken": 1,
+              "nextTransitionToken": 1,
+              "registryId": "fixture-game:900012:qualified-v1",
+              "roots": [],
+              "scenarioHolds": [],
+              "schemaVersion": "tweet-source-claim-registry-v1",
+              "sourceTexts": []
+            },
+            "derivations": []
+          },
+          "reduction": {
+            "observations": [],
+            "associations": [],
+            "scenarios": [],
+            "actions": []
+          },
+          "holds": [],
+          "trace": [],
+          "reviewableEffects": [],
+          "dispatchInstructions": []
+        },
+        "meanings": [],
+        "globalDisputes": [],
+        "occurrenceIdentity": null,
+        "fingerprint": "309639a48b9901a0797413a2ce00ed1103a1058656cca94c73732b80df19d2e9",
+        "noDispatch": true
+      }
+    },
+    {
+      "id": "CR051-AMBIGUOUS-NEGATIVE-v2",
+      "status": "passed",
+      "outcome": {
+        "version": "qualified-tweet-claims-v2",
+        "lineage": {
+          "links": [
+            {
+              "receipt": "offline-fixture:retained:9900000000000000002",
+              "originId": "9900000000000000001",
+              "author": "fixture_a",
+              "publishedAt": "2026-10-15T12:00:00Z",
+              "textHash": "3ef00de6c496b4dc712f5feb3739cd9b2bc08f6d32f14f57dc10352542343dee"
+            },
+            {
+              "receipt": "offline-fixture:retained:9900000000000000002",
+              "originId": "9900000000000000001",
+              "author": "fixture_a",
+              "publishedAt": "2026-10-15T12:00:00Z",
+              "textHash": "8fd9db83a8a9c5548233717285dbd50d4c49d65cd4a201b9bb4be0733a65ee8b"
+            }
+          ],
+          "resolved": [
+            {
+              "claim": {
+                "identityVersion": 2,
+                "extractionVersion": "2026-10-16.4",
+                "contentHash": "4ad2cc4672b7cd6330a321cb92efbc0d37dd7f91d3d07f5ac7cd5962d377aeca",
+                "lineageKey": "offline-fixture:retained:9900000000000000002",
+                "scopeKey": "fixture-game:900012",
+                "semantic": {
+                  "id": "dsl-derivation:7663657b26a9a601db060a0c4c38834400e646e5d7535122ebed7b05d4cd07cf",
+                  "reportId": "dsl-report:2be3e09ca9c88e47c24270e6758584decfb8dce29a21984f0a5db1c0e9649c3d",
+                  "sourceKey": "offline-fixture",
+                  "original": {
+                    "tweetId": "9900000000000000001",
+                    "author": "fixture_a",
+                    "publishedAt": "2026-10-15T12:00:00Z"
+                  },
+                  "wrapper": null,
+                  "receivedAt": "2026-10-15T12:01:00Z",
+                  "interpretedAt": "2026-10-15T12:02:00Z",
+                  "evidence": {
+                    "start": 0,
+                    "end": 35,
+                    "text": "Jordan Staal will not play tonight."
+                  },
+                  "scope": {
+                    "kind": "game",
+                    "teamId": 12,
+                    "gameId": 900012,
+                    "phase": "entry",
+                    "group": null
+                  },
+                  "fact": {
+                    "kind": "availability",
+                    "playerId": 8473533,
+                    "status": "out"
+                  },
+                  "effectiveAt": "2026-10-15T23:00:00Z",
+                  "modality": "asserted",
+                  "support": {
+                    "status": "supported",
+                    "basis": "synthetic_explicit_local_clause",
+                    "validUntil": "2026-10-16T04:00:00Z"
+                  },
+                  "relation": null
+                },
+                "claimAnchor": {
+                  "subjectSpan": {
+                    "start": 0,
+                    "end": 12,
+                    "text": "Jordan Staal",
+                    "offsetUnit": "UTF-16_code_unit"
+                  },
+                  "predicateSpan": {
+                    "start": 13,
+                    "end": 26,
+                    "text": "will not play",
+                    "offsetUnit": "UTF-16_code_unit"
+                  }
+                },
+                "source": {
+                  "snapshotDate": "2026-10-16",
+                  "team": {
+                    "id": 6,
+                    "abbreviation": "BOS",
+                    "name": "Boston Bruins"
+                  },
+                  "gameId": 2026020010,
+                  "tweetId": "9900000000000000001",
+                  "sourceUrl": "https://x.com/fixture_a/status/9900000000000000001",
+                  "sourceHandle": "fixture_a",
+                  "rawText": "Jordan Staal will not play tonight.",
+                  "tweetPostedAt": "2026-10-15T12:00:00Z",
+                  "observedAt": "2026-10-15T12:01:00Z",
+                  "nhlFilterStatus": "accepted",
+                  "detectedLeague": "NHL",
+                  "metadata": {
+                    "interpretation": {
+                      "version": "fixture",
+                      "context": "game",
+                      "certainty": "confirmed",
+                      "units": [],
+                      "unresolved": [],
+                      "identityContext": {
+                        "basis": "current_membership",
+                        "sourcePublishedAt": "2026-10-16T15:00:00Z"
+                      },
+                      "events": [
+                        {
+                          "playerId": 8478499,
+                          "playerName": "Jeremy Swayman",
+                          "kind": "goalie",
+                          "state": "confirmed",
+                          "goalieRole": "starter",
+                          "evidence": {
+                            "start": 4,
+                            "end": 34,
+                            "text": "Jeremy Swayman starts tonight."
+                          },
+                          "timeline": null,
+                          "timelines": [],
+                          "availability": "unknown",
+                          "claimAnchor": {
+                            "subjectSpan": {
+                              "start": 4,
+                              "end": 18,
+                              "text": "Jeremy Swayman"
+                            },
+                            "predicateSpan": {
+                              "start": 19,
+                              "end": 25,
+                              "text": "starts"
+                            }
+                          },
+                          "teamId": 6,
+                          "modality": "affirmative",
+                          "resolutionBasis": "full_name",
+                          "times": {
+                            "observation": "2026-10-16T15:00:00Z",
+                            "reference": null,
+                            "applicability": "unresolved"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                "attribution": {
+                  "relay": {
+                    "accountKey": "x:handle:fixture_a",
+                    "accountId": null,
+                    "handle": "fixture_a"
+                  },
+                  "original": {
+                    "accountKey": "x:handle:fixture_a",
+                    "accountId": null,
+                    "handle": "fixture_a"
+                  },
+                  "quoted": null,
+                  "originalTweetId": "9900000000000000001",
+                  "originalUrl": "https://x.com/fixture_a/status/9900000000000000001",
+                  "status": "resolved",
+                  "originalPublishedAt": "2026-10-15T12:00:00Z",
+                  "relationship": "direct",
+                  "quoteEndorsement": "not_asserted"
+                },
+                "coverage": {
+                  "status": "unresolved",
+                  "teamIds": [],
+                  "leagues": [],
+                  "entryIds": [],
+                  "bindingAuthority": false
+                },
+                "directoryEvidence": [
+                  {
+                    "accountKey": "x:handle:reporter",
+                    "accountId": null,
+                    "handle": "reporter",
+                    "role": "relay",
+                    "status": "observed_context",
+                    "teamIds": [
+                      6
+                    ],
+                    "league": "NHL",
+                    "sourceUrl": "https://x.com/Reporter/status/1000",
+                    "publishedAt": "2026-10-16T15:00:00Z",
+                    "id": "source-context-v1:bf294b03f363656c88dbe63086235b31e4d0e3b527d990679ad84cccea7e7ffa"
+                  },
+                  {
+                    "accountKey": "x:handle:reporter",
+                    "accountId": null,
+                    "handle": "reporter",
+                    "role": "original",
+                    "status": "observed_context",
+                    "teamIds": [
+                      6
+                    ],
+                    "league": "NHL",
+                    "sourceUrl": "https://x.com/Reporter/status/1000",
+                    "publishedAt": "2026-10-16T15:00:00Z",
+                    "id": "source-context-v1:cf11283a37fccb4fbc7105511498074c4e8869cf54125bb3741f001cb5fca2fd"
+                  }
+                ],
+                "aliases": [
+                  {
+                    "key": "report:2d752d21f4c44fbd94c2c3b4470dc4c1c19f242230b37a6f337a59735b405302:6:fixture",
+                    "version": 1
+                  },
+                  {
+                    "key": "event:2d752d21f4c44fbd94c2c3b4470dc4c1c19f242230b37a6f337a59735b405302:6:fixture:8478499:4",
+                    "version": 1
+                  },
+                  {
+                    "key": "receipt:tweet-receipt-v2:1000:claim:0",
+                    "version": 2
+                  }
+                ]
+              },
+              "root": null,
+              "link": null,
+              "hold": "original_lineage_evidence_conflict"
+            },
+            {
+              "claim": {
+                "identityVersion": 2,
+                "extractionVersion": "2026-10-16.4",
+                "contentHash": "4ad2cc4672b7cd6330a321cb92efbc0d37dd7f91d3d07f5ac7cd5962d377aeca",
+                "lineageKey": "offline-fixture:retained:9900000000000000002",
+                "scopeKey": "fixture-game:900013",
+                "semantic": {
+                  "id": "dsl-derivation:17ba8928fb9637f74d727bade24eef796c7492abaf7610d864d15e07956619b5",
+                  "reportId": "dsl-report:b03c7b08f4ef540ee9e5dc593c1facc958e381ef7adc04772f0f1bb4bfef2e34",
+                  "sourceKey": "offline-fixture",
+                  "original": {
+                    "tweetId": "9900000000000000001",
+                    "author": "fixture_a",
+                    "publishedAt": "2026-10-15T12:00:00Z"
+                  },
+                  "wrapper": null,
+                  "receivedAt": "2026-10-15T12:01:00Z",
+                  "interpretedAt": "2026-10-15T12:02:00Z",
+                  "evidence": {
+                    "start": 0,
+                    "end": 36,
+                    "text": "Jordan Staal will not play tomorrow."
+                  },
+                  "scope": {
+                    "kind": "game",
+                    "teamId": 12,
+                    "gameId": 900013,
+                    "phase": "entry",
+                    "group": null
+                  },
+                  "fact": {
+                    "kind": "availability",
+                    "playerId": 8473533,
+                    "status": "out"
+                  },
+                  "effectiveAt": "2026-10-15T23:00:00Z",
+                  "modality": "asserted",
+                  "support": {
+                    "status": "supported",
+                    "basis": "synthetic_explicit_local_clause",
+                    "validUntil": "2026-10-16T04:00:00Z"
+                  },
+                  "relation": null
+                },
+                "claimAnchor": {
+                  "subjectSpan": {
+                    "start": 0,
+                    "end": 12,
+                    "text": "Jordan Staal",
+                    "offsetUnit": "UTF-16_code_unit"
+                  },
+                  "predicateSpan": {
+                    "start": 13,
+                    "end": 26,
+                    "text": "will not play",
+                    "offsetUnit": "UTF-16_code_unit"
+                  }
+                },
+                "source": {
+                  "snapshotDate": "2026-10-16",
+                  "team": {
+                    "id": 6,
+                    "abbreviation": "BOS",
+                    "name": "Boston Bruins"
+                  },
+                  "gameId": 2026020010,
+                  "tweetId": "9900000000000000001",
+                  "sourceUrl": "https://x.com/fixture_a/status/9900000000000000001",
+                  "sourceHandle": "fixture_a",
+                  "rawText": "Jordan Staal will not play tomorrow.",
+                  "tweetPostedAt": "2026-10-15T12:00:00Z",
+                  "observedAt": "2026-10-15T12:01:00Z",
+                  "nhlFilterStatus": "accepted",
+                  "detectedLeague": "NHL",
+                  "metadata": {
+                    "interpretation": {
+                      "version": "fixture",
+                      "context": "game",
+                      "certainty": "confirmed",
+                      "units": [],
+                      "unresolved": [],
+                      "identityContext": {
+                        "basis": "current_membership",
+                        "sourcePublishedAt": "2026-10-16T15:00:00Z"
+                      },
+                      "events": [
+                        {
+                          "playerId": 8478499,
+                          "playerName": "Jeremy Swayman",
+                          "kind": "goalie",
+                          "state": "confirmed",
+                          "goalieRole": "starter",
+                          "evidence": {
+                            "start": 4,
+                            "end": 34,
+                            "text": "Jeremy Swayman starts tonight."
+                          },
+                          "timeline": null,
+                          "timelines": [],
+                          "availability": "unknown",
+                          "claimAnchor": {
+                            "subjectSpan": {
+                              "start": 4,
+                              "end": 18,
+                              "text": "Jeremy Swayman"
+                            },
+                            "predicateSpan": {
+                              "start": 19,
+                              "end": 25,
+                              "text": "starts"
+                            }
+                          },
+                          "teamId": 6,
+                          "modality": "affirmative",
+                          "resolutionBasis": "full_name",
+                          "times": {
+                            "observation": "2026-10-16T15:00:00Z",
+                            "reference": null,
+                            "applicability": "unresolved"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                "attribution": {
+                  "relay": {
+                    "accountKey": "x:handle:fixture_a",
+                    "accountId": null,
+                    "handle": "fixture_a"
+                  },
+                  "original": {
+                    "accountKey": "x:handle:fixture_a",
+                    "accountId": null,
+                    "handle": "fixture_a"
+                  },
+                  "quoted": null,
+                  "originalTweetId": "9900000000000000001",
+                  "originalUrl": "https://x.com/fixture_a/status/9900000000000000001",
+                  "status": "resolved",
+                  "originalPublishedAt": "2026-10-15T12:00:00Z",
+                  "relationship": "direct",
+                  "quoteEndorsement": "not_asserted"
+                },
+                "coverage": {
+                  "status": "unresolved",
+                  "teamIds": [],
+                  "leagues": [],
+                  "entryIds": [],
+                  "bindingAuthority": false
+                },
+                "directoryEvidence": [
+                  {
+                    "accountKey": "x:handle:reporter",
+                    "accountId": null,
+                    "handle": "reporter",
+                    "role": "relay",
+                    "status": "observed_context",
+                    "teamIds": [
+                      6
+                    ],
+                    "league": "NHL",
+                    "sourceUrl": "https://x.com/Reporter/status/1000",
+                    "publishedAt": "2026-10-16T15:00:00Z",
+                    "id": "source-context-v1:bf294b03f363656c88dbe63086235b31e4d0e3b527d990679ad84cccea7e7ffa"
+                  },
+                  {
+                    "accountKey": "x:handle:reporter",
+                    "accountId": null,
+                    "handle": "reporter",
+                    "role": "original",
+                    "status": "observed_context",
+                    "teamIds": [
+                      6
+                    ],
+                    "league": "NHL",
+                    "sourceUrl": "https://x.com/Reporter/status/1000",
+                    "publishedAt": "2026-10-16T15:00:00Z",
+                    "id": "source-context-v1:cf11283a37fccb4fbc7105511498074c4e8869cf54125bb3741f001cb5fca2fd"
+                  }
+                ],
+                "aliases": [
+                  {
+                    "key": "report:2d752d21f4c44fbd94c2c3b4470dc4c1c19f242230b37a6f337a59735b405302:6:fixture",
+                    "version": 1
+                  },
+                  {
+                    "key": "event:2d752d21f4c44fbd94c2c3b4470dc4c1c19f242230b37a6f337a59735b405302:6:fixture:8478499:4",
+                    "version": 1
+                  },
+                  {
+                    "key": "receipt:tweet-receipt-v2:1000:claim:0",
+                    "version": 2
+                  }
+                ]
+              },
+              "root": null,
+              "link": null,
+              "hold": "original_lineage_evidence_conflict"
+            }
+          ]
+        },
+        "bindings": [],
+        "holds": [
+          {
+            "observationId": "dsl-derivation:7663657b26a9a601db060a0c4c38834400e646e5d7535122ebed7b05d4cd07cf",
+            "reason": "original_lineage_evidence_conflict"
+          },
+          {
+            "observationId": "dsl-derivation:17ba8928fb9637f74d727bade24eef796c7492abaf7610d864d15e07956619b5",
+            "reason": "original_lineage_evidence_conflict"
+          }
+        ],
+        "legacy": {
+          "status": "unknown",
+          "reason": "legacy_retention_history_or_writer_fence_unattested",
+          "retained": [
+            {
+              "sink": "tweet_projection_reports",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "tweet_player_events",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "line_source_snapshots",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "lines_ccc",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "player_forecast_goalie_start_observations",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "player_forecast_lineup_snapshots",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "line_claim_revisions",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "line_entry_revisions",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "line_pp_decisions",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "line_source_captures",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "news_feed_items",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "player_forecast_inference_queue",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "player_forecast_lineup_assignments",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            {
+              "sink": "line_claim_relations",
+              "complete": true,
+              "rows": [],
+              "payloadFingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            }
+          ]
+        },
+        "plan": {
+          "accepted": true,
+          "noDispatch": true,
+          "nextState": {
+            "schemaVersion": "tweet-claim-reducer-adapter-v1",
+            "registry": {
+              "alignments": [],
+              "associations": [],
+              "claims": [],
+              "effects": [],
+              "evidenceVersions": [],
+              "interpretationVersions": [],
+              "legacyBindings": [],
+              "legacyCoverage": [],
+              "legacyRows": [],
+              "nextOccurrenceToken": 1,
+              "nextTransitionToken": 1,
+              "registryId": "fixture-game:900012:qualified-v1",
+              "roots": [],
+              "scenarioHolds": [],
+              "schemaVersion": "tweet-source-claim-registry-v1",
+              "sourceTexts": []
+            },
+            "derivations": []
+          },
+          "reduction": {
+            "observations": [],
+            "associations": [],
+            "scenarios": [],
+            "actions": []
+          },
+          "holds": [],
+          "trace": [],
+          "reviewableEffects": [],
+          "dispatchInstructions": []
+        },
+        "meanings": [],
+        "globalDisputes": [],
+        "occurrenceIdentity": null,
+        "fingerprint": "f7eb5a409acfbf30c3dfe747de008c76547a1276a0f5cb9eabb23eadc6e07e34",
+        "noDispatch": true
+      }
+    },
+    {
+      "id": "AUTHENTICATED-EDIT-REVISION-v2",
+      "status": "passed",
+      "assertions": [
+        {
+          "assertion": {
+            "op": "same",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "dsl-original:9900000000000000103:fixture_a:occurrence:1",
+            "dsl-original:9900000000000000103:fixture_a:occurrence:1"
+          ],
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "interpretationVersionId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "actual": [
+            "tweet-source-claim-v1:interpretation:05049433970d0d2852db456d40340466c50b31a81dad00b75df9b533a500b584",
+            "tweet-source-claim-v1:interpretation:57d4946fa1003225af712fcc415cfdc773b44cb4b618b980c41e0d18c16ecbbc"
+          ],
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.sourceClaimCount",
+            "value": 1
+          },
+          "actual": 1,
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.newEffectProposalCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "assertion": {
+            "op": "equals",
+            "path": "result.compensatingEffectCount",
+            "value": 0
+          },
+          "actual": 0,
+          "pass": true
+        }
+      ],
+      "outcome": {
+        "records": {
+          "a": {
+            "recordId": "a",
+            "fixtureClass": "synthetic_already_bound",
+            "source": {
+              "namespace": "offline-fixture-v2",
+              "originalId": "9900000000000000103",
+              "originalAuthor": "fixture_a",
+              "relayId": null,
+              "primaryTextMode": "verified_original",
+              "provenanceVerification": "synthetic_verified",
+              "lineageCandidateCount": 1,
+              "retainedSourceId": "offline-fixture-v2:retained:edit-103"
+            },
+            "sourceText": {
+              "text": "Jordan Staal will not play tonight.",
+              "sha256": "190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66",
+              "sourceTextVersionId": "fixture-text:190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66"
+            },
+            "occurrence": {
+              "subjectSpan": {
+                "start": 0,
+                "end": 12,
+                "text": "Jordan Staal",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "predicateSpan": {
+                "start": 13,
+                "end": 26,
+                "text": "will not play",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "governingClauseSpan": {
+                "start": 0,
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "contextSpans": [],
+              "alignmentProof": "unique_1_to_1_explicit_synthetic_authenticated_edit"
+            },
+            "evidence": {
+              "displaySpan": {
+                "start": 0,
+                "end": 35,
+                "text": "Jordan Staal will not play tonight.",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "ruleVersion": "evidence-edit-fixture-v2"
+            },
+            "interpretation": {
+              "ruleVersion": "interpretation-rule-1",
+              "subject": {
+                "status": "known",
+                "playerId": 8473533,
+                "teamId": 12
+              },
+              "scope": {
+                "status": "known",
+                "kind": "game",
+                "teamId": 12,
+                "gameId": 900012,
+                "phase": "entry",
+                "group": null
+              },
+              "fact": {
+                "kind": "availability",
+                "playerId": 8473533,
+                "status": "out"
+              },
+              "polarity": "affirmed",
+              "assertionStrength": "asserted",
+              "modality": "asserted",
+              "validation": {
+                "status": "supported",
+                "basis": "synthetic_explicit_local_clause"
+              },
+              "relation": null
+            },
+            "time": {
+              "originalPublishedAt": "2026-10-16T12:00:00Z",
+              "receivedAt": "2026-10-16T12:01:00Z",
+              "interpretedAt": "2026-10-16T12:02:00Z",
+              "effectiveAt": "2026-10-16T23:00:00Z",
+              "validUntil": "2026-10-17T04:00:00Z",
+              "wrapperPublishedAt": null
+            },
+            "legacy": null,
+            "sourceApplicability": {
+              "date": "2026-10-16",
+              "gameNumber": 1,
+              "status": "explicit_synthetic_prebound_scope",
+              "independentClause": true
+            },
+            "sourceRevision": {
+              "version": 1,
+              "authentication": "explicit_synthetic_precondition",
+              "supersedesTextHash": null
+            },
+            "sourceClaimId": "dsl-original:9900000000000000103:fixture_a:occurrence:1",
+            "nativeSourceClaimId": "dsl-original:9900000000000000103:fixture_a:occurrence:1",
+            "evidenceVersionId": "tweet-source-claim-v1:evidence:22ab799f19effcedf6d7ccfa90943d9b93b2007fd6d38853fcffd456a691f96c",
+            "interpretationVersionId": "tweet-source-claim-v1:interpretation:05049433970d0d2852db456d40340466c50b31a81dad00b75df9b533a500b584",
+            "resolvedSemantics": "tweet-source-claim-v1:meaning:ae8082943cae6f983ab381feee156f2f7e8ee200d1118029d3dfd77afbf71603",
+            "scenarioId": "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+            "scenarioRevisionId": "tweet-semantic-v1:revision:38a94b2b08573f9d2bb1801acd93b290f172d67e7da43371aec76aa7e7a9ac16",
+            "effectId": null,
+            "sharedPredicateSpan": {
+              "start": 13,
+              "end": 26,
+              "text": "will not play"
+            },
+            "initialAcceptanceProposalCount": 0
+          },
+          "b": {
+            "recordId": "b",
+            "fixtureClass": "synthetic_already_bound",
+            "source": {
+              "namespace": "offline-fixture-v2",
+              "originalId": "9900000000000000103",
+              "originalAuthor": "fixture_a",
+              "relayId": null,
+              "primaryTextMode": "verified_original",
+              "provenanceVerification": "synthetic_verified",
+              "lineageCandidateCount": 1,
+              "retainedSourceId": "offline-fixture-v2:retained:edit-103"
+            },
+            "sourceText": {
+              "text": "Jordan Staal is available tonight.",
+              "sha256": "dceae0511aa06ff74bd741939f4aa1a0edde0d73c728f06f03096d63bcfd0c90",
+              "sourceTextVersionId": "fixture-text:dceae0511aa06ff74bd741939f4aa1a0edde0d73c728f06f03096d63bcfd0c90"
+            },
+            "occurrence": {
+              "subjectSpan": {
+                "start": 0,
+                "end": 12,
+                "text": "Jordan Staal",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "predicateSpan": {
+                "start": 13,
+                "end": 25,
+                "text": "is available",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "governingClauseSpan": {
+                "start": 0,
+                "end": 34,
+                "text": "Jordan Staal is available tonight.",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "contextSpans": [],
+              "alignmentProof": "unique_1_to_1_explicit_synthetic_authenticated_edit"
+            },
+            "evidence": {
+              "displaySpan": {
+                "start": 0,
+                "end": 34,
+                "text": "Jordan Staal is available tonight.",
+                "offsetUnit": "UTF-16_code_unit"
+              },
+              "ruleVersion": "evidence-edit-fixture-v2"
+            },
+            "interpretation": {
+              "ruleVersion": "interpretation-rule-1",
+              "subject": {
+                "status": "known",
+                "playerId": 8473533,
+                "teamId": 12
+              },
+              "scope": {
+                "status": "known",
+                "kind": "game",
+                "teamId": 12,
+                "gameId": 900012,
+                "phase": "entry",
+                "group": null
+              },
+              "fact": {
+                "kind": "availability",
+                "playerId": 8473533,
+                "status": "available"
+              },
+              "polarity": "affirmed",
+              "assertionStrength": "asserted",
+              "modality": "asserted",
+              "validation": {
+                "status": "supported",
+                "basis": "synthetic_explicit_local_clause"
+              },
+              "relation": {
+                "kind": "correction",
+                "targetRecordIds": [
+                  "a"
+                ]
+              }
+            },
+            "time": {
+              "originalPublishedAt": "2026-10-16T12:00:00Z",
+              "receivedAt": "2026-10-16T12:01:00Z",
+              "interpretedAt": "2026-10-16T12:04:00Z",
+              "effectiveAt": "2026-10-16T23:00:00Z",
+              "validUntil": "2026-10-17T04:00:00Z",
+              "wrapperPublishedAt": null
+            },
+            "legacy": null,
+            "sourceApplicability": {
+              "date": "2026-10-16",
+              "gameNumber": 1,
+              "status": "explicit_synthetic_prebound_scope",
+              "independentClause": true
+            },
+            "sourceRevision": {
+              "version": 2,
+              "authentication": "explicit_synthetic_precondition",
+              "supersedesTextHash": "190167acc98a1656cf0f3afbf7b8035e718c161df99f4b2c0c4d77971f266e66"
+            },
+            "sourceClaimId": "dsl-original:9900000000000000103:fixture_a:occurrence:1",
+            "nativeSourceClaimId": "dsl-original:9900000000000000103:fixture_a:occurrence:1",
+            "evidenceVersionId": "tweet-source-claim-v1:evidence:14e168aec528f4d94153aa98911dfb3b0147e031ef14dd11744a0cc2f43a8e9c",
+            "interpretationVersionId": "tweet-source-claim-v1:interpretation:57d4946fa1003225af712fcc415cfdc773b44cb4b618b980c41e0d18c16ecbbc",
+            "resolvedSemantics": "tweet-source-claim-v1:meaning:c20bf6cf0c07c4ee01a5c2f25a2e3fd380e8e9224cec9798e217cf14eef79e7a",
+            "scenarioId": "tweet-semantic-v1:scenario:37fa3ad48b85c0062c4c90968aaa1b93847c4b3fbd2ae53ecc69a9864353fb11",
+            "scenarioRevisionId": "tweet-semantic-v1:revision:93023d47d2bf62f2aa70d26adc890df67fe01565ad7733930961672fbf508f0b",
+            "effectId": null,
+            "sharedPredicateSpan": {
+              "start": 13,
+              "end": 25,
+              "text": "is available"
+            },
+            "initialAcceptanceProposalCount": 0
+          }
+        },
+        "result": {
+          "sourceClaimCount": 1,
+          "evidenceVersionCount": 2,
+          "initialAcceptanceProposalCount": 0,
+          "newEffectProposalCount": 0,
+          "totalUniqueEffectIdentityCount": 0,
+          "effectId": null,
+          "immutableRowReplacementCount": 0,
+          "legacyKeysUnchanged": true,
+          "allEvidenceSpansExact": true,
+          "holdReasons": [
+            "material_rebind_after_effect",
+            "semantic_association_pending"
+          ],
+          "autoAliasCount": 1,
+          "identityCollision": false,
+          "originalOccurrenceRecordUnchanged": false,
+          "scenarioCount": 1,
+          "scenarioStatus": "unresolved",
+          "supportedOriginCount": 1,
+          "firstAcceptanceClocksUnchanged": false,
+          "firstAcceptanceValidUntil": null,
+          "conflictRetained": true,
+          "contraryEvidenceDiscarded": false,
+          "historicalAcceptanceRetained": false,
+          "evidenceRecordCount": 2,
+          "crossWrapperAutoAliasCount": 0,
+          "compensatingEffectCount": 0,
+          "retractionReplacementFact": null,
+          "requiresApprovedTransitionPolicy": false,
+          "promotedAssertedClaimCount": 0
+        },
+        "rawHolds": [
+          "semantic_association_pending",
+          "material_qualified_reinterpretation_requires_resolution"
+        ],
+        "identityState": null,
+        "changedImmutableRows": [],
+        "normalization": "Pure r3 registry plus complete-final semantic reducer; optional separately versioned occurrence-identity candidate projects its allocated stable ID and retains native r3 IDs. No persistence, parent publisher or compensator is invoked."
+      }
+    }
+  ]
+}

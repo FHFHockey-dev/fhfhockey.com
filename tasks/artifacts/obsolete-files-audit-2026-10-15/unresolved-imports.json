@@ -1,0 +1,26 @@
+[
+  {
+    "importer": "web/lib/projections/module-imports.test.ts",
+    "line": 127,
+    "specifier": "./runProjectionV2.ts",
+    "kind": "import-meta-url"
+  },
+  {
+    "importer": "web/lib/projections/module-imports.test.ts",
+    "line": 140,
+    "specifier": "../../pages/api/v1/db/update-start-chart-projections.ts",
+    "kind": "import-meta-url"
+  },
+  {
+    "importer": "web/scripts/report-starter-board-operations.mjs",
+    "line": 15,
+    "specifier": "../../",
+    "kind": "import-meta-url"
+  },
+  {
+    "importer": "web/scripts/verify-start-chart-publication.mjs",
+    "line": 10,
+    "specifier": "../../",
+    "kind": "import-meta-url"
+  }
+]

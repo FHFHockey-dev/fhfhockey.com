@@ -1,0 +1,52 @@
+{
+  "counts": {
+    "passed": 41,
+    "failed": 2,
+    "deferred_persistence": 9
+  },
+  "assertionsChecked": 196,
+  "failedCases": [
+    {
+      "id": "CR011",
+      "failed": [
+        {
+          "index": 0,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "sourceClaimId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            "dsl-original:9900000000000000001:fixture_a:occurrence:1",
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CR051",
+      "failed": [
+        {
+          "index": 1,
+          "assertion": {
+            "op": "pairwise_distinct",
+            "field": "effectId",
+            "records": [
+              "a",
+              "b"
+            ]
+          },
+          "pass": false,
+          "actual": [
+            "tweet-source-claim-v1:effect:6866cd289bf92ee06135297023944d40aee3ec651eb08f4165b0d0bc7dff1084",
+            null
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,692 @@
+{
+  "status": "Literal table/RPC-related code reference hints only; reads and writes are not distinguished; not a complete writer, retention or production fence audit",
+  "searchRoots": [
+    "web/lib",
+    "web/pages/api",
+    "functions"
+  ],
+  "missingSearchRoots": [
+    "webhooks"
+  ],
+  "excluded": "test/spec/fixture files and all task data, including sealed future outcomes",
+  "relations": [
+    {
+      "name": "tweet_projection_reports",
+      "referencePaths": [
+        "web/lib/sources/tweetAttribution.ts",
+        "web/lib/sources/tweetProjectionStorage.ts"
+      ]
+    },
+    {
+      "name": "tweet_player_events",
+      "referencePaths": [
+        "web/lib/sources/tweetProjectionStorage.ts"
+      ]
+    },
+    {
+      "name": "line_source_snapshots",
+      "referencePaths": [
+        "web/lib/sources/lineSourceLineCombinations.ts",
+        "web/lib/sources/tweetClaimForecastDelivery.ts",
+        "web/lib/sources/tweetProjectionStorage.ts",
+        "web/pages/api/v1/db/player-name-aliases.ts",
+        "web/pages/api/v1/db/tweet-pattern-review.ts",
+        "web/pages/api/v1/db/update-line-sources.ts"
+      ]
+    },
+    {
+      "name": "lines_ccc",
+      "referencePaths": [
+        "web/lib/game-predictions/featureBuilder.ts",
+        "web/lib/sources/lineSourceLineCombinations.ts",
+        "web/pages/api/v1/db/tweet-pattern-review.ts",
+        "web/pages/api/v1/db/update-lines-ccc.ts"
+      ]
+    },
+    {
+      "name": "player_forecast_goalie_start_observations",
+      "referencePaths": [
+        "web/lib/player-forecasts/readiness.ts",
+        "web/lib/player-forecasts/sourceObservations.ts",
+        "web/pages/api/v1/player-forecasts/conflicts.ts"
+      ]
+    },
+    {
+      "name": "player_forecast_lineup_snapshots",
+      "referencePaths": [
+        "web/lib/player-forecasts/readiness.ts",
+        "web/lib/player-forecasts/sourceObservations.ts"
+      ]
+    },
+    {
+      "name": "line_claim_revisions",
+      "referencePaths": [
+        "web/lib/lines/storage.ts"
+      ]
+    },
+    {
+      "name": "line_entry_revisions",
+      "referencePaths": [
+        "web/lib/lines/storage.ts"
+      ]
+    },
+    {
+      "name": "line_pp_decisions",
+      "referencePaths": [
+        "web/lib/lines/storage.ts"
+      ]
+    },
+    {
+      "name": "line_source_captures",
+      "referencePaths": [
+        "web/lib/lines/storage.ts"
+      ]
+    },
+    {
+      "name": "news_feed_items",
+      "referencePaths": [
+        "web/lib/newsFeed.ts",
+        "web/pages/api/v1/db/auto-news-feed-items.ts",
+        "web/pages/api/v1/db/news-feed-items.ts"
+      ]
+    },
+    {
+      "name": "player_forecast_inference_queue",
+      "referencePaths": [
+        "web/lib/player-forecasts/dashboard.ts",
+        "web/lib/player-forecasts/readiness.ts",
+        "web/pages/api/v1/player-forecasts/jobs/retry.ts"
+      ]
+    },
+    {
+      "name": "player_forecast_lineup_assignments",
+      "referencePaths": [
+        "web/lib/player-forecasts/sourceObservations.ts"
+      ]
+    },
+    {
+      "name": "line_claim_relations",
+      "referencePaths": [
+        "web/lib/lines/storage.ts"
+      ]
+    },
+    {
+      "name": "line_source_ifttt_events",
+      "referencePaths": [
+        "web/pages/api/v1/db/tweet-pattern-review.ts",
+        "web/pages/api/v1/db/update-line-sources.ts"
+      ]
+    },
+    {
+      "name": "lines_ccc_ifttt_events",
+      "referencePaths": [
+        "web/pages/api/v1/db/tweet-pattern-review.ts",
+        "web/pages/api/v1/db/update-lines-ccc.ts"
+      ]
+    },
+    {
+      "name": "tweet_pipeline_jobs",
+      "referencePaths": [
+        "web/lib/sources/tweetAttribution.ts",
+        "web/lib/sources/tweetProcessingJobs.ts",
+        "web/pages/api/v1/db/player-name-aliases.ts",
+        "web/pages/api/v1/db/replay-player-aliases.ts",
+        "web/pages/api/v1/db/send-player-name-alias-review.ts",
+        "web/pages/api/v1/db/update-drafted-prospects.ts"
+      ]
+    },
+    {
+      "name": "games",
+      "referencePaths": [
+        "web/lib/game-predictions/accountability.ts",
+        "web/lib/game-predictions/adminHealth.ts",
+        "web/lib/game-predictions/espnOdds.ts",
+        "web/lib/game-predictions/featureBuilder.ts",
+        "web/lib/game-predictions/publicPredictions.ts",
+        "web/lib/game-predictions/workflow.ts",
+        "web/lib/lines/service.ts",
+        "web/lib/player-forecasts/dashboard.ts",
+        "web/lib/player-forecasts/evaluation.ts",
+        "web/lib/player-forecasts/scopeReads.ts",
+        "web/lib/player-forecasts/serving.ts",
+        "web/lib/player-forecasts/settlement.ts",
+        "web/lib/projections/adapters/supabaseAdapters.ts",
+        "web/lib/projections/derived/buildStrengthTablesV2.ts",
+        "web/lib/projections/issuedContext.ts",
+        "web/lib/projections/queries/goalie-queries.ts",
+        "web/lib/projections/queries/line-combo-queries.ts",
+        "web/lib/projections/queries/skater-queries.ts",
+        "web/lib/projections/queries/team-context-queries.ts",
+        "web/lib/projections/stages/preflight-stage.ts",
+        "web/lib/projections/stages/skater-stage.ts",
+        "web/lib/projections/starterBoardDataset.ts",
+        "web/lib/projections/starterBoardQueue.ts",
+        "web/lib/rankings/deploymentTiers.ts",
+        "web/lib/rankings/rankingQueries.ts",
+        "web/lib/rankings/teamMatrix.ts",
+        "web/lib/rosterScheduleData/planning.ts",
+        "web/lib/sources/lineSourceProcessing.ts",
+        "web/lib/sources/tweetClaimRegistry.ts",
+        "web/lib/sources/tweetClaimSourceHints.ts",
+        "web/lib/splits/splitsServer.ts",
+        "web/lib/supabase/Upserts/fetchPbP.ts",
+        "web/lib/supabase/Upserts/fetchPowerRankings.js",
+        "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+        "web/lib/supabase/Upserts/fetchWGOdata.js",
+        "web/lib/supabase/Upserts/nhlRawGamecenterRoute.ts",
+        "web/lib/sustainability/data.ts",
+        "web/lib/underlying-stats/adminRouteHelpers.ts",
+        "web/lib/underlying-stats/goalieStatsRefreshWindow.ts",
+        "web/lib/underlying-stats/playerStatsLandingServer.ts",
+        "web/lib/underlying-stats/playerStatsRefreshWindow.ts",
+        "web/lib/underlying-stats/teamScheduleStrength.ts",
+        "web/lib/underlying-stats/teamStatsRefreshWindow.ts",
+        "web/lib/xg/backfillCoverageAudit.ts",
+        "web/pages/api/v1/db/audit-nhl-ppt-replay-coverage.ts",
+        "web/pages/api/v1/db/cron/update-stats-cron.ts",
+        "web/pages/api/v1/db/ingest-projection-inputs.ts",
+        "web/pages/api/v1/db/powerPlayTimeFrame.ts",
+        "web/pages/api/v1/db/run-projection-accuracy.ts",
+        "web/pages/api/v1/db/run-projection-v2.ts",
+        "web/pages/api/v1/db/run-rolling-forge-pipeline.ts",
+        "web/pages/api/v1/db/shift-charts.ts",
+        "web/pages/api/v1/db/update-PbP.ts",
+        "web/pages/api/v1/db/update-games.ts",
+        "web/pages/api/v1/db/update-goalie-projections-v2.ts",
+        "web/pages/api/v1/db/update-goalie-underlying-summaries.ts",
+        "web/pages/api/v1/db/update-line-combinations/index.ts",
+        "web/pages/api/v1/db/update-lineup-source-provenance.ts",
+        "web/pages/api/v1/db/update-market-prices.ts",
+        "web/pages/api/v1/db/update-nhl-ppt-replay-tracking.ts",
+        "web/pages/api/v1/db/update-nhl-xg-adjusted-impact.ts",
+        "web/pages/api/v1/db/update-nhl-xg-aggregates.ts",
+        "web/pages/api/v1/db/update-nhl-xg-rebound-control.ts",
+        "web/pages/api/v1/db/update-nhl-xg-shot-features.ts",
+        "web/pages/api/v1/db/update-nhl-xg-travel-fatigue.ts",
+        "web/pages/api/v1/db/update-nst-gamelog.ts",
+        "web/pages/api/v1/db/update-player-statuses.ts",
+        "web/pages/api/v1/db/update-player-underlying-summaries.ts",
+        "web/pages/api/v1/db/update-power-play-combinations/index.ts",
+        "web/pages/api/v1/db/update-season-stats.ts",
+        "web/pages/api/v1/forge/goalies.ts",
+        "web/pages/api/v1/lines/projected.ts",
+        "web/pages/api/v1/start-chart.ts",
+        "web/pages/api/v1/xg/operations.ts"
+      ]
+    },
+    {
+      "name": "roster_optimizer_team_games",
+      "referencePaths": [
+        "web/lib/draft-pro/scenariosServer.ts",
+        "web/lib/player-forecasts/scopeReads.ts",
+        "web/lib/projections/issuedContext.ts",
+        "web/lib/rosterScheduleData/persistence.ts",
+        "web/lib/rosterScheduleData/planningInputs.ts",
+        "web/lib/rosterScheduleData/query.ts",
+        "web/pages/api/v1/db/refresh-roster-optimizer-schedule.ts",
+        "web/pages/api/v1/db/update-roster-optimizer-schedule.ts",
+        "web/pages/api/v1/draft-pro/dust.ts"
+      ]
+    },
+    {
+      "name": "nhl_api_game_roster_spots",
+      "referencePaths": [
+        "web/lib/draft-ranker/discoveryServer.ts",
+        "web/lib/underlying-stats/playerStatsLandingServer.ts",
+        "web/pages/api/v1/db/shift-charts.ts"
+      ]
+    },
+    {
+      "name": "nhl_api_game_normalization_status",
+      "referencePaths": [
+        "web/lib/supabase/Upserts/nhlRawGamecenterRoute.ts"
+      ]
+    },
+    {
+      "name": "nhl_api_game_payloads_raw",
+      "referencePaths": [
+        "web/lib/player-forecasts/evaluation.ts",
+        "web/lib/player-forecasts/settlement.ts",
+        "web/lib/underlying-stats/goalieStatsSummaryRefresh.ts",
+        "web/lib/underlying-stats/playerStatsLandingServer.ts",
+        "web/lib/underlying-stats/playerStatsSummaryRefresh.ts",
+        "web/lib/underlying-stats/teamStatsSummaryRefresh.ts",
+        "web/pages/api/v1/db/update-player-underlying-summaries.ts"
+      ]
+    },
+    {
+      "name": "forge_game_update_queue",
+      "referencePaths": [
+        "web/lib/player-forecasts/orchestration.ts",
+        "web/pages/api/v1/start-chart.ts"
+      ]
+    }
+  ],
+  "referencedFiles": [
+    {
+      "path": "web/lib/draft-pro/scenariosServer.ts",
+      "sha256": "71a4c326fbc374a1a6e2e63ad31341b013891c025bbaf75332c9195360a31f1f"
+    },
+    {
+      "path": "web/lib/draft-ranker/discoveryServer.ts",
+      "sha256": "07ebade83d8aa3bcd60b7d94089a17f2a29c9aa005e409da1a134758f380488a"
+    },
+    {
+      "path": "web/lib/game-predictions/accountability.ts",
+      "sha256": "43fdb73c75899bf1442af56e6188f346240a931e006f5e3fa7365074da911e6c"
+    },
+    {
+      "path": "web/lib/game-predictions/adminHealth.ts",
+      "sha256": "15064b2a2e153430013fabd5e253688aec8154f5c27829d05ff4baedffea5059"
+    },
+    {
+      "path": "web/lib/game-predictions/espnOdds.ts",
+      "sha256": "3e9b40e68d9922b6cac179d20634afa4c3966a5771cd9d49fd450673af753c87"
+    },
+    {
+      "path": "web/lib/game-predictions/featureBuilder.ts",
+      "sha256": "c31e8826f25404a566f7fd320f76d017b1c75d2641377155320d5f9bd53375c4"
+    },
+    {
+      "path": "web/lib/game-predictions/publicPredictions.ts",
+      "sha256": "fcb6541b4b55ca394fd1e8728eea7b24aa8c13846728072b2997e7eb6bb46048"
+    },
+    {
+      "path": "web/lib/game-predictions/workflow.ts",
+      "sha256": "f03a14454f890404c4447fe80cce74a480f1b0e0c7d3557f5f80441854ae3006"
+    },
+    {
+      "path": "web/lib/lines/service.ts",
+      "sha256": "bde1b3b012df923cd9fb05f0bb4e8b5148c5aec941a9c1ed06cbdcbd7852e03f"
+    },
+    {
+      "path": "web/lib/lines/storage.ts",
+      "sha256": "496eaef942b2b4fd05ee45264d6207cca90bd41c8a633eb61c42df4990e1154e"
+    },
+    {
+      "path": "web/lib/newsFeed.ts",
+      "sha256": "bca7e485757f4555f395b9aeabfdef7676f930a019e6f3aabf8bb3b8e76e2d6c"
+    },
+    {
+      "path": "web/lib/player-forecasts/dashboard.ts",
+      "sha256": "fccabad4e43d1e2b72b7428b32956c497f839f90c7d4940caabe1ddb3db207c8"
+    },
+    {
+      "path": "web/lib/player-forecasts/evaluation.ts",
+      "sha256": "a38c679034bad475ff6cc70ec6122e6d82a1bbbeda1dfcfba12991e1ba389f15"
+    },
+    {
+      "path": "web/lib/player-forecasts/orchestration.ts",
+      "sha256": "13022711be387683593d9ca5f601c54bf2df91684a4e730c9f7244319c381106"
+    },
+    {
+      "path": "web/lib/player-forecasts/readiness.ts",
+      "sha256": "34ed8176c4fac56b9bc18f85cf7c78b8477ebea9915f0406b90002bf8a1d53bd"
+    },
+    {
+      "path": "web/lib/player-forecasts/scopeReads.ts",
+      "sha256": "804d79e6e67091dd79d485db4835fb2b18f27accf59968ef7c4cad3ed034cdfd"
+    },
+    {
+      "path": "web/lib/player-forecasts/serving.ts",
+      "sha256": "60c9f3d584b8eaace3b44797adf30216af337744be3019f8192be37025dbec72"
+    },
+    {
+      "path": "web/lib/player-forecasts/settlement.ts",
+      "sha256": "17538dea898e5e69a25e22a187d6a2de95e48c39e60a747291147c78916905e5"
+    },
+    {
+      "path": "web/lib/player-forecasts/sourceObservations.ts",
+      "sha256": "de7aaaeeadae51bbe9d29b1fef900682070a0a3775285be010cd4ef8edd7490b"
+    },
+    {
+      "path": "web/lib/projections/adapters/supabaseAdapters.ts",
+      "sha256": "6afcb854dd4725000a028f76433aa2e3feb1b491afb9ea112fbd50113047d7e0"
+    },
+    {
+      "path": "web/lib/projections/derived/buildStrengthTablesV2.ts",
+      "sha256": "6dfb3b212c57ee86f7fcf1f662dcc478bb522b14661b8b7d5c8ead93f65c845e"
+    },
+    {
+      "path": "web/lib/projections/issuedContext.ts",
+      "sha256": "8d2aeb9d1c01f9513ee18a6301ef17dbfa49ea2100c321939de7d35f9ebabb9d"
+    },
+    {
+      "path": "web/lib/projections/queries/goalie-queries.ts",
+      "sha256": "c102c5f8c5a065dfcd59885e11291d0f172aa0cb6ddc953538bc4992fb20a175"
+    },
+    {
+      "path": "web/lib/projections/queries/line-combo-queries.ts",
+      "sha256": "2437e840b69e567d17e3b2a319b2351ccea5f99b144d6b7fd8dcdaba32f215a8"
+    },
+    {
+      "path": "web/lib/projections/queries/skater-queries.ts",
+      "sha256": "9e3452e0cb1206bdb985b5e7d6fc89336c0c9d468ef3a340368ba79fb091c290"
+    },
+    {
+      "path": "web/lib/projections/queries/team-context-queries.ts",
+      "sha256": "e2b50cf8765801fe865f467b09627335ceae21dfc36498720ffd166ef4061dba"
+    },
+    {
+      "path": "web/lib/projections/stages/preflight-stage.ts",
+      "sha256": "bf57142988cc1ca5145acc82bb81fe7800a4b5b7e5d889387eef140f408d9760"
+    },
+    {
+      "path": "web/lib/projections/stages/skater-stage.ts",
+      "sha256": "f44feb8db443221bc259b985d6c7f512655dce42f3205622efccb04c73d6894d"
+    },
+    {
+      "path": "web/lib/projections/starterBoardDataset.ts",
+      "sha256": "77ea0728f37111acdf674060be80831af7ca387b1047014d4f9cd56947e26f3c"
+    },
+    {
+      "path": "web/lib/projections/starterBoardQueue.ts",
+      "sha256": "91585d1df28ebe94446cb5b3accd6fb56de5cc389b8098628c0890fdfa6d0862"
+    },
+    {
+      "path": "web/lib/rankings/deploymentTiers.ts",
+      "sha256": "85db41684f38fec3b4d29026c1cc0b4649bda4009f9f4673dba2c642badaa1b7"
+    },
+    {
+      "path": "web/lib/rankings/rankingQueries.ts",
+      "sha256": "c510ebb93f4c8af6bf326f33bb98f7f8b0255d6a56d122a4ccc637627e6c235c"
+    },
+    {
+      "path": "web/lib/rankings/teamMatrix.ts",
+      "sha256": "a10508a33078369325533e97c268845f77f6a2d82d6cd763d3e3a26445f569d3"
+    },
+    {
+      "path": "web/lib/rosterScheduleData/persistence.ts",
+      "sha256": "2e26a73a64f8abe53c87a854b85189740fbbc8300b582d6588ad45d4b69b4605"
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planning.ts",
+      "sha256": "093b075f45d66a274b684f56c349389ce6b1afdccb4478e749ffa725be0f001d"
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planningInputs.ts",
+      "sha256": "0a7e6ba064567c7c825ff38bb50190c6d58ca8613ae1a4231b853114e2a0c1b4"
+    },
+    {
+      "path": "web/lib/rosterScheduleData/query.ts",
+      "sha256": "37c34b2e415c3eff6261f0348ad254d3b5e041e8d7c38a17657d07507f4e3860"
+    },
+    {
+      "path": "web/lib/sources/lineSourceLineCombinations.ts",
+      "sha256": "0c35d5f776b7a90f5e70e5a5970c2050c24498a19fc5a1ce2685358dbe2849d1"
+    },
+    {
+      "path": "web/lib/sources/lineSourceProcessing.ts",
+      "sha256": "4f3621d2a52e764899388b2b0ede5856fe717f50d9187a305f026abe19663e4d"
+    },
+    {
+      "path": "web/lib/sources/tweetAttribution.ts",
+      "sha256": "c450a0c428fa05ab909db5baf63232928a45aa939c14b85cc5b8aadfcc0daa24"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimForecastDelivery.ts",
+      "sha256": "b1b3906a8375b17fdb08ed6bdf8966527a22290ec0b89bab46bb6cb1d19acd91"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimRegistry.ts",
+      "sha256": "5abf16d2eb722f92d219aafd28d90ea5e2356fc60099856bf41b19c63cfed1d3"
+    },
+    {
+      "path": "web/lib/sources/tweetClaimSourceHints.ts",
+      "sha256": "31b5b180aa0d43a173f99593c24a1210192c0966118101c81f19cd63b62213b6"
+    },
+    {
+      "path": "web/lib/sources/tweetProcessingJobs.ts",
+      "sha256": "f8f18445bfa65094f79ea292275f264cbc0b2fe9e35e4fd1f4dc3ebb140171d4"
+    },
+    {
+      "path": "web/lib/sources/tweetProjectionStorage.ts",
+      "sha256": "a3987dd70356e5b96016a19b28286700ec1fa46aa0ea7911eaedbb7e4f4f73b6"
+    },
+    {
+      "path": "web/lib/splits/splitsServer.ts",
+      "sha256": "a9e61aee565b8d50b32193b59e5fafc1fee9dadcdac6d068ea7b9a9c0f092638"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchPbP.ts",
+      "sha256": "a2b96201c03f5320942d7b289a443248d9c7f02cf7987a1a8217895233027c13"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchPowerRankings.js",
+      "sha256": "0511228b9632ad8b755f9eeef2ec520b29ce945170b47a8885b7e9cae5422f00"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "sha256": "d4e048838cdd574e22585252090cea13e22bb7c2785676f9b8ef65419a709b7c"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchWGOdata.js",
+      "sha256": "a604fecdd57e44096a03d5577c1c32f1116f943020e6028328cb12400b1d98e2"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlRawGamecenterRoute.ts",
+      "sha256": "42c1e535acf04e69110327081ac3cc9293e001df7ec8a4f4a0908757fd34ffd4"
+    },
+    {
+      "path": "web/lib/sustainability/data.ts",
+      "sha256": "fc1e822e47121e235051adb2216b2c1f514dc5defab87d8d1bd0976ccafc86f5"
+    },
+    {
+      "path": "web/lib/underlying-stats/adminRouteHelpers.ts",
+      "sha256": "e7cb00ab540103b7a5c9e006e5c231df5cd64094a8518b43fe1b91aceefb2746"
+    },
+    {
+      "path": "web/lib/underlying-stats/goalieStatsRefreshWindow.ts",
+      "sha256": "a59480e06af244a72cd992afe66c5b982819a787ada881a49edfc6039b8dd3d4"
+    },
+    {
+      "path": "web/lib/underlying-stats/goalieStatsSummaryRefresh.ts",
+      "sha256": "5994ba83b0ac313e96a0d12686e075aa8e8de353f83173998b04a5659c058529"
+    },
+    {
+      "path": "web/lib/underlying-stats/playerStatsLandingServer.ts",
+      "sha256": "f1799f30a4cd605d341623c02dde70c7a96822c0fac65348b2caf87104cfca97"
+    },
+    {
+      "path": "web/lib/underlying-stats/playerStatsRefreshWindow.ts",
+      "sha256": "d6a291b2371deab1f260ff5fe575069c4aaf42fe97a0dd87a81dcc952b820fb1"
+    },
+    {
+      "path": "web/lib/underlying-stats/playerStatsSummaryRefresh.ts",
+      "sha256": "121c2e2b16f77ea5630aaf25b4e974101c09bd710ed8df6cbfe377099b5644c5"
+    },
+    {
+      "path": "web/lib/underlying-stats/teamScheduleStrength.ts",
+      "sha256": "4b991e3c28db439da97a0b856dceacfc0b8bc6490f8911e62fe31b6ad4ea43b3"
+    },
+    {
+      "path": "web/lib/underlying-stats/teamStatsRefreshWindow.ts",
+      "sha256": "a8919dc82b1dd21c372c87147df6a3f50460bd29da0ecd6f4d387f906d5efd18"
+    },
+    {
+      "path": "web/lib/underlying-stats/teamStatsSummaryRefresh.ts",
+      "sha256": "9fd8197c67a5847220c29320734284bc883e68eef04b7ba9775ce8aef6c731eb"
+    },
+    {
+      "path": "web/lib/xg/backfillCoverageAudit.ts",
+      "sha256": "af622c91b0eb0eec2666043407712caa6cce05d29549cc54185e44520f9556ca"
+    },
+    {
+      "path": "web/pages/api/v1/db/audit-nhl-ppt-replay-coverage.ts",
+      "sha256": "39b2bcbda8292de55e79e6b98f8cba84a2c924f64028f76e1ddc111244c578e2"
+    },
+    {
+      "path": "web/pages/api/v1/db/auto-news-feed-items.ts",
+      "sha256": "534807ccf8ee0122b623ee504ca8b8b6472004bc1f539aeeb2e3eb341bbb6432"
+    },
+    {
+      "path": "web/pages/api/v1/db/cron/update-stats-cron.ts",
+      "sha256": "4e037bd92ad1f5842698b4e422e4132e9a2f6134d7cd14057bd4be7953ce5146"
+    },
+    {
+      "path": "web/pages/api/v1/db/ingest-projection-inputs.ts",
+      "sha256": "60568b2a707ffaef5c5bdcef03ed2387975d18460b019103831145497709dd4c"
+    },
+    {
+      "path": "web/pages/api/v1/db/news-feed-items.ts",
+      "sha256": "299135a4dbcbee07b2da98f7ee3c7f2be4845f619d39349ac8cc33caac1b4dd5"
+    },
+    {
+      "path": "web/pages/api/v1/db/player-name-aliases.ts",
+      "sha256": "213418f118652764b07c81a4cf3e1e9bfe446aba696a0c90d7fd0a2b5d23f5b1"
+    },
+    {
+      "path": "web/pages/api/v1/db/powerPlayTimeFrame.ts",
+      "sha256": "100dd5af3d697c5e41a7e2deed384ecf133561e792e110706dd53da2e9e91a13"
+    },
+    {
+      "path": "web/pages/api/v1/db/refresh-roster-optimizer-schedule.ts",
+      "sha256": "f93de7aa936a36d2274330fdd3fa5d30cb4888e63a5f8135f21c4b25ec4282d8"
+    },
+    {
+      "path": "web/pages/api/v1/db/replay-player-aliases.ts",
+      "sha256": "98261dff05413949eb8ee379ee01ee98a80c5e0e477f805ced020ef146ceb87e"
+    },
+    {
+      "path": "web/pages/api/v1/db/run-projection-accuracy.ts",
+      "sha256": "16aadd34dc6d61b93bda8a151511ac5f2b219396a360e3c3f8a0e1414f9ec1d4"
+    },
+    {
+      "path": "web/pages/api/v1/db/run-projection-v2.ts",
+      "sha256": "1429d8722c2ca62a301278ef6d0747bce7e37f5c79d7ad48039991d0870c6a5c"
+    },
+    {
+      "path": "web/pages/api/v1/db/run-rolling-forge-pipeline.ts",
+      "sha256": "bd488bc3eecaa6f866c4721fce3df292ee2f06cd519f2c2702da6ae762927e2c"
+    },
+    {
+      "path": "web/pages/api/v1/db/send-player-name-alias-review.ts",
+      "sha256": "174c20239c008c4e0b3b668f8d0f1e71753e5ebc30d9ebb18c7a2ba1a8da9e70"
+    },
+    {
+      "path": "web/pages/api/v1/db/shift-charts.ts",
+      "sha256": "37a5d4a4143d3a383a986f7befcce9efa73337ff5af26a0f6325110dc332b5ed"
+    },
+    {
+      "path": "web/pages/api/v1/db/tweet-pattern-review.ts",
+      "sha256": "ce35679d3a1b66a58a93bc8e7eac048242d271da55610f1fb522ced3a949b74f"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-PbP.ts",
+      "sha256": "b36d4367a25d1241c7fcd1593091d3a985acc26f0910db21fdbe177c85d5ae7e"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-drafted-prospects.ts",
+      "sha256": "980b050f88509ae0f333a458d4726a4c2b32986ed630b23c27c61d5d4b2b2c9c"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-games.ts",
+      "sha256": "d4f3adb52288e6adf918c0c51768566324fb4f5261d2643553f8910ae41a945e"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-goalie-projections-v2.ts",
+      "sha256": "3441abbfede95d2b9334041fe275910ce7318270a83ab5e2696a2f80cffeb7e8"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-goalie-underlying-summaries.ts",
+      "sha256": "70eadc7d86ef49c4de0fc114b935cc446847e94b84c588b0c2eee53a8b7a93b6"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-line-combinations/index.ts",
+      "sha256": "49fe21be73856c1ed6bce82335eabba698e9c6a4ab252fc4ef7f4d3f4bfacb3d"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-line-sources.ts",
+      "sha256": "3730aa17e7140b10815bf9d044acc502cbb616de720c12c95a091f06e051890e"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-lines-ccc.ts",
+      "sha256": "a7777315823ff655e2625faa531cf39ca23bdf0c544f5b1ba7d8a4715d850084"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-lineup-source-provenance.ts",
+      "sha256": "4890855bf0ad82e01723fd0ef23cd866a7ef03c4c8af0f83c710226f2942ea29"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-market-prices.ts",
+      "sha256": "461c11857ed139e8a777fa0b39987077ae9c21f05c29bada9f7527281ae74768"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-ppt-replay-tracking.ts",
+      "sha256": "2d13a8f3add7db41cd407c71983ed9ea902b87708fd66c0a9b1e1dea44797b95"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-xg-adjusted-impact.ts",
+      "sha256": "bea1ddd6bb41feea24091a439b901aafd084239c796fdd2add66a5375b9e3146"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-xg-aggregates.ts",
+      "sha256": "f8a5e249b48570dff62234b72cefc447b3e0942423187930ce40b13c1b8c24aa"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-xg-rebound-control.ts",
+      "sha256": "d535fc1c7b4d28990ddb97bbfd7d2ad8c190fd3f08939fddfea4e0c288452d3c"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-xg-shot-features.ts",
+      "sha256": "8560eab5dccde0993d329ac550b243b4011ff681ab7de8f879764baa7ed810e8"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-xg-travel-fatigue.ts",
+      "sha256": "1b189ed60c19a95267115dd16a00ed4e2c081238f6931d460070e7056ee7db86"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-gamelog.ts",
+      "sha256": "414c51e92be3d07e0098ecaea414bc79f4da9a1b83c3e99688176664651503ff"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-player-statuses.ts",
+      "sha256": "7de1eeb9239aa3bf3c5e7d1915d80a1f7c396a53fa84407f419393419b193f9d"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-player-underlying-summaries.ts",
+      "sha256": "d53ab8ff3f7c6bb46d6ab90bf11999dc05fecf2b158a54fd9f317c8701fef201"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-power-play-combinations/index.ts",
+      "sha256": "2f944e48c334f18b4c7cca52ad628ed2e6826e956ee4a486d78d9745ccada498"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-roster-optimizer-schedule.ts",
+      "sha256": "ff6dcdf25e0d7f9d8534088affa713f17d712c447969d2bb8299d21a08296859"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-season-stats.ts",
+      "sha256": "a0c937f4ad5e30ea012a38b23896058bc8663920fc9814879f13646630c18b4c"
+    },
+    {
+      "path": "web/pages/api/v1/draft-pro/dust.ts",
+      "sha256": "307c1a35659095fd5b9a990be80b15d2ab799bb66f5985a9b73b443eb7b03486"
+    },
+    {
+      "path": "web/pages/api/v1/forge/goalies.ts",
+      "sha256": "cfa83cab9bc00f1df1f206bd54694e83368fad57fc54861e3ccde07d72b301aa"
+    },
+    {
+      "path": "web/pages/api/v1/lines/projected.ts",
+      "sha256": "008cfd2edf6f80da4004a39d410c873893292c814946c6bd9f3eef44d6e2b6d3"
+    },
+    {
+      "path": "web/pages/api/v1/player-forecasts/conflicts.ts",
+      "sha256": "56abeedfff25a2e95961709d32eafdaf726c4a2b02c37bc7672cf98b21f46e3f"
+    },
+    {
+      "path": "web/pages/api/v1/player-forecasts/jobs/retry.ts",
+      "sha256": "1e0164e82992a257d13e3ff113c4a95faff5a92271e024fa1ca0fcb5cba785bc"
+    },
+    {
+      "path": "web/pages/api/v1/start-chart.ts",
+      "sha256": "29a743a0a9b5f9f623f851697a8cfcbc6552091f43478c85d6798cf022465890"
+    },
+    {
+      "path": "web/pages/api/v1/xg/operations.ts",
+      "sha256": "e5b18d0d45bdd4feaf08bdbf792a6e99d691bcd6971938ea8bb43a79eb561e5f"
+    }
+  ],
+  "hostedEvidence": false
+}

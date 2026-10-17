@@ -1,0 +1,17 @@
+
+> web@0.1.0 test
+> vitest __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx -t passes the shared participation catalog|uses a saved manager
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:32571) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx (205 tests | 200 skipped) 1049ms
+   ✓ RosterScheduleOptimizer workspace > uses a saved manager null lock through refresh, undo, save and reopen (provider conflict: false)  305ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed | 200 skipped (205)
+   Start at  02:21:08
+   Duration  2.04s (transform 450ms, setup 3ms, collect 675ms, tests 1.05s, environment 135ms, prepare 36ms)
+

@@ -1,0 +1,256 @@
+{
+  "status": "passed",
+  "synthetic": true,
+  "cases": [
+    {
+      "label": "retained fallback with no cache; manager rules stored",
+      "candidates": 197,
+      "unverifiedEligibility": 197,
+      "unknownAvailability": 197,
+      "schedule": "complete",
+      "acquisitionTiming": "unknown",
+      "acquisitionCost": null,
+      "periods": 0,
+      "firstCandidate": {
+        "playerId": "10002",
+        "status": "filtered",
+        "stopReason": "filtered",
+        "generated": 0,
+        "skipped": 0,
+        "evaluated": 0,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 0,
+        "reasons": [
+          "League positional eligibility is unverified.",
+          "League availability is not verified for acquisition."
+        ]
+      },
+      "firstPlans": []
+    },
+    {
+      "label": "retained fallback with all 198 exact current cache records",
+      "candidates": 197,
+      "unverifiedEligibility": 0,
+      "unknownAvailability": 197,
+      "schedule": "complete",
+      "acquisitionTiming": "unknown",
+      "acquisitionCost": null,
+      "periods": 0,
+      "firstCandidate": {
+        "playerId": "10002",
+        "status": "filtered",
+        "stopReason": "filtered",
+        "generated": 0,
+        "skipped": 0,
+        "evaluated": 0,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 0,
+        "reasons": [
+          "League availability is not verified for acquisition."
+        ]
+      },
+      "firstPlans": []
+    },
+    {
+      "label": "ready cache but no current roster lineage in planning snapshot",
+      "candidates": 197,
+      "unverifiedEligibility": 197,
+      "unknownAvailability": 197,
+      "schedule": "complete",
+      "acquisitionTiming": "unknown",
+      "acquisitionCost": null,
+      "periods": 0,
+      "firstCandidate": {
+        "playerId": "10002",
+        "status": "filtered",
+        "stopReason": "filtered",
+        "generated": 0,
+        "skipped": 0,
+        "evaluated": 0,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 0,
+        "reasons": [
+          "League positional eligibility is unverified.",
+          "League availability is not verified for acquisition."
+        ]
+      },
+      "firstPlans": []
+    },
+    {
+      "label": "previous daily cache cycle",
+      "candidates": 197,
+      "unverifiedEligibility": 197,
+      "unknownAvailability": 197,
+      "schedule": "complete",
+      "acquisitionTiming": "unknown",
+      "acquisitionCost": null,
+      "periods": 0,
+      "firstCandidate": {
+        "playerId": "10002",
+        "status": "filtered",
+        "stopReason": "filtered",
+        "generated": 0,
+        "skipped": 0,
+        "evaluated": 0,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 0,
+        "reasons": [
+          "League positional eligibility is unverified.",
+          "League availability is not verified for acquisition."
+        ]
+      },
+      "firstPlans": []
+    },
+    {
+      "label": "connected named ownership supplied; transaction rules absent",
+      "candidates": 197,
+      "unverifiedEligibility": 0,
+      "unknownAvailability": 196,
+      "schedule": "complete",
+      "acquisitionTiming": "unknown",
+      "acquisitionCost": null,
+      "periods": 0,
+      "firstCandidate": {
+        "playerId": "10002",
+        "status": "no_proposals",
+        "stopReason": "exhausted",
+        "generated": 0,
+        "skipped": 0,
+        "evaluated": 0,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 0,
+        "reasons": [
+          "Acquisition effective timing is unverified."
+        ]
+      },
+      "firstPlans": []
+    },
+    {
+      "label": "timing supplied; cost and periods absent; bounded two-proposal search",
+      "candidates": 197,
+      "unverifiedEligibility": 0,
+      "unknownAvailability": 196,
+      "schedule": "complete",
+      "acquisitionTiming": "same_day",
+      "acquisitionCost": null,
+      "periods": 0,
+      "firstCandidate": {
+        "playerId": "10002",
+        "status": "partial",
+        "stopReason": "proposal_limit",
+        "generated": 2,
+        "skipped": 0,
+        "evaluated": 2,
+        "illegal": 2,
+        "unverifiedBudget": 0,
+        "retained": 0,
+        "reasons": [
+          "Some scheduled games lack unconditional scoring forecasts; projected outcome is incomplete.",
+          "No acquisition period covers 2026-10-16T00:00:00.000Z.",
+          "Future availability for 10002 must be rechecked before add:10002:0:2026-10-16.",
+          "An active game lacks a complete approved unconditional totals forecast.",
+          "Start/sit quality is unresolved because competing eligible players lack comparable scoring forecasts. This is a schedule-capacity assignment.",
+          "No remaining opportunities have usable forecasts; projected outcome is unavailable.",
+          "Projected GOALS is incomplete.",
+          "Future availability for 10002 must be rechecked before add:10002:0:2026-10-16:drop:10001."
+        ]
+      },
+      "firstPlans": []
+    },
+    {
+      "label": "named fixture candidate with explicit manager rules and fresh game evidence",
+      "candidates": 197,
+      "unverifiedEligibility": 0,
+      "unknownAvailability": 196,
+      "schedule": "complete",
+      "acquisitionTiming": "same_day",
+      "acquisitionCost": 1,
+      "periods": 1,
+      "firstCandidate": {
+        "playerId": "10002",
+        "status": "partial",
+        "stopReason": "proposal_limit",
+        "generated": 2,
+        "skipped": 0,
+        "evaluated": 2,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 2,
+        "reasons": [
+          "Candidate proposal limit reached; other times or drops may be unevaluated."
+        ]
+      },
+      "firstPlans": [
+        {
+          "netAGP": 1,
+          "netPoints": null
+        },
+        {
+          "netAGP": 0,
+          "netPoints": null
+        }
+      ]
+    },
+    {
+      "label": "same qualified fixture with stale schedule source receipt",
+      "candidates": 197,
+      "unverifiedEligibility": 0,
+      "unknownAvailability": 196,
+      "schedule": "partial",
+      "acquisitionTiming": "same_day",
+      "acquisitionCost": 1,
+      "periods": 1,
+      "firstCandidate": {
+        "playerId": "10002",
+        "status": "partial",
+        "stopReason": "proposal_limit",
+        "generated": 2,
+        "skipped": 0,
+        "evaluated": 2,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 2,
+        "reasons": [
+          "Candidate proposal limit reached; other times or drops may be unevaluated.",
+          "Planning schedule coverage is incomplete or unknown."
+        ]
+      },
+      "firstPlans": [
+        {
+          "netAGP": null,
+          "netPoints": null
+        },
+        {
+          "netAGP": null,
+          "netPoints": null
+        }
+      ]
+    }
+  ],
+  "relayedScheduleEvidence": {
+    "gameId": "2026020112",
+    "seasonId": 20262027,
+    "rowIds": [
+      353,
+      354
+    ],
+    "teams": [
+      "VAN",
+      "FLA"
+    ],
+    "fetchedAt": "2026-10-14T00:12:54.911Z",
+    "readAt": "2026-10-15T22:37:25.275Z",
+    "provenance": "FORGE owner relay; no database read performed here",
+    "ageMs": 167070364,
+    "exceeds36HoursByMs": 37470364
+  },
+  "mockQueryCount": 28,
+  "actualNetworkRequests": 0,
+  "ownerStorageAccess": 0,
+  "workspaceMutated": false
+}

@@ -1,0 +1,20 @@
+{
+  "command": "NODE_OPTIONS=--max-old-space-size=8192 npx tsc --noEmit --incremental false",
+  "reason": "Replacement after concrete TS18048 Start Chart one-line optional-access correction; first failed receipt preserved.",
+  "startedAtUTC": "2026-10-15T19:25:39.713157+00:00",
+  "completedAtUTC": "2026-10-15T19:26:28.716884+00:00",
+  "durationSeconds": 49.00347037499887,
+  "pid": 65247,
+  "exitCode": 0,
+  "stoppedForBudgetOrPilotBoundary": false,
+  "deadlineUTC": "2026-10-15T21:10:00+00:00",
+  "log": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-release-path-2026-10-15/typescript-v2.log",
+  "logBytes": 0,
+  "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "configuredTypeScriptAndConfigInputs": 2701,
+  "sourceDrift": [],
+  "cohortSha256": "f31b94303fb8857200940dc861e480dc37db0740c9f0ca476be92316725b089b",
+  "beforeSha256": "bbf9f73574954bcdeed9e28d7b397d53bf1581a177e5df2a0e202e7f8abe61b1",
+  "afterSha256": "bbf9f73574954bcdeed9e28d7b397d53bf1581a177e5df2a0e202e7f8abe61b1",
+  "note": "Full web TypeScript tree; dependency contents bound by package lock, not separately rehashed."
+}

@@ -1,0 +1,2786 @@
+[
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 57,
+    "heading": "Freshness Gate Checklist",
+    "text": "confirm the selected player has fresh WGO rows through the expected validation date range",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 58,
+    "heading": "Freshness Gate Checklist",
+    "text": "confirm the relevant NST source tables are fresh for the same range",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 59,
+    "heading": "Freshness Gate Checklist",
+    "text": "confirm `rolling_player_game_metrics` rows were recomputed after the logic under validation",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 60,
+    "heading": "Freshness Gate Checklist",
+    "text": "confirm `powerPlayCombinations` is fresh before validating `pp_share_pct` or `pp_unit`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 61,
+    "heading": "Freshness Gate Checklist",
+    "text": "confirm `lineCombinations` is fresh before validating `line_combo_slot` or `line_combo_group`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 62,
+    "heading": "Freshness Gate Checklist",
+    "text": "review rolling diagnostics for:",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 67,
+    "heading": "Freshness Gate Checklist",
+    "text": "stop if any freshness blocker is unresolved",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 74,
+    "heading": "Required Refresh Actions When Freshness Fails",
+    "text": "targeted rolling recompute for affected player/season:",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 78,
+    "heading": "Required Refresh Actions When Freshness Fails",
+    "text": "rerun per-game PP builder for affected validation games:",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 82,
+    "heading": "Required Refresh Actions When Freshness Fails",
+    "text": "rerun per-game or batch line builder for affected validation games:",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 87,
+    "heading": "Required Refresh Actions When Freshness Fails",
+    "text": "run the upstream import/refresh path that repopulates the stale source table",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 88,
+    "heading": "Required Refresh Actions When Freshness Fails",
+    "text": "confirm the latest source date advanced before retrying rolling validation",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 91,
+    "heading": "Required Refresh Actions When Freshness Fails",
+    "text": "stop validation",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 92,
+    "heading": "Required Refresh Actions When Freshness Fails",
+    "text": "record the blocking table(s)",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 93,
+    "heading": "Required Refresh Actions When Freshness Fails",
+    "text": "add the missing refresh action to the validation runbook before proceeding",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 99,
+    "heading": "Global Validation Workflow",
+    "text": "check upstream freshness for the player and date range",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 100,
+    "heading": "Global Validation Workflow",
+    "text": "run the refresh action if freshness is stale or incomplete",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 101,
+    "heading": "Global Validation Workflow",
+    "text": "re-check freshness",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 102,
+    "heading": "Global Validation Workflow",
+    "text": "run targeted rolling recompute for the player and season",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 103,
+    "heading": "Global Validation Workflow",
+    "text": "confirm stored rows advanced to the expected current range",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 104,
+    "heading": "Global Validation Workflow",
+    "text": "reconstruct the intended value from live upstream data",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 105,
+    "heading": "Global Validation Workflow",
+    "text": "compare source-derived value vs fresh stored value",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 106,
+    "heading": "Global Validation Workflow",
+    "text": "classify any mismatch",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 107,
+    "heading": "Global Validation Workflow",
+    "text": "record evidence before moving to the next metric",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 114,
+    "heading": "1. Availability / Participation",
+    "text": "`games_played`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 115,
+    "heading": "1. Availability / Participation",
+    "text": "`team_games_played`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 116,
+    "heading": "1. Availability / Participation",
+    "text": "`season_availability_pct`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 117,
+    "heading": "1. Availability / Participation",
+    "text": "`three_year_availability_pct`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 118,
+    "heading": "1. Availability / Participation",
+    "text": "`career_availability_pct`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 119,
+    "heading": "1. Availability / Participation",
+    "text": "`availability_pct_last3_team_games`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 120,
+    "heading": "1. Availability / Participation",
+    "text": "`availability_pct_last5_team_games`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 121,
+    "heading": "1. Availability / Participation",
+    "text": "`availability_pct_last10_team_games`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 122,
+    "heading": "1. Availability / Participation",
+    "text": "`availability_pct_last20_team_games`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 123,
+    "heading": "1. Availability / Participation",
+    "text": "`season_games_played`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 124,
+    "heading": "1. Availability / Participation",
+    "text": "`season_team_games_available`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 125,
+    "heading": "1. Availability / Participation",
+    "text": "`three_year_games_played`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 126,
+    "heading": "1. Availability / Participation",
+    "text": "`three_year_team_games_available`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 127,
+    "heading": "1. Availability / Participation",
+    "text": "`career_games_played`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 128,
+    "heading": "1. Availability / Participation",
+    "text": "`career_team_games_available`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 129,
+    "heading": "1. Availability / Participation",
+    "text": "`games_played_last3_team_games`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 130,
+    "heading": "1. Availability / Participation",
+    "text": "`team_games_available_last3`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 131,
+    "heading": "1. Availability / Participation",
+    "text": "`games_played_last5_team_games`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 132,
+    "heading": "1. Availability / Participation",
+    "text": "`team_games_available_last5`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 133,
+    "heading": "1. Availability / Participation",
+    "text": "`games_played_last10_team_games`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 134,
+    "heading": "1. Availability / Participation",
+    "text": "`team_games_available_last10`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 135,
+    "heading": "1. Availability / Participation",
+    "text": "`games_played_last20_team_games`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 136,
+    "heading": "1. Availability / Participation",
+    "text": "`team_games_available_last20`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 139,
+    "heading": "1. Availability / Participation",
+    "text": "`season_participation_pct`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 140,
+    "heading": "1. Availability / Participation",
+    "text": "`three_year_participation_pct`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 141,
+    "heading": "1. Availability / Participation",
+    "text": "`career_participation_pct`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 142,
+    "heading": "1. Availability / Participation",
+    "text": "`participation_pct_last3_team_games`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 143,
+    "heading": "1. Availability / Participation",
+    "text": "`participation_pct_last5_team_games`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 144,
+    "heading": "1. Availability / Participation",
+    "text": "`participation_pct_last10_team_games`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 145,
+    "heading": "1. Availability / Participation",
+    "text": "`participation_pct_last20_team_games`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 146,
+    "heading": "1. Availability / Participation",
+    "text": "`season_participation_games`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 147,
+    "heading": "1. Availability / Participation",
+    "text": "`three_year_participation_games`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 148,
+    "heading": "1. Availability / Participation",
+    "text": "`career_participation_games`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 149,
+    "heading": "1. Availability / Participation",
+    "text": "`participation_games_last3_team_games`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 150,
+    "heading": "1. Availability / Participation",
+    "text": "`participation_games_last5_team_games`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 151,
+    "heading": "1. Availability / Participation",
+    "text": "`participation_games_last10_team_games`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 152,
+    "heading": "1. Availability / Participation",
+    "text": "`participation_games_last20_team_games`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 155,
+    "heading": "1. Availability / Participation",
+    "text": "verify retained legacy `gp_pct_*` behavior matches the documented compatibility contract for all-strength rows",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 156,
+    "heading": "1. Availability / Participation",
+    "text": "verify retained legacy `gp_pct_*` behavior matches the documented compatibility contract for EV/PP/PK participation rows",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 159,
+    "heading": "1. Availability / Participation",
+    "text": "Brent Burns healthy-control availability case",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 160,
+    "heading": "1. Availability / Participation",
+    "text": "Corey Perry traded-player season-availability case",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 161,
+    "heading": "1. Availability / Participation",
+    "text": "Corey Perry missed-games denominator case",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 162,
+    "heading": "1. Availability / Participation",
+    "text": "rolling current-team `last3/5/10/20` availability case",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 163,
+    "heading": "1. Availability / Participation",
+    "text": "EV participation case",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 164,
+    "heading": "1. Availability / Participation",
+    "text": "PP participation case",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 165,
+    "heading": "1. Availability / Participation",
+    "text": "PK participation case",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 169,
+    "heading": "2. TOI",
+    "text": "`toi_seconds_total_all`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 170,
+    "heading": "2. TOI",
+    "text": "`toi_seconds_avg_all`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 171,
+    "heading": "2. TOI",
+    "text": "`toi_seconds_total_last3`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 172,
+    "heading": "2. TOI",
+    "text": "`toi_seconds_avg_last3`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 173,
+    "heading": "2. TOI",
+    "text": "`toi_seconds_total_last5`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 174,
+    "heading": "2. TOI",
+    "text": "`toi_seconds_avg_last5`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 175,
+    "heading": "2. TOI",
+    "text": "`toi_seconds_total_last10`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 176,
+    "heading": "2. TOI",
+    "text": "`toi_seconds_avg_last10`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 177,
+    "heading": "2. TOI",
+    "text": "`toi_seconds_total_last20`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 178,
+    "heading": "2. TOI",
+    "text": "`toi_seconds_avg_last20`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 179,
+    "heading": "2. TOI",
+    "text": "`toi_seconds_avg_season`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 180,
+    "heading": "2. TOI",
+    "text": "`toi_seconds_avg_3ya`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 181,
+    "heading": "2. TOI",
+    "text": "`toi_seconds_avg_career`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 184,
+    "heading": "2. TOI",
+    "text": "verify WGO `toi_per_game` normalization is correct where WGO fallback is used",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 185,
+    "heading": "2. TOI",
+    "text": "verify TOI fallback tier diagnostics match the actual resolution path",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 186,
+    "heading": "2. TOI",
+    "text": "verify split-strength participation uses TOI consistently with the intended participation contract",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 190,
+    "heading": "3. Additive Counts",
+    "text": "`goals`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 191,
+    "heading": "3. Additive Counts",
+    "text": "`assists`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 192,
+    "heading": "3. Additive Counts",
+    "text": "`shots`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 193,
+    "heading": "3. Additive Counts",
+    "text": "`hits`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 194,
+    "heading": "3. Additive Counts",
+    "text": "`blocks`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 195,
+    "heading": "3. Additive Counts",
+    "text": "`pp_points`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 196,
+    "heading": "3. Additive Counts",
+    "text": "`points`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 199,
+    "heading": "3. Additive Counts",
+    "text": "all / running scope",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 200,
+    "heading": "3. Additive Counts",
+    "text": "`last3`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 201,
+    "heading": "3. Additive Counts",
+    "text": "`last5`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 202,
+    "heading": "3. Additive Counts",
+    "text": "`last10`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 203,
+    "heading": "3. Additive Counts",
+    "text": "`last20`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 204,
+    "heading": "3. Additive Counts",
+    "text": "season",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 205,
+    "heading": "3. Additive Counts",
+    "text": "3YA",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 206,
+    "heading": "3. Additive Counts",
+    "text": "career",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 210,
+    "heading": "4. Opportunity Counts",
+    "text": "`ixg`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 211,
+    "heading": "4. Opportunity Counts",
+    "text": "`iscf`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 212,
+    "heading": "4. Opportunity Counts",
+    "text": "`ihdcf`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 215,
+    "heading": "4. Opportunity Counts",
+    "text": "all / running scope",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 216,
+    "heading": "4. Opportunity Counts",
+    "text": "`last3`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 217,
+    "heading": "4. Opportunity Counts",
+    "text": "`last5`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 218,
+    "heading": "4. Opportunity Counts",
+    "text": "`last10`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 219,
+    "heading": "4. Opportunity Counts",
+    "text": "`last20`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 220,
+    "heading": "4. Opportunity Counts",
+    "text": "season",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 221,
+    "heading": "4. Opportunity Counts",
+    "text": "3YA",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 222,
+    "heading": "4. Opportunity Counts",
+    "text": "career",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 226,
+    "heading": "5. Weighted `/60`",
+    "text": "`sog_per_60`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 227,
+    "heading": "5. Weighted `/60`",
+    "text": "`ixg_per_60`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 228,
+    "heading": "5. Weighted `/60`",
+    "text": "`hits_per_60`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 229,
+    "heading": "5. Weighted `/60`",
+    "text": "`blocks_per_60`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 232,
+    "heading": "5. Weighted `/60`",
+    "text": "all",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 233,
+    "heading": "5. Weighted `/60`",
+    "text": "`last3`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 234,
+    "heading": "5. Weighted `/60`",
+    "text": "`last5`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 235,
+    "heading": "5. Weighted `/60`",
+    "text": "`last10`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 236,
+    "heading": "5. Weighted `/60`",
+    "text": "`last20`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 237,
+    "heading": "5. Weighted `/60`",
+    "text": "season",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 238,
+    "heading": "5. Weighted `/60`",
+    "text": "3YA",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 239,
+    "heading": "5. Weighted `/60`",
+    "text": "career",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 242,
+    "heading": "5. Weighted `/60`",
+    "text": "verify fixed-appearance window membership",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 243,
+    "heading": "5. Weighted `/60`",
+    "text": "verify weighted numerator/TOI aggregation instead of average-of-rates behavior",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 244,
+    "heading": "5. Weighted `/60`",
+    "text": "explicitly verify `ixg_per_60` source path:",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 252,
+    "heading": "6. Finishing Ratios",
+    "text": "`shooting_pct`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 253,
+    "heading": "6. Finishing Ratios",
+    "text": "`primary_points_pct`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 254,
+    "heading": "6. Finishing Ratios",
+    "text": "`expected_sh_pct`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 257,
+    "heading": "6. Finishing Ratios",
+    "text": "all",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 258,
+    "heading": "6. Finishing Ratios",
+    "text": "`last3`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 259,
+    "heading": "6. Finishing Ratios",
+    "text": "`last5`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 260,
+    "heading": "6. Finishing Ratios",
+    "text": "`last10`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 261,
+    "heading": "6. Finishing Ratios",
+    "text": "`last20`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 262,
+    "heading": "6. Finishing Ratios",
+    "text": "season",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 263,
+    "heading": "6. Finishing Ratios",
+    "text": "3YA",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 264,
+    "heading": "6. Finishing Ratios",
+    "text": "career",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 267,
+    "heading": "6. Finishing Ratios",
+    "text": "verify stored raw numerators and denominators match the reconstructed ratio",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 268,
+    "heading": "6. Finishing Ratios",
+    "text": "verify null-vs-zero denominator behavior matches the declared contract",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 269,
+    "heading": "6. Finishing Ratios",
+    "text": "verify scale handling matches the documented family scale",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 273,
+    "heading": "7. On-Ice Context",
+    "text": "`ipp`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 274,
+    "heading": "7. On-Ice Context",
+    "text": "`on_ice_sh_pct`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 275,
+    "heading": "7. On-Ice Context",
+    "text": "`pdo`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 278,
+    "heading": "7. On-Ice Context",
+    "text": "all",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 279,
+    "heading": "7. On-Ice Context",
+    "text": "`last3`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 280,
+    "heading": "7. On-Ice Context",
+    "text": "`last5`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 281,
+    "heading": "7. On-Ice Context",
+    "text": "`last10`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 282,
+    "heading": "7. On-Ice Context",
+    "text": "`last20`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 283,
+    "heading": "7. On-Ice Context",
+    "text": "season",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 284,
+    "heading": "7. On-Ice Context",
+    "text": "3YA",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 285,
+    "heading": "7. On-Ice Context",
+    "text": "career",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 288,
+    "heading": "7. On-Ice Context",
+    "text": "verify component support fields for all retained scopes",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 289,
+    "heading": "7. On-Ice Context",
+    "text": "verify composite PDO arithmetic uses aggregated components",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 293,
+    "heading": "8. Zone / Usage",
+    "text": "`oz_start_pct`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 294,
+    "heading": "8. Zone / Usage",
+    "text": "`pp_share_pct`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 297,
+    "heading": "8. Zone / Usage",
+    "text": "all",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 298,
+    "heading": "8. Zone / Usage",
+    "text": "`last3`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 299,
+    "heading": "8. Zone / Usage",
+    "text": "`last5`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 300,
+    "heading": "8. Zone / Usage",
+    "text": "`last10`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 301,
+    "heading": "8. Zone / Usage",
+    "text": "`last20`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 302,
+    "heading": "8. Zone / Usage",
+    "text": "season",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 303,
+    "heading": "8. Zone / Usage",
+    "text": "3YA",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 304,
+    "heading": "8. Zone / Usage",
+    "text": "career",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 307,
+    "heading": "8. Zone / Usage",
+    "text": "verify `oz_start_pct` matches the intended NST semantics",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 308,
+    "heading": "8. Zone / Usage",
+    "text": "verify `pp_share_pct` against the final authoritative denominator contract",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 309,
+    "heading": "8. Zone / Usage",
+    "text": "verify `pp_share_pct` support fields store the reconstructed player and team PP TOI inputs correctly",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 310,
+    "heading": "8. Zone / Usage",
+    "text": "verify PP-share validation on Jesper Bratt and one low-PP case",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 315,
+    "heading": "9. Territorial",
+    "text": "`cf`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 316,
+    "heading": "9. Territorial",
+    "text": "`ca`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 317,
+    "heading": "9. Territorial",
+    "text": "`ff`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 318,
+    "heading": "9. Territorial",
+    "text": "`fa`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 321,
+    "heading": "9. Territorial",
+    "text": "`cf_pct`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 322,
+    "heading": "9. Territorial",
+    "text": "`ff_pct`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 325,
+    "heading": "9. Territorial",
+    "text": "all",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 326,
+    "heading": "9. Territorial",
+    "text": "`last3`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 327,
+    "heading": "9. Territorial",
+    "text": "`last5`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 328,
+    "heading": "9. Territorial",
+    "text": "`last10`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 329,
+    "heading": "9. Territorial",
+    "text": "`last20`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 330,
+    "heading": "9. Territorial",
+    "text": "season",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 331,
+    "heading": "9. Territorial",
+    "text": "3YA",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 332,
+    "heading": "9. Territorial",
+    "text": "career",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 337,
+    "heading": "10. Historical Baselines",
+    "text": "verify simple historical averages remain mathematically healthy",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 338,
+    "heading": "10. Historical Baselines",
+    "text": "verify weighted `/60` historical snapshots remain mathematically healthy",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 339,
+    "heading": "10. Historical Baselines",
+    "text": "verify ratio historical snapshots remain mathematically healthy",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 340,
+    "heading": "10. Historical Baselines",
+    "text": "verify historical availability semantics match the redesigned cross-stint contract",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 344,
+    "heading": "11. Context Labels",
+    "text": "`pp_unit`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 345,
+    "heading": "11. Context Labels",
+    "text": "`line_combo_slot`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 346,
+    "heading": "11. Context Labels",
+    "text": "`line_combo_group`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 349,
+    "heading": "11. Context Labels",
+    "text": "verify builder freshness before comparison",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 350,
+    "heading": "11. Context Labels",
+    "text": "verify row values match upstream builder outputs for the affected games",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 351,
+    "heading": "11. Context Labels",
+    "text": "verify these fields remain treated as contextual labels, not arithmetic metrics",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 357,
+    "heading": "Explicit Disputed Metric Checklist",
+    "text": "`gp_pct_avg_season` replacement field(s)",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 358,
+    "heading": "Explicit Disputed Metric Checklist",
+    "text": "`gp_pct_total_all`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 359,
+    "heading": "Explicit Disputed Metric Checklist",
+    "text": "rolling GP replacement field(s)",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 360,
+    "heading": "Explicit Disputed Metric Checklist",
+    "text": "`gp_pct_avg_3ya`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 361,
+    "heading": "Explicit Disputed Metric Checklist",
+    "text": "`gp_pct_avg_career`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 362,
+    "heading": "Explicit Disputed Metric Checklist",
+    "text": "`shooting_pct_total_lastN`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 363,
+    "heading": "Explicit Disputed Metric Checklist",
+    "text": "`primary_points_pct_total_lastN`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 364,
+    "heading": "Explicit Disputed Metric Checklist",
+    "text": "`expected_sh_pct_total_lastN`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 365,
+    "heading": "Explicit Disputed Metric Checklist",
+    "text": "`ipp_total_lastN`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 366,
+    "heading": "Explicit Disputed Metric Checklist",
+    "text": "`pp_share_pct_total_lastN`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 367,
+    "heading": "Explicit Disputed Metric Checklist",
+    "text": "`ixg_per_60`",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 368,
+    "heading": "Explicit Disputed Metric Checklist",
+    "text": "any renamed ratio-family aliases",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 369,
+    "heading": "Explicit Disputed Metric Checklist",
+    "text": "any renamed weighted `/60` aliases",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 370,
+    "heading": "Explicit Disputed Metric Checklist",
+    "text": "any newly introduced numerator / denominator support fields",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 376,
+    "heading": "Observability and Run-Quality Evidence Checklist",
+    "text": "coverage warnings",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 377,
+    "heading": "Observability and Run-Quality Evidence Checklist",
+    "text": "suspicious-output warnings",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 378,
+    "heading": "Observability and Run-Quality Evidence Checklist",
+    "text": "unknown game ID reporting",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 379,
+    "heading": "Observability and Run-Quality Evidence Checklist",
+    "text": "GP-window denominator diagnostics",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 380,
+    "heading": "Observability and Run-Quality Evidence Checklist",
+    "text": "ratio-window component completeness diagnostics",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 381,
+    "heading": "Observability and Run-Quality Evidence Checklist",
+    "text": "TOI fallback tier diagnostics",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 382,
+    "heading": "Observability and Run-Quality Evidence Checklist",
+    "text": "rate reconstruction diagnostics",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 383,
+    "heading": "Observability and Run-Quality Evidence Checklist",
+    "text": "stale-tail diagnostics",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 384,
+    "heading": "Observability and Run-Quality Evidence Checklist",
+    "text": "structured run summary output",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 385,
+    "heading": "Observability and Run-Quality Evidence Checklist",
+    "text": "phase-level progress logs for:",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 397,
+    "heading": "Signoff Rules",
+    "text": "every metric family above has a recorded result",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 398,
+    "heading": "Signoff Rules",
+    "text": "every disputed metric above has a recorded result",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 399,
+    "heading": "Signoff Rules",
+    "text": "all freshness blockers were resolved or documented as external blockers",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 400,
+    "heading": "Signoff Rules",
+    "text": "all mismatches were classified",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 401,
+    "heading": "Signoff Rules",
+    "text": "current-code rows, not stale legacy rows, were used as evidence",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 402,
+    "heading": "Signoff Rules",
+    "text": "the structured run summary was captured from a post-remediation run",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 410,
+    "heading": "Final Audit Re-Read Completeness Check",
+    "text": "implemented",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 411,
+    "heading": "Final Audit Re-Read Completeness Check",
+    "text": "intentionally deferred as optional",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 412,
+    "heading": "Final Audit Re-Read Completeness Check",
+    "text": "intentionally deferred as follow-up",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-metrics-post-implementation-validation-checklist.md",
+    "line": 413,
+    "heading": "Final Audit Re-Read Completeness Check",
+    "text": "unresolved",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/rso-release-readiness-2026-10-15/ACCEPTANCE.md",
+    "line": 40,
+    "heading": "Release owner checklist",
+    "text": "Record the disposition and evidence for A1–A11, including any explicit scope exclusions. Do not label local fixture acceptance as real acceptance.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/rso-release-readiness-2026-10-15/ACCEPTANCE.md",
+    "line": 41,
+    "heading": "Release owner checklist",
+    "text": "Integrate separately accepted changes and select the exact release candidate commit. The current dirty checkout and 24-file archive are not a whole-repository candidate SHA.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/rso-release-readiness-2026-10-15/ACCEPTANCE.md",
+    "line": 42,
+    "heading": "Release owner checklist",
+    "text": "Obtain current-task authorization for the intended remote action, naming project, environment, branch and exact SHA. Publishing is outside this sprint.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/rso-release-readiness-2026-10-15/ACCEPTANCE.md",
+    "line": 43,
+    "heading": "Release owner checklist",
+    "text": "Before an authorized push/merge, inventory every linked Vercel project, root directory, branch trigger and ignored-build behavior, including CMS/functions. Record expected entries versus actual builds; obtain approval for any unrelated-project skip plan.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/rso-release-readiness-2026-10-15/ACCEPTANCE.md",
+    "line": 44,
+    "heading": "Release owner checklist",
+    "text": "Inspect existing deployment status for that SHA/environment, reuse a suitable success or wait for an in-progress build, and avoid duplicate builds.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/rso-release-readiness-2026-10-15/ACCEPTANCE.md",
+    "line": 45,
+    "heading": "Release owner checklist",
+    "text": "State approved read-only smoke routes and the stopping condition before execution, at most five sequential requests unless a larger budget is separately approved. Do not use cron/ETL/refresh/recompute endpoints for QA.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/rso-release-readiness-2026-10-15/ACCEPTANCE.md",
+    "line": 46,
+    "heading": "Release owner checklist",
+    "text": "After an authorized release, record deployed revision and bounded readback, reconcile accepted work into `master`, then sync the sole editing branch `octoberBranch` from the released commit.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-working-checklist-2026-10-15.md",
+    "line": 16,
+    "heading": "P0: establish the evidence needed to improve the model",
+    "text": "F02 Reconcile this amendment against the living register and current code; avoid duplicate tasks and preserve original IDs.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-working-checklist-2026-10-15.md",
+    "line": 17,
+    "heading": "P0: establish the evidence needed to improve the model",
+    "text": "F03 Perform the retained-index coverage audit after separate approval. Existing proposed scope: October 7, 2025–January 13, 2026; metadata only, no mixed-file reopening or new outcome access.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-working-checklist-2026-10-15.md",
+    "line": 18,
+    "heading": "P0: establish the evidence needed to improve the model",
+    "text": "F04 Define forecast opportunity populations, verified participation/nonparticipation, category definitions, missing-versus-zero rules and conditionality.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-working-checklist-2026-10-15.md",
+    "line": 19,
+    "heading": "P0: establish the evidence needed to improve the model",
+    "text": "F05 Freeze exact cohort/sources, chronological development/selection protocol, finite candidate budget, metrics and practical promotion/stop criteria.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-working-checklist-2026-10-15.md",
+    "line": 20,
+    "heading": "P0: establish the evidence needed to improve the model",
+    "text": "F06 Reproduce the baseline and existing candidates across the admitted broader population, with matched rows and target-specific coverage.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-working-checklist-2026-10-15.md",
+    "line": 24,
+    "heading": "P1: improve means and opportunity, one change at a time",
+    "text": "F07 Isolate minutes/role versus rate-model improvements through paired ablations. Actual future minutes are diagnostic only.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-working-checklist-2026-10-15.md",
+    "line": 25,
+    "heading": "P1: improve means and opportunity, one change at a time",
+    "text": "F08 Forecast participation and role uncertainty; separate team PP opportunity from player deployment. Test news freshness at authentic cutoffs.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-working-checklist-2026-10-15.md",
+    "line": 26,
+    "heading": "P1: improve means and opportunity, one change at a time",
+    "text": "F09 Compare pooled exposure/rate forecasts for SOG, HIT and BLK with one modest context addition.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-working-checklist-2026-10-15.md",
+    "line": 27,
+    "heading": "P1: improve means and opportunity, one change at a time",
+    "text": "F10 Test current-era rink recording effects for the recorded-count target; map shot/block semantics correctly.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-working-checklist-2026-10-15.md",
+    "line": 28,
+    "heading": "P1: improve means and opportunity, one change at a time",
+    "text": "F11 Evaluate G/A/PPP components; add shot-quality/finishing or assist decomposition only when coverage and measurable gains justify them.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-working-checklist-2026-10-15.md",
+    "line": 29,
+    "heading": "P1: improve means and opportunity, one change at a time",
+    "text": "F12 Evaluate PIM frequency/severity modeling against a simple baseline; retain legitimate extremes.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-working-checklist-2026-10-15.md",
+    "line": 30,
+    "heading": "P1: improve means and opportunity, one change at a time",
+    "text": "F13 Build and score coherent goalie appearance/workload/SA/SV/GA components. Validate W, SO, pStart and ratio definitions separately; a full simulator is optional later work.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-working-checklist-2026-10-15.md",
+    "line": 34,
+    "heading": "P2: sophistication that must earn its complexity",
+    "text": "F14 Test one dynamic adaptation approach for role changes, trades, rookies and returns.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-working-checklist-2026-10-15.md",
+    "line": 35,
+    "heading": "P2: sophistication that must earn its complexity",
+    "text": "F15 Evaluate distributions, zero/tail calibration and intervals separately from mean accuracy.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-working-checklist-2026-10-15.md",
+    "line": 36,
+    "heading": "P2: sophistication that must earn its complexity",
+    "text": "F16 Test a bounded nonlinear model or regularized ensemble only after the simpler benchmark; no guaranteed blend gain.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-working-checklist-2026-10-15.md",
+    "line": 37,
+    "heading": "P2: sophistication that must earn its complexity",
+    "text": "F17 Replay actual legal start/bench and complete drop/add decisions in RSO/Start Chart, using identical rules and information for each model.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-working-checklist-2026-10-15.md",
+    "line": 38,
+    "heading": "P2: sophistication that must earn its complexity",
+    "text": "F18 Produce next-10/20 scheduled-game totals from forecasts issued at one common origin; track refreshed versions separately.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-working-checklist-2026-10-15.md",
+    "line": 39,
+    "heading": "P2: sophistication that must earn its complexity",
+    "text": "F19 Build the accountability view: per-target baseline/challenger, sample/date coverage, signed-error histograms, loss trends, calibration, subgroups and evidence-status labels.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-working-checklist-2026-10-15.md",
+    "line": 43,
+    "heading": "P0 parallel operations: future confirmation and release",
+    "text": "F20 Prepare and independently verify a future cloud-ready capture package, including runner/model/guard pins, fixtures, clock and duplicate controls. No new credential setup or passed-window retry implied.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-working-checklist-2026-10-15.md",
+    "line": 44,
+    "heading": "P0 parallel operations: future confirmation and release",
+    "text": "F21 Freeze and issue future prospective shadow forecasts under the approved capture policy, retaining immutable versions.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-working-checklist-2026-10-15.md",
+    "line": 45,
+    "heading": "P0 parallel operations: future confirmation and release",
+    "text": "F22 Review release readiness per head/population: predictive evidence, data coverage, replay, consumer behavior, latency and rollback.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-amended-research-plan-2026-10-15.md",
+    "line": 141,
+    "heading": "P0 — Preserve progress and establish a usable benchmark",
+    "text": "**F02 — Reconcile this amendment with the living register and current code.** Owner: Scout + FORGE owner. Map each task to existing work, actual paths and latest receipts; retain original task IDs; mark done only with evidence. Deliverable: delta register, no duplicate backlog.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-amended-research-plan-2026-10-15.md",
+    "line": 142,
+    "heading": "P0 — Preserve progress and establish a usable benchmark",
+    "text": "**F03 — Complete the value-free coverage audit, subject to its separate approval.** Owner: data owner + evaluator. Existing proposed scope remains retained indexes/spans October 7, 2025–January 13, 2026. Exact IDs, roles, team bindings, schemas, target units, date/game counts and missingness. Do not reopen mixed outcome files. Deliverable: concrete cohort proposal and authorization-ready manifest. Research request does not itself authorize this data audit.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-amended-research-plan-2026-10-15.md",
+    "line": 143,
+    "heading": "P0 — Preserve progress and establish a usable benchmark",
+    "text": "**F04 — Define opportunity population, targets and label contract.** Owner: FORGE + evaluator. Include verified nonappearances; distinguish missing/zero; pin provider definitions, revisions, forecast horizons and conditionality. Depends F03 for actual feasibility. Exit: each head has an explicit population, time boundary and fallback.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-amended-research-plan-2026-10-15.md",
+    "line": 144,
+    "heading": "P0 — Preserve progress and establish a usable benchmark",
+    "text": "**F05 — Freeze finite benchmark protocol.** Owner: evaluator. Exact sources/cohort, lag/availability policy, temporal partitions, candidate budget, primary scores, practical gain criterion, subgroup checks and stop rules. Preserve exposed-history labels. Exit: independently reviewed manifest before execution.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-amended-research-plan-2026-10-15.md",
+    "line": 145,
+    "heading": "P0 — Preserve progress and establish a usable benchmark",
+    "text": "**F06 — Reproduce baseline and existing candidates on admitted broader data.** Owner: FORGE. First run is a coverage/benchmark repair, not a new algorithm sweep. Report matched rows and exclusions. Depends F03–F05 and execution approval. Exit: immutable reproducible forecasts and target-specific comparisons.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-amended-research-plan-2026-10-15.md",
+    "line": 149,
+    "heading": "P1 — Improve opportunity and high-utility count forecasts",
+    "text": "**F07 — Decompose exposure versus rate error.** Owner: skater-model worker. Four ablations from Section B; forecast exposure out of sample; oracle diagnostic kept separate. Depends F06. Exit: identify the next change from evidence rather than speculation.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-amended-research-plan-2026-10-15.md",
+    "line": 150,
+    "heading": "P1 — Improve opportunity and high-utility count forecasts",
+    "text": "**F08 — Participation and role evidence model.** Owner: data/role worker. Versioned pregame evidence, probabilistic role scenarios, source freshness and contradictory reports. Separate PP team opportunity from deployment, and test early versus late authentic information cutoffs when feasible. Calibrate only on an authentic risk set. Conditional forecasts may proceed separately while unavailable history is disclosed.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-amended-research-plan-2026-10-15.md",
+    "line": 151,
+    "heading": "P1 — Improve opportunity and high-utility count forecasts",
+    "text": "**F09 — SOG/HIT/BLK rate challenger.** Owner: skater-model worker. Compare simple shrunk exposure model and one modest context extension; reuse existing implementation where present. Exit: paired mean accuracy, calibration/bias, subgroup/concentration and latency results.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-amended-research-plan-2026-10-15.md",
+    "line": 152,
+    "heading": "P1 — Improve opportunity and high-utility count forecasts",
+    "text": "**F10 — Rink/era observation-model experiment.** Owner: separate modeling worker after F06. Recent training-only venue effects; recorded-count evaluation; verify SHOT versus SOG and shooting-team BLOCK versus defending-player BLK mappings; no historic coefficient copying. Avoid simultaneous edits to F09. Exit: ablation shows whether venue adds useful signal beyond player/team/context.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-amended-research-plan-2026-10-15.md",
+    "line": 153,
+    "heading": "P1 — Improve opportunity and high-utility count forecasts",
+    "text": "**F11 — Goals/assists/PPP components.** Owner: scoring-model worker. Start from direct target means; compare opportunity + rate decomposition. Test shot-volume/finishing or assist components only with verified labels. PPP incorporates PP exposure/role uncertainty; no PP evidence means unknown role, not zero PPP. Exit: per-head gains after coherence checks.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-amended-research-plan-2026-10-15.md",
+    "line": 154,
+    "heading": "P1 — Improve opportunity and high-utility count forecasts",
+    "text": "**F12 — PIM event-severity challenger.** Owner: skater-model worker. Verify penalty-type accounting first; compare simple shrunk baseline against one compound/hurdle candidate. No arbitrary outlier deletion. Exit: full-tail and typical-game performance reported separately, promotion based on declared target.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-amended-research-plan-2026-10-15.md",
+    "line": 155,
+    "heading": "P1 — Improve opportunity and high-utility count forecasts",
+    "text": "**F13 — Coherent goalie components.** Owner: goalie-model worker. Conditional minutes/SA baseline, stopping component, start/relief state where support exists, derived SV/GA, ratio contract and independent W/SO gates. pStart must cover the complete team-game candidate set (with an unknown/other state if needed); official W/SO marginal probability heads can precede a full simulator. Exit: reconciled per-component evaluation, honest unsupported heads and no hidden regression in blended goalie scores.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-amended-research-plan-2026-10-15.md",
+    "line": 159,
+    "heading": "P2 — Earn sophistication and connect it to lineup value",
+    "text": "**F14 — Test one dynamic adaptation mechanism.** Owner: FORGE. Recency or state-space challenger, not unlimited half-life search; subgroup tests for trades, role changes, rookies and returns. Depends broad baseline and verified feature clocks.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-amended-research-plan-2026-10-15.md",
+    "line": 160,
+    "heading": "P2 — Earn sophistication and connect it to lineup value",
+    "text": "**F15 — Calibrate distributions and uncertainty.** Owner: evaluator/modeler. Mean-fixed distribution comparison, then joint exposure uncertainty; residual dispersion and zero/tail checks. Optional time-adaptive interval calibration is a separate policy needing its own test. Exit: interval usefulness and coverage, not only wider intervals.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-amended-research-plan-2026-10-15.md",
+    "line": 161,
+    "heading": "P2 — Earn sophistication and connect it to lineup value",
+    "text": "**F16 — Benchmark a bounded nonlinear challenger and/or regularized ensemble.** Owner: FORGE. Only after simple baselines; identical pregame features; chronological out-of-fold predictions for combination weights. No blend-improvement guarantee, no final-block weight tuning. Exit: improvement survives selection and reconciliation cost.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-amended-research-plan-2026-10-15.md",
+    "line": 162,
+    "heading": "P2 — Earn sophistication and connect it to lineup value",
+    "text": "**F17 — RSO/Start Chart decision replay.** Owner: consumer/evaluator pair. Same legal solver, points/category rules and actionable candidates; report crowded-day start/bench gains and net complete-swap gains. Distinguish simulator from authentic account replay. Depends admitted forecasts and consumer contracts.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-amended-research-plan-2026-10-15.md",
+    "line": 163,
+    "heading": "P2 — Earn sophistication and connect it to lineup value",
+    "text": "**F18 — Next-10/20 scheduled-game aggregation.** Owner: FORGE. Sum the next 10/20 scheduled-game means all issued at the same forecast origin; keep each later refresh as a separate version. For uncertainty, model shared role/availability and schedule dependence. Exit: horizon-specific calibration, no silent switch to next appearances.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-amended-research-plan-2026-10-15.md",
+    "line": 164,
+    "heading": "P2 — Earn sophistication and connect it to lineup value",
+    "text": "**F19 — Accountability dashboard.** Owner: independent UI worker after schema freeze. Target/version/baseline, sample and date coverage, signed-error histogram, loss through time, calibration, subgroups, excluded rows and test-status badges. Display local/research/shadow/deployed distinctly.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-amended-research-plan-2026-10-15.md",
+    "line": 168,
+    "heading": "P0 operational track — Make future confirmation reliable",
+    "text": "**F20 — Package a future cloud-ready capture runner.** Owner: capture owner + Scout. Export exact runner/model/input-schema/guard pins and admissible nonsecret fixture package; verify environment parity, clock, dependencies, duplicate prevention and immutable receipts. Credentials or expanded access need their own approved setup. This is future work: it does not reopen October 14's passed window or authorize an automatic retry.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-amended-research-plan-2026-10-15.md",
+    "line": 169,
+    "heading": "P0 operational track — Make future confirmation reliable",
+    "text": "**F21 — Freeze and issue prospective shadow forecasts.** Owner: sole capture executor. Freeze candidate choices and rolling-update policy before permitted windows, then evaluate with genuine source times. Unsupported heads remain conditional/unavailable. Do not let UI pressure turn research into a production claim.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-amended-research-plan-2026-10-15.md",
+    "line": 170,
+    "heading": "P0 operational track — Make future confirmation reliable",
+    "text": "**F22 — Per-head release review and rollback.** Owner: independent reviewer + product owner. Data integrity, predictive evidence, coverage, calibration, consumer readback, latency and rollback. Promote supported heads/populations independently when justified; no entire-model blanket approval.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 155,
+    "heading": "October 14 ongoing candidate comparison and accountability requirements",
+    "text": "OCT14-COMP-0 Deliver the ongoing full-FORGE candidate-comparison program and accountability dashboard only after the granular requirements below have accepted evidence; the small conditional BLK pilot does not close this parent.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 156,
+    "heading": "October 14 ongoing candidate comparison and accountability requirements",
+    "text": "OCT14-COMP-1 Version the protocol for each bounded run: target/estimand, units, conditioning, horizon, matched as-of input and player-game cohort, permitted allocations, training/validation/final/prospective separation, candidate/compute budget and stopping rule. Preserve unallocated dates under the latest reviewed allocation (January 14 onward at the October 15 planning reconciliation; January 8–13 was separately allocated development) and review new target allocations before labels; never rewrite historical clocks or previous experiment identities.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 157,
+    "heading": "October 14 ongoing candidate comparison and accountability requirements",
+    "text": "OCT14-COMP-2 Retain a complete immutable trial and issuance ledger covering all candidate/feature/model versions, hashes, parameters, source/cohort manifests, real cutoff/issue/settlement clocks, revisions, failures, exposure, missingness, abstentions and selection decisions. Report requested and paired populations so exclusion of hard cases cannot manufacture improvement.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 158,
+    "heading": "October 14 ongoing candidate comparison and accountability requirements",
+    "text": "OCT14-COMP-3 Compare native FORGE, expanding/recency baselines, shrinkage/exposure, count and probability families in predeclared finite stages. Add justified boosted trees/ensembles only after coverage and compute permit; test team Elo/Glicko only as a dated contextual-feature ablation, never as the whole player model. No duplicate model executor or open-ended score hunting.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 159,
+    "heading": "October 14 ongoing candidate comparison and accountability requirements",
+    "text": "OCT14-COMP-4 Select expected means with squared error/MSE or appropriate proper distribution scores, never solely MAE. Report MAE/RMSE, bias, proper count/probability losses, calibration, interval coverage/width and coverage together. New loss policies get new reviewed versions; do not reinterpret the accepted MAE-selected historical pilot.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 160,
+    "heading": "October 14 ongoing candidate comparison and accountability requirements",
+    "text": "OCT14-COMP-5 Evaluate paired, baseline-covered cohorts per target/horizon/conditioning/evidence class, including chronological stability, game/slate counts and defensible clustered/time-block uncertainty. Preserve missing forecasts and coverage differences; keep raw units separate, mark zero-denominator skill undefined, and show unsupported rookie/trade/role-change segments as not estimable.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 161,
+    "heading": "October 14 ongoing candidate comparison and accountability requirements",
+    "text": "OCT14-COMP-6 Extend the existing accountability UI with time-series loss/coverage trends, signed/absolute-error histograms, per-target/horizon/version leaderboards, baseline skill, paired differences/sample sizes/uncertainty and supported cohort filters. Expose evidence stage, missingness and abstentions; no generic accuracy percentage or repeatedly mined held-out leaderboard as a promotion claim.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 162,
+    "heading": "October 14 ongoing candidate comparison and accountability requirements",
+    "text": "OCT14-COMP-7 Measure lineup and drop/add net decision gains/regret with identical frozen scoring, roster, eligibility, locks, waiver/transaction/allowance and acquisition-cost rules; preserve matching issued inputs, shared-game dependence, legality and excluded-decision counts. Keep conditional BLK proxies and sensitivity comparisons distinct from realized roster/transaction gains.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 163,
+    "heading": "October 14 ongoing candidate comparison and accountability requirements",
+    "text": "OCT14-COMP-8 Predeclare promotion and rollback criteria before final evaluation: sample/coverage floors, meaningful baseline skill, calibration/coherence and subgroup limits, original-input/issuance integrity, operating bounds and hash-pinned fallback. Independent evaluator seals final feedback; one declared final decision, new unexposed protocol for further selection, and separate release authority.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 164,
+    "heading": "October 14 ongoing candidate comparison and accountability requirements",
+    "text": "OCT14-COMP-9 Inventory and reuse existing evaluation/storage/dashboard/accuracy/promotion/rollout contracts before adding a duplicate stack or migration. Implement only accepted gaps with focused tests/review. Preserve the original dated October 14 17:30 Eastern freeze and separate 17:50/18:15/18:30 live guards/BLK fallback as historical requirements, including missed-window handling; any future scheduled run, acquisition, publish or deployment needs its own approved bounds.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/prediction-engine/tasks-prd-forge-prediction-engine-super-task-list.md",
+    "line": 310,
+    "heading": "October 14 ongoing comparison program — open source-ledger mapping",
+    "text": "OCT14-COMP Map and deliver TJ's ongoing versioned candidate-comparison and accountability-dashboard requirement through the authoritative [Projection V1 checklist](../v1/tasks-prd-projection-model.md#october-14-ongoing-candidate-comparison-and-accountability-requirements), `OCT14-COMP-0` through `OCT14-COMP-9`, and its [source PRD](../v1/prd/prd-projection-model.md#october-14-2026-versioned-candidate-comparison-and-accountability-program).",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 653,
+    "heading": "Source: `tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md` (208 rows)",
+    "text": "`SRC::tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md::C0084` (original L159) — NEW 17.0 Rotate sensitive credentials that were exposed during auth setup and debugging",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 654,
+    "heading": "Source: `tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md` (208 rows)",
+    "text": "`SRC::tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md::C0085` (original L160) — NEW 17.1 Rotate the Supabase service-role key and any other exposed Supabase secrets.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 655,
+    "heading": "Source: `tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md` (208 rows)",
+    "text": "`SRC::tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md::C0086` (original L161) — NEW 17.2 Rotate exposed third-party credentials, including Yahoo, Resend, database, and Google service-account secrets.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 656,
+    "heading": "Source: `tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md` (208 rows)",
+    "text": "`SRC::tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md::C0087` (original L162) — NEW 17.3 Update local and deployed environment configuration with the rotated values and verify dependent integrations still work.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 769,
+    "heading": "Source: `tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md` (208 rows)",
+    "text": "`SRC::tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md::C0200` (live NEW) — NEW 46.0 **P2 OAuth PKCE migration dependency:** browser auth explicitly uses PKCE; code/token-hash callback/reset compatibility, credential scrubbing, safe return paths, and post-auth hard-navigation fallback are locally verified by the focused 5-file/35-test cohort. Production `dpl_47AFWu6itJvqzrpeWkd1fTuQkVjq` now has fresh value-free confirmation/recovery completion: clean callback/reset navigation, confirmed-user/profile/settings readback, password update/sign-out, and zero-residual cleanup. Current Google verification is limited to a value-free OAuth initiation at the expected Google identifier page; keep open for current full Google completion under a separately authorized provider boundary before retiring legacy-fragment compatibility.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 777,
+    "heading": "Source: `tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md` (208 rows)",
+    "text": "`SRC::tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md::C0208` (live NEW) — NEW 51.0 **P1 legacy mailbox plaintext-credential retention:** a bounded Sent Items verification unexpectedly exposed older credential-bearing messages unrelated to the requested support thread. Never repeat, copy, test, or reuse values; keep the already-rotated FHFH password family deduplicated under NEW 48, identify/retire or rotate every other affected credential value-free, and obtain explicit owner approval before deleting source/recoverable mailbox copies. Metadata-only inventory bounds the candidate set to one 2025 `FHFH` subject plus three 2022 developer-account subjects sent to a Gmail-domain recipient, with no body/value/ID/address/link access; exact system ownership and retirement require an owner-supplied redacted mapping (updated 2026-07-21).",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 1706,
+    "heading": "Source: `tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md` (75 rows)",
+    "text": "`SRC::tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md::C0076` (live NEW) — NEW 72.0 **P1 recurring natural route-audit observation gap after a prior clean report:** the non-preview Production `daily-cron-report` at `2026-08-04T13:00:32.210549Z` returned HTTP 200/success with 59/59 scheduled activity and jobsMissingLast=0, but warnMissingAudit=4 for `update-standings-details`, `update-nst-goalies`, `update-nst-team-daily`, and `update-nst-team-daily-incremental`. Read-only SQL confirms successful submissions for jobs 43/99/275/328 but no matching `cron_job_audit` rows; all four local routes still export `withCronJobAudit(adminOnly(...))`, and the affected wrapper/report cohort passes 28/28. Keep open for a correlated deployed route receipt or approved runtime correction; no route invocation or schedule/data mutation occurred (discovered 2026-08-04).",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 2765,
+    "heading": "Source: `tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md` (85 rows)",
+    "text": "`SRC::tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md::C0038` (original L140) — 6.0 Verify unresolved-name email alerts are live across sources",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 2767,
+    "heading": "Source: `tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md` (85 rows)",
+    "text": "`SRC::tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md::C0040` (original L142) — 6.2 Confirm the alias review email route can be triggered in production with the configured admin secret/auth path. Readiness: POST-only `adminOnly` route, bounded 25-row selection, shared signed-token flow, local variable-name presence, and Outlook personal-account listing are verified; 70 messages since July 1 contain zero prior review subjects. Production name presence, send/receipt, review, and reprocess remain external (2026-07-16).",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 2790,
+    "heading": "Source: `tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md` (85 rows)",
+    "text": "`SRC::tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md::C0063` (original L169) — 10.0 Validate end-to-end rollout",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 2794,
+    "heading": "Source: `tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md` (85 rows)",
+    "text": "`SRC::tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md::C0067` (original L173) — 10.4 Create and test the three IFTTT applets with one controlled event per GDL account. Read-only provider evidence: all three existing applets are Connected with exact watched accounts/routes, POST/JSON, and nonblank secret headers; all omit `tweet_embed_code`, GameDayLines stores literal `SOURCE_ACCOUNT`, and the required conflict pause was honored before mutation. All three Vercel names exist for Production/Preview; missing/current-empty-body auth is 401/400 (2026-07-16).",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 2795,
+    "heading": "Source: `tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md` (85 rows)",
+    "text": "`SRC::tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md::C0068` (original L174) — 10.5 Process pending events and confirm rows land in source storage, first-arrival display, unresolved-name queue, and canonical `lineCombinations` where applicable. Readiness: bounded source/tweet/date processing and status/count queries are documented; no live write was performed (2026-07-16).",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 2803,
+    "heading": "Source: `tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md` (85 rows)",
+    "text": "`SRC::tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md::C0076` (live NEW) — NEW 13.0 **P0 IFTTT Webhooks provider-key exposure containment:** rotate the credential rendered by the read-only detail-page snapshot, update every proven inbound consumer value-free, and verify retired/current authorization without recording values or bodies before any controlled event.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 2804,
+    "heading": "Source: `tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md` (85 rows)",
+    "text": "`SRC::tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md::C0077` (live NEW) — NEW 14.0 **P1 existing GDL applet payload drift:** repair rather than recreate the three Connected applets; set GameDayLines `source_account` to its exact account, add `tweet_embed_code` to all three, preserve exact trigger/route/POST/JSON/header contracts, and re-audit redacted shapes before promotion/events.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 2805,
+    "heading": "Source: `tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md` (85 rows)",
+    "text": "`SRC::tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md::C0078` (live NEW) — NEW 15.0 **P0 regenerated IFTTT Webhooks key remains authorized:** one signed-in repeat regeneration issued a second distinct working replacement, but both prior credential generations still authorize unique cache-busted requests contrary to the official invalidation contract. Keep applet edits/promotion/events held pending NEW 17 provider/support or separately approved remove/reconnect resolution.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 2806,
+    "heading": "Source: `tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md` (85 rows)",
+    "text": "`SRC::tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md::C0079` (live NEW) — NEW 16.0 **P0 current IFTTT Webhooks key exposed in retained probe URL:** tab inventory rendered the current Maker probe URL after handoff. The tab is contained on IFTTT login; replace the key in the authorized repeat regeneration and navigate away from credential-bearing URLs before any later inventory/finalization.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 2807,
+    "heading": "Source: `tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md` (85 rows)",
+    "text": "`SRC::tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md::C0080` (live NEW) — NEW 17.0 **P0 multi-generation IFTTT credential retirement resolution:** approved option B removed/reconnected Webhooks and restored four Connected applets plus the disconnected podcast applet, but the pre-reconnect key still authorizes while the distinct replacement authorizes. Provider-confirmed account-level invalidation is now required before downstream work.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 2808,
+    "heading": "Source: `tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md` (85 rows)",
+    "text": "`SRC::tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md::C0081` (live NEW) — NEW 18.0 **P0 Webhooks remove/reconnect does not retire the prior key:** preserve the restored applet state, keep the value-free provider case bookmarked, and require pre-reconnect-key rejection/current-key authorization. Ryan found the account after the identity-only clarification and assigned historical-key validity to engineering. The owner answered Ryan's risk question value-free: there is no suspected leak, and the refresh is precautionary after sharing with this Codex collaboration. No invalidation or rejection evidence was supplied. Owner-approved scheduling keeps this external dependency bookmarked for meaningful-checkpoint checks while non-overlapping work proceeds; retirement proof remains open (updated 2026-07-22).",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 3056,
+    "heading": "Source: `tasks/TASKS/rules/generate-tasks.mdc` (6 rows)",
+    "text": "`SRC::tasks/TASKS/rules/generate-tasks.mdc::C0001` (original L63) — 1.0 Parent Task Title",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 3057,
+    "heading": "Source: `tasks/TASKS/rules/generate-tasks.mdc` (6 rows)",
+    "text": "`SRC::tasks/TASKS/rules/generate-tasks.mdc::C0002` (original L64) — 1.1 [Sub-task description 1.1]",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 3058,
+    "heading": "Source: `tasks/TASKS/rules/generate-tasks.mdc` (6 rows)",
+    "text": "`SRC::tasks/TASKS/rules/generate-tasks.mdc::C0003` (original L65) — 1.2 [Sub-task description 1.2]",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 3059,
+    "heading": "Source: `tasks/TASKS/rules/generate-tasks.mdc` (6 rows)",
+    "text": "`SRC::tasks/TASKS/rules/generate-tasks.mdc::C0004` (original L66) — 2.0 Parent Task Title",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 3060,
+    "heading": "Source: `tasks/TASKS/rules/generate-tasks.mdc` (6 rows)",
+    "text": "`SRC::tasks/TASKS/rules/generate-tasks.mdc::C0005` (original L67) — 2.1 [Sub-task description 2.1]",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 3061,
+    "heading": "Source: `tasks/TASKS/rules/generate-tasks.mdc` (6 rows)",
+    "text": "`SRC::tasks/TASKS/rules/generate-tasks.mdc::C0006` (original L68) — 3.0 Parent Task Title",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 3820,
+    "heading": "Source: `tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md` (89 rows)",
+    "text": "`SRC::tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md::C0073` (original L156) — 5.0 Testing, docs, and performance",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 3824,
+    "heading": "Source: `tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md` (89 rows)",
+    "text": "`SRC::tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md::C0077` (original L160) — 5.2 Backtest accuracy vs career-only and recent-only baselines (MAE/RMSE; Brier for probs).",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 3835,
+    "heading": "Source: `tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md` (89 rows)",
+    "text": "`SRC::tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md::C0088` — NEW 7.0 Establish genuine historical projection/actual coverage before publishing calibration or baseline-win claims. Evidence: production has 0 projection rows versus 219,568 score rows and 10,849,256 trend-band rows (2026-07-11); harness/docs may proceed, but result claims remain open until projection snapshots mature into actuals.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 3883,
+    "heading": "Source: `tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md` (57 rows)",
+    "text": "`SRC::tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md::C0044` (live NEW) — NEW 2.0 **P1 expected-shooting formula/identity drift:** owner-approved `ixG / unblocked attempts * 100` is locally implemented with the compatibility key retained and a focused numeric regression; keep open for versioned bounded repair and post-repair reader evidence.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 3887,
+    "heading": "Source: `tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md` (57 rows)",
+    "text": "`SRC::tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md::C0048` (live NEW) — NEW 6.0 **P1 missing-PDO unit/default ambiguity:** owner-approved neutral missing handling is locally implemented with observed-only PDO moments, explicit zero-observation/missing provenance, and `pdo_z=0`; keep open for bounded history/version and deployed evidence.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 3888,
+    "heading": "Source: `tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md` (57 rows)",
+    "text": "`SRC::tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md::C0049` (live NEW) — NEW 7.0 **P1 player-trend playoff unit and cumulative-history corruption:** explicit playoff-source seconds→minutes normalization and mixed full-accumulator coverage are local; versioned bounded repair for stored 60×-low/reset history remains open.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 3889,
+    "heading": "Source: `tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md` (57 rows)",
+    "text": "`SRC::tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md::C0050` (live NEW) — NEW 8.0 **P1 Sustainability source-cutoff provenance misstates freshness:** provenance v2 forward rows separate requested, observed, derived, and scope fields plus raw-source age with focused coverage; bounded repair policy for stored v1 false provenance remains open.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 3890,
+    "heading": "Source: `tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md` (57 rows)",
+    "text": "`SRC::tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md::C0051` (live NEW) — NEW 9.0 **P1 team-rating final-source schedule inversion:** live 09:55 NST → 10:15 no-parameter rating order is correct; a local two-day default window repairs the prior date before today's carry-forward with focused coverage, while historical version/backfill and deployed natural proof remain open.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 3891,
+    "heading": "Source: `tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md` (57 rows)",
+    "text": "`SRC::tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md::C0052` (live NEW) — NEW 10.0 **P1 rolling date-scoped refresh resets history and contaminates FORGE:** local forward runs read complete prior selected-scope history and tag new FORGE runs with the repaired contract; accuracy rejects missing/legacy provenance without rewriting historical predictions. Stored primary/support repair and raw→rolling→FORGE/backfill proof remain open.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 3894,
+    "heading": "Source: `tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md` (57 rows)",
+    "text": "`SRC::tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md::C0055` (live NEW) — NEW 13.0 **P1 FORGE result/accuracy coverage and run-version gap:** canonical latest-run eligibility is 7,523 player-games with 1,344 missing; new-run input provenance plus the local atomic RPC exclude legacy/contaminated runs while preserving historical projections and eligible empty-scope cleanup. Migration application, bounded eligible-run backfill, and post-write idempotency/coverage remain open.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 3966,
+    "heading": "Source: `tasks/TASKS/three-pillars-analytics/tasks-prd-three-pillars-analytics.md` (85 rows)",
+    "text": "`SRC::tasks/TASKS/three-pillars-analytics/tasks-prd-three-pillars-analytics.md::C0066` (original L152) — 13.0 NEW: Provide live external odds-provider verification once a ParlayAPI key is available",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 3969,
+    "heading": "Source: `tasks/TASKS/three-pillars-analytics/tasks-prd-three-pillars-analytics.md` (85 rows)",
+    "text": "`SRC::tasks/TASKS/three-pillars-analytics/tasks-prd-three-pillars-analytics.md::C0069` (original L155) — 13.3 Confirm at least one live prop market lands in `prop_market_prices_daily` and player matching succeeds for the target slate.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 5254,
+    "heading": "Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md` (111 rows)",
+    "text": "`SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md::C0046` (live NEW) — NEW 20.0 P1 producer completeness/backfill: local generated-schema/raw-manifest completeness, disjoint field ownership, numeric assignments/game types, deterministic position paging, playoff OT, strict PBP shift timelines, and exact strength invalidation are verified. The bounded 14,976-row/392-game relationship and 12,279-row/329-current-season strength inventories remain; keep open for one authoritative materializer, transactional/versioned producer boundary, bounded history repair, production deployment, and rollback evidence (2026-07-19).",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 5257,
+    "heading": "Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md` (111 rows)",
+    "text": "`SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md::C0049` (live NEW) — NEW 23.0 P1 derived-strength failure boundary: local strict clocks/identities/situations/PBP/raw-player coverage, exact prior player/team scope deletion, dependent-stage stop, and failed-date cursor regressions pass. Keep open for a durable exact status/version gate, transaction/serialization, production deployment, and stale-history proof (2026-07-19).",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 5258,
+    "heading": "Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md` (111 rows)",
+    "text": "`SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md::C0050` (live NEW) — NEW 24.0 P1 scheduled projection continuation: local previous-slate defaults, untruncated same-date processing, accepted deterministic date/game cursors, exact failed cursor, and greater-than-six continuation pass. Keep open for durable cursor storage, coordinated production cron commands/deployment, bounded retry/runtime proof, and natural evidence (2026-07-19).",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 5259,
+    "heading": "Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md` (111 rows)",
+    "text": "`SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md::C0051` (live NEW) — NEW 25.0 P1 PBP completeness/freshness: final metadata/nonterminal/unique-event/terminal validation, prevalidated shifts, exact replacement, source fingerprints, shared lock/versioned RPC, rollback/concurrency, deployed one-game publication, and physical no-DML replay pass. Keep open because job 104 can bypass the manifest through NEW 27 and bounded history/backfill proof is absent (updated 2026-07-21).",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 5260,
+    "heading": "Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md` (111 rows)",
+    "text": "`SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md::C0052` (live NEW) — NEW 26.0 P1 exact relationship correction: shared-lock/current-input CAS, relationship-only clearing, strength preservation, exact current-player replacement/counts, correction/removal, rollback, idempotency, and one production canary/replay pass. Keep open for bounded repair, active canonical scheduling, natural evidence, and legacy-owner retirement under NEW 20/27/29/38 (updated 2026-07-21).",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 5261,
+    "heading": "Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md` (111 rows)",
+    "text": "`SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md::C0053` (live NEW) — NEW 27.0 P1 active legacy PBP collision: exact authoritative checkpoint `58cca4e31e44981df3e3089b6ebd6f0cb1d20139` publishes one authenticated/audited `update-PbP` adapter whose recent, exact-game, bounded/start-only, and current-day modes invoke the named unwrapped canonical transaction; invalid controls fail closed and auth inventory is 20/1/31. Keep open because `games=all` deliberately remains authenticated legacy for one release and deployment, caller inventory, replacement backfill semantics, rollback, and retirement remain. Job 104's 100-second caller timeout is shorter than the canonical handler's 270-second default, so deployment requires temporary deactivation plus bounded auth/non-writing/timing gates before reactivation (published 2026-07-21).",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 5263,
+    "heading": "Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md` (111 rows)",
+    "text": "`SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md::C0055` (live NEW) — NEW 29.0 P1 exact normalized Gamecenter scopes: bind normalized roster/PBP/shift replacement to the latest immutable raw hashes so removed upstream rows cannot survive; prove correction/removal, downstream xG/underlying/team-unit-TOI compatibility, bounded repair, rollback, and idempotency (discovered 2026-07-20).",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 5266,
+    "heading": "Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md` (111 rows)",
+    "text": "`SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md::C0058` (live NEW) — NEW 32.0 P1 dependent expected-version CAS: relationship/derived clients and RPCs verify input hash plus version under the shared lock; isolated ABA/version-race and deployed production canary/replay pass. Keep open solely until NEW 27/29 contain every bypassing physical source writer (updated 2026-07-21).",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 5267,
+    "heading": "Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md` (111 rows)",
+    "text": "`SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md::C0059` (live NEW) — NEW 33.0 P1 offseason queue season identity: direct server and implicit-route tests prove a future season is excluded and the latest-started season reaches the paginated game query; keep open for bounded deployed implicit-queue offseason proof with unchanged schedules (updated 2026-07-21).",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 5271,
+    "heading": "Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md` (111 rows)",
+    "text": "`SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md::C0063` (live NEW) — NEW 37.0 P2 relationship algorithm-version queueing: a shared-selector route test proves a completed older-algorithm row is queued and reaches per-game processing; keep open for value-free legitimate-candidate selection plus one bounded deployed implicit v3 writer/audit/no-unrelated-mutation proof (updated 2026-07-21).",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 5272,
+    "heading": "Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md` (111 rows)",
+    "text": "`SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md::C0064` (live NEW) — NEW 38.0 P1 canonical relationship scheduling/order: local coordinator already runs canonical input → relationship → derived with fail-stop/status gating and job 16 targets a compatibility adapter. Keep open because deployed schedules still place job 16 before input and NEW 49/50 must reconcile ownership/runtime before authoritative cutover, rollback, and natural-order proof (updated 2026-07-21).",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 5273,
+    "heading": "Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md` (111 rows)",
+    "text": "`SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md::C0065` (live NEW) — NEW 39.0 P1 stable cross-day backlog: implicit coordinator runs preserve the durable input queue, resume oldest unfinished input, avoid explicit date/limit bypass, and stop downstream work on failure. The owner selected per-game manifests plus stage-local cursors/leases with no global operation identity. Keep open for deployed next-day/stage-recovery and natural-run proof (ownership decision 2026-07-30).",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 5515,
+    "heading": "Source: `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md` (72 rows)",
+    "text": "`SRC::tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md::C0039` (original L77) — 6.0 Add operational scheduling, retries, and observability",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 5519,
+    "heading": "Source: `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md` (72 rows)",
+    "text": "`SRC::tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md::C0043` (original L81) — 6.4 Make historical backfill resumable/idempotent with bounded date/player scopes and machine-readable telemetry; do not treat local log files as the sole operational record. Week-scoped provider semantics are valid, but the global game catalog has no league identity and connected-account storage has nine distinct 2025 leagues/no older-season league; require controlled provider discovery/equivalence evidence instead of selecting a fixed or arbitrary league (verified read-only 2026-07-30).",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 5528,
+    "heading": "Source: `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md` (72 rows)",
+    "text": "`SRC::tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md::C0052` (original L92) — 8.0 Execute staged verification and synchronize the initiative",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 5531,
+    "heading": "Source: `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md` (72 rows)",
+    "text": "`SRC::tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md::C0055` (original L95) — 8.3 Run staging/provider controlled verification only through a checkpoint; record counts without storing credentials or sensitive provider payloads.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 5532,
+    "heading": "Source: `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md` (72 rows)",
+    "text": "`SRC::tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md::C0056` (original L96) — 8.4 Reconcile one bounded end-to-end path from Yahoo source through history/mapping to Draft Dashboard/player visibility.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 5533,
+    "heading": "Source: `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md` (72 rows)",
+    "text": "`SRC::tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md::C0057` (original L97) — 8.5 Update the PRD, this list, auth/provider tasks, Draft Dashboard list, cron docs, runbook, and master ledger with final evidence.",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 5539,
+    "heading": "Source: `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md` (72 rows)",
+    "text": "`SRC::tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md::C0063` (original L114) — NEW 9.5 **P1 incomplete ingestion lifecycle and fixed-season scheduling:** local metadata/week and player-key snapshot RPC rollback/idempotency/correction/removal/two-session proofs, exact scheduler cutover, and lifecycle-specific alert telemetry pass; the required Production predeploy migrations are applied and read back. Keep open for controlled provider runtime/league discovery, legacy Python retirement, and resumable historical backfill (updated 2026-07-31).",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/rules/generate-tasks.mdc",
+    "line": 66,
+    "heading": "Tasks",
+    "text": "1.0 Parent Task Title",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/rules/generate-tasks.mdc",
+    "line": 67,
+    "heading": "Tasks",
+    "text": "1.1 [Sub-task description 1.1]",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/rules/generate-tasks.mdc",
+    "line": 68,
+    "heading": "Tasks",
+    "text": "1.2 [Sub-task description 1.2]",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/rules/generate-tasks.mdc",
+    "line": 69,
+    "heading": "Tasks",
+    "text": "2.0 Parent Task Title",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/rules/generate-tasks.mdc",
+    "line": 70,
+    "heading": "Tasks",
+    "text": "2.1 [Sub-task description 2.1]",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "tasks/TASKS/rules/generate-tasks.mdc",
+    "line": 71,
+    "heading": "Tasks",
+    "text": "3.0 Parent Task Title",
+    "checked": false,
+    "prior_adjudication": null
+  },
+  {
+    "path": "docs/repository-audit/generate-audit-tasks-prompt.md",
+    "line": 58,
+    "heading": "Atomic subtasks",
+    "text": "AUDIT-TASK-<NNN>.<N> — <single reviewable change>",
+    "checked": false,
+    "prior_adjudication": null
+  }
+]

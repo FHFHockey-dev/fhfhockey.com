@@ -1,0 +1,273 @@
+--- a/web/lib/rosterScheduleOptimizer/refreshForecastInputs.ts
++++ b/web/lib/rosterScheduleOptimizer/refreshForecastInputs.ts
+@@ -16,11 +16,13 @@
+   return { ...snapshot,
+     id: `${snapshot.id.slice(0, 100)}:forecasts:${manifest.id.slice(0, 48)}:${read.checkedAt}`,
+     context: { ...snapshot.context, asOf: read.checkedAt },
+-    forecasts: read.data.forecasts, baselineSources: read.data.baselineSources,
++    forecasts: read.data.forecasts, baselineSources: read.data.baselineSources, participationSources: read.data.participationSources,
+     forecastManifest: manifest, forecastInputExclusions: undefined,
+     evidence: { ...snapshot.evidence,
+       forecasts: read.data.evidence.forecasts ?? { source: "Shared forecast read", seasonId: manifest.seasonId,
+         asOf: manifest.asOf, completeness: "partial", limitations: ["Forecast coverage is unverified."] },
++      participation: read.data.evidence.participation ?? { source: "Shared participation read", seasonId: manifest.seasonId,
++        asOf: manifest.asOf, completeness: "partial", limitations: ["Participation coverage is unverified."] },
+       baselines: read.data.evidence.baselines ?? { source: "Shared baseline read", seasonId: manifest.seasonId,
+         asOf: manifest.asOf, completeness: "partial", limitations: ["Baseline coverage is unverified."] },
+     },
+--- a/web/lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts
++++ b/web/lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts
+@@ -1,5 +1,5 @@
+ import { describe, expect, it } from "vitest";
+-import { forecastCalendarPolicy, type ContributionSource } from "lib/player-forecasts/contributions";
++import { forecastCalendarPolicy, type ContributionParticipation, type ContributionSource } from "lib/player-forecasts/contributions";
+ import { resolvePlanningContributions } from "lib/player-forecasts/planningContributions";
+ import { candidatePlanForSort, candidatePlanMetrics } from "./candidatePlanMetrics";
+ import { contributionLedger } from "./contributionLedger";
+@@ -78,6 +78,36 @@
+     expect(refreshed.forecasts).toBe(read.data.forecasts);
+   });
+ 
++  it("replaces the participation catalog and evidence while preserving provider state and denied uses", () => {
++    const { snapshot, read } = fixture();
++    const receipt: ContributionParticipation = { playerId: 1, nhlPlayerId: 1001, seasonId: snapshot.context.seasonId,
++      gameId: 101, teamId: 1, scheduledAt: snapshot.games[0].startsAt!, basis: "appearance", probability: 0.5,
++      revisionId: "synthetic-participation", released: true, scheduleRevision: "fixture-schedule", rosterRevision: "fixture-roster-1",
++      allowedUses: { assignment: false, totals: false, comparison: false, conditionalTieBreak: true },
++      issuedAt: read.checkedAt, cutoffAt: snapshot.context.asOf, expiresAt: "2026-10-19T00:00:00Z" };
++    snapshot.participationSources = [{ ...receipt, revisionId: "old" }];
++    read.data.participationSources = [receipt];
++    read.data.evidence.participation = { source: "Synthetic uncalibrated participation", seasonId: snapshot.context.seasonId,
++      asOf: read.checkedAt, completeness: "partial", limitations: ["Calibration unavailable."] };
++    const refreshed = refreshForecastInputs(snapshot, read);
++    expect(refreshed.participationSources).toBe(read.data.participationSources);
++    expect(refreshed.participationSources?.[0].allowedUses?.totals).toBe(false);
++    expect(refreshed.evidence.participation).toBe(read.data.evidence.participation);
++    expect(refreshed.roster).toBe(snapshot.roster);
++    expect(refreshed.rules).toBe(snapshot.rules);
++    expect(refreshed.lockedAssignments).toBe(snapshot.lockedAssignments);
++    expect(refreshed.evidence.roster).toBe(snapshot.evidence.roster);
++    for (const catalog of [[], undefined]) {
++      const next = refreshForecastInputs(refreshed, { ...read, checkedAt: "2026-10-12T12:04:00Z", data: {
++        ...read.data, participationSources: catalog, evidence: {},
++        forecastManifest: { ...read.data.forecastManifest!, asOf: "2026-10-12T12:03:00Z" },
++      } });
++      expect(next.participationSources).toBe(catalog);
++      expect(next.evidence.participation).toMatchObject({ completeness: "partial", limitations: ["Participation coverage is unverified."] });
++      expect(snapshot.participationSources?.[0].revisionId).toBe("old");
++    }
++  });
++
+   it.each(["provider", "seasonId", "leagueId", "teamId", "startDate", "endDate", "timeZone"] as const)("rejects a read for another %s", key => {
+     const { snapshot, read } = fixture(); (read.context as any)[key] = key === "seasonId" ? 20252026 : "other";
+     expect(refreshForecastInputs(snapshot, read)).toBe(snapshot);
+--- a/web/lib/rosterScheduleOptimizer/workspace.ts
++++ b/web/lib/rosterScheduleOptimizer/workspace.ts
+@@ -281,7 +281,7 @@
+   })).values()];
+   return {
+     id: `retained:${workspace.context.teamId}:${workspace.context.startDate}:${workspace.context.endDate}:${asOf}`,
+-    context: { ...workspace.context, asOf }, players, roster: workspace.roster, games: data.games, forecasts: data.forecasts, baselineSources: data.baselineSources, forecastManifest: data.forecastManifest,
++    context: { ...workspace.context, asOf }, players, roster: workspace.roster, games: data.games, forecasts: data.forecasts, baselineSources: data.baselineSources, participationSources: data.participationSources, forecastManifest: data.forecastManifest,
+     rules: { ...workspace.rules, acquisitionTiming: "unknown", acquisitionCost: null, periods: [], goalieMinimum: { ...workspace.rules.goalieMinimum, credited: null }, unsupported: [...workspace.rules.unsupported, "Retained roster inputs are unverified; this is provisional schedule analysis."] },
+     lockedAssignments: workspace.lockedAssignments ?? [], realized: {}, opponent: null,
+     evidence: { ...data.evidence, roster: { source: "Retained local roster", asOf: workspace.context.asOf, seasonId: workspace.context.seasonId, completeness: "partial", limitations: ["Yahoo has not verified this roster, its locks or player availability for the current analysis."] } },
+--- a/web/lib/rosterScheduleOptimizer/workspace.test.ts
++++ b/web/lib/rosterScheduleOptimizer/workspace.test.ts
+@@ -111,6 +111,32 @@
+   expect(result.opponent).toBeNull();
+ });
+ 
++it("carries participation receipts and explicit revocation into a retained roster without restoring provider authority", () => {
++  const workspace = defaultWorkspace(new Date("2026-10-01T00:00:00Z"));
++  workspace.context.provider = "yahoo";
++  workspace.roster = [{ playerId: player.id, position: "active" }];
++  workspace.manualPlayers = [{ ...player, availability: "rostered", canDrop: true }];
++  const participation = { playerId: 1, nhlPlayerId: 1, seasonId: workspace.context.seasonId, gameId: 31, teamId: 6,
++    basis: "appearance" as const, probability: 0.5, revisionId: "synthetic-participation", released: true,
++    allowedUses: { assignment: true, totals: false, comparison: false, conditionalTieBreak: true },
++    scheduleRevision: "fixture-schedule", rosterRevision: "fixture-roster", issuedAt: workspace.context.asOf,
++    cutoffAt: workspace.context.asOf, expiresAt: "2026-10-08T00:00:00Z" };
++  const evidence = { source: "Synthetic uncalibrated participation", asOf: workspace.context.asOf,
++    seasonId: workspace.context.seasonId, completeness: "partial" as const, limitations: ["Calibration unavailable."] };
++  const data = { players: [], games: [], forecasts: [], participationSources: [participation], evidence: { participation: evidence } };
++  const before = JSON.stringify(workspace);
++  const retained = retainedScheduleSnapshot(workspace, data, "2026-10-02T00:00:00Z")!;
++  expect(retained.participationSources).toBe(data.participationSources);
++  expect(retained.evidence.participation).toBe(evidence);
++  expect(retained.participationSources?.[0].allowedUses?.totals).toBe(false);
++  expect(retained.players[0]).toMatchObject({ availability: "unknown", canDrop: null });
++  expect(retained.rules.acquisitionTiming).toBe("unknown");
++  expect(retained.rules.periods).toEqual([]);
++  expect(retainedScheduleSnapshot(workspace, { ...data, participationSources: [] }, retained.context.asOf)?.participationSources).toEqual([]);
++  expect(retainedScheduleSnapshot(workspace, { ...data, participationSources: undefined }, retained.context.asOf)?.participationSources).toBeUndefined();
++  expect(JSON.stringify(workspace)).toBe(before);
++});
++
+ it("uses current catalog lineage only for matching retained player identity and team", () => {
+   const workspace = defaultWorkspace(new Date("2026-10-01T00:00:00Z"));
+   workspace.roster = [{ playerId: player.id, position: "active" }];
+--- a/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
++++ b/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+@@ -572,7 +572,7 @@
+       return retained ? withCachedYahooEligibility({ ...retained, id: `${retained.id}:${fingerprint(workspace)}` }, yahooEligibility.receipt) : null;
+     }
+     if (!data) return null;
+-    return { id: `manual:${fingerprint({ contextKey, forecastManifest: data.forecastManifest?.id, roster: workspace.roster, rules: workspace.rules, locks: workspace.lockedAssignments, manualPlayers: workspace.manualPlayers, realized: workspace.realized, opponent: workspace.opponent, asOf: workspace.context.asOf })}`, context: workspace.context, players, roster: workspace.roster, games: data.games, forecasts: data.forecasts, baselineSources: data.baselineSources, forecastManifest: data.forecastManifest, rules: workspace.rules, lockedAssignments: workspace.lockedAssignments ?? [], realized: workspace.realized, opponent: workspace.opponent, evidence: data.evidence };
++    return { id: `manual:${fingerprint({ contextKey, forecastManifest: data.forecastManifest?.id, roster: workspace.roster, rules: workspace.rules, locks: workspace.lockedAssignments, manualPlayers: workspace.manualPlayers, realized: workspace.realized, opponent: workspace.opponent, asOf: workspace.context.asOf })}`, context: workspace.context, players, roster: workspace.roster, games: data.games, forecasts: data.forecasts, baselineSources: data.baselineSources, participationSources: data.participationSources, forecastManifest: data.forecastManifest, rules: workspace.rules, lockedAssignments: workspace.lockedAssignments ?? [], realized: workspace.realized, opponent: workspace.opponent, evidence: data.evidence };
+   }, [workspace, data, players, supplemented, contextKey, lastUpdated, viewingSaved, account, yahooEligibility.receipt, sharedForecastRead]);
+   const { result: rawResult, error: planningError, loading: planningLoading } = useRosterPlanning(snapshot, workspace.intent);
+   const result = rawResult && rawResult.snapshotId === snapshot?.id && rawResult.intentRevision === workspace.intent.revision ? rawResult : null;
+--- a/web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx
++++ b/web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx
+@@ -125,6 +125,29 @@
+     expect(evaluated.at(-1)?.forecasts).toEqual([fixtureForecast]);
+     expect(state.reads()).toBe(1);
+     expect(state.saved().intent).toEqual(original.intent);
++  });
++
++  it("passes the shared participation catalog through manual evaluation and save validation", async () => {
++    const workspace = defaultWorkspace(new Date("2026-10-15T12:00:00Z"));
++    localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
++    const catalog = [{ playerId: 1, nhlPlayerId: 1, seasonId: workspace.context.seasonId, gameId: 31, teamId: 6,
++      basis: "appearance" as const, probability: 0.5, revisionId: "synthetic-participation", released: true,
++      scheduleRevision: "synthetic-schedule", rosterRevision: "synthetic-roster", issuedAt: workspace.context.asOf,
++      cutoffAt: workspace.context.asOf, expiresAt: "2026-10-20T00:00:00Z",
++      allowedUses: { assignment: true, totals: false, comparison: false, conditionalTieBreak: true } }];
++    const snapshots: PlanningSnapshot[] = [];
++    planningState.evaluate = (snapshot, intent) => { snapshots.push(snapshot); return planRoster(snapshot, intent); };
++    vi.stubGlobal("fetch", vi.fn(async (url: string) => ({ ok: true, json: async () => url.includes("/data?")
++      ? { success: true, data: { ...data, participationSources: catalog } }
++      : url.endsWith("/access") ? { data: { eligible: false, capabilities: [] } } : { data: null } })));
++    render(<RosterScheduleOptimizer />);
++    await waitFor(() => expect(snapshots.at(-1)?.participationSources).toBe(catalog));
++    const parsed = saveWorkspaceSchema.safeParse({ workspace: JSON.parse(localStorage.getItem(WORKSPACE_KEY)!), snapshot: snapshots.at(-1), expectedVersion: null });
++    expect(parsed.success).toBe(true);
++    if (parsed.success) {
++      expect(parsed.data.snapshot?.participationSources).toEqual(catalog);
++      expect(parsed.data.snapshot?.participationSources?.[0].allowedUses?.totals).toBe(false);
++    }
+   });
+ 
+   it("saves a shared-reloaded connected workspace with coherent evaluation time and unchanged manager/provider state", async () => {
+--- a/web/lib/in-season/workspaceSchema.ts
++++ b/web/lib/in-season/workspaceSchema.ts
+@@ -47,13 +47,21 @@
+   mean: z.number().finite(), participationIntegrated: z.boolean(), cutoffAt: instant,
+   issuedAt: instant, expiresAt: instant, sourceWatermark: id, scheduleRevision: id,
+   rosterRevision: id, legacyAvailabilityAdjustment: z.boolean().optional(), limitations: stringArray.optional() }).strict();
++const hash = z.string().regex(/^[a-f0-9]{64}$/);
++const participationModel = z.object({ version: z.literal("skater-participation-frequency-v1"),
++  event: z.literal("positive_minutes"), probabilityStatus: z.literal("uncalibrated_model"),
++  calibration: z.literal("unavailable"), inputHash: hash, evidenceHashes: z.array(hash).max(1000),
++  numerator: z.number().int().min(0).max(20), denominator: z.number().int().min(1).max(20),
++  selectedGameIds: z.array(positiveInteger).max(20).refine(ids => new Set(ids).size === ids.length, "Duplicate selected participation game."),
++  limitations: stringArray }).strict().refine(model => model.numerator <= model.denominator, "Participation numerator exceeds denominator.");
++const contributionParticipation = z.object({ playerId: positiveInteger, nhlPlayerId: positiveInteger, seasonId, gameId: positiveInteger,
++  teamId: positiveInteger, scheduledAt: instant.optional(), scheduleRevision: id, rosterRevision: id,
++  basis: z.enum(["appearance", "start"]), probability: z.number().finite().min(0).max(1), revisionId: id,
++  released: z.boolean(), allowedUses: allowedUses.optional(), issuedAt: instant, cutoffAt: instant,
++  expiresAt: instant, competitionId: id.optional(), model: participationModel.optional() }).strict();
+ const resolvedContribution = z.object({ resolverVersion: z.literal("contribution-resolver-v1"),
+   inputs: z.object({ detailed: contributionSource.optional(), baseline: contributionSource.optional(),
+-    participation: z.object({ playerId: positiveInteger, nhlPlayerId: positiveInteger, seasonId, gameId: positiveInteger,
+-      teamId: positiveInteger, scheduledAt: instant.optional(), scheduleRevision: id, rosterRevision: id,
+-      basis: z.enum(["appearance", "start"]), probability: z.number().finite().min(0).max(1), revisionId: id,
+-      released: z.boolean(), allowedUses: allowedUses.optional(), issuedAt: instant, cutoffAt: instant,
+-      expiresAt: instant, competitionId: id.optional() }).strict().optional(),
++    participation: contributionParticipation.optional(),
+     horizonDays: positiveInteger, calendarPolicy: calendarPolicy.optional(), servingEnabled: z.boolean() }).strict().optional(),
+   game: contributionGame, targetKey: id, sourceKind: z.enum(["detailed", "baseline", "blended"]).nullable(),
+   conditionalMean: nullableNumber, unconditionalMean: nullableNumber,
+@@ -89,7 +97,7 @@
+   acceptedNewsRevision: id.nullable().optional(),
+   seasonId, asOf: instant, scheduleRevision: id, rosterRevision: id, issuedRevisionIds: stringArray,
+   exclusions: z.array(z.object({ gameId: id, playerId: id.optional(), targetKey: id.optional(), reasons: z.array(forecastExclusionReason).max(100) }).strict()).max(15000).optional(),
+-  baselineChecksum: id.nullable(), requiredOpportunities: z.number().int().nonnegative(),
++  baselineChecksum: id.nullable(), participationRevisionIds: z.array(id).max(15000).optional(), participationChecksum: hash.nullable().optional(), requiredOpportunities: z.number().int().nonnegative(),
+   forecastedOpportunities: z.number().int().nonnegative(),
+   exclusionCounts: z.record(z.string().min(1).max(50), z.number().int().nonnegative()) }).strict();
+ const period = z.object({ id, start: instant, end: instant, remaining: z.number().int().nonnegative().nullable(), source: z.enum(["provider", "manager", "unknown"]), lineupLockAt: instant.nullable().optional() }).strict().refine((value) => Date.parse(value.start) < Date.parse(value.end) && (!value.lineupLockAt || Date.parse(value.lineupLockAt) <= Date.parse(value.end)), "Invalid acquisition period bounds.");
+@@ -121,6 +129,7 @@
+ export const snapshotSchema: z.ZodType<PlanningSnapshot> = z.object({ id, context: contextSchema, acquisitionEvidence: acquisitionEvidence.optional(),
+   players: z.array(player).max(3000), roster: z.array(rosterEntry).max(200), games: z.array(game).max(5000),
+   forecasts: z.array(forecast).max(15000), baselineSources: z.array(contributionSource).max(15000).optional(),
++  participationSources: z.array(contributionParticipation).max(15000).optional(),
+   forecastInputExclusions: forecastManifest.shape.exclusions,
+   forecastManifest: forecastManifest.optional(), rules, lockedAssignments: z.array(lockedAssignment).max(1000),
+   realized: statLine, opponent, evidence: z.record(z.string().min(1), evidence) }).strict();
+--- a/web/lib/in-season/workspaceSchema.test.ts
++++ b/web/lib/in-season/workspaceSchema.test.ts
+@@ -4,6 +4,10 @@
+ const context = { provider: "manual", seasonId: 20262027, leagueId: "league", teamId: "team", startDate: "2026-10-01", endDate: "2026-10-07", timeZone: "America/New_York", asOf: "2026-10-01T12:00:00Z" };
+ const rules = { lineupMode: "daily", rosterSlots: { C: 1 }, lineupPeriods: [{ id: "week", start: "2026-10-01T00:00:00Z", end: "2026-10-08T00:00:00Z", lockAt: null }], acquisitionTiming: "unknown", acquisitionCost: null, periods: [], scoring: { mode: "points", weights: {}, categories: [] }, goalieMinimum: { required: null, credited: null, periodStart: "2026-10-01", periodEnd: "2026-10-07", counts: "unknown", penalty: "unknown" }, unsupported: [] };
+ const workspace = { version: 1, context, rules, managerRuleOverrides: { acquisitionTiming: "next_day", scoring: { categories: [{ key: "GOALS", direction: "higher" }] }, goalieMinimum: { credited: 2 } }, roster: [], intent: { revision: 0, steps: [], protectedPlayerIds: [], excludedPlayerIds: [], goalieCoverage: "accept_risk", goalieWindow: "any", goalieSplit: "mon_thu", alternativeCount: 10 }, manualPlayers: [], unresolvedNames: [], realized: {}, opponent: null };
++const modeledMetadata = { version: "skater-participation-frequency-v1", event: "positive_minutes",
++  probabilityStatus: "uncalibrated_model", calibration: "unavailable", inputHash: "a".repeat(64),
++  evidenceHashes: ["b".repeat(64)], numerator: 1, denominator: 2, selectedGameIds: [101, 102],
++  limitations: ["Synthetic fixture only; calibration unavailable."] };
+ const snapshot = { id: "snapshot", context, players: [], roster: [], games: [], forecasts: [], rules, lockedAssignments: [], realized: {}, opponent: null, evidence: {} };
+ 
+ describe("saved in-season workspace validation", () => {
+@@ -47,7 +51,7 @@
+           gameId: identity.gameId, teamId: identity.teamId, scheduleRevision: identity.scheduleRevision,
+           rosterRevision: identity.rosterRevision, basis: "appearance", probability: 0.5, revisionId: "participation",
+           released: true, allowedUses: source.allowedUses, issuedAt: context.asOf, cutoffAt: context.asOf,
+-          expiresAt: source.expiresAt } },
++          expiresAt: source.expiresAt, model: modeledMetadata } },
+       sourceKind: "baseline", conditionalMean: 0.5, unconditionalMean: null, unit: "count", basis: "per_appearance",
+       allowedUses: { assignment: false, totals: false, comparison: false, conditionalTieBreak: true },
+       sourceIds: ["rate-a"], participationRevisionId: null, blendWeight: null,
+@@ -67,16 +71,21 @@
+         sourceKind: "baseline", sourceWatermark: "captured-reads", cutoffAt: context.asOf, expiresAt: source.expiresAt,
+         conditioning: "unconditional", startProbability: null, confirmedStart: false, revisionId: "rate-a",
+         issuedAt: context.asOf, modelVersion: "baseline-v1", limitations: [] }],
+-      baselineSources: [source], forecastManifest: { version: "planning-forecasts-v1", id: "manifest-a",
++      baselineSources: [source], participationSources: [contribution.inputs.participation], forecastManifest: { version: "planning-forecasts-v1", id: "manifest-a",
+         calendarPolicy, acceptedNewsRevision: "opaque-news-receipts",
+         seasonId: 20262027, asOf: context.asOf, scheduleRevision: "schedule-a", rosterRevision: "roster-a",
+-        issuedRevisionIds: [], baselineChecksum: "checksum-a", requiredOpportunities: 1,
++        issuedRevisionIds: [], baselineChecksum: "checksum-a", participationRevisionIds: ["participation"], participationChecksum: "c".repeat(64), requiredOpportunities: 1,
+         forecastedOpportunities: 0, exclusionCounts: { missing_participation: 1 },
+         exclusions: [{ gameId: "31", reasons: ["discovery_failed", "game_mismatch", "invalid_cutoff", "no_usable_target", "conflicting_forecast"] }] } };
+     const parsed = saveWorkspaceSchema.safeParse({ workspace, snapshot: enriched, expectedVersion: null });
+     expect(parsed.success).toBe(true);
+     if (parsed.success) {
+       expect(parsed.data.snapshot?.baselineSources?.[0].sourceId).toBe("rate-a");
++      expect(parsed.data.snapshot?.participationSources).toEqual(enriched.participationSources);
++      expect(parsed.data.snapshot?.participationSources?.[0].allowedUses?.totals).toBe(false);
++      expect(parsed.data.snapshot?.participationSources?.[0].model).toEqual(modeledMetadata);
++      expect(parsed.data.snapshot?.forecastManifest?.participationRevisionIds).toEqual(["participation"]);
++      expect(parsed.data.snapshot?.forecastManifest?.participationChecksum).toBe("c".repeat(64));
+       expect(parsed.data.snapshot?.forecastManifest?.id).toBe("manifest-a");
+       expect(parsed.data.snapshot?.forecastManifest?.calendarPolicy).toEqual(calendarPolicy);
+       expect(parsed.data.snapshot?.forecastManifest?.acceptedNewsRevision).toBe("opaque-news-receipts");
+@@ -111,6 +120,28 @@
+     expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...enriched,
+       forecasts: [{ ...enriched.forecasts[0], revisionId: "a".repeat(4097) }] }, expectedVersion: null }).success).toBe(false);
+   });
++  it.each([
++    { numerator: 3 }, { numerator: NaN }, { denominator: Infinity }, { denominator: 0 }, { denominator: 21 },
++    { numerator: 0.5 }, { inputHash: "bad" }, { evidenceHashes: ["bad"] },
++    { selectedGameIds: [101, 101] }, { selectedGameIds: Array.from({ length: 21 }, (_, i) => i + 1) },
++    { selectedGameIds: [0] }, { calibration: "calibrated" }, { probabilityStatus: "confirmed" }, { privatePayload: "secret" },
++  ])("rejects malformed or promoted participation metadata %j", invalid => {
++    const receipt = { playerId: 7, nhlPlayerId: 77, seasonId: 20262027, gameId: 31, teamId: 6,
++      scheduleRevision: "schedule-a", rosterRevision: "roster-a", basis: "appearance", probability: 0.5,
++      revisionId: "synthetic-participation", released: true, issuedAt: context.asOf, cutoffAt: context.asOf,
++      expiresAt: "2026-10-08T00:00:00Z", model: { ...modeledMetadata, ...invalid } };
++    expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...snapshot, participationSources: [receipt] }, expectedVersion: null }).success).toBe(false);
++  });
++  it("preserves explicit empty participation catalogs and nullable manifest checksums", () => {
++    const parsed = saveWorkspaceSchema.parse({ workspace, snapshot: { ...snapshot, participationSources: [], forecastManifest: {
++      version: "planning-forecasts-v1", id: "manifest", seasonId: 20262027, asOf: context.asOf,
++      scheduleRevision: "schedule", rosterRevision: "roster", issuedRevisionIds: [], baselineChecksum: null,
++      participationRevisionIds: [], participationChecksum: null, requiredOpportunities: 0, forecastedOpportunities: 0, exclusionCounts: {},
++    } }, expectedVersion: null });
++    expect(parsed.snapshot?.participationSources).toEqual([]);
++    expect(parsed.snapshot?.forecastManifest?.participationRevisionIds).toEqual([]);
++    expect(parsed.snapshot?.forecastManifest?.participationChecksum).toBeNull();
++  });
+   it("preserves manager-entered locked assignments", () => {
+     const lockedAssignments = [{ date: "2026-10-01", playerId: "p", slotId: "G" }];
+     const parsed = saveWorkspaceSchema.safeParse({ workspace: { ...workspace, lockedAssignments }, snapshot, expectedVersion: null });

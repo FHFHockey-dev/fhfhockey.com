@@ -1,0 +1,16 @@
+--- retained-archive-adapter
++++ local-adapter
+@@ -4,11 +4,11 @@
+   type ClaimAlignment, type ClaimEffectHistory, type ClaimEvidence, type ClaimInterpretation,
+   type ClaimSourceRoot, type ClaimSpan, type LegacyClaimRef, type SourceClaimCandidate,
+   type SourceClaimPlanInput, type SourceClaimProposal, type SourceClaimRegistry,
+-} from "../../ifttt-claim-identity-repair-2026-10-15/source/web/lib/sources/tweetSourceClaimRegistry";
++} from "./tweetSourceClaimRegistry";
+ import {
+   reduceTweetSemanticEvents, type TweetSemanticObservation, type TweetSemanticReduction,
+   type TweetSemanticScope,
+-} from "../../ifttt-claim-identity-repair-2026-10-15/source/web/lib/sources/tweetSemanticEvents";
++} from "./tweetSemanticEvents";
+ 
+ /** OFFLINE NO-DISPATCH CANDIDATE. Neither this module nor its dependencies dispatch. */
+ export type RetainedClaimDerivation = Readonly<{

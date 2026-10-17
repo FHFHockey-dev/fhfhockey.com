@@ -22,6 +22,25 @@ import { buildStarterBoardOperationsReport, type BoardOperationalEvent } from ".
 import { boardComponentDecisions, boardReviewSchema, buildBoardValidationDisclosure, normalizeBoardValidationDisclosure,
   type BoardValidationPolicy, type BoardValidationReview } from "./starterBoardValidation";
 
+describe("shared PP-role normalization", () => {
+  it("preserves explicit missing/not-applicable states and never admits a raw role or source", () => {
+    const unavailable = { value: null, status: "unavailable", reason: "current_role_evidence_unavailable", source: null };
+    const notApplicable = { value: null, status: "not_applicable", reason: "not_applicable", source: null };
+    const read = (powerPlayRole?: unknown) => normalizeStartChartResponse({ date: "2026-10-15", players: [{ player_id: 7,
+      gameExpectation: { playerId: "7", scheduleRevision: "schedule-a", powerPlayRole, targets: {
+        PP_POINTS: { expected: 0.8, allowedUses: { totals: true } },
+      } } }] }).players[0].gameExpectation!;
+    for (const role of [unavailable, notApplicable]) expect(read(role).powerPlayRole).toEqual(role);
+    for (const role of [undefined, "PP1", { value: "PP1", status: "qualified", source: { privateBody: "secret" } },
+      { ...notApplicable, value: "PP1" }, { ...notApplicable, source: { privateBody: "secret" } }]) {
+      const normalized = read(role);
+      expect(normalized.powerPlayRole).toEqual(unavailable);
+      expect(normalized.targets.PP_POINTS.expected).toBe(0.8);
+      expect(JSON.stringify(normalized)).not.toContain("secret");
+    }
+  });
+});
+
 describe("immutable daily-board forecast exports", () => {
   const fixture = (): FrozenBoardSource => {
     const game = { id: 1, date: "2026-10-10", type: 2, homeTeamId: 10, awayTeamId: 8 };

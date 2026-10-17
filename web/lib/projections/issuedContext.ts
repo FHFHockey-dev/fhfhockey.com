@@ -14,7 +14,8 @@ export type ForgeIssuedContextV1 = {
 
 export function forgeScheduleRevision(row: { source_game_id: number; start_time: string; team_abbreviation: string;
   opponent_abbreviation: string; game_status: string; schedule_status: string }): string {
-  return playerForecastSourcePayloadHash({ id: String(row.source_game_id), start: row.start_time,
+  const instant = Date.parse(row.start_time);
+  return playerForecastSourcePayloadHash({ id: String(row.source_game_id), start: Number.isFinite(instant) ? new Date(instant).toISOString() : row.start_time,
     team: row.team_abbreviation, opponent: row.opponent_abbreviation,
     status: String(row.game_status ?? "").toUpperCase(), schedule: String(row.schedule_status ?? "").toUpperCase() });
 }

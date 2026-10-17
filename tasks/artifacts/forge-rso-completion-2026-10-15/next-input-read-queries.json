@@ -1,0 +1,57 @@
+{
+  "status": "proposed_not_approved",
+  "project": "fyhftlxokyjtpndbkfse",
+  "cutoffAt": "2026-10-16T03:50:00Z",
+  "queries": [
+    {
+      "name": "pregame_lineups",
+      "maxRows": 501,
+      "query": "BEGIN READ ONLY; SET LOCAL statement_timeout = '8s'; SELECT id,game_id,team_id,observed_at,available_at,created_at,expires_at,accepted,source_key,source_account,source_url,parser_version,count(*) OVER() AS scope_count FROM public.player_forecast_lineup_snapshots WHERE game_id in (2026020121,2026020123,2026020125,2026020126,2026020127,2026020128,2026020130,2026020132,2026020133,2026020134,2026020135) and accepted=true and available_at <= '2026-10-16T03:50:00Z'::timestamptz and observed_at <= '2026-10-16T03:50:00Z'::timestamptz and created_at <= '2026-10-16T03:50:00Z'::timestamptz ORDER BY id LIMIT 501; COMMIT;"
+    },
+    {
+      "name": "pregame_assignments",
+      "maxRows": 2001,
+      "query": "BEGIN READ ONLY; SET LOCAL statement_timeout = '8s'; SELECT id,snapshot_id,player_id,unit_type,unit_number,assignment_status,created_at,count(*) OVER() AS scope_count FROM public.player_forecast_lineup_assignments WHERE snapshot_id IN (SELECT id FROM public.player_forecast_lineup_snapshots WHERE game_id in (2026020121,2026020123,2026020125,2026020126,2026020127,2026020128,2026020130,2026020132,2026020133,2026020134,2026020135) and accepted=true and available_at <= '2026-10-16T03:50:00Z'::timestamptz and observed_at <= '2026-10-16T03:50:00Z'::timestamptz and created_at <= '2026-10-16T03:50:00Z'::timestamptz) AND created_at <= '2026-10-16T03:50:00Z'::timestamptz ORDER BY id LIMIT 2001; COMMIT;"
+    },
+    {
+      "name": "pregame_goalies",
+      "maxRows": 501,
+      "query": "BEGIN READ ONLY; SET LOCAL statement_timeout = '8s'; SELECT id,game_id,team_id,observed_at,available_at,created_at,expires_at,accepted,source_key,source_account,source_url,player_id,observation_status,count(*) OVER() AS scope_count FROM public.player_forecast_goalie_start_observations WHERE game_id in (2026020121,2026020123,2026020125,2026020126,2026020127,2026020128,2026020130,2026020132,2026020133,2026020134,2026020135) and accepted=true and available_at <= '2026-10-16T03:50:00Z'::timestamptz and observed_at <= '2026-10-16T03:50:00Z'::timestamptz and created_at <= '2026-10-16T03:50:00Z'::timestamptz ORDER BY id LIMIT 501; COMMIT;"
+    },
+    {
+      "name": "pregame_conflicts",
+      "maxRows": 501,
+      "query": "BEGIN READ ONLY; SET LOCAL statement_timeout = '8s'; SELECT id,game_id,team_id,player_id,conflict_key,conflict_version,conflict_type,detected_at,created_at,count(*) OVER() AS scope_count FROM public.player_forecast_observation_conflicts WHERE game_id in (2026020121,2026020123,2026020125,2026020126,2026020127,2026020128,2026020130,2026020132,2026020133,2026020134,2026020135) and detected_at <= '2026-10-16T03:50:00Z'::timestamptz and created_at <= '2026-10-16T03:50:00Z'::timestamptz ORDER BY id LIMIT 501; COMMIT;"
+    },
+    {
+      "name": "pregame_resolutions",
+      "maxRows": 501,
+      "query": "BEGIN READ ONLY; SET LOCAL statement_timeout = '8s'; SELECT id,conflict_id,action,selected_observation_id,resolved_at,created_at,count(*) OVER() AS scope_count FROM public.player_forecast_conflict_resolutions WHERE conflict_id IN (SELECT id FROM public.player_forecast_observation_conflicts WHERE game_id in (2026020121,2026020123,2026020125,2026020126,2026020127,2026020128,2026020130,2026020132,2026020133,2026020134,2026020135) and detected_at <= '2026-10-16T03:50:00Z'::timestamptz and created_at <= '2026-10-16T03:50:00Z'::timestamptz) AND created_at <= '2026-10-16T03:50:00Z'::timestamptz AND resolved_at <= '2026-10-16T03:50:00Z'::timestamptz ORDER BY id LIMIT 501; COMMIT;"
+    },
+    {
+      "name": "fiala_prior_games",
+      "maxRows": 21,
+      "query": "BEGIN READ ONLY; SET LOCAL statement_timeout = '8s'; SELECT id,date,\"seasonId\",type,\"startTime\",\"homeTeamId\",\"awayTeamId\",count(*) OVER() AS scope_count FROM public.games WHERE id IN (2025020304,2025020330,2025020334,2025020359,2025020384,2025020401,2025020420,2025020435,2025020449,2025020462,2025020479,2025020507,2025020518,2025020529,2025020538,2025020574,2025020587,2025020597,2025020611,2025020639) AND \"seasonId\"=20252026 AND type=2 ORDER BY id LIMIT 21; COMMIT;"
+    },
+    {
+      "name": "fiala_prior_roster",
+      "maxRows": 21,
+      "query": "BEGIN READ ONLY; SET LOCAL statement_timeout = '8s'; SELECT game_id,player_id,team_id,season_id,game_date,source_play_by_play_hash,parser_version,count(*) OVER() AS scope_count FROM public.nhl_api_game_roster_spots WHERE game_id IN (2025020304,2025020330,2025020334,2025020359,2025020384,2025020401,2025020420,2025020435,2025020449,2025020462,2025020479,2025020507,2025020518,2025020529,2025020538,2025020574,2025020587,2025020597,2025020611,2025020639) AND player_id=8477942 AND season_id=20252026 ORDER BY game_id LIMIT 21; COMMIT;"
+    },
+    {
+      "name": "fiala_prior_raw_metadata",
+      "maxRows": 41,
+      "query": "BEGIN READ ONLY; SET LOCAL statement_timeout = '8s'; WITH wanted(game_id,fetched_at) AS (VALUES (2025020304,'2026-04-02T09:53:44.666+00:00'::timestamptz),(2025020330,'2026-04-02T09:55:26.565+00:00'::timestamptz),(2025020334,'2026-04-02T09:55:41.131+00:00'::timestamptz),(2025020359,'2026-04-02T09:57:19.848+00:00'::timestamptz),(2025020384,'2026-04-02T14:32:42.621+00:00'::timestamptz),(2025020401,'2026-04-02T14:33:42.205+00:00'::timestamptz),(2025020420,'2026-04-02T14:34:49.367+00:00'::timestamptz),(2025020435,'2026-04-02T14:35:39.348+00:00'::timestamptz),(2025020449,'2026-04-02T14:36:57.854+00:00'::timestamptz),(2025020462,'2026-04-02T14:37:44.551+00:00'::timestamptz),(2025020479,'2026-04-02T14:38:46.22+00:00'::timestamptz),(2025020507,'2026-04-02T14:40:22.665+00:00'::timestamptz),(2025020518,'2026-04-02T14:41:00.905+00:00'::timestamptz),(2025020529,'2026-04-02T14:41:41.858+00:00'::timestamptz),(2025020538,'2026-04-02T14:42:12.088+00:00'::timestamptz),(2025020574,'2026-04-02T04:54:21.8+00:00'::timestamptz),(2025020587,'2026-04-02T04:45:20.149+00:00'::timestamptz),(2025020597,'2026-04-02T04:31:03.152+00:00'::timestamptz),(2025020611,'2026-04-02T04:15:14.056+00:00'::timestamptz),(2025020639,'2026-04-02T03:50:34.878+00:00'::timestamptz)) SELECT r.id,r.game_id,r.season_id,r.payload_hash,r.fetched_at,count(*) OVER() AS scope_count FROM public.nhl_api_game_payloads_raw r JOIN wanted w ON r.game_id=w.game_id AND r.fetched_at=w.fetched_at WHERE r.endpoint='boxscore' AND r.season_id=20252026 ORDER BY r.game_id,r.id LIMIT 41; COMMIT;"
+    },
+    {
+      "name": "yahoo_injury_schema",
+      "maxRows": 23,
+      "query": "BEGIN READ ONLY; SET LOCAL statement_timeout = '8s'; SELECT table_name,column_name,data_type FROM information_schema.columns WHERE table_schema='public' AND ((table_name='yahoo_game_keys' AND column_name IN ('game_id','game_key','code','season')) OR (table_name='fhfh_player_identities' AND column_name IN ('id','nhl_player_id','verification_status','merged_into_id')) OR (table_name='fhfh_player_external_identities' AND column_name IN ('provider','context_key','season_id','verification_status','fhfh_player_id','external_player_id')) OR (table_name='yahoo_players' AND column_name IN ('player_key','player_id','game_id','season','injury_note','status','status_full','last_updated'))) ORDER BY table_name,ordinal_position LIMIT 23; COMMIT;"
+    },
+    {
+      "name": "yahoo_fiala_cached_injury",
+      "maxRows": 3,
+      "query": "BEGIN READ ONLY; SET LOCAL statement_timeout = '8s'; WITH game_context AS (SELECT game_id,game_key,season,coalesce(game_key::text,game_id::text) AS key,count(*) OVER() AS game_context_count FROM public.yahoo_game_keys WHERE code='nhl' AND season::text='2026')\nSELECT c.id AS canonical_id,c.nhl_player_id,g.key AS game_key,g.game_context_count,e.external_player_id,e.context_key,e.season_id,\n(SELECT count(*) FROM public.fhfh_player_external_identities r WHERE r.provider='yahoo' AND r.context_key=e.context_key AND r.season_id=e.season_id AND r.verification_status='verified' AND r.external_player_id=e.external_player_id) AS reverse_owner_count,\np.player_key,p.player_id,p.game_id,p.season,p.injury_note,p.status,p.status_full,p.last_updated,count(*) OVER() AS scope_count\nFROM public.fhfh_player_identities c CROSS JOIN game_context g\nJOIN public.fhfh_player_external_identities e ON e.fhfh_player_id=c.id AND e.provider='yahoo' AND e.context_key='yahoo:game:'||g.key||':season:2026' AND e.season_id=20262027 AND e.verification_status='verified'\nJOIN public.yahoo_players p ON p.player_key=e.external_player_id AND p.game_id::text=g.key AND p.season::text='2026'\nWHERE c.id::text='9572' AND c.nhl_player_id=8477942 AND c.verification_status='verified' AND c.merged_into_id IS NULL\nORDER BY e.external_player_id LIMIT 3; COMMIT;"
+    }
+  ]
+}

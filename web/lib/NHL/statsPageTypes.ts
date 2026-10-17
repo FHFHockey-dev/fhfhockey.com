@@ -48,13 +48,19 @@ export type GoalieStat = {
   sweater_number?: number | null;
 };
 
-export type StatsProps = {
-  skaterSeasonLabel: string;
-  goalieSeasonLabel: string;
+export type SkaterPosition = "C" | "LW" | "RW" | "D";
+
+export type SkaterLeaderboards = {
   pointsLeaders: SkaterStat[];
   goalsLeaders: SkaterStat[];
   pppLeaders: SkaterStat[];
   bshLeaders: SkaterStat[];
+};
+
+export type StatsProps = SkaterLeaderboards & {
+  skaterSeasonLabel: string;
+  goalieSeasonLabel: string;
+  skaterLeadersByPosition: Partial<Record<SkaterPosition, SkaterLeaderboards>>;
   goalieLeadersWins: GoalieStat[];
   goalieLeadersSavePct: GoalieStat[];
   goalieLeadersGAA: GoalieStat[];

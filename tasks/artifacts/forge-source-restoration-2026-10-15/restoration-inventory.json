@@ -1,0 +1,1054 @@
+{
+  "createdAt": "2026-10-15T15:58:46.800580+00:00",
+  "status": "NO_CANDIDATE_IDENTIFIED_IN_BOUNDED_SEARCH",
+  "purpose": "Metadata-only restoration inventory; not source admission or authorization to execute A.",
+  "metadataInputs": [
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-metadata-feasibility-20251007-20260113-v1/span-manifest.json",
+      "sha256": "387c4aaac7ba27554fdb7dfd74b9008657627ed579ea9d5723e61aeee939435d"
+    },
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-metadata-feasibility-20251007-20260113-v1/metadata-contexts.json",
+      "sha256": "c60e124cecb20bf386129815f32c809ca24b028a1e9ed8854dac0a4653cbb393"
+    }
+  ],
+  "sources": [
+    {
+      "originalPath": "/tmp/fhfh-core-handoffs-20261013/forge-local-composition/native-goalie-outcomes/original-goalie-boxscores-v1.json",
+      "inheritedWholeFileBytes": 3332818,
+      "inheritedWholeFileSHA256": "41e921afb4aeeb5a70b5a23f6447e93a9a11cdf2ff575f3b3fae7be69c59e2e8",
+      "allocatedSpanCount": 63,
+      "allocatedBytes": 1779221,
+      "spans": [
+        {
+          "span": [
+            1397523,
+            1425820
+          ],
+          "day": "2025-10-09",
+          "gameId": 2025020017,
+          "spanSHA256": "3b6913284e1c7255505a26c612fa5f681400067491cca81c3b2aca21666df5db"
+        },
+        {
+          "span": [
+            1426083,
+            1454366
+          ],
+          "day": "2025-10-11",
+          "gameId": 2025020034,
+          "spanSHA256": "17eea00bb5c44ff8391dec200ded930588d75a764adff6e454049177e0a6b94e"
+        },
+        {
+          "span": [
+            1454629,
+            1482514
+          ],
+          "day": "2025-10-14",
+          "gameId": 2025020054,
+          "spanSHA256": "d3e864cc8c1f2a6e71b71faad8dac70eaa02b24324baa24380f2f73c9c590e25"
+        },
+        {
+          "span": [
+            1482777,
+            1510558
+          ],
+          "day": "2025-10-16",
+          "gameId": 2025020068,
+          "spanSHA256": "23b65af436132779bf3c53ed9515dbc2b7505bf2b3d89b07d07f2186c6dd13ad"
+        },
+        {
+          "span": [
+            1510821,
+            1538909
+          ],
+          "day": "2025-10-18",
+          "gameId": 2025020083,
+          "spanSHA256": "d95db76dba616983cde87858523886b4c0d3a6cb929dabcfd248503a29f0cdea"
+        },
+        {
+          "span": [
+            1539172,
+            1567522
+          ],
+          "day": "2025-10-21",
+          "gameId": 2025020106,
+          "spanSHA256": "e486e4add1bd98eb7e78d2b0c35a93e9b332f3a247034b81fa57b4be993fc493"
+        },
+        {
+          "span": [
+            1567785,
+            1595702
+          ],
+          "day": "2025-10-23",
+          "gameId": 2025020119,
+          "spanSHA256": "5e33d91942287609b1feddf783de0f990be1774957ce6279237014358e54da77"
+        },
+        {
+          "span": [
+            1595965,
+            1624045
+          ],
+          "day": "2025-10-25",
+          "gameId": 2025020138,
+          "spanSHA256": "0181b6360ce7350130c6936816504a2c8a5b599329464d1b5f955d32f2666699"
+        },
+        {
+          "span": [
+            1624308,
+            1652214
+          ],
+          "day": "2025-10-26",
+          "gameId": 2025020145,
+          "spanSHA256": "34ddfb47daa31c7cb3ff75308276f9d847579b25f1f34c2f650e4f92d933efe9"
+        },
+        {
+          "span": [
+            1652477,
+            1680386
+          ],
+          "day": "2025-10-28",
+          "gameId": 2025020159,
+          "spanSHA256": "71df7168497184ab0b2673e91eff71b366dc65a9fcf6ee444045f0c4d8423b52"
+        },
+        {
+          "span": [
+            1680649,
+            1709083
+          ],
+          "day": "2025-10-30",
+          "gameId": 2025020169,
+          "spanSHA256": "364c69ca35fe8c071f46ce88799e0a575a84d19547cb9806291ebcbc7f3c4507"
+        },
+        {
+          "span": [
+            1709346,
+            1737404
+          ],
+          "day": "2025-11-01",
+          "gameId": 2025020185,
+          "spanSHA256": "8e349e84a918c61d84d8728b6a1978934b760664db59b855e660039ae272872d"
+        },
+        {
+          "span": [
+            1737667,
+            1765731
+          ],
+          "day": "2025-11-04",
+          "gameId": 2025020207,
+          "spanSHA256": "a82c3c020a40d7674a30653d1f91dba6732cfc06b63e7f4fa6b93ee46bee4b50"
+        },
+        {
+          "span": [
+            1765994,
+            1794350
+          ],
+          "day": "2025-11-06",
+          "gameId": 2025020224,
+          "spanSHA256": "a8bf98c6e80d541469f26182334c8657c82d791a8d1369fee7df8b9947e5dec0"
+        },
+        {
+          "span": [
+            1794613,
+            1822704
+          ],
+          "day": "2025-11-08",
+          "gameId": 2025020233,
+          "spanSHA256": "6c8d6dcb531c4ef0112f42b0d292fb2be19c779f182615c4fbeaeb44eb7cd73b"
+        },
+        {
+          "span": [
+            1822967,
+            1851197
+          ],
+          "day": "2025-11-09",
+          "gameId": 2025020248,
+          "spanSHA256": "c673d09e05a02a989ff9f86a1f11fd1197c23e498b133999c3c220e2263e596d"
+        },
+        {
+          "span": [
+            1851460,
+            1879592
+          ],
+          "day": "2025-11-11",
+          "gameId": 2025020258,
+          "spanSHA256": "b0924e52b6aa682e3aebc2e717545580a571eed7e3a50baddccc911990b814fc"
+        },
+        {
+          "span": [
+            1879855,
+            1908001
+          ],
+          "day": "2025-11-13",
+          "gameId": 2025020270,
+          "spanSHA256": "a9709a04ce3a566b2c4be52be66dcc21077ff21b3d3976e0a2195e2cc8d10a47"
+        },
+        {
+          "span": [
+            1908264,
+            1936408
+          ],
+          "day": "2025-11-15",
+          "gameId": 2025020293,
+          "spanSHA256": "44a13e48ae9e8acf27232ff1526f0927ba9afd6c5fe344e3871dadb1252ec2fc"
+        },
+        {
+          "span": [
+            1936670,
+            1964679
+          ],
+          "day": "2025-11-18",
+          "gameId": 2025020310,
+          "spanSHA256": "fd179aa243463fc63338ae2ace15650b96ad9e09e61b834ec36ca922f7b66c0e"
+        },
+        {
+          "span": [
+            1964942,
+            1993039
+          ],
+          "day": "2025-11-20",
+          "gameId": 2025020328,
+          "spanSHA256": "1e74ce315bdcc74ab0116b78e11a5026da4c71fde019fb09619be5711caf7a4e"
+        },
+        {
+          "span": [
+            1993302,
+            2021985
+          ],
+          "day": "2025-11-22",
+          "gameId": 2025020345,
+          "spanSHA256": "05a25f7a5f026e6b99d27221d47abee50dd72db9ccbfa9f0a95b4b09ae5c95f6"
+        },
+        {
+          "span": [
+            2022248,
+            2050360
+          ],
+          "day": "2025-11-25",
+          "gameId": 2025020360,
+          "spanSHA256": "f79c9a0e3181d12a7cc2cd21dec8a558722585dd9f97b6aeb1ab9633b4c6d957"
+        },
+        {
+          "span": [
+            2050623,
+            2079020
+          ],
+          "day": "2025-11-26",
+          "gameId": 2025020375,
+          "spanSHA256": "3e2a016593f0e3d964330f2f34f173a7a6c3b04425284fd2db8fa0263ada065c"
+        },
+        {
+          "span": [
+            2079283,
+            2107450
+          ],
+          "day": "2025-11-28",
+          "gameId": 2025020390,
+          "spanSHA256": "c3bfe12889fc09176c7cbd7e736f3f48c6ea54a5dd30e0962b01411770ed2db1"
+        },
+        {
+          "span": [
+            2107712,
+            2135850
+          ],
+          "day": "2025-11-30",
+          "gameId": 2025020405,
+          "spanSHA256": "36c6724688fa29a7b178dce69120a77c0a84926331fb1245c81be9be8f381c81"
+        },
+        {
+          "span": [
+            2136113,
+            2164329
+          ],
+          "day": "2025-12-02",
+          "gameId": 2025020415,
+          "spanSHA256": "683387b727a4d9a6dea959e2beeb624e35c857a711262830e2317bf042ced287"
+        },
+        {
+          "span": [
+            2164592,
+            2193244
+          ],
+          "day": "2025-12-02",
+          "gameId": 2025020419,
+          "spanSHA256": "bad5782c1d9bf4d2ff21b7488410d9876ea029d807aa47c47ee7e904fea88826"
+        },
+        {
+          "span": [
+            2193506,
+            2221878
+          ],
+          "day": "2025-12-03",
+          "gameId": 2025020421,
+          "spanSHA256": "61c7f01af64e73c56bf4a912ce257498e504e1aaf25201b9d1541fe21b0681e8"
+        },
+        {
+          "span": [
+            2222141,
+            2250199
+          ],
+          "day": "2025-12-05",
+          "gameId": 2025020438,
+          "spanSHA256": "f33e0286a705f9fb13b0d6e745113167730b185109c229800f21c7b866bd0c12"
+        },
+        {
+          "span": [
+            2250462,
+            2278467
+          ],
+          "day": "2025-12-07",
+          "gameId": 2025020456,
+          "spanSHA256": "655f21439f76c0df3512fa33091dc15170cad21947b3f5b700b12660c5b669d3"
+        },
+        {
+          "span": [
+            2278729,
+            2307067
+          ],
+          "day": "2025-12-07",
+          "gameId": 2025020458,
+          "spanSHA256": "e15cb6b55f0f0701be5d3110350120d6c3fa14563ade1a72b8fa41037c744a31"
+        },
+        {
+          "span": [
+            2307329,
+            2335813
+          ],
+          "day": "2025-12-09",
+          "gameId": 2025020468,
+          "spanSHA256": "16fd9d43c2f7af7cd91fdb14a984bbe6e9603429be9bde17ef818880ef0a79cf"
+        },
+        {
+          "span": [
+            2336076,
+            2364252
+          ],
+          "day": "2025-12-09",
+          "gameId": 2025020473,
+          "spanSHA256": "fee75ab0996d174f3e7f084ea7389dfac9c451f40adeec6496f118708e472a55"
+        },
+        {
+          "span": [
+            2364514,
+            2393144
+          ],
+          "day": "2025-12-11",
+          "gameId": 2025020483,
+          "spanSHA256": "a9cf12ba8dc1cf34f7ba8e59a948bc9dee949c80d0a21054cd5fa7748754b728"
+        },
+        {
+          "span": [
+            2393407,
+            2421760
+          ],
+          "day": "2025-12-11",
+          "gameId": 2025020488,
+          "spanSHA256": "d0c01bd73fdcff33adaa676988b572e17c7ab7030d0b271b9bcaa92b2f69344d"
+        },
+        {
+          "span": [
+            2422023,
+            2450469
+          ],
+          "day": "2025-12-13",
+          "gameId": 2025020502,
+          "spanSHA256": "b3317bd8669a1668946603609b0ddba70cf864cf9cf2a2be7bd2f0769a461382"
+        },
+        {
+          "span": [
+            2450732,
+            2478798
+          ],
+          "day": "2025-12-13",
+          "gameId": 2025020505,
+          "spanSHA256": "158494ec77ac8fd1474ec6922f8e97c37932f504251103e8838c0bc4d1961f5b"
+        },
+        {
+          "span": [
+            2479061,
+            2507023
+          ],
+          "day": "2025-12-15",
+          "gameId": 2025020518,
+          "spanSHA256": "1fbea70bf87c032dd9b11e329b4d15f91cb00bd2e5029a358f079ab0cbd8510c"
+        },
+        {
+          "span": [
+            2507286,
+            2535992
+          ],
+          "day": "2025-12-17",
+          "gameId": 2025020533,
+          "spanSHA256": "1cd5fdd37b84f404d0d403236110624c743596ca598d261ec7d4a23817e473f9"
+        },
+        {
+          "span": [
+            2536255,
+            2564198
+          ],
+          "day": "2025-12-18",
+          "gameId": 2025020543,
+          "spanSHA256": "4344f547a052cc5a21b45944a1a447d74f73074c050d19de889e8da86db4055f"
+        },
+        {
+          "span": [
+            2564461,
+            2592989
+          ],
+          "day": "2025-12-19",
+          "gameId": 2025020548,
+          "spanSHA256": "16bb2a562c10cb5194d46f19d76057cf48f33e69d5994b5bc98e6dba8a815afd"
+        },
+        {
+          "span": [
+            1368805,
+            1397260
+          ],
+          "day": "2025-12-20",
+          "gameId": 2025020559,
+          "spanSHA256": "306ceebd54ab40b9d507a4c8159a62b33ab96a74fd9e6e37f485e930e074081d"
+        },
+        {
+          "span": [
+            1340479,
+            1368542
+          ],
+          "day": "2025-12-21",
+          "gameId": 2025020568,
+          "spanSHA256": "a6780e6d709039f8272541c3468e44920914b8f56923a13a8a73a5edda03b967"
+        },
+        {
+          "span": [
+            1312047,
+            1340216
+          ],
+          "day": "2025-12-21",
+          "gameId": 2025020570,
+          "spanSHA256": "49d7344c25be12c0480e666b8132e00f7d791c514aa1d2b0a1989fe8c9cca981"
+        },
+        {
+          "span": [
+            1283487,
+            1311784
+          ],
+          "day": "2025-12-23",
+          "gameId": 2025020579,
+          "spanSHA256": "cbd45b6d5fc602fb8d766e5b0f9077eb8e0934a50595d79a687e27740b059bfa"
+        },
+        {
+          "span": [
+            1255184,
+            1283224
+          ],
+          "day": "2025-12-23",
+          "gameId": 2025020586,
+          "spanSHA256": "51bea837167e828923943fb7f6597d9b20abeb7c1e34f232dee4bc3eb8e5b113"
+        },
+        {
+          "span": [
+            1226698,
+            1254921
+          ],
+          "day": "2025-12-27",
+          "gameId": 2025020596,
+          "spanSHA256": "8352c2c23b2c395941514c4ec49996077fed9d3f8866dc62f88eb11a9f4ebb9d"
+        },
+        {
+          "span": [
+            1198218,
+            1226436
+          ],
+          "day": "2025-12-27",
+          "gameId": 2025020600,
+          "spanSHA256": "d12f4aade8d52ff54a0e8090844f64616f33e985cd9005f1cc1cce7635ccfc8c"
+        },
+        {
+          "span": [
+            1169646,
+            1197955
+          ],
+          "day": "2025-12-29",
+          "gameId": 2025020614,
+          "spanSHA256": "4da47bcabbeea0fad9fbad3e94cf04ed4b1d1e5659708585e055f0e1f61416dc"
+        },
+        {
+          "span": [
+            1141079,
+            1169383
+          ],
+          "day": "2025-12-31",
+          "gameId": 2025020623,
+          "spanSHA256": "9941278c5dc176a579696cd7110bee8a2afd4f60e2aebda518e3c0ea8accbfa8"
+        },
+        {
+          "span": [
+            1112908,
+            1140816
+          ],
+          "day": "2025-12-31",
+          "gameId": 2025020628,
+          "spanSHA256": "26facaaa490c83c401ef3fa257a203482899b51a5a27fd0d2a4e6dc07728d35a"
+        },
+        {
+          "span": [
+            1084062,
+            1112645
+          ],
+          "day": "2026-01-01",
+          "gameId": 2025020637,
+          "spanSHA256": "e8cf7e83a02d411baf590273d4de26ffec027af580d0c35c2e378aab7147813e"
+        },
+        {
+          "span": [
+            1054690,
+            1083799
+          ],
+          "day": "2026-01-02",
+          "gameId": 2025020640,
+          "spanSHA256": "0fda76fdc9ad624bb478805c05b05b93adf7fd0c974f8713de445d6c94c415ae"
+        },
+        {
+          "span": [
+            1026300,
+            1054427
+          ],
+          "day": "2026-01-04",
+          "gameId": 2025020657,
+          "spanSHA256": "a665f4b4c04a78aecb5ffc63c8d5bb78c95645cd6532a671e9d18f3fc45cba87"
+        },
+        {
+          "span": [
+            997198,
+            1026037
+          ],
+          "day": "2026-01-04",
+          "gameId": 2025020661,
+          "spanSHA256": "0eb4d85f9a8b77360d78ab24dec9369b0d5a6c46d747b5672426969b0451cf33"
+        },
+        {
+          "span": [
+            968811,
+            996935
+          ],
+          "day": "2026-01-06",
+          "gameId": 2025020671,
+          "spanSHA256": "41b18cc255cb92afebfb1adee8af6e28b6cf8a075b170c2f9e977461f096a337"
+        },
+        {
+          "span": [
+            940145,
+            968548
+          ],
+          "day": "2026-01-06",
+          "gameId": 2025020673,
+          "spanSHA256": "fe58bc009ab0c4644fc252c72d87339b1ac53fd7203288ca2b46240f2e67ce87"
+        },
+        {
+          "span": [
+            911649,
+            939882
+          ],
+          "day": "2026-01-07",
+          "gameId": 2025020677,
+          "spanSHA256": "3353365ccdf24881aabc5d4bc6d9494a96aa9687c9e65bf565dd5ed8d2e1e5f6"
+        },
+        {
+          "span": [
+            882373,
+            911386
+          ],
+          "day": "2026-01-08",
+          "gameId": 2025020692,
+          "spanSHA256": "263be28912f4e35553186f5431c2e17906401f4e4a5e7c25b5749a309799a5c9"
+        },
+        {
+          "span": [
+            854178,
+            882110
+          ],
+          "day": "2026-01-10",
+          "gameId": 2025020700,
+          "spanSHA256": "57066d1f08878a852f07c7be850e7851d519e5b43fe6d53ba42b23f9b3d4a4a6"
+        },
+        {
+          "span": [
+            826133,
+            853915
+          ],
+          "day": "2026-01-12",
+          "gameId": 2025020724,
+          "spanSHA256": "9d5b3dd7f82e52b0871088259102ea88e0a708207d90e51f887c9b9a6a30aedf"
+        },
+        {
+          "span": [
+            797469,
+            825870
+          ],
+          "day": "2026-01-13",
+          "gameId": 2025020734,
+          "spanSHA256": "03160f47d45fe52c05676b23bba0b22593c0252d22e7df21af38a200fa5b70ac"
+        }
+      ]
+    },
+    {
+      "originalPath": "/tmp/fhfh-core-handoffs-20261013/forge-local-composition/power-play-counts/history-original-bodies.json",
+      "inheritedWholeFileBytes": 1462518,
+      "inheritedWholeFileSHA256": "932ea439a38fe0b3770a1800b39bb924c2822aad400cc67ca98cf8c7043a0492",
+      "allocatedSpanCount": 49,
+      "allocatedBytes": 602779,
+      "spans": [
+        {
+          "span": [
+            213,
+            10245
+          ],
+          "day": "2025-10-08",
+          "gameId": 2025020005,
+          "spanSHA256": "c48763fcdec1c6a0b0209087172ac902616c78bec346b85e5cc0deb6537e60d1"
+        },
+        {
+          "span": [
+            10459,
+            20862
+          ],
+          "day": "2025-10-09",
+          "gameId": 2025020009,
+          "spanSHA256": "84c4b0c36bdc088bcaedbacb54ec3c3ac53fe6564601e36bc64f2ac56ba7863c"
+        },
+        {
+          "span": [
+            21076,
+            30821
+          ],
+          "day": "2025-10-11",
+          "gameId": 2025020024,
+          "spanSHA256": "61c1ee1ef825e89972f8296f9bbe2fb70c43dd309cb1efabfc662328b8cda1b4"
+        },
+        {
+          "span": [
+            31035,
+            42619
+          ],
+          "day": "2025-10-11",
+          "gameId": 2025020028,
+          "spanSHA256": "0d29877fed56cc8009009e835a0f804c2159f3bdfc16b658a5b69637112bd62a"
+        },
+        {
+          "span": [
+            42833,
+            48174
+          ],
+          "day": "2025-10-12",
+          "gameId": 2025020038,
+          "spanSHA256": "1aa6da4c812fb7e6ac8c7518e39ea9e1dc16f72ccac1567d71c10362a3c3da2b"
+        },
+        {
+          "span": [
+            48388,
+            58523
+          ],
+          "day": "2025-10-13",
+          "gameId": 2025020039,
+          "spanSHA256": "4ab87d92d2183a3c3561674e30274b065a4930978ab6ae95245fb47e425dded3"
+        },
+        {
+          "span": [
+            58737,
+            79436
+          ],
+          "day": "2025-10-15",
+          "gameId": 2025020057,
+          "spanSHA256": "6a59a482370dbbbebd9a8d73251c63115e41d46ab96995c39ddbee04c66bc720"
+        },
+        {
+          "span": [
+            79650,
+            90708
+          ],
+          "day": "2025-10-18",
+          "gameId": 2025020076,
+          "spanSHA256": "70b57e026c30d4104f96689d6671db5abfbbbc6e53585b944ca4bbb2b808b8f7"
+        },
+        {
+          "span": [
+            90922,
+            102289
+          ],
+          "day": "2025-10-20",
+          "gameId": 2025020095,
+          "spanSHA256": "7d7190352d3448fd91d5d9d6659bf61064d536eebb6910c7bdda7a4d2cb1c862"
+        },
+        {
+          "span": [
+            102503,
+            114736
+          ],
+          "day": "2025-10-22",
+          "gameId": 2025020109,
+          "spanSHA256": "14416f82b8565f2ab606d7f772b70af67bcf09e3f27e18fd7437d1c1cf3cfbdf"
+        },
+        {
+          "span": [
+            114950,
+            129178
+          ],
+          "day": "2025-10-24",
+          "gameId": 2025020123,
+          "spanSHA256": "23ec73ae941f7c3135d8955506c63990c33cd92988b274bc08c68db66c85a518"
+        },
+        {
+          "span": [
+            129392,
+            143564
+          ],
+          "day": "2025-10-25",
+          "gameId": 2025020132,
+          "spanSHA256": "8139eb8cca77bdda0bbf855483b662aaf202a5d2724f56a9924591edf0c07d6e"
+        },
+        {
+          "span": [
+            143778,
+            160067
+          ],
+          "day": "2025-10-25",
+          "gameId": 2025020135,
+          "spanSHA256": "b5d9ae68a89c97cb36d607216b0dd32d509c96e20a439d67ae13c33e9b0e2ea4"
+        },
+        {
+          "span": [
+            160281,
+            173251
+          ],
+          "day": "2025-10-28",
+          "gameId": 2025020152,
+          "spanSHA256": "d225704fb5c23849f558b0a7caebebd6055403412c0cbae0fb2a0c2eb36cd0ca"
+        },
+        {
+          "span": [
+            173465,
+            179564
+          ],
+          "day": "2025-10-28",
+          "gameId": 2025020159,
+          "spanSHA256": "e34b70daf77d68432334a1e92d6c5faa8863af41e73f4e8601ac72d1f34fe354"
+        },
+        {
+          "span": [
+            179778,
+            194408
+          ],
+          "day": "2025-10-30",
+          "gameId": 2025020167,
+          "spanSHA256": "62c034fa2e851becf4f6d28e48ae7d54ffb9978ce6fef6294798ac7a3122a866"
+        },
+        {
+          "span": [
+            194622,
+            204805
+          ],
+          "day": "2025-10-31",
+          "gameId": 2025020179,
+          "spanSHA256": "b0e58d865f0ce9cf5399c61be4540e3dc7b96bddc1a5a33b4ae1384effb56761"
+        },
+        {
+          "span": [
+            205019,
+            222807
+          ],
+          "day": "2025-11-01",
+          "gameId": 2025020186,
+          "spanSHA256": "384d2b213f9dc9b43c9f8881750fc566d91c48291956cb53d585ffc46f78ea91"
+        },
+        {
+          "span": [
+            223021,
+            230702
+          ],
+          "day": "2025-11-04",
+          "gameId": 2025020203,
+          "spanSHA256": "89b1c03c0a8de94e8577bd22e86e2cfe8863d7817edf12edb77d7d36d68e210f"
+        },
+        {
+          "span": [
+            230916,
+            238972
+          ],
+          "day": "2025-11-06",
+          "gameId": 2025020219,
+          "spanSHA256": "83e19bbcc7be2b915d5c212adb5275a6b09a892ae5afe95c3ce52998ea0bf527"
+        },
+        {
+          "span": [
+            239185,
+            253908
+          ],
+          "day": "2025-11-08",
+          "gameId": 2025020238,
+          "spanSHA256": "9194e3fc349b38198e80f22ad1ce39841fd245be610b1ded125816631ffd8b31"
+        },
+        {
+          "span": [
+            254121,
+            266890
+          ],
+          "day": "2025-11-12",
+          "gameId": 2025020267,
+          "spanSHA256": "77eb8750e8b9665b40fb3a968926a207db2bd691cf529621b6a6106c9e74192a"
+        },
+        {
+          "span": [
+            267104,
+            282714
+          ],
+          "day": "2025-11-13",
+          "gameId": 2025020275,
+          "spanSHA256": "21b26eb13d22f7c36b9567f8a2c58f18f8b2946bd57fab0fe8e2a027e45aede8"
+        },
+        {
+          "span": [
+            282928,
+            298373
+          ],
+          "day": "2025-11-15",
+          "gameId": 2025020287,
+          "spanSHA256": "ce9448a40101fa5064eba2d616b86faed11264bd8f3f8c5e2ecb03f89863e8dd"
+        },
+        {
+          "span": [
+            298587,
+            309693
+          ],
+          "day": "2025-11-17",
+          "gameId": 2025020302,
+          "spanSHA256": "e0d1e9864ddc4fc39095b5491e1aaf00a0848d4119568a27af5c17efe9bf660b"
+        },
+        {
+          "span": [
+            309907,
+            323498
+          ],
+          "day": "2025-11-19",
+          "gameId": 2025020316,
+          "spanSHA256": "37bf3c0e819c1282a12f85144f0d472345e2342869dbcb348cd79ad4b5959c3f"
+        },
+        {
+          "span": [
+            323712,
+            342143
+          ],
+          "day": "2025-11-21",
+          "gameId": 2025020331,
+          "spanSHA256": "27d36c18dc74921cde2ef638896ca304a19099876d786078371f78129b38e895"
+        },
+        {
+          "span": [
+            342357,
+            353062
+          ],
+          "day": "2025-11-23",
+          "gameId": 2025020347,
+          "spanSHA256": "805b93a8384a2d083bbbe706b0ebb5df7c2bdf209df502af9a2c99e1145ea8d2"
+        },
+        {
+          "span": [
+            353276,
+            363109
+          ],
+          "day": "2025-11-26",
+          "gameId": 2025020366,
+          "spanSHA256": "feda8564c975b43228f66f88ad12e1177259287734607b67c89f26774fd0088d"
+        },
+        {
+          "span": [
+            363323,
+            373268
+          ],
+          "day": "2025-11-28",
+          "gameId": 2025020379,
+          "spanSHA256": "38b3e49ab101c61ae37fde648d8006c35a4321f5d8130924d12b63b52f6adde4"
+        },
+        {
+          "span": [
+            373482,
+            385431
+          ],
+          "day": "2025-11-29",
+          "gameId": 2025020399,
+          "spanSHA256": "f24ee7c33628d400b512ddbdf1c4f5867cc2b01fa36fba740e12560558947f8b"
+        },
+        {
+          "span": [
+            385645,
+            397623
+          ],
+          "day": "2025-12-01",
+          "gameId": 2025020408,
+          "spanSHA256": "1ee6724ebf7096ce1a74f03c12f3a47ca80125ee93469413af3dd4322eb9cea6"
+        },
+        {
+          "span": [
+            397837,
+            413395
+          ],
+          "day": "2025-12-03",
+          "gameId": 2025020423,
+          "spanSHA256": "a2f757ce0ac2bd7e01f3a4bd45d26efe3d4e7fe12d25a8ff3f46b7086c81e10c"
+        },
+        {
+          "span": [
+            413608,
+            424202
+          ],
+          "day": "2025-12-05",
+          "gameId": 2025020437,
+          "spanSHA256": "e9072eda1c170649d45753365a032393c3f420af7d404915e0e80ed95b9efc29"
+        },
+        {
+          "span": [
+            424416,
+            445698
+          ],
+          "day": "2025-12-08",
+          "gameId": 2025020463,
+          "spanSHA256": "8cc26c3f6dd0a1a377a09051c00dcb94cfdca99c54463d7f9e91c37bfa7e2487"
+        },
+        {
+          "span": [
+            445912,
+            459741
+          ],
+          "day": "2025-12-09",
+          "gameId": 2025020474,
+          "spanSHA256": "302c9ed8b1fdf435364bbbd7a1c32d29aceb70dd7b1f2d65c6646dceccc86d86"
+        },
+        {
+          "span": [
+            459955,
+            469077
+          ],
+          "day": "2025-12-14",
+          "gameId": 2025020513,
+          "spanSHA256": "b4abc805bb38de44be84e788f0a2e5021e791a421d7c2f8392e20b908fa3500f"
+        },
+        {
+          "span": [
+            469291,
+            483430
+          ],
+          "day": "2025-12-18",
+          "gameId": 2025020535,
+          "spanSHA256": "1fd875f58d390b561d813f43297b7726ae121d97b0c255dbb797dc6a0de9b05b"
+        },
+        {
+          "span": [
+            483644,
+            496916
+          ],
+          "day": "2025-12-20",
+          "gameId": 2025020553,
+          "spanSHA256": "d05002d0fb5660ee9ac1029fe1d6e0ffc87154dc67ef982aec8e40445c66821a"
+        },
+        {
+          "span": [
+            497130,
+            504586
+          ],
+          "day": "2025-12-21",
+          "gameId": 2025020565,
+          "spanSHA256": "68082dd47189445f6cdb21120dd0ea0d9b3abc8d33ad9a251a12ffba770ee1e2"
+        },
+        {
+          "span": [
+            504800,
+            515409
+          ],
+          "day": "2025-12-23",
+          "gameId": 2025020578,
+          "spanSHA256": "4639f5ce27e0f3cb3b1fbde7b22f6991ee5ecb516b7eda881c6ac6b008a449a2"
+        },
+        {
+          "span": [
+            515623,
+            525250
+          ],
+          "day": "2025-12-27",
+          "gameId": 2025020589,
+          "spanSHA256": "1e785a906952e287947570290a80da51cbc24d2cd501aad496b5ac582a045f23"
+        },
+        {
+          "span": [
+            525464,
+            536142
+          ],
+          "day": "2025-12-29",
+          "gameId": 2025020610,
+          "spanSHA256": "568b1687417e2d8f71182b0e66c8679a54891881ce68d219f9845443cb41f674"
+        },
+        {
+          "span": [
+            536356,
+            546116
+          ],
+          "day": "2025-12-31",
+          "gameId": 2025020628,
+          "spanSHA256": "baac707ff06c53b1ba01ce2a39ca8d3620b170df8e56635788383106a09e959a"
+        },
+        {
+          "span": [
+            546330,
+            559008
+          ],
+          "day": "2026-01-03",
+          "gameId": 2025020646,
+          "spanSHA256": "5054e028d1d4fc7f2530d33a350d5933681b656913cd272d3cc9a4629da139e0"
+        },
+        {
+          "span": [
+            559222,
+            572713
+          ],
+          "day": "2026-01-06",
+          "gameId": 2025020667,
+          "spanSHA256": "55eb0d12fb885a4c68888b296f75c4f92902ee7ea05836c7bffd0db2048d18b1"
+        },
+        {
+          "span": [
+            572927,
+            584775
+          ],
+          "day": "2026-01-08",
+          "gameId": 2025020685,
+          "spanSHA256": "1addf9afcac62a5c615904e70fdb42c4e9d40f504c962dc0c8bc258e77907740"
+        },
+        {
+          "span": [
+            584989,
+            600553
+          ],
+          "day": "2026-01-10",
+          "gameId": 2025020701,
+          "spanSHA256": "ac056310fa4885a7d0f7a3b78905c5bc0f3fb79a63dcd72697c3f2ba4b440b9f"
+        },
+        {
+          "span": [
+            600767,
+            613261
+          ],
+          "day": "2026-01-12",
+          "gameId": 2025020716,
+          "spanSHA256": "5fa31ebd40b7d3b1b617c08499f85e255cd98cdeddc2366180dddb42199f5900"
+        }
+      ]
+    }
+  ],
+  "verificationLimits": {
+    "sourceBodiesOpened": false,
+    "sourceBodiesHashed": false,
+    "wholeFileHashes": "Inherited from retained manifest; not freshly verified.",
+    "spanHashes": "Copied from retained metadata contexts; not freshly verified against source bytes.",
+    "aAttempt": "Owner reports absent; zero source-body reads.",
+    "localSearch": "Filename-only search of known private root, repository tasks/artifacts and original /tmp handoff root found no exact originals or candidate source mirror. This is not an exhaustive Mac or backup search.",
+    "cloudSearch": "Scout reports no exact filename in /workspace/shared/current scratch or ZIP central-directory metadata, and no candidate in Library title-only search. Not independently repeated here.",
+    "ownerMirrorKnowledge": "Existing executor reports no known exact durable mirror or archive identity."
+  },
+  "nextGate": "Identify an exact retained candidate and obtain scoped restoration/path-amendment authority before copying or reading source bytes. Existing evaluator must bind authorized verification to original identity, allocation and span digests; restoring a pathname alone does not verify whole-file bytes. No refetch, substitution, partial pass or new allocation."
+}

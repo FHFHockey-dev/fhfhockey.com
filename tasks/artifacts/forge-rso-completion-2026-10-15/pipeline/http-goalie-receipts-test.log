@@ -1,0 +1,14 @@
+
+> web@0.1.0 test
+> vitest lib/player-forecasts/nativeGoalieOutcomes.test.ts --run
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ lib/player-forecasts/nativeGoalieOutcomes.test.ts (23 tests) 9ms
+
+ Test Files  1 passed (1)
+      Tests  23 passed (23)
+   Start at  22:03:09
+   Duration  276ms (transform 57ms, setup 3ms, collect 75ms, tests 9ms, environment 0ms, prepare 35ms)
+

@@ -1,0 +1,783 @@
+{
+  "taskId": "U05.01",
+  "observedOn": "2026-10-15",
+  "checkpointStatus": "blocked_not_closed",
+  "scope": "DFOFantasy and NHL_Rosters IFTTT source routing and authentic inbound evidence",
+  "parentThreadId": "01a10d0c-2480-73ea-aa65-3be0547bd0d5",
+  "authoritativeTaskList": "Not present in searched local task lists; parent clarification requested; register not edited.",
+  "repository": {
+    "head": "a8f58de6178e282acd3a71851c66f4a56b119f14",
+    "branch": "octoberBranch",
+    "files": [
+      {
+        "path": "web/lib/sources/lineSourceIftttReceiver.ts",
+        "sha256": "70f15ecccf871bc0a8177f1a28ec263fa93287774698ceaffcb13b10cd1d08f9",
+        "workingBlob": "faee6e1e23f3ea5be36af11b9974f952a9d7b690",
+        "headBlob": "faee6e1e23f3ea5be36af11b9974f952a9d7b690",
+        "deployedCommitBlob": "faee6e1e23f3ea5be36af11b9974f952a9d7b690"
+      },
+      {
+        "path": "web/lib/sources/lineSourceIftttReceiver.test.ts",
+        "sha256": "ec639303d55b194a459ea9228916a46d311a679baf17cf7c71056b7968248e99",
+        "workingBlob": "b41711f701c005de6808b869eb22e96ad0822947",
+        "headBlob": "b41711f701c005de6808b869eb22e96ad0822947",
+        "deployedCommitBlob": "b41711f701c005de6808b869eb22e96ad0822947"
+      },
+      {
+        "path": "web/pages/api/v1/sources/ifttt/gamedaylines-tweet.ts",
+        "sha256": "d32c4faf5a073545e502b056f40aa9b26069376e2f47a1d5974b25a39f041859",
+        "workingBlob": "72047d33a46d2835fbda6b6b07df767b96bf7ad4",
+        "headBlob": "72047d33a46d2835fbda6b6b07df767b96bf7ad4",
+        "deployedCommitBlob": "72047d33a46d2835fbda6b6b07df767b96bf7ad4"
+      },
+      {
+        "path": "web/pages/api/v1/sources/ifttt/gamedaygoalies-tweet.ts",
+        "sha256": "89d554fec38517f69450fa7a8f851954423391da9111e53f6b268f4d3ebdd726",
+        "workingBlob": "93381447c28dc6bed19e675ea5ec06fec86f3494",
+        "headBlob": "93381447c28dc6bed19e675ea5ec06fec86f3494",
+        "deployedCommitBlob": "93381447c28dc6bed19e675ea5ec06fec86f3494"
+      },
+      {
+        "path": "web/pages/api/v1/sources/ifttt/gamedaynewsnhl-tweet.ts",
+        "sha256": "a0f36ef0de4d574d6785fe54d648a6a8ccca2ff74167627041b4f9b291069fbb",
+        "workingBlob": "24927e87d736636818de148b8ff7590706712584",
+        "headBlob": "24927e87d736636818de148b8ff7590706712584",
+        "deployedCommitBlob": "24927e87d736636818de148b8ff7590706712584"
+      },
+      {
+        "path": "web/pages/api/v1/sources/ifttt/ccc-tweet.ts",
+        "sha256": "c3004ed5f405b6e3a226d8cbe9b56523fa17299761951bfd81eacc144f6f7bfd",
+        "workingBlob": "e7c7ddb29a5ffc8896e29671b0e0dbace04e66c8",
+        "headBlob": "e7c7ddb29a5ffc8896e29671b0e0dbace04e66c8",
+        "deployedCommitBlob": "e7c7ddb29a5ffc8896e29671b0e0dbace04e66c8"
+      },
+      {
+        "path": "web/pages/api/v1/db/update-line-sources.ts",
+        "sha256": "fa8b6924cd4bc201190a78bf0d3c76a2aec6de470182b20dcc776edbebf9301d",
+        "workingBlob": "c582a09780412581c198886c492ce7e3c75e1409",
+        "headBlob": "c582a09780412581c198886c492ce7e3c75e1409",
+        "deployedCommitBlob": "c582a09780412581c198886c492ce7e3c75e1409"
+      },
+      {
+        "path": "web/lib/sources/tweetInterpretation.ts",
+        "sha256": "a72e39f1c9bea27297ad67b475d1f8d62cf082e70ede613835eff339bded0c55",
+        "workingBlob": "7eeab99cbc995ba18dfa85ae55c77047db0f0351",
+        "headBlob": "9d4f9d044cf323b1fe4bb92b0bc7466d83d0d954",
+        "deployedCommitBlob": "b5331b61da737c1e47af6337af5d292b0581bc39"
+      },
+      {
+        "path": "web/lib/sources/tweetInterpretation.test.ts",
+        "sha256": "8c310cdcd8f738efbefb3ba4fbe24e94677b2c733767757cf0615f9ea23e9053",
+        "workingBlob": "68cd240b1f89c2a3e14034df18b056ed55be32ed",
+        "headBlob": "2aec43975678c47d53f5e9078ec6229904d472b7",
+        "deployedCommitBlob": "d2782dab68c6bc3991ec72e78cd99014f83af4ff"
+      },
+      {
+        "path": "web/__tests__/fixtures/lineupSectionFixtures.ts",
+        "sha256": "d59fd225e7364d61ee4b8e0f3102b39001c321a0d98ece46c15de3a88014caed",
+        "workingBlob": "6c4d32fc9a68b1fca786d105ebea58249faac87e",
+        "headBlob": null,
+        "deployedCommitBlob": null
+      },
+      {
+        "path": "web/lib/sources/playerIdentity.ts",
+        "sha256": "73205daa7a17437f5179bf53d21c8b331710405a369ac4ebb2a61b5c2d1694d0",
+        "workingBlob": "fd6c5eea48433385e9e487e40b7f05a3327e5afd",
+        "headBlob": "fd6c5eea48433385e9e487e40b7f05a3327e5afd",
+        "deployedCommitBlob": "fd6c5eea48433385e9e487e40b7f05a3327e5afd"
+      },
+      {
+        "path": "web/lib/sources/playerIdentity.test.ts",
+        "sha256": "6b47a6fd906d5e6cccf966e192615972a7f9642ed8cb18047f0acc4931686a50",
+        "workingBlob": "74fc8e2a7bbed56877d2897e7a910ddcb0517738",
+        "headBlob": "74fc8e2a7bbed56877d2897e7a910ddcb0517738",
+        "deployedCommitBlob": "74fc8e2a7bbed56877d2897e7a910ddcb0517738"
+      },
+      {
+        "path": "web/lib/sources/playerNameAliases.ts",
+        "sha256": "1fe954374999eccbe7620231134839f0c3a50dd861bf59e6b0d054145d9d4daa",
+        "workingBlob": "67862dcc6935cd41e2781418403decbb4b23afc2",
+        "headBlob": "67862dcc6935cd41e2781418403decbb4b23afc2",
+        "deployedCommitBlob": "67862dcc6935cd41e2781418403decbb4b23afc2"
+      }
+    ],
+    "adjacentParserFiles": [
+      {
+        "path": "web/lib/sources/lineSourceProcessing.ts",
+        "sha256": "4f3621d2a52e764899388b2b0ede5856fe717f50d9187a305f026abe19663e4d",
+        "workingBlob": "1ffea0193a6e3951ecd67d61e8308f047e43662f",
+        "headBlob": "2e5d431b6f612dc13235c887cd83288bec2124da"
+      },
+      {
+        "path": "web/lib/sources/lineSourceProcessing.test.ts",
+        "sha256": "ae58fcf09864556a278d7d0152c85b2721bad7b02ebeacc85f5ddb64c46ee80e",
+        "workingBlob": "26655f4ef51733f0cfc3486738993a497bdf88f1",
+        "headBlob": "3878d209d75eba3849e9c05c9dff66e2619e9d1d"
+      },
+      {
+        "path": "web/lib/sources/linesCccIngestion.ts",
+        "sha256": "aeb9e3e7a25f45b7934a919473d34860154fab36a788f677c776be17458ec458",
+        "workingBlob": "100940e580719fce8191e7803b136481cdcd9ad2",
+        "headBlob": "d38116c02a1c486eaed69c7fcbf57fe45d0c0a8d"
+      },
+      {
+        "path": "web/lib/sources/linesCccIngestion.test.ts",
+        "sha256": "fb70a674deb500b09cf2a3e75edc119df285dd1c0c789d7fb3691c31260137de",
+        "workingBlob": "49bca78b9ff4a63d300ed1189ed89659ac05a3c6",
+        "headBlob": "8f1383c859a196c6377486ddf45fa9cb0eaa5e5d"
+      },
+      {
+        "path": "web/lib/sources/lineupSourceIngestion.ts",
+        "sha256": "a5b4f72ab280921453830e4ee7fabda9175ab0ef46d56d02848554b82d60cea3",
+        "workingBlob": "f59e141fe883e9519922fe12b2ff9d09d46e4c36",
+        "headBlob": "7c4f0e8ce5fe8ea82d2fa43ac7c2ffdc7092152d"
+      },
+      {
+        "path": "web/lib/sources/lineupSourceIngestion.test.ts",
+        "sha256": "f1324d05b07eec6ccb5a8eb4c0f5cbe8f8f216748a4e98c43a9a058a6b0514e2",
+        "workingBlob": "f689ba8b7cac97d533b0f3c19ea37050cac6dab3",
+        "headBlob": "4b3953beeeff43893dd635a46074b33d44dba144"
+      },
+      {
+        "path": "web/lib/sources/tweetPlayerEvents.ts",
+        "sha256": "8f4c2c6aefd2cd0fc181ff9b98fe57ce3eff266a3f0644f7ea4c0db6500e0734",
+        "workingBlob": "dbf8a634f5f81318fba2bd2073334071135c17dd",
+        "headBlob": "d344c6993c4f301833443277d2a7822972f72955"
+      }
+    ]
+  },
+  "deployment": {
+    "method": "Vercel list_deployments(limit=2, target=production, state=READY), then get_deployment with Git metadata",
+    "projectId": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+    "teamId": "team_KVFicHhQJARTbO6wRD2x6jpq",
+    "deploymentId": "dpl_HxdhE1sPUQM9RXaBuUJK1y4VFcPW",
+    "commit": "90d3d5963f47dccfe690d5582dae3d23a598e16d",
+    "branch": "master",
+    "state": "READY",
+    "target": "production",
+    "url": "fhfhockey-nax3ptj61-fhfhockeydevs-projects.vercel.app",
+    "aliases": [
+      "fhfhockey.com",
+      "fhfhockey.vercel.app",
+      "www.fhfhockey.com",
+      "fhfhockey-fhfhockeydevs-projects.vercel.app",
+      "fhfhockey-git-master-fhfhockeydevs-projects.vercel.app"
+    ],
+    "createdAt": 1791858307974,
+    "readyAt": 1791858628957,
+    "limits": [
+      "Metadata links aliases to a deployed commit; no application endpoint was requested.",
+      "Matching local Git blobs establish source correspondence, not fresh execution of every route.",
+      "Database rows and timestamps do not independently establish the originating IFTTT applet or exact deployment request."
+    ]
+  },
+  "database": {
+    "projectId": "fyhftlxokyjtpndbkfse",
+    "method": "Supabase execute_sql, BEGIN READ ONLY, SET LOCAL statement_timeout='5s', SELECT, COMMIT",
+    "schema": [
+      {
+        "table_name": "line_source_ifttt_events",
+        "column_name": "id",
+        "data_type": "uuid"
+      },
+      {
+        "table_name": "line_source_ifttt_events",
+        "column_name": "source",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_ifttt_events",
+        "column_name": "source_group",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_ifttt_events",
+        "column_name": "source_key",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_ifttt_events",
+        "column_name": "source_account",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_ifttt_events",
+        "column_name": "username",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_ifttt_events",
+        "column_name": "text",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_ifttt_events",
+        "column_name": "link_to_tweet",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_ifttt_events",
+        "column_name": "tweet_id",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_ifttt_events",
+        "column_name": "tweet_embed_code",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_ifttt_events",
+        "column_name": "tweet_created_at",
+        "data_type": "timestamp with time zone"
+      },
+      {
+        "table_name": "line_source_ifttt_events",
+        "column_name": "created_at_label",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_ifttt_events",
+        "column_name": "processing_status",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_ifttt_events",
+        "column_name": "raw_payload",
+        "data_type": "jsonb"
+      },
+      {
+        "table_name": "line_source_ifttt_events",
+        "column_name": "received_at",
+        "data_type": "timestamp with time zone"
+      },
+      {
+        "table_name": "line_source_ifttt_events",
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "capture_key",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "source_group",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "source_key",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "source_account",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "snapshot_date",
+        "data_type": "date"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "observed_at",
+        "data_type": "timestamp with time zone"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "tweet_posted_at",
+        "data_type": "timestamp with time zone"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "tweet_posted_label",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "game_id",
+        "data_type": "bigint"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "team_id",
+        "data_type": "bigint"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "team_abbreviation",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "team_name",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "source",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "source_url",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "source_label",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "source_handle",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "author_name",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "tweet_id",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "tweet_url",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "quoted_tweet_id",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "quoted_tweet_url",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "quoted_author_handle",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "quoted_author_name",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "primary_text_source",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "classification",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "detected_league",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "nhl_filter_status",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "nhl_filter_reason",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "status",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "raw_text",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "enriched_text",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "quoted_raw_text",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "quoted_enriched_text",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "keyword_hits",
+        "data_type": "ARRAY"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "matched_player_ids",
+        "data_type": "ARRAY"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "matched_player_names",
+        "data_type": "ARRAY"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "unmatched_names",
+        "data_type": "ARRAY"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "line_1_player_ids",
+        "data_type": "ARRAY"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "line_1_player_names",
+        "data_type": "ARRAY"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "line_2_player_ids",
+        "data_type": "ARRAY"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "line_2_player_names",
+        "data_type": "ARRAY"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "line_3_player_ids",
+        "data_type": "ARRAY"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "line_3_player_names",
+        "data_type": "ARRAY"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "line_4_player_ids",
+        "data_type": "ARRAY"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "line_4_player_names",
+        "data_type": "ARRAY"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "pair_1_player_ids",
+        "data_type": "ARRAY"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "pair_1_player_names",
+        "data_type": "ARRAY"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "pair_2_player_ids",
+        "data_type": "ARRAY"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "pair_2_player_names",
+        "data_type": "ARRAY"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "pair_3_player_ids",
+        "data_type": "ARRAY"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "pair_3_player_names",
+        "data_type": "ARRAY"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "goalie_1_player_id",
+        "data_type": "bigint"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "goalie_1_name",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "goalie_2_player_id",
+        "data_type": "bigint"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "goalie_2_name",
+        "data_type": "text"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "scratches_player_ids",
+        "data_type": "ARRAY"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "scratches_player_names",
+        "data_type": "ARRAY"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "injured_player_ids",
+        "data_type": "ARRAY"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "injured_player_names",
+        "data_type": "ARRAY"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "raw_payload",
+        "data_type": "jsonb"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "metadata",
+        "data_type": "jsonb"
+      },
+      {
+        "table_name": "line_source_snapshots",
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone"
+      }
+    ],
+    "recentSourceSample": {
+      "query": "BEGIN READ ONLY;\nSET LOCAL statement_timeout = '5s';\nWITH sampled AS MATERIALIZED (\n  SELECT id, source, source_group, source_key, source_account, username,\n         tweet_id, received_at, tweet_created_at, processing_status, link_to_tweet\n  FROM public.line_source_ifttt_events\n  WHERE received_at >= '2026-10-01T00:00:00Z' AND received_at < '2026-10-15T05:25:00Z'\n  ORDER BY received_at DESC LIMIT 5000\n), groups AS (\n  SELECT source, source_group, source_key, source_account, username,\n    count(*) AS event_count, min(received_at) AS first_received_at, max(received_at) AS last_received_at,\n    array_agg(DISTINCT processing_status ORDER BY processing_status) AS processing_statuses\n  FROM sampled GROUP BY source, source_group, source_key, source_account, username\n), matches AS (\n  SELECT id,source,source_group,source_key,source_account,username,tweet_id,received_at,tweet_created_at,processing_status\n  FROM sampled\n  WHERE lower(replace(source_account,'@','')) IN ('dfofantasy','nhl_rosters')\n     OR lower(replace(coalesce(username,''),'@','')) IN ('dfofantasy','nhl_rosters')\n     OR lower(coalesce(link_to_tweet,'')) ~ '^https?://(www\\.)?(twitter\\.com|x\\.com)/(dfofantasy|nhl_rosters)/status(es)?/'\n  ORDER BY received_at DESC LIMIT 20\n)\nSELECT now() AS observed_at,\n  (SELECT count(*) FROM sampled) AS sample_count,\n  (SELECT min(received_at) FROM sampled) AS sample_first_received_at,\n  (SELECT max(received_at) FROM sampled) AS sample_last_received_at,\n  coalesce((SELECT jsonb_agg(to_jsonb(groups) ORDER BY event_count DESC) FROM groups),'[]'::jsonb) AS source_groups,\n  coalesce((SELECT jsonb_agg(to_jsonb(matches)) FROM matches),'[]'::jsonb) AS requested_source_matches;\nCOMMIT;",
+      "result": [
+        {
+          "observed_at": "2026-10-15 05:09:07.83425+00",
+          "sample_count": 1247,
+          "sample_first_received_at": "2026-10-01 01:20:44.199416+00",
+          "sample_last_received_at": "2026-10-15 03:58:41.556367+00",
+          "source_groups": [
+            {
+              "source": "ifttt",
+              "username": "GameDayLines",
+              "source_key": "gamedaylines",
+              "event_count": 509,
+              "source_group": "gdl_suite",
+              "source_account": "SOURCE_ACCOUNT",
+              "last_received_at": "2026-10-15T03:00:31.408742+00:00",
+              "first_received_at": "2026-10-01T01:20:44.199416+00:00",
+              "processing_statuses": [
+                "failed",
+                "processed",
+                "rejected"
+              ]
+            },
+            {
+              "source": "ifttt",
+              "username": "GameDayNewsNHL",
+              "source_key": "gamedaynewsnhl",
+              "event_count": 478,
+              "source_group": "gdl_suite",
+              "source_account": "GameDayNewsNHL",
+              "last_received_at": "2026-10-15T03:58:41.556367+00:00",
+              "first_received_at": "2026-10-01T14:13:31.409102+00:00",
+              "processing_statuses": [
+                "failed",
+                "pending",
+                "processed",
+                "rejected"
+              ]
+            },
+            {
+              "source": "ifttt",
+              "username": "GameDayGoalies",
+              "source_key": "gamedaygoalies",
+              "event_count": 260,
+              "source_group": "gdl_suite",
+              "source_account": "GameDayGoalies",
+              "last_received_at": "2026-10-14T18:32:39.87161+00:00",
+              "first_received_at": "2026-10-01T01:57:21.695079+00:00",
+              "processing_statuses": [
+                "failed",
+                "processed",
+                "rejected"
+              ]
+            }
+          ],
+          "requested_source_matches": []
+        }
+      ]
+    },
+    "historicalRequestedSources": {
+      "query": "BEGIN READ ONLY;\nSET LOCAL statement_timeout = '5s';\nWITH matches AS (\n  SELECT id,source,source_group,source_key,source_account,username,tweet_id,received_at,tweet_created_at,processing_status\n  FROM public.line_source_ifttt_events\n  WHERE source_account IN ('DFOFantasy','@DFOFantasy','dfofantasy','NHL_Rosters','@NHL_Rosters','nhl_rosters')\n    OR username IN ('DFOFantasy','@DFOFantasy','dfofantasy','NHL_Rosters','@NHL_Rosters','nhl_rosters')\n    OR source_key IN ('dfofantasy','dfo_fantasy','dfo-fantasy','nhl_rosters','nhl-rosters','nhlrosters')\n  ORDER BY received_at DESC LIMIT 20\n), mentions AS (\n SELECT source_key,\n   count(*) FILTER (WHERE text ~* '(^|[^a-z0-9_])@?DFOFantasy([^a-z0-9_]|$)') AS dfofantasy_text_mentions,\n   count(*) FILTER (WHERE text ~* '(^|[^a-z0-9_])@?NHL_Rosters([^a-z0-9_]|$)') AS nhl_rosters_text_mentions\n FROM public.line_source_ifttt_events\n WHERE received_at >= '2026-10-01T00:00:00Z' AND received_at < '2026-10-15T05:25:00Z'\n GROUP BY source_key\n)\nSELECT now() AS observed_at,\n  coalesce((SELECT jsonb_agg(to_jsonb(matches)) FROM matches),'[]'::jsonb) AS exact_historical_matches,\n  coalesce((SELECT jsonb_agg(to_jsonb(mentions)) FROM mentions),'[]'::jsonb) AS recent_relay_text_mentions;\nCOMMIT;",
+      "result": [
+        {
+          "observed_at": "2026-10-15 05:10:32.68552+00",
+          "exact_historical_matches": [],
+          "recent_relay_text_mentions": [
+            {
+              "source_key": "gamedaygoalies",
+              "dfofantasy_text_mentions": 0,
+              "nhl_rosters_text_mentions": 0
+            },
+            {
+              "source_key": "gamedaynewsnhl",
+              "dfofantasy_text_mentions": 0,
+              "nhl_rosters_text_mentions": 0
+            },
+            {
+              "source_key": "gamedaylines",
+              "dfofantasy_text_mentions": 0,
+              "nhl_rosters_text_mentions": 0
+            }
+          ]
+        }
+      ]
+    },
+    "snapshotLinkage": {
+      "query": "BEGIN READ ONLY;\nSET LOCAL statement_timeout = '5s';\nWITH requested_snapshots AS (\n  SELECT capture_key,source_group,source_key,source_account,tweet_id,observed_at,\n    metadata->>'iftttEventId' AS ifttt_event_id,classification,nhl_filter_status,status\n  FROM public.line_source_snapshots\n  WHERE source_account IN ('DFOFantasy','@DFOFantasy','dfofantasy','NHL_Rosters','@NHL_Rosters','nhl_rosters')\n     OR source_key IN ('dfofantasy','dfo_fantasy','dfo-fantasy','nhl_rosters','nhl-rosters','nhlrosters')\n  ORDER BY observed_at DESC LIMIT 20\n), controls AS (\n  SELECT recent.* FROM (VALUES ('gamedaylines'),('gamedaygoalies'),('gamedaynewsnhl')) AS key(source_key)\n  CROSS JOIN LATERAL (\n    SELECT id,source_key,source_account,username,tweet_id,received_at,processing_status,\n      raw_payload->'lineSourceProcessing'->>'captureKey' AS receipt_capture_key,\n      raw_payload->'lineSourceProcessing'->>'processedAt' AS receipt_processed_at\n    FROM public.line_source_ifttt_events event\n    WHERE event.source_key=key.source_key AND event.processing_status='processed'\n      AND event.received_at >= '2026-10-01T00:00:00Z'\n      AND event.received_at < '2026-10-15T05:25:00Z'\n    ORDER BY event.received_at DESC LIMIT 1\n  ) recent\n), links AS (\n  SELECT c.*,s.capture_key AS snapshot_capture_key,s.metadata->>'iftttEventId' AS snapshot_event_id,\n    s.source_account AS snapshot_source_account,s.classification,s.nhl_filter_status,s.status AS snapshot_status,\n    (s.metadata->>'iftttEventId'=c.id::text) AS event_id_matches,\n    (s.capture_key=c.receipt_capture_key) AS capture_key_matches\n  FROM controls c\n  LEFT JOIN public.line_source_snapshots s ON s.capture_key=c.receipt_capture_key\n)\nSELECT now() AS observed_at,\n  coalesce((SELECT jsonb_agg(to_jsonb(requested_snapshots)) FROM requested_snapshots),'[]'::jsonb) AS requested_source_snapshots,\n  coalesce((SELECT jsonb_agg(to_jsonb(links)) FROM links),'[]'::jsonb) AS existing_source_control_links;\nCOMMIT;",
+      "result": [
+        {
+          "observed_at": "2026-10-15 05:11:13.507915+00",
+          "requested_source_snapshots": [],
+          "existing_source_control_links": [
+            {
+              "id": "6cac29e2-e13d-4b0b-b296-10a8047d2fa2",
+              "tweet_id": "2110527985757601916",
+              "username": "GameDayLines",
+              "source_key": "gamedaylines",
+              "received_at": "2026-10-15T00:35:40.383952+00:00",
+              "classification": "lineup",
+              "source_account": "SOURCE_ACCOUNT",
+              "snapshot_status": "observed",
+              "event_id_matches": true,
+              "nhl_filter_status": "accepted",
+              "processing_status": "processed",
+              "snapshot_event_id": "6cac29e2-e13d-4b0b-b296-10a8047d2fa2",
+              "capture_key_matches": true,
+              "receipt_capture_key": "gamedaylines:2026-10-14:25:no-game:2110527985757601916:no-quoted-tweet:lineup:accepted",
+              "receipt_processed_at": "2026-10-15T00:35:43.523Z",
+              "snapshot_capture_key": "gamedaylines:2026-10-14:25:no-game:2110527985757601916:no-quoted-tweet:lineup:accepted",
+              "snapshot_source_account": "SOURCE_ACCOUNT"
+            },
+            {
+              "id": "085af12d-748d-4a93-b949-82c95db7957d",
+              "tweet_id": "2110437831697141776",
+              "username": "GameDayGoalies",
+              "source_key": "gamedaygoalies",
+              "received_at": "2026-10-14T18:32:39.87161+00:00",
+              "classification": "goalie_start",
+              "source_account": "GameDayGoalies",
+              "snapshot_status": "observed",
+              "event_id_matches": true,
+              "nhl_filter_status": "accepted",
+              "processing_status": "processed",
+              "snapshot_event_id": "085af12d-748d-4a93-b949-82c95db7957d",
+              "capture_key_matches": true,
+              "receipt_capture_key": "gamedaygoalies:2026-10-14:25:2026020107:2110437831697141776:no-quoted-tweet:goalie_start:accepted",
+              "receipt_processed_at": "2026-10-14T18:32:42.305Z",
+              "snapshot_capture_key": "gamedaygoalies:2026-10-14:25:2026020107:2110437831697141776:no-quoted-tweet:goalie_start:accepted",
+              "snapshot_source_account": "GameDayGoalies"
+            },
+            {
+              "id": "4a196361-9a60-4a8d-b42d-f8d7d052008b",
+              "tweet_id": "2110580632707559765",
+              "username": "GameDayNewsNHL",
+              "source_key": "gamedaynewsnhl",
+              "received_at": "2026-10-15T03:58:38.991005+00:00",
+              "classification": "other",
+              "source_account": "GameDayNewsNHL",
+              "snapshot_status": "observed",
+              "event_id_matches": true,
+              "nhl_filter_status": "accepted",
+              "processing_status": "processed",
+              "snapshot_event_id": "4a196361-9a60-4a8d-b42d-f8d7d052008b",
+              "capture_key_matches": true,
+              "receipt_capture_key": "gamedaynewsnhl:2026-10-14:25:2026020107:2110580632707559765:no-quoted-tweet:other:accepted",
+              "receipt_processed_at": "2026-10-15T03:58:41.282Z",
+              "snapshot_capture_key": "gamedaynewsnhl:2026-10-14:25:2026020107:2110580632707559765:no-quoted-tweet:other:accepted",
+              "snapshot_source_account": "GameDayNewsNHL"
+            }
+          ]
+        }
+      ]
+    },
+    "limits": [
+      "The recent window uses received_at >= 2026-10-01T00:00:00Z and < 2026-10-15T05:25:00Z; each result's observed_at is the actual earlier observation time.",
+      "The recent sample cap was 5000 and 1247 were returned, so the cap was not reached.",
+      "Historical exact-variant searches do not prove absence under an unknown spelling, different database/table, or upstream applet.",
+      "Positive control rows belong to existing GameDay accounts, not DFOFantasy or NHL_Rosters.",
+      "No full raw_payload, tweet bodies, header values, credentials, aliases, or sealed outcome datasets were selected."
+    ]
+  },
+  "localTests": {
+    "command": "npm test -- --run lib/sources/lineSourceIftttReceiver.test.ts",
+    "cwd": "/Users/tim/Code/fhfhockey.com/web",
+    "node": "v22.11.0",
+    "exitCode": 0,
+    "testsPassed": 9,
+    "filesPassed": 1,
+    "output": "\n> web@0.1.0 test\n> vitest --run lib/sources/lineSourceIftttReceiver.test.ts\n\n\n RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web\n\n(node:49149) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.\n(Use `node --trace-deprecation ...` to show where the warning was created)\nstderr | lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > preserves pending work when production has no trusted processor origin\nLine source IFTTT processor follow-up failed: { success: false, status: null, error: 'Processor request failed' }\n\nstderr | lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > keeps the raw event stored and retryable when process=true follow-up fails\nLine source IFTTT processor follow-up failed: { success: false, status: 503, error: 'Processor request failed' }\n\n ✓ lib/sources/lineSourceIftttReceiver.test.ts (9 tests) 75ms\n\n Test Files  1 passed (1)\n      Tests  9 passed (9)\n   Start at  00:09:52\n   Duration  445ms (transform 39ms, setup 3ms, collect 52ms, tests 75ms, environment 148ms, prepare 32ms)\n\n",
+    "limits": [
+      "Mocks exercise generic GameDay source routing, dedupe, immediate processing, trusted origin, bounded retries, and processor-failure retention.",
+      "No DFOFantasy- or NHL_Rosters-specific test exists in the inspected receiver suite.",
+      "No parser tests were run during this acceptance task."
+    ]
+  },
+  "retainedEvidence": [
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/GDL-INGESTION-RUNBOOK.md",
+      "finding": "Documents three GameDay routes plus CCC; no requested-account mapping."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-closure-receipts.json",
+      "finding": "Existing observed caller receipts explicitly do not prove caller identity, deployment linkage, or processed-source parity."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-browser-source-evidence.json",
+      "finding": "Original-post observations explicitly do not verify original-to-relay relationship."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-deployment.json",
+      "finding": "Historical metadata identifies a different deployment/commit, not acceptance for these accounts."
+    }
+  ],
+  "operationalAccounting": {
+    "supabaseProjectListings": 1,
+    "supabaseReadOnlySqlCalls": 4,
+    "vercelDeploymentListCalls": 1,
+    "vercelDeploymentDetailCalls": 1,
+    "applicationRequests": 0,
+    "ingestionOrCronRequests": 0,
+    "dbWrites": 0,
+    "aliasWrites": 0,
+    "replays": 0,
+    "deploymentsTriggered": 0,
+    "pushes": 0,
+    "parserFilesEdited": 0,
+    "sealedOutcomeDatasetsInspected": 0
+  },
+  "ownership": {
+    "ownedOutputDirectory": "tasks/artifacts/ifttt-u05-01-acceptance-2026-10-15",
+    "parserAndIdentityFiles": "Read-only; existing dirty changes preserved; adjacent cloud parser worker owns repair.",
+    "sharedRegister": "Parent remains sole writer; no local U05.01 register located."
+  }
+}

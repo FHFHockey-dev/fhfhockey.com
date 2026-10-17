@@ -1,0 +1,25 @@
+{
+  "note": "New task-only exact storage harness/evidence outside frozen56; author-only, independently unreviewed.",
+  "files": [
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/exact-persistence.test.ts",
+      "sha256": "eb68eccbc7ab860c7fddcded07bc666892fd5c681100d976390a180fe9d306d6"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/exact-persistence-results.json",
+      "sha256": "a9189d2f27b76693365c163108b71134e0d4385a8fa43b1902d234946cf5439a"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/EXACT-PERSISTENCE-PROGRESS.md",
+      "sha256": "01c062c6c4b99daf9614ff51ae444ef650c009b24dccc174cd0f345f900883a1"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/exact-persistence-initial.log",
+      "sha256": "137ca060fb1f3a5095f4b85791646a46ad27b5e8615c399e1e41bef2e8c6eecd"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/exact-persistence-run.log",
+      "sha256": "bb402d4ae1d8cfdea0c7028d9eb9640a9d423cefa03f91e7c07ede7f765a0793"
+    }
+  ]
+}

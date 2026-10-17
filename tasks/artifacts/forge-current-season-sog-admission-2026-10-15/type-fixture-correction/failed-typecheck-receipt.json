@@ -1,0 +1,11 @@
+{
+  "startUTC": "2026-10-15T22:19:51.015310+00:00",
+  "finishedUTC": "2026-10-15T22:19:53.267991+00:00",
+  "elapsedSeconds": 2.252548750002461,
+  "exit": 1,
+  "timedOut": false,
+  "maxOldSpaceMiB": 4096,
+  "wallTimeoutSeconds": 55,
+  "scope": "eight changed files, two ambient roots and transitive imports; not full configured repository",
+  "logSHA256": "71f6a7834a7a0465ee3690e7be37946dbbf705d9a23633dd538f216f64c274b4"
+}

@@ -1,0 +1,20 @@
+{
+  "note": "Only these three captured inputs execute or define the new receiver storage fixture. Other prior accepted read-only snapshots remain retained, without extending combined-goal acceptance.",
+  "files": [
+    {
+      "path": "web/lib/projections/starterBoardFlags.ts",
+      "snapshotPath": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v1/dependency-snapshot/web/lib/projections/starterBoardFlags.ts",
+      "sha256": "f6f0bea6cedda71bb43f41f7aa0235232178524b9bf9271c0a1b3567ae251e2d"
+    },
+    {
+      "path": "web/lib/projections/evidenceTime.ts",
+      "snapshotPath": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v1/dependency-snapshot/web/lib/projections/evidenceTime.ts",
+      "sha256": "c818c021a2857607055d60454ecf03ac39fb27298719726662652d8321e42a00"
+    },
+    {
+      "path": "supabase/migrations/20260716112908_production_schema_baseline.sql",
+      "snapshotPath": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v1/dependency-snapshot/supabase/migrations/20260716112908_production_schema_baseline.sql",
+      "sha256": "27067d2221516be147d5cf71492b1fee3f0fd377d0ccd14e49557931ad1b791d"
+    }
+  ]
+}

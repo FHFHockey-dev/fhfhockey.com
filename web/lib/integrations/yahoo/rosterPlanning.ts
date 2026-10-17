@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadPlanningData, parsePlanningDataQuery } from "lib/rosterScheduleData/planning";
 import { expandActiveSlots } from "lib/rosterScheduleOptimizer/slots";
+import { normalizeEligibility } from "lib/rosterScheduleOptimizer/eligibility";
 import type { AcquisitionEvidence, LeagueRules, PlanningData, PlanningSnapshot, ProviderCapabilities, RosterEntry, ScoringCategory, StatLine } from "lib/rosterScheduleOptimizer/planningTypes";
 import { assertYahooLeagueGameContext, resolveYahooGameContext } from "./gameContext";
 import { parseYahooBoardSettings, YAHOO_STAT_KEY_BY_ID, YahooLiveDraftError } from "./liveDraft";
@@ -275,39 +276,71 @@ export async function loadYahooPlanningSnapshot(args: {
     lockedAssignments.push({ date: today, playerId: player.id, slotId: slot?.id ?? null });
   }
   let pagesChecked = 0, availabilityComplete = false;
+  let pagesAttempted = 0, pagesAccepted = 0, rowsAccepted = 0, repeatedRows = 0;
+  let availabilityStop = "page limit";
   const candidates = new Map<string, Row>();
   const availabilityStarted = Date.now();
   let repeatedPageIdentity = false;
   // Read all pages within a disclosed bound, independent of forecast availability.
   for (let start = 0; start <= 2000; start += 25) {
-    if ((retryAfterSeconds ?? 0) > 0 || refreshError?.code === "yahoo_rate_limited" || refreshError?.code === "yahoo_reauth_required" || refreshError?.code === "yahoo_access_denied") break;
-    if (Date.now() - availabilityStarted >= 8000) { limitations.push("Availability discovery reached its time budget; remaining players are unknown."); break; }
+    if ((retryAfterSeconds ?? 0) > 0 || refreshError?.code === "yahoo_rate_limited" || refreshError?.code === "yahoo_reauth_required" || refreshError?.code === "yahoo_access_denied") { availabilityStop = "provider backoff or access restriction"; break; }
+    if (Date.now() - availabilityStarted >= 8000) { availabilityStop = "time budget"; limitations.push("Availability discovery reached its time budget; remaining players are unknown."); break; }
+    let pageFailure = "request failure";
     try {
+      pagesAttempted++;
       const result = await fetchYahooPlanningResource({ ...provider, resource: { type: "available_page", start } });
       pagesChecked++;
-      if (!providerFresh(result, now) || text(yahooValue(result.payload, "league_key")) !== league.external_league_key) throw new Error("Unverified availability scope/freshness");
+      const pageFresh = providerFresh(result, now), pageScoped = text(yahooValue(result.payload, "league_key")) === league.external_league_key;
+      if (!pageFresh || !pageScoped) {
+        pageFailure = pageScoped ? "unverified freshness" : pageFresh ? "league scope mismatch" : "unverified scope and freshness";
+        throw new Error("Unverified availability scope/freshness");
+      }
+      pageFailure = "invalid player collection";
       const rows = yahooPlanningPlayers(result.payload);
       if (rows.length > 25) throw new Error("Incomplete availability page");
+      pagesAccepted++; rowsAccepted += rows.length;
       for (const row of rows) {
-        if (candidates.has(row.player_key)) { repeatedPageIdentity = true; candidates.set(row.player_key, { ...row, ownership: null }); limitations.push("Availability pages changed while reading; repeated identities remain unknown."); }
+        if (candidates.has(row.player_key)) { repeatedRows++; repeatedPageIdentity = true; candidates.set(row.player_key, { ...row, ownership: null }); limitations.push("Availability pages changed while reading; repeated identities remain unknown."); }
         else candidates.set(row.player_key, row);
       }
-      if (rows.length < 25) { availabilityComplete = !repeatedPageIdentity; break; }
-    } catch (error) { optionalFailure(error); limitations.push("Availability coverage is partial; unverified players remain unknown."); break; }
+      if (rows.length < 25) { availabilityComplete = !repeatedPageIdentity; availabilityStop = repeatedPageIdentity ? "end of list with repeated identities" : "end of list"; break; }
+    } catch (error) { availabilityStop = pageFailure; optionalFailure(error); limitations.push("Availability coverage is partial; unverified players remain unknown."); break; }
   }
+  const availabilityElapsed = Math.max(0, Date.now() - availabilityStarted);
   if (!availabilityComplete) limitations.push("Available-player discovery did not reach the end of the provider list.");
+  let catalogMatches = 0, rosteredMatches = 0;
   for (const row of candidates.values()) {
-    const player = resolve(row); if (!player || unavailableIds.has(player.id)) continue;
+    const player = resolve(row); if (!player) continue;
+    catalogMatches++;
+    if (unavailableIds.has(player.id)) { rosteredMatches++; continue; }
     const ownership = yahooFields(row.ownership);
     player.availability = ownership.ownership_type === "freeagents" ? "free_agent" : ownership.ownership_type === "waivers" ? "waivers" : "unknown";
     const waiver = numeric(ownership.waiver_date);
-    player.waiverClearsAt = waiver === null ? null : new Date(waiver * 1000).toISOString();
+    // Unrepresentable timestamps stay unknown instead of aborting the roster read.
+    player.waiverClearsAt = waiver === null ? null : new Date(waiver * 1000).toJSON();
     player.providerId = String(row.player_key);
     const positions = eligibility(row.eligible_positions).filter(value => !["BN", "IR", "IR+", "NA"].includes(value));
     if (positions.length) player.eligiblePositions = [...new Set(positions)];
     player.eligibilityVerified = positions.length > 0;
   }
   for (const player of data.players) if (unavailableIds.has(player.id)) player.availability = "rostered";
+  // Request-local counts only. These summaries do not enter the saved snapshot or change player facts.
+  let bothKnown = 0, eligibilityOnly = 0, availabilityOnly = 0, neitherKnown = 0;
+  for (const player of data.players) {
+    if (unavailableIds.has(player.id)) continue;
+    const normalized = normalizeEligibility(player.eligiblePositions);
+    const eligible = player.eligibilityVerified === true && normalized.valid && normalized.playerClass === player.playerClass;
+    const available = player.availability === "free_agent" || player.availability === "waivers";
+    if (eligible && available) bothKnown++;
+    else if (eligible) eligibilityOnly++;
+    else if (available) availabilityOnly++;
+    else neitherKnown++;
+  }
+  const discoverySummary = [
+    `Yahoo availability read: ${pagesAttempted} pages attempted, ${pagesChecked} returned, ${pagesAccepted} accepted; ${rowsAccepted} accepted rows, ${candidates.size} unique, ${repeatedRows} repeats. ${availabilityElapsed} ms elapsed; 8000 ms between-page budget. Stopped: ${availabilityStop}.`,
+    `Yahoo availability matches: ${catalogMatches} unique catalog matches, ${candidates.size - catalogMatches} unmatched; ${rosteredMatches} rostered/excluded, ${catalogMatches - rosteredMatches} candidate matches.`,
+    `Yahoo provider catalog before search: ${bothKnown + eligibilityOnly + availabilityOnly + neitherKnown} candidates; ${bothKnown} both known, ${eligibilityOnly} eligibility only, ${availabilityOnly} availability only, ${neitherKnown} neither known. Eligibility means usable verified positions; availability means free agent or waivers. Discovery ${availabilityComplete ? "complete" : "partial"}; unseen players remain unknown.`,
+  ];
   let realized: StatLine = {}, opponent: PlanningSnapshot["opponent"] = null;
   if (scoreboardResult && providerFresh(scoreboardResult, now)
     && text(yahooValue(scoreboardResult.payload, "league_key")) === league.external_league_key) {
@@ -338,6 +371,6 @@ export async function loadYahooPlanningSnapshot(args: {
       availability: { source: `Yahoo league ownership (${pagesChecked} pages)`, asOf: now.toISOString(), seasonId: query.seasonId, completeness: availabilityComplete ? "complete" : "partial", limitations: availabilityComplete ? [] : ["Only individually verified availability may be actionable."] },
     },
   };
-  return { snapshot, capabilities: { roster: fresh && ownRows.length === roster.length && roster.length > 0, availability: availabilityComplete, rules: false, matchup: opponent !== null, acquisitions: false, limitations },
+  return { snapshot, capabilities: { roster: fresh && ownRows.length === roster.length && roster.length > 0, availability: availabilityComplete, rules: false, matchup: opponent !== null, acquisitions: false, limitations: [...limitations, ...discoverySummary] },
     ...(refreshError ? { code: refreshError.code, retryAfterSeconds } : {}) };
 }

@@ -1,0 +1,21 @@
+const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),ts=require(path.resolve(process.cwd(),'node_modules/typescript'));
+const root=path.resolve(process.cwd(),'..'),task=path.join(root,'tasks/ifttt-integration-2026-10-16'),own=__dirname;
+const sha=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
+const parse=p=>ts.createSourceFile(p,fs.readFileSync(p,'utf8'),ts.ScriptTarget.Latest,true);
+const must=(v,msg)=>{if(!v)throw Error(msg)};
+const calls=p=>{const out=[];const f=parse(p);const walk=n=>{if(ts.isCallExpression(n)&&n.arguments.length>=2&&(/^(it|test)(\.|\()/.test(n.expression.getText(f))||['it','test'].includes(n.expression.getText(f)))){
+ const body=n.arguments[1];if(ts.isArrowFunction(body)||ts.isFunctionExpression(body))out.push({title:n.arguments[0].getText(f),body:body.getText(f)});
+ }ts.forEachChild(n,walk)};walk(f);return out};
+const asserts=p=>{const f=parse(p),out=[];const walk=n=>{if(ts.isCallExpression(n)&&n.expression.getText(f).startsWith('expect('))out.push(n.getText(f));ts.forEachChild(n,walk)};walk(f);return out};
+const original=path.join(task,'consumer-binding-increment/consumer-binding.test.ts'),copy=path.join(task,'dependency-compatibility-increment/consumer-binding.test.ts');
+must(JSON.stringify(calls(original))===JSON.stringify(calls(copy)),'Consumer case body/assertions changed');
+const route=path.join(root,'web/__tests__/pages/api/v1/db/update-line-sources.test.ts'),routeBefore=path.join(task,'raw-job-ack-increment/evidence/update-line-sources.test.before.ts');
+must(JSON.stringify(asserts(route))===JSON.stringify(asserts(routeBefore)),'Original route assertions changed');
+const ownerExpiry=path.join(root,'web/lib/player-forecasts/contributions.test.ts'),copyExpiry=path.join(task,'dependency-compatibility-increment/expiry-compatibility.test.ts');
+const relevant=calls(ownerExpiry).filter(c=>c.title.includes('retains original source clocks while enforcing earlier catalog validity')||c.title.includes('withholds invalid or elapsed catalog validity'));
+must(relevant.length===2,'Owner expiry cases missing');must(JSON.stringify(relevant)===JSON.stringify(calls(copyExpiry)),'Copied expiry body/assertions changed');
+const vars=p=>{const f=parse(p),out={};const walk=n=>{if(ts.isVariableDeclaration(n)&&['game','source'].includes(n.name.getText(f))&&n.initializer&&!out[n.name.getText(f)])out[n.name.getText(f)]=n.initializer.getText(f);ts.forEachChild(n,walk)};walk(f);return out};
+must(JSON.stringify(vars(ownerExpiry))===JSON.stringify(vars(copyExpiry)),'Expiry fixture constants changed');
+for(const [src,dest] of [[copy,'consumer-binding.test.ts'],[copyExpiry,'expiry-compatibility.test.ts'],[path.join(task,'raw-job-ack-increment/raw-job-ack.test.ts'),'raw-job-ack.test.ts']])must(fs.readFileSync(src).equals(fs.readFileSync(path.join(own,dest))),'Reviewer copied test differs');
+const report={consumerBodiesUnchanged:true,consumerBodyCount:calls(copy).length,routeOriginalAssertionsUnchanged:true,routeAssertionExpressionCount:asserts(route).length,expiryOwnerBodiesByteIdentical:true,expiryFixturesByteIdentical:true,ownerExpirySourcePath:ownerExpiry,ownerExpirySourceSha256:sha(ownerExpiry),reviewerHarnessCopiesByteIdentical:true,originalConsumerTestSha256:sha(original),copiedConsumerTestSha256:sha(copy),jobTestSha256:sha(path.join(own,'raw-job-ack.test.ts'))};
+fs.writeFileSync(path.join(own,'fidelity-audit.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report,null,2));

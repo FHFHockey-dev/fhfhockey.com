@@ -1,0 +1,523 @@
+--- tasks/artifacts/forge-rso-completion-2026-10-15/consumer/frozen-window/before/modeledSkaterParticipation.ts	2026-10-15 23:41:49
++++ web/lib/player-forecasts/modeledSkaterParticipation.ts	2026-10-15 23:44:17
+@@ -43,8 +43,15 @@
+  * No outcome acquisition, fitting, private research input, or participation confirmation. */
+ export function buildSkaterParticipationReceipt(input: SkaterParticipationInput,
+   issuance: { issuedAt: string; expiresAt: string }): SkaterParticipationReceipt {
++  return buildSkaterParticipationKernel(input, issuance);
++}
++
++function buildSkaterParticipationKernel(input: SkaterParticipationInput,
++  issuance: { issuedAt: string; expiresAt: string },
++  frame?: { start: number; end: number; additionalEvidence: ParticipationEvidence[] }): SkaterParticipationReceipt {
+   const scope = input?.scope, cutoff = time(input?.cutoffAt), issued = time(issuance.issuedAt), expiry = time(issuance.expiresAt);
+   const season = String(scope?.seasonId);
++  const historyStart = frame?.start ?? cutoff - 60 * DAY, historyEnd = frame?.end ?? cutoff;
+   if (input?.version !== "skater-participation-input-v1" || !scope
+     || ![scope.playerId, scope.nhlPlayerId, scope.teamId, scope.gameId].every(positiveId)
+     || !/^\d{8}$/.test(season) || Number(season.slice(4)) !== Number(season.slice(0, 4)) + 1
+@@ -57,12 +64,12 @@
+     || expiry > time(scope.scheduledAt)
+     || !input.history || typeof input.history.complete !== "boolean"
+     || !Array.isArray(input.history.games) || input.history.games.length > 64
+-    || time(input.history.windowStartAt) !== cutoff - 60 * DAY) throw new Error("Invalid modeled participation scope or issuance.");
+-  const evidence = [input.scheduleEvidence, input.rosterEvidence, input.history.scheduleEvidence];
++    || time(input.history.windowStartAt) !== historyStart) throw new Error("Invalid modeled participation scope or issuance.");
++  const evidence = [input.scheduleEvidence, input.rosterEvidence, input.history.scheduleEvidence, ...(frame?.additionalEvidence ?? [])];
+   for (const game of input.history.games) {
+     if (!positiveId(game.gameId) || game.gameId === scope.gameId || game.teamId !== scope.teamId
+-      || !Number.isFinite(time(game.scheduledAt)) || time(game.scheduledAt) < cutoff - 60 * DAY
+-      || time(game.scheduledAt) >= cutoff || !label(game.occurred) || !label(game.eligible)
++      || !Number.isFinite(time(game.scheduledAt)) || time(game.scheduledAt) < historyStart
++      || time(game.scheduledAt) >= historyEnd || !label(game.occurred) || !label(game.eligible)
+       || time(game.scheduledAt) < time(`${season.slice(0, 4)}-07-01T00:00:00Z`)
+       || !label(game.positiveMinutes)
+       || ![null, "positive_toi", "explicit_zero_toi", "complete_official_nonappearance"].includes(game.resolution)) {
+@@ -123,7 +130,7 @@
+   };
+ }
+ 
+-export function participationFromReceipt(receipt: SkaterParticipationReceipt,
++export function participationFromReceipt(receipt: SkaterParticipationReceipt | FrozenWindowSkaterParticipationReceipt,
+   allowedUses: NonNullable<ContributionParticipation["allowedUses"]>): ContributionParticipation | null {
+   if (receipt.probability === null) return null;
+   return { ...receipt.scope, basis: "appearance", probability: receipt.probability,
+@@ -134,3 +141,67 @@
+       numerator: receipt.numerator, denominator: receipt.denominator, selectedGameIds: [...receipt.selectedGameIds],
+       limitations: [...receipt.limitations] } };
+ }
++
++
++export const FROZEN_WINDOW_SKATER_PARTICIPATION_METHOD = "skater-frozen-window-appearance-frequency-v1" as const;
++export type DatedParticipationEligibility = {
++  playerId: number; nhlPlayerId: number; teamId: number; eligible: boolean | null;
++  effectiveFrom: string; effectiveUntil: string; evidence: ParticipationEvidence;
++};
++export type FrozenWindowSkaterParticipationInput = Omit<SkaterParticipationInput, "version" | "history"> & {
++  version: "skater-frozen-window-participation-input-v1"; playerClass: "skater";
++  targetEligibility: DatedParticipationEligibility | null;
++  history: Omit<SkaterParticipationInput["history"], "games"> & {
++    /** Frozen approved Sep29–Oct12 America/New_York games, half-open; never a fabricated current frame. */
++    windowEndAt: string;
++    games: Array<Omit<SkaterParticipationInput["history"]["games"][number], "eligible" | "eligibilityEvidence"> & {
++      eligibility: DatedParticipationEligibility | null;
++    }>;
++  };
++};
++export type FrozenWindowSkaterParticipationReceipt = Omit<SkaterParticipationReceipt, "version" | "methodVersion"> & {
++  version: "modeled-skater-frozen-window-participation-v1";
++  methodVersion: typeof FROZEN_WINDOW_SKATER_PARTICIPATION_METHOD;
++  historyStartAt: string; historyEndAt: string;
++};
++
++/** Explicit frozen-history baseline; actual capture/cutoff clocks are never backdated. */
++export function buildFrozenWindowSkaterParticipationReceipt(input: FrozenWindowSkaterParticipationInput,
++  issuance: { issuedAt: string; expiresAt: string }): FrozenWindowSkaterParticipationReceipt {
++  const cutoff = time(input?.cutoffAt), start = time(input?.history?.windowStartAt), end = time(input?.history?.windowEndAt);
++  const year = String(input?.scope?.seasonId).slice(0, 4);
++  if (input?.version !== "skater-frozen-window-participation-input-v1" || input.playerClass !== "skater"
++    || !input.scope || !Array.isArray(input.history?.games)
++    || !Number.isFinite(start) || !Number.isFinite(end) || !Number.isFinite(cutoff)
++    || start !== time(`${year}-09-29T04:00:00Z`) || end !== time(`${year}-10-13T04:00:00Z`)
++    || end - start !== 14 * DAY || cutoff < end || cutoff - end > 14 * DAY) {
++    throw new Error("Invalid frozen 14-day participation frame or lag.");
++  }
++  const additionalEvidence: ParticipationEvidence[] = [], reasons: string[] = [];
++  const eligibleAt = (row: DatedParticipationEligibility | null, at: string): boolean | null => {
++    if (!row) return null;
++    if (row.playerId !== input.scope.playerId || row.nhlPlayerId !== input.scope.nhlPlayerId
++      || row.teamId !== input.scope.teamId || !label(row.eligible)
++      || !Number.isFinite(time(row.effectiveFrom)) || !Number.isFinite(time(row.effectiveUntil))
++      || time(row.effectiveFrom) >= time(row.effectiveUntil)) throw new Error("Invalid frozen-window eligibility identity or interval.");
++    if (row.evidence) additionalEvidence.push(row.evidence);
++    return row.evidence && time(at) >= time(row.effectiveFrom) && time(at) < time(row.effectiveUntil) ? row.eligible : null;
++  };
++  if (eligibleAt(input.targetEligibility, input.cutoffAt) !== true) reasons.push("unknown_or_ineligible_target");
++  if (input.targetEligibility?.evidence && cutoff - time(input.targetEligibility.evidence.capturedAt) > DAY) reasons.push("stale_target_eligibility");
++  const mapped: SkaterParticipationInput = { ...input, version: "skater-participation-input-v1",
++    history: { ...input.history, games: input.history.games.map(game => ({ ...game,
++      eligible: eligibleAt(game.eligibility, game.scheduledAt), eligibilityEvidence: game.eligibility?.evidence ?? null })) } };
++  const receipt = buildSkaterParticipationKernel(mapped, issuance, { start, end, additionalEvidence });
++  const allReasons = [...new Set([...receipt.reasons, ...reasons])];
++  return { ...receipt, version: "modeled-skater-frozen-window-participation-v1", methodVersion: FROZEN_WINDOW_SKATER_PARTICIPATION_METHOD,
++    historyStartAt: input.history.windowStartAt, historyEndAt: input.history.windowEndAt,
++    inputHash: playerForecastSourcePayloadHash(input), probability: allReasons.length ? null : receipt.probability, reasons: allReasons,
++    limitations: ["Experimental frozen Sep29–Oct12 America/New_York eligible-opportunity appearance frequency; calibration unavailable.",
++      "Historical frame ends independently of the actual current capture/cutoff; omitted later games are not observed negatives.",
++      "Requires complete independently supported 14-day club schedule, dated eligibility and explicit positive, zero or official nonappearance labels.",
++      "Frozen history may lag cutoff by at most 14 days; latest eligible game must also be within 14 days of cutoff.",
++      "Assumes freshly observed eligibility at cutoff continues; no injury, role, opponent or future roster adjustment.",
++      "Finite endpoint frequencies zero and one are model estimates, never confirmation of future absence or appearance.",
++      "Positive-minute conditioning excludes penalty-only zero-minute PIM; no all-appearance PIM claim."] };
++}
+--- tasks/artifacts/forge-rso-completion-2026-10-15/consumer/frozen-window/before/modeledSkaterParticipation.test.ts	2026-10-15 23:41:49
++++ web/lib/player-forecasts/modeledSkaterParticipation.test.ts	2026-10-15 23:44:17
+@@ -1,7 +1,10 @@
+ // @vitest-environment node
+-import { describe, expect, it } from "vitest";
+-import { buildSkaterParticipationReceipt, type SkaterParticipationInput } from "./modeledSkaterParticipation";
++import { describe, expect, it, vi } from "vitest";
++import { buildSkaterParticipationReceipt, type SkaterParticipationInput, buildFrozenWindowSkaterParticipationReceipt, type FrozenWindowSkaterParticipationInput } from "./modeledSkaterParticipation";
+ 
++import { loadFrozenWindowSkaterParticipation, FROZEN_WINDOW_SKATER_PARTICIPATION_DATASET, type FrozenWindowSkaterParticipationBundle } from "./modeledSkaterParticipationStore";
++import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
++
+ const cutoff = "2026-10-15T10:00:00Z";
+ const issuance = { issuedAt: "2026-10-15T11:00:00Z", expiresAt: "2026-10-15T18:00:00Z" };
+ function fixture(): SkaterParticipationInput {
+@@ -97,3 +100,85 @@
+     expect(a.inputHash).not.toBe(b.inputHash); expect(b.scope.gameId).toBe(31);
+   });
+ });
++
++
++function frozenFixture(): FrozenWindowSkaterParticipationInput {
++  const old = fixture(), evidence = old.rosterEvidence;
++  const eligibility = () => ({ playerId: old.scope.playerId, nhlPlayerId: old.scope.nhlPlayerId, teamId: old.scope.teamId,
++    eligible: true, effectiveFrom: "2026-09-29T04:00:00Z", effectiveUntil: "2026-10-16T00:00:00Z", evidence });
++  return { ...old, version: "skater-frozen-window-participation-input-v1", playerClass: "skater", targetEligibility: eligibility(),
++    history: { ...old.history, windowStartAt: "2026-09-29T04:00:00Z", windowEndAt: "2026-10-13T04:00:00Z",
++      games: old.history.games.map((game, index) => {
++        const { eligible: _eligible, eligibilityEvidence: _evidence, ...rest } = game;
++        return { ...rest, scheduledAt: `2026-10-${String(2 + index * 4).padStart(2, "0")}T00:00:00Z`, eligibility: eligibility() };
++      }) } };
++}
++describe("explicit frozen 14-day skater opportunity frequency", () => {
++  it("uses original current capture clocks after the frozen frame without observing omitted later games", () => {
++    const input = frozenFixture(), before = structuredClone(input);
++    const receipt = buildFrozenWindowSkaterParticipationReceipt(input, issuance);
++    expect(receipt).toMatchObject({ probability: 2 / 3, numerator: 2, denominator: 3,
++      methodVersion: "skater-frozen-window-appearance-frequency-v1", cutoffAt: cutoff,
++      historyStartAt: input.history.windowStartAt, historyEndAt: input.history.windowEndAt,
++      inputHash: playerForecastSourcePayloadHash(input), calibration: "unavailable" });
++    expect(receipt.limitations.join(" ")).toContain("omitted later games are not observed negatives");
++    expect(input).toEqual(before);
++    expect(Date.parse(input.history.scheduleEvidence.capturedAt)).toBeGreaterThan(Date.parse(input.history.windowEndAt));
++  });
++  it("includes Oct12 New York games starting after UTC midnight and excludes the half-open end", () => {
++    const input = frozenFixture();
++    input.history.games[2].scheduledAt = "2026-10-13T00:00:00Z";
++    expect(buildFrozenWindowSkaterParticipationReceipt(input, issuance).denominator).toBe(3);
++    input.history.games[2].scheduledAt = "2026-10-13T04:00:00Z";
++    expect(() => buildFrozenWindowSkaterParticipationReceipt(input, issuance)).toThrow("history opportunity");
++  });
++  it.each([0, 1])("retains endpoint %s as an uncalibrated model estimate", probability => {
++    const input = frozenFixture();
++    input.history.games.forEach(game => { game.positiveMinutes = !!probability; game.resolution = probability ? "positive_toi" : "explicit_zero_toi"; });
++    const result = buildFrozenWindowSkaterParticipationReceipt(input, issuance);
++    expect(result.probability).toBe(probability);
++    expect(result.limitations.join(" ")).toContain("never confirmation");
++  });
++  it.each(["frame", "target", "target ineligible", "historical eligibility", "dated interval", "occurrence", "label", "stale target"])("withholds %s without inventing negatives", kind => {
++    const input = frozenFixture();
++    if (kind === "frame") input.history.complete = false;
++    if (kind === "target") input.targetEligibility = null;
++    if (kind === "target ineligible") input.targetEligibility!.eligible = false;
++    if (kind === "historical eligibility") input.history.games[1].eligibility = null;
++    if (kind === "dated interval") input.history.games[1].eligibility!.effectiveFrom = "2026-10-07T00:00:00Z";
++    if (kind === "occurrence") input.history.games[1].occurred = null;
++    if (kind === "label") input.history.games[1].outcomeEvidence = null;
++    if (kind === "stale target") input.targetEligibility!.evidence = { ...input.rosterEvidence, id: "stale-target", capturedAt: "2026-10-13T04:00:00Z" };
++    expect(buildFrozenWindowSkaterParticipationReceipt(input, issuance).probability).toBeNull();
++  });
++  it.each(["protected game", "wrong start", "wrong end", "stale frame", "future source", "wrong identity"])("rejects %s", kind => {
++    const input = frozenFixture();
++    if (kind === "protected game") input.history.games[1].scheduledAt = "2026-10-13T04:00:00Z";
++    if (kind === "wrong start") input.history.windowStartAt = "2026-09-30T00:00:00Z";
++    if (kind === "wrong end") input.history.windowEndAt = "2026-10-14T00:00:00Z";
++    if (kind === "stale frame") input.cutoffAt = "2026-10-28T00:00:00Z";
++    if (kind === "future source") input.targetEligibility!.evidence = { ...input.rosterEvidence, availableAt: issuance.issuedAt };
++    if (kind === "wrong identity") input.history.games[0].eligibility!.nhlPlayerId++;
++    expect(() => buildFrozenWindowSkaterParticipationReceipt(input, issuance)).toThrow();
++  });
++  it("uses a separate default-denied store and reproduces exact frozen payloads", async () => {
++    const input = frozenFixture();
++    const payload: FrozenWindowSkaterParticipationBundle = { version: FROZEN_WINDOW_SKATER_PARTICIPATION_DATASET,
++      seasonId: input.scope.seasonId, ...issuance, released: true,
++      allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false },
++      ownerApprovalRef: "synthetic-owner", reviewRef: "synthetic-review", entries: [{ input, receipt: buildFrozenWindowSkaterParticipationReceipt(input, issuance) }] };
++    const id = "11111111-1111-4111-8111-111111111111", row = { id, provider: "fhfh", dataset_key: payload.version,
++      entity_kind: "participation_bundle", entity_key: String(payload.seasonId), available_at: issuance.issuedAt,
++      payload_hash: playerForecastSourcePayloadHash(payload), payload };
++    const chain: any = new Proxy({}, { get: (_, key) => key === "then" ? Promise.resolve({ data: [row], error: null }).then.bind(Promise.resolve({ data: [row], error: null })) : () => chain });
++    const db = { from: vi.fn(() => chain) };
++    expect((await loadFrozenWindowSkaterParticipation(db as never, payload.seasonId, new Date(issuance.issuedAt),
++      { environment: { PLAYER_FORECAST_PARTICIPATION_RELEASES: `${id}:${row.payload_hash}` } })).sources).toEqual([]);
++    expect(db.from).not.toHaveBeenCalled();
++    const options = { environment: { PLAYER_FORECAST_FROZEN_WINDOW_SKATER_PARTICIPATION_RELEASES: `${id}:${row.payload_hash}` } };
++    expect((await loadFrozenWindowSkaterParticipation(db as never, payload.seasonId, new Date(issuance.issuedAt), options)).sources[0])
++      .toMatchObject({ basis: "appearance", probability: 2 / 3, model: { version: "skater-frozen-window-appearance-frequency-v1" } });
++    row.payload.entries[0].receipt.probability = 0;
++    expect((await loadFrozenWindowSkaterParticipation(db as never, payload.seasonId, new Date(issuance.issuedAt), options)).sources).toEqual([]);
++  });
++});
+--- tasks/artifacts/forge-rso-completion-2026-10-15/consumer/frozen-window/before/modeledGoalieParticipation.ts	2026-10-15 23:41:49
++++ web/lib/player-forecasts/modeledGoalieParticipation.ts	2026-10-15 23:42:27
+@@ -1,6 +1,7 @@
+ import type { ContributionParticipation } from "./contributions";
+ import { buildSkaterParticipationReceipt, type ParticipationEvidence, type SkaterParticipationInput,
+-  type SkaterParticipationReceipt } from "./modeledSkaterParticipation";
++  type SkaterParticipationReceipt, buildFrozenWindowSkaterParticipationReceipt,
++  type FrozenWindowSkaterParticipationInput, type FrozenWindowSkaterParticipationReceipt } from "./modeledSkaterParticipation";
+ import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
+ import { timestampMicros } from "../projections/evidenceTime";
+ 
+@@ -75,7 +76,7 @@
+ }
+ 
+ /** Call only after exact bundle release admission, never as automatic publication. */
+-export function goalieParticipationFromReceipt(receipt: GoalieParticipationReceipt,
++export function goalieParticipationFromReceipt(receipt: GoalieParticipationReceipt | FrozenWindowGoalieParticipationReceipt,
+   allowedUses: NonNullable<ContributionParticipation["allowedUses"]>): ContributionParticipation | null {
+   if (receipt.probability === null) return null;
+   return { ...receipt.scope, basis: "appearance", probability: receipt.probability,
+@@ -86,3 +87,25 @@
+       numerator: receipt.numerator, denominator: receipt.denominator, selectedGameIds: [...receipt.selectedGameIds],
+       limitations: [...receipt.limitations] } };
+ }
++
++
++export const FROZEN_WINDOW_GOALIE_PARTICIPATION_METHOD = "goalie-frozen-window-appearance-frequency-v1" as const;
++export type FrozenWindowGoalieParticipationInput = Omit<FrozenWindowSkaterParticipationInput, "version" | "playerClass"> & {
++  version: "goalie-frozen-window-participation-input-v1"; playerClass: "goalie";
++};
++export type FrozenWindowGoalieParticipationReceipt = Omit<FrozenWindowSkaterParticipationReceipt, "version" | "methodVersion"> & {
++  version: "modeled-goalie-frozen-window-participation-v1";
++  methodVersion: typeof FROZEN_WINDOW_GOALIE_PARTICIPATION_METHOD;
++};
++export function buildFrozenWindowGoalieParticipationReceipt(input: FrozenWindowGoalieParticipationInput,
++  issuance: { issuedAt: string; expiresAt: string }): FrozenWindowGoalieParticipationReceipt {
++  if (input?.version !== "goalie-frozen-window-participation-input-v1" || input.playerClass !== "goalie") {
++    throw new Error("Invalid frozen-window goalie participation input.");
++  }
++  const receipt = buildFrozenWindowSkaterParticipationReceipt({ ...input,
++    version: "skater-frozen-window-participation-input-v1", playerClass: "skater" }, issuance);
++  return { ...receipt, version: "modeled-goalie-frozen-window-participation-v1", methodVersion: FROZEN_WINDOW_GOALIE_PARTICIPATION_METHOD,
++    inputHash: playerForecastSourcePayloadHash(input), limitations: [...receipt.limitations,
++      "Goalie positive minutes include relief; an eligible nonstarter remains an opportunity, never an inferred nonappearance.",
++      "This is an appearance probability only; no start probability or confirmed lineup is supplied."] };
++}
+--- tasks/artifacts/forge-rso-completion-2026-10-15/consumer/frozen-window/before/modeledGoalieParticipation.test.ts	2026-10-15 23:41:49
++++ web/lib/player-forecasts/modeledGoalieParticipation.test.ts	2026-10-15 23:44:17
+@@ -1,7 +1,7 @@
+ // @vitest-environment node
+ import { describe, expect, it, vi } from "vitest";
+-import { buildGoalieParticipationReceipt, type GoalieParticipationInput } from "./modeledGoalieParticipation";
+-import { loadModeledGoalieParticipation, GOALIE_PARTICIPATION_DATASET, type GoalieParticipationBundle } from "./modeledGoalieParticipationStore";
++import { buildGoalieParticipationReceipt, type GoalieParticipationInput, buildFrozenWindowGoalieParticipationReceipt, type FrozenWindowGoalieParticipationInput } from "./modeledGoalieParticipation";
++import { loadModeledGoalieParticipation, GOALIE_PARTICIPATION_DATASET, type GoalieParticipationBundle, loadFrozenWindowGoalieParticipation, FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASET, type FrozenWindowGoalieParticipationBundle } from "./modeledGoalieParticipationStore";
+ import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
+ 
+ const id = "11111111-1111-4111-8111-111111111111", now = new Date("2026-10-15T12:00:00Z");
+@@ -132,3 +132,47 @@
+     expect(() => buildGoalieParticipationReceipt(input, row.payload)).toThrow("eligibility identity or dates");
+   });
+ });
++
++
++function frozenGoalieFixture(): FrozenWindowGoalieParticipationInput {
++  const input = fixture().payload.entries[0].input;
++  return { ...input, version: "goalie-frozen-window-participation-input-v1",
++    history: { ...input.history, windowStartAt: "2026-09-29T04:00:00Z", windowEndAt: "2026-10-13T04:00:00Z",
++      games: input.history.games.map((game, index) => ({ ...game, scheduledAt: `2026-10-${10 + index}T00:00:00Z` })) } };
++}
++describe("frozen goalie appearance frequency", () => {
++  it("counts relief and explicit nonappearance over eligible opportunities without inferring starts", () => {
++    const input = frozenGoalieFixture(), clocks = fixture().payload;
++    const receipt = buildFrozenWindowGoalieParticipationReceipt(input, clocks);
++    expect(receipt).toMatchObject({ probability: 0.5, numerator: 1, denominator: 2,
++      methodVersion: "goalie-frozen-window-appearance-frequency-v1", inputHash: playerForecastSourcePayloadHash(input) });
++    expect(receipt.limitations.join(" ")).toContain("eligible nonstarter remains an opportunity");
++    input.history.games[1].positiveMinutes = null; input.history.games[1].resolution = null;
++    expect(buildFrozenWindowGoalieParticipationReceipt(input, clocks).probability).toBeNull();
++  });
++  it("preserves missing eligibility and current ineligibility as unknown, never injury-driven zero", () => {
++    const input = frozenGoalieFixture(), clocks = fixture().payload;
++    input.targetEligibility!.eligible = false;
++    expect(buildFrozenWindowGoalieParticipationReceipt(input, clocks).probability).toBeNull();
++    input.targetEligibility!.eligible = true;
++    input.history.games[0].eligibility = null;
++    expect(buildFrozenWindowGoalieParticipationReceipt(input, clocks).probability).toBeNull();
++  });
++  it("separately admits exact frozen releases and rejects wrong-role or changed receipts", async () => {
++    const input = frozenGoalieFixture(), old = fixture(), clocks = { issuedAt: old.payload.issuedAt, expiresAt: old.payload.expiresAt };
++    const payload: FrozenWindowGoalieParticipationBundle = { ...old.payload, version: FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASET,
++      entries: [{ input, receipt: buildFrozenWindowGoalieParticipationReceipt(input, clocks) }] };
++    const row = { ...old, dataset_key: payload.version, payload, payload_hash: playerForecastSourcePayloadHash(payload) };
++    const database = db([row]);
++    expect((await loadFrozenWindowGoalieParticipation(database as never, 20262027, now, { environment: environment(old) })).sources).toEqual([]);
++    expect(database.from).not.toHaveBeenCalled();
++    const options = { environment: { PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_PARTICIPATION_RELEASES: `${row.id}:${row.payload_hash}` } };
++    expect((await loadFrozenWindowGoalieParticipation(database as never, 20262027, now, options)).sources[0])
++      .toMatchObject({ probability: 0.5, basis: "appearance", model: { version: "goalie-frozen-window-appearance-frequency-v1" } });
++    expect(() => buildFrozenWindowGoalieParticipationReceipt({ ...input, playerClass: "skater" } as never, clocks)).toThrow();
++    row.payload.entries[0].receipt.denominator = 3;
++    row.payload_hash = playerForecastSourcePayloadHash(row.payload);
++    expect((await loadFrozenWindowGoalieParticipation(db([row]) as never, 20262027, now,
++      { environment: { PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_PARTICIPATION_RELEASES: `${row.id}:${row.payload_hash}` } })).sources).toEqual([]);
++  });
++});
+--- tasks/artifacts/forge-rso-completion-2026-10-15/consumer/frozen-window/before/modeledSkaterParticipationStore.ts	2026-10-15 23:41:49
++++ web/lib/player-forecasts/modeledSkaterParticipationStore.ts	2026-10-15 23:42:55
+@@ -1,11 +1,13 @@
+ import type { SupabaseClient } from "@supabase/supabase-js";
+ import type { ContributionAllowedUses, ContributionParticipation } from "./contributions";
+ import { buildSkaterParticipationReceipt, participationFromReceipt,
+-  type SkaterParticipationInput, type SkaterParticipationReceipt } from "./modeledSkaterParticipation";
++  type SkaterParticipationInput, type SkaterParticipationReceipt, buildFrozenWindowSkaterParticipationReceipt,
++  type FrozenWindowSkaterParticipationInput, type FrozenWindowSkaterParticipationReceipt } from "./modeledSkaterParticipation";
+ import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
+ import { timestampMicros } from "../projections/evidenceTime";
+ 
+ export const PARTICIPATION_DATASET = "skater-participation-bundle-v1";
++export const FROZEN_WINDOW_SKATER_PARTICIPATION_DATASET = "skater-frozen-window-participation-bundle-v1";
+ export type SkaterParticipationBundle = {
+   version: typeof PARTICIPATION_DATASET; seasonId: number; issuedAt: string; expiresAt: string;
+   released: boolean; allowedUses: ContributionAllowedUses;
+@@ -13,6 +15,10 @@
+   ownerApprovalRef: string; reviewRef: string;
+   entries: Array<{ input: SkaterParticipationInput; receipt: SkaterParticipationReceipt }>;
+ };
++export type FrozenWindowSkaterParticipationBundle = Omit<SkaterParticipationBundle, "version" | "entries"> & {
++  version: typeof FROZEN_WINDOW_SKATER_PARTICIPATION_DATASET;
++  entries: Array<{ input: FrozenWindowSkaterParticipationInput; receipt: FrozenWindowSkaterParticipationReceipt }>;
++};
+ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+ const HASH = /^[0-9a-f]{64}$/;
+ const nonempty = (value: unknown) => typeof value === "string" && value.trim().length > 0;
+@@ -21,12 +27,13 @@
+ /** One bounded read of exact ID:payload-hash releases. Default disabled, no writes.
+  * Reproduction authenticates arithmetic, not source truth: publication review must
+  * establish genuine complete eligibility/label inputs before allowlisting bytes. */
+-export async function loadModeledSkaterParticipation(db: SupabaseClient<any>, seasonId: number, now: Date,
+-  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal } = {}): Promise<{
++async function loadSkaterParticipation(db: SupabaseClient<any>, seasonId: number, now: Date,
++  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal }, frozen: boolean): Promise<{
+     sources: ContributionParticipation[]; checksum: string | null; limitations: string[];
+   }> {
++  const dataset = frozen ? FROZEN_WINDOW_SKATER_PARTICIPATION_DATASET : PARTICIPATION_DATASET;
+   const empty = (reason: string) => ({ sources: [], checksum: null, limitations: [reason] });
+-  const releases = (options.environment ?? process.env).PLAYER_FORECAST_PARTICIPATION_RELEASES
++  const releases = (options.environment ?? process.env)[frozen ? "PLAYER_FORECAST_FROZEN_WINDOW_SKATER_PARTICIPATION_RELEASES" : "PLAYER_FORECAST_PARTICIPATION_RELEASES"]
+     ?.split(",").map(value => value.trim()).filter(Boolean) ?? [];
+   if (!releases.length) return empty("modeled_participation_serving_disabled");
+   const pins = releases.map(value => value.split(":"));
+@@ -35,7 +42,7 @@
+     || new Set(pins.map(pin => pin[0])).size !== pins.length) return empty("invalid_participation_release_allowlist");
+   let query = db.from("player_forecast_source_observations")
+     .select("id,provider,dataset_key,entity_kind,entity_key,available_at,payload_hash,payload")
+-    .in("id", pins.map(pin => pin[0])).eq("provider", "fhfh").eq("dataset_key", PARTICIPATION_DATASET)
++    .in("id", pins.map(pin => pin[0])).eq("provider", "fhfh").eq("dataset_key", dataset)
+     .eq("entity_kind", "participation_bundle").eq("entity_key", String(seasonId)).limit(9);
+   if (options.signal) query = query.abortSignal(options.signal);
+   const { data, error } = await query;
+@@ -44,13 +51,13 @@
+   let bytes = 0, entries = 0;
+   try {
+     for (const row of data) {
+-      const pin = pins.find(value => value[0] === row.id), payload = row.payload as SkaterParticipationBundle;
++      const pin = pins.find(value => value[0] === row.id), payload = row.payload as SkaterParticipationBundle | FrozenWindowSkaterParticipationBundle;
+       bytes += Buffer.byteLength(JSON.stringify(payload), "utf8");
+       const uses = payload?.allowedUses;
+       if (!pin || seen.has(`release:${row.id}`) || bytes > 8 * 1024 * 1024 || row.provider !== "fhfh"
+-        || row.dataset_key !== PARTICIPATION_DATASET || row.entity_kind !== "participation_bundle"
++        || row.dataset_key !== dataset || row.entity_kind !== "participation_bundle"
+         || row.entity_key !== String(seasonId) || row.payload_hash !== pin[1]
+-        || playerForecastSourcePayloadHash(payload) !== pin[1] || payload.version !== PARTICIPATION_DATASET
++        || playerForecastSourcePayloadHash(payload) !== pin[1] || payload.version !== dataset
+         || payload.seasonId !== seasonId || payload.released !== true || !nonempty(payload.ownerApprovalRef)
+         || !nonempty(payload.reviewRef) || !uses || Object.keys(uses).length !== 4
+         || ["assignment", "totals", "comparison", "conditionalTieBreak"].some(key => typeof uses[key as keyof ContributionAllowedUses] !== "boolean")
+@@ -64,7 +71,9 @@
+       for (const entry of payload.entries) {
+         if (sources.length >= 500 || entry.input.scope.seasonId !== seasonId
+           || entry.receipt.issuedAt !== payload.issuedAt || entry.receipt.expiresAt !== payload.expiresAt) return empty("invalid_participation_release");
+-        const rebuilt = buildSkaterParticipationReceipt(entry.input, { issuedAt: payload.issuedAt, expiresAt: payload.expiresAt });
++        const clocks = { issuedAt: payload.issuedAt, expiresAt: payload.expiresAt };
++        const rebuilt = frozen ? buildFrozenWindowSkaterParticipationReceipt(entry.input as FrozenWindowSkaterParticipationInput, clocks)
++          : buildSkaterParticipationReceipt(entry.input as SkaterParticipationInput, clocks);
+         if (playerForecastSourcePayloadHash(rebuilt) !== playerForecastSourcePayloadHash(entry.receipt)) return empty("participation_receipt_mismatch");
+         const key = `${rebuilt.scope.playerId}:${rebuilt.scope.gameId}`;
+         if (seen.has(key)) return empty("conflicting_participation_release");
+@@ -75,5 +84,18 @@
+     }
+   } catch { return empty("invalid_participation_release"); }
+   return { sources, checksum: playerForecastSourcePayloadHash(pins.slice().sort((a, b) => a[0].localeCompare(b[0]))),
+-    limitations: ["Experimental modeled skater participation; calibration unavailable; source completeness is owner-reviewed."] };
++    limitations: [frozen ? "Experimental frozen-window skater appearance frequency; calibration unavailable; source completeness is owner-reviewed."
++      : "Experimental modeled skater participation; calibration unavailable; source completeness is owner-reviewed."] };
+ }
++
++
++export function loadModeledSkaterParticipation(db: SupabaseClient<any>, seasonId: number, now: Date,
++  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal } = {}) {
++  return loadSkaterParticipation(db, seasonId, now, options, false);
++}
++
++/** Separate exact-hash allowlist; disabled by default, never inherits v1 approval. */
++export function loadFrozenWindowSkaterParticipation(db: SupabaseClient<any>, seasonId: number, now: Date,
++  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal } = {}) {
++  return loadSkaterParticipation(db, seasonId, now, options, true);
++}
+--- tasks/artifacts/forge-rso-completion-2026-10-15/consumer/frozen-window/before/modeledGoalieParticipationStore.ts	2026-10-15 23:41:49
++++ web/lib/player-forecasts/modeledGoalieParticipationStore.ts	2026-10-15 23:42:55
+@@ -1,11 +1,13 @@
+ import type { SupabaseClient } from "@supabase/supabase-js";
+ import type { ContributionAllowedUses, ContributionParticipation } from "./contributions";
+ import { buildGoalieParticipationReceipt, goalieParticipationFromReceipt,
+-  type GoalieParticipationInput, type GoalieParticipationReceipt } from "./modeledGoalieParticipation";
++  type GoalieParticipationInput, type GoalieParticipationReceipt, buildFrozenWindowGoalieParticipationReceipt,
++  type FrozenWindowGoalieParticipationInput, type FrozenWindowGoalieParticipationReceipt } from "./modeledGoalieParticipation";
+ import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
+ import { timestampMicros } from "../projections/evidenceTime";
+ 
+ export const GOALIE_PARTICIPATION_DATASET = "goalie-participation-bundle-v1";
++export const FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASET = "goalie-frozen-window-participation-bundle-v1";
+ export type GoalieParticipationBundle = {
+   version: typeof GOALIE_PARTICIPATION_DATASET; seasonId: number; issuedAt: string; expiresAt: string;
+   released: boolean; allowedUses: ContributionAllowedUses;
+@@ -13,6 +15,10 @@
+   ownerApprovalRef: string; reviewRef: string;
+   entries: Array<{ input: GoalieParticipationInput; receipt: GoalieParticipationReceipt }>;
+ };
++export type FrozenWindowGoalieParticipationBundle = Omit<GoalieParticipationBundle, "version" | "entries"> & {
++  version: typeof FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASET;
++  entries: Array<{ input: FrozenWindowGoalieParticipationInput; receipt: FrozenWindowGoalieParticipationReceipt }>;
++};
+ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+ const HASH = /^[0-9a-f]{64}$/;
+ const nonempty = (value: unknown) => typeof value === "string" && value.trim().length > 0;
+@@ -21,12 +27,13 @@
+ /** One bounded read of exact ID:payload-hash releases. Default disabled, no writes.
+  * Reproduction authenticates arithmetic, not source truth: publication review must
+  * establish genuine complete eligibility/label inputs before allowlisting bytes. */
+-export async function loadModeledGoalieParticipation(db: SupabaseClient<any>, seasonId: number, now: Date,
+-  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal } = {}): Promise<{
++async function loadGoalieParticipation(db: SupabaseClient<any>, seasonId: number, now: Date,
++  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal }, frozen: boolean): Promise<{
+     sources: ContributionParticipation[]; checksum: string | null; limitations: string[];
+   }> {
++  const dataset = frozen ? FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASET : GOALIE_PARTICIPATION_DATASET;
+   const empty = (reason: string) => ({ sources: [], checksum: null, limitations: [reason] });
+-  const releases = (options.environment ?? process.env).PLAYER_FORECAST_GOALIE_PARTICIPATION_RELEASES
++  const releases = (options.environment ?? process.env)[frozen ? "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_PARTICIPATION_RELEASES" : "PLAYER_FORECAST_GOALIE_PARTICIPATION_RELEASES"]
+     ?.split(",").map(value => value.trim()).filter(Boolean) ?? [];
+   if (!releases.length) return empty("modeled_participation_serving_disabled");
+   const pins = releases.map(value => value.split(":"));
+@@ -35,7 +42,7 @@
+     || new Set(pins.map(pin => pin[0])).size !== pins.length) return empty("invalid_participation_release_allowlist");
+   let query = db.from("player_forecast_source_observations")
+     .select("id,provider,dataset_key,entity_kind,entity_key,available_at,payload_hash,payload")
+-    .in("id", pins.map(pin => pin[0])).eq("provider", "fhfh").eq("dataset_key", GOALIE_PARTICIPATION_DATASET)
++    .in("id", pins.map(pin => pin[0])).eq("provider", "fhfh").eq("dataset_key", dataset)
+     .eq("entity_kind", "participation_bundle").eq("entity_key", String(seasonId)).limit(9);
+   if (options.signal) query = query.abortSignal(options.signal);
+   const { data, error } = await query;
+@@ -44,13 +51,13 @@
+   let bytes = 0, entries = 0;
+   try {
+     for (const row of data) {
+-      const pin = pins.find(value => value[0] === row.id), payload = row.payload as GoalieParticipationBundle;
++      const pin = pins.find(value => value[0] === row.id), payload = row.payload as GoalieParticipationBundle | FrozenWindowGoalieParticipationBundle;
+       bytes += Buffer.byteLength(JSON.stringify(payload), "utf8");
+       const uses = payload?.allowedUses;
+       if (!pin || seen.has(`release:${row.id}`) || bytes > 8 * 1024 * 1024 || row.provider !== "fhfh"
+-        || row.dataset_key !== GOALIE_PARTICIPATION_DATASET || row.entity_kind !== "participation_bundle"
++        || row.dataset_key !== dataset || row.entity_kind !== "participation_bundle"
+         || row.entity_key !== String(seasonId) || row.payload_hash !== pin[1]
+-        || playerForecastSourcePayloadHash(payload) !== pin[1] || payload.version !== GOALIE_PARTICIPATION_DATASET
++        || playerForecastSourcePayloadHash(payload) !== pin[1] || payload.version !== dataset
+         || payload.seasonId !== seasonId || payload.released !== true || !nonempty(payload.ownerApprovalRef)
+         || !nonempty(payload.reviewRef) || !uses || Object.keys(uses).length !== 4
+         || ["assignment", "totals", "comparison", "conditionalTieBreak"].some(key => typeof uses[key as keyof ContributionAllowedUses] !== "boolean")
+@@ -64,7 +71,9 @@
+       for (const entry of payload.entries) {
+         if (sources.length >= 500 || entry.input.scope.seasonId !== seasonId
+           || entry.receipt.issuedAt !== payload.issuedAt || entry.receipt.expiresAt !== payload.expiresAt) return empty("invalid_participation_release");
+-        const rebuilt = buildGoalieParticipationReceipt(entry.input, { issuedAt: payload.issuedAt, expiresAt: payload.expiresAt });
++        const clocks = { issuedAt: payload.issuedAt, expiresAt: payload.expiresAt };
++        const rebuilt = frozen ? buildFrozenWindowGoalieParticipationReceipt(entry.input as FrozenWindowGoalieParticipationInput, clocks)
++          : buildGoalieParticipationReceipt(entry.input as GoalieParticipationInput, clocks);
+         if (playerForecastSourcePayloadHash(rebuilt) !== playerForecastSourcePayloadHash(entry.receipt)) return empty("participation_receipt_mismatch");
+         const key = `${rebuilt.scope.playerId}:${rebuilt.scope.gameId}`;
+         if (seen.has(key)) return empty("conflicting_participation_release");
+@@ -75,5 +84,18 @@
+     }
+   } catch { return empty("invalid_participation_release"); }
+   return { sources, checksum: playerForecastSourcePayloadHash(pins.slice().sort((a, b) => a[0].localeCompare(b[0]))),
+-    limitations: ["Experimental modeled goalie participation; calibration unavailable; source completeness is owner-reviewed."] };
++    limitations: [frozen ? "Experimental frozen-window goalie appearance frequency; calibration unavailable; source completeness is owner-reviewed."
++      : "Experimental modeled goalie participation; calibration unavailable; source completeness is owner-reviewed."] };
+ }
++
++
++export function loadModeledGoalieParticipation(db: SupabaseClient<any>, seasonId: number, now: Date,
++  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal } = {}) {
++  return loadGoalieParticipation(db, seasonId, now, options, false);
++}
++
++/** Separate exact-hash allowlist; disabled by default, never inherits v1 approval. */
++export function loadFrozenWindowGoalieParticipation(db: SupabaseClient<any>, seasonId: number, now: Date,
++  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal } = {}) {
++  return loadGoalieParticipation(db, seasonId, now, options, true);
++}

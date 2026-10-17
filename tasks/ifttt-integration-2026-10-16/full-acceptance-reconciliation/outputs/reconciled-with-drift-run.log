@@ -1,0 +1,29 @@
+{
+  "original": {
+    "cases": 52,
+    "assertions": 227,
+    "caseRowsWithAllAssertionsMatching": 50,
+    "matchingAssertions": 225,
+    "nonmatchingAssertions": 2,
+    "pure": {
+      "cases": 43,
+      "passedCases": 41,
+      "failedCases": 2,
+      "assertions": 196,
+      "matchingAssertions": 194,
+      "persistenceDeferred": 9
+    },
+    "separatePersistence": {
+      "cases": 9,
+      "assertions": 31,
+      "matchingAssertions": 31
+    }
+  },
+  "approvedVersionedFixtures": {
+    "positiveCases": 2,
+    "positiveAssertions": 12,
+    "originalAssertionsRetained": 7,
+    "negativeControls": 2
+  },
+  "full52EndToEndAccepted": false
+}

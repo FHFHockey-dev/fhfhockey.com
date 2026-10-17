@@ -1,0 +1,231 @@
+{
+  "version": 1,
+  "recordedAt": "2026-10-16T04:21:01.493867+00:00",
+  "threadId": "01a13df3-0374-727c-a8bd-a932723c2032",
+  "checkout": "/Users/tim/Code/fhfhockey.com",
+  "branchVerified": "octoberBranch",
+  "status": "safe_checkpoint_no_active_source_writer_in_this_lane",
+  "observationScope": "Current hashes were read earlier in this same checkpoint turn; this manifest records observed bytes, not an accepted combined candidate or a lease over other owners.",
+  "currentObservedManifest": "tasks/artifacts/rso-release-coordination-2026-10-16/current-observed.sha256",
+  "currentObservedManifestSha256": "f972c9c4cca33ef54d56f5e9f30c42229e2f0af3db21bd8be98b1ec6615abba8",
+  "latestCohorts": [
+    {
+      "name": "rso-intraday-periods-2026-10-16",
+      "acceptedManifest": "tasks/artifacts/rso-intraday-periods-2026-10-16/candidate.sha256",
+      "acceptedManifestSha256": "861e405f36b21d87e93e8083b62afecd6c800e79c330c81b4108e8fcd43d681a",
+      "review": "tasks/artifacts/rso-intraday-periods-2026-10-16/independent-review.md",
+      "reviewSha256": "fe6effafa002f6478ab4daf1bf2031518d98f2675d6421c8e680c3af5d81c330",
+      "reviewVerdict": "ACCEPT exact historical increment; no blocking findings",
+      "pins": [
+        {
+          "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+          "acceptedSha256": "260806450b10cbf0bb6140692e524551dff7d1b17bbdb020deb8d7f275cb804d",
+          "observedSha256": "5f0a700c5edf0a12e0a5ec3a11243611e2a5eb882322c38c268e61b5975b149a",
+          "matchesAccepted": false
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/planningTypes.ts",
+          "acceptedSha256": "3ac73ac55c3999ca4bfe448cca0d553f48db71bd2fe43dee7b9e957c8ae0e445",
+          "observedSha256": "3ac73ac55c3999ca4bfe448cca0d553f48db71bd2fe43dee7b9e957c8ae0e445",
+          "matchesAccepted": true
+        },
+        {
+          "path": "web/lib/in-season/workspaceSchema.ts",
+          "acceptedSha256": "39859b6aa7c9ca708c4838fc5ecc13ea35f05dce87f5dacbdccdf73b2a364cb7",
+          "observedSha256": "39859b6aa7c9ca708c4838fc5ecc13ea35f05dce87f5dacbdccdf73b2a364cb7",
+          "matchesAccepted": true
+        },
+        {
+          "path": "web/lib/in-season/workspaceSchema.test.ts",
+          "acceptedSha256": "c9c519c3b9936352446b3a711ac2d18b2507e687feee4acd5030923715d9cd37",
+          "observedSha256": "c9c519c3b9936352446b3a711ac2d18b2507e687feee4acd5030923715d9cd37",
+          "matchesAccepted": true
+        },
+        {
+          "path": "web/__tests__/components/RosterScheduleOptimizer/AcquisitionRules.integration.test.tsx",
+          "acceptedSha256": "5fbe032b27cbe9b9b18f6800f3007da9c4980b0732de1b1cb628020066daef74",
+          "observedSha256": "5fbe032b27cbe9b9b18f6800f3007da9c4980b0732de1b1cb628020066daef74",
+          "matchesAccepted": true
+        },
+        {
+          "path": "web/components/RosterScheduleOptimizer/AcquisitionPeriodTimes.tsx",
+          "acceptedSha256": "ba4a9703f5f94f56e25197f5c97699c0500d2b5534a34bcd113ef0c627f4193b",
+          "observedSha256": "ba4a9703f5f94f56e25197f5c97699c0500d2b5534a34bcd113ef0c627f4193b",
+          "matchesAccepted": true
+        },
+        {
+          "path": "web/components/RosterScheduleOptimizer/AcquisitionPeriodTimes.test.tsx",
+          "acceptedSha256": "06498058e4ae0d2094b751172d6e2601cc67d0425c76a0db22f85dfaa1fd862c",
+          "observedSha256": "06498058e4ae0d2094b751172d6e2601cc67d0425c76a0db22f85dfaa1fd862c",
+          "matchesAccepted": true
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/periodBoundaries.ts",
+          "acceptedSha256": "0e777c8af2b61ebe68b00818ccb89627dd25a79aa6aa93da3c100dada2ba9bbc",
+          "observedSha256": "0e777c8af2b61ebe68b00818ccb89627dd25a79aa6aa93da3c100dada2ba9bbc",
+          "matchesAccepted": true
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/periodBoundaries.test.ts",
+          "acceptedSha256": "a2e4ed8f4eab1fe63fb21030d2c8ec45657a0fdcd9808ce291edb530f1d9bffc",
+          "observedSha256": "a2e4ed8f4eab1fe63fb21030d2c8ec45657a0fdcd9808ce291edb530f1d9bffc",
+          "matchesAccepted": true
+        }
+      ]
+    },
+    {
+      "name": "rso-candidate-pool-2026-10-16",
+      "acceptedManifest": "tasks/artifacts/rso-candidate-pool-2026-10-16/candidate.sha256",
+      "acceptedManifestSha256": "5fc0eb7e5edf5bba41b1bf5ceb206a8b4bec243f79dc8569b675dfeb5fc32b72",
+      "review": "tasks/artifacts/rso-candidate-pool-2026-10-16/independent-review.md",
+      "reviewSha256": "e697152204dcbefb8a429f906883aedea06ed73e11a116bd84f9daeede7cc826",
+      "reviewVerdict": "ACCEPT exact historical increment; no blocking findings",
+      "pins": [
+        {
+          "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx",
+          "acceptedSha256": "cb86658b8a3b3810311e872886741d2098e779ed6b9fd5c6639ab8aa6e6969aa",
+          "observedSha256": "cb86658b8a3b3810311e872886741d2098e779ed6b9fd5c6639ab8aa6e6969aa",
+          "matchesAccepted": true
+        },
+        {
+          "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx",
+          "acceptedSha256": "8000c9329446d17a5cfd203ef12625467dc84c4c54be94fa0e4da25ccb985cb4",
+          "observedSha256": "8000c9329446d17a5cfd203ef12625467dc84c4c54be94fa0e4da25ccb985cb4",
+          "matchesAccepted": true
+        },
+        {
+          "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.integration.test.tsx",
+          "acceptedSha256": "9e3ead9f5d69ad918e2ad015465704c9416fc81c72b85fa3c928924ded25be93",
+          "observedSha256": "9e3ead9f5d69ad918e2ad015465704c9416fc81c72b85fa3c928924ded25be93",
+          "matchesAccepted": true
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts",
+          "acceptedSha256": "20990ac63fb31000545e591f9057b5b674a3c57dfc36d968e91f91c8080bc75d",
+          "observedSha256": "782dde20cfd9e12645afa0b7ddc3ff6d3c23f76982cebb817eb5ec876322120d",
+          "matchesAccepted": false
+        }
+      ]
+    },
+    {
+      "name": "rso-discovery-observability-2026-10-16",
+      "acceptedManifest": "tasks/artifacts/rso-discovery-observability-2026-10-16/candidate.sha256",
+      "acceptedManifestSha256": "0f9133d90f8432e41a3e1ac07f865f2f1cabb90a672470d1320e577e6ddbafea",
+      "review": "tasks/artifacts/rso-discovery-observability-2026-10-16/independent-review.md",
+      "reviewSha256": "8399a4733742bbb162e5faf8a92966e0d88fb988f39072d082235dd87f45f225",
+      "reviewVerdict": "ACCEPT exact historical increment; no blocking findings",
+      "pins": [
+        {
+          "path": "web/lib/integrations/yahoo/rosterPlanning.ts",
+          "acceptedSha256": "709b5cba1cdf73405eafce5b4067bcefed3a18416bf4407f3978cf5ff360e1a7",
+          "observedSha256": "709b5cba1cdf73405eafce5b4067bcefed3a18416bf4407f3978cf5ff360e1a7",
+          "matchesAccepted": true
+        },
+        {
+          "path": "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+          "acceptedSha256": "dc1abe03347a0308d888c1edc959cdbbf55854587a467fff940606d0738bd829",
+          "observedSha256": "dc1abe03347a0308d888c1edc959cdbbf55854587a467fff940606d0738bd829",
+          "matchesAccepted": true
+        },
+        {
+          "path": "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+          "acceptedSha256": "b278e5cc5b91598217b8f10f36f5658e90394dfc71a377216260bc1f4a0504f8",
+          "observedSha256": "39c6e5513f1ca75fb285f796c2f048d86e690b3f7502b1f65dc34d4004c6a9c8",
+          "matchesAccepted": false
+        }
+      ]
+    }
+  ],
+  "matchingLatestAcceptedPins": 13,
+  "supersededLatestAcceptedPins": 3,
+  "hold": {
+    "thisLaneWillEditSource": false,
+    "runningTests": [],
+    "runningCompilers": [],
+    "runningServersOrJobsStartedByThisLane": [],
+    "newFullCompilerPlanned": false,
+    "preserveDirtyWork": true,
+    "note": "Stable from this lane. Completion-owner edits need their own freeze/checks before combined verification. No staging or committing."
+  },
+  "otherOwners": [
+    {
+      "threadId": "01a14283-f596-73c3-8590-37d198756c4b",
+      "observedThreadStatus": "active",
+      "reportedOwnership": "Audit1 planning.ts/candidatePlanMetrics.ts and their tests; full completion integration. Main component/persistence work has superseded this lane pins.",
+      "latestObservedActivity": "Preparing bounded read-only Yahoo capture path; no new live action authorized by this checkpoint.",
+      "proposedPaths": [
+        "web/pages/api/v1/roster-schedule-optimizer/provider.ts",
+        "web/lib/integrations/yahoo/providerClient.ts",
+        "web/lib/integrations/yahoo/tokenManager.ts",
+        "web/lib/integrations/yahoo/rosterPlanning.ts"
+      ]
+    },
+    {
+      "threadId": "01a135cf-dda8-7599-896b-ca48cede00da",
+      "observedThreadStatus": "idle",
+      "note": "Historical RSO exact-period independent review completed ACCEPT. No active source lease held by this lane."
+    },
+    {
+      "threadId": "01a14214-82f5-77a5-a8f6-d51b7f0430f2",
+      "note": "Reports holding four recurring integration paths stable; source.ts has a newer observed coverage-gate increment.",
+      "relayedSourcePath": "web/lib/rosterScheduleData/source.ts",
+      "relayedCurrentSha256": "770c0dd5820aaf745441e4b5b10bc5d73d727e3d14d0fc3617ab369bbac9b92e",
+      "relayedPriorSha256": "1aad10ae23f6a3585900b79f918d71872db3fbe28c9a9c2233011c02797406c5",
+      "newIncrementOwner": "Not this lane; completion coordinator is the known schedule-work contact. Exact author/review/freeze not confirmed here."
+    }
+  ],
+  "checksRetained": [
+    {
+      "cohort": "intraday periods",
+      "outcome": "18 boundary +44 editor/schema/manual/Yahoo integration tests passed; eight independent helper probes passed; lint nine files zero errors/three existing main warnings; scoped TypeScript zero diagnostics,61 project/1029 total inputs,no drift.",
+      "scopeLimit": "Exact accepted historical nine-file increment. Superseded main file means no current combined-tree verification claim.",
+      "receipt": "tasks/artifacts/rso-intraday-periods-2026-10-16/receipt.json",
+      "typescriptReceipt": "tasks/artifacts/rso-intraday-periods-2026-10-16/typescript-receipt.json"
+    },
+    {
+      "cohort": "candidate pool",
+      "outcome": "23 UI/integration +2 engine cases passed; four-path lint zero errors; independent ACCEPT.",
+      "scopeLimit": "Current candidatePlanMetrics.test.ts and engine dependency have changed under completion ownership; receipt historical.",
+      "receipt": "tasks/artifacts/rso-candidate-pool-2026-10-16/receipt.json"
+    },
+    {
+      "cohort": "Yahoo count observability",
+      "outcome": "50 adapter tests +1 main UI case passed; scoped lint zero errors; independent ACCEPT.",
+      "scopeLimit": "Main test has since changed; adapter pair remains matched at observation.",
+      "receipt": "tasks/artifacts/rso-discovery-observability-2026-10-16/receipt.json"
+    }
+  ],
+  "olderOwnedIncrementReferencesHistoricalOnly": [
+    "tasks/artifacts/rso-release-readiness-2026-10-15/receipt.json",
+    "tasks/artifacts/rso-shared-forecast-refresh-2026-10-15/receipt.json",
+    "tasks/artifacts/rso-participation-transport-2026-10-15/files.sha256",
+    "tasks/artifacts/rso-weekly-rule-supplement-2026-10-15/files.sha256",
+    "tasks/artifacts/rso-candidate-admission-2026-10-15/candidate.sha256",
+    "tasks/artifacts/rso-automatic-suggestions-2026-10-15/files.sha256",
+    "tasks/artifacts/rso-acquisition-rules-workflow-2026-10-16/FINAL-STATUS.md"
+  ],
+  "remainingGates": [
+    "Freeze/review/test completion-owner Audit1, main/persistence and bounded capture increments; exact combined verification belongs to release coordinator.",
+    "No retained current full provider snapshot in this lane. Historical849/652/197 discovery counts cannot identify the actually evaluated candidate universe.",
+    "No authoritative next20 schedule completeness witness for13roster clubs in this lane. Historical57games/114sides and October15-only22sides are insufficient.",
+    "Actual account/workspace entry, save/reopen and preserved nonzero intent acceptance require current owner evidence and their scoped authority.",
+    "Manager Monday03:00 America/New_York/same-day/cost1/current remaining2 is confirmed; future allowance and remaining unsupported rules stay unknown.",
+    "Genuine private ability sources do not themselves establish participation, all scoring heads, publication permissions or positive matching consumer readbacks.",
+    "Conditional production push still requires complete aggregate checkpoints, exact candidate and Vercel project/build inventory plus the current authorized release scope."
+  ],
+  "excludedAndSeparateApproval": {
+    "diagnostic": "Five files listed in tasks/artifacts/rso-readonly-diagnostic-2026-10-15/receipt.json remain excluded from prior release proposal pending explicit inclusion; accepted preparation only, not executed.",
+    "private": "No private raw account/provider packet, credentials, model/pilot data or source outcome bodies are copied into this checkpoint. No full current provider snapshot exists in this lane.",
+    "operationsNotAuthorizedByCheckpoint": [
+      "migrations",
+      "live provider/source ingestion or dispatch/replay",
+      "scheduler activation",
+      "forecast publication",
+      "workspace/account writes",
+      "push",
+      "deployment"
+    ],
+    "historicalArtifacts": "Before copies, rejected attempts, synthetic fixtures and private operational proposals are evidence, not implicit runtime/release membership."
+  },
+  "actionsThisCheckpoint": "Read-only hashes/status/retained-evidence inspection; wrote only this local checkpoint JSON and its observation manifest. No application edits or test/compiler reruns."
+}

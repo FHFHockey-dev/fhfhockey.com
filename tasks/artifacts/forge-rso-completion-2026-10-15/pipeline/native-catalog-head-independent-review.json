@@ -1,0 +1,26 @@
+{
+  "version": "independent-native-catalog-head-review-v1",
+  "reviewedAt": "2026-10-16T07:58:34.511792+00:00",
+  "verdict": "no_remaining_blockers",
+  "pins": {
+    "native-catalog-head-review.sql": "4149d89da3bcc94b271596acc1cf1b8e18458cd5baffefd7359e654101a901d7",
+    "native-catalog-head-pg-result-v2.json": "e7e7680e9d4c404dd4503a13d93fa019010fcf5ca557f1d6933dda184559595b",
+    "native-catalog-head-pg-log-v2.txt": "7ea151bcef20ad1560c1a8e212ba672671c9387ea48484954ee88b8b29a9869e",
+    "native-catalog-head-pg-verify.py": "c17089c6735acbfcdc060806af0f099c24c68bc4b27966e4763ec2351982538b"
+  },
+  "resolvedFinding": "SQL nullable envelope checks corrected with explicit required type and identity guards; missing/null season and expiry rejection confirmed in retained local PG17 result.",
+  "evidence": "Independent source review plus inspection of actual retained local PostgreSQL17 result/log. Reviewer did not rerun casepack.",
+  "passedCases": [
+    "initial service-role CAS and exact returned revision",
+    "revision and previous-hash conflicts leave head unchanged",
+    "matching revision and previous hash advance exactly once",
+    "wrong season, expired selection, wrong kind, missing/null expiry and missing/null season rejected",
+    "two concurrent initial callers have exactly one winner",
+    "anonymous/authenticated lack read/execute and service role cannot directly update heads"
+  ],
+  "limits": [
+    "Disposable synthetic local database only; no hosted schema application or live head activation verified.",
+    "Durable producer closure writer is not implemented; missing closed receipts still hold.",
+    "No scientific forecast qualification implied."
+  ]
+}

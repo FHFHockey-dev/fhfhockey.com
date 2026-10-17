@@ -1,0 +1,27 @@
+{
+  "ownedPaths": [
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx",
+    "web/components/RosterScheduleOptimizer/CandidateCard.test.tsx"
+  ],
+  "testsPassed": 6,
+  "testsFailed": 0,
+  "testFiles": 2,
+  "testSuccess": true,
+  "lintExitCode": 0,
+  "lintErrors": 0,
+  "lintWarnings": 0,
+  "browserRerun": false,
+  "fullCompilerRunByThisConsumer": false,
+  "fullCompilerOwner": "01a135c8-567b-71d2-b610-6b78f3cc40d7",
+  "combinedSourcePins": 28,
+  "sharedInventoryOnlyOwnEntriesChanged": true,
+  "otherOwnerInventoryMismatchesAtFreeze": [
+    {
+      "path": "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+      "inventory": "634b7428d566fcba65fc44c33e8c6b86bcc562d025c034fb688490f8df37d6c5",
+      "actual": "931b83dbfb5e26bbfc2957c352bc5220f1a1449ea4f413bb7e33da63f5dbd6ef"
+    }
+  ],
+  "combinedReceiptSha256": "cf3ce5d720fe303e594697c1c51e1506eccca94da5e0faf4ff7712fb2fb795aa",
+  "applicationSourceChanged": false
+}

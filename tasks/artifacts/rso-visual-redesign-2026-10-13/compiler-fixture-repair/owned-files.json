@@ -1,0 +1,12 @@
+[
+  {
+    "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx",
+    "baselineSha256": "81bf909f6135074bf28a0aedaca603fdb60a56e0b506e885d2efbae79ffe3b98",
+    "candidateSha256": "30f7fd36d802a192131118b80d0080f24502d401b051a3b1900989396c48ebf2"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/CandidateCard.test.tsx",
+    "baselineSha256": "04206659b79c893bbb80847bddd0c5ccbdcd679a0a8da1bff986bcabf4c98d7a",
+    "candidateSha256": "eed32aef8a76cd58f3b009c83e181e27351fa71cba25dffa7e771778b2095299"
+  }
+]

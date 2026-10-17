@@ -1,0 +1,14 @@
+/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.ts:13
+const requireFact=(condition:unknown,message:string):void=>{if(!condition)throw new Error(message);};
+                                                                                ^
+Error: Read-only dependency changed: web/lib/player-forecasts/contributions.ts
+    at requireFact (/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.ts:13:81)
+    at loadEvidence (/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.ts:34:3)
+    at main (/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.ts:125:25)
+    at Object.<anonymous> (/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.ts:132:85)
+    at Module._compile (node:internal/modules/cjs/loader:1546:14)
+    at Module.m._compile (/Users/tim/Code/fhfhockey.com/web/node_modules/ts-node/src/index.ts:1618:23)
+    at node:internal/modules/cjs/loader:1689:10
+    at Object.require.extensions.<computed> [as .ts] (/Users/tim/Code/fhfhockey.com/web/node_modules/ts-node/src/index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1318:32)
+    at Function._load (node:internal/modules/cjs/loader:1128:12)

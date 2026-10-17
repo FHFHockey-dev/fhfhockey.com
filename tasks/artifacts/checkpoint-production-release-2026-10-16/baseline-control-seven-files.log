@@ -1,0 +1,998 @@
+
+> web@0.1.0 test
+> vitest --run --maxWorkers=4 __tests__/components/RosterScheduleOptimizer/CategoryGains.test.tsx __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx __tests__/pages/api/v1/db/update-line-sources.test.ts lib/rosterScheduleOptimizer/planningReproducibility.test.ts lib/sources/tweetInterpretation.test.ts lib/supabase/supportedBaselineMigration.test.ts scripts/qualify-native-players-offline.test.ts
+
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90m/private/tmp/fhf-release-checkpoint-20261016-0424/baseline-control/web[39m
+
+(node:19175) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:19178) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:19176) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:19177) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [31m❯[39m lib/supabase/supportedBaselineMigration.test.ts [2m([22m[2m19 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 31[2mms[22m[39m
+[31m   [31m×[31m supported Supabase schema-baseline reconciliation[2m > [22mkeeps only the reviewed baseline and supported post-baseline deltas active[39m[32m 5[2mms[22m[39m
+[31m     → expected [ …(80) ] to deeply equal [ …(72) ][39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mrequires an editor event for every opening projection release[32m 0[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22minherits long-lived season assumptions without auto-publishing direct stat edits[32m 0[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mrevokes browser execution of the two privileged maintenance RPCs[32m 1[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mkeeps credential-bearing routines out of the current-schema baseline[32m 12[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mmakes the authoritative-root provenance RPC match the reviewed A-GDL source[32m 1[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mpreserves all three trigger semantics through one fail-closed Vault helper[32m 1[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mkeeps legacy RPC tombstones credential-free and browser-denied[32m 0[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mkeeps the separately authorized legacy-RPC final drop exact and fail-closed[32m 1[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mrepairs compile-invalid legacy routines without restoring duplicate writers[32m 1[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mkeeps SKO run control service-only with deterministic lease rejection[32m 1[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22matomically versions complete Yahoo game metadata/week snapshots[32m 0[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mbounds the Utah WGO identity repair to the frozen replay-safe manifest[32m 0[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mmakes the April 2023 WGO/trend season repair atomic and reversible[32m 1[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mkeeps the legacy Yahoo cache revocation postdeploy and fail-closed[32m 0[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mkeeps public view and routine hardening explicit and bounded[32m 0[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mkeeps canonical aggregate readers public while privatizing materialized storage[32m 0[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mreconstructs the exact credential-free hosted analytics contract[32m 1[2mms[22m[39m
+   [32m✓[39m supported Supabase schema-baseline reconciliation[2m > [22mkeeps the frozen Production application classes and migration hashes exact[32m 4[2mms[22m[39m
+ [31m❯[39m __tests__/components/RosterScheduleOptimizer/CategoryGains.test.tsx [2m([22m[2m18 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 65[2mms[22m[39m
+[31m   [31m×[31m shows per-category gains and losses from startable days, preserving manager moves and reset accounting[39m[32m 17[2mms[22m[39m
+[31m     → expected [ [ '2026-10-06', '1' ], …(1) ] to deeply equal [ [ '2026-10-06', '1' ], …(1) ][39m
+   [32m✓[39m excludes a postponed candidate game from gains[32m 16[2mms[22m[39m
+   [32m✓[39m excludes a cancelled candidate game from gains[32m 3[2mms[22m[39m
+   [32m✓[39m excludes a final candidate game from gains[32m 2[2mms[22m[39m
+   [32m✓[39m keeps expired gains unavailable[32m 3[2mms[22m[39m
+   [32m✓[39m keeps missing gains unavailable[32m 3[2mms[22m[39m
+   [32m✓[39m keeps comparison denied gains unavailable[32m 2[2mms[22m[39m
+   [32m✓[39m keeps eligibility unknown gains unavailable[32m 3[2mms[22m[39m
+   [32m✓[39m keeps schedule changed gains unavailable[32m 2[2mms[22m[39m
+   [32m✓[39m keeps roster changed gains unavailable[32m 2[2mms[22m[39m
+   [32m✓[39m keeps opponent missing gains unavailable[32m 1[2mms[22m[39m
+   [32m✓[39m keeps allowance unknown gains unavailable[32m 2[2mms[22m[39m
+   [32m✓[39m keeps allowance exhausted gains unavailable[32m 1[2mms[22m[39m
+   [32m✓[39m keeps too early gains unavailable[32m 2[2mms[22m[39m
+   [32m✓[39m shows no category gain for a candidate without a compatible starting position[32m 2[2mms[22m[39m
+   [32m✓[39m does not compare different manifests or unapproved legacy evaluations[32m 2[2mms[22m[39m
+   [32m✓[39m uses whole-lineup goalie ratios and keeps projected starts separate from credited minimum progress[32m 3[2mms[22m[39m
+   [32m✓[39m omits category UI for a points league[32m 1[2mms[22m[39m
+[90mstdout[2m | lib/sources/tweetInterpretation.test.ts[2m > [22m[2mstructured tweet interpretation[2m > [22m[2mchecks frozen source hashes and reports bounded semantic holdout classifications
+[22m[39mFrozen semantic evaluation (not blind/identity/full-route accuracy) {"matched":14,"denominator":19,"counts":{"lineup":{"truePositive":5,"predicted":5,"labeled":6},"practice_lines":{"truePositive":2,"predicted":3,"labeled":2},"goalie_start":{"truePositive":2,"predicted":2,"labeled":2},"injury":{"truePositive":2,"predicted":2,"labeled":5},"other":{"truePositive":3,"predicted":6,"labeled":4},"power_play":{"truePositive":0,"predicted":1,"labeled":0}}}
+
+ [32m✓[39m lib/sources/tweetInterpretation.test.ts [2m([22m[2m67 tests[22m[2m)[22m[32m 201[2mms[22m[39m
+ [31m❯[39m __tests__/pages/api/v1/db/update-line-sources.test.ts [2m([22m[2m29 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 123[2mms[22m[39m
+   [32m✓[39m private Starter Board release operations[2m > [22mregisters a server-hashed frozen policy without activating it[32m 8[2mms[22m[39m
+   [32m✓[39m private Starter Board release operations[2m > [22mpublishes a matching review as evidence without promoting a model or intervals[32m 3[2mms[22m[39m
+   [32m✓[39m private Starter Board release operations[2m > [22mreturns a no-store bounded report with honest empty evidence[32m 0[2mms[22m[39m
+   [32m✓[39m private Starter Board release operations[2m > [22mrejects unbounded windows and does not disclose database errors[32m 0[2mms[22m[39m
+   [32m✓[39m private Starter Board release operations[2m > [22mrecords render time separately while retaining legacy receipt compatibility[32m 0[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mavoids empty-queue roster work while retaining scheduled reconciliation and audit[32m 2[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mleaves a concurrent arrival pending for the next unchanged scheduler cycle[32m 14[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22maudits queue-read failures rather than treating them as empty[32m 0[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mretains a bounded safe receipt for complete schedule reconciliation rejection in the failed response and audit[32m 7[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mdistinguishes an incomplete canonical_games schedule read without inventing unknown counts[32m 2[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mdistinguishes an incomplete team_game_status schedule read without inventing unknown counts[32m 2[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mkeeps generic errors on the existing failure path without serializing an arbitrary schedule receipt[32m 4[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mleaves events pending when required immutable evidence capture fails[32m 5[2mms[22m[39m
+[31m   [31m×[31m /api/v1/db/update-line-sources[2m > [22mreplays the frozen 11 regression and 24 candidate records equivalently through GDL and CCC with mocked enrichment and storage[39m[32m 5[2mms[22m[39m
+[31m     → ENOENT: no such file or directory, open '/private/tmp/fhf-release-checkpoint-20261016-0424/baseline-control/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-holdout-context.json'[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mretains both validated goalie teams and finalizes one raw receipt through gdl[32m 8[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mretains both validated goalie teams and finalizes one raw receipt through ccc[32m 3[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mlimits automatic retries to receipts on the Eastern slate, including UTC midnight[32m 2[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mwithholds game applicability for null / #Habs lines
+Caufield - Suzuki - Slafkovsky[32m 2[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mwithholds game applicability for 2026-04-28T23:00:00Z / #Habs lines
+Caufield - Suzuki - Slafkovsky[32m 1[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mwithholds game applicability for 2026-04-30T02:00:00Z / #Habs lines tomorrow
+Caufield - Suzuki - Slafkovsky[32m 2[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mprocesses GDL goalie, lines, news, non-NHL, and ambiguous events by source key[32m 10[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mprefixes capture keys so duplicate tweet ids from different sources do not collide[32m 2[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22muses the quoted report date and text for 2049560345441206272[32m 8[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22muses the quoted report date and text for 2047808467969220779[32m 4[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22muses the quoted report date and text for 2049560345441206272 tomorrow[32m 3[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22mloads rosters for accepted teams that are not on the requested date schedule[32m 4[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22muses beat-writer handles and NHL hashtag hints to avoid false ambiguous GDL rejections[32m 16[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22maccepts Utah goalie tweets after second-pass roster loading when #TusksUp is the only team hint[32m 2[2mms[22m[39m
+   [32m✓[39m /api/v1/db/update-line-sources[2m > [22muses decisive roster-density fallback for short tweets with multiple same-team player hits[32m 2[2mms[22m[39m
+[90mstdout[2m | lib/rosterScheduleOptimizer/planningReproducibility.test.ts[2m > [22m[2mplanning search reproducibility[2m > [22m[2mbounds long-range default work by dates and available candidate groups
+[22m[39mLong-range planning fixture: 9.8 ms, 47 evaluations
+
+[90mstdout[2m | lib/rosterScheduleOptimizer/planningReproducibility.test.ts[2m > [22m[2mplanning search reproducibility[2m > [22m[2mbounds a 367-day catalog workload with 25 rostered and 300 available players
+[22m[39mCatalog planning fixture: 1476.4 ms, 13 evaluations
+
+ [31m❯[39m lib/rosterScheduleOptimizer/planningReproducibility.test.ts [2m([22m[2m15 tests[22m[2m | [22m[31m5 failed[39m[2m)[22m[33m 1615[2mms[22m[39m
+[31m   [31m×[31m planning search reproducibility[2m > [22mreproduces admitted detailed quality decisions across scoring profiles and input order[39m[32m 38[2mms[22m[39m
+[31m     → expected 'agp' to be 'outcome' // Object.is equality[39m
+[31m   [31m×[31m planning search reproducibility[2m > [22mreproduces admitted baseline quality decisions across scoring profiles and input order[39m[32m 25[2mms[22m[39m
+[31m     → expected 'agp' to be 'outcome' // Object.is equality[39m
+[31m   [31m×[31m planning search reproducibility[2m > [22mreproduces admitted blended quality decisions across scoring profiles and input order[39m[32m 25[2mms[22m[39m
+[31m     → expected 'agp' to be 'outcome' // Object.is equality[39m
+   [32m✓[39m planning search reproducibility[2m > [22mreplays admitted quality forecasts with daily locks and realized results[32m 5[2mms[22m[39m
+   [32m✓[39m planning search reproducibility[2m > [22mreplays admitted quality forecasts with weekly locks and realized results[32m 9[2mms[22m[39m
+   [32m✓[39m planning search reproducibility[2m > [22mretains an eligible quality checkpoint when a deadline interrupts search[32m 4[2mms[22m[39m
+   [32m✓[39m planning search reproducibility[2m > [22mbounds unchecked points bench decisions without inventing scoring evidence[32m 4[2mms[22m[39m
+[31m   [31m×[31m planning search reproducibility[2m > [22mbounds unchecked categories bench decisions without inventing scoring evidence[39m[32m 3[2mms[22m[39m
+[31m     → expected { policyVersion: 'rso-bench-v1', …(5) } to deeply equal { policyVersion: 'rso-bench-v1', …(5) }[39m
+[31m   [31m×[31m planning search reproducibility[2m > [22mbounds unchecked goalie bench decisions without inventing scoring evidence[39m[32m 3[2mms[22m[39m
+[31m     → expected { policyVersion: 'rso-bench-v1', …(5) } to deeply equal { policyVersion: 'rso-bench-v1', …(5) }[39m
+   [32m✓[39m planning search reproducibility[2m > [22mprioritizes selected-plan explanations and shares duplicate receipts within the quota[32m 3[2mms[22m[39m
+   [32m✓[39m planning search reproducibility[2m > [22mstarts no bench rechecks after the response deadline and retains approved numerical inputs[32m 1[2mms[22m[39m
+   [32m✓[39m planning search reproducibility[2m > [22muses canonical schedule-fit and acquisition ordering across input permutations[32m 3[2mms[22m[39m
+   [32m✓[39m planning search reproducibility[2m > [22muses work quotas by default and labels an explicit time interruption[32m 2[2mms[22m[39m
+   [32m✓[39m planning search reproducibility[2m > [22mbounds long-range default work by dates and available candidate groups[32m 10[2mms[22m[39m
+   [33m[2m✓[22m[39m planning search reproducibility[2m > [22mbounds a 367-day catalog workload with 25 rostered and 300 available players [33m 1478[2mms[22m[39m
+ [31m❯[39m scripts/qualify-native-players-offline.test.ts [2m([22m[2m56 tests[22m[2m | [22m[31m8 failed[39m[2m)[22m[33m 4885[2mms[22m[39m
+[31m   [31m×[31m offline current native player qualification[2m > [22mreproduces current native calculations with genuine admission and zero live client/transport/writes[39m[33m 600[2mms[22m[39m
+[31m     → expected false to be true // Object.is equality[39m
+[31m   [31m×[31m offline current native player qualification[2m > [22mleaves absent playing/start evidence unknown and preserves consumer missing-participation rejection[39m[32m 86[2mms[22m[39m
+[31m     → expected false to be true // Object.is equality[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds original publishedAt before/equal/one microsecond after cutoff[32m 177[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds original receivedAt before/equal/one microsecond after cutoff[32m 173[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds original verifiedAt before/equal/one microsecond after cutoff[32m 171[2mms[22m[39m
+[31m   [31m×[31m offline current native player qualification[2m > [22mbounds retained roster_optimizer_team_games.fetched_at before/equal/one microsecond after cutoff[39m[32m 83[2mms[22m[39m
+[31m     → expected false to be true // Object.is equality[39m
+[31m   [31m×[31m offline current native player qualification[2m > [22mbounds retained roster_optimizer_team_games.fetchedAt before/equal/one microsecond after cutoff[39m[32m 84[2mms[22m[39m
+[31m     → expected false to be true // Object.is equality[39m
+[31m   [31m×[31m offline current native player qualification[2m > [22mbounds retained roster_optimizer_team_games.source_updated_at before/equal/one microsecond after cutoff[39m[32m 83[2mms[22m[39m
+[31m     → expected false to be true // Object.is equality[39m
+[31m   [31m×[31m offline current native player qualification[2m > [22mbounds retained roster_optimizer_team_games.sourceUpdatedAt before/equal/one microsecond after cutoff[39m[32m 81[2mms[22m[39m
+[31m     → expected false to be true // Object.is equality[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained rosters.created_at before/equal/one microsecond after cutoff[32m 163[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained fhfh_player_identities.updated_at before/equal/one microsecond after cutoff[32m 162[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_lineup_snapshots.observed_at before/equal/one microsecond after cutoff[32m 159[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_lineup_snapshots.available_at before/equal/one microsecond after cutoff[32m 159[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_lineup_snapshots.created_at before/equal/one microsecond after cutoff[32m 165[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_lineup_assignments.created_at before/equal/one microsecond after cutoff[32m 163[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_goalie_start_observations.observed_at before/equal/one microsecond after cutoff[32m 164[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_goalie_start_observations.available_at before/equal/one microsecond after cutoff[32m 164[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_goalie_start_observations.created_at before/equal/one microsecond after cutoff[32m 169[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_observation_conflicts.detected_at before/equal/one microsecond after cutoff[32m 169[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_observation_conflicts.created_at before/equal/one microsecond after cutoff[32m 168[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_conflict_resolutions.resolved_at before/equal/one microsecond after cutoff[32m 166[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_conflict_resolutions.created_at before/equal/one microsecond after cutoff[32m 167[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained forge_board_news_events.accepted_at before/equal/one microsecond after cutoff[32m 165[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained market_prices_daily.source_observed_at before/equal/one microsecond after cutoff[32m 163[2mms[22m[39m
+[31m   [31m×[31m offline current native player qualification[2m > [22mallows future schedule/expiry/effective metadata and later local artifact creation without moving source cutoff[39m[32m 81[2mms[22m[39m
+[31m     → expected false to be true // Object.is equality[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects source evidence even one microsecond beyond the supplied cutoff[32m 5[2mms[22m[39m
+[31m   [31m×[31m offline current native player qualification[2m > [22mnever promotes a confirmed PP role to playing participation[39m[32m 79[2mms[22m[39m
+[31m     → expected false to be true // Object.is equality[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects missing receipts, incomplete exports, changed hashes and late nested source evidence[32m 4[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mfails closed if a native optional query swallows an unprovided input table[32m 6[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects omitted retained columns even when a producer fallback catches the query error[32m 7[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects later accepted-news evidence without backdating its receipt[32m 4[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects missing/future as-of and target/roster mismatch[32m 5[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mblocks direct RPC, adapter mutations and unsupported/unrecorded reads[32m 1[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for limit[32m 1[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for limit[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for select[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for order[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for order[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for range[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for eq[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for or[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for maybeSingle[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for abortSignal[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects implicit predicate type coercion and compares zoned timestamp filters exactly[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mimplements native exact-count HEAD without returning rows[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mblocks equivalent client paths and SDK entry points before inert config/sentinel access in a fresh process[32m 251[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects future outcomes in rolling/team/goalie history and their referenced game[32m 6[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mchecks aggregate and camel-case event times while allowing future schedule/expiry[32m 6[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrequires exact completion for cutoff-day history, and completion before the original publication[32m 90[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects historical statistics whose referenced puck drop is still in the future[32m 5[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mcannot certify PPP from missing or zero PP exposure denominators[32m 79[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mretains a native PPP diagnostic but blocks source support when PP rows are absent[32m 76[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mcannot relabel the immutable fictional artifact as retained exports (replace strings=false)[32m 5[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mcannot relabel the immutable fictional artifact as retained exports (replace strings=true)[32m 4[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mblocks network primitives and process escapes before dispatch and restores them[32m 1[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mwrites a new reproducible receipt without changing or overwriting original inputs[32m 163[2mms[22m[39m
+ [31m❯[39m __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx [2m([22m[2m148 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 10597[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: 2026-10-10T09:00:00Z[32m 1[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: 2026-10-10T08:59:59Z[32m 0[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: 2026-10-10T13:00:00Z[32m 0[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z[32m 0[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z[32m 0[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z[32m 0[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z[32m 0[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z[32m 0[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: 2026-10-10T12:59:59Z[32m 0[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: null[32m 0[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: invalid[32m 0[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mkeeps input-age and near-game boundaries explicit: 2026-10-10T15:00:01Z[32m 0[2mms[22m[39m
+   [32m✓[39m provisional schedule freshness warnings[2m > [22mdoes not infer receipt age from a different source or invalid evaluation time[32m 0[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mcompares startable plan totals 95 and 100 safely[32m 14[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mcompares startable plan totals 94 and 100 safely[32m 2[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mcompares startable plan totals 0 and 0 safely[32m 1[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mcompares startable plan totals 0 and 1 safely[32m 1[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mcompares startable plan totals -100 and -95 safely[32m 2[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mcompares startable plan totals -100 and 100 safely[32m 1[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mcompares startable plan totals 1e-300 and 9.6e-301 safely[32m 1[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mcompares startable plan totals 1e-300 and 5e-301 safely[32m 1[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mcompares startable plan totals 1.7976931348623157e+308 and 1.7437623408164462e+308 safely[32m 2[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mcompares startable plan totals 1.7976931348623157e+308 and -1.7976931348623157e+308 safely[32m 1[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mwithholds unsupported or mismatched comparison null / 0[32m 1[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mwithholds unsupported or mismatched comparison NaN / 0[32m 1[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mwithholds unsupported or mismatched comparison Infinity / 0[32m 0[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mwithholds unsupported or mismatched comparison 95 / 100[32m 0[2mms[22m[39m
+   [32m✓[39m provisional similar projected points display[2m > [22mwithholds unsupported or mismatched comparison 95 / 100[32m 1[2mms[22m[39m
+   [33m[2m✓[22m[39m RosterScheduleOptimizer workspace[2m > [22mresumes a display day without aliasing a different owner or rewriting the plan [33m 482[2mms[22m[39m
+   [33m[2m✓[22m[39m RosterScheduleOptimizer workspace[2m > [22mresumes a display day without aliasing a different league or rewriting the plan [33m 418[2mms[22m[39m
+   [33m[2m✓[22m[39m RosterScheduleOptimizer workspace[2m > [22mresumes a display day without aliasing a different team or rewriting the plan [33m 389[2mms[22m[39m
+   [33m[2m✓[22m[39m RosterScheduleOptimizer workspace[2m > [22mresumes a display day without aliasing a different horizon or rewriting the plan [33m 367[2mms[22m[39m
+   [33m[2m✓[22m[39m RosterScheduleOptimizer workspace[2m > [22mresumes a display day without aliasing a different timezone or rewriting the plan [33m 360[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mkeeps display-preference corrupt separate from the working plan[32m 189[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mkeeps display-preference out-of-horizon separate from the working plan[32m 182[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mkeeps display-preference read-failure separate from the working plan[32m 184[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mkeeps display-preference write-failure separate from the working plan[32m 222[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mshows upstream stale and disabled evidence in manual readiness independently of reader time[32m 45[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mshows a provisional schedule warning without changing complete coverage or manager intent[32m 22[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mupdates the provisional schedule 2-hour warning after an edit without a new read[32m 30[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mupdates the provisional schedule 6-hour warning after an edit without a new read[32m 28[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mshows confirmed Yahoo zero usage independently from unknown allowance and planned adds[32m 0[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mdistinguishes projected fit from schedule-first order for unequal games and quality[32m 0[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mseparates planned adds from allowance 'Week: 0 remaining (manager)'[32m 21[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mseparates planned adds from allowance 'Week: Allowance unknown'[32m 17[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mseparates planned adds from allowance 'Week: Allowance unknown'[32m 20[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mrenders verified zero AGP separately from unavailable metrics[32m 5[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22muses schedule ordering and category-plan guidance instead of points claims in category leagues[32m 7[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mgroups candidates by team without changing eligibility, filters and deduplicates All players[32m 34[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mreviews manual candidate positions explicitly without replacing selected moves or leaking another candidate's positions[32m 157[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mpreserves API warnings without converting structured errors to object text[32m 0[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mrenders the structured planning-data failure as its actual warning[32m 17[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mshows the actual bench tradeoff and public assumptions within the selected date[32m 2[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mkeeps unsupported bench decisions unresolved and separates locks from scoring reasons[32m 2[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mshows category results and projected goalie assumptions without claiming a satisfied minimum[32m 3[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mguides an empty manual workspace to existing inputs without implying acquisition readiness[32m 154[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mrequires input review and renews it after rule changes without certifying unknown scoring[32m 154[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22muses eligible full-team evidence for goalie starts without capping conflicts or reviving legacy rows[32m 10[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mseparates remaining goalie windows by the selected split without hiding unknown timing or availability[32m 11[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mlabels the selected statistical source and its permitted uses without implying a total[32m 1[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mshows only each target's selected source timestamps across mixed inputs and replay[32m 3[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mlabels unverified lineups as schedule capacity[32m 57[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mdistinguishes category comparison availability (true) from a recommended winner[32m 114[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mdistinguishes category comparison availability (false) from a recommended winner[32m 94[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mwithholds category gains when the no-move lineup cannot satisfy a selected-player lock[32m 1[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mdistinguishes identically named Yahoo teams by league and selects the matching context[32m 100[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mcounts only acquired players' future games before their next drop[32m 0[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mkeeps exact canonical selections and unresolved pasted names across remount[32m 108[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mreports already-rostered pasted names without changing selected moves or unresolved names[32m 73[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mreveals and focuses existing player detail from 'roster' at 390 without editing the plan[32m 79[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mreveals and focuses existing player detail from 'compact' at 1440 without editing the plan[32m 134[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mreveals and focuses existing player detail from 'candidate' at 1440 without editing the plan[32m 141[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mundoes local roster edits without changing the public snapshot[32m 89[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mretains local undo when the workspace is reopened[32m 113[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mresumes each league's local working plan when switching contexts and reopening[32m 139[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mmarks a future selected add conditional until the provider confirms it[32m 72[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mshows selected acquisition cost 0 with its drop and sequence prerequisite[32m 17[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mshows selected acquisition cost 2 with its drop and sequence prerequisite[32m 20[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mshows selected acquisition cost null with its drop and sequence prerequisite[32m 18[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22midentifies the next selected action without promoting an unresolved plan (mistimed prerequisite: false)[32m 37[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22midentifies the next selected action without promoting an unresolved plan (mistimed prerequisite: true)[32m 17[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mkeeps the next selected action review-only after confirmation with unsupported rules[32m 31[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22muses a saved manager null lock through refresh, undo, save and reopen (provider conflict: false)[32m 124[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22muses a saved manager null lock through refresh, undo, save and reopen (provider conflict: true)[32m 114[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22muses a saved manager 'C#1' lock through refresh, undo, save and reopen (provider conflict: false)[32m 108[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22muses a saved manager 'C#1' lock through refresh, undo, save and reopen (provider conflict: true)[32m 116[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mselects an add using next-day rules and 'manager_available' clearance[32m 43[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mselects an add using next-day rules and 'waivers' clearance[32m 46[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mleaves acquisition intent unresolved for 'unknown'/'manager_available'[32m 48[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mleaves acquisition intent unresolved for 'same_day'/'waivers'[32m 50[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mshows provider refresh feedback immediately, prevents duplicate requests and reports unchanged inputs[32m 92[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains unavailable provider refresh for user null, sync false and team ''team''[32m 28[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains unavailable provider refresh for user { id: 'manager' }, sync false and team ''team''[32m 27[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains unavailable provider refresh for user { id: 'manager' }, sync true and team ''manual''[32m 28[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains unavailable provider refresh for user { id: 'manager' }, sync true and team '' ''[32m 33[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains unavailable provider inputs without reporting success or replacing saved inputs: 'Connected refresh is unavailable for …'[32m 37[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains unavailable provider inputs without reporting success or replacing saved inputs: 'Provider refresh returned no inputs. …'[32m 36[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mkeeps refreshed provider authority through undo and reopen without replacing selected moves[32m 193[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mrefreshes the selected 'leagueId' and ignores a late response for the previous scope[32m 95[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mrefreshes the selected 'teamId' and ignores a late response for the previous scope[32m 99[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mrefreshes the selected 'endDate' and ignores a late response for the previous scope[32m 53[2mms[22m[39m
+[31m   [31m×[31m RosterScheduleOptimizer workspace[2m > [22mrefreshes the selected 'timeZone' and ignores a late response for the previous scope[39m[33m 1038[2mms[22m[39m
+[31m     → expected [ { …(2) } ] to have a length of 2 but got 1
+
+Ignored nodes: comments, script, style
+[36m<html>[31m
+  [36m<head />[31m
+  [36m<body>[31m
+    [36m<div>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"_workspace_52fb3c"[31m
+      [36m>[31m
+        [36m<header[31m
+          [33mclass[31m=[32m"_topbar_52fb3c"[31m
+        [36m>[31m
+          [36m<div>[31m
+            [36m<span[31m
+              [33mclass[31m=[32m"_eyebrow_52fb3c"[31m
+            [36m>[31m
+              [0mTools / In-season planning[0m
+            [36m</span>[31m
+            [36m<h1>[31m
+              [0mRoster Schedule Optimizer[0m
+            [36m</h1>[31m
+          [36m</div>[31m
+          [36m<div[31m
+            [33mclass[31m=[32m"_actions_52fb3c"[31m
+          [36m>[31m
+            [36m<button[31m
+              [33maria-controls[31m=[32m"rso-planning-setup"[31m
+              [33maria-expanded[31m=[32m"false"[31m
+              [33mclass[31m=[32m"_mobileSetupToggle_52fb3c"[31m
+            [36m>[31m
+              [0mPlanning setup · [0m
+              [0mThu, Oct 15[0m
+              [0m – [0m
+              [0mWed, Oct 28[0m
+            [36m</button>[31m
+            [36m<button>[31m
+              [0mUndo[0m
+            [36m</button>[31m
+            [36m<button>[31m
+              [0mMatchup[0m
+            [36m</button>[31m
+            [36m<span>[31m
+              [0mReader checked 11:39:14 PM[0m
+            [36m</span>[31m
+          [36m</div>[31m
+        [36m</header>[31m
+        [36m<fieldset[31m
+          [33maria-label[31m=[32m"Planning setup"[31m
+          [33mclass[31m=[32m"_controls_52fb3c "[31m
+          [33mid[31m=[32m"rso-planning-setup"[31m
+        [36m>[31m
+          [36m<label>[31m
+            [0mSource[0m
+            [36m<select>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"manual"[31m
+              [36m>[31m
+                [0mManual[0m
+              [36m</option>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"yahoo"[31m
+              [36m>[31m
+                [0mYahoo[0m
+              [36m</option>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"fantrax"[31m
+              [36m>[31m
+                [0mFantrax[0m
+              [36m</option>[31m
+            [36m</select>[31m
+          [36m</label>[31m
+          [36m<label>[31m
+            [0mSeason[0m
+            [36m<input[31m
+              [33mtype[31m=[32m"number"[31m
+              [33mvalue[31m=[32m"20262027"[31m
+            [36m/>[31m
+          [36m</label>[31m
+          [36m<label>[31m
+            [0mFrom[0m
+            [36m<input[31m
+              [33mtype[31m=[32m"date"[31m
+              [33mvalue[31m=[32m"2026-10-15"[31m
+            [36m/>[31m
+          [36m</label>[31m
+          [36m<label>[31m
+            [0mThrough[0m
+            [36m<input[31m
+              [33mtype[31m=[32m"date"[31m
+              [33mvalue[31m=[32m"2026-10-28"[31m
+            [36m/>[31m
+          [36m</label>[31m
+          [36m<label>[31m
+            [0mTeam ID[0m
+            [36m<input[31m
+              [33mvalue[31m=[32m"team"[31m
+            [36m/>[31m
+          [36m</label>[31m
+          [36m<button[31m
+            [33maria-busy[31m=[32m"true"[31m
+            [33maria-describedby[31m=[32m"rso-provider-refresh-status"[31m
+            [33maria-label[31m=[32m"Refresh provider"[31m
+            [33mdisabled[31m=[32m""[31m
+          [36m>[31m
+            [0mRefreshing provider…[0m
+          [36m</button>[31m
+          [36m<label>[31m
+            [0mLeague ID[0m
+            [36m<input[31m
+              [33mvalue[31m=[32m"first-league"[31m
+            [36m/>[31m
+          [36m</label>[31m
+          [36m<label>[31m
+            [0mTime zone[0m
+            [36m<input[31m
+              [33mvalue[31m=[32m"America/Chicago"[31m
+            [36m/>[31m
+          [36m</label>[31m
+          [36m<label>[31m
+            [0mGoalie choice[0m
+            [36m<select>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"accept_risk"[31m
+              [36m>[31m
+                [0mAccept risk[0m
+              [36m</option>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"cover"[31m
+              [36m>[31m
+                [0mCover minimum[0m
+              [36m</option>[31m
+            [36m</select>[31m
+          [36m</label>[31m
+          [36m<label>[31m
+            [0mWindow[0m
+            [36m<select>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"any"[31m
+              [36m>[31m
+                [0mAny date[0m
+              [36m</option>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"early"[31m
+              [36m>[31m
+                [0mEarly[0m
+              [36m</option>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"late"[31m
+              [36m>[31m
+                [0mLate[0m
+              [36m</option>[31m
+            [36m</select>[31m
+          [36m</label>[31m
+          [36m<label>[31m
+            [0mSplit[0m
+            [36m<select>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"mon_thu"[31m
+              [36m>[31m
+                [0mMon–Thu / Fri–Sun[0m
+              [36m</option>[31m
+              [36m<option[31m
+                [33mvalue[31m=[32m"mon_wed"[31m
+              [36m>[31m
+                [0mMon–Wed / Thu–Sun[0m
+              [36m</option>[31m
+            [36m</select>[31m
+          [36m</label>[31m
+          [36m<div[31m
+            [33maria-label[31m=[32m"Matchup week navigation"[31m
+            [33mclass[31m=[32m"_weekNav_52fb3c"[31m
+            [33mrole[31m=[32m"group"[31m
+          [36m>[31m
+            [36m<button[31m
+              [33maria-describedby[31m=[32m"rso-matchup-week-reason"[31m
+              [33maria-label[31m=[32m"Previous matchup week"[31m
+              [33mdisabled[31m=[32m""[31m
+            [36m>[31m
+              [0m‹[0m
+            [36m</button>[31m
+            [36m<label>[31m
+              [0mMatchup week[0m
+              [36m<select>[31m
+                [36m<option[31m
+                  [33mvalue[31m=[32m"-1"[31m
+                [36m>[31m
+                  [0mCustom dates[0m
+                [36m</option>[31m
+              [36m</select>[31m
+            [36m</label>[31m
+            [36m<button[31m
+              [33maria-describedby[31m=[32m"rso-matchup-week-reason"[31m
+              [33maria-label[31m=[32m"Next matchup week"[31m
+              [33mdisabled[31m=[32m""[31m
+            [36m>[31m
+              [0m›[0m
+            [36m</button>[31m
+            [36m<small[31m
+              [33mid[31m=[32m"rso-matchup-week-reason"[31m
+            [36m>[31m
+             ...[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22madopts Yahoo's league timezone without losing the selected team, horizon or intent[32m 30[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mkeeps the selected context when provider evidence belongs to another league[32m 24[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22muses the signed-in session for access and account reads, then refreshes after account switch[32m 228[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mignores an older same-account 'eligible' access response after a newer refresh[32m 86[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mignores an older same-account 'failed' access response after a newer refresh[32m 90[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mignores an older same-account 'eligible after failed revalidation' access response after a newer refresh[32m 88[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains access-service failures instead of silently disabling provider sync[32m 39[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mreports account-save failure, allows retry and preserves the submitted snapshot while local edits continue[32m 143[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mreports checking access before explaining a missing provider team[32m 28[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains disabled manual controls and invalid rule-window dates using visible descriptions[32m 256[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains empty manual continuation without enabling an unavailable action[32m 22[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains first, last and custom matchup-week navigation boundaries[32m 71[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains the 'input' Select plan gate and acknowledges selection when summaries match[32m 50[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains the 'scoring' Select plan gate and acknowledges selection when summaries match[32m 67[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains the 'legal' Select plan gate and acknowledges selection when summaries match[32m 68[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains the 'budget' Select plan gate and acknowledges selection when summaries match[32m 69[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains the 'hold' Select plan gate and acknowledges selection when summaries match[32m 69[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mexplains the 'ready' Select plan gate and acknowledges selection when summaries match[32m 78[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mkeeps the local plan on a stale-version save and ignores a late save after account switching[32m 202[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mdoes not attach an old account save to a newly selected timeframe[32m 146[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mkeeps invalid zone and cleared period dates out of committed rules[32m 44[2mms[22m[39m
+   [32m✓[39m RosterScheduleOptimizer workspace[2m > [22mopens a saved manual snapshot read-only until the manager explicitly forks it[32m 168[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mdefaults future horizons to their first valid day while retaining today and past-week behavior[32m 0[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22maccounts for 19 players without duplicating dual eligibility and preserves configured vacancies[32m 1[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22maccounts for 20 players without duplicating dual eligibility and preserves configured vacancies[32m 1[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22maccounts for 25 players without duplicating dual eligibility and preserves configured vacancies[32m 0[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mretains a non-playing lock and weekly window occupant instead of inventing an open slot[32m 1[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mplaces all unstarted McDavid, Panarin and Batherson in local Bench after 13 filled slots[32m 91[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mkeeps eligibility, team and source warnings on unstarted Bench rows[32m 36[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mpreserves active and Bench locks while warning on unsupported and conflicting slot claims[32m 1[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mretains local Bench membership and collapse counts with configured capacity 0[32m 50[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mretains local Bench membership and collapse counts with configured capacity undefined[32m 52[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mretains local Bench membership and collapse counts with configured capacity -1[32m 51[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mkeeps unclaimed slots pending when active membership or schedule coverage is unresolved[32m 1[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mcounts verified active capacity and distinct roster and NHL games for the selected day[32m 1[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mkeeps unknown eligibility, unsupported reserves and conflicting locks honest[32m 0[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mchanges view state and bench visibility without editing intent, and distinguishes unknown goalie starts[32m 95[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mbounds range keyboard navigation and synchronizes the selected header and day label[32m 105[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mpreserves collapsed Bench membership as the selected day changes and honors controlled visibility[32m 69[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mlabels partial positive game evidence as known and missing partial evidence as unknown[32m 39[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mmarks an engine assignment conflicting with a held slot and an unknown weekly window as unresolved[32m 1[2mms[22m[39m
+[31m   [31m×[31m compact RSO schedule[2m > [22mlabels effective planned additions and reserve capacity conflicts without losing current roster players[39m[32m 4[2mms[22m[39m
+[31m     → .toMatch() expects to receive a string, but got undefined[39m
+   [32m✓[39m compact RSO schedule[2m > [22mkeeps missing team null schedules unknown despite complete shared coverage[32m 125[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mkeeps missing team  schedules unknown despite complete shared coverage[32m 119[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mpreserves the selected weekday during week navigation and falls back inside clipped weeks[32m 167[2mms[22m[39m
+   [32m✓[39m compact RSO schedule[2m > [22mlabels a confirmed goalie only when eligible full-team evidence supports it[32m 86[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 18 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m scripts/qualify-native-players-offline.test.ts[2m > [22moffline current native player qualification[2m > [22mreproduces current native calculations with genuine admission and zero live client/transport/writes
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m scripts/qualify-native-players-offline.test.ts:[2m48:58[22m[39m
+    [90m 46| [39m    const skater = first.result.categoryCoverage[0], goalie = first.re…
+    [90m 47| [39m    [34mexpect[39m(skater[33m.[39mparticipation[33m.[39mstatus)[33m.[39m[34mtoBe[39m([32m"confirmed_evidence"[39m)[33m;[39m
+    [90m 48| [39m    [34mexpect[39m(skater[33m.[39madmission[33m.[39macceptedByUnchangedConsumer)[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   | [39m                                                         [31m^[39m
+    [90m 49| [39m    for (const key of ["G", "A", "SOG"]) expect(skater.categories.find…
+    [90m 50| [39m      modeledStatus: "missing", status: "blocked", reasons: expect.arr…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/18]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m scripts/qualify-native-players-offline.test.ts[2m > [22moffline current native player qualification[2m > [22mleaves absent playing/start evidence unknown and preserves consumer missing-participation rejection
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m scripts/qualify-native-players-offline.test.ts:[2m70:97[22m[39m
+    [90m 68| [39m    expect(skater.participation).toMatchObject({ status: "missing", pr…
+    [90m 69| [39m    [34mexpect[39m(skater[33m.[39madmission[33m.[39macceptedByUnchangedConsumer)[33m.[39m[34mtoBe[39m([35mfalse[39m)[33m;[39m
+    [90m 70| [39m    expect(skater.admission.reasons.some(row => row.reasons.includes("…
+    [90m   | [39m                                                                                                [31m^[39m
+    [90m 71| [39m    expect(receipt.result.categoryCoverage[1].participation.status).to…
+    [90m 72| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/18]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m scripts/qualify-native-players-offline.test.ts[2m > [22moffline current native player qualification[2m > [22mbounds retained roster_optimizer_team_games.fetched_at before/equal/one microsecond after cutoff
+[41m[1m FAIL [22m[49m scripts/qualify-native-players-offline.test.ts[2m > [22moffline current native player qualification[2m > [22mbounds retained roster_optimizer_team_games.fetchedAt before/equal/one microsecond after cutoff
+[41m[1m FAIL [22m[49m scripts/qualify-native-players-offline.test.ts[2m > [22moffline current native player qualification[2m > [22mbounds retained roster_optimizer_team_games.source_updated_at before/equal/one microsecond after cutoff
+[41m[1m FAIL [22m[49m scripts/qualify-native-players-offline.test.ts[2m > [22moffline current native player qualification[2m > [22mbounds retained roster_optimizer_team_games.sourceUpdatedAt before/equal/one microsecond after cutoff
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m scripts/qualify-native-players-offline.test.ts:[2m131:156[22m[39m
+    [90m129| [39m        [34mexpect[39m(receipt[33m.[39mresult[33m.[39mblockers)[33m.[39m[34mtoEqual[39m([])[33m;[39m
+    [90m130| [39m        [34mexpect[39m(receipt[33m.[39mresult[33m.[39mcalculation[33m?.[39mgamesProcessed)[33m.[39m[34mtoBe[39m([34m1[39m)[33m;[39m
+    [90m131| [39m        if (table === "roster_optimizer_team_games") expect(receipt.re…
+    [90m   | [39m                                                                                                                                                           [31m^[39m
+    [90m132| [39m      }
+    [90m133| [39m    }
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/18]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m scripts/qualify-native-players-offline.test.ts[2m > [22moffline current native player qualification[2m > [22mallows future schedule/expiry/effective metadata and later local artifact creation without moving source cutoff
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m scripts/qualify-native-players-offline.test.ts:[2m144:107[22m[39m
+    [90m142| [39m    const original = projectionInputHash(inputs), receipt = await qual…
+    [90m143| [39m    [34mexpect[39m(receipt[33m.[39mresult[33m.[39mblockers)[33m.[39m[34mtoEqual[39m([])[33m;[39m
+    [90m144| [39m    expect(receipt.result.categoryCoverage.every(target => target.admi…
+    [90m   | [39m                                                                                                          [31m^[39m
+    [90m145| [39m    [34mexpect[39m(receipt[33m.[39mresult[33m.[39masOf)[33m.[39m[34mtoBe[39m(asOf)[33m;[39m
+    [90m146| [39m    expect(Date.parse(receipt.createdAt)).toBeGreaterThan(Date.parse(a…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/18]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m scripts/qualify-native-players-offline.test.ts[2m > [22moffline current native player qualification[2m > [22mnever promotes a confirmed PP role to playing participation
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m scripts/qualify-native-players-offline.test.ts:[2m160:117[22m[39m
+    [90m158| [39m    const result = (await qualifyNativePlayersOffline(inputs, asOf)).r…
+    [90m159| [39m    expect(result.categoryCoverage[0].participation.probability).toBeN…
+    [90m160| [39m    expect(result.categoryCoverage[0].admission.reasons.some(row => ro…
+    [90m   | [39m                                                                                                                    [31m^[39m
+    [90m161| [39m  })[33m;[39m
+    [90m162| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/18]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m lib/rosterScheduleOptimizer/planningReproducibility.test.ts[2m > [22mplanning search reproducibility[2m > [22mreproduces admitted detailed quality decisions across scoring profiles and input order
+[41m[1m FAIL [22m[49m lib/rosterScheduleOptimizer/planningReproducibility.test.ts[2m > [22mplanning search reproducibility[2m > [22mreproduces admitted baseline quality decisions across scoring profiles and input order
+[41m[1m FAIL [22m[49m lib/rosterScheduleOptimizer/planningReproducibility.test.ts[2m > [22mplanning search reproducibility[2m > [22mreproduces admitted blended quality decisions across scoring profiles and input order
+[31m[1mAssertionError[22m: expected 'agp' to be 'outcome' // Object.is equality[39m
+
+Expected: [32m"outcome"[39m
+Received: [31m"agp"[39m
+
+[36m [2m❯[22m lib/rosterScheduleOptimizer/planningReproducibility.test.ts:[2m122:43[22m[39m
+    [90m120| [39m      const replayed = planRoster(JSON.parse(JSON.stringify(snapshot))…
+    [90m121| [39m      [35mfor[39m ([35mconst[39m result [35mof[39m [one[33m,[39m two[33m,[39m replayed]) {
+    [90m122| [39m        [34mexpect[39m(result[33m.[39mbaseline[33m.[39mobjective)[33m.[39m[34mtoBe[39m([32m"outcome"[39m)[33m;[39m
+    [90m   | [39m                                          [31m^[39m
+    [90m123| [39m        [34mexpect[39m(result[33m.[39mselected[33m.[39mrecommendation[33m?.[39meligible)[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m124| [39m        [34mexpect[39m(result[33m.[39mselected[33m.[39mcomparisonEligible)[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/18]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m lib/rosterScheduleOptimizer/planningReproducibility.test.ts[2m > [22mplanning search reproducibility[2m > [22mbounds unchecked categories bench decisions without inventing scoring evidence
+[41m[1m FAIL [22m[49m lib/rosterScheduleOptimizer/planningReproducibility.test.ts[2m > [22mplanning search reproducibility[2m > [22mbounds unchecked goalie bench decisions without inventing scoring evidence
+[31m[1mAssertionError[22m: expected { policyVersion: 'rso-bench-v1', …(5) } to deeply equal { policyVersion: 'rso-bench-v1', …(5) }[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "complete": false,[39m
+[31m+   "complete": true,[39m
+[2m    "evaluated": 0,[22m
+[2m    "maxEvaluations": 0,[22m
+[2m    "policyVersion": "rso-bench-v1",[22m
+[2m    "timeLimitReached": false,[22m
+[32m-   "workQuotaReached": true,[39m
+[31m+   "workQuotaReached": false,[39m
+[2m  }[22m
+
+[36m [2m❯[22m lib/rosterScheduleOptimizer/planningReproducibility.test.ts:[2m214:41[22m[39m
+    [90m212| [39m    [35mconst[39m options [33m=[39m { maxSteps[33m:[39m [34m0[39m[33m,[39m maxBenchEvaluations[33m:[39m [34m0[39m }[33m;[39m
+    [90m213| [39m    [35mconst[39m result [33m=[39m [34mplanRoster[39m(snapshot[33m,[39m intent[33m,[39m options)[33m;[39m
+    [90m214| [39m    expect(result.search.benchEvidence).toEqual({ policyVersion: "rso-…
+    [90m   | [39m                                        [31m^[39m
+    [90m215| [39m      maxEvaluations: 0, complete: false, workQuotaReached: true, time…
+    [90m216| [39m    expect(result.selected.recommendation).toMatchObject({ eligible: f…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/18]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m lib/supabase/supportedBaselineMigration.test.ts[2m > [22msupported Supabase schema-baseline reconciliation[2m > [22mkeeps only the reviewed baseline and supported post-baseline deltas active
+[31m[1mAssertionError[22m: expected [ …(80) ] to deeply equal [ …(72) ][39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[33m@@ -68,7 +68,15 @@[39m
+[2m    "20260916044919_starter_board_atomic_lineup_capture.sql",[22m
+[2m    "20260916045842_starter_board_operational_reporting.sql",[22m
+[2m    "20260916052239_starter_board_validation_registry.sql",[22m
+[2m    "20260916060521_starter_board_atomic_goalie_capture.sql",[22m
+[2m    "20260917133519_mock_draft_adp.sql",[22m
+[31m+   "20260919005608_tweet_pipeline_reports_and_review.sql",[39m
+[31m+   "20260919005622_nhl_draft_identity_ingestion.sql",[39m
+[31m+   "20260919005852_nhl_prospect_verification_actor.sql",[39m
+[31m+   "20260923184653_fantrax_live_draft_sessions.sql",[39m
+[31m+   "20260927104934_in_season_access_workspace.sql",[39m
+[2m    "20261002021651_forge_local_execution_fence.sql",[22m
+[31m+   "20261002134400_game_line_snapshots.sql",[39m
+[31m+   "20261002140500_resolve_goalie_unified_game_team.sql",[39m
+[31m+   "20261004181455_forge_public_revision_reader.sql",[39m
+[2m  ][22m
+
+[36m [2m❯[22m lib/supabase/supportedBaselineMigration.test.ts:[2m65:7[22m[39m
+    [90m 63| [39m        [33m.[39m[34mfilter[39m((name) [33m=>[39m name[33m.[39m[34mendsWith[39m([32m".sql"[39m))
+    [90m 64| [39m        [33m.[39m[34msort[39m()[33m,[39m
+    [90m 65| [39m    )[33m.[39m[34mtoEqual[39m(activeMigrationNames)[33m;[39m
+    [90m   | [39m      [31m^[39m
+    [90m 66| [39m
+    [90m 67| [39m    [34mexpect[39m(migrationAuthority[33m.[39mschemaVersion)[33m.[39m[34mtoBe[39m([34m1[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/18]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/components/RosterScheduleOptimizer/CategoryGains.test.tsx[2m > [22mshows per-category gains and losses from startable days, preserving manager moves and reset accounting
+[31m[1mAssertionError[22m: expected [ [ '2026-10-06', '1' ], …(1) ] to deeply equal [ [ '2026-10-06', '1' ], …(1) ][39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[33m@@ -3,8 +3,8 @@[39m
+[2m      "2026-10-06",[22m
+[2m      "1",[22m
+[2m    ],[22m
+[2m    [[22m
+[2m      "2026-10-07",[22m
+[32m-     "3",[39m
+[31m+     "1",[39m
+[2m    ],[22m
+[2m  ][22m
+
+[36m [2m❯[22m __tests__/components/RosterScheduleOptimizer/CategoryGains.test.tsx:[2m59:77[22m[39m
+    [90m 57| [39m    projectedValue: 0, acquisitions: { "Before reset": 1 }, steps: int…
+    [90m 58| [39m  [34mexpect[39m(evaluations[33m.[39mbaseline[33m.[39mprojectedValue)[33m.[39m[34mtoBe[39m([34m0[39m)[33m;[39m
+    [90m 59| [39m  expect(evaluations.plan.assignments.map(row => [row.date, row.player…
+    [90m   | [39m                                                                            [31m^[39m
+    [90m 60| [39m  expect(evaluations.plan.forecastInputs?.find(row => row.playerId ===…
+    [90m 61| [39m  [34mexpect[39m([33mJSON[39m[33m.[39m[34mstringify[39m(intent))[33m.[39m[34mtoBe[39m(original)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/18]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx[2m > [22mRosterScheduleOptimizer workspace[2m > [22mrefreshes the selected 'timeZone' and ignores a late response for the previous scope
+[31m[1mAssertionError[22m[39m: expected [ { …(2) } ] to have a length of 2 but got 1
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_workspace_52fb3c"[39m
+      [36m>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_topbar_52fb3c"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_eyebrow_52fb3c"[39m
+            [36m>[39m
+              [0mTools / In-season planning[0m
+            [36m</span>[39m
+            [36m<h1>[39m
+              [0mRoster Schedule Optimizer[0m
+            [36m</h1>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_actions_52fb3c"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_mobileSetupToggle_52fb3c"[39m
+            [36m>[39m
+              [0mPlanning setup · [0m
+              [0mThu, Oct 15[0m
+              [0m – [0m
+              [0mWed, Oct 28[0m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mUndo[0m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mMatchup[0m
+            [36m</button>[39m
+            [36m<span>[39m
+              [0mReader checked 11:39:14 PM[0m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</header>[39m
+        [36m<fieldset[39m
+          [33maria-label[39m=[32m"Planning setup"[39m
+          [33mclass[39m=[32m"_controls_52fb3c "[39m
+          [33mid[39m=[32m"rso-planning-setup"[39m
+        [36m>[39m
+          [36m<label>[39m
+            [0mSource[0m
+            [36m<select>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"manual"[39m
+              [36m>[39m
+                [0mManual[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"yahoo"[39m
+              [36m>[39m
+                [0mYahoo[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"fantrax"[39m
+              [36m>[39m
+                [0mFantrax[0m
+              [36m</option>[39m
+            [36m</select>[39m
+          [36m</label>[39m
+          [36m<label>[39m
+            [0mSeason[0m
+            [36m<input[39m
+              [33mtype[39m=[32m"number"[39m
+              [33mvalue[39m=[32m"20262027"[39m
+            [36m/>[39m
+          [36m</label>[39m
+          [36m<label>[39m
+            [0mFrom[0m
+            [36m<input[39m
+              [33mtype[39m=[32m"date"[39m
+              [33mvalue[39m=[32m"2026-10-15"[39m
+            [36m/>[39m
+          [36m</label>[39m
+          [36m<label>[39m
+            [0mThrough[0m
+            [36m<input[39m
+              [33mtype[39m=[32m"date"[39m
+              [33mvalue[39m=[32m"2026-10-28"[39m
+            [36m/>[39m
+          [36m</label>[39m
+          [36m<label>[39m
+            [0mTeam ID[0m
+            [36m<input[39m
+              [33mvalue[39m=[32m"team"[39m
+            [36m/>[39m
+          [36m</label>[39m
+          [36m<button[39m
+            [33maria-busy[39m=[32m"true"[39m
+            [33maria-describedby[39m=[32m"rso-provider-refresh-status"[39m
+            [33maria-label[39m=[32m"Refresh provider"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mRefreshing provider…[0m
+          [36m</button>[39m
+          [36m<label>[39m
+            [0mLeague ID[0m
+            [36m<input[39m
+              [33mvalue[39m=[32m"first-league"[39m
+            [36m/>[39m
+          [36m</label>[39m
+          [36m<label>[39m
+            [0mTime zone[0m
+            [36m<input[39m
+              [33mvalue[39m=[32m"America/Chicago"[39m
+            [36m/>[39m
+          [36m</label>[39m
+          [36m<label>[39m
+            [0mGoalie choice[0m
+            [36m<select>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"accept_risk"[39m
+              [36m>[39m
+                [0mAccept risk[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"cover"[39m
+              [36m>[39m
+                [0mCover minimum[0m
+              [36m</option>[39m
+            [36m</select>[39m
+          [36m</label>[39m
+          [36m<label>[39m
+            [0mWindow[0m
+            [36m<select>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"any"[39m
+              [36m>[39m
+                [0mAny date[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"early"[39m
+              [36m>[39m
+                [0mEarly[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"late"[39m
+              [36m>[39m
+                [0mLate[0m
+              [36m</option>[39m
+            [36m</select>[39m
+          [36m</label>[39m
+          [36m<label>[39m
+            [0mSplit[0m
+            [36m<select>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"mon_thu"[39m
+              [36m>[39m
+                [0mMon–Thu / Fri–Sun[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"mon_wed"[39m
+              [36m>[39m
+                [0mMon–Wed / Thu–Sun[0m
+              [36m</option>[39m
+            [36m</select>[39m
+          [36m</label>[39m
+          [36m<div[39m
+            [33maria-label[39m=[32m"Matchup week navigation"[39m
+            [33mclass[39m=[32m"_weekNav_52fb3c"[39m
+            [33mrole[39m=[32m"group"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-describedby[39m=[32m"rso-matchup-week-reason"[39m
+              [33maria-label[39m=[32m"Previous matchup week"[39m
+              [33mdisabled[39m=[32m""[39m
+            [36m>[39m
+              [0m‹[0m
+            [36m</button>[39m
+            [36m<label>[39m
+              [0mMatchup week[0m
+              [36m<select>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"-1"[39m
+                [36m>[39m
+                  [0mCustom dates[0m
+                [36m</option>[39m
+              [36m</select>[39m
+            [36m</label>[39m
+            [36m<button[39m
+              [33maria-describedby[39m=[32m"rso-matchup-week-reason"[39m
+              [33maria-label[39m=[32m"Next matchup week"[39m
+              [33mdisabled[39m=[32m""[39m
+            [36m>[39m
+              [0m›[0m
+            [36m</button>[39m
+            [36m<small[39m
+              [33mid[39m=[32m"rso-matchup-week-reason"[39m
+            [36m>[39m
+             ...
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 2[39m
+[31m+ 1[39m
+
+[36m [2m❯[22m __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx:[2m1303:41[22m[39m
+    [90m1301| [39m    fireEvent.change(screen.getByLabelText(label), { target: { value }…
+    [90m1302| [39m    if (field === "timeZone") fireEvent.blur(screen.getByLabelText(lab…
+    [90m1303| [39m    await waitFor(() => expect(pending).toHaveLength(2));
+    [90m   | [39m                                        [31m^[39m
+    [90m1304| [39m    expect(pending[0].init?.signal?.aborted).toBe(true);
+    [90m1305| [39m    expect(saved().context[field]).toBe(value);
+[90m [2m❯[22m runWithExpensiveErrorDiagnosticsDisabled ../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:[2m47:12[22m[39m
+[90m [2m❯[22m checkCallback ../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/wait-for.js:[2m124:77[22m[39m
+[90m [2m❯[22m Timeout.checkRealTimersCallback ../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/wait-for.js:[2m118:16[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/18]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx[2m > [22mcompact RSO schedule[2m > [22mlabels effective planned additions and reserve capacity conflicts without losing current roster players
+[31m[1mTypeError[22m: .toMatch() expects to receive a string, but got undefined[39m
+[36m [2m❯[22m __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx:[2m2044:62[22m[39m
+    [90m2042| [39m    input.intent.steps = [{ id: "add", type: "add", playerId: "new", d…
+    [90m2043| [39m    const rows = compactGroups(input).flatMap(group => group.rows);
+    [90m2044| [39m    expect(rows.find(row => row.playerId === "new")?.change).toMatch(/…
+    [90m   | [39m                                                             [31m^[39m
+    [90m2045| [39m    expect(rows.find(row => row.playerId === "p19")?.status).toContain…
+    [90m2046| [39m  });
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/18]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m __tests__/pages/api/v1/db/update-line-sources.test.ts[2m > [22m/api/v1/db/update-line-sources[2m > [22mreplays the frozen 11 regression and 24 candidate records equivalently through GDL and CCC with mocked enrichment and storage
+[31m[1mError[22m: ENOENT: no such file or directory, open '/private/tmp/fhf-release-checkpoint-20261016-0424/baseline-control/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-holdout-context.json'[39m
+[36m [2m❯[22m __tests__/pages/api/v1/db/update-line-sources.test.ts:[2m676:34[22m[39m
+    [90m674| [39m      const audit = JSON.parse(readFileSync(resolve(process.cwd(), "..…
+    [90m675| [39m      const frozenGames = JSON.parse(readFileSync(resolve(process.cwd(…
+    [90m676| [39m      const holdout = JSON.parse(readFileSync(resolve(process.cwd(), "…
+    [90m   | [39m                                 [31m^[39m
+    [90m677| [39m      const labels = JSON.parse(readFileSync(resolve(process.cwd(), ".…
+    [90m678| [39m      audit.snapshots.push(...holdout.snapshots.map((snapshot: any) =>…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/18]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m6 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (7)[39m
+[2m      Tests [22m [1m[31m18 failed[39m[22m[2m | [22m[1m[32m334 passed[39m[22m[90m (352)[39m
+[2m   Start at [22m 23:39:06
+[2m   Duration [22m 11.61s[2m (transform 1000ms, setup 14ms, collect 1.70s, tests 17.52s, environment 1.17s, prepare 225ms)[22m
+

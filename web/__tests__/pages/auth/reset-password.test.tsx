@@ -98,6 +98,72 @@ describe("Reset password page", () => {
     expect(screen.getByRole("button", { name: "Update Password" })).toBeTruthy();
   });
 
+  it.each([
+    {
+      password: "short",
+      confirmation: "short",
+      message: "Use a password with at least 8 characters.",
+      invalidField: "New Password"
+    },
+    {
+      password: "supersecret1",
+      confirmation: "different-password",
+      message: "Your password confirmation does not match.",
+      invalidField: "Confirm Password"
+    }
+  ])("keeps the form editable after $message", async ({ password, confirmation, message, invalidField }) => {
+    render(<ResetPasswordPage />);
+
+    await screen.findByText("Choose a new password for your account.");
+    const passwordInput = screen.getByLabelText<HTMLInputElement>("New Password");
+    const confirmationInput = screen.getByLabelText<HTMLInputElement>("Confirm Password");
+    fireEvent.change(passwordInput, { target: { value: password } });
+    fireEvent.change(confirmationInput, { target: { value: confirmation } });
+    fireEvent.click(screen.getByRole("button", { name: "Update Password" }));
+
+    expect(await screen.findByText(message)).toBeTruthy();
+    expect(screen.getByLabelText("New Password")).toBe(passwordInput);
+    expect(screen.getByLabelText("Confirm Password")).toBe(confirmationInput);
+    expect(passwordInput.value).toBe(password);
+    expect(confirmationInput.value).toBe(confirmation);
+    expect(passwordInput.disabled).toBe(false);
+    expect(confirmationInput.disabled).toBe(false);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Update Password" }).disabled).toBe(false);
+    expect(fetch).not.toHaveBeenCalled();
+    const errorMessage = screen.getByRole("alert");
+    const invalidInput = screen.getByLabelText(invalidField);
+    expect(invalidInput.getAttribute("aria-invalid")).toBe("true");
+    expect(invalidInput.getAttribute("aria-describedby")).toBe(errorMessage.id);
+
+    fireEvent.change(passwordInput, { target: { value: "corrected-password" } });
+    fireEvent.change(confirmationInput, { target: { value: "corrected-password" } });
+    fireEvent.click(screen.getByRole("button", { name: "Update Password" }));
+
+    expect(await screen.findByRole("link", { name: "Continue to Site" })).toBeTruthy();
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(fetch).mock.calls[0][1]?.body).toBe(
+      JSON.stringify({ password: "corrected-password" })
+    );
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByLabelText("New Password")).toBeNull();
+  });
+
+  it("does not show the form without a recovery session", async () => {
+    pageState.getSession.mockResolvedValue({ data: { session: null }, error: null });
+
+    render(<ResetPasswordPage />);
+
+    expect(
+      await screen.findByText(
+        "Your recovery session is missing or expired. Request a new password reset email from the auth modal."
+      )
+    ).toBeTruthy();
+    expect(screen.queryByLabelText("New Password")).toBeNull();
+    expect(screen.queryByLabelText("Confirm Password")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Update Password" })).toBeNull();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it("exchanges recovery codes delivered directly to the reset page", async () => {
     pageState.exchangeCodeForSession.mockImplementation(async () => {
       expect(window.location.href).toBe("http://localhost:3000/auth/reset-password");
@@ -224,10 +290,39 @@ describe("Reset password page", () => {
     );
   });
 
-  it("shows a direct error when the password update request fails", async () => {
+  it("keeps the form mounted and disabled while the password update is pending", async () => {
+    let resolveUpdate!: (response: Response) => void;
+    vi.mocked(fetch).mockReturnValueOnce(new Promise<Response>((resolve) => {
+      resolveUpdate = resolve;
+    }));
+
+    render(<ResetPasswordPage />);
+
+    await screen.findByText("Choose a new password for your account.");
+    const passwordInput = screen.getByLabelText<HTMLInputElement>("New Password");
+    const confirmationInput = screen.getByLabelText<HTMLInputElement>("Confirm Password");
+    fireEvent.change(passwordInput, { target: { value: "supersecret1" } });
+    fireEvent.change(confirmationInput, { target: { value: "supersecret1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Update Password" }));
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    expect(screen.getByLabelText("New Password")).toBe(passwordInput);
+    expect(screen.getByLabelText("Confirm Password")).toBe(confirmationInput);
+    expect(passwordInput.disabled).toBe(true);
+    expect(confirmationInput.disabled).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Updating..." }).disabled).toBe(true);
+    fireEvent.submit(passwordInput.form!);
+    expect(fetch).toHaveBeenCalledTimes(1);
+
+    resolveUpdate({ ok: true, text: async () => "{}" } as Response);
+    expect(await screen.findByRole("link", { name: "Continue to Site" })).toBeTruthy();
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("preserves the fields and allows a successful retry after an update error", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue({
+      vi.fn().mockResolvedValueOnce({
         ok: false,
         status: 400,
         text: vi.fn().mockResolvedValue(
@@ -235,6 +330,9 @@ describe("Reset password page", () => {
             msg: "New password should be different from the old password."
           })
         )
+      }).mockResolvedValue({
+        ok: true,
+        text: vi.fn().mockResolvedValue("{}")
       })
     );
 
@@ -252,5 +350,24 @@ describe("Reset password page", () => {
     expect(
       await screen.findByText("New password should be different from the old password.")
     ).toBeTruthy();
+    const passwordInput = screen.getByLabelText<HTMLInputElement>("New Password");
+    const confirmationInput = screen.getByLabelText<HTMLInputElement>("Confirm Password");
+    expect(passwordInput.value).toBe("supersecret1");
+    expect(confirmationInput.value).toBe("supersecret1");
+    expect(passwordInput.disabled).toBe(false);
+    expect(confirmationInput.disabled).toBe(false);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Update Password" }).disabled).toBe(false);
+    expect(passwordInput.form?.getAttribute("aria-describedby")).toBe(screen.getByRole("alert").id);
+
+    fireEvent.change(passwordInput, { target: { value: "different-password" } });
+    fireEvent.change(confirmationInput, { target: { value: "different-password" } });
+    fireEvent.click(screen.getByRole("button", { name: "Update Password" }));
+
+    expect(await screen.findByRole("link", { name: "Continue to Site" })).toBeTruthy();
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(fetch).mock.calls[1][1]?.body).toBe(
+      JSON.stringify({ password: "different-password" })
+    );
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 });

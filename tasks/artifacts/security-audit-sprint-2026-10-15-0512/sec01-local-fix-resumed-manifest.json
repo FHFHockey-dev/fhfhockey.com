@@ -1,0 +1,86 @@
+{
+  "saved_at_utc": "2026-10-15T14:09:47.717309+00:00",
+  "state": "tested local candidate; independent review pending; stopped for unverified task speed",
+  "baseline_head": "a8f58de6178e282acd3a71851c66f4a56b119f14",
+  "branch": "octoberBranch",
+  "baseline_original_route_sha256": "cb4362d45c1f72f3490225f135bbc88f8c45f63b08b84d8dad698c7022a8f05f",
+  "resumed_from_patch_sha256": "a5ec02502020731362e76f2f9b8e9016c7b1de947534dab80b151e6c76e10898",
+  "resume_baseline_verification": "HEAD original matched saved route; all three resumed files exactly matched original checkpoint patch before edits",
+  "candidate_patch": "tasks/artifacts/security-audit-sprint-2026-10-15-0512/sec01-local-fix-resumed.patch",
+  "candidate_patch_sha256": "30e867386f33b951e0f5619d2dfdbcb188704b1adc2e1b259ba82009835b82eb",
+  "files": [
+    {
+      "path": "web/pages/api/cors/index.ts",
+      "sha256": "592944a99828fac71490cab3a239a6802a7c87a346f08cbd594bd7fec082c064",
+      "git_blob_sha1": "a581d89ada709a8d729e2052d3b1bad5bfc0ca95"
+    },
+    {
+      "path": "web/lib/NHL/corsProxy.ts",
+      "sha256": "f3236baf1b01b283fcf35e29862ae1d208eccc60383a7d7fa413829f2303fe50",
+      "git_blob_sha1": "688f6f9df7f4cb74d71fdc67ce31014dbcff7833"
+    },
+    {
+      "path": "web/__tests__/pages/api/cors.test.ts",
+      "sha256": "a3ca848360947fd8546502137415d01a478e24f9efa1cadfccd267c6ff5ee89e",
+      "git_blob_sha1": "df7a01526f01fdd44b600b8a9a677809bed85360"
+    },
+    {
+      "path": "web/lib/NHL/corsProxy.test.ts",
+      "sha256": "458a7ef2d8311bc6f7f270e7e4ed0b1c79e8d3b444378349d068ae52960144d0",
+      "git_blob_sha1": "2d420e57d5a62f5287753dda5fed13ad2dedb3c6"
+    }
+  ],
+  "checks": [
+    {
+      "check": "npm test -- --run __tests__/pages/api/cors.test.ts lib/NHL/corsProxy.test.ts",
+      "status": "passed",
+      "files": 2,
+      "tests": 114
+    },
+    {
+      "check": "npm test -- --run __tests__/pages/api/cors.test.ts lib/NHL/corsProxy.test.ts lib/cors-fetch.test.ts components/ShiftChart/useGameGrid.test.tsx components/LinemateMatrix/index.test.tsx",
+      "status": "passed",
+      "files": 5,
+      "tests": 130
+    },
+    {
+      "check": "TypeScript createProgram with web/tsconfig.json options and four owned root files, no emit",
+      "status": "passed",
+      "diagnostics": 0,
+      "scope": [
+        "web/pages/api/cors/index.ts",
+        "web/lib/NHL/corsProxy.ts",
+        "web/__tests__/pages/api/cors.test.ts",
+        "web/lib/NHL/corsProxy.test.ts"
+      ]
+    },
+    {
+      "check": "npx --no-install eslint pages/api/cors/index.ts lib/NHL/corsProxy.ts __tests__/pages/api/cors.test.ts lib/NHL/corsProxy.test.ts",
+      "status": "passed",
+      "exit_code": 0
+    },
+    {
+      "check": "Independent review",
+      "status": "pending"
+    },
+    {
+      "check": "Full-tree tests/typecheck/lint/build",
+      "status": "not run"
+    },
+    {
+      "check": "Live/browser/deployed behavior",
+      "status": "not run; fixtures only"
+    }
+  ],
+  "execution_speed": {
+    "observed": "unavailable",
+    "standard_verified": false,
+    "action": "stopped immediately at checkpoint after explicit user instruction"
+  },
+  "processes_left_running": [],
+  "limits": [
+    "No production requests, push, deploy, remote configuration, credentials, or database changes.",
+    "Source parent thread not found through send_message_to_thread; no message delivered. A pending read-only list_threads call was terminated at stop.",
+    "No subagents or subthreads were launched; no full-tree check was run."
+  ]
+}

@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import type { candidateMetrics } from "lib/rosterScheduleOptimizer/planning";
+import type { candidatePlanMetrics } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
 import type { PlanIntent, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 
-type Metrics = ReturnType<typeof candidateMetrics>;
+type Metrics = ReturnType<typeof candidatePlanMetrics>;
 export function useCandidateMetrics(snapshot: PlanningSnapshot | null, intent: PlanIntent) {
-  // Candidate hypotheticals ignore transactions, alternative count and revision.
+  // Compare with the original roster, independently of selected transactions and display count.
   const key = JSON.stringify([intent.excludedPlayerIds, intent.protectedPlayerIds,
     intent.goalieCoverage, intent.goalieWindow, intent.goalieSplit]);
   const calculationIntent = useMemo<PlanIntent>(() => {

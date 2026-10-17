@@ -1,0 +1,374 @@
+{
+  "scenario": "manual-complete",
+  "width": 2048,
+  "height": 1096,
+  "deviceScaleFactor": 1,
+  "initialFrame": {
+    "viewport": {
+      "width": 2048,
+      "height": 1096,
+      "devicePixelRatio": 1,
+      "screenWidth": 2048,
+      "screenHeight": 1096,
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/148.0.7778.96 Safari/537.36",
+      "touchPoints": 0,
+      "coarsePointer": false
+    },
+    "document": {
+      "width": 2048,
+      "height": 1096,
+      "scrollY": 0
+    },
+    "header": {
+      "x": 0,
+      "y": 0,
+      "width": 2048,
+      "height": 68,
+      "bottom": 68
+    },
+    "panels": [
+      {
+        "label": "Roster and setup",
+        "x": 4,
+        "y": 313,
+        "width": 581.390625,
+        "height": 751,
+        "bottom": 1064
+      },
+      {
+        "label": "Itinerary",
+        "x": 593.390625,
+        "y": 313,
+        "width": 861.21875,
+        "height": 751,
+        "bottom": 1064
+      },
+      {
+        "label": "Candidates and detail",
+        "x": 1462.609375,
+        "y": 313,
+        "width": 581.390625,
+        "height": 751,
+        "bottom": 1064
+      }
+    ],
+    "typography": {
+      "headingFamily": "\"Roboto Condensed\", sans-serif",
+      "headingSize": "21px",
+      "headingWeight": "700",
+      "bodyFamily": "Roboto, sans-serif",
+      "headerFamily": "\"Roboto Condensed\", sans-serif",
+      "fontStatus": "loaded",
+      "fontCheck400": true,
+      "fontCheck700": true,
+      "faces": [
+        {
+          "family": "Roboto Condensed",
+          "weight": "100 900",
+          "status": "loaded"
+        }
+      ]
+    },
+    "summaryMetrics": {
+      "bounds": {
+        "x": 598.390625,
+        "y": 359,
+        "width": 851.21875,
+        "height": 108,
+        "bottom": 467
+      },
+      "display": "grid",
+      "columns": "67.2656px 67.2656px 67.2656px 67.2656px 67.2656px 67.2656px 67.2656px 67.2656px 67.2656px 67.2656px 67.2656px 67.2656px",
+      "rows": "62px 42px",
+      "children": [
+        {
+          "tag": "ARTICLE",
+          "bounds": {
+            "x": 598.390625,
+            "y": 359,
+            "width": 281.0625,
+            "height": 62,
+            "bottom": 421
+          }
+        },
+        {
+          "tag": "ARTICLE",
+          "bounds": {
+            "x": 883.453125,
+            "y": 359,
+            "width": 281.078125,
+            "height": 62,
+            "bottom": 421
+          }
+        },
+        {
+          "tag": "ARTICLE",
+          "bounds": {
+            "x": 1168.53125,
+            "y": 359,
+            "width": 281.078125,
+            "height": 62,
+            "bottom": 421
+          }
+        },
+        {
+          "tag": "ARTICLE",
+          "bounds": {
+            "x": 598.390625,
+            "y": 425,
+            "width": 209.796875,
+            "height": 42,
+            "bottom": 467
+          }
+        },
+        {
+          "tag": "ARTICLE",
+          "bounds": {
+            "x": 812.1875,
+            "y": 425,
+            "width": 209.8125,
+            "height": 42,
+            "bottom": 467
+          }
+        },
+        {
+          "tag": "ARTICLE",
+          "bounds": {
+            "x": 1026,
+            "y": 425,
+            "width": 209.796875,
+            "height": 42,
+            "bottom": 467
+          }
+        },
+        {
+          "tag": "ARTICLE",
+          "bounds": {
+            "x": 1239.796875,
+            "y": 425,
+            "width": 209.8125,
+            "height": 42,
+            "bottom": 467
+          }
+        }
+      ],
+      "qualifier": null
+    },
+    "caption": {
+      "x": 1853.921875,
+      "y": 1056.5,
+      "width": 190.078125,
+      "height": 35.5,
+      "bottom": 1092
+    }
+  },
+  "checks": {
+    "mobileStickyTabs": null,
+    "netMetrics": {
+      "text": "Net points unavailable Net AGP unavailable",
+      "bounds": {
+        "x": 1829.671875,
+        "y": 550,
+        "width": 196.328125,
+        "height": 40
+      },
+      "fields": [
+        {
+          "label": "Net points unavailable",
+          "x": 1834.671875,
+          "y": 555,
+          "width": 84.65625,
+          "height": 30
+        },
+        {
+          "label": "Net AGP unavailable",
+          "x": 1927.328125,
+          "y": 555,
+          "width": 93.671875,
+          "height": 30
+        }
+      ]
+    },
+    "scrolling": null
+  },
+  "interaction": {
+    "keyboardTooltip": {
+      "escapeAndRefocus": true,
+      "bounds": {
+        "x": 1727.15625,
+        "y": 119,
+        "width": 136.28125,
+        "height": 29
+      }
+    },
+    "touchTooltip": null,
+    "dateDisclosure": {
+      "sliderKeyboardEnd": true,
+      "repeatedKeyboardDismissal": true,
+      "dayCapacityAccessible": true
+    },
+    "reload": {
+      "scopedFreshToken": true,
+      "browserNoStore": true,
+      "oneSharedRead": true,
+      "providerReadsUnchanged": true,
+      "workspaceBytesPreserved": true
+    },
+    "search": {
+      "commandSearchFiltersExistingCards": true
+    }
+  },
+  "screenshots": [
+    {
+      "file": "fixture-manual-complete-2048x1096.png",
+      "sha256": "0fd0ebdae6efc415e35b487bc175fc69b500cb678efb02d76abb5542a37d371f",
+      "fullPage": false,
+      "label": "FIXTURE DATA · actual page-shell styling · synthetic account/provider state"
+    },
+    {
+      "file": "fixture-manual-complete-2048x1096-candidates.png",
+      "sha256": "0fd0ebdae6efc415e35b487bc175fc69b500cb678efb02d76abb5542a37d371f",
+      "fullPage": false,
+      "label": "FIXTURE DATA · actual page-shell styling · synthetic account/provider state"
+    }
+  ],
+  "resources": [
+    {
+      "url": "http://127.0.0.1:47999/roster-schedule-optimizer",
+      "disposition": "local-html"
+    },
+    {
+      "url": "http://127.0.0.1:47999/__qa/fonts/RobotoCondensed-Variable.ttf",
+      "disposition": "local-font",
+      "bytes": 371616,
+      "sha256": "dace262afcee68a5276f200d8026c57221735c0118ab5fda8c2c0d3dc409a8d0"
+    },
+    {
+      "url": "https://img.buymeacoffee.com/button-api/ [parameters omitted]",
+      "disposition": "intercepted-local-substitute-no-network"
+    },
+    {
+      "url": "http://127.0.0.1:47999/pictures/socials/twitter.png",
+      "disposition": "local-public-asset",
+      "sha256": "768f1c2b82311a653e530e4823c89529007cb87970f159e0aa4f6d2f36bb8f24"
+    },
+    {
+      "url": "http://127.0.0.1:47999/pictures/socials/discord.png",
+      "disposition": "local-public-asset",
+      "sha256": "316f088570fddae28b4cf6c2d3d33e91901519282c373320837046c988545ae9"
+    },
+    {
+      "url": "http://127.0.0.1:47999/pictures/socials/patreon.png",
+      "disposition": "local-public-asset",
+      "sha256": "d0a59e68e274802762f0f844a98f313d5740f3539927904ae99a86508d8ac512"
+    },
+    {
+      "url": "http://127.0.0.1:47999/pictures/socials/youtube.png",
+      "disposition": "local-public-asset",
+      "sha256": "f052608143e5fb6957f61c8aa88e525461c58e09416f9ee73dab443dd84a8378"
+    },
+    {
+      "url": "http://127.0.0.1:47999/pictures/socials/spotify.png",
+      "disposition": "local-public-asset",
+      "sha256": "62deedcfd539d3122c7392bc64f5140be0efeead1c2154e5245ab47fdb79b8ac"
+    },
+    {
+      "url": "http://127.0.0.1:47999/teamLogos/WSH.png",
+      "disposition": "local-public-asset",
+      "sha256": "ded76c958c138a6d70220aba92ecfb63ce0a28f5eb691a9b9b783f68387e977e"
+    },
+    {
+      "url": "http://127.0.0.1:47999/teamLogos/COL.png",
+      "disposition": "local-public-asset",
+      "sha256": "85006a4fec7b63cd52e7f60504a4fe3c2793c6f14460fc6be8355c30096d9ecf"
+    },
+    {
+      "url": "http://127.0.0.1:47999/teamLogos/CAR.png",
+      "disposition": "local-public-asset",
+      "sha256": "af823e61e9033c08b4a8d37fcb8872cbe250abc98fd2c5c935efa8c7bd6cc2da"
+    },
+    {
+      "url": "http://127.0.0.1:47999/teamLogos/CAR.png",
+      "disposition": "local-public-asset",
+      "sha256": "af823e61e9033c08b4a8d37fcb8872cbe250abc98fd2c5c935efa8c7bd6cc2da"
+    },
+    {
+      "url": "http://127.0.0.1:47999/teamLogos/COL.png",
+      "disposition": "local-public-asset",
+      "sha256": "85006a4fec7b63cd52e7f60504a4fe3c2793c6f14460fc6be8355c30096d9ecf"
+    },
+    {
+      "url": "http://127.0.0.1:47999/teamLogos/OTT.png",
+      "disposition": "local-public-asset",
+      "sha256": "28e36e2a51c287c43b7e696d3ff6d02aa295c2b4b5bd0078230db7e7b75bfeb8"
+    },
+    {
+      "url": "http://127.0.0.1:47999/teamLogos/BOS.png",
+      "disposition": "local-public-asset",
+      "sha256": "63e3274e3838c1eba5689f2f2b7d42c711ea86657184730cb6bc65d27838c649"
+    },
+    {
+      "url": "http://127.0.0.1:47999/teamLogos/DAL.png",
+      "disposition": "local-public-asset",
+      "sha256": "38b11adbeda5e655047d483366770f3ab19fa34ba33280773392f7d4d2381818"
+    },
+    {
+      "url": "http://127.0.0.1:47999/teamLogos/CAR.png",
+      "disposition": "local-public-asset",
+      "sha256": "af823e61e9033c08b4a8d37fcb8872cbe250abc98fd2c5c935efa8c7bd6cc2da"
+    },
+    {
+      "url": "http://127.0.0.1:47999/teamLogos/CAR.png",
+      "disposition": "local-public-asset",
+      "sha256": "af823e61e9033c08b4a8d37fcb8872cbe250abc98fd2c5c935efa8c7bd6cc2da"
+    }
+  ],
+  "reads": [
+    {
+      "url": "/api/v1/roster-schedule-optimizer/access",
+      "method": "GET",
+      "cache": null
+    },
+    {
+      "url": "/api/v1/roster-schedule-optimizer/data?seasonId=20262027&startDate=2026-10-12&endDate=2026-10-18&timeZone=America%2FNew_York",
+      "method": "GET",
+      "cache": null
+    },
+    {
+      "url": "/api/v1/schedule/2026-10-11",
+      "method": "GET",
+      "cache": null
+    },
+    {
+      "url": "/api/v1/schedule/2026-10-18",
+      "method": "GET",
+      "cache": null
+    },
+    {
+      "url": "/api/v1/roster-schedule-optimizer/workspace?provider=manual&seasonId=20262027&leagueId=fixture-league&teamId=fixture-team&startDate=2026-10-12&endDate=2026-10-18",
+      "method": "GET",
+      "cache": null
+    },
+    {
+      "url": "/api/v1/team/20262027",
+      "method": "GET",
+      "cache": null
+    },
+    {
+      "url": "/api/v1/roster-schedule-optimizer/data?seasonId=20262027&startDate=2026-10-12&endDate=2026-10-18&timeZone=America%2FNew_York&readToken=49338290-1c2f-4420-a7af-21ad71c6b4f8",
+      "method": "GET",
+      "cache": "no-store"
+    }
+  ],
+  "dbReads": [
+    {
+      "table": "external_teams",
+      "operation": "read"
+    }
+  ],
+  "pageErrors": [],
+  "consoleErrors": [],
+  "outboundNetworkRequests": 0,
+  "realProviderRequests": 0,
+  "realAccountRequests": 0
+}

@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { encodePlanningDataTransport, PlanningDataTransportLimitError } from "lib/rosterScheduleData/planningDataTransport";
 import serviceRoleClient from "lib/supabase/server";
 import { loadPlanningData, parsePlanningDataQuery } from "lib/rosterScheduleData/planning";
 
@@ -11,8 +12,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const data = await loadPlanningData(serviceRoleClient, query);
     res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=300");
-    return res.json({ success: true, data });
-  } catch {
+    return res.json({ success: true, data: encodePlanningDataTransport(data) });
+  } catch (error) {
+    if (error instanceof PlanningDataTransportLimitError) return res.status(503).json({ success: false, code: "planning_range_too_large", error: error.message });
     return res.status(503).json({ success: false, error: "Planning data is temporarily unavailable. Your saved manual workspace is preserved." });
   }
 }

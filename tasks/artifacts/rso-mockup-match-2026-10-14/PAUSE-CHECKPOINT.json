@@ -1,0 +1,140 @@
+{
+  "status": "resumed",
+  "reason": "Confirmed user correction: pause only at verified60% remaining or user stop",
+  "sourceManifestSHA256": "20f0469a2b37873c86ba50725614382e65b8430b1a466f55676c7accecff305c",
+  "ownedPaths": [
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+    "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss",
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx",
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx",
+    "web/components/RosterScheduleOptimizer/CandidateCard.tsx",
+    "web/components/RosterScheduleOptimizer/CandidateCard.test.tsx",
+    "web/components/RosterScheduleOptimizer/CandidateCard.module.scss",
+    "web/components/RosterScheduleOptimizer/CompactSchedule.tsx",
+    "web/components/RosterScheduleOptimizer/RosterContribution.tsx",
+    "web/components/RosterScheduleOptimizer/TeamScheduleContext.tsx",
+    "web/components/RosterScheduleOptimizer/TeamScheduleContext.test.tsx",
+    "web/components/RosterScheduleOptimizer/RosterPlayerRow.tsx",
+    "web/components/RosterScheduleOptimizer/TeamScheduleContext.module.scss"
+  ],
+  "sourcePinsVerified": true,
+  "sourceIndependentReview": "bounded ACCEPT; final browser receipt not yet re-reviewed",
+  "finalFixture": {
+    "completedContexts": 13,
+    "defects": 0,
+    "applicationInputs": 80,
+    "applicationInputDrift": [],
+    "outboundRequests": 0,
+    "boundary1100": {
+      "mobileStickyTabs": {
+        "tabs": {
+          "x": 8,
+          "y": 486.03125,
+          "width": 1084,
+          "height": 52
+        },
+        "header": {
+          "x": 0,
+          "y": 0,
+          "width": 1100,
+          "height": 68
+        },
+        "buttons": [
+          {
+            "label": "Itinerary",
+            "centerY": 512.03125,
+            "hitOwnControl": true,
+            "obstruction": "BUTTON"
+          },
+          {
+            "label": "Roster",
+            "centerY": 512.03125,
+            "hitOwnControl": true,
+            "obstruction": "BUTTON"
+          },
+          {
+            "label": "Candidates",
+            "centerY": 512.03125,
+            "hitOwnControl": true,
+            "obstruction": "BUTTON"
+          },
+          {
+            "label": "Matchup",
+            "centerY": 512.03125,
+            "hitOwnControl": true,
+            "obstruction": "BUTTON"
+          }
+        ]
+      },
+      "netMetrics": {
+        "text": "Net points unavailable Net AGP unavailable",
+        "bounds": {
+          "x": 696.734375,
+          "y": 811.03125,
+          "width": 377.265625,
+          "height": 44
+        },
+        "fields": [
+          {
+            "label": "Net points unavailable",
+            "x": 701.734375,
+            "y": 816.03125,
+            "width": 175.125,
+            "height": 34
+          },
+          {
+            "label": "Net AGP unavailable",
+            "x": 884.859375,
+            "y": 816.03125,
+            "width": 184.140625,
+            "height": 34
+          }
+        ]
+      },
+      "scrolling": {
+        "scheduleHorizontal": 0,
+        "clientWidth": 1074,
+        "scrollWidth": 1074
+      }
+    }
+  },
+  "tests": {
+    "structuralSuite": "225 passed; one old visible-caption assertion failed",
+    "correctedScheduleSubset": "27 passed",
+    "cardBrowserSubset": "19 passed",
+    "independentReview": "44 passed",
+    "priorStableFullScopedRun": "226 passed before final structural trim"
+  },
+  "lint": "0 errors, four preexisting hook warnings; scoped pre-final visual-only trim log retained",
+  "compiler": "sole combined owner01a135c8; awaiting final accepted evidence and functional freezes",
+  "remaining": [
+    "Independent readback of the now-complete13-context final fixture receipt",
+    "Final combined TypeScript check by coordinated FORGE owner",
+    "Final comparison/handoff documentation and bounded assessment of remaining mockup differences"
+  ],
+  "realAccountOrProductionParity": false,
+  "newReviewsOrRetriesPlanned": false,
+  "localExecutionStopped": false,
+  "goalControlAvailable": false,
+  "externalGoalPauseConfirmed": false,
+  "pauseRelay": {
+    "functional": {
+      "threadId": "01a13843-9006-7102-8595-5d2b23566974",
+      "delivered": true,
+      "acknowledgment": "Owner confirms supported Goal tool returned paused, workspace worker interrupted, no matching active Vitest/TypeScript process; no further work will start.",
+      "threadStatusAtBoundedCheck": "active; no Goal control success confirmed",
+      "goalStatus": "paused",
+      "goalControlConfirmed": true,
+      "checkpoint": "/tmp/rso-functional-20261014/PAUSE-CHECKPOINT.json",
+      "functionalReview": "reconciliation correction interrupted; current functional pins not accepted"
+    },
+    "forge": {
+      "threadId": "01a13822-4d3f-7380-9609-f38bf25ce46e",
+      "delivered": true,
+      "acknowledgment": null,
+      "threadStatusAtBoundedCheck": "active; no stop acknowledgment yet"
+    }
+  },
+  "resumedAtUTC": "2026-10-14T02:52:51.936165+00:00"
+}

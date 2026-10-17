@@ -1,0 +1,138 @@
+{
+  "competing": [
+    {
+      "body": {
+        "id": "0e9ff842-5617-4391-98c7-3716d58e32db",
+        "text": "Player will play tomorrow.",
+        "source": "ifttt",
+        "tweet_id": "6100",
+        "username": "Competing",
+        "updated_at": "2026-10-16T03:46:14.395838-05:00",
+        "raw_payload": {
+          "text": "Player will play tomorrow.",
+          "username": "Reporter",
+          "created_at": "2026-10-16T12:00:00Z",
+          "link_to_tweet": "https://x.com/Reporter/status/6100",
+          "source_account": "Reporter"
+        },
+        "received_at": "2026-10-16T03:46:13.394-05:00",
+        "link_to_tweet": "https://x.com/Reporter/status/6100",
+        "source_account": "Reporter",
+        "created_at_label": "2026-10-16T12:00:00Z",
+        "tweet_created_at": "2026-10-16T07:00:00-05:00",
+        "tweet_embed_code": null,
+        "processing_status": "pending"
+      }
+    }
+  ],
+  "firstResult": {
+    "statusCode": 500,
+    "body": {
+      "success": false,
+      "error": "Failed to store IFTTT event"
+    }
+  },
+  "retry": {
+    "success": true,
+    "sourceKey": "fixture-reporter",
+    "tweetId": "6100",
+    "processingStatus": "held_for_review",
+    "receipt": {
+      "id": "c506f61a-2845-44cf-a854-f7bffc3943ca",
+      "classification": "same_post_variant",
+      "outcome": "retained",
+      "requiresReview": true
+    }
+  },
+  "after": {
+    "raw": [],
+    "ccc": [
+      {
+        "body": {
+          "id": "0e9ff842-5617-4391-98c7-3716d58e32db",
+          "text": "Player will play tomorrow.",
+          "source": "ifttt",
+          "tweet_id": "6100",
+          "username": "Competing",
+          "updated_at": "2026-10-16T03:46:14.395838-05:00",
+          "raw_payload": {
+            "text": "Player will play tomorrow.",
+            "username": "Reporter",
+            "created_at": "2026-10-16T12:00:00Z",
+            "link_to_tweet": "https://x.com/Reporter/status/6100",
+            "source_account": "Reporter"
+          },
+          "received_at": "2026-10-16T03:46:13.394-05:00",
+          "link_to_tweet": "https://x.com/Reporter/status/6100",
+          "source_account": "Reporter",
+          "created_at_label": "2026-10-16T12:00:00Z",
+          "tweet_created_at": "2026-10-16T07:00:00-05:00",
+          "tweet_embed_code": null,
+          "processing_status": "pending"
+        }
+      }
+    ],
+    "archive": [
+      {
+        "body": {
+          "event_id": "0e9ff842-5617-4391-98c7-3716d58e32db",
+          "input_row": {
+            "text": "Player will play tomorrow.",
+            "source": "ifttt",
+            "tweet_id": "6100",
+            "username": "Competing",
+            "raw_payload": {
+              "text": "Player will play tomorrow.",
+              "username": "Reporter",
+              "created_at": "2026-10-16T12:00:00Z",
+              "link_to_tweet": "https://x.com/Reporter/status/6100",
+              "source_account": "Reporter"
+            },
+            "link_to_tweet": "https://x.com/Reporter/status/6100",
+            "source_account": "Reporter",
+            "created_at_label": "2026-10-16T12:00:00Z",
+            "tweet_created_at": "2026-10-16T07:00:00-05:00",
+            "tweet_embed_code": null
+          },
+          "input_hash": "babf2947b063b3b3cb2d1ceeb60f83db93bd20231e4274117b52b3f00bd92f05",
+          "receipt_id": "c9987280-b79b-41c9-a998-3eb48af7384a",
+          "baseline_id": null,
+          "event_table": "lines_ccc_ifttt_events",
+          "received_at": "2026-10-16T03:46:13.394-05:00",
+          "retained_at": "2026-10-16T03:46:14.409064-05:00",
+          "classification": "canonical"
+        }
+      },
+      {
+        "body": {
+          "event_id": "0e9ff842-5617-4391-98c7-3716d58e32db",
+          "input_row": {
+            "text": "Player will not play tonight.",
+            "source": "ifttt",
+            "tweet_id": "6100",
+            "username": "Reporter",
+            "raw_payload": {
+              "text": "Player will not play tonight.",
+              "username": "Reporter",
+              "created_at": "2026-10-16T12:00:00Z",
+              "link_to_tweet": "https://x.com/Reporter/status/6100",
+              "source_account": "Reporter"
+            },
+            "link_to_tweet": "https://x.com/Reporter/status/6100",
+            "source_account": "Reporter",
+            "created_at_label": "2026-10-16T12:00:00Z",
+            "tweet_created_at": "2026-10-16T07:00:00-05:00",
+            "tweet_embed_code": null
+          },
+          "input_hash": "5bea5561f1ec3b0f611643c578d69d528b53e15daef282e94cdc6835c2dac754",
+          "receipt_id": "c506f61a-2845-44cf-a854-f7bffc3943ca",
+          "baseline_id": "c9987280-b79b-41c9-a998-3eb48af7384a",
+          "event_table": "lines_ccc_ifttt_events",
+          "received_at": "2026-10-16T03:46:14.409549-05:00",
+          "retained_at": "2026-10-16T03:46:14.409549-05:00",
+          "classification": "same_post_variant"
+        }
+      }
+    ]
+  }
+}

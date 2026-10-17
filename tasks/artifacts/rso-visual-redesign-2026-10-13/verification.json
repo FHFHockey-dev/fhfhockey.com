@@ -1,0 +1,67 @@
+{
+  "branch": "octoberBranch",
+  "scope": "Local RSO presentation only; exact incremental baseline is in owned-files.json",
+  "unitTests": {
+    "passed": 205,
+    "failed": 0,
+    "command": "npm test -- --run __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx components/RosterScheduleOptimizer/TeamScheduleContext.test.tsx components/RosterScheduleOptimizer/InfoTooltip.test.tsx components/RosterScheduleOptimizer/CandidateCard.test.tsx components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx",
+    "finalFormattingChecks": {
+      "passed": 4,
+      "failed": 0
+    }
+  },
+  "lint": {
+    "exitCode": 0,
+    "errors": 0,
+    "preexistingHookWarnings": 4
+  },
+  "diffCheck": "passed",
+  "browser": {
+    "scenarios": [
+      "complete",
+      "partial",
+      "conditional",
+      "empty"
+    ],
+    "viewports": [
+      "1440x900",
+      "390x844"
+    ],
+    "narrowOverflowCheck": "320x844",
+    "freshContexts": 8,
+    "documentHorizontalOverflow": 0,
+    "desktopDocumentVerticalOverflow": 0,
+    "mobileTabsVerified": true,
+    "tooltips": "keyboard Enter/Escape/focus and repeated touch open/dismiss, bounds within viewport",
+    "scrolling": "roster vertical and mobile individual schedule horizontal verified",
+    "selection": "exact compared timed swap selected; Undo restores no steps and hides selected-plan feedback",
+    "productionRequests": 0,
+    "externalRequests": 0,
+    "accountRequests": 0,
+    "frameworkBoundary": "Actual RSO/page/Container/ClientOnly/styles/workers; auth/API/canonical calendar and site header/Next image wrappers mocked; remote font imports removed"
+  },
+  "typescript": "Not run by visual consumer; FORGE is designated sole coordinated compiler after visual and Yahoo-cache integration freezes",
+  "remoteActions": {
+    "commits": 0,
+    "pushes": 0,
+    "deployments": 0,
+    "installs": 0,
+    "credentialsAccessed": false
+  },
+  "references": {
+    "libraryBytesMaterialized": false,
+    "resolved": [
+      {
+        "libraryFileId": "libfile_4036088661688191bd99bb845190c3e5",
+        "filename": "Screenshot 2026-10-13 at 3.56.57\u202fPM.png"
+      },
+      {
+        "libraryFileId": "libfile_f6ad345cf52881918975b48e983fd6b9",
+        "filename": "Dark Fantasy Hockey Roster Optimizer Dashboard(1).png"
+      }
+    ],
+    "limitation": "Supported Library transfer failed in sandbox and with escalation; no bytes or pixels from these two items claimed verified.",
+    "viewedFallback": "/Users/tim/Desktop/FHFH Stuff/website stuff/Dark Fantasy Hockey Roster Optimizer Dashboard.png"
+  },
+  "concurrency": "All editing in canonical checkout; existing files edited only after explicit staged owner releases. Main page now released for the owner\u2019s separate Yahoo cache integration."
+}

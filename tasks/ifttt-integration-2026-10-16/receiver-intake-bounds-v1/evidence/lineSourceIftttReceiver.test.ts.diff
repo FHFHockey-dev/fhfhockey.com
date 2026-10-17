@@ -1,0 +1,65 @@
+--- accepted125/web/lib/sources/lineSourceIftttReceiver.test.ts
++++ web/lib/sources/lineSourceIftttReceiver.test.ts
+@@ -60,17 +60,25 @@
+   return res;
+ }
+ 
++const fixturePolicy = { version: "ifttt-intake-v1", id: "local-nearest", startsAt: "2026-10-16T00:00:00Z", endsAt: "2026-10-17T00:00:00Z", maxAttempts: 5, maxReceipts: 3,
++  scopes: [{ table: "line_source_ifttt_events", sourceGroup: "gdl_suite", sourceKey: "gamedaygoalies", sourceAccount: "gamedaygoalies" }] };
++const enableIntake = () => {
++  vi.stubEnv("IFTTT_RECEIPT_VARIANTS_ENABLED", "true");
++  vi.stubEnv("IFTTT_INTAKE_POLICY", JSON.stringify(fixturePolicy));
++  vi.stubEnv("TWEET_CLAIMS_MODE", "shadow");
++  vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
++};
+ describe("createLineSourceIftttReceiver", () => {
+   afterEach(() => vi.unstubAllEnvs());
+   it("retains a same-post variant with the explicit flag and does not request another processing action", async () => {
+-    vi.stubEnv("IFTTT_RECEIPT_VARIANTS_ENABLED", "true");
++    enableIntake();
+     const request = vi.fn(); vi.stubGlobal("fetch", request);
+-    rpcMock.mockImplementation(async (_name, { p_table, p_row }) => {
++    rpcMock.mockImplementation(async (_name, { p_scope, p_row }) => {
+       const { updated_at: _clock, processing_status: _status, ...inputRow } = p_row;
+-      return { error: null, data: { version: "ifttt-receipt-v1", table: p_table,
++      return { error: null, data: { version: "ifttt-intake-v1", policyId: fixturePolicy.id, status: "retained", receipt: { version: "ifttt-receipt-v1", table: p_scope.table,
+         eventId: "00000000-0000-4000-8000-000000000001", receiptId: "00000000-0000-4000-8000-000000000002",
+         baselineId: "00000000-0000-4000-8000-000000000003", classification: "same_post_variant",
+-        outcome: "retained", requiresReview: true, receivedAt: new Date().toISOString(), inputRow } };
++        outcome: "retained", requiresReview: true, receivedAt: new Date().toISOString(), inputRow } } };
+     });
+     const handler = createLineSourceIftttReceiver({ sourceGroup: "gdl_suite", sourceKey: "gamedaygoalies",
+       sourceAccount: "GameDayGoalies", secretEnvVar: "IFTTT_GAMEDAYGOALIES_WEBHOOK_SECRET", processorPath: "/api/v1/db/update-line-sources" });
+@@ -80,19 +88,19 @@
+     expect(rpcMock).toHaveBeenCalledOnce(); expect(fromMock).not.toHaveBeenCalled(); expect(request).not.toHaveBeenCalled();
+   });
+   it("does not fall back to the lossy upsert after an uncertain receipt RPC", async () => {
+-    vi.stubEnv("IFTTT_RECEIPT_VARIANTS_ENABLED", "true");
++    enableIntake();
+     rpcMock.mockRejectedValue(new Error("synthetic receipt reply lost"));
+     const handler = createLineSourceIftttReceiver({ sourceGroup: "gdl_suite", sourceKey: "gamedaygoalies",
+       sourceAccount: "GameDayGoalies", secretEnvVar: "IFTTT_GAMEDAYGOALIES_WEBHOOK_SECRET" });
+     const res = createMockRes(); await handler(createMockReq(), res);
+     expect(res.statusCode).toBe(500); expect(rpcMock).toHaveBeenCalledOnce(); expect(fromMock).not.toHaveBeenCalled();
+   });
+-  it("keeps missing-ID receipt storage unchanged when variant retention is enabled", async () => {
+-    vi.stubEnv("IFTTT_RECEIPT_VARIANTS_ENABLED", "true");
++  it("rejects missing post IDs without a legacy write in controlled intake", async () => {
++    enableIntake();
+     const handler = createLineSourceIftttReceiver({ sourceGroup: "gdl_suite", sourceKey: "gamedaygoalies",
+       sourceAccount: "GameDayGoalies", secretEnvVar: "IFTTT_GAMEDAYGOALIES_WEBHOOK_SECRET" });
+     const res = createMockRes(); await handler(createMockReq({ body: { text: "unidentified original" } }), res);
+-    expect(res.statusCode).toBe(200); expect(insertMock).toHaveBeenCalledOnce(); expect(rpcMock).not.toHaveBeenCalled();
++    expect(res.statusCode).toBe(400); expect(insertMock).not.toHaveBeenCalled(); expect(rpcMock).not.toHaveBeenCalled();
+   });
+   it("processes automatically with capture enabled, respects explicit deferral, and never trusts Host", async () => {
+     vi.stubEnv("STARTER_BOARD_CAPTURE_ENABLED", "true");
+@@ -140,6 +148,8 @@
+     vi.clearAllMocks();
+     vi.unstubAllGlobals();
+     vi.stubEnv("IFTTT_RECEIPT_VARIANTS_ENABLED", "false");
++    vi.stubEnv("IFTTT_INTAKE_POLICY", undefined);
++    vi.stubEnv("IFTTT_INTAKE_STOP", undefined);
+     rpcMock.mockResolvedValue({ data: 0, error: null });
+     dispatchMock.mockResolvedValue({ dispatched: 16, failed: 0, results: [] });
+     process.env.IFTTT_GAMEDAYGOALIES_WEBHOOK_SECRET = "test-secret";

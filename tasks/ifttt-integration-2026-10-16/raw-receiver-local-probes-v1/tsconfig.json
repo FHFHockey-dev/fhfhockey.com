@@ -1,0 +1,49 @@
+{
+  "extends": "../consumer-binding-increment/tsconfig.json",
+  "include": [
+    "../../../web/next-bootstrap.d.ts",
+    "../../../web/yahoo-fantasy.d.ts",
+    "./receiver.test.ts",
+    "./snapshot/web/**/*.ts"
+  ],
+  "compilerOptions": {
+    "paths": {
+      "components/*": [
+        "./components/*"
+      ],
+      "contexts/*": [
+        "./contexts/*"
+      ],
+      "hooks/*": [
+        "./hooks/*"
+      ],
+      "lib/*": [
+        "./lib/*"
+      ],
+      "next-seo.config": [
+        "./next-seo.config.js"
+      ],
+      "pages/*": [
+        "./pages/*"
+      ],
+      "public/*": [
+        "./public/*"
+      ],
+      "styles/*": [
+        "./styles/*"
+      ],
+      "utils/*": [
+        "./utils/*"
+      ],
+      "moment-timezone": [
+        "./node_modules/moment-timezone/index.d.ts"
+      ],
+      "vitest": [
+        "node_modules/vitest"
+      ],
+      "pg": [
+        "node_modules/@types/pg"
+      ]
+    }
+  }
+}

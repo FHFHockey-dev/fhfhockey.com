@@ -1,0 +1,14 @@
+{
+  "consumerBodiesUnchanged": true,
+  "consumerBodyCount": 24,
+  "routeOriginalAssertionsUnchanged": true,
+  "routeAssertionExpressionCount": 129,
+  "expiryOwnerBodiesByteIdentical": true,
+  "expiryFixturesByteIdentical": true,
+  "ownerExpirySourcePath": "/Users/tim/Code/fhfhockey.com/web/lib/player-forecasts/contributions.test.ts",
+  "ownerExpirySourceSha256": "c3adbe3919567572071644db289afdc93cb07ac95cf1d60949ff22c41d94ebf6",
+  "reviewerHarnessCopiesByteIdentical": true,
+  "originalConsumerTestSha256": "02002d18f102c6776371223d68619fed0ff8df164c1c6196e8149f585dcacaaf",
+  "copiedConsumerTestSha256": "409ae6c9748aa2d6b22c67b436f93d3f46ec0c421cade9b382c8167f26289aea",
+  "jobTestSha256": "8b9fb3e33fa0d2833e69b5d5cfb207fe0ae23795b26ff77d00e2f7511b873add"
+}

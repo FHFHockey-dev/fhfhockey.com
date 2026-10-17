@@ -1,0 +1,85 @@
+{
+  "scope": "three compatibility projection routes + direct parametrized tests only",
+  "overlap": "none in routes or direct tests before editing",
+  "head": "a8f58de6178e282acd3a71851c66f4a56b119f14",
+  "files": [
+    {
+      "path": "web/pages/api/v1/projections/players.ts",
+      "beforeSha256": "e7fbac9f0984741b5452c88e801fdf2bf69876e3cb0cfdf95c3025831bda2725",
+      "afterSha256": "4a4118e984d3c8179ccd34d2b873bdbff89f2d7ee4e08cfb87a8f4b9fcfb31dd"
+    },
+    {
+      "path": "web/pages/api/v1/projections/goalies.ts",
+      "beforeSha256": "efd285f1d0f41b3b66e63ac2a1d78bb7067d9a0e9efa0e8811c3ef4f49ded00c",
+      "afterSha256": "062dbe50f7f77bb7849d4f9b59c83e392ace53888a10acabc8cc02b3f475df83"
+    },
+    {
+      "path": "web/pages/api/v1/projections/teams.ts",
+      "beforeSha256": "9bdc6e1d928a53be5bd42a50f1cf7003e52099ab5282c68af851fa3c41594a99",
+      "afterSha256": "1c9f118fcbed0732dea41a8bebbe6b8411184b1051ab65af64379903d9351dcc"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/projections/explicitRunAdmission.test.ts",
+      "beforeSha256": null,
+      "afterSha256": "50d9c127d0cb7125feaeb3348c6f9c6022e8e5b7522440133f98c9efac880bf4"
+    }
+  ],
+  "additionalDiffSha256": "138053707465fd9e3339ad47187d69026751990d084c30a2a637e1e718d3a78a",
+  "priorPatchPreservation": [
+    {
+      "path": "web/lib/projections/stages/skater-stage.ts",
+      "expectedSha256": "f44feb8db443221bc259b985d6c7f512655dce42f3205622efccb04c73d6894d",
+      "observedSha256": "f44feb8db443221bc259b985d6c7f512655dce42f3205622efccb04c73d6894d",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/projections/stages/goalie-stage.ts",
+      "expectedSha256": "7eb6abfcdef2505dc8743ce53dd8c2224198a8245da719573c7df594dec972a5",
+      "observedSha256": "7eb6abfcdef2505dc8743ce53dd8c2224198a8245da719573c7df594dec972a5",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/projections/calibrationEligibility.ts",
+      "expectedSha256": "65749b0a1e4fe8c1c7fa70b7c199767d4ec50a6ea53ec0430b6b94bb81f5acd7",
+      "observedSha256": "65749b0a1e4fe8c1c7fa70b7c199767d4ec50a6ea53ec0430b6b94bb81f5acd7",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/projections/gameRevisions.ts",
+      "expectedSha256": "2b16ffb05973d007798e46329720579bf12b25c409daaf750d2cca8cf0841e95",
+      "observedSha256": "2b16ffb05973d007798e46329720579bf12b25c409daaf750d2cca8cf0841e95",
+      "unchanged": true
+    },
+    {
+      "path": "web/pages/api/v1/db/run-projection-accuracy.ts",
+      "expectedSha256": "16aadd34dc6d61b93bda8a151511ac5f2b219396a360e3c3f8a0e1414f9ec1d4",
+      "observedSha256": "16aadd34dc6d61b93bda8a151511ac5f2b219396a360e3c3f8a0e1414f9ec1d4",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/projections/apiHelpers.test.ts",
+      "expectedSha256": "af5afb0db55cb2659a90725a17641ab316ab190803a659cf37ea0877a8304308",
+      "observedSha256": "af5afb0db55cb2659a90725a17641ab316ab190803a659cf37ea0877a8304308",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/projections/nativeInputEligibility.test.ts",
+      "expectedSha256": "1093a650ba05f4911c3792e30ff39b8493ce21e66a65eab8956269b4096427c6",
+      "observedSha256": "1093a650ba05f4911c3792e30ff39b8493ce21e66a65eab8956269b4096427c6",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/projections/apiHelpers.ts",
+      "expectedSha256": "206f69a271bd5d603568a99a4451dcbd166fa54c82b1714452efe39c1cfd4786",
+      "observedSha256": "206f69a271bd5d603568a99a4451dcbd166fa54c82b1714452efe39c1cfd4786",
+      "unchanged": true
+    }
+  ],
+  "checks": {
+    "focusedTests": "38/38 passed:36 explicit admission tests +2 existing direct route tests",
+    "scopedEslint": "passed",
+    "diffWhitespace": "passed",
+    "broadTestsAndTypecheck": "not run for this increment"
+  },
+  "externalActions": "none"
+}

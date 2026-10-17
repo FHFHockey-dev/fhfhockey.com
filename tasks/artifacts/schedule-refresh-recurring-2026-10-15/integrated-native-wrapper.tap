@@ -1,0 +1,68 @@
+TAP version 13
+# Integrated verification: all five repository paths match the reviewed candidate; fixture loads repository files only.
+# cron_job_audit insert failed synthetic audit insert rejection
+# cron_job_audit insert failed synthetic audit transport failure
+# Subtest: real auth/audit chain acknowledges cron write and persists one exact scheduled audit before response
+ok 1 - real auth/audit chain acknowledges cron write and persists one exact scheduled audit before response
+  ---
+  duration_ms: 123.412
+  ...
+# Subtest: real wrapper withholds response until the synthetic audit acknowledgement arrives
+ok 2 - real wrapper withholds response until the synthetic audit acknowledgement arrives
+  ---
+  duration_ms: 41.319
+  ...
+# Subtest: failed or thrown audit transport preserves cache acknowledgement but marks final audit failed once
+ok 3 - failed or thrown audit transport preserves cache acknowledgement but marks final audit failed once
+  ---
+  duration_ms: 83.496042
+  ...
+# Subtest: stale busy and rejected transaction receipts remain zero-row HTTP409 failure audits
+ok 4 - stale busy and rejected transaction receipts remain zero-row HTTP409 failure audits
+  ---
+  duration_ms: 96.556583
+  ...
+# Subtest: committed but lost RPC acknowledgement stays unknown and is recorded as failure without invented zero rows
+ok 5 - committed but lost RPC acknowledgement stays unknown and is recorded as failure without invented zero rows
+  ---
+  duration_ms: 55.837333
+  ...
+# Subtest: default inspection traverses real authentication with no commit or audit insertion
+ok 6 - default inspection traverses real authentication with no commit or audit insertion
+  ---
+  duration_ms: 37.078
+  ...
+# Subtest: real authentication rejects absent invalid unverified nonadmin and empty-secret callers before schedule/audit work
+ok 7 - real authentication rejects absent invalid unverified nonadmin and empty-secret callers before schedule/audit work
+  ---
+  duration_ms: 128.595708
+  ...
+# Subtest: real verified administrator authorization retains the existing browser-admin contract
+ok 8 - real verified administrator authorization retains the existing browser-admin contract
+  ---
+  duration_ms: 22.443208
+  ...
+# Subtest: authentication precedes real method enforcement and rejected methods cannot audit or call sources
+ok 9 - authentication precedes real method enforcement and rejected methods cannot audit or call sources
+  ---
+  duration_ms: 45.550917
+  ...
+# Subtest: localhost headers cannot create a development bypass for a nonloopback peer
+ok 10 - localhost headers cannot create a development bypass for a nonloopback peer
+  ---
+  duration_ms: 21.515416
+  ...
+# Subtest: malformed explicit write is audited as not-attempted failure before any source or transaction
+ok 11 - malformed explicit write is audited as not-attempted failure before any source or transaction
+  ---
+  duration_ms: 22.612042
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 813.958125

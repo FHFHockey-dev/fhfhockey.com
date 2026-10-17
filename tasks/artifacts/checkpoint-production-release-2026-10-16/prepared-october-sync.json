@@ -1,0 +1,11 @@
+{
+  "currentOctober": "a8f58de6178e282acd3a71851c66f4a56b119f14",
+  "releasedCandidate": "457435eb3010c5b3dd92d2e1a46d9c75d851780a",
+  "preparedOctoberSyncCommit": "f08e59095260a35405f5eb121b497a4b2bfffce7",
+  "preparedOctoberSyncTree": "4a62f3466f76047a1805151d95330f487cbfba78",
+  "mergeConflict": false,
+  "refsModified": false,
+  "sharedIndexModified": false,
+  "workingFilesModified": false,
+  "status": "Prepared only; apply after release reconciliation and expected-head/index/preservation checks."
+}

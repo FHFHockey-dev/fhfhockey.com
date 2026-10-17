@@ -1,0 +1,8 @@
+{
+  "observedAt": "2026-10-15T20:58:21.866208+00:00",
+  "files": {
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx": "802d81dd0663eb3caaf335625948cc3e2d05710739adabede42bfb5e502d5c31",
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx": "a60ef7d8287b8c199f70d3f5ab780ba1371382ab46388f1cfa4e46d380421364"
+  },
+  "cohortPinsUnchanged": 27
+}

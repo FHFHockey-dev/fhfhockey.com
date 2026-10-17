@@ -1,0 +1,15 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/review-v4/independent-postgres.test.ts -t independent: actual hook --config ../tasks/ifttt-integration-2026-10-16/review-v4/vitest.review.config.mjs --reporter=default --reporter=json --outputFile=../tasks/ifttt-integration-2026-10-16/review-v4/independent-postgres-results.json
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-v4/independent-postgres.test.ts (15 tests | 14 skipped) 825ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 14 skipped (15)
+   Start at  23:09:57
+   Duration  1.27s (transform 155ms, setup 14ms, collect 248ms, tests 825ms, environment 0ms, prepare 33ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/review-v4/independent-postgres-results.json

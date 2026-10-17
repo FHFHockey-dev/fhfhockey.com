@@ -1,0 +1,17 @@
+
+> web@0.1.0 test
+> vitest --run lib/sources/tweetClaimLineage.test.ts lib/sources/tweetClaimOccurrenceIdentity.test.ts lib/sources/tweetClaimExtraction.test.ts lib/sources/tweetClaimEvidence.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ lib/sources/tweetClaimOccurrenceIdentity.test.ts (15 tests) 7ms
+ ✓ lib/sources/tweetClaimEvidence.test.ts (3 tests) 18ms
+ ✓ lib/sources/tweetClaimExtraction.test.ts (13 tests) 16ms
+ ✓ lib/sources/tweetClaimLineage.test.ts (7 tests) 37ms
+
+ Test Files  4 passed (4)
+      Tests  38 passed (38)
+   Start at  00:09:26
+   Duration  412ms (transform 189ms, setup 6ms, collect 615ms, tests 78ms, environment 0ms, prepare 136ms)
+

@@ -1,0 +1,10 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ ../tasks/ifttt-integration-2026-10-16/occurrence-increment/immutable-registry-audit.test.ts (16 tests) 6ms
+
+ Test Files  1 passed (1)
+      Tests  16 passed (16)
+   Start at  23:42:48
+   Duration  287ms (transform 41ms, setup 4ms, collect 44ms, tests 6ms, environment 0ms, prepare 44ms)
+

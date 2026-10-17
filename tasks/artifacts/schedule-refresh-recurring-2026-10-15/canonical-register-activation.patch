@@ -1,0 +1,18 @@
+--- a/tasks/TASKS/cron-operations/cron-schedule.md
++++ b/tasks/TASKS/cron-operations/cron-schedule.md
+@@ -27,6 +27,15 @@
+ # ALL CRON JOBS:
+ ```json
+ [
++  {
++    "jobid": null,
++    "jobname": "refresh-roster-optimizer-schedule",
++    "schedule": "50 9,21 * * *",
++    "run_time_utc": "09:50 UTC, 21:50 UTC",
++    "active": true,
++    "method": "POST",
++    "route": "/api/v1/db/refresh-roster-optimizer-schedule?profile=current-next-v1&dryRun=false"
++  },
+   {
+     "jobid": 1,
+     "jobname": "update-line-combinations-job",

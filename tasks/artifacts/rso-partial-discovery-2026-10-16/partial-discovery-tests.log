@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run lib/integrations/yahoo/rosterPlanning.test.ts -t keeps individually verified partial discovery facts --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:25710) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/integrations/yahoo/rosterPlanning.test.ts (47 tests | 39 skipped) 26ms
+
+ Test Files  1 passed (1)
+      Tests  8 passed | 39 skipped (47)
+   Start at  20:07:48
+   Duration  969ms (transform 346ms, setup 3ms, collect 487ms, tests 26ms, environment 279ms, prepare 57ms)
+

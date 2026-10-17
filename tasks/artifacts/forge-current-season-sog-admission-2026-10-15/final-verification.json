@@ -1,0 +1,54 @@
+{
+  "status": "final_frozen_pending_focused_rereview",
+  "recordedUTC": "2026-10-15T22:23:05.030084+00:00",
+  "changedPaths": [
+    "web/lib/player-forecasts/currentSeasonSogContribution.ts",
+    "web/lib/player-forecasts/currentSeasonSogContribution.test.ts",
+    "web/lib/player-forecasts/contributions.ts",
+    "web/lib/player-forecasts/contributions.test.ts",
+    "web/lib/player-forecasts/contributionStore.ts",
+    "web/lib/player-forecasts/nativeContributionAdmission.ts",
+    "web/pages/forge/forecasts.tsx",
+    "web/__tests__/pages/forge/forecasts.test.tsx"
+  ],
+  "ownership": "FORGE shared adapter/store/native admission/resolver and FORGE page only; RSO/SC confirmed no overlap",
+  "tests": {
+    "files": 6,
+    "passed": 255,
+    "exit": 0,
+    "log": "final-focused-tests.log",
+    "fixturesOnly": true
+  },
+  "eslint": {
+    "files": 8,
+    "exit": 0,
+    "log": "final-eslint.log",
+    "errors": 0,
+    "warnings": 0
+  },
+  "whitespace": "all8incremental checks passed (no-index --check may exit1 for differing files; stdout/stderr both empty required)",
+  "scopedTypeScript": {
+    "exit": 0,
+    "diagnostics": 0,
+    "programInputs": 831,
+    "projectInputs": 41,
+    "currentDrift": [],
+    "fullTree": false,
+    "receipt": "scoped-typecheck-receipt.json",
+    "earlierFailedAttemptRetained": "type-fixture-correction/"
+  },
+  "reviewHistory": {
+    "initial": "accepted-v1/independent-review.md",
+    "strictShapeCorrection": "independent-review-v2.md pending",
+    "invalidClock": "clock-guard/independent-review.md pending",
+    "fixtureAnnotations": "type-fixture-correction/ pending"
+  },
+  "sourceRequests": 0,
+  "genuinePacketOrOutcomeBodyReads": 0,
+  "databaseWrites": 0,
+  "activations": 0,
+  "privatePilotActions": 0,
+  "gitWrites": 0,
+  "buildsOrDeployments": 0,
+  "permission": "conditionalTieBreak only; no participation or unconditional totals; single exact bound game"
+}

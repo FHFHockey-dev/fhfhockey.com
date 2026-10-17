@@ -1,0 +1,14 @@
+
+> web@0.1.0 test
+> vitest lib/projections/starterBoardQueue.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ lib/projections/starterBoardQueue.test.ts (6 tests) 16ms
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  21:46:03
+   Duration  323ms (transform 80ms, setup 3ms, collect 94ms, tests 16ms, environment 0ms, prepare 33ms)
+

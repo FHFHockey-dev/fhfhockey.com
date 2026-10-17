@@ -1,0 +1,77 @@
+{
+  "status": "accepted-local-functional-slice",
+  "reviewer": "Chef /root; independent of implementing workers; final source and regression diff inspected",
+  "baselineHead": "a8f58de6178e282acd3a71851c66f4a56b119f14",
+  "manifestSHA256": "cd7e1ab8e5fa624d9fecd8ea0830441a14364e83caad49f9b1148175d27693fe",
+  "files": [
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+      "sha256": "6d9cccc048f75cd6254af106d720b3c6c2a84db51aa17593ad2e486f44e0a71b",
+      "changedThisGoal": false
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planning.test.ts",
+      "sha256": "84ec06314da69a6657e06650c1903964714509110093fa30e1561500dac272e2",
+      "changedThisGoal": true
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planningTimeline.ts",
+      "sha256": "e61be30023f555e7196e0f9e3e63cce8e1bca0a0c026cf445bef7d81d4b0532e",
+      "changedThisGoal": true
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/benchDecisions.ts",
+      "sha256": "244def92c6daa756831e9669334c7207164094ec5bc396009861f9669fa4b076",
+      "changedThisGoal": false
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.ts",
+      "sha256": "3c0cdf82dd25dc0ad36662569cefa5bf0a4e67a831853578735e845cc7b0334d",
+      "changedThisGoal": false
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts",
+      "sha256": "5e22a977ab25e45302f43158197df98e2c9c3d030da6f79e9d38542a1da336c4",
+      "changedThisGoal": false
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/workspace.ts",
+      "sha256": "43ea709c0ba024acd90ba69fdcb51826bfb91ed892d775d1af696aeef4f9ede7",
+      "changedThisGoal": false
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/workspace.test.ts",
+      "sha256": "1df9d2645e0787b8aa171251dc6df906b2703599bc2436c2cfcaa531169d0161",
+      "changedThisGoal": false
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/reconciliation.ts",
+      "sha256": "f43c7f84cd408d95c7cc89fad545f05c41c8f69beae03f13f1188e2ed50ab69d",
+      "changedThisGoal": true
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/reconciliation.test.ts",
+      "sha256": "7a83a334e68ca83b4b24b0fb8adab2d8a7f9cfbfb4e3f7a7b0a3fa5981784ec5",
+      "changedThisGoal": true
+    }
+  ],
+  "checks": {
+    "planner": "owner red/green;113 passed at unchanged final planner pins",
+    "candidateIntegration": "20 passed after timeline repair",
+    "workspace": "22 passed; no workspace source changes",
+    "reconciliation": "3 passed after final test-only legality clarification; prior combined25 passed",
+    "scopedSourceLint": "exit0 for planningTimeline.ts and reconciliation.ts",
+    "whitespace": "exit0 for four changed files",
+    "componentIntegration": "3 passed /191 skipped: nonzero crowded refresh Undo reopen, refreshed authority, stale-version save and late account response"
+  },
+  "reviewCorrections": [
+    "Invalidate dependent steps before allowance accounting",
+    "Chronological regression places dependent before independent add",
+    "Order equivalent timestamp prerequisites by actual instant",
+    "Preserve legal selected add followed by standalone drop; assert timeline legality"
+  ],
+  "combinedCompiler": "passed: compiler-verification.json",
+  "finalCombinedBrowser": "13 fixture contexts passed with80unchanged application inputs: handoff.json",
+  "liveAcceptance": "not established",
+  "externalActions": "No provider/account/database writes, production repairs, deployment or model promotion"
+}

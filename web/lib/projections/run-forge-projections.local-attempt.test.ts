@@ -25,6 +25,7 @@ function fixture(failure?: "player" | "snapshot" | "publication") {
   })));
   const historyDate = "2026-10-03";
   const tables: Record<string, Row[]> = {
+    rolling_player_metric_support_payloads: [],
     games: [
       { id: gameId, date, seasonId: 20262027, type: 2, startTime: `${date}T23:30:00.000Z`, homeTeamId: 6, awayTeamId: 9 },
       { id: historyId, date: historyDate, seasonId: 20262027, type: 2, homeTeamId: 6, awayTeamId: 9 },

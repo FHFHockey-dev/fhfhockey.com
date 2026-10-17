@@ -1,0 +1,23 @@
+# Native cadence hosted parity preflight — prepared only
+
+Target: repository-linked Supabase project `fyhftlxokyjtpndbkfse`. This package prepares the five read-only queries proposed in `../native-approval-package.md`; it executes nothing, applies no DDL/grant and activates no caller. Standing authorization permits ordinary necessary metadata reads; root owns the execution decision and hosted interpretation. Current function/writer/upstream-observer owner replies remain separate evidence.
+
+Exact package: `package.json`, SHA256`61012e6d232008fd2e448f415b32499d0fc1fc75bf88b5b5b738ca47ddadc19c`. Each sibling `N-query-args.json` is the exact `{project_id,query}` argument for the existing Supabase `execute_sql` tool. Package entries bind their hashes.
+
+At most5sequential requests, concurrency1, no retries/continuation,60seconds overall execution window. Each exact query uses `BEGIN TRANSACTION READ ONLY`, local8second statement timeout and COMMIT. SQL timeouts do not include connector/transport overhead; check elapsed time before every next call and stop if the whole deadline is exhausted. Return at most549metadata rows including five overflow sentinels, never accept a truncated result. Proposed response acceptance ceilings are8MiBper response/16MiBaggregate; these are postresponse checks when using the existing connector, not a claim that its transport enforces byte caps.
+
+| Query | Exact scope | Allowed / sentinel |
+|---|---|---:|
+|1|Queue columns; exact dependent game/run/revision columns; four table existence/owner/RLS records, constraints and indexes|200 /201|
+|2|All overloads of existing claim/finish/internal enqueue/observation/resolution helpers; absence or definition of the two proposed new function names. Includes identity/result, owner, SECURITY DEFINER flag, search path/settings, ACL and bounded source|16 /17|
+|3|Four named table ACLs/RLS policies, public/internal schema ACLs, effective SELECT/INSERT/UPDATE/DELETE and schema USAGE/CREATE for anon/authenticated/service_role, effective execution privileges for the exact seven function names|200 /201|
+|4|At most64running native queue items or pending/failed items for future scheduled games. Queue IDs/versions/clocks/attempts/lease/run references, active run status and publication-exists booleans only|64 /65|
+|5|Noninternal triggers on native queue/run/revision and three existing news-input tables; exact trigger/function metadata and bounded function source|64 /65|
+
+Function-source fields above64KiB return an explicit `over_definition_byte_limit` flag and no definition; stop rather than accepting a truncated function. No query selects source/forecast/output/outcome bodies, private-pilot rows, player labels, run metrics, freeform errors, secrets, cron commands or pg_stat_activity query text. The observation/conflict tables in query5 are catalog names only; their rows are never read. Queue/publication metadata does not certify forecast quality.
+
+Execute in order, retain exact original responses and request clocks privately, and inspect each result before continuing. Stop on SQL/connector error, row/byte/time overflow, a definition-overflow flag, missing required objects, unexpected overload/column/name conflict, incompatible return type/constraint/index/security boundary or substantive hosted function drift. `cadence_slots`, `enqueue_forge_cadence_slot` and `advance_forge_cadence_slots` are expected absent for an unapplied candidate; their presence is a review stop, not permission to overwrite. A hosted mismatch requires reconciliation with the current owner/source, not automatic adaptation or retry.
+
+Known local source comparison: `supabase/migrations/20260916014510_starter_board_news_queue.sql`, plus the existing native worker code. Reviewed proposal SQL SHA256`aa6d8d845a780308263ca663d24a78563fb0e28c44c74a7c217b0476f0e48013`; existing native PostgreSQL assertion script SHA256`066d4538676653c916f695c6aeca67cb471d6b17cb4f625b28e0b0ffad6b8df9`; existing isolated result SHA256`8c30c88357e1a0b93b753c241b3317687e5ede521edea18de239d24b11b196be`. Existing fixture evidence was referenced, not rerun. Static JSON/hash/read-only/row-limit checks passed; SQL was inspected against local named schema definitions but not executed by this preparation.
+
+An empty/nonrunning queue does not establish writer ownership, upstream completion, an atomic maintenance window, deployed SHA or natural cadence behavior. Source-owner handback and actual upstream completion receipts remain required before any separate SQL install or first invocation. This preflight supplies neither. No schema operation, dispatcher, provider refresh, scheduler activation, permission change or deployment is part of its execution.

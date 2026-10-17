@@ -1,0 +1,20 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/review-raw-job-ack-v1/consumer-binding.test.ts ../tasks/ifttt-integration-2026-10-16/review-raw-job-ack-v1/expiry-compatibility.test.ts --no-file-parallelism --config ../tasks/ifttt-integration-2026-10-16/review-raw-job-ack-v1/vitest.compatibility.config.mjs --reporter=default --reporter=json --outputFile=../tasks/ifttt-integration-2026-10-16/review-raw-job-ack-v1/compatibility-results.json
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-raw-job-ack-v1/consumer-binding.test.ts (26 tests) 6297ms
+   ✓ real forecast capture, queue and retained action binding > enforces every required proof field and exact identities on direct service inserts, including ON CONFLICT  532ms
+   ✓ real forecast capture, queue and retained action binding > authenticates the complete next-ten prefix and holds omitted scopes even with a recomputed hash  313ms
+(node:39783) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-raw-job-ack-v1/expiry-compatibility.test.ts (8 tests) 3ms
+
+ Test Files  2 passed (2)
+      Tests  34 passed (34)
+   Start at  02:38:12
+   Duration  6.98s (transform 190ms, setup 29ms, collect 312ms, tests 6.30s, environment 129ms, prepare 55ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/review-raw-job-ack-v1/compatibility-results.json

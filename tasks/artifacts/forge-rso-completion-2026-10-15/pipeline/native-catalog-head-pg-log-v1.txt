@@ -1,0 +1,27 @@
+The files belonging to this database system will be owned by user "tim".
+This user must also own the server process.
+
+The database cluster will be initialized with locale "C".
+The default database encoding has accordingly been set to "SQL_ASCII".
+The default text search configuration will be set to "english".
+
+Data page checksums are disabled.
+
+creating directory /var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-native-head-fixture-hmdqwts8/data ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... America/Chicago
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+syncing data to disk ... ok
+
+Success. You can now start the database server using:
+
+    '/opt/homebrew/opt/postgresql@17/bin/pg_ctl' -D /var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-native-head-fixture-hmdqwts8/data -l logfile start
+
+waiting for server to start.... stopped waiting
+pg_ctl: could not start server
+Examine the log output.

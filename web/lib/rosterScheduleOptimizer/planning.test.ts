@@ -40,7 +40,10 @@ function snapshot(): PlanningSnapshot {
     rules: { lineupMode: "daily", rosterSlots: { C: 1, BN: 1 }, acquisitionTiming: "same_day", acquisitionCost: 1,
       periods: [{ id: "p", start: "2026-10-04T00:00:00Z", end: "2026-10-12T00:00:00Z", remaining: 2, source: "manager" }],
       scoring: { mode: "points", weights: { pts: 1 }, categories: [] }, goalieMinimum: { required: null, credited: null, counts: "unknown", penalty: "none" }, unsupported: [] },
-    lockedAssignments: [], realized: { pts: 0 }, opponent: null, evidence: {},
+    lockedAssignments: [], realized: { pts: 0 }, opponent: null, evidence: { schedule: {
+      source: "synthetic complete schedule", asOf: "2026-10-04T00:00:00Z", seasonId: 20262027,
+      completeness: "complete", limitations: [],
+    } },
   };
   data.forecasts = games.flatMap(game => players.filter(item => item.teamAbbreviation === game.teamAbbreviation)
     .map(item => issuedForecast(data, item.id, game.id)));
@@ -48,6 +51,146 @@ function snapshot(): PlanningSnapshot {
 }
 
 describe("planning engine", () => {
+  describe("hypothetical schedule-only full-roster swaps", () => {
+    function scheduleOnlySwap() {
+      const data = snapshot();
+      data.players = data.players.filter(row => row.id !== "b");
+      data.roster = [{ playerId: "a", position: "active" }];
+      data.rules.rosterSlots = { C: 1 };
+      data.games = data.games.filter(game => game.teamAbbreviation === "C" || game.id === "A0");
+      data.forecasts = [];
+      data.players.find(row => row.id === "c")!.availability = "manager_available";
+      return data;
+    }
+    const options = { maxSteps: 1, maxCandidates: 1, maxEvaluations: 100 };
+    it("returns a legal AGP swap with unknown points as an explicitly hypothetical schedule comparison", () => {
+      const data = scheduleOnlySwap(), before = JSON.stringify(data);
+      const result = planRoster(data, intent, options);
+      const swap = result.alternatives.find(plan => plan.objective === "agp" && plan.steps.some(step => step.dropPlayerId === "a"));
+      expect(result.noMoveAgp.activeGames).toBe(1);
+      expect(swap).toMatchObject({ legal: true, budgetVerified: true, activeGames: 2, projectedValue: null,
+        comparisonEligible: false, recommendation: { eligible: false, mode: "schedule_capacity" } });
+      expect(swap?.limitations).toContain("Hypothetical schedule comparison using supplied availability and drop permissions; net fantasy points and drop cost are unknown.");
+      expect(swap?.limitations).toContain("Dropping a: 1 scheduled active games from the no-move lineup are absent in this plan; fantasy-point cost is unknown.");
+      expect(JSON.stringify(data)).toBe(before);
+    });
+    it.each(["protected", "cannot_drop", "unavailable", "excluded", "timing", "budget", "owned_team", "candidate_team", "schedule"])("preserves %s gates with missing points", kind => {
+      const data = scheduleOnlySwap(), selectedIntent = structuredClone(intent);
+      if (kind === "protected") selectedIntent.protectedPlayerIds = ["a"];
+      if (kind === "cannot_drop") data.players[0].canDrop = false;
+      if (kind === "unavailable") data.players[1].availability = "unknown";
+      if (kind === "excluded") selectedIntent.excludedPlayerIds = ["c"];
+      if (kind === "timing") data.rules.acquisitionTiming = "unknown";
+      if (kind === "budget") data.rules.periods[0].remaining = null;
+      if (kind === "owned_team") data.players[0].teamAbbreviation = null;
+      if (kind === "candidate_team") data.players[1].teamAbbreviation = null;
+      if (kind === "schedule") data.evidence.schedule!.completeness = "partial";
+      expect(planRoster(data, selectedIntent, options).alternatives.every(plan => !plan.steps.length)).toBe(true);
+    });
+    it("still excludes a scheduled-game gain with a known points loss", () => {
+      const data = scheduleOnlySwap();
+      // Only the first date permits an acquisition; a delayed swap would keep
+      // the10point owned game and would correctly be a different improvement.
+      data.rules.periods[0].end = "2026-10-06T00:00:00Z";
+      data.forecasts = data.games.map(game => issuedForecast(data, game.teamAbbreviation === "A" ? "a" : "c", game.id,
+        { stats: { pts: game.teamAbbreviation === "A" ? 10 : 1 } }));
+      expect(planRoster(data, intent, options).alternatives.every(plan => !plan.steps.length)).toBe(true);
+    });
+  });
+  describe("crowded daily acceptance checkpoint", () => {
+    function crowdedDay(): PlanningSnapshot {
+      const data = snapshot();
+      data.context.endDate = data.context.startDate;
+      data.players = [
+        { ...player("a", "A"), eligiblePositions: ["LW", "RW"] },
+        { ...player("b", "B"), eligiblePositions: ["LW"] },
+        { ...player("d", "D"), eligiblePositions: ["RW"] },
+        { ...player("e", "E"), eligiblePositions: ["RW"] },
+        { ...player("f", "F", "free_agent"), eligiblePositions: ["RW"] },
+      ];
+      data.roster = data.players.filter(row => row.id !== "f").map(row => ({ playerId: row.id, position: "bench" }));
+      data.rules.rosterSlots = { LW: 1, RW: 1, BN: 2 };
+      data.games = data.players.map(row => ({ ...data.games[0], id: row.id,
+        teamAbbreviation: row.teamAbbreviation!, scheduleRevision: `schedule-${row.id}` }));
+      const values: Record<string, number> = { a: 8, b: 7, d: 6, e: 2, f: 100 };
+      data.forecasts = data.players.map(row => issuedForecast(data, row.id, row.id, { stats: { pts: values[row.id] } }));
+      data.realized = { pts: 4 };
+      return data;
+    }
+
+    it("reassigns the flexible player to maximize supported value without exceeding legal capacity", () => {
+      const data = crowdedDay();
+      const original = JSON.stringify(data);
+      const selected = evaluatePlan(data, intent, "outcome");
+      expect(selected).toMatchObject({ legal: true, activeGames: 2, benchGames: 2, assignmentValue: 15,
+        projectedValue: 19, comparisonEligible: true, recommendation: { eligible: true } });
+      expect(selected.assignments.map(row => [row.playerId, row.slotId]).sort()).toEqual([["a", "RW#1"], ["b", "LW#1"]]);
+      expect(selected.recommendation?.exclusions?.map(row => row.playerId).sort()).toEqual(["d", "e"]);
+      const reversed = { ...data, players: [...data.players].reverse(), roster: [...data.roster].reverse(),
+        games: [...data.games].reverse(), forecasts: [...data.forecasts].reverse() };
+      expect(evaluatePlan(reversed, intent, "outcome").assignments).toEqual(selected.assignments);
+      expect(JSON.stringify(data)).toBe(original);
+
+      data.forecasts.find(row => row.playerId === "d")!.stats.pts = 10;
+      const improved = evaluatePlan(data, intent, "outcome");
+      expect(improved).toMatchObject({ legal: true, activeGames: 2, assignmentValue: 18, projectedValue: 22,
+        comparisonEligible: true, recommendation: { eligible: true } });
+      expect(improved.assignments.map(row => [row.playerId, row.slotId]).sort()).toEqual([["a", "LW#1"], ["d", "RW#1"]]);
+    });
+
+    it.each(["absent", "null", "conditional"])("withholds crowded-day quality when a competing forecast is %s", problem => {
+      const data = crowdedDay();
+      const forecast = data.forecasts.find(row => row.playerId === "d")!;
+      if (problem === "absent") data.forecasts = data.forecasts.filter(row => row !== forecast);
+      else if (problem === "null") forecast.stats.pts = null;
+      else {
+        // Malformed serialized input must not inherit the unconditional contract's permissions.
+        forecast.conditioning = "conditional_playing" as unknown as GameForecast["conditioning"];
+        forecast.stats.pts = 1000;
+        forecast.conditionalStats = { pts: 1000 };
+      }
+      const original = JSON.stringify(data);
+      const result = evaluatePlan(data, intent, "outcome");
+      expect(result).toMatchObject({ legal: true, activeGames: 2, projectedValue: null, comparisonEligible: false,
+        recommendation: { eligible: false, mode: "schedule_capacity", coverage: { requiredCount: 4,
+          assignmentEligibleCount: 3, totalsEligibleCount: 3, comparisonEligibleCount: 3 } } });
+      expect(result.recommendation?.coverage?.exclusions).toContainEqual(expect.objectContaining({ playerId: "d", targetKey: "pts" }));
+      expect(result.recommendation?.exclusions?.every(row => !row.evidence)).toBe(true);
+      expect(JSON.stringify(data)).toBe(original);
+
+      if (problem === "conditional") {
+        const locked = evaluatePlan({ ...data, lockedAssignments: [{ date: data.context.startDate,
+          playerId: "d", slotId: "RW#1", source: "manager" }] }, intent, "outcome");
+        expect(locked.assignments).toContainEqual(expect.objectContaining({ playerId: "d", locked: true }));
+        expect(locked.projectedStats.pts).toBeNull();
+        expect(locked.projectedValue).toBeNull();
+        expect(locked.recommendation?.eligible).toBe(false);
+      }
+
+      data.lockedAssignments = [{ date: data.context.startDate, playerId: "d", slotId: null, source: "manager" }];
+      const narrowed = evaluatePlan(data, intent, "outcome");
+      expect(narrowed).toMatchObject({ legal: true, projectedValue: 19, comparisonEligible: true,
+        recommendation: { eligible: true } });
+      expect(narrowed.assignments.map(row => row.playerId).sort()).toEqual(["a", "b"]);
+    });
+
+    it.each(["capacity", "protected drop"])("preserves the selected legal lineup after rejecting a %s change", problem => {
+      const data = crowdedDay();
+      data.lockedAssignments = [{ date: data.context.startDate, playerId: "e", slotId: null, source: "manager" }];
+      const selectedIntent = { ...intent, protectedPlayerIds: ["b"] };
+      const original = JSON.stringify({ data, selectedIntent });
+      const baseline = evaluatePlan(data, selectedIntent, "outcome");
+      const add = { id: "rejected-add", type: "add" as const, playerId: "f", at: data.context.asOf,
+        effectiveAt: data.context.asOf, conditional: false, dependsOn: [],
+        ...(problem === "protected drop" ? { dropPlayerId: "b" } : {}) };
+      expect(evaluatePlan(data, selectedIntent, "outcome", [add])).toMatchObject({ legal: false,
+        comparisonEligible: false, recommendation: { eligible: false } });
+      expect(JSON.stringify({ data, selectedIntent })).toBe(original);
+      expect(evaluatePlan(data, selectedIntent, "outcome")).toEqual(baseline);
+      expect(baseline.assignments.map(row => row.playerId).sort()).toEqual(["a", "b"]);
+    });
+  });
+
   describe("unranked category decision policy", () => {
     function categoryData(values = { a: { g: 103, h: 11 }, b: { g: 102, h: 12 }, c: { g: 102, h: 12 } }) {
       const data = snapshot();
@@ -1069,6 +1212,8 @@ describe("planning engine", () => {
     expect(evaluatePlan(data, intent, "agp", [{ ...claim, waiverSpend: -1 }]).legal).toBe(false);
     data.rules.waivers = { mode: "priority", remainingBudget: null };
     expect(evaluatePlan(data, intent, "agp", [claim]).budgetVerified).toBe(true);
+    data.players[2].waiverClearsAt = "not-a-time";
+    expect(evaluatePlan(data, intent, "agp", [claim]).legal).toBe(false);
   });
   it("finds the two-slot two-step exhaustive sequence winner deterministically", () => {
     const data = snapshot();

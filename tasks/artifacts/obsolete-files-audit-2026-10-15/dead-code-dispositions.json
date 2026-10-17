@@ -1,0 +1,858 @@
+[
+  {
+    "path": "cms/.sanity/runtime/app.js",
+    "bytes": 303,
+    "sha256": "dd225ffd617f3b7f88838243cedf23cc0d9746d71fe41c99cae96c951e01682a",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "review-generated-tracking",
+    "rationale": "Auto-generated Sanity development runtime, tracked since Sanity v3 migration; preserve physical files until regeneration contract verified.",
+    "evidence": [
+      "cms/.sanity/runtime/app.js:2-3",
+      "cms/.sanity/runtime/index.html:3"
+    ]
+  },
+  {
+    "path": "cms/sanity.cli.js",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "keep-framework-entrypoint",
+    "rationale": "Discovered by CLI/configuration/glob rather than imported by an application module.",
+    "evidence": [
+      "web/package.json",
+      "web/.storybook/main.ts:4-7",
+      "cms/README.md:5"
+    ]
+  },
+  {
+    "path": "tools/add-cron-audit-to-db-endpoints.mjs",
+    "bytes": 4235,
+    "sha256": "268457808a6330a6aff35c7121ef27f1bd53dde4452034430fa06d40ac1285c8",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "underlying-stats/teamRatingsService.ts",
+    "bytes": 47,
+    "sha256": "ce5b9e97a58ed1927922ff692be7f8017eae253c991ad761a317a3ec158506b2",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-compatibility-export-pending-owner",
+    "rationale": "Barrel/re-export compatibility path. No current static importer; local absence does not retire its supported import contract.",
+    "evidence": [
+      "underlying-stats/teamRatingsService.ts"
+    ]
+  },
+  {
+    "path": "underlying-stats/types.ts",
+    "bytes": 116,
+    "sha256": "8ce0f507e50d1e5cf332a912fac826d3221161fde86c3a47c84a93063496dd36",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-compatibility-export-pending-owner",
+    "rationale": "Barrel/re-export compatibility path. No current static importer; local absence does not retire its supported import contract.",
+    "evidence": [
+      "underlying-stats/types.ts"
+    ]
+  },
+  {
+    "path": "web/.storybook/main.ts",
+    "bytes": 469,
+    "sha256": "db9edec289d9ec1111e0fc02115fadad1eb33cf92319aca90fb442b139d3393a",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "keep-framework-entrypoint",
+    "rationale": "Discovered by CLI/configuration/glob rather than imported by an application module.",
+    "evidence": [
+      "web/package.json",
+      "web/.storybook/main.ts:4-7",
+      "cms/README.md:5"
+    ]
+  },
+  {
+    "path": "web/.storybook/preview.ts",
+    "bytes": 239,
+    "sha256": "518be8b2e00e6db05c166a6b52f9feee2fcffa9f66f9bf87ddecaa10fa4b30d7",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "keep-framework-entrypoint",
+    "rationale": "Discovered by CLI/configuration/glob rather than imported by an application module.",
+    "evidence": [
+      "web/package.json",
+      "web/.storybook/main.ts:4-7",
+      "cms/README.md:5"
+    ]
+  },
+  {
+    "path": "web/components/Banner/index.ts",
+    "bytes": 36,
+    "sha256": "56d136198ffafb2edffec33a045b948ac3b1a05f76ae715301e86adf40543386",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-compatibility-export-pending-owner",
+    "rationale": "Barrel/re-export compatibility path. No current static importer; local absence does not retire its supported import contract.",
+    "evidence": [
+      "web/components/Banner/index.ts"
+    ]
+  },
+  {
+    "path": "web/components/BlogPost/index.ts",
+    "bytes": 38,
+    "sha256": "fcecf6a5ad22975ecbcbc2e70e20ff59120b8f6450c1cb4c2c00ddc3d68d3e19",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-compatibility-export-pending-owner",
+    "rationale": "Barrel/re-export compatibility path. No current static importer; local absence does not retire its supported import contract.",
+    "evidence": [
+      "web/components/BlogPost/index.ts"
+    ]
+  },
+  {
+    "path": "web/components/DateRangeMatrix/DateRangeMatrixForGames.tsx",
+    "bytes": 1235,
+    "sha256": "9b936e5ed1d98a6454619787bcacc2619e415f5526c83d483656b0ae000029e2",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "keep-explicit-quarantine",
+    "rationale": "Prior owner explicitly retains the dormant wrapper; no current static importer does not override that disposition.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md:87-90"
+    ]
+  },
+  {
+    "path": "web/components/GameScoreChart/GameLogTable.tsx",
+    "bytes": 2755,
+    "sha256": "ab6d5c5db250adc4906e27e2fc1870d31c3534dbcaab1effc9d6e6533ffbbd86",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "keep-quarantine-lineage-owner-gate",
+    "rationale": "Existing sKO quarantine and lineage decisions prohibit treating this disconnected cluster as accidental debris.",
+    "evidence": [
+      "web/lib/predictions/legacyQuarantine.ts:14-29",
+      "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-4-audit-remediation.md:198-201"
+    ]
+  },
+  {
+    "path": "web/components/GameScoreChart/GameScoreChart.tsx",
+    "bytes": 4529,
+    "sha256": "881d6642d9213962a628526c625d974a0d20c532637bb505c4095fb61cbd15f3",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "keep-quarantine-lineage-owner-gate",
+    "rationale": "Existing sKO quarantine and lineage decisions prohibit treating this disconnected cluster as accidental debris.",
+    "evidence": [
+      "web/lib/predictions/legacyQuarantine.ts:14-29",
+      "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-4-audit-remediation.md:198-201"
+    ]
+  },
+  {
+    "path": "web/components/IconButton/index.ts",
+    "bytes": 40,
+    "sha256": "ece01b56f844228120e3f239bd030d74c062475d885a1ded2bd55a493d4e525d",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-compatibility-export-pending-owner",
+    "rationale": "Barrel/re-export compatibility path. No current static importer; local absence does not retire its supported import contract.",
+    "evidence": [
+      "web/components/IconButton/index.ts"
+    ]
+  },
+  {
+    "path": "web/components/Predictions/InfoPopover.tsx",
+    "bytes": 1747,
+    "sha256": "dab6f6eeac71256c1143ab4e3e9323aee61de4ba45a7db5d2eb093c658ef1bae",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "keep-quarantine-lineage-owner-gate",
+    "rationale": "Existing sKO quarantine and lineage decisions prohibit treating this disconnected cluster as accidental debris.",
+    "evidence": [
+      "web/lib/predictions/legacyQuarantine.ts:14-29",
+      "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-4-audit-remediation.md:198-201"
+    ]
+  },
+  {
+    "path": "web/components/Predictions/MetricCards.tsx",
+    "bytes": 3622,
+    "sha256": "9a863c28804602226fff2cc11440ae97ad86e1c6d34bce63f7db0a120d20a5c6",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "keep-quarantine-lineage-owner-gate",
+    "rationale": "Existing sKO quarantine and lineage decisions prohibit treating this disconnected cluster as accidental debris.",
+    "evidence": [
+      "web/lib/predictions/legacyQuarantine.ts:14-29",
+      "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-4-audit-remediation.md:198-201"
+    ]
+  },
+  {
+    "path": "web/components/Predictions/PredictionsHeader.tsx",
+    "bytes": 1486,
+    "sha256": "e848c684536681805c4cd0c24645205da650cecb8e81dcc0cc13c298db7dce35",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "keep-quarantine-lineage-owner-gate",
+    "rationale": "Existing sKO quarantine and lineage decisions prohibit treating this disconnected cluster as accidental debris.",
+    "evidence": [
+      "web/lib/predictions/legacyQuarantine.ts:14-29",
+      "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-4-audit-remediation.md:198-201"
+    ]
+  },
+  {
+    "path": "web/components/Predictions/PredictionsLeaderboard.tsx",
+    "bytes": 6758,
+    "sha256": "717d0296f702cff6fa882d0c238a5eacbadc2eca0d26af873bcdf9f8e4e6eb5f",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "keep-quarantine-lineage-owner-gate",
+    "rationale": "Existing sKO quarantine and lineage decisions prohibit treating this disconnected cluster as accidental debris.",
+    "evidence": [
+      "web/lib/predictions/legacyQuarantine.ts:14-29",
+      "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-4-audit-remediation.md:198-201"
+    ]
+  },
+  {
+    "path": "web/components/Predictions/SearchBox.tsx",
+    "bytes": 3541,
+    "sha256": "2fac70bad193d8cfd494a9b1e3a799c9fcfcccd89c464b0efaea4a861d15cd93",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "keep-quarantine-lineage-owner-gate",
+    "rationale": "Existing sKO quarantine and lineage decisions prohibit treating this disconnected cluster as accidental debris.",
+    "evidence": [
+      "web/lib/predictions/legacyQuarantine.ts:14-29",
+      "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-4-audit-remediation.md:198-201"
+    ]
+  },
+  {
+    "path": "web/components/Predictions/Stepper.tsx",
+    "bytes": 829,
+    "sha256": "c1f6babdc8116389377b7fd7de80c0a2b507839eafd28896e79cbea42562dc29",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "keep-quarantine-lineage-owner-gate",
+    "rationale": "Existing sKO quarantine and lineage decisions prohibit treating this disconnected cluster as accidental debris.",
+    "evidence": [
+      "web/lib/predictions/legacyQuarantine.ts:14-29",
+      "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-4-audit-remediation.md:198-201"
+    ]
+  },
+  {
+    "path": "web/components/RecentPosts/index.ts",
+    "bytes": 41,
+    "sha256": "8d0f4358dce797b25be662945ff59e2fa4067545df4b5aa4c0adcc881c9f86a2",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-compatibility-export-pending-owner",
+    "rationale": "Barrel/re-export compatibility path. No current static importer; local absence does not retire its supported import contract.",
+    "evidence": [
+      "web/components/RecentPosts/index.ts"
+    ]
+  },
+  {
+    "path": "web/components/ShiftChart/PowerPlayAreaIndicators/index.tsx",
+    "bytes": 2934,
+    "sha256": "db8a5de1a67e77422817ce9af63bf7504eca70f5f48fe4a18ca05e754901e6a7",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "owner-review-no-static-import",
+    "rationale": "Static import graph found no incoming edge. Dynamic/manual/planned use and historical retention are not disproven; no deletion conclusion.",
+    "evidence": [
+      "import-edges.json",
+      "no-static-inbound-review.json"
+    ]
+  },
+  {
+    "path": "web/components/SkoLineChart/LineChart.tsx",
+    "bytes": 4988,
+    "sha256": "a3d090a6c9cf17e724b3b22dd082b92d338c7b795b4dbad28b58b0afc4eb70ef",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "keep-quarantine-lineage-owner-gate",
+    "rationale": "Existing sKO quarantine and lineage decisions prohibit treating this disconnected cluster as accidental debris.",
+    "evidence": [
+      "web/lib/predictions/legacyQuarantine.ts:14-29",
+      "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-4-audit-remediation.md:198-201"
+    ]
+  },
+  {
+    "path": "web/components/forge-dashboard/GoalieRiskCard.tsx",
+    "bytes": 13306,
+    "sha256": "f9245879c114bfecf89ece8e34dda1f673974b9caeb991a534941fc4baf9f8bc",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-legacy-dashboard-owner-review",
+    "rationale": "Old dashboard cards remain historical implementation evidence with explicit task ownership; shared replacements or whole-family retirement need owner review.",
+    "evidence": [
+      "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-4-audit-remediation.md:192-201"
+    ]
+  },
+  {
+    "path": "web/components/forge-dashboard/HotColdCard.tsx",
+    "bytes": 27361,
+    "sha256": "273ab967ececd3090846303d16909eb57915ae2803562d92cc8b2b45134a425a",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-legacy-dashboard-owner-review",
+    "rationale": "Old dashboard cards remain historical implementation evidence with explicit task ownership; shared replacements or whole-family retirement need owner review.",
+    "evidence": [
+      "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-4-audit-remediation.md:192-201"
+    ]
+  },
+  {
+    "path": "web/components/forge-dashboard/SlateStripCard.tsx",
+    "bytes": 14201,
+    "sha256": "f04dd11921a74d885d2e48054b4109230497d9f9fcfd861719d231a46a947343",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-legacy-dashboard-owner-review",
+    "rationale": "Old dashboard cards remain historical implementation evidence with explicit task ownership; shared replacements or whole-family retirement need owner review.",
+    "evidence": [
+      "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-4-audit-remediation.md:192-201"
+    ]
+  },
+  {
+    "path": "web/components/forge-dashboard/SustainabilityCard.tsx",
+    "bytes": 21708,
+    "sha256": "a715652a7fc82440081ce747b6b9c2a5b9143e9173e31ac95ce974313db6b65f",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-legacy-dashboard-owner-review",
+    "rationale": "Old dashboard cards remain historical implementation evidence with explicit task ownership; shared replacements or whole-family retirement need owner review.",
+    "evidence": [
+      "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-4-audit-remediation.md:192-201"
+    ]
+  },
+  {
+    "path": "web/components/forge-dashboard/TeamPowerCard.tsx",
+    "bytes": 20039,
+    "sha256": "6c03cac406065ae7c7a199ce81744fd432cbee65d6837beeb41824a3bb9de06b",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-legacy-dashboard-owner-review",
+    "rationale": "Old dashboard cards remain historical implementation evidence with explicit task ownership; shared replacements or whole-family retirement need owner review.",
+    "evidence": [
+      "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-4-audit-remediation.md:192-201"
+    ]
+  },
+  {
+    "path": "web/debug-goalies.ts",
+    "bytes": 795,
+    "sha256": "abcce07a6023c4acee2dbdf95c0bfc21bad57ffa87ccfcee30f0054ec7e9f251",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "web/hooks/useHideableNavbar.ts",
+    "bytes": 1946,
+    "sha256": "544ad7e5103494d59d29bad9ac3fd15a77e2237ab1ad46d283fa955b6f10eafb",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "source-retirement-candidate-needs-review",
+    "rationale": "No runtime import; Header contains its own current scroll behavior. Navbar hook retains a test mock; scroll helper has only historical inventory references.",
+    "evidence": [
+      "web/components/Layout/Header/Header.tsx:30-47",
+      "web/__tests__/components/Layout/Header.test.tsx:54",
+      "focused-dead-code-references.json"
+    ]
+  },
+  {
+    "path": "web/hooks/usePlayerStats.ts",
+    "bytes": 18761,
+    "sha256": "080ee0d8018cfc50898a74e32af4175e94931e7306ceb2de01c02f0080191f5d",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "owner-review-no-static-import",
+    "rationale": "Static import graph found no incoming edge. Dynamic/manual/planned use and historical retention are not disproven; no deletion conclusion.",
+    "evidence": [
+      "import-edges.json",
+      "no-static-inbound-review.json"
+    ]
+  },
+  {
+    "path": "web/hooks/usePlayerWeeklyStats.ts",
+    "bytes": 6343,
+    "sha256": "2c69697b7d69d62ce4d51f252ded265b6631c65cbe028c10dd2da445845b17da",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "owner-review-no-static-import",
+    "rationale": "Static import graph found no incoming edge. Dynamic/manual/planned use and historical retention are not disproven; no deletion conclusion.",
+    "evidence": [
+      "import-edges.json",
+      "no-static-inbound-review.json"
+    ]
+  },
+  {
+    "path": "web/hooks/useProjectionSourceAnalysis.ts",
+    "bytes": 3836,
+    "sha256": "88b5dad473ebca4ffcf8fe5806c375238ff72106b20218cd350498feed952de6",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "owner-review-no-static-import",
+    "rationale": "Static import graph found no incoming edge. Dynamic/manual/planned use and historical retention are not disproven; no deletion conclusion.",
+    "evidence": [
+      "import-edges.json",
+      "no-static-inbound-review.json"
+    ]
+  },
+  {
+    "path": "web/hooks/useTeamAbbreviation.ts",
+    "bytes": 428,
+    "sha256": "df96e16154f21b43913b704207a02217c2a0c5af1ad716502613834fdbd4a23f",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "owner-review-no-static-import",
+    "rationale": "Static import graph found no incoming edge. Dynamic/manual/planned use and historical retention are not disproven; no deletion conclusion.",
+    "evidence": [
+      "import-edges.json",
+      "no-static-inbound-review.json"
+    ]
+  },
+  {
+    "path": "web/hooks/useTeamStats.ts",
+    "bytes": 4154,
+    "sha256": "9ed31cc968b723086c2aaa49568fa8b68cfde40b396c2aa904b587440a945e23",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "owner-review-no-static-import",
+    "rationale": "Static import graph found no incoming edge. Dynamic/manual/planned use and historical retention are not disproven; no deletion conclusion.",
+    "evidence": [
+      "import-edges.json",
+      "no-static-inbound-review.json"
+    ]
+  },
+  {
+    "path": "web/hooks/useTeamStatsFromDb.ts",
+    "bytes": 5769,
+    "sha256": "fe6137369ae3b027aa15fac46da8ffad733769f5dff3cf18d86cc9ac9f955fef",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "owner-review-no-static-import",
+    "rationale": "Static import graph found no incoming edge. Dynamic/manual/planned use and historical retention are not disproven; no deletion conclusion.",
+    "evidence": [
+      "import-edges.json",
+      "no-static-inbound-review.json"
+    ]
+  },
+  {
+    "path": "web/hooks/useWGOPlayerStats.ts",
+    "bytes": 2846,
+    "sha256": "0a4e426a90bb8dfe9fb7c0659aac603258289564a635df3c379a170fd469afa5",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "owner-review-no-static-import",
+    "rationale": "Static import graph found no incoming edge. Dynamic/manual/planned use and historical retention are not disproven; no deletion conclusion.",
+    "evidence": [
+      "import-edges.json",
+      "no-static-inbound-review.json"
+    ]
+  },
+  {
+    "path": "web/lib/NHL/teamPageTypes.ts",
+    "bytes": 2761,
+    "sha256": "5fac56b20afa2911878c57e904cc1b42f1e79d5a4eac4336bf18916b8696113e",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "owner-review-no-static-import",
+    "rationale": "Static import graph found no incoming edge. Dynamic/manual/planned use and historical retention are not disproven; no deletion conclusion.",
+    "evidence": [
+      "import-edges.json",
+      "no-static-inbound-review.json"
+    ]
+  },
+  {
+    "path": "web/lib/projections/adapters/supabaseAdapters.ts",
+    "bytes": 2928,
+    "sha256": "6afcb854dd4725000a028f76433aa2e3feb1b491afb9ea112fbd50113047d7e0",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "owner-review-no-static-import",
+    "rationale": "Static import graph found no incoming edge. Dynamic/manual/planned use and historical retention are not disproven; no deletion conclusion.",
+    "evidence": [
+      "import-edges.json",
+      "no-static-inbound-review.json"
+    ]
+  },
+  {
+    "path": "web/lib/supabase/GoaliePage/calculateGoalieRanking.ts",
+    "bytes": 2142,
+    "sha256": "52968395fbb075d571008d77551a5774632a3e4e02949cc744b26a9d801588b0",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "web/lib/supabase/GoaliePage/fetchAllGoalies.ts",
+    "bytes": 1105,
+    "sha256": "aa4f6d7211c6466693a3d0f1a44237564523dcd46633558101dd4a9e9a02dd33",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "web/lib/supabase/GoaliePage/updateWeeklyData.ts",
+    "bytes": 2926,
+    "sha256": "9017e011a7605f619ebc532be0f589091ae5fe1d0415748cffc4eded0903bd66",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "web/lib/supabase/Upserts/fetchPPTOIdata.js",
+    "bytes": 6280,
+    "sha256": "9dd07041468420bda77cb38443ba7184b0ec303405083d5103c608bb3363abde",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "web/lib/supabase/Upserts/fetchPowerRankings.js",
+    "bytes": 44033,
+    "sha256": "0511228b9632ad8b755f9eeef2ec520b29ce945170b47a8885b7e9cae5422f00",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "web/lib/supabase/Upserts/fetchRollingGames.js",
+    "bytes": 38156,
+    "sha256": "245f57d272ba2c3dde0c53b826bd15b00b51c4460348689a968d2bd2578a7958",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "web/lib/supabase/Upserts/fetchSKOskaterStats.js",
+    "bytes": 12957,
+    "sha256": "54a54595ff6c4e0df3b0f07cbf701d3e069396ded1be2783273f3cd4a7aea3d9",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "web/lib/supabase/Upserts/fetchSKOyears.js",
+    "bytes": 8310,
+    "sha256": "1fe7d5defd745daeec4d98ce0ec2c1ec5e176ab3c8ea5f561116b49e523b1496",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "web/lib/supabase/Upserts/fetchSoSgameLog.js",
+    "bytes": 13526,
+    "sha256": "34f1d2b6fa993d2bb562f93fddbac8716e21c19f53679346bc93174b60ba53eb",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "web/lib/supabase/Upserts/fetchStandings.js",
+    "bytes": 7143,
+    "sha256": "33e35f110dbcd4d93b1459972493c46860b825acb7c0da5c49d9ae9740b68c10",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "web/lib/supabase/Upserts/fetchWGOdata.js",
+    "bytes": 33594,
+    "sha256": "a604fecdd57e44096a03d5577c1c32f1116f943020e6028328cb12400b1d98e2",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "web/lib/supabase/Upserts/fetchWGOgoalieData.js",
+    "bytes": 5694,
+    "sha256": "2f88a4b9807367d7ac2f044855827ec76449da0cddd5d1a56a1de54e60f935f0",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "web/lib/supabase/Upserts/fetchWGOgoalieStats.js",
+    "bytes": 6089,
+    "sha256": "97c4c648cadc00cbcfb71b3f0d1a2ef3bfdc3fa37bc9d52ad75e956c5b042799",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "web/lib/supabase/Upserts/fetchWGOskaterStats.js",
+    "bytes": 37730,
+    "sha256": "3b3e4d33b6cc2d6c502c30fc705e76f37aeb7f73afabad49f4e979cb10fbc039",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "web/lib/supabase/shotsByCoord.js",
+    "bytes": 6331,
+    "sha256": "a762cd6cc24fb0b6d7e2ec20aa14f9f734eaac16b240a03cb6587c230a06e9ae",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "web/lib/supabase/signInWithGitHub.ts",
+    "bytes": 267,
+    "sha256": "34dc11ab4226110e30f3764a65be54ae28caa31e96b4ce506ac47f3e8acf1732",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "web/lib/supabase/sosStandings.js",
+    "bytes": 25818,
+    "sha256": "605f5eb0b625e8536cc7911fa2d545276d429cc8c3aa3bd0d07c3c94f62c75c3",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "web/lib/supabase/utils/calculations.ts",
+    "bytes": 1293,
+    "sha256": "85f4ff0ce6f889d9cfd6804e80015d0e45dd1d55fcc84f89fa5b95c37b0d059e",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "web/lib/supabase/utils/dataFetching.ts",
+    "bytes": 5320,
+    "sha256": "9f5286189dd0e2e8ed860028a6aa2fc04867cc01796614f99282bbeddbcd4bce",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "web/lib/supabase/utils/fetchAllGoalies.ts",
+    "bytes": 481,
+    "sha256": "461efcb3b606af2a41827cc4cbad18f86e139256d606324f035888314e6724ce",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "web/lib/supabase/utils/fetchAllSkaters.ts",
+    "bytes": 843,
+    "sha256": "e47190d46e09f37e37ac3ab9307583032c9f5b223eaf294d1d31cba060a0f9af",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "web/lib/supabase/utils/statistics.ts",
+    "bytes": 6812,
+    "sha256": "c7271ba718807de8868ab9bf838639b8fc549444038017fbdc79bf56a439f824",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "retain-manual-operational-or-library-owner-review",
+    "rationale": "Could be manually invoked or retained for operation/history; no script was executed and no remote scheduler was inspected.",
+    "evidence": [
+      "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "tasks/TASKS/super-goal/cleanup-reconciliation.md:23"
+    ]
+  },
+  {
+    "path": "web/stories/Button.stories.ts",
+    "bytes": 1439,
+    "sha256": "a4f7e62a898c747643d5362f6e9553a3cacebe1f976942f3e7ffa51c72287338",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "keep-framework-entrypoint",
+    "rationale": "Discovered by CLI/configuration/glob rather than imported by an application module.",
+    "evidence": [
+      "web/package.json",
+      "web/.storybook/main.ts:4-7",
+      "cms/README.md:5"
+    ]
+  },
+  {
+    "path": "web/stories/Header.stories.ts",
+    "bytes": 781,
+    "sha256": "d6d894d2e1b7ebe86a8b9452f9e6b205b1318f67341bd584952d80031b496a0d",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "keep-framework-entrypoint",
+    "rationale": "Discovered by CLI/configuration/glob rather than imported by an application module.",
+    "evidence": [
+      "web/package.json",
+      "web/.storybook/main.ts:4-7",
+      "cms/README.md:5"
+    ]
+  },
+  {
+    "path": "web/stories/Page.stories.ts",
+    "bytes": 1031,
+    "sha256": "3960e0351e531fb64e3b0c39aa18ffa387861302d959871d4f76da6a28ca8c89",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "keep-framework-entrypoint",
+    "rationale": "Discovered by CLI/configuration/glob rather than imported by an application module.",
+    "evidence": [
+      "web/package.json",
+      "web/.storybook/main.ts:4-7",
+      "cms/README.md:5"
+    ]
+  },
+  {
+    "path": "web/stories/SustainabilityUi.stories.tsx",
+    "bytes": 1208,
+    "sha256": "b40f2f8e3732c8b65d390a29d1880468c1a235366410c80f03ed4472cddb4ec1",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "keep-framework-entrypoint",
+    "rationale": "Discovered by CLI/configuration/glob rather than imported by an application module.",
+    "evidence": [
+      "web/package.json",
+      "web/.storybook/main.ts:4-7",
+      "cms/README.md:5"
+    ]
+  },
+  {
+    "path": "web/stories/WiGO/GameScoreLineChart.stories.tsx",
+    "bytes": 637,
+    "sha256": "8ad26993ee76570a147c06af45fec2e55f54f910975e603c2c5ec8ca5ae048e0",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "keep-framework-entrypoint",
+    "rationale": "Discovered by CLI/configuration/glob rather than imported by an application module.",
+    "evidence": [
+      "web/package.json",
+      "web/.storybook/main.ts:4-7",
+      "cms/README.md:5"
+    ]
+  },
+  {
+    "path": "web/utils/scrollTop.ts",
+    "bytes": 254,
+    "sha256": "1fd7ac36b34be7a7986addf419f2b42844dd90f67b6d424a15d6ba7bec30324b",
+    "tracked": true,
+    "role": "no-static-import-owner-review",
+    "disposition": "source-retirement-candidate-needs-review",
+    "rationale": "No runtime import; Header contains its own current scroll behavior. Navbar hook retains a test mock; scroll helper has only historical inventory references.",
+    "evidence": [
+      "web/components/Layout/Header/Header.tsx:30-47",
+      "web/__tests__/components/Layout/Header.test.tsx:54",
+      "focused-dead-code-references.json"
+    ]
+  }
+]

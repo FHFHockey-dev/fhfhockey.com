@@ -1,0 +1,37 @@
+{
+  "method": "Library prepare_materialize signed GET via system curl into consuming Mac workspace",
+  "files": [
+    {
+      "library_file_id": "libfile_c90b300a29f08191bc80ff760e7f9749",
+      "file_id": "file_000000008ba88209a098c6562a622986",
+      "file_name": "FORGE-amended-research-plan-2026-10-15.md",
+      "current_version_number": 0,
+      "size_bytes": 32591,
+      "local_path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-amended-research-plan-2026-10-15.md",
+      "sha256": "1fc17a7b68f13a86659c25bb2227befec156d0aef07a95cd51ac3f987a6ef76b",
+      "readable_utf8": true,
+      "xattrs": [
+        {
+          "name": "user.library-file-version",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "library_file_id": "libfile_71cb2af1ab748191ab3ae40c284951de",
+      "file_id": "file_00000000952881f5bc9a60de5870fb26",
+      "file_name": "FORGE-working-checklist-2026-10-15.md",
+      "current_version_number": 0,
+      "size_bytes": 5443,
+      "local_path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-working-checklist-2026-10-15.md",
+      "sha256": "21426ff08b948b0c293d317d8a4863fc26dc41bc7bb987e3d5604740f41d0e91",
+      "readable_utf8": true,
+      "xattrs": [
+        {
+          "name": "user.library-file-version",
+          "value": "0"
+        }
+      ]
+    }
+  ]
+}

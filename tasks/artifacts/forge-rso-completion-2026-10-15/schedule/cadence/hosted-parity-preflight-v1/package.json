@@ -1,0 +1,61 @@
+{
+  "project_id": "fyhftlxokyjtpndbkfse",
+  "status": "prepared_not_executed",
+  "maximumCalls": 5,
+  "concurrency": 1,
+  "retries": 0,
+  "statementTimeoutSeconds": 8,
+  "elapsedStopSeconds": 60,
+  "maximumReturnedRows": 549,
+  "maximumResponseBytes": 8388608,
+  "maximumAggregateResponseBytes": 16777216,
+  "targetScope": "Native cadence catalog parity and bounded queue operational metadata only; no source/forecast/outcome bodies",
+  "queries": [
+    {
+      "name": "table_shape_constraints_indexes",
+      "maximumRows": 201,
+      "allowedRows": 200,
+      "sentinels": "Stop if row count>200 or any over_definition_byte_limit=true; no truncation acceptance",
+      "query": "BEGIN TRANSACTION READ ONLY;\nSET LOCAL statement_timeout = '8s';\nWITH wanted(schema_name,table_name) AS (VALUES ('public','forge_game_update_queue'),('public','forge_runs'),('public','forge_game_revisions'),('public','games')), rel AS (\n SELECT w.*,c.oid,c.relkind,c.relowner,c.relrowsecurity,c.relforcerowsecurity\n FROM wanted w LEFT JOIN pg_catalog.pg_namespace n ON n.nspname=w.schema_name\n LEFT JOIN pg_catalog.pg_class c ON c.relnamespace=n.oid AND c.relname=w.table_name\n), rows AS (\n SELECT 'relation'::text kind,schema_name,table_name,'_'::text item,\n jsonb_build_object('exists',oid IS NOT NULL,'kind',relkind,'owner',pg_catalog.pg_get_userbyid(relowner),'rls',relrowsecurity,'forceRls',relforcerowsecurity) detail FROM rel\n UNION ALL\n SELECT 'column',r.schema_name,r.table_name,a.attname::text,jsonb_build_object('ordinal',a.attnum,'type',pg_catalog.format_type(a.atttypid,a.atttypmod),'notNull',a.attnotnull,'default',pg_catalog.pg_get_expr(d.adbin,d.adrelid))\n FROM rel r JOIN pg_catalog.pg_attribute a ON a.attrelid=r.oid AND a.attnum>0 AND NOT a.attisdropped\n LEFT JOIN pg_catalog.pg_attrdef d ON d.adrelid=r.oid AND d.adnum=a.attnum\n WHERE r.table_name='forge_game_update_queue'\n OR r.table_name='games' AND a.attname IN ('id','startTime','homeTeamId','awayTeamId')\n OR r.table_name='forge_runs' AND a.attname IN ('run_id','status','updated_at','metrics')\n OR r.table_name='forge_game_revisions' AND a.attname IN ('id','game_id','run_id','decision_as_of','published_at')\n UNION ALL\n SELECT 'constraint',r.schema_name,r.table_name,c.conname::text,jsonb_build_object('type',c.contype,'definition',pg_catalog.pg_get_constraintdef(c.oid,true)) FROM rel r JOIN pg_catalog.pg_constraint c ON c.conrelid=r.oid\n UNION ALL\n SELECT 'index',r.schema_name,r.table_name,i.indexrelid::regclass::text,jsonb_build_object('unique',i.indisunique,'valid',i.indisvalid,'definition',pg_catalog.pg_get_indexdef(i.indexrelid)) FROM rel r JOIN pg_catalog.pg_index i ON i.indrelid=r.oid\n) SELECT * FROM rows ORDER BY schema_name,table_name,kind,item LIMIT 201;\nCOMMIT;\n",
+      "exactArgsPath": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-rso-completion-2026-10-15/schedule/cadence/hosted-parity-preflight-v1/1-query-args.json",
+      "exactArgsSHA256": "2939b7f9f3a4b7454a97e43674a75c89e1e01091406d00b2ccdbaa81b4bbe00b"
+    },
+    {
+      "name": "function_definitions_and_name_conflicts",
+      "maximumRows": 17,
+      "allowedRows": 16,
+      "sentinels": "Stop if row count>16 or any over_definition_byte_limit=true; no truncation acceptance",
+      "query": "BEGIN TRANSACTION READ ONLY;\nSET LOCAL statement_timeout = '8s';\nWITH wanted(schema_name,function_name) AS (VALUES ('public','claim_starter_board_jobs'),('public','finish_starter_board_job'),('fhfh_internal','enqueue_starter_board_game'),('fhfh_internal','enqueue_starter_board_observation'),('fhfh_internal','enqueue_starter_board_resolution'),('public','enqueue_forge_cadence_slot'),('fhfh_internal','advance_forge_cadence_slots'))\nSELECT w.schema_name,w.function_name,p.oid IS NOT NULL AS exists,\n CASE WHEN p.oid IS NOT NULL THEN pg_catalog.pg_get_function_identity_arguments(p.oid) END AS identity_arguments,\n CASE WHEN p.oid IS NOT NULL THEN pg_catalog.pg_get_function_result(p.oid) END AS result_type,\n pg_catalog.pg_get_userbyid(p.proowner) AS owner,p.prosecdef AS security_definer,p.provolatile AS volatility,p.proconfig AS settings,p.proacl::text AS acl,\n CASE WHEN p.oid IS NOT NULL THEN octet_length(pg_catalog.pg_get_functiondef(p.oid))>65536 ELSE false END AS over_definition_byte_limit,\n CASE WHEN p.oid IS NOT NULL AND octet_length(pg_catalog.pg_get_functiondef(p.oid))<=65536 THEN pg_catalog.pg_get_functiondef(p.oid) END AS definition\nFROM wanted w LEFT JOIN pg_catalog.pg_namespace n ON n.nspname=w.schema_name\nLEFT JOIN pg_catalog.pg_proc p ON p.pronamespace=n.oid AND p.proname=w.function_name AND p.prokind IN ('f','p')\nORDER BY w.schema_name,w.function_name,identity_arguments LIMIT 17;\nCOMMIT;\n",
+      "exactArgsPath": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-rso-completion-2026-10-15/schedule/cadence/hosted-parity-preflight-v1/2-query-args.json",
+      "exactArgsSHA256": "a04f935ff1a04d5c46b5064e7a2aab83994a0be2992e234980af5135f7f71be4"
+    },
+    {
+      "name": "table_schema_rpc_grants_and_rls",
+      "maximumRows": 201,
+      "allowedRows": 200,
+      "sentinels": "Stop if row count>200 or any over_definition_byte_limit=true; no truncation acceptance",
+      "query": "BEGIN TRANSACTION READ ONLY;\nSET LOCAL statement_timeout = '8s';\nWITH wanted(schema_name,table_name) AS (VALUES ('public','forge_game_update_queue'),('public','forge_runs'),('public','forge_game_revisions'),('public','games')), rows AS (\n SELECT 'table_acl'::text kind,w.schema_name,w.table_name AS object_name,\n jsonb_build_object('acl',c.relacl,'owner',pg_catalog.pg_get_userbyid(c.relowner)) detail\n FROM wanted w LEFT JOIN pg_catalog.pg_namespace n ON n.nspname=w.schema_name LEFT JOIN pg_catalog.pg_class c ON c.relnamespace=n.oid AND c.relname=w.table_name\n UNION ALL\n SELECT 'schema_acl',n.nspname,'_',jsonb_build_object('acl',n.nspacl,'owner',pg_catalog.pg_get_userbyid(n.nspowner)) FROM pg_catalog.pg_namespace n WHERE n.nspname IN ('public','fhfh_internal')\n UNION ALL\n SELECT 'policy',p.schemaname,p.tablename||':'||p.policyname,jsonb_build_object('roles',p.roles,'command',p.cmd,'permissive',p.permissive,'using',p.qual,'check',p.with_check)\n FROM pg_catalog.pg_policies p JOIN wanted w ON w.schema_name=p.schemaname AND w.table_name=p.tablename\n UNION ALL\n SELECT 'effective_schema_acl',n.nspname,r.rolname,jsonb_build_object('usage',pg_catalog.has_schema_privilege(r.oid,n.oid,'USAGE'),'create',pg_catalog.has_schema_privilege(r.oid,n.oid,'CREATE')) FROM pg_catalog.pg_namespace n CROSS JOIN pg_catalog.pg_roles r WHERE n.nspname IN ('public','fhfh_internal') AND r.rolname IN ('anon','authenticated','service_role')\n UNION ALL\n SELECT 'effective_table_acl',w.schema_name,w.table_name||':'||r.rolname,jsonb_build_object('select',pg_catalog.has_table_privilege(r.oid,c.oid,'SELECT'),'insert',pg_catalog.has_table_privilege(r.oid,c.oid,'INSERT'),'update',pg_catalog.has_table_privilege(r.oid,c.oid,'UPDATE'),'delete',pg_catalog.has_table_privilege(r.oid,c.oid,'DELETE'))\n FROM wanted w JOIN pg_catalog.pg_namespace n ON n.nspname=w.schema_name JOIN pg_catalog.pg_class c ON c.relnamespace=n.oid AND c.relname=w.table_name CROSS JOIN pg_catalog.pg_roles r WHERE r.rolname IN ('anon','authenticated','service_role')\n UNION ALL\n SELECT 'effective_function_acl',n.nspname,p.proname||'('||pg_catalog.pg_get_function_identity_arguments(p.oid)||'):'||r.rolname,jsonb_build_object('execute',pg_catalog.has_function_privilege(r.oid,p.oid,'EXECUTE'))\n FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace JOIN (VALUES ('public','claim_starter_board_jobs'),('public','finish_starter_board_job'),('fhfh_internal','enqueue_starter_board_game'),('fhfh_internal','enqueue_starter_board_observation'),('fhfh_internal','enqueue_starter_board_resolution'),('public','enqueue_forge_cadence_slot'),('fhfh_internal','advance_forge_cadence_slots')) AS f(schema_name,function_name) ON f.schema_name=n.nspname AND f.function_name=p.proname CROSS JOIN pg_catalog.pg_roles r WHERE r.rolname IN ('anon','authenticated','service_role')\n) SELECT * FROM rows ORDER BY kind,schema_name,object_name LIMIT 201;\nCOMMIT;\n",
+      "exactArgsPath": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-rso-completion-2026-10-15/schedule/cadence/hosted-parity-preflight-v1/3-query-args.json",
+      "exactArgsSHA256": "62ee5ffb767599e9ec2c7da13683da530d10222e5f6cd788d67f1ce538521127"
+    },
+    {
+      "name": "bounded_queue_operational_metadata",
+      "maximumRows": 65,
+      "allowedRows": 64,
+      "sentinels": "Stop if row count>64 or any over_definition_byte_limit=true; no truncation acceptance",
+      "query": "BEGIN TRANSACTION READ ONLY;\nSET LOCAL statement_timeout = '8s';\nSELECT q.game_id,q.version,q.claimed_version,q.status,q.first_accepted_at,q.last_accepted_at,q.source_published_at,q.received_at,q.not_before,q.lease_owner,q.lease_expires_at,q.dispatched_at,q.completed_at,q.active_run_id,q.published_run_id,q.attempt_count,\n g.\"startTime\" AS scheduled_start_at,\n q.lease_expires_at>statement_timestamp() AS lease_unexpired,\n (SELECT r.status FROM public.forge_runs r WHERE r.run_id=q.active_run_id) AS active_run_status,\n EXISTS(SELECT 1 FROM public.forge_game_revisions r WHERE r.game_id=q.game_id AND r.run_id=q.active_run_id) AS active_run_has_revision,\n EXISTS(SELECT 1 FROM public.forge_game_revisions r WHERE r.game_id=q.game_id AND r.run_id=q.published_run_id) AS published_run_has_revision,\n statement_timestamp() AS observed_at\nFROM public.forge_game_update_queue q LEFT JOIN public.games g ON g.id=q.game_id\nWHERE q.status='running' OR q.status IN ('pending','failed') AND g.\"startTime\">statement_timestamp()\nORDER BY CASE WHEN q.status='running' THEN 0 ELSE 1 END,q.first_accepted_at,q.game_id LIMIT 65;\nCOMMIT;\n",
+      "exactArgsPath": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-rso-completion-2026-10-15/schedule/cadence/hosted-parity-preflight-v1/4-query-args.json",
+      "exactArgsSHA256": "0424431b5d991499a327b549c63ea6d2375209c2020cc028771b4f8334345c01"
+    },
+    {
+      "name": "exact_queue_upstream_trigger_definitions",
+      "maximumRows": 65,
+      "allowedRows": 64,
+      "sentinels": "Stop if row count>64 or any over_definition_byte_limit=true; no truncation acceptance",
+      "query": "BEGIN TRANSACTION READ ONLY;\nSET LOCAL statement_timeout = '8s';\nWITH target(schema_name,table_name) AS (VALUES ('public','forge_game_update_queue'),('public','forge_runs'),('public','forge_game_revisions'),('public','player_forecast_lineup_snapshots'),('public','player_forecast_goalie_start_observations'),('public','player_forecast_conflict_resolutions'))\nSELECT n.nspname AS schema_name,c.relname AS table_name,t.tgname,t.tgenabled,pg_catalog.pg_get_triggerdef(t.oid,true) AS trigger_definition,\n fn.nspname AS function_schema,p.proname AS function_name,pg_catalog.pg_get_function_identity_arguments(p.oid) AS function_arguments,p.prosecdef AS security_definer,pg_catalog.pg_get_userbyid(p.proowner) AS function_owner,p.proconfig AS settings,\n octet_length(pg_catalog.pg_get_functiondef(p.oid))>65536 AS over_definition_byte_limit,\n CASE WHEN octet_length(pg_catalog.pg_get_functiondef(p.oid))<=65536 THEN pg_catalog.pg_get_functiondef(p.oid) END AS function_definition\nFROM target x JOIN pg_catalog.pg_namespace n ON n.nspname=x.schema_name JOIN pg_catalog.pg_class c ON c.relnamespace=n.oid AND c.relname=x.table_name\nJOIN pg_catalog.pg_trigger t ON t.tgrelid=c.oid AND NOT t.tgisinternal JOIN pg_catalog.pg_proc p ON p.oid=t.tgfoid JOIN pg_catalog.pg_namespace fn ON fn.oid=p.pronamespace\nORDER BY n.nspname,c.relname,t.tgname LIMIT 65;\nCOMMIT;\n",
+      "exactArgsPath": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-rso-completion-2026-10-15/schedule/cadence/hosted-parity-preflight-v1/5-query-args.json",
+      "exactArgsSHA256": "631153b0c591e460710d85f625c82ab7db611b7752c80dae262eb0c5168c246e"
+    }
+  ],
+  "execution": null
+}

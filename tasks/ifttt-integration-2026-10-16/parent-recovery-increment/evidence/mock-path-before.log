@@ -1,0 +1,60 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-parent-persistence.test.ts --config ../tasks/ifttt-integration-2026-10-16/durable-occurrence-increment/vitest.config.mjs
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-parent-persistence.test.ts (5 tests | 5 failed) 943ms
+   × original legacy parent contracts through the actual public producer > CR037 rejects separate raw_payload forced same-parent-key conflict 48ms
+     → No production consumer RPC is allowed in this fixture
+   × original legacy parent contracts through the actual public producer > CR037 rejects separate provenanceHash forced same-parent-key conflict 34ms
+     → No production consumer RPC is allowed in this fixture
+   × original legacy parent contracts through the actual public producer > CR037 rejects separate team_or_game_scope forced same-parent-key conflict 33ms
+     → No production consumer RPC is allowed in this fixture
+   × original legacy parent contracts through the actual public producer > CR037 rejects separate interpretation forced same-parent-key conflict 26ms
+     → No production consumer RPC is allowed in this fixture
+   × original legacy parent contracts through the actual public producer > CR041 reads the exact committed parent before any child after lost acknowledgement and fresh retry 42ms
+     → No production consumer RPC is allowed in this fixture
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-parent-persistence.test.ts > original legacy parent contracts through the actual public producer > CR037 rejects separate raw_payload forced same-parent-key conflict
+ FAIL  ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-parent-persistence.test.ts > original legacy parent contracts through the actual public producer > CR037 rejects separate provenanceHash forced same-parent-key conflict
+ FAIL  ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-parent-persistence.test.ts > original legacy parent contracts through the actual public producer > CR037 rejects separate team_or_game_scope forced same-parent-key conflict
+ FAIL  ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-parent-persistence.test.ts > original legacy parent contracts through the actual public producer > CR037 rejects separate interpretation forced same-parent-key conflict
+Error: No production consumer RPC is allowed in this fixture
+ ❯ Object.rpc ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-parent-persistence.test.ts:85:22
+     83|           }};return query;
+     84|       }};
+     85|     },rpc:()=>{throw new Error("No production consumer RPC is allowed …
+       |                      ^
+     86|     consumer.capture=async({rows}:any)=>{
+     87|       calls++;trace.push("consumer_fixture");expect(trace.lastIndexOf(…
+ ❯ capturePlayerForecastSourceRows lib/player-forecasts/sourceObservations.ts:456:77
+ ❯ Module.persistTweetProjectionReports lib/sources/tweetProjectionStorage.ts:257:13
+ ❯ ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-parent-persistence.test.ts:121:67
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-parent-persistence.test.ts > original legacy parent contracts through the actual public producer > CR041 reads the exact committed parent before any child after lost acknowledgement and fresh retry
+Error: No production consumer RPC is allowed in this fixture
+ ❯ Object.rpc ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-parent-persistence.test.ts:85:22
+     83|           }};return query;
+     84|       }};
+     85|     },rpc:()=>{throw new Error("No production consumer RPC is allowed …
+       |                      ^
+     86|     consumer.capture=async({rows}:any)=>{
+     87|       calls++;trace.push("consumer_fixture");expect(trace.lastIndexOf(…
+ ❯ capturePlayerForecastSourceRows lib/player-forecasts/sourceObservations.ts:456:77
+ ❯ Module.persistTweetProjectionReports lib/sources/tweetProjectionStorage.ts:257:13
+ ❯ ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-parent-persistence.test.ts:136:69
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed (5)
+   Start at  00:49:02
+   Duration  1.46s (transform 173ms, setup 16ms, collect 310ms, tests 943ms, environment 0ms, prepare 34ms)
+

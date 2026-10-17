@@ -1,0 +1,230 @@
+
+> web@0.1.0 test
+> vitest __tests__/pages/api/v1/db/update-line-sources.test.ts __tests__/pages/api/v1/db/update-lines-ccc.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ __tests__/pages/api/v1/db/update-lines-ccc.test.ts (10 tests) 40ms
+ ❯ __tests__/pages/api/v1/db/update-line-sources.test.ts (31 tests | 7 failed) 149ms
+   ✓ private Starter Board release operations > registers a server-hashed frozen policy without activating it 7ms
+   ✓ private Starter Board release operations > publishes a matching review as evidence without promoting a model or intervals 2ms
+   ✓ private Starter Board release operations > returns a no-store bounded report with honest empty evidence 0ms
+   ✓ private Starter Board release operations > rejects unbounded windows and does not disclose database errors 0ms
+   ✓ private Starter Board release operations > records render time separately while retaining legacy receipt compatibility 0ms
+   ✓ /api/v1/db/update-line-sources > avoids empty-queue roster work while retaining scheduled reconciliation and audit 2ms
+   ✓ /api/v1/db/update-line-sources > stops a closed prospective intake budget before roster or enrichment work 0ms
+   ✓ /api/v1/db/update-line-sources > isolates shadow capture before snapshot/forecast/line/review publishers even when their flags are enabled 19ms
+   ✓ /api/v1/db/update-line-sources > leaves a concurrent arrival pending for the next unchanged scheduler cycle 6ms
+   ✓ /api/v1/db/update-line-sources > audits queue-read failures rather than treating them as empty 0ms
+   × /api/v1/db/update-line-sources > retains a bounded safe receipt for complete schedule reconciliation rejection in the failed response and audit 11ms
+     → expected { success: false, …(2) } to match object { success: false, …(2) }
+(5 matching properties omitted from actual)
+   × /api/v1/db/update-line-sources > distinguishes an incomplete canonical_games schedule read without inventing unknown counts 5ms
+     → expected { success: false, …(2) } to match object { success: false, …(1) }
+(6 matching properties omitted from actual)
+   × /api/v1/db/update-line-sources > distinguishes an incomplete team_game_status schedule read without inventing unknown counts 3ms
+     → expected { success: false, …(2) } to match object { success: false, …(1) }
+(6 matching properties omitted from actual)
+   × /api/v1/db/update-line-sources > keeps generic errors on the existing failure path without serializing an arbitrary schedule receipt 3ms
+     → expected { success: false, …(2) } to match object { success: false, …(1) }
+(5 matching properties omitted from actual)
+   ✓ /api/v1/db/update-line-sources > leaves events pending when required immutable evidence capture fails 5ms
+   × /api/v1/db/update-line-sources > replays the frozen 11 regression and 24 candidate records equivalently through GDL and CCC with mocked enrichment and storage 12ms
+     → gdl:2104668922113052956:{"success":false,"error":"supabase.from(...).select is not a function","timing":{"startedAt":"2026-10-01T03:59:59.000Z","endedAt":"2026-10-01T03:59:59.000Z","durationMs":0,"timer":"00:00"}}: expected 500 to be 200 // Object.is equality
+   × /api/v1/db/update-line-sources > retains both validated goalie teams and finalizes one raw receipt through gdl 5ms
+     → {"success":false,"error":"supabase.from(...).select is not a function","timing":{"startedAt":"2026-10-16T07:29:37.411Z","endedAt":"2026-10-16T07:29:37.416Z","durationMs":5,"timer":"00:00"}}: expected 500 to be 200 // Object.is equality
+   × /api/v1/db/update-line-sources > retains both validated goalie teams and finalizes one raw receipt through ccc 2ms
+     → {"success":false,"error":"supabase.from(...).select is not a function","timing":{"startedAt":"2026-10-16T07:29:37.416Z","endedAt":"2026-10-16T07:29:37.418Z","durationMs":2,"timer":"00:00"}}: expected 500 to be 200 // Object.is equality
+   ✓ /api/v1/db/update-line-sources > limits automatic retries to receipts on the Eastern slate, including UTC midnight 2ms
+   ✓ /api/v1/db/update-line-sources > withholds game applicability for null / #Habs lines
+Caufield - Suzuki - Slafkovsky 1ms
+   ✓ /api/v1/db/update-line-sources > withholds game applicability for 2026-04-28T23:00:00Z / #Habs lines
+Caufield - Suzuki - Slafkovsky 1ms
+   ✓ /api/v1/db/update-line-sources > withholds game applicability for 2026-04-30T02:00:00Z / #Habs lines tomorrow
+Caufield - Suzuki - Slafkovsky 1ms
+   ✓ /api/v1/db/update-line-sources > processes GDL goalie, lines, news, non-NHL, and ambiguous events by source key 12ms
+   ✓ /api/v1/db/update-line-sources > prefixes capture keys so duplicate tweet ids from different sources do not collide 2ms
+   ✓ /api/v1/db/update-line-sources > uses the quoted report date and text for 2049560345441206272 8ms
+   ✓ /api/v1/db/update-line-sources > uses the quoted report date and text for 2047808467969220779 3ms
+   ✓ /api/v1/db/update-line-sources > uses the quoted report date and text for 2049560345441206272 tomorrow 3ms
+   ✓ /api/v1/db/update-line-sources > loads rosters for accepted teams that are not on the requested date schedule 6ms
+   ✓ /api/v1/db/update-line-sources > uses beat-writer handles and NHL hashtag hints to avoid false ambiguous GDL rejections 19ms
+   ✓ /api/v1/db/update-line-sources > accepts Utah goalie tweets after second-pass roster loading when #TusksUp is the only team hint 3ms
+   ✓ /api/v1/db/update-line-sources > uses decisive roster-density fallback for short tweets with multiple same-team player hits 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  __tests__/pages/api/v1/db/update-line-sources.test.ts > /api/v1/db/update-line-sources > retains a bounded safe receipt for complete schedule reconciliation rejection in the failed response and audit
+AssertionError: expected { success: false, …(2) } to match object { success: false, …(2) }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "error": "Forecast schedule scope is incomplete or inconsistent",
+-   "scheduleRejection": {
+-     "checkedGames": 80,
+-     "discoveredGames": 80,
+-     "readStatus": "complete",
+-     "reasons": [
+-       "season_mismatch",
+-       "type_mismatch",
+-       "date_mismatch",
+-       "identity_conflict",
+-       "invalid_start",
+-       "start_time_mismatch",
+-       "invalid_receipt",
+-       "unknown_status",
+-       "missing_sides",
+-       "conflicting_versions",
+-       "conflicting_sides",
+-     ],
+-     "rejectedGameCount": 6,
+-     "rejectedGameSampleTruncated": true,
+-     "scope": {
+-       "fromDate": "2026-10-10",
+-       "teamId": 5,
+-       "throughDate": null,
+-     },
+-     "stage": "reconciliation",
+-     "unreadGames": 0,
+-     "validationStatus": "rejected",
+-   },
++   "error": "supabase.from(...).select is not a function",
+    "success": false,
+  }
+
+ ❯ __tests__/pages/api/v1/db/update-line-sources.test.ts:653:22
+    651|     const error = Object.assign(new ForecastScheduleError(receipt), { …
+    652|     const { res, audit } = await rejectDuringProjection(error);
+    653|     expect(res.body).toMatchObject({ success: false, error: error.mess…
+       |                      ^
+    654|       readStatus: "complete", validationStatus: "rejected", stage: "re…
+    655|       discoveredGames: 80, checkedGames: 80, unreadGames: 0, reasons, …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  __tests__/pages/api/v1/db/update-line-sources.test.ts > /api/v1/db/update-line-sources > distinguishes an incomplete canonical_games schedule read without inventing unknown counts
+ FAIL  __tests__/pages/api/v1/db/update-line-sources.test.ts > /api/v1/db/update-line-sources > distinguishes an incomplete team_game_status schedule read without inventing unknown counts
+AssertionError: expected { success: false, …(2) } to match object { success: false, …(1) }
+(6 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "scheduleRejection": {
+-     "checkedGames": 0,
+-     "discoveredGames": null,
+-     "readStatus": "incomplete",
+-     "reasons": [
+-       "read_deadline",
+-     ],
+-     "rejectedGameCount": 0,
+-     "rejectedGameSampleTruncated": false,
+-     "rejectedGames": [],
+-     "scope": {
+-       "fromDate": "2026-10-10",
+-       "teamId": 5,
+-       "throughDate": null,
+-     },
+-     "stage": "canonical_games",
+-     "unreadGames": null,
+-     "validationStatus": "rejected",
+-   },
+    "success": false,
+  }
+
+ ❯ __tests__/pages/api/v1/db/update-line-sources.test.ts:669:22
+    667|       reasons: [stage === "canonical_games" ? "read_deadline" : "incom…
+    668|     const { res } = await rejectDuringProjection(new ForecastScheduleE…
+    669|     expect(res.body).toMatchObject({ success: false, scheduleRejection…
+       |                      ^
+    670|       ...receipt, rejectedGameCount: 0, rejectedGameSampleTruncated: f…
+    671|     } });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  __tests__/pages/api/v1/db/update-line-sources.test.ts > /api/v1/db/update-line-sources > keeps generic errors on the existing failure path without serializing an arbitrary schedule receipt
+AssertionError: expected { success: false, …(2) } to match object { success: false, …(1) }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "error": "Projection temporarily unavailable",
++   "error": "supabase.from(...).select is not a function",
+    "success": false,
+  }
+
+ ❯ __tests__/pages/api/v1/db/update-line-sources.test.ts:678:22
+    676|     });
+    677|     const { res, audit } = await rejectDuringProjection(error);
+    678|     expect(res.body).toMatchObject({ success: false, error: "Projectio…
+       |                      ^
+    679|     expect(res.body.scheduleRejection).toBeUndefined();
+    680|     expect(JSON.stringify(res.body)).not.toContain("PRIVATE_SENTINEL");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  __tests__/pages/api/v1/db/update-line-sources.test.ts > /api/v1/db/update-line-sources > replays the frozen 11 regression and 24 candidate records equivalently through GDL and CCC with mocked enrichment and storage
+AssertionError: gdl:2104668922113052956:{"success":false,"error":"supabase.from(...).select is not a function","timing":{"startedAt":"2026-10-01T03:59:59.000Z","endedAt":"2026-10-01T03:59:59.000Z","durationMs":0,"timer":"00:00"}}: expected 500 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 500
+
+ ❯ __tests__/pages/api/v1/db/update-line-sources.test.ts:778:92
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  __tests__/pages/api/v1/db/update-line-sources.test.ts > /api/v1/db/update-line-sources > retains both validated goalie teams and finalizes one raw receipt through gdl
+AssertionError: {"success":false,"error":"supabase.from(...).select is not a function","timing":{"startedAt":"2026-10-16T07:29:37.411Z","endedAt":"2026-10-16T07:29:37.416Z","durationMs":5,"timer":"00:00"}}: expected 500 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 500
+
+ ❯ __tests__/pages/api/v1/db/update-line-sources.test.ts:846:54
+    844|     const res = createMockRes();
+    845|     await (path === "gdl" ? handler : cccHandler)(createMockReq({ quer…
+    846|     expect(res.statusCode, JSON.stringify(res.body)).toBe(200);
+       |                                                      ^
+    847|     const rows = getUpsertedRows(fixture.lineSourceSnapshotsUpsertMock…
+    848|     expect(rows).toHaveLength(2);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+ FAIL  __tests__/pages/api/v1/db/update-line-sources.test.ts > /api/v1/db/update-line-sources > retains both validated goalie teams and finalizes one raw receipt through ccc
+AssertionError: {"success":false,"error":"supabase.from(...).select is not a function","timing":{"startedAt":"2026-10-16T07:29:37.416Z","endedAt":"2026-10-16T07:29:37.418Z","durationMs":2,"timer":"00:00"}}: expected 500 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 500
+
+ ❯ __tests__/pages/api/v1/db/update-line-sources.test.ts:846:54
+    844|     const res = createMockRes();
+    845|     await (path === "gdl" ? handler : cccHandler)(createMockReq({ quer…
+    846|     expect(res.statusCode, JSON.stringify(res.body)).toBe(200);
+       |                                                      ^
+    847|     const rows = getUpsertedRows(fixture.lineSourceSnapshotsUpsertMock…
+    848|     expect(rows).toHaveLength(2);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  7 failed | 34 passed (41)
+   Start at  02:29:36
+   Duration  791ms (transform 337ms, setup 5ms, collect 844ms, tests 189ms, environment 0ms, prepare 72ms)
+

@@ -1,0 +1,18 @@
+
+> web@0.1.0 test
+> vitest --run hooks/useYahooEligibility.test.tsx __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx -t candidate catalogue|stored Yahoo eligibility --reporter=dot
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:6341) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:6342) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+·--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------··
+
+ Test Files  2 passed (2)
+      Tests  3 passed | 200 skipped (203)
+   Start at  17:30:23
+   Duration  1.30s (transform 490ms, setup 6ms, collect 893ms, tests 258ms, environment 397ms, prepare 68ms)
+

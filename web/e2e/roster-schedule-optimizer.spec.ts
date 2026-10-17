@@ -1562,6 +1562,57 @@ test("candidate worker ranks the complete population without blocking filters an
   await page.screenshot({ path: testInfo.outputPath("rso-worker-zero-agp.png"), fullPage: true });
 });
 
+test("Audit1 native candidate Worker finds complete swaps before any plan is selected", async ({ page }, testInfo) => {
+  await page.route("**/api/**", route => route.request().url().includes("/roster-schedule-optimizer/")
+    ? route.fallback() : route.fulfill({ json: {} }));
+  await page.addInitScript(() => {
+    const NativeWorker = window.Worker;
+    (window as any).__auditCandidateResults = [];
+    window.Worker = class extends NativeWorker {
+      constructor(url: string | URL, options?: WorkerOptions) {
+        super(url, options);
+        this.addEventListener("message", event => {
+          if (event.data.metrics) (window as any).__auditCandidateResults.push(event.data.metrics);
+        });
+      }
+    };
+  });
+  const owned = [fixturePlayer(1, "Owned Strong", "NJD"), fixturePlayer(2, "Owned Second", "NJD"), fixturePlayer(3, "Owned Weak", "NJD")];
+  const candidates = Array.from({ length: 41 }, (_, index) => fixturePlayer(100 + index,
+    index === 40 ? "Strongest Last Candidate" : `Audit Candidate ${index}`, "NJD"));
+  const players = [...owned, ...candidates], game = fixtureGame("audit-native-game", 5, "NJD");
+  const forecasts = players.map((member, index) => fixtureForecast(member, game,
+    [100, 90, 1][index] ?? (index === 43 ? 1000 : 10)));
+  const workspace = fixtureWorkspace(players, { ...fixtureRules, rosterSlots: { C: 3, BN: 0 } });
+  workspace.roster = owned.map(member => ({ playerId: member.id, position: "active" }));
+  workspace.context.endDate = date(5);
+  workspace.intent.steps = [];
+  await seedWorkspace(page, workspace);
+  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true,
+    data: { players, games: [game], forecasts, evidence: { schedule: { source: "complete synthetic Audit1 universe",
+      asOf: workspace.context.asOf, seasonId: 20262027, completeness: "complete", limitations: [] } } } } }));
+  await page.goto("/roster-schedule-optimizer");
+  await expect.poll(() => page.evaluate(() => (window as any).__auditCandidateResults.length)).toBeGreaterThan(0);
+  const metrics = await page.evaluate(() => (window as any).__auditCandidateResults.at(-1));
+  expect(metrics.baseline.projectedPoints).toBe(191);
+  expect(metrics.search).toMatchObject({ candidates: 40, eligibleCandidates: 41, complete: false });
+  expect(metrics.search.evaluated).toBeLessThanOrEqual(160);
+  const strongest = metrics.candidates.find((candidate: any) => candidate.playerId === "fhfh:140");
+  expect(strongest.plans.some((plan: any) => plan.netPoints === 999 && plan.steps[0].dropPlayerId === "fhfh:3")).toBe(true);
+  const card = page.locator('[data-rso-candidate-id="fhfh:140"]');
+  await expect(card).toContainText("Net points +999");
+  await expect(card).toContainText("Owned Weak");
+  await expect(card.getByRole("button", { name: "Select compared plan" })).toBeDisabled();
+  await page.getByText("League rules and scoring", { exact: true }).click();
+  await page.getByRole("button", { name: "Confirm planning inputs" }).click();
+  await page.getByText("League rules and scoring", { exact: true }).click();
+  await expect(card.getByRole("button", { name: "Select compared plan" })).toBeEnabled();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).intent.steps)).toEqual([]);
+  await writeFile(testInfo.outputPath("audit1-native-worker.json"), JSON.stringify({
+    scope: "Native browser Worker and served local UI; intercepted synthetic inputs, not genuine feed acceptance", metrics,
+  }, null, 2));
+});
+
 function compactWorkspace(count: number) {
   const positions = ["C", "C", "LW", "LW", "RW", "RW", "D", "D", "D", "D", "C", "LW", "G", "G"];
   const players = Array.from({ length: count === 19 ? 20 : count }, (_, index) => ({ ...fixturePlayer(index + 1, `Compact Surname${index + 1}`, "CAR"),

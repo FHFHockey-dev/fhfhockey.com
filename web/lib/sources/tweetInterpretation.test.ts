@@ -9,6 +9,128 @@ import { classifyInjuryEvent, extractInjuryTimeline, extractInjuryTimelines, ext
 import { assignmentsFor } from "../player-forecasts/sourceObservations";
 import { buildLinesCccSourceFromIftttEvent } from "./linesCccIngestion";
 import { reconcileAlias } from "./tweetAliasReconciliation";
+import { edmontonSectionRoster, edmontonSectionText, explicit11F7DText, seattleSectionRoster, seattleSectionText } from "../../__tests__/fixtures/lineupSectionFixtures";
+import claimContextCases from "./fixtures/claimContextCases.json";
+
+describe("reviewed critical corpus extraction gaps", () => {
+  const fixture = (id: string) => claimContextCases.cases.find(item => item.id === id)!;
+  const events = (id: string) => extractTweetPlayerEvents({ ...fixture(id), claimAware: true });
+  it("retains the exact three source hashes as development regression evidence", () => {
+    for (const item of claimContextCases.cases) expect(createHash("sha256").update(item.text).digest("hex")).toBe(item.text_sha256);
+  });
+  it("keeps legacy payload identities unchanged while the claim-aware rollout is off", () => {
+    expect(extractTweetPlayerEvents({ ...fixture("G003095"), claimAware: false })).toEqual([]);
+    expect(extractTweetPlayerEvents({ ...fixture("G003366"), claimAware: false })).toEqual([]);
+    expect(extractTweetPlayerEvents({ ...fixture("G005040"), claimAware: false })).toMatchObject([{ evidence: { start: 73, end: 126 } }]);
+    expect(extractTweetPlayerEvents({ ...fixture("G005040"), claimAware: false })[0]!).not.toHaveProperty("claimAnchor");
+  });
+  it("extracts G003095 as witnessed practice absence without inferring injury or game exclusion", () => {
+    expect(events("G003095")).toMatchObject([{ playerId: 8481641, kind: "participation", state: "observed", modality: "negated", observation: "practice", availability: "unknown" }]);
+    expect(events("G003095")[0]!.evidence.text).toContain("Don’t see Kiviranta");
+  });
+  it("preserves G003366's not-optimistic qualifier as uncertain availability, never OUT", () => {
+    const extracted = events("G003366");
+    expect(extracted.some(event => event.playerId === 8476923 && event.kind === "injury" && event.availability === "uncertain" && event.evidence.text.includes("not optimistic"))).toBe(true);
+    expect(extracted.some(event => event.availability === "out" || event.availability === "available")).toBe(false);
+  });
+  it("keeps G005040 UNKNOWN and retains the reviewed governing-without evidence span", () => {
+    expect(events("G005040")).toMatchObject([{ kind: "injury", state: "unknown", availability: "unknown", evidence: { start: 65, end: 126 } }]);
+    expect(events("G005040")[0]!.evidence.text).toBe(fixture("G005040").text.slice(65, 126));
+    const anchored = extractTweetPlayerEvents({ ...fixture("G005040"), includeClaimAnchors: true })[0]!;
+    expect(anchored.claimAnchor).toEqual({ subjectSpan: { start: 73, end: 85, text: "Jordan Staal" }, predicateSpan: { start: 65, end: 72, text: "without" } });
+  });
+});
+
+describe("source sections and positive role admission", () => {
+  const checkSpans = (text: string, result: ReturnType<typeof interpretTweetUnits>) => {
+    for (const unit of [...result.units, ...(result.excludedUnits ?? [])]) for (const span of unit.evidence) expect(text.slice(span.start, span.end)).toBe(span.text);
+    for (const issue of result.unresolved) expect(text.slice(issue.start, issue.end)).toBe(issue.text);
+  };
+  it("parses the supplied slash rows and keeps explicit extras out of active units", () => {
+    const result = interpretTweetUnits(seattleSectionText, seattleSectionRoster);
+    expect(completeEvenStrengthUnits(result)).toHaveLength(7);
+    expect(result.units.filter((unit) => unit.situation === "scratch").flatMap((unit) => unit.players.map((player) => player.playerId))).toEqual([2, 3]);
+    expect(result.units.filter((unit) => unit.situation === "goalie")).toEqual([]);
+    expect(result.relationships).toBeUndefined();
+    checkSpans(seattleSectionText, result);
+  });
+  it("does not let short forward extras shift defense ordinals or a lone defenseman become a goalie", () => {
+    const result = interpretTweetUnits(edmontonSectionText, edmontonSectionRoster);
+    expect(result.context).toBe("practice");
+    expect(completeEvenStrengthUnits(result)).toHaveLength(7);
+    expect(result.units.filter((unit) => unit.situation === "es_defense").map((unit) => [unit.number, unit.players.map((player) => player.name)])).toEqual([
+      [1, ["Fixture Ekholm", "Fixture Bouchard"]], [2, ["Fixture Shea", "Fixture Murphy"]], [3, ["Fixture Mukhamadullin", "Fixture Emberson"]],
+    ]);
+    expect(result.units.filter((unit) => unit.situation === "goalie").flatMap((unit) => unit.players.map((player) => player.name))).toEqual(["Fixture Levi", "Fixture Jarry"]);
+    expect(result.excludedUnits?.map((unit) => unit.players.map((player) => player.name))).toEqual([["Fixture Jones", "Fixture Hyman"], ["Fixture Walman"]]);
+    checkSpans(edmontonSectionText, result);
+  });
+  it("preserves the explicitly declared 11F-7D exception", () => {
+    const result = interpretTweetUnits(explicit11F7DText, edmontonSectionRoster);
+    expect(completeEvenStrengthUnits(result)).toHaveLength(8);
+    expect(result.units.filter((unit) => unit.situation === "es_forward").map((unit) => unit.players.length)).toEqual([3, 3, 3, 2]);
+    expect(result.units.filter((unit) => unit.situation === "es_defense").map((unit) => unit.players.length)).toEqual([2, 2, 2, 1]);
+    checkSpans(explicit11F7DText, result);
+  });
+  it.each(["unknown position", "conflicting team"])("reserves an invalid full source row's ordinal: %s", (condition) => {
+    const players = edmontonSectionRoster.map((player, index) => ({ ...player,
+      position: condition === "unknown position" && index === 0 ? null : player.position,
+      teamId: condition === "conflicting team" && index === 0 ? 30 : player.teamId }));
+    const result = interpretTweetUnits(edmontonSectionText, players);
+    expect(result.units.filter((unit) => unit.situation === "es_forward").map((unit) => [unit.number, unit.complete])).toEqual([[1, false], [2, true], [3, true], [4, true]]);
+    expect(result.unresolved.find((issue) => issue.text === "Podkolzin-McDavid-Draisaitl")?.number).toBe(1);
+    checkSpans(edmontonSectionText, result);
+  });
+  it.each(["Forwards:", "F1:"])("reserves a headed position contradiction's slot: %s", (heading) => {
+    const text = `${heading}\nEkholm-McDavid-Draisaitl\nHallander-Dickinson-Kapanen`;
+    const result = interpretTweetUnits(text, edmontonSectionRoster);
+    expect(result.units.map((unit) => [unit.number, unit.complete])).toEqual([[1, false], [2, true]]);
+    expect(result.unresolved[0]?.number).toBe(1);
+    checkSpans(text, result);
+  });
+  it.each(["pp", "pk"] as const)("interrupts %s assembly at an invalid fragment", (situation) => {
+    for (const position of [null, "G"]) {
+      const players = ["Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Zeta"].map((name, index) => ({
+        playerId: index + 1, fullName: name, lastName: name, teamId: 22,
+        position: index === 3 ? position : index < 3 ? "F" : "D" }));
+      const text = `${situation.toUpperCase()}1:\n${situation === "pp" ? "Alpha-Beta-Gamma" : "Alpha-Beta"}\nDelta\nEpsilon-Zeta`;
+      const result = interpretTweetUnits(text, players);
+      expect(result.units.map((unit) => [unit.situation, unit.number, unit.complete, unit.players.map((player) => player.playerId)])).toEqual([
+        [situation, 1, false, situation === "pp" ? [1, 2, 3] : [1, 2]],
+        [situation, 1, false, [4]], [situation, 1, false, [5, 6]],
+      ]);
+      expect(result.unresolved).toMatchObject([{ text: "Delta", situation, number: 1, reason: "invalid_extraction" }]);
+      checkSpans(text, result);
+    }
+  });
+  it.each(["missing positions", "missing identities", "conflicting team"])("withholds role admission for %s", (condition) => {
+    const players = condition === "missing identities" ? [] : edmontonSectionRoster.map((player, index) => ({ ...player, position: condition === "missing positions" ? null : player.position, teamId: condition === "conflicting team" && index === 0 ? 30 : player.teamId }));
+    const result = interpretTweetUnits(edmontonSectionText, players);
+    expect(completeEvenStrengthUnits(result)).toEqual([]);
+    expect(result.unresolved.length).toBeGreaterThan(0);
+    if (condition === "missing positions") expect(result.units.some((unit) => unit.complete)).toBe(false);
+    checkSpans(edmontonSectionText, result);
+  });
+  it("keeps explicit section labels authoritative and incomplete contradictions reviewable", () => {
+    const text = "Defense:\nJones-Hyman\n\nD1: Ekholm-Bouchard\nGoalies:\nWalman";
+    const result = interpretTweetUnits(text, edmontonSectionRoster);
+    expect(result.units.filter((unit) => unit.complete).map((unit) => unit.players.map((player) => player.name))).toEqual([["Fixture Ekholm", "Fixture Bouchard"]]);
+    expect(result.unresolved.map((issue) => issue.text)).toEqual(["Jones-Hyman", "Walman"]);
+    checkSpans(text, result);
+  });
+  it("retains a negated ice-absence observation without a game OUT or starter claim", () => {
+    const result = extractTweetPlayerEvents({ text: seattleSectionText, players: seattleSectionRoster, publishedAt: null });
+    expect(result).toMatchObject([{ playerId: 1, kind: "participation", state: "observed", availability: "unknown", modality: "negated", times: { observation: null, applicability: "unresolved" } }]);
+    expect(result[0]?.observation).toBeUndefined();
+    expect(result.some((event) => event.kind === "goalie" || event.availability === "out")).toBe(false);
+    for (const event of result) expect(seattleSectionText.slice(event.evidence.start, event.evidence.end)).toBe(event.evidence.text);
+  });
+  it("keeps explicit practice absence observational while retaining an explicit game-OUT statement separately", () => {
+    const result = extractTweetPlayerEvents({ text: "Joey Daccord is not on the ice at practice.", players: seattleSectionRoster, publishedAt: null });
+    expect(result).toMatchObject([{ kind: "participation", observation: "practice", modality: "negated", availability: "unknown" }]);
+    expect(extractTweetPlayerEvents({ text: "Joey Daccord will not play tonight.", players: seattleSectionRoster, publishedAt: null })).toMatchObject([{ kind: "injury", availability: "out" }]);
+  });
+});
 
 describe("BOS standard lineup identity regression", () => {
   afterEach(() => vi.unstubAllEnvs());
@@ -643,6 +765,15 @@ describe("Oct11 verified original regressions", () => {
     expect(events(record.tweetId)).toMatchObject([{ playerName: "Leevi Meriläinen", kind: "goalie", state: "confirmed", times: { observation: record.publishedAt, applicability: "unresolved" } }]);
     const ambiguous = `${record.text.split(". He")[0]}. Another goalie is ready. He’ll get the start.`;
     expect(extractTweetPlayerEvents({ text: ambiguous, players: record.players, publishedAt: record.publishedAt }).some(event => event.state === "confirmed")).toBe(false);
+  });
+
+  it("preserves a governing without qualifier and its previous evidence anchor", () => {
+    const text = "Morning skate without Hart on the ice.";
+    const events = extractTweetPlayerEvents({ text, players: [{ playerId: 100, fullName: "Carter Hart", lastName: "Hart", position: "G" }], publishedAt: null, claimAware: true });
+    expect(events).toMatchObject([{ kind: "participation", modality: "negated", availability: "unknown", legacyEvidenceStart: text.indexOf("Hart") }]);
+    expect(events[0]!.evidence.text).toContain("without Hart");
+    expect(text.slice(events[0]!.evidence.start, events[0]!.evidence.end)).toBe(events[0]!.evidence.text);
+    expect(events.some(event => event.kind === "goalie" && event.state === "confirmed")).toBe(false);
   });
 
   it("retains Lindgren's explicit injured reserve status without confirming a game appearance", () => {

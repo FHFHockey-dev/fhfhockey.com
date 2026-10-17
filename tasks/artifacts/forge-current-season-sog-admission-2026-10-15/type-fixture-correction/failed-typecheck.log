@@ -1,0 +1,21 @@
+lib/player-forecasts/currentSeasonSogContribution.test.ts(32,52): error TS2345: Argument of type '{ version: string; packet: { payloadHash: string; version: string; status: "unreleased_local"; scope: Readonly<{ playerId: 10047; nhlPlayerId: 8478444; teamId: 23; teamAbbreviation: "VAN"; seasonId: 20262027; ... 6 more ...; maximumSourceBytes: number; }>; ... 14 more ...; limitations: string[]; }; binding: { ...; }...' is not assignable to parameter of type 'CurrentSeasonSogContributionInput'.
+  Types of property 'version' are incompatible.
+    Type 'string' is not assignable to type '"current-season-sog-contribution-inputs-v1"'.
+lib/player-forecasts/currentSeasonSogContribution.test.ts(44,73): error TS2345: Argument of type '{ version: string; packet: { payloadHash: string; version: string; status: "unreleased_local"; scope: Readonly<{ playerId: 10047; nhlPlayerId: 8478444; teamId: 23; teamAbbreviation: "VAN"; seasonId: 20262027; ... 6 more ...; maximumSourceBytes: number; }>; ... 14 more ...; limitations: string[]; }; binding: { ...; }...' is not assignable to parameter of type 'CurrentSeasonSogContributionInput'.
+  Types of property 'version' are incompatible.
+    Type 'string' is not assignable to type '"current-season-sog-contribution-inputs-v1"'.
+lib/player-forecasts/currentSeasonSogContribution.test.ts(77,60): error TS2345: Argument of type '{ version: string; packet: { payloadHash: string; version: string; status: "unreleased_local"; scope: Readonly<{ playerId: 10047; nhlPlayerId: 8478444; teamId: 23; teamAbbreviation: "VAN"; seasonId: 20262027; ... 6 more ...; maximumSourceBytes: number; }>; ... 14 more ...; limitations: string[]; }; binding: { ...; }...' is not assignable to parameter of type 'CurrentSeasonSogContributionInput'.
+  Types of property 'version' are incompatible.
+    Type 'string' is not assignable to type '"current-season-sog-contribution-inputs-v1"'.
+lib/player-forecasts/currentSeasonSogContribution.test.ts(80,59): error TS2345: Argument of type '{ version: string; packet: { payloadHash: string; version: string; status: "unreleased_local"; scope: Readonly<{ playerId: 10047; nhlPlayerId: 8478444; teamId: 23; teamAbbreviation: "VAN"; seasonId: 20262027; ... 6 more ...; maximumSourceBytes: number; }>; ... 14 more ...; limitations: string[]; }; binding: { ...; }...' is not assignable to parameter of type 'CurrentSeasonSogContributionInput'.
+  Types of property 'version' are incompatible.
+    Type 'string' is not assignable to type '"current-season-sog-contribution-inputs-v1"'.
+lib/player-forecasts/currentSeasonSogContribution.test.ts(92,28): error TS2322: Type '20252026' is not assignable to type '20262027'.
+lib/player-forecasts/currentSeasonSogContribution.test.ts(101,52): error TS2345: Argument of type '{ version: string; packet: { payloadHash: string; version: string; status: "unreleased_local"; scope: Readonly<{ playerId: 10047; nhlPlayerId: 8478444; teamId: 23; teamAbbreviation: "VAN"; seasonId: 20262027; ... 6 more ...; maximumSourceBytes: number; }>; ... 14 more ...; limitations: string[]; }; binding: { ...; }...' is not assignable to parameter of type 'CurrentSeasonSogContributionInput'.
+  Types of property 'version' are incompatible.
+    Type 'string' is not assignable to type '"current-season-sog-contribution-inputs-v1"'.
+lib/player-forecasts/currentSeasonSogContribution.test.ts(119,28): error TS2322: Type '20252026' is not assignable to type '20262027'.
+lib/player-forecasts/currentSeasonSogContribution.test.ts(169,84): error TS2345: Argument of type '{ version: string; packet: { payloadHash: string; version: string; status: "unreleased_local"; scope: Readonly<{ playerId: 10047; nhlPlayerId: 8478444; teamId: 23; teamAbbreviation: "VAN"; seasonId: 20262027; ... 6 more ...; maximumSourceBytes: number; }>; ... 14 more ...; limitations: string[]; }; binding: { ...; }...' is not assignable to parameter of type 'CurrentSeasonSogContributionInput'.
+  Types of property 'version' are incompatible.
+    Type 'string' is not assignable to type '"current-season-sog-contribution-inputs-v1"'.
+Scoped semantic TypeScript: 8 diagnostics; 41 project inputs; 0 changed during check.

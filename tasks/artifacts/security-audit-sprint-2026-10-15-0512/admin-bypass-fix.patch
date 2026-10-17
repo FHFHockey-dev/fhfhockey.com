@@ -1,0 +1,237 @@
+diff --git a/web/__tests__/utils/adminOnlyMiddleware.test.ts b/web/__tests__/utils/adminOnlyMiddleware.test.ts
+index cd6c19d64..8bf17dc1f 100644
+--- a/web/__tests__/utils/adminOnlyMiddleware.test.ts
++++ b/web/__tests__/utils/adminOnlyMiddleware.test.ts
+@@ -1,6 +1,7 @@
+ import { afterEach, describe, expect, it, vi } from "vitest";
+ 
+ import { createClientWithToken } from "lib/supabase";
++import serviceRoleClient from "lib/supabase/server";
+ 
+ import {
+   default as adminOnly,
+@@ -19,6 +20,7 @@ const originalCronSecret = process.env.CRON_SECRET;
+ 
+ describe("adminOnlyMiddleware", () => {
+   afterEach(() => {
++    vi.resetAllMocks();
+     vi.unstubAllEnvs();
+     if (originalCronSecret === undefined) delete process.env.CRON_SECRET;
+     else process.env.CRON_SECRET = originalCronSecret;
+@@ -42,45 +44,172 @@ describe("adminOnlyMiddleware", () => {
+     expect(invokedByCron("Bearer    ")).toBe(false);
+   });
+ 
+-  it("allows localhost requests in non-production environments", () => {
++  it.each(["127.0.0.1", "::1", "::ffff:127.0.0.1"])(
++    "allows direct loopback peer %s in explicit development mode",
++    (remoteAddress) => {
++      vi.stubEnv("NODE_ENV", "development");
++
++      expect(
++        invokedByLocalDev({
++          headers: {
++            host: "localhost:3000",
++          },
++          socket: { remoteAddress },
++        } as never),
++      ).toBe(true);
++      expect(
++        invokedByLocalDev({
++          headers: {
++            host: "127.0.0.1:3000",
++          },
++          socket: { remoteAddress },
++        } as never),
++      ).toBe(true);
++    },
++  );
++
++  it.each([
++    "198.51.100.10",
++    "192.168.1.10",
++    "::ffff:198.51.100.10",
++    "2001:db8::10",
++    "127.0.0.1.example.com",
++    "",
++    undefined,
++  ])("rejects a forged localhost Host from peer %s", (remoteAddress) => {
+     vi.stubEnv("NODE_ENV", "development");
+ 
+     expect(
+       invokedByLocalDev({
+         headers: {
+           host: "localhost:3000",
++          "x-forwarded-for": "127.0.0.1",
++          "x-real-ip": "127.0.0.1",
++          forwarded: "for=127.0.0.1;host=localhost:3000",
+         },
++        socket: { remoteAddress },
+       } as never),
+-    ).toBe(true);
+-    expect(
+-      invokedByLocalDev({
+-        headers: {
+-          host: "127.0.0.1:3000",
+-        },
+-      } as never),
+-    ).toBe(true);
++    ).toBe(false);
+   });
+ 
+-  it("does not allow non-local or production requests through the localhost bypass", () => {
++  it("fails closed without socket evidence", () => {
+     vi.stubEnv("NODE_ENV", "development");
+-
+     expect(
+-      invokedByLocalDev({
+-        headers: {
+-          host: "fhfhockey.com",
+-        },
+-      } as never),
++      invokedByLocalDev({ headers: { host: "localhost:3000" } } as never),
+     ).toBe(false);
++  });
+ 
++  it.each(["production", "test", "", undefined])(
++    "does not grant development access when NODE_ENV is %s",
++    (environment) => {
++      vi.stubEnv("NODE_ENV", environment);
++      expect(
++        invokedByLocalDev({
++          headers: { host: "localhost:3000" },
++          socket: { remoteAddress: "127.0.0.1" },
++        } as never),
++      ).toBe(false);
++    },
++  );
++
++  it.each(["fhfhockey.com", "localhost.example.com", "", undefined])(
++    "retains the Host restriction for a loopback peer with Host %s",
++    (host) => {
++      vi.stubEnv("NODE_ENV", "development");
++      expect(
++        invokedByLocalDev({
++          headers: { host },
++          socket: { remoteAddress: "127.0.0.1" },
++        } as never),
++      ).toBe(false);
++    },
++  );
++
++  it("denies an unauthenticated remote request with a forged localhost Host", async () => {
++    vi.stubEnv("NODE_ENV", "development");
++    const json = vi.fn();
++    const status = vi.fn().mockReturnValue({ json });
++    const handler = vi.fn();
++    const request = {
++      headers: { host: "localhost:3000" },
++      socket: { remoteAddress: "198.51.100.10" },
++    };
++
++    await adminOnly(handler)(request as never, { status } as never);
++
++    expect(status).toHaveBeenCalledWith(401);
++    expect(handler).not.toHaveBeenCalled();
++    expect(createClientWithToken).not.toHaveBeenCalled();
++    expect(request).not.toHaveProperty("supabase");
++  });
++
++  it("preserves direct local development handler access", async () => {
++    vi.stubEnv("NODE_ENV", "development");
++    const handler = vi.fn();
++    const request = {
++      headers: { host: "localhost:3000" },
++      socket: { remoteAddress: "::1" },
++    };
++
++    await adminOnly(handler)(request as never, {} as never);
++
++    expect(handler).toHaveBeenCalledOnce();
++    expect(request).toHaveProperty("supabase", serviceRoleClient);
++    expect(createClientWithToken).not.toHaveBeenCalled();
++  });
++
++  it.each(["development", "production"])(
++    "still requires a verified admin role for a remote request in %s",
++    async (environment) => {
++      vi.stubEnv("NODE_ENV", environment);
++      const getUser = vi.fn().mockResolvedValue({ error: null });
++      const maybeSingle = vi.fn();
++      vi.mocked(createClientWithToken).mockReturnValue({
++        auth: { getUser },
++        from: vi.fn(() => ({ select: vi.fn(() => ({ maybeSingle })) })),
++      } as never);
++      const json = vi.fn();
++      const status = vi.fn().mockReturnValue({ json });
++      const handler = vi.fn();
++
++      for (const role of [undefined, "user", "admin"]) {
++        maybeSingle.mockResolvedValue({ data: role ? { role } : null });
++        const request = {
++          headers: {
++            host: "localhost:3000",
++            authorization: "Bearer synthetic-user-token",
++          },
++          socket: { remoteAddress: "198.51.100.10" },
++        };
++        await adminOnly(handler)(request as never, { status } as never);
++        if (role === "admin") {
++          expect(handler).toHaveBeenCalledOnce();
++          expect(request).toHaveProperty("supabase", serviceRoleClient);
++        } else {
++          expect(status).toHaveBeenLastCalledWith(403);
++          expect(handler).not.toHaveBeenCalled();
++          expect(request).not.toHaveProperty("supabase");
++        }
++      }
++      expect(getUser).toHaveBeenCalledTimes(3);
++      expect(maybeSingle).toHaveBeenCalledTimes(3);
++    },
++  );
++
++  it("preserves authenticated remote cron access in production", async () => {
+     vi.stubEnv("NODE_ENV", "production");
++    vi.stubEnv("CRON_SECRET", "synthetic-cron-secret");
++    const handler = vi.fn();
++    const request = {
++      headers: { authorization: "Bearer synthetic-cron-secret" },
++      socket: { remoteAddress: "198.51.100.10" },
++    };
+ 
+-    expect(
+-      invokedByLocalDev({
+-        headers: {
+-          host: "localhost:3000",
+-        },
+-      } as never),
+-    ).toBe(false);
++    await adminOnly(handler)(request as never, {} as never);
++
++    expect(handler).toHaveBeenCalledOnce();
++    expect(request).toHaveProperty("supabase", serviceRoleClient);
++    expect(createClientWithToken).not.toHaveBeenCalled();
+   });
+ 
+   it("returns one fixed denial for missing, malformed, and rejected bearer tokens", async () => {
+diff --git a/web/utils/adminOnlyMiddleware.ts b/web/utils/adminOnlyMiddleware.ts
+index ae640ca0a..a0e860e37 100644
+--- a/web/utils/adminOnlyMiddleware.ts
++++ b/web/utils/adminOnlyMiddleware.ts
+@@ -81,7 +81,15 @@ function isLocalHostHeader(hostHeader: string | undefined) {
+ }
+ 
+ export function invokedByLocalDev(req: NextApiRequest) {
++  // Host/forwarded headers cannot establish that a caller is local.
++  const remoteAddress = req.socket?.remoteAddress;
++  const isLoopbackPeer =
++    remoteAddress === "127.0.0.1" ||
++    remoteAddress === "::1" ||
++    remoteAddress === "::ffff:127.0.0.1";
+   return (
+-    process.env.NODE_ENV !== "production" && isLocalHostHeader(req.headers.host)
++    process.env.NODE_ENV === "development" &&
++    isLoopbackPeer &&
++    isLocalHostHeader(req.headers.host)
+   );
+ }

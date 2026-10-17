@@ -1,0 +1,68 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/review-v3/independent-hint-provenance.test.ts -t independent hint --config ../tasks/ifttt-integration-2026-10-16/review-v3/vitest.review.config.mjs --reporter=default --reporter=json --outputFile=../tasks/ifttt-integration-2026-10-16/review-v3/independent-hint-provenance-results.json
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-v3/independent-hint-provenance.test.ts (4 tests | 2 failed | 2 skipped) 18ms
+   ↓ automated dated source-directory hints > narrows an ambiguous source and reparses it against independent official dated roster evidence
+   ↓ automated dated source-directory hints > abstains on stale/multiple assignments and cannot manufacture missing official evidence
+   × independent hint and public provenance integration > does not treat a partial incoming game cache as the complete team-date schedule 16ms
+     → expected 2026020010 to be null
+   × independent hint and public provenance integration > suppresses a selected quote whose retained post ID contradicts its URL 2ms
+     → expected { displayName: null, …(2) } to deeply equal { …(3) }
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/review-v3/independent-hint-provenance.test.ts > independent hint and public provenance integration > does not treat a partial incoming game cache as the complete team-date schedule
+AssertionError: expected 2026020010 to be null
+
+- Expected: 
+null
+
++ Received: 
+2026020010
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-v3/independent-hint-provenance.test.ts:18:39
+     16|     } };
+     17|     const result = await applyTweetClaimSourceHints(db, [f.source], [f…
+     18|     expect(result.sources[0]!.gameId).toBeNull();
+       |                                       ^
+     19|   });
+     20|   it('suppresses a selected quote whose retained post ID contradicts i…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/review-v3/independent-hint-provenance.test.ts > independent hint and public provenance integration > suppresses a selected quote whose retained post ID contradicts its URL
+AssertionError: expected { displayName: null, …(2) } to deeply equal { …(3) }
+
+- Expected
++ Received
+
+  {
+-   "account": null,
+-   "displayName": "Original source pending",
+-   "url": null,
++   "account": "@Reporter",
++   "displayName": null,
++   "url": "https://x.com/Reporter/status/1000",
+  }
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/review-v3/independent-hint-provenance.test.ts:26:54
+     24|     const item: any = { source_label: 'GameDayLines', source_account: …
+     25|       metadata: { primaryTextSource: source.primaryTextSource, quotedT…
+     26|     expect(getPublicNewsSourceAttribution({ item })).toEqual({ display…
+       |                                                      ^
+     27|   });
+     28| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 2 skipped (4)
+   Start at  23:03:31
+   Duration  373ms (transform 112ms, setup 15ms, collect 177ms, tests 18ms, environment 0ms, prepare 30ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/review-v3/independent-hint-provenance-results.json

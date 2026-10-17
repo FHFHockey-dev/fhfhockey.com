@@ -1,0 +1,23 @@
+ExpectError: expect(received).toBe(expected) // Object.is equality
+
+Expected: "function"
+Received: "undefined"
+
+Call Log:
+- Timeout 5000ms exceeded while waiting on the predicate
+    at captureRawStack (/Users/tim/Code/fhfhockey.com/web/node_modules/playwright-core/lib/coreBundle.js:3130:17)
+    at callMatcherAsStep (/Users/tim/Code/fhfhockey.com/web/node_modules/playwright/lib/matchers/expect.js:12873:57)
+    at Object.toBe (/Users/tim/Code/fhfhockey.com/web/node_modules/playwright/lib/matchers/expect.js:12863:23)
+    at main (/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-mockup-match-2026-10-14/interaction-shell/run.cjs:128:92) {
+  matcherResult: {
+    pass: false,
+    message: 'expect(received).toBe(expected) // Object.is equality\n' +
+      '\n' +
+      'Expected: "function"\n' +
+      'Received: "undefined"\n' +
+      '\n' +
+      'Call Log:\n' +
+      '- Timeout 5000ms exceeded while waiting on the predicate',
+    name: 'toBe'
+  }
+}

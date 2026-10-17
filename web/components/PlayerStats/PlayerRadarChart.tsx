@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Radar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -13,9 +13,9 @@ import styles from "./PlayerStats.module.scss";
 import {
   formatStatValue,
   STAT_DISPLAY_NAMES as SHARED_STAT_DISPLAY_NAMES,
+  TimeFrame,
 } from "./types";
 import supabase from "../../lib/supabase";
-import useCurrentSeason from "../../hooks/useCurrentSeason";
 
 ChartJS.register(
   RadialLinearScale,
@@ -58,6 +58,9 @@ interface PlayerRadarChartProps {
   selectedStats: string[];
   isGoalie: boolean;
   showPlayoffData?: boolean;
+  seasonId?: string | number | null;
+  timeFrame?: TimeFrame;
+  usedGameLogFallback?: boolean;
 }
 
 // Define how each stat is calculated and compared
@@ -186,418 +189,196 @@ const normalizePosition = (position: string): string => {
   return positionMap[pos] || pos;
 };
 
-// Fallback percentile calculation using simplified thresholds
-// TODO: Replace this with actual database queries
-const calculateFallbackPercentile = (
-  stat: string,
-  value: number,
-  playerCategory: string,
-): number => {
-  // These are very basic fallback thresholds - should be replaced with real data
-  const basicThresholds: Record<
-    string,
-    Record<string, { elite: number; good: number; average: number }>
-  > = {
-    forward: {
-      points: { elite: 1.0, good: 0.7, average: 0.4 },
-      goals: { elite: 0.5, good: 0.3, average: 0.15 },
-      assists: { elite: 0.6, good: 0.4, average: 0.2 },
-      shots: { elite: 3.0, good: 2.2, average: 1.5 },
-      hits: { elite: 2.0, good: 1.5, average: 1.0 },
-    },
-    defenseman: {
-      points: { elite: 0.6, good: 0.4, average: 0.2 },
-      goals: { elite: 0.2, good: 0.1, average: 0.05 },
-      assists: { elite: 0.5, good: 0.3, average: 0.15 },
-      blocked_shots: { elite: 2.0, good: 1.5, average: 1.0 },
-      hits: { elite: 2.5, good: 1.8, average: 1.2 },
-    },
-    goalie: {
-      save_pct: { elite: 0.92, good: 0.91, average: 0.9 },
-      goals_against_avg: { elite: 2.5, good: 2.8, average: 3.2 },
-      wins: { elite: 0.65, good: 0.5, average: 0.35 },
-    },
-  };
-
-  const thresholds = basicThresholds[playerCategory]?.[stat];
-  if (!thresholds) return 50; // Default to average
-
-  const statInfo = STAT_CALCULATION_METHODS[stat];
-  const isInverted = statInfo?.isInverted || stat === "goals_against_avg";
-
-  if (isInverted) {
-    if (value <= thresholds.elite) return 90;
-    else if (value <= thresholds.good) return 75;
-    else if (value <= thresholds.average) return 50;
-    else return Math.max(10, 50 - (value - thresholds.average) * 10);
-  } else {
-    if (value >= thresholds.elite) return 90;
-    else if (value >= thresholds.good) return 75;
-    else if (value >= thresholds.average) return 50;
-    else return Math.max(10, (value / thresholds.average) * 50);
+const finiteStatValue = (value: unknown): number | null => {
+  if (
+    (typeof value !== "number" && typeof value !== "string") ||
+    (typeof value === "string" && value.trim() === "")
+  ) {
+    return null;
   }
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : null;
 };
+
+interface RadarComparison {
+  key: string;
+  values: Record<string, number>;
+  percentiles: Record<string, number>;
+  rankings: Record<string, { rank: number; total: number }>;
+}
 
 export function PlayerRadarChart({
   player,
   gameLog,
-  playoffGameLog,
   selectedStats,
   isGoalie,
-  showPlayoffData,
+  showPlayoffData = false,
+  seasonId,
+  timeFrame = "season",
+  usedGameLogFallback = false,
 }: PlayerRadarChartProps) {
   const [comparisonType, setComparisonType] =
     useState<ComparisonType>("position");
   const [showCalculationInfo, setShowCalculationInfo] = useState(false);
+  const [comparison, setComparison] = useState<RadarComparison | null>(null);
 
-  // Get current season for filtering database queries
-  const currentSeason = useCurrentSeason();
+  const seasonString = String(seasonId ?? "");
+  const seasonNumber = /^\d{8}$/.test(seasonString) &&
+    Number(seasonString.slice(4)) === Number(seasonString.slice(0, 4)) + 1
+      ? Number(seasonString)
+      : null;
+  const scopeLabel = `${seasonString.slice(0, 4)}-${seasonString.slice(6)} regular season · Full season`;
+  const unavailableScope = showPlayoffData
+    ? "Rankings unavailable for playoffs. Comparisons use full-season regular-season aggregates."
+    : timeFrame !== "season"
+      ? "Rankings unavailable for the selected game window. Select Full Season for regular-season comparisons."
+      : usedGameLogFallback
+        ? "Rankings unavailable for fallback game logs. Select a season with matching game data."
+        : seasonNumber === null
+          ? "Rankings unavailable because no valid season is selected."
+          : null;
+  const hasSelectedData = gameLog.length > 0 && selectedStats.length > 0;
 
-  // State for database percentiles and rankings
-  const [databasePercentiles, setDatabasePercentiles] = useState<
-    Record<string, number>
-  >({});
-  const [nhlRankings, setNhlRankings] = useState<
-    Record<string, { rank: number; total: number }>
-  >({});
-  const [percentileLoading, setPercentileLoading] = useState(false);
-  const [usingFallback, setUsingFallback] = useState(true);
-
-  // State to store actual player values from per_game view
-  const [playerPerGameValues, setPlayerPerGameValues] = useState<
-    Record<string, number>
-  >({});
-
-  // Determine player category using normalized position
   const playerCategory = useMemo(() => {
     if (isGoalie) return "goalie";
     const normalizedPos = normalizePosition(player.position);
     if (POSITION_CATEGORIES.forward.includes(normalizedPos)) return "forward";
     if (POSITION_CATEGORIES.defenseman.includes(normalizedPos))
       return "defenseman";
-    return "forward"; // Default fallback
+    return "forward";
   }, [player.position, isGoalie]);
 
-  // Fetch percentiles from database
-  const fetchPercentiles = useCallback(
-    async (stats: string[], playerValues: Record<string, number>) => {
-      if (stats.length === 0 || !currentSeason?.seasonId) return;
+  const comparisonKey = JSON.stringify([
+    player.id, player.position, isGoalie, comparisonType, seasonNumber,
+    timeFrame, showPlayoffData, usedGameLogFallback, hasSelectedData, selectedStats,
+  ]);
+  const currentComparison = comparison?.key === comparisonKey ? comparison : null;
+  const percentileLoading = !unavailableScope && hasSelectedData && !currentComparison;
+  const nhlRankings = currentComparison?.rankings ?? {};
 
-      setPercentileLoading(true);
+  useEffect(() => {
+    let cancelled = false;
+    setComparison(null);
+    if (unavailableScope || !hasSelectedData || seasonNumber === null) return;
 
+    const fetchPercentiles = async () => {
+      const next: RadarComparison = {
+        key: comparisonKey, values: {}, percentiles: {}, rankings: {},
+      };
       try {
-        const normalizedPos = normalizePosition(player.position);
-        const tableName = isGoalie
-          ? "wgo_goalie_stats_per_game"
-          : "wgo_skater_stats_per_game";
-
-        // Convert season ID to string format for the database query
-        const seasonString = currentSeason.seasonId.toString(); // Convert 20242025 to "20242025"
-
-        // Build position filter based on comparison type
-        let positionFilter: string[] = [];
-        switch (comparisonType) {
-          case "position":
-            positionFilter = [normalizedPos];
-            break;
-          case "category":
-            if (playerCategory === "forward") {
-              positionFilter = ["C", "LW", "RW"];
-            } else if (playerCategory === "defenseman") {
-              positionFilter = ["D"];
-            } else if (playerCategory === "goalie") {
-              positionFilter = ["G"];
-            }
-            break;
-          case "league":
-            // For league comparison, don't filter by position
-            positionFilter = [];
-            break;
-        }
-
-        const newPercentiles: Record<string, number> = {};
-        const newRankings: Record<string, { rank: number; total: number }> = {};
-
-        console.log(`Fetching percentiles for season: ${seasonString}`);
-
-        // First, get the player's actual values from the per_game view
         const { data: playerData, error: playerError } = isGoalie
           ? await supabase
               .from("wgo_goalie_stats_per_game")
               .select("*")
               .eq("goalie_id", player.id)
-              .eq("season_id", currentSeason.seasonId)
+              .eq("season_id", seasonNumber)
               .single()
           : await supabase
               .from("wgo_skater_stats_per_game")
               .select("*")
               .eq("player_id", player.id)
-              .eq("season", seasonString)
+              .eq("season", String(seasonNumber))
               .single();
 
+        if (cancelled) return;
         if (playerError || !playerData) {
-          console.error(
-            `Error fetching player data from ${tableName}:`,
-            playerError,
-          );
-          setUsingFallback(true);
+          console.error("Unable to load the selected-season radar values", playerError);
           return;
         }
 
-        console.log(
-          `[PlayerRadarChart] Player data from ${tableName}:`,
-          playerData,
-        );
+        const normalizedPos = normalizePosition(player.position);
+        const positionFilter = comparisonType === "position"
+          ? [normalizedPos]
+          : comparisonType === "category"
+            ? playerCategory === "forward" ? ["C", "LW", "RW"] : ["D"]
+            : [];
 
-        // Store player values for display - filter to only numeric stats
-        const numericPlayerData: Record<string, number> = {};
-        Object.entries(playerData).forEach(([key, value]) => {
-          const numericValue = Number(value);
-          if (!isNaN(numericValue) && value !== null && value !== undefined) {
-            numericPlayerData[key] = numericValue;
-          }
-        });
-        setPlayerPerGameValues(numericPlayerData);
+        for (const stat of selectedStats) {
+          if (cancelled) return;
+          const statInfo = STAT_CALCULATION_METHODS[stat];
+          if (!statInfo) continue;
+          const playerValue = finiteStatValue((playerData as any)[stat]);
+          if (playerValue === null) continue;
+          next.values[stat] = playerValue;
 
-        // Fetch percentiles and rankings for each stat
-        for (const stat of stats) {
-          const playerValue = Number((playerData as any)[stat]);
-          if (
-            isNaN(playerValue) ||
-            playerValue === null ||
-            playerValue === undefined
-          ) {
-            continue;
-          }
-
-          console.log(
-            `[PlayerRadarChart] Using ${stat} value: ${playerValue} from per_game view`,
-          );
-
-          let data;
-          let error;
-          if (isGoalie) {
-            const result = await supabase
-              .from("wgo_goalie_stats_per_game")
-              .select(stat)
-              .not(stat, "is", null)
-              .eq("season_id", currentSeason.seasonId);
-            data = result.data;
-            error = result.error;
-          } else {
-            let query = supabase
-              .from("wgo_skater_stats_per_game")
-              .select(stat)
-              .not(stat, "is", null)
-              .eq("season", seasonString);
-
-            if (positionFilter.length > 0) {
-              query = query.in("position_code", positionFilter);
-            }
-
-            const result = await query;
-            data = result.data;
-            error = result.error;
-          }
-
-          if (error) {
-            console.error(
-              `Error fetching ${stat} data for season ${seasonString}:`,
-              error,
-            );
-            continue;
-          }
-
-          if (data && data.length > 0) {
-            const values = data
-              .map((row) => Number((row as any)[stat]))
-              .filter((val) => !isNaN(val))
-              .sort((a, b) => a - b);
-
-            if (values.length > 0) {
-              const statInfo = STAT_CALCULATION_METHODS[stat];
-              const isInverted =
-                statInfo?.isInverted || stat === "goals_against_avg";
-
-              // Calculate percentile rank and NHL rank consistently
-              let percentile: number;
-              let rank: number;
-
-              if (isInverted) {
-                // For inverted stats (lower is better)
-                const betterCount = values.filter(
-                  (v) => v < playerValue,
-                ).length;
-                const equalCount = values.filter(
-                  (v) => v === playerValue,
-                ).length;
-
-                // Percentile: what percentage of players this player is better than
-                percentile = (betterCount / values.length) * 100;
-
-                // Rank: 1st place goes to lowest value
-                // Count how many have strictly lower values, then add 1
-                rank = betterCount + 1;
-              } else {
-                // For normal stats (higher is better)
-                const worseCount = values.filter((v) => v < playerValue).length;
-                const equalCount = values.filter(
-                  (v) => v === playerValue,
-                ).length;
-
-                // Percentile: what percentage of players this player is better than
-                percentile = (worseCount / values.length) * 100;
-
-                // Rank: 1st place goes to highest value
-                // Count how many have strictly higher values, then add 1
-                const betterCount = values.filter(
-                  (v) => v > playerValue,
-                ).length;
-                rank = betterCount + 1;
+          try {
+            let data;
+            let error;
+            if (isGoalie) {
+              const result = await supabase
+                .from("wgo_goalie_stats_per_game")
+                .select(stat)
+                .not(stat, "is", null)
+                .eq("season_id", seasonNumber);
+              data = result.data;
+              error = result.error;
+            } else {
+              let query = supabase
+                .from("wgo_skater_stats_per_game")
+                .select(stat)
+                .not(stat, "is", null)
+                .eq("season", String(seasonNumber));
+              if (positionFilter.length > 0) {
+                query = query.in("position_code", positionFilter);
               }
-
-              newPercentiles[stat] = Math.round(percentile);
-              newRankings[stat] = { rank, total: values.length };
-
-              console.log(
-                `${stat}: ${playerValue} -> ${percentile.toFixed(1)}% (rank ${rank}/${values.length})`,
-              );
+              const result = await query;
+              data = result.data;
+              error = result.error;
             }
-          }
-        }
+            if (cancelled) return;
+            if (error) {
+              console.error(`Unable to load the ${stat} radar comparison`, error);
+              continue;
+            }
 
-        if (Object.keys(newPercentiles).length > 0) {
-          setDatabasePercentiles(newPercentiles);
-          setNhlRankings(newRankings);
-          setUsingFallback(false);
-          console.log(
-            `Successfully calculated percentiles for ${Object.keys(newPercentiles).length} stats`,
-          );
-        } else {
-          console.warn("No valid percentile data calculated");
-          setUsingFallback(true);
+            const values = (data ?? [])
+              .map((row) => finiteStatValue((row as any)[stat]))
+              .filter((value): value is number => value !== null);
+            if (values.length === 0) continue;
+
+            const isInverted = statInfo.isInverted || stat === "goals_against_avg";
+            const worseCount = values.filter((value) =>
+              isInverted ? value > playerValue : value < playerValue,
+            ).length;
+            const betterCount = values.filter((value) =>
+              isInverted ? value < playerValue : value > playerValue,
+            ).length;
+            next.percentiles[stat] = Math.round((worseCount / values.length) * 100);
+            next.rankings[stat] = { rank: betterCount + 1, total: values.length };
+          } catch (error) {
+            console.error(`Unable to load the ${stat} radar comparison`, error);
+          }
         }
       } catch (error) {
-        console.error("Error fetching season-filtered percentiles:", error);
-        setUsingFallback(true);
+        console.error("Unable to load the selected-season radar comparison", error);
       } finally {
-        setPercentileLoading(false);
+        if (!cancelled) setComparison(next);
       }
-    },
-    [
-      player.position,
-      player.id,
-      isGoalie,
-      comparisonType,
-      playerCategory,
-      currentSeason?.seasonId,
-    ],
-  );
+    };
 
-  // Calculate percentiles using database or fallback
-  const calculatePercentile = useCallback(
-    (stat: string, value: number): number => {
-      // Use database percentile if available
-      if (!usingFallback && databasePercentiles[stat] !== undefined) {
-        return databasePercentiles[stat];
-      }
-
-      // Fallback to simplified calculation
-      return calculateFallbackPercentile(stat, value, playerCategory);
-    },
-    [databasePercentiles, usingFallback, playerCategory],
-  );
+    void fetchPercentiles();
+    return () => { cancelled = true; };
+  }, [
+    comparisonKey, unavailableScope, hasSelectedData, seasonNumber,
+    player.id, player.position, isGoalie, comparisonType, playerCategory, selectedStats,
+  ]);
 
   const radarData = useMemo(() => {
-    const log = showPlayoffData && playoffGameLog ? playoffGameLog : gameLog;
-
-    if (log.length === 0 || selectedStats.length === 0) return null;
-
-    const gamesPlayed = log.reduce(
-      (sum, game) => sum + (game.games_played || 0),
-      0,
-    );
-
-    const averages: { [key: string]: number } = {};
-    const percentiles: { [key: string]: number } = {};
-    const calculationMethods: { [key: string]: StatCalculationInfo } = {};
-
+    if (!hasSelectedData) return null;
+    const averages = currentComparison?.values ?? {};
+    const percentiles = currentComparison?.percentiles ?? {};
+    const calculationMethods: Record<string, StatCalculationInfo> = {};
     selectedStats.forEach((stat) => {
-      const values = log.map((game) => Number(game[stat]) || 0);
-      const statInfo = STAT_CALCULATION_METHODS[stat];
-      calculationMethods[stat] = statInfo || {
-        method: "per_game",
-        description: "Per game average",
+      calculationMethods[stat] = STAT_CALCULATION_METHODS[stat] || {
+        method: "per_game", description: "Per game average",
       };
-
-      // Calculate stat value based on its calculation method
-      switch (statInfo?.method) {
-        case "per_game":
-          const total = values.reduce((sum, val) => sum + val, 0);
-          averages[stat] = gamesPlayed > 0 ? total / gamesPlayed : 0;
-          break;
-
-        case "percentage":
-        case "rate":
-          // Weighted average for percentages and rates
-          const weights = log.map((game) => game.games_played || 1);
-          const weightedSum = values.reduce(
-            (sum, val, idx) => sum + val * weights[idx],
-            0,
-          );
-          const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
-          averages[stat] = totalWeight > 0 ? weightedSum / totalWeight : 0;
-          break;
-
-        case "per_60":
-          // These should already be calculated as per-60 in the data
-          const per60Total = values.reduce((sum, val) => sum + val, 0);
-          averages[stat] = gamesPlayed > 0 ? per60Total / gamesPlayed : 0;
-          break;
-
-        default:
-          // Default to per-game calculation
-          const defaultTotal = values.reduce((sum, val) => sum + val, 0);
-          averages[stat] = gamesPlayed > 0 ? defaultTotal / gamesPlayed : 0;
-      }
-
-      // Special handling for specific stats
-      if (stat === "wins" && isGoalie) {
-        const wins = values.reduce((sum, val) => sum + val, 0);
-        averages[stat] = gamesPlayed > 0 ? wins / gamesPlayed : 0;
-      } else if (stat === "shutouts" && isGoalie) {
-        const shutouts = values.reduce((sum, val) => sum + val, 0);
-        averages[stat] = gamesPlayed > 0 ? shutouts / gamesPlayed : 0;
-      }
-
-      // Calculate shooting percentage properly
-      if (stat === "shooting_percentage") {
-        const totalGoals = log.reduce(
-          (sum, game) => sum + (Number(game.goals) || 0),
-          0,
-        );
-        const totalShots = log.reduce(
-          (sum, game) => sum + (Number(game.shots) || 0),
-          0,
-        );
-        averages[stat] = totalShots > 0 ? (totalGoals / totalShots) * 100 : 0;
-      }
-
-      // Calculate percentile using current method
-      percentiles[stat] = calculatePercentile(stat, averages[stat]);
     });
-
-    const labels = selectedStats.map(
-      (stat) => SHARED_STAT_DISPLAY_NAMES[stat] || stat,
-    );
-    const data = selectedStats.map((stat) => percentiles[stat] || 0);
-
     return {
-      labels,
+      labels: selectedStats.map((stat) => SHARED_STAT_DISPLAY_NAMES[stat] || stat),
       datasets: [
         {
           label: player.fullName,
-          data,
+          data: selectedStats.map((stat) => percentiles[stat] ?? null),
           backgroundColor: isGoalie
             ? "rgba(239, 68, 68, 0.15)"
             : "rgba(20, 162, 210, 0.15)",
@@ -617,15 +398,7 @@ export function PlayerRadarChart({
       percentiles,
       calculationMethods,
     };
-  }, [
-    gameLog,
-    playoffGameLog,
-    selectedStats,
-    isGoalie,
-    player.fullName,
-    showPlayoffData,
-    calculatePercentile,
-  ]);
+  }, [hasSelectedData, currentComparison, selectedStats, isGoalie, player.fullName]);
 
   // Get comparison description
   const getComparisonDescription = () => {
@@ -681,7 +454,7 @@ export function PlayerRadarChart({
           label: (context: any) => {
             const statIndex = context.dataIndex;
             const stat = selectedStats[statIndex];
-            const percentile = context.parsed.r;
+            const percentile = radarData?.percentiles[stat];
             const average = radarData?.averages[stat];
             const calcMethod = radarData?.calculationMethods[stat];
 
@@ -690,9 +463,10 @@ export function PlayerRadarChart({
 
             return [
               `Value: ${formattedValue}`,
-              `Percentile: ${percentile.toFixed(0)}%`,
+              `Percentile: ${percentile === undefined ? "Unavailable" : `${percentile.toFixed(0)}%`}`,
               `Method: ${calcMethod?.description || "Per game"}`,
               `Comparison: ${getComparisonDescription()}`,
+              `Scope: ${scopeLabel}`,
             ];
           },
           labelColor: (context: any) => ({
@@ -754,116 +528,7 @@ export function PlayerRadarChart({
     },
   };
 
-  // Fetch percentiles on mount and when comparison type or other dependencies change
-  useEffect(() => {
-    if (
-      gameLog.length > 0 &&
-      selectedStats.length > 0 &&
-      currentSeason?.seasonId
-    ) {
-      // Clear existing percentiles when comparison type changes
-      setDatabasePercentiles({});
-      setUsingFallback(true);
-
-      // Extract stats to calculate percentiles for
-      const statsToFetch = selectedStats.filter(
-        (stat) => STAT_CALCULATION_METHODS[stat],
-      );
-
-      // Prepare player values for percentile calculation
-      const playerValues: Record<string, number> = {};
-      selectedStats.forEach((stat) => {
-        const values = gameLog.map((game) => Number(game[stat]) || 0);
-        const gamesPlayed = gameLog.reduce(
-          (sum, game) => sum + (game.games_played || 0),
-          0,
-        );
-
-        // Calculate the same way we do in radarData
-        const statInfo = STAT_CALCULATION_METHODS[stat];
-        let calculatedValue = 0;
-
-        switch (statInfo?.method) {
-          case "per_game":
-            const total = values.reduce((sum, val) => sum + val, 0);
-            calculatedValue = gamesPlayed > 0 ? total / gamesPlayed : 0;
-            break;
-          case "percentage":
-          case "rate":
-            // Weighted average for percentages and rates
-            const weights = gameLog.map((game) => game.games_played || 1);
-            const weightedSum = values.reduce(
-              (sum, val, idx) => sum + val * weights[idx],
-              0,
-            );
-            const totalWeight = weights.reduce(
-              (sum, weight) => sum + weight,
-              0,
-            );
-            calculatedValue = totalWeight > 0 ? weightedSum / totalWeight : 0;
-            break;
-          case "per_60":
-            const per60Total = values.reduce((sum, val) => sum + val, 0);
-            calculatedValue = gamesPlayed > 0 ? per60Total / gamesPlayed : 0;
-            break;
-          default:
-            const defaultTotal = values.reduce((sum, val) => sum + val, 0);
-            calculatedValue = gamesPlayed > 0 ? defaultTotal / gamesPlayed : 0;
-        }
-
-        // Special handling for specific stats
-        if (stat === "wins" && isGoalie) {
-          const wins = values.reduce((sum, val) => sum + val, 0);
-          calculatedValue = gamesPlayed > 0 ? wins / gamesPlayed : 0;
-        } else if (stat === "shutouts" && isGoalie) {
-          const shutouts = values.reduce((sum, val) => sum + val, 0);
-          calculatedValue = gamesPlayed > 0 ? shutouts / gamesPlayed : 0;
-        } else if (stat === "shooting_percentage") {
-          const totalGoals = gameLog.reduce(
-            (sum, game) => sum + (Number(game.goals) || 0),
-            0,
-          );
-          const totalShots = gameLog.reduce(
-            (sum, game) => sum + (Number(game.shots) || 0),
-            0,
-          );
-          calculatedValue =
-            totalShots > 0 ? (totalGoals / totalShots) * 100 : 0;
-        }
-
-        playerValues[stat] = calculatedValue;
-
-        // Debug logging for troubleshooting
-        console.log(`[PlayerRadarChart] ${stat} calculation:`, {
-          values: values.slice(0, 5), // Show first 5 game values
-          gamesPlayed,
-          total:
-            stat === "points"
-              ? values.reduce((sum, val) => sum + val, 0)
-              : "N/A",
-          calculatedValue,
-          formattedValue: formatStatValue(calculatedValue, stat),
-        });
-      });
-
-      console.log(
-        `[PlayerRadarChart] Final playerValues for percentile calculation:`,
-        playerValues,
-      );
-
-      fetchPercentiles(statsToFetch, playerValues);
-    }
-  }, [
-    gameLog,
-    selectedStats,
-    player.id,
-    isGoalie,
-    comparisonType,
-    currentSeason?.seasonId, // Added currentSeason as dependency
-    fetchPercentiles,
-  ]);
-
-  if (!radarData || gameLog.length === 0) {
+  if (unavailableScope || !radarData) {
     return (
       <div className={styles.radarContainer}>
         <div className={styles.radarHeader}>
@@ -871,7 +536,9 @@ export function PlayerRadarChart({
           <p>Percentile rankings vs league peers</p>
         </div>
         <div className={styles.radarWrapper}>
-          <div className={styles.noData}>No data available for radar chart</div>
+          <div className={styles.noData}>
+            {unavailableScope || "No data available for radar chart"}
+          </div>
         </div>
       </div>
     );
@@ -887,7 +554,7 @@ export function PlayerRadarChart({
           <div>
             <p>
               Percentile rankings {getComparisonDescription()}
-              {showPlayoffData ? " (Playoffs)" : " (Regular Season)"}
+              {` · ${scopeLabel}`}
             </p>
             {percentileLoading && (
               <div
@@ -948,8 +615,7 @@ export function PlayerRadarChart({
           </div>
         </div>
 
-        {/* Warning about fallback percentiles - only show after queries complete and fail */}
-        {!percentileLoading && usingFallback && (
+        {!percentileLoading && selectedStats.some((stat) => radarData.percentiles[stat] === undefined) && (
           <div
             style={{
               fontSize: "0.8em",
@@ -958,14 +624,20 @@ export function PlayerRadarChart({
               fontStyle: "italic",
             }}
           >
-            ⚠️ Using simplified percentile calculations. Database queries failed
-            or returned no data.
+            Some selected statistics have no matching comparison data. Their
+            rankings are unavailable.
           </div>
         )}
       </div>
 
       <div className={styles.radarWrapper}>
-        <Radar data={radarData} options={options} />
+        {Object.keys(radarData.percentiles).length > 0 ? (
+          <Radar data={radarData} options={options} />
+        ) : (
+          <div className={styles.noData}>
+            {percentileLoading ? "Calculating rankings..." : "No rankings available for the selected statistics"}
+          </div>
+        )}
       </div>
 
       {/* Player Statistics with NHL Rankings */}
@@ -980,7 +652,8 @@ export function PlayerRadarChart({
               const method = radarData.calculationMethods[stat];
 
               // Determine rank color based on percentile
-              const getRankColorClass = (percentile: number) => {
+              const getRankColorClass = (percentile: number | undefined) => {
+                if (percentile === undefined) return "";
                 if (percentile >= 90) return styles.elite;
                 if (percentile >= 75) return styles.good;
                 if (percentile >= 50) return styles.average;
@@ -1011,17 +684,13 @@ export function PlayerRadarChart({
                     <div className={styles.statValueContainer}>
                       <span className={styles.statLabel}>Value:</span>
                       <span className={styles.statValueLarge}>
-                        {/* Use actual value from per_game view if available, otherwise fall back to calculated */}
-                        {!usingFallback &&
-                        playerPerGameValues[stat] !== undefined
-                          ? formatStatValue(playerPerGameValues[stat], stat)
-                          : formatStatValue(statValue, stat)}
+                        {formatStatValue(statValue, stat)}
                       </span>
                     </div>
 
                     <div className={styles.rankingContainer}>
                       <span className={styles.statLabel}>NHL Rank:</span>
-                      {!usingFallback && ranking ? (
+                      {ranking ? (
                         <span
                           className={`${styles.nhlRank} ${getRankColorClass(percentile)}`}
                         >
@@ -1029,7 +698,7 @@ export function PlayerRadarChart({
                         </span>
                       ) : (
                         <span className={styles.nhlRank}>
-                          {usingFallback ? "Est." : "Loading..."}
+                          {percentileLoading ? "Loading..." : "Unavailable"}
                         </span>
                       )}
                     </div>
@@ -1039,7 +708,7 @@ export function PlayerRadarChart({
                       <span
                         className={`${styles.percentileValue} ${getRankColorClass(percentile)}`}
                       >
-                        {percentile.toFixed(0)}%
+                        {percentile === undefined ? "Unavailable" : `${percentile.toFixed(0)}%`}
                       </span>
                     </div>
                   </div>
@@ -1052,11 +721,10 @@ export function PlayerRadarChart({
             })}
           </div>
 
-          {!usingFallback && (
+          {Object.keys(nhlRankings).length > 0 && (
             <div className={styles.rankingNote}>
               <em>
-                NHL rankings are calculated from current season data and update
-                when comparison type changes.
+                Rankings use {scopeLabel} values and peers from the same source.
               </em>
             </div>
           )}
@@ -1097,7 +765,9 @@ export function PlayerRadarChart({
               </span>
               <span
                 className={`${styles.percentile} ${
-                  percentile >= 90
+                  percentile === undefined
+                    ? ""
+                    : percentile >= 90
                     ? styles.elite
                     : percentile >= 75
                       ? styles.good
@@ -1109,7 +779,7 @@ export function PlayerRadarChart({
                 }`}
                 title={method?.description}
               >
-                {percentile.toFixed(0)}%
+                {percentile === undefined ? "Unavailable" : `${percentile.toFixed(0)}%`}
               </span>
             </div>
           );

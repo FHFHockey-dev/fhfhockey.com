@@ -1,0 +1,14 @@
+
+> web@0.1.0 test
+> vitest lib/rosterScheduleData/planning.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ lib/rosterScheduleData/planning.test.ts (76 tests) 39ms
+
+ Test Files  1 passed (1)
+      Tests  76 passed (76)
+   Start at  21:26:51
+   Duration  554ms (transform 203ms, setup 3ms, collect 291ms, tests 39ms, environment 0ms, prepare 42ms)
+

@@ -1,0 +1,29 @@
+{
+  "provenance": "User-supplied sanitized execution evidence relayed by Scout; agent did not issue the request or inspect credentials",
+  "source_message": "Sentinel_50d1e317974081919a469c6b56719fa7",
+  "destination_confirmation": "Parent states user confirmed deployed public database URL https://fyhftlxokyjtpndbkfse.supabase.co privately",
+  "agent_independent_runtime_verification": false,
+  "receipt": {
+    "httpStatus": 200,
+    "inspectionOnly": true,
+    "success": true,
+    "dryRun": true,
+    "boundedModeMatches": true,
+    "gameKeyMatches": true,
+    "yahooSeasonMatches": true,
+    "sourceSeasonMatches": true,
+    "rangeMatches": true,
+    "exact57GameIdsMatch": true,
+    "scopeSeasonId": 20262027,
+    "maximumSides": 114,
+    "sides": 114,
+    "rowsPlanned": 114,
+    "rowsUpserted": 0,
+    "rowsDeleted": 0,
+    "writeNotAttempted": true,
+    "warningsCount": 0,
+    "scopeHash": "eab29c8c1413bc553908a01f0f5e6d760565ee58675d336931f7420b174e8b7c",
+    "scopeChecksPassed": true,
+    "result": "Inspection ready for separate review; no write was submitted."
+  }
+}

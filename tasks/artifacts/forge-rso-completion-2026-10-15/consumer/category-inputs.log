@@ -1,0 +1,17 @@
+
+> web@0.1.0 test
+> vitest __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx -t manual matchup totals
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:48152) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx (201 tests | 200 skipped) 372ms
+   ✓ active provider refresh scheduling > applies manual matchup totals to the connected category snapshot without replacing its roster  372ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 200 skipped (201)
+   Start at  21:27:24
+   Duration  1.44s (transform 479ms, setup 3ms, collect 721ms, tests 372ms, environment 146ms, prepare 33ms)
+

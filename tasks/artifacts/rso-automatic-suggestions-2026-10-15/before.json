@@ -1,0 +1,12 @@
+{
+  "observedAt": "2026-10-15T22:01:34.083117+00:00",
+  "files": {
+    "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.ts": "3c0cdf82dd25dc0ad36662569cefa5bf0a4e67a831853578735e845cc7b0334d",
+    "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts": "5e22a977ab25e45302f43158197df98e2c9c3d030da6f79e9d38542a1da336c4",
+    "web/hooks/useCandidateMetrics.test.tsx": "cc8c4038b3012de07b9f82f615dc6d84bfd1dd4f19cea9f6afc8ba140cbaa6d4",
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx": "c0bf57577c2102b720979d00c2a0aafc3601934a9cc3227c9802d501695095c9",
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx": "8c63fa3f847041b078de6c7771ea9bfdc548b01c94ab562943576395933a5268",
+    "web/components/RosterScheduleOptimizer/CandidateCard.tsx": "2109329089d373c8b7a3013c2be5a98dad760d800d40c242043839be6472305e",
+    "web/components/RosterScheduleOptimizer/CandidateCard.test.tsx": "0eb330f8d09408f3f3e81008defbe9f7a051109989d658719e2b797ec153039b"
+  }
+}

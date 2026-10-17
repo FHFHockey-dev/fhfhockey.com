@@ -1,0 +1,62 @@
+{
+  "createdAt": "2026-10-15T22:08:46.078661+00:00",
+  "files": {
+    "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.ts": "0be1217d4a20ad3581a33b9455a65e6dce72e260d46a6a7ff8cd86aacecd8ee0",
+    "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts": "36f93d62f562dfa629f2b0f08d7e1135bd8e1da84c65b0ef2509c66846445070",
+    "web/hooks/useCandidateMetrics.test.tsx": "e29f6648da41a7617b06e243f4aee3a5e614ee7cf675026fefe822e8e1b69cbb",
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx": "2bb760eea783a1ab93c20900322f362deba449099d0f6c3562c2d2509e0958bd",
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx": "6b4b5075dd4c1fc7af7b89b7dcacaaeaf5aa7e28330fcee3955db6d85fbdb89d",
+    "web/components/RosterScheduleOptimizer/CandidateCard.tsx": "ddb6f575958a4050455c3e7ee18b145d139fbb94b1e5ce4c180ee3359be31b37",
+    "web/components/RosterScheduleOptimizer/CandidateCard.test.tsx": "f91460fbabc9a8cef64224176250823a234c37b733c56bbfe11f26ab65d30008"
+  },
+  "patchSha256": "3c758f90a910a8e739655eedb810a10ac34f814170668f2a7cea0c11ee2ce991",
+  "scope": "Seven exact RSO engine/test/presentation paths; patch starts from retained dirty intake copies. Existing changes preserved. No shared solver, main component, hook runtime, worker runtime, forecast/persistence/pilot edit.",
+  "reproduction": {
+    "command": "npm test -- --run lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts -t 'automatically proposes|twelve evaluated'",
+    "beforeFix": "1 passed (empty intent +1AGP/null points),1 failed (default cap omitted legal later d drop);20 skipped. Valid baseline and max24 control passed before default-cap assertion failed.",
+    "afterTwoLineFix": "2 passed,20 skipped. Actual proposal/evaluation limits unchanged; skipped capacity-invalid add-only proposals no longer consume evaluated-proposal allowance."
+  },
+  "automaticDispatch": "2/2 hook tests passed; first render posts steps:[], later selected-transaction edits do not trigger/gate a new calculation, late prior snapshot replies remain suppressed.",
+  "tests": {
+    "command": "npm test -- --run lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts hooks/useCandidateMetrics.test.tsx components/RosterScheduleOptimizer/CandidateCard.test.tsx components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx",
+    "passed": 66,
+    "failed": 0,
+    "files": 4,
+    "durationMs": 1230,
+    "logSha256": "d28c515828fb2db72e3055cdd74e9ca32844850a4409532b1993cd0d503d9297",
+    "scope": "Synthetic fixtures/mocked Worker only. No browser, provider, DB, network or actual app Worker execution."
+  },
+  "sourceInputBinding": {
+    "count": 22,
+    "beforeEqualsAfter": true,
+    "beforeSha256": "56f0a0cf10a4618d8e0e7db9c2a4f6899754d57da55cb4e65bfa0feaadce000d",
+    "afterSha256": "56f0a0cf10a4618d8e0e7db9c2a4f6899754d57da55cb4e65bfa0feaadce000d"
+  },
+  "lint": {
+    "exitCode": 0,
+    "outputBytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "whitespace": "owned pair/path set passed git diff --check",
+  "reviewSkill": "vercel:react-best-practices applied: pure derived metadata, Map lookup, type-only imports, named reason lists, no new fetch/effect/storage; independent review pending.",
+  "historicalCompilerCohort": {
+    "manifestSha256": "42929006a75dea1de6d6d158720c4f8886b69c74b27bfdf636415105654bf191",
+    "pins": 27,
+    "ownedOverlap": false,
+    "currentDrift": [
+      "web/__tests__/pages/forge/forecasts.test.tsx",
+      "web/lib/player-forecasts/contributions.ts",
+      "web/pages/forge/forecasts.tsx"
+    ],
+    "note": "Historical compiler is not new verification. FORGE separately owns authorized offline SOG admission changes; any changed external pins are recorded, not overwritten."
+  },
+  "compiler": "not run; no full-tree compiler or build",
+  "liveRequests": 0,
+  "databaseWrites": 0,
+  "providerRequests": 0,
+  "browserStorageReads": 0,
+  "browserStorageWrites": 0,
+  "pilotChanges": 0,
+  "review": "pending exact frozen increment review",
+  "limits": "TJ current runtime remains unobserved. Search remains bounded and not proven optimal. Existing drop-action safety when points unknown remains unchanged; this slice proves schedule-only comparison/ranking, not a numeric points or drop-quality endorsement."
+}

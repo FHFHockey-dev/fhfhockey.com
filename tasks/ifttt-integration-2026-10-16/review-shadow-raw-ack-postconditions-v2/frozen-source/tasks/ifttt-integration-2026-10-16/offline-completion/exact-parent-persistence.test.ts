@@ -1,0 +1,169 @@
+// @vitest-environment node
+/** Real legacy producer, retained local table DDL, fixture consumer only. */
+import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
+import { mkdtempSync,mkdirSync,readFileSync,rmSync,writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { createRequire } from "node:module";
+import { join } from "node:path";
+import { promisify } from "node:util";
+import { afterAll,afterEach,beforeAll,beforeEach,describe,expect,it,vi } from "vitest";
+import { persistTweetProjectionReports } from "../../../web/lib/sources/tweetProjectionStorage";
+import { extractTweetPlayerEvents } from "../../../web/lib/sources/tweetPlayerEvents";
+
+const consumer=vi.hoisted(()=>({capture:null as null|((args:any)=>Promise<void>)}));
+vi.mock("../../../web/lib/player-forecasts/sourceObservations",()=>({capturePlayerForecastSourceRows:async(args:any)=>{
+  if(!consumer.capture)throw new Error("Fixture consumer unavailable");return consumer.capture(args);
+}}));
+const {Client}=createRequire(join(__dirname,"../../../web/package.json"))("pg") as typeof import("pg");
+const oracleBytes=readFileSync(join(__dirname,"../handoff/extracted-reviewed/ifttt-claim-replay-tests-2026-10-15/acceptance-cases.json"),"utf8");
+const oracle=JSON.parse(oracleBytes.toString()),variants:any[]=[],results:any[]=[];
+const originalAssertions=(c:any,result:any)=>c.assertions.map((assertion:any)=>{
+  expect(assertion.op).toBe("equals");const actual=assertion.path.split(".").reduce((v:any,k:string)=>v?.[k],{result});
+  expect(actual).toEqual(assertion.value);return {assertion,actual,pass:true};
+});
+
+describe.runIf(Boolean(process.env.IFTTT_POSTGRES_BIN))("original legacy parent contracts through the actual public producer",()=>{
+  const exec=promisify(execFile),bin=process.env.IFTTT_POSTGRES_BIN!;
+  const env={...process.env};for(const key of Object.keys(env))if(key.startsWith("PG"))delete env[key];
+  let root:string,socket:string,started=false;
+  const allowed={line_source_snapshots:"capture_key",lines_ccc:"capture_key",tweet_projection_reports:"report_key",tweet_player_events:"event_key",fixture_children:"capture_key"};
+  type Table=keyof typeof allowed;
+  const sql=async(query:string,values:any[]=[])=>{
+    const db=new Client({host:socket,port:65440,user:"ifttt_parent_test",database:"postgres",password:"",ssl:false,options:"",connectionTimeoutMillis:2000});
+    await db.connect();try{return (await db.query(query,values)).rows;}finally{await db.end();}
+  };
+  const all=async(table:Table)=>table==="fixture_children"
+    ?(await sql("select body from fixture_children order by key")).map(row=>row.body)
+    :(await sql(`select to_jsonb(t) body from public.${table} t order by ${allowed[table]}`)).map(row=>row.body);
+  const insert=async(table:Table,row:any)=>{
+    if(table==="fixture_children")return sql("insert into fixture_children(key,body) values($1,$2) on conflict(key) do nothing",[row.capture_key,JSON.stringify(row)]);
+    const entries=Object.entries(row).filter(([,value])=>value!==undefined);
+    if(entries.some(([key])=>! /^[a-z_][a-z_0-9]*$/.test(key)))throw new Error("Invalid fixture column");
+    await sql(`insert into public.${table}(${entries.map(([key])=>key).join(",")}) values(${entries.map((_,i)=>`$${i+1}`).join(",")}) on conflict(${allowed[table]}) do nothing`,entries.map(([,value])=>value));
+  };
+  const sourceFor=(c:any)=>{
+    const r=c.records[0],publishedAt=r.time.originalPublishedAt,text=r.sourceText.text;
+    const interpretation={version:r.interpretation.ruleVersion,context:"game",certainty:"confirmed",units:[],unresolved:[],
+      events:extractTweetPlayerEvents({text,players:[{playerId:r.interpretation.subject.playerId,fullName:"Jordan Staal",lastName:"Staal",position:"C",teamId:r.interpretation.subject.teamId}],publishedAt,includeClaimAnchors:true})};
+    expect(interpretation.events).toMatchObject([{kind:"injury",playerId:r.interpretation.subject.playerId,availability:r.interpretation.fact.status}]);
+    // The DSL retains a distinct relay and verified original. This producer's
+    // quoted-original representation preserves both; no relay author/URL is guessed.
+    const source:any={snapshotDate:publishedAt.slice(0,10),team:{id:r.interpretation.scope.teamId,abbreviation:"CAR",name:"Carolina Hurricanes"},gameId:r.interpretation.scope.gameId,
+      tweetId:r.source.relayId,sourceUrl:null,primaryTextSource:"quoted_oembed",quotedTweetId:r.source.originalId,
+      quotedTweetUrl:`https://x.com/${r.source.originalAuthor}/status/${r.source.originalId}`,quotedAuthorHandle:r.source.originalAuthor,quotedRawText:text,
+      tweetPostedAt:publishedAt,observedAt:r.time.receivedAt,nhlFilterStatus:"accepted",detectedLeague:"NHL",rawText:text,metadata:{interpretation}};
+    const raw={capture_key:r.source.retainedSourceId,source:"fixture_original",source_group:r.source.namespace,source_key:r.source.namespace,source_account:r.source.originalAuthor,
+      snapshot_date:source.snapshotDate,tweet_id:source.tweetId,source_url:null,tweet_url:null,primary_text_source:source.primaryTextSource,
+      quoted_tweet_id:source.quotedTweetId,quoted_tweet_url:source.quotedTweetUrl,quoted_author_handle:source.quotedAuthorHandle,quoted_raw_text:text,game_id:source.gameId,team_id:source.team.id,
+      team_abbreviation:source.team.abbreviation,team_name:source.team.name,status:"observed",nhl_filter_status:"accepted",raw_text:text,
+      observed_at:source.observedAt,tweet_posted_at:source.tweetPostedAt,updated_at:source.observedAt,metadata:source.metadata,raw_payload:r};
+    return {source,raw};
+  };
+  const adapter=()=>{
+    const trace:string[]=[],fault:{variant:string|null;ackLoss:boolean}={variant:null,ackLoss:false};let calls=0;
+    const db:any={from:(name:string)=>{
+      if(!(name in allowed))throw new Error(`Unexpected producer relation ${name}`);const table=name as Table;
+      return {upsert:async(rows:any[],options:any)=>{
+        expect(options.onConflict).toBe(allowed[table]);expect(options.ignoreDuplicates).toBe(true);
+        for(const row of rows){
+          const parent=table==="line_source_snapshots" && row.metadata?.derived===true;
+          if(parent && fault.variant){
+            // The original DSL explicitly forces the existing parent key while
+            // injecting a different immutable field at the writer boundary.
+            if(fault.variant==="raw_payload")row.raw_payload.forcedConflict="CR037 distinct raw payload";
+            else if(fault.variant==="provenanceHash")row.metadata.provenanceHash="CR037-distinct-provenance";
+            else if(fault.variant==="team_or_game_scope")row.game_id++;
+            else if(fault.variant==="interpretation")row.metadata.interpretation.version="CR037-distinct-interpretation";
+            else throw new Error("Unknown original conflict variant");
+          }
+          trace.push(parent?"parent_insert":"upsert:"+table);await insert(table,row);
+          if(parent && fault.ackLoss){fault.ackLoss=false;trace.push("parent_ack_lost");throw new Error("CR041 parent committed acknowledgment lost");}
+        }return {error:null};
+      },select:()=>{
+        const filters:Array<(row:any)=>boolean>=[];let from=0,to=1000,by:string|null=null;let parentRead=false;
+        const query:any={eq:(key:string,value:any)=>{filters.push(row=>row[key]===value);return query;},
+          in:(key:string,values:any[])=>{if(table==="line_source_snapshots" && key==="capture_key")parentRead=true;filters.push(row=>values.includes(row[key]));return query;},
+          gte:()=>query,lte:()=>query,or:()=>query,abortSignal:()=>query,
+          order:(key:string)=>{by=key;return query;},range:(start:number,end:number)=>{from=start;to=end+1;return query;},
+          then:async(resolve:any,reject:any)=>{
+            try{let rows=(await all(table)).filter(row=>filters.every(f=>f(row)));if(by)rows=rows.sort((a,b)=>String(a[by!]).localeCompare(String(b[by!])));
+              rows=rows.slice(from,to);trace.push(parentRead?"parent_readback":"read:"+table);return resolve({data:rows,count:rows.length,error:null});
+            }catch(error){return reject(error);}
+          }};return query;
+      }};
+    },rpc:()=>{throw new Error("No production consumer RPC is allowed in this fixture");}};
+    consumer.capture=async({rows}:any)=>{
+      calls++;trace.push("consumer_fixture");expect(trace.lastIndexOf("parent_readback")).toBeLessThan(trace.lastIndexOf("consumer_fixture"));
+      for(const row of rows){const retained=(await all("line_source_snapshots")).find(p=>p.capture_key===row.capture_key);expect(retained).toBeDefined();await insert("fixture_children",row);}
+    };
+    return {db,trace,fault,callCount:()=>calls};
+  };
+  const parent=async()=>(await all("line_source_snapshots")).filter(row=>row.metadata?.derived===true);
+  const counts=async()=>({children:(await all("fixture_children")).length,reports:(await all("tweet_projection_reports")).length,events:(await all("tweet_player_events")).length});
+  beforeAll(async()=>{
+    expect(createHash("sha256").update(oracleBytes).digest("hex")).toBe("d9fe45ca44042673ff0381cd0f1981074b196da99fb6fdf9da573ac5df84fd8b");
+    root=mkdtempSync(join(tmpdir(),"fhfh-ifttt-parent-pg-"));socket=join(root,"socket");mkdirSync(socket,{mode:0o700});
+    await exec(join(bin,"initdb"),["-D",join(root,"data"),"--no-locale","--encoding=UTF8","--auth-local=trust","--auth-host=reject","-U","ifttt_parent_test"],{env});
+    await exec(join(bin,"pg_ctl"),["-D",join(root,"data"),"-l",join(root,"server.log"),"-w","-t","10","-o",`-c listen_addresses='' -c unix_socket_directories='${socket}' -p 65440`,"start"],{env});started=true;
+    // Use exact retained local column/check DDL, not a permissive JSON stand-in.
+    // Reference targets are bounded fixture identities; this is not hosted schema/history evidence.
+    const baseline=readFileSync(join(__dirname,"../../../supabase/migrations/20260716112908_production_schema_baseline.sql"),"utf8");
+    const reports=readFileSync(join(__dirname,"../../../supabase/migrations/20260919005608_tweet_pipeline_reports_and_review.sql"),"utf8");
+    await sql("create table public.teams(id bigint primary key);create table public.games(id bigint primary key);create table public.players(id bigint primary key);insert into public.teams values(12);insert into public.games values(900012),(900013);insert into public.players values(8473533)");
+    for(const table of ["line_source_snapshots","lines_ccc"]){
+      const ddl=baseline.match(new RegExp(`CREATE TABLE public\\.${table} \\([\\s\\S]*?\\n\\);`))?.[0];expect(ddl).toBeDefined();await sql(ddl!);
+      await sql(`alter table public.${table} add primary key(capture_key)`);
+      for(const key of ["game_id","team_id"]){
+        const ddl=baseline.match(new RegExp(`ALTER TABLE ONLY public\\.${table}\\n    ADD CONSTRAINT ${table}_${key}_fkey [^;]+;`))?.[0];expect(ddl).toBeDefined();await sql(ddl!);
+      }
+    }
+    for(const table of ["tweet_projection_reports","tweet_player_events"]){
+      const ddl=reports.match(new RegExp(`create table public\\.${table} \\([\\s\\S]*?\\n\\);`))?.[0];expect(ddl).toBeDefined();await sql(ddl!);
+    }
+    await sql("create table fixture_children(key text primary key,body jsonb not null)");
+  },20000);
+  beforeEach(async()=>{
+    await sql(`truncate ${Object.keys(allowed).join(",")}`);
+    vi.stubEnv("TWEET_CLAIMS_MODE","");vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED","true");vi.stubEnv("TWEET_PIPELINE_PUBLISHING_ENABLED","true");
+    vi.useFakeTimers({toFake:["Date"]});
+  });
+  afterEach(()=>{vi.useRealTimers();vi.unstubAllEnvs();consumer.capture=null;});
+  afterAll(async()=>{
+    if(started)await exec(join(bin,"pg_ctl"),["-D",join(root,"data"),"-w","-t","10","stop","-m","fast"],{env});
+    if(root)rmSync(root,{recursive:true,force:true});
+    if(variants.length===4){const c=oracle.cases.find((c:any)=>c.id==="CR037"),result={eachListedConflictVariantRejected:variants.every(v=>v.rejected),
+      originalImmutableBytesUnchanged:variants.every(v=>v.parentUnchanged),newChildCount:variants.reduce((n,v)=>n+v.newChildren,0),downstreamCallsAfterConflict:variants.reduce((n,v)=>n+v.downstream,0)};
+      results.unshift({id:c.id,result,assertions:originalAssertions(c,result),variants});}
+    writeFileSync(join(__dirname,"exact-parent-persistence-results.json"),JSON.stringify({originalOracleSha256:createHash("sha256").update(oracleBytes).digest("hex"),
+      candidateManifest:"../parent-recovery-increment/owned-source-v1-sha256.json",candidateManifestSha256:createHash("sha256").update(readFileSync(join(__dirname,"../parent-recovery-increment/owned-source-v1-sha256.json"),"utf8")).digest("hex"),
+      producer:"persistTweetProjectionReports → persistProjectionSourceSnapshots",storage:"private PG exact retained local parent/report/event column/check DDL; bounded reference targets, fixture children; hosted schema/history not established",
+      downstream:"fixture capture boundary only; actual forecast consumer disabled",noHostedActions:true,noActualDispatch:true,fullOriginalAcceptance:false,results},null,2)+"\n");
+  });
+  for(const field of oracle.cases.find((c:any)=>c.id==="CR037").records[1].immutableConflictFields as string[])it(`CR037 rejects separate ${field} forced same-parent-key conflict`,async()=>{
+    const c=oracle.cases.find((c:any)=>c.id==="CR037"),f=sourceFor(c);vi.setSystemTime(c.records[0].time.interpretedAt);
+    await insert("line_source_snapshots",f.raw);const a=adapter();await persistTweetProjectionReports(a.db,[f.source]);
+    const before=await parent();expect(before).toHaveLength(1);const beforeCounts=await counts();expect(beforeCounts.children).toBe(1);
+    const callCount=a.callCount();a.fault.variant=field;vi.setSystemTime("2026-10-15T12:03:00Z");
+    let error:unknown;try{await persistTweetProjectionReports(a.db,[f.source]);}catch(e){error=e;}
+    const after=await parent(),afterCounts=await counts(),result={field,rejected:/version conflict/.test(String(error)),
+      parentUnchanged:JSON.stringify(after)===JSON.stringify(before),newChildren:afterCounts.children-beforeCounts.children,
+      downstream:a.callCount()-callCount,before,after,beforeCounts,afterCounts,trace:a.trace,error:String(error)};
+    variants.push(result);expect(result.rejected).toBe(true);expect(result.parentUnchanged).toBe(true);
+    expect(afterCounts).toEqual(beforeCounts);expect(result.downstream).toBe(0);
+  });
+  it("CR041 reads the exact committed parent before any child after lost acknowledgement and fresh retry",async()=>{
+    const c=oracle.cases.find((c:any)=>c.id==="CR041"),f=sourceFor(c);vi.setSystemTime(c.records[0].time.interpretedAt);
+    await insert("line_source_snapshots",f.raw);const first=adapter();first.fault.ackLoss=true;
+    await expect(persistTweetProjectionReports(first.db,[f.source])).rejects.toThrow("parent committed acknowledgment lost");
+    expect(first.callCount()).toBe(0);const before=await parent();expect(before).toHaveLength(1);
+    const second=adapter();vi.setSystemTime("2026-10-15T12:03:00Z");await persistTweetProjectionReports(second.db,JSON.parse(JSON.stringify([f.source])));
+    const after=await parent(),readIndex=second.trace.indexOf("parent_readback"),childIndex=second.trace.indexOf("consumer_fixture");
+    const evidenceVersions=(await all("tweet_projection_reports")).map(row=>row.report_key);
+    const result={parentCountAfterRetry:after.length,exactParentReadbackBeforeChildren:readIndex>=0&&childIndex>readIndex,
+      originalImmutableBytesUnchanged:JSON.stringify(before)===JSON.stringify(after),duplicateEvidenceVersionCount:evidenceVersions.length-new Set(evidenceVersions).size};
+    expect(second.callCount()).toBe(1);expect(await counts()).toEqual({children:1,reports:1,events:1});
+    results.push({id:c.id,result,assertions:originalAssertions(c,result),before,after,firstTrace:first.trace,secondTrace:second.trace,
+      evidenceVersionMapping:"legacy projection report_key; no claim about r3 evidenceVersions or real consumer receipts"});
+  });
+});

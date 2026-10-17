@@ -1,0 +1,30 @@
+{
+  "candidateCommit": "457435eb3010c5b3dd92d2e1a46d9c75d851780a",
+  "deployment": "dpl_6ccUfnYgqnueRsNEbSESqZmSbzPu",
+  "observedAt": "2026-10-16T04:56:31.140503+00:00",
+  "budget": 5,
+  "actualApplicationRequests": 1,
+  "concurrency": 1,
+  "retries": 0,
+  "redirectsFollowed": 0,
+  "ingestionCronOrPublishingRequests": 0,
+  "allPlannedChecksPassed": false,
+  "results": [
+    {
+      "path": "/robots.txt",
+      "expectedStatus": 200,
+      "status": null,
+      "passed": false,
+      "seconds": 0.283,
+      "bytes": 0,
+      "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "contentType": null,
+      "cache": null,
+      "requestId": null,
+      "proxyFailurePayloadExpected": null,
+      "error": "URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1020)>",
+      "redirectFollowed": false
+    }
+  ],
+  "bodiesRetained": false
+}

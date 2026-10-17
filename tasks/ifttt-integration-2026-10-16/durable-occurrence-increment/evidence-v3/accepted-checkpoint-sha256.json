@@ -1,0 +1,35 @@
+{
+  "candidateManifestSha256": "98e25223a81e300bc411e3e8dca05d2a151b374977b369d02b9a14fd6e2a05a0",
+  "source59FinalRecheck": true,
+  "reviewStatus": "Independent bounded local held acceptance; source hold released; five exact contracts remain open.",
+  "files": [
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/durable-occurrence-increment/ACCEPTED-V3.md",
+      "sha256": "095c3f2c6c3346128f528fec61f4eb15dd21b75dc031e0abd7d94175fc473240"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/durable-occurrence-increment/CANDIDATE-V3.md",
+      "sha256": "72fcb247a7ab737b708d8c5c6a2da0fd8633a11769203024edb9627d09220b89"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/durable-occurrence-increment/CHECKPOINT-V3.md",
+      "sha256": "3bcfd49d87488d369d8a919a6c011e5e9c67c2445086f0272d242750fe42622c"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/durable-occurrence-increment/TYPECHECK-COORDINATION.md",
+      "sha256": "58bfeceecf19384bc94c063a2fd2ec94324afb1b6385a600db483da705f7d800"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/durable-occurrence-increment/LEGACY-PARENT-NEXT-INCREMENT.md",
+      "sha256": "d0dc185e4edb8f7f7eaa76048ad38b5e8b0b2a7c6be683d190cd3dbbfa224959"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/offline-completion/REMAINING-PERSISTENCE-CONTRACTS.md",
+      "sha256": "e759d6079ca76d7694bed32f5d73f15b0f1fae24398b40aecd5e989bf57ae8c4"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/durable-occurrence-increment/evidence-v3/author-artifacts-sha256.json",
+      "sha256": "f718318b53a6256ceb2df6a34d97409f038bcb97434b32e60847cd312a413b4d"
+    }
+  ]
+}

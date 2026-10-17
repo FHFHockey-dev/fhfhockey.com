@@ -1,0 +1,17 @@
+{
+  "capturedAt": "2026-10-16T04:26:29.184279+00:00",
+  "snapshot": "/tmp/fhf-release-checkpoint-20261016-0424/source-pins",
+  "files": {
+    "web/pages/api/v1/start-chart.ts": "29a743a0a9b5f9f623f851697a8cfcbc6552091f43478c85d6798cf022465890",
+    "web/lib/projections/startChartContract.ts": "48d3e00e9aff10e381a61ea04dd69fe30af53eb4bb2be68025bdbffba1963033",
+    "web/pages/start-chart.tsx": "fdbd24bb40b257b6483d7dc10c7b30060d36fbc0aa20faca9e3f8f9a0f706be3",
+    "web/__tests__/pages/api/v1/start-chart.test.ts": "7339fed3b4204862cd338ac5ecef3b0e3044df634274b3fdc5f5dbcb0a589768",
+    "web/__tests__/pages/start-chart.test.tsx": "369426852674462f073983ff30408e8fa2a1c1b6966fb3765f9670058f89e4b7",
+    "web/lib/cron/cronInventory.ts": "7ce3f8cd67c3dc5749018591899f88885e724d17352247c5bab770b145b9d8eb",
+    "web/lib/rosterScheduleData/recurring.ts": "e876ef82ec720744588bbc4dc3e984db8669b1861229666b6637d6de1ae46136",
+    "web/lib/rosterScheduleData/source.ts": "770c0dd5820aaf745441e4b5b10bc5d73d727e3d14d0fc3617ab369bbac9b92e",
+    "web/pages/api/v1/db/cron-report.ts": "04db8f08d9cc86bc1ad474cc3aaa33971905a33dfd747966a4e8e01ea0048b55",
+    "web/pages/api/v1/db/refresh-roster-optimizer-schedule.ts": "f93de7aa936a36d2274330fdd3fa5d30cb4888e63a5f8135f21c4b25ec4282d8"
+  },
+  "candidateMembership": false
+}

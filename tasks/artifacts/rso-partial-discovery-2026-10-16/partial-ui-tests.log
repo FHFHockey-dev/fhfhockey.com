@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx -t merges known per-player facts from a partial provider snapshot --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:26000) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx (200 tests | 199 skipped) 171ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 199 skipped (200)
+   Start at  20:08:50
+   Duration  1.44s (transform 505ms, setup 3ms, collect 852ms, tests 171ms, environment 261ms, prepare 34ms)
+

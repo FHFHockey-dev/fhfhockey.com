@@ -1,0 +1,22 @@
+{
+  "recordedUTC": "2026-10-15T22:34:38.716054+00:00",
+  "status": "genuine_binding_blocked_first_query_deadline",
+  "privateRoot": "/Users/tim/Documents/FHFH-private/forge-current-season-sog-binding-20261015-v1",
+  "terminalSHA256": "b90046d3d1afe5455b79d81acdef01d430cf1652888f288b8a4c7ff28ffcfbfe",
+  "auditSHA256": "35d69690781bafb13a243efd7a57c8eeb92be7309b5fcfa91394a618105486ea",
+  "publicationStatusSHA256": "4f79470dbf0b50144d562b7d3507d6a71c7fa5b22a9c62e7eb6f2b92d8ca6290",
+  "project": "fyhftlxokyjtpndbkfse",
+  "packetReads": 1,
+  "metadataRequests": 1,
+  "metadataResponses": 0,
+  "returnedRows": 0,
+  "retries": 0,
+  "queryElapsedMs": 8002.198042,
+  "nextQueriesNotExecuted": 3,
+  "bindingCreated": false,
+  "databaseWrites": 0,
+  "activation": false,
+  "expiryUTC": "2026-10-15T23:00:00Z",
+  "operationalReview": "requested from existing reviewer; no acceptance claimed",
+  "publicationProposal": "blocked: no genuine binding or wrapper/candidate/bundle hashes; no placeholder approvals"
+}

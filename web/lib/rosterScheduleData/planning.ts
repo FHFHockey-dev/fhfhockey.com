@@ -5,7 +5,10 @@ export { publicPlanningForecasts } from "lib/projections/consumerRevisionAdmissi
 export type { PlanningDataQuery } from "./planningInputs";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { playerForecastSourcePayloadHash } from "lib/player-forecasts/sourceSnapshot";
-import { loadApprovedContributionBundle } from "lib/player-forecasts/contributionStore";
+import { resolveNativeCatalogEnvironment, unavailableNativeCatalogEnvironment } from "lib/player-forecasts/nativeCatalogHead";
+import { loadNativeContributionBundle } from "lib/player-forecasts/nativeContributionAdmission";
+import { loadModeledGoalieParticipation, loadFrozenWindowGoalieParticipation, loadFrozenWindowGoalieStarts, loadRosterObservationGoalieParticipation, loadRosterObservationGoalieStarts } from "lib/player-forecasts/modeledGoalieParticipationStore";
+import { loadModeledSkaterParticipation, loadFrozenWindowSkaterParticipation, loadRosterObservationSkaterParticipation } from "lib/player-forecasts/modeledSkaterParticipationStore";
 import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import type { ForgeGameRevision } from "lib/projections/gameRevisions";
 import { starterBoardCanaryGameIds, starterBoardFlags } from "lib/projections/starterBoardFlags";
@@ -35,18 +38,60 @@ function evidence(source: string, asOf: string | null, seasonId: number | null, 
   return { source, asOf, seasonId, completeness: limitations.length ? "partial" : "complete", limitations };
 }
 
-export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningDataQuery, options: { now?: Date; forecastsEnabled?: boolean; deadlineMs?: number } = {}): Promise<PlanningData> {
+export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningDataQuery, options: { now?: Date; forecastsEnabled?: boolean; deadlineMs?: number; skipOwnership?: boolean; skipRecentForm?: boolean } = {}): Promise<PlanningData> {
   const now = options.now ?? new Date();
   const deadline = Math.min(options.deadlineMs ?? Infinity, Date.now() + 20000);
+  const nativeCatalog = await withinDeadline(Math.min(deadline, Date.now() + 8000), signal => resolveNativeCatalogEnvironment(db, query.seasonId, now, process.env, signal))
+    .catch(() => unavailableNativeCatalogEnvironment(process.env));
   const inputDeadline = Math.min(deadline, Date.now() + 8000);
+  const selectedEnvironment = nativeCatalog.environment;
   const calendarPolicy = forecastCalendarPolicy(Number(process.env.STARTER_BOARD_CALENDAR_HORIZON_DAYS ?? 14));
-  const [{ players, games, scheduleRows, scheduleProblems, evidence: sources }, weeks, baseline] = await Promise.all([
+  const [{ players, games, scheduleRows, scheduleProblems, evidence: sources }, weeks, baseline, skaterParticipation, goalieParticipation,
+    frozenSkaterParticipation, frozenGoalieParticipation, frozenGoalieStarts,
+    observedSkaterParticipation, observedGoalieParticipation, observedGoalieStarts] = await Promise.all([
     loadPlanningInputs(db, query, now, inputDeadline),
     pages(() => db.from("yahoo_matchup_weeks").select("id,game_key,week,start_date,end_date", { count: "exact" })
       .eq("season", String(query.seasonId).slice(0, 4)).order("week").order("id"), inputDeadline, 500).catch(() => []),
-    withinDeadline(inputDeadline, signal => loadApprovedContributionBundle(db, query.seasonId, now, { signal }))
+    // Admission reads bundles, review receipts, then original inputs. Bound the
+    // complete sequence by the route deadline rather than one 8-second stage.
+    withinDeadline(deadline, signal => loadNativeContributionBundle(db, query.seasonId, now, { signal, environment: selectedEnvironment }))
       .catch(() => ({ sources: [], manifests: [], checksum: null, limitations: ["baseline_read_unavailable"] })),
+    withinDeadline(inputDeadline, signal => loadModeledSkaterParticipation(db, query.seasonId, now, { signal, environment: selectedEnvironment }))
+      .catch(() => ({ sources: [], checksum: null, limitations: ["participation_read_unavailable"] })),
+    withinDeadline(inputDeadline, signal => loadModeledGoalieParticipation(db, query.seasonId, now, { signal, environment: selectedEnvironment }))
+      .catch(() => ({ sources: [], checksum: null, limitations: ["goalie_participation_read_unavailable"] })),
+    withinDeadline(inputDeadline, signal => loadFrozenWindowSkaterParticipation(db, query.seasonId, now, { signal, environment: selectedEnvironment }))
+      .catch(() => ({ sources: [], checksum: null, limitations: ["frozen_skater_participation_read_unavailable"] })),
+    withinDeadline(inputDeadline, signal => loadFrozenWindowGoalieParticipation(db, query.seasonId, now, { signal, environment: selectedEnvironment }))
+      .catch(() => ({ sources: [], checksum: null, limitations: ["frozen_goalie_participation_read_unavailable"] })),
+    withinDeadline(inputDeadline, signal => loadFrozenWindowGoalieStarts(db, query.seasonId, now, { signal, environment: selectedEnvironment }))
+      .catch(() => ({ sources: [], checksum: null, limitations: ["frozen_goalie_starts_read_unavailable"] })),
+    withinDeadline(inputDeadline, signal => loadRosterObservationSkaterParticipation(db, query.seasonId, now, { signal, environment: selectedEnvironment }))
+      .catch(() => ({ sources: [], checksum: null, limitations: ["roster_observation_skater_participation_read_unavailable"] })),
+    withinDeadline(inputDeadline, signal => loadRosterObservationGoalieParticipation(db, query.seasonId, now, { signal, environment: selectedEnvironment }))
+      .catch(() => ({ sources: [], checksum: null, limitations: ["roster_observation_goalie_participation_read_unavailable"] })),
+    withinDeadline(inputDeadline, signal => loadRosterObservationGoalieStarts(db, query.seasonId, now, { signal, environment: selectedEnvironment }))
+      .catch(() => ({ sources: [], checksum: null, limitations: ["roster_observation_goalie_starts_read_unavailable"] })),
   ]);
+  // Preserve the existing skater checksum and disabled behavior when no goalie
+  // releases are admitted; goalie revisions are an independently pinned catalog.
+  const legacyParticipationChecksum = goalieParticipation.checksum ? playerForecastSourcePayloadHash({ skater: skaterParticipation.checksum,
+    goalie: goalieParticipation.checksum }) : skaterParticipation.checksum;
+  const frozenParticipationChecksum = frozenSkaterParticipation.checksum || frozenGoalieParticipation.checksum || frozenGoalieStarts.checksum
+    ? playerForecastSourcePayloadHash({ legacy: legacyParticipationChecksum, frozenSkater: frozenSkaterParticipation.checksum,
+      frozenGoalie: frozenGoalieParticipation.checksum,
+      ...(frozenGoalieStarts.checksum ? { frozenGoalieStarts: frozenGoalieStarts.checksum } : {}) }) : legacyParticipationChecksum;
+  const observationEnabled = observedSkaterParticipation.checksum || observedGoalieParticipation.checksum || observedGoalieStarts.checksum;
+  const participation = { sources: [...skaterParticipation.sources, ...goalieParticipation.sources,
+    ...frozenSkaterParticipation.sources, ...frozenGoalieParticipation.sources, ...frozenGoalieStarts.sources,
+    ...observedSkaterParticipation.sources, ...observedGoalieParticipation.sources, ...observedGoalieStarts.sources],
+    checksum: observationEnabled ? playerForecastSourcePayloadHash({ existing: frozenParticipationChecksum,
+      observedSkater: observedSkaterParticipation.checksum, observedGoalie: observedGoalieParticipation.checksum,
+      observedGoalieStarts: observedGoalieStarts.checksum }) : frozenParticipationChecksum,
+    limitations: [...skaterParticipation.limitations, ...[...goalieParticipation.limitations,
+      ...frozenSkaterParticipation.limitations, ...frozenGoalieParticipation.limitations, ...frozenGoalieStarts.limitations,
+      ...observedSkaterParticipation.limitations, ...observedGoalieParticipation.limitations, ...observedGoalieStarts.limitations]
+      .filter(reason => reason !== "modeled_participation_serving_disabled")] };
   const revisions: ForgeGameRevision[] = [];
   const exclusionCounts: Record<string, number> = {};
   const exclusionRows: ForecastDiscoveryExclusion[] = [];
@@ -115,16 +160,25 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
   const rosterRevision = playerForecastSourcePayloadHash(players.map(player => [player.id, player.rosterRevision]).sort());
   const manifestContent = { seasonId: query.seasonId, calendarPolicy, acceptedNewsRevision, scheduleRevision, rosterRevision,
     issuedRevisionIds: [...new Set(forecasts.map(row => row.revisionId))].sort(), baselineChecksum: baseline.checksum,
+    participationRevisionIds: participation.sources.map(source => source.revisionId).sort(), participationChecksum: participation.checksum,
     exclusions: exclusionRows };
   const forecastManifest: ForecastManifest = { ...manifestContent, version: "planning-forecasts-v1", id: playerForecastSourcePayloadHash(manifestContent), asOf: now.toISOString(),
     requiredOpportunities: players.reduce((sum, player) => sum + games.filter(game => game.teamAbbreviation === player.teamAbbreviation && game.status === "scheduled").length, 0),
     forecastedOpportunities: forecasts.length, exclusionCounts, exclusions: exclusionRows };
+  if (nativeCatalog.limitation) { baseline.limitations.push(nativeCatalog.limitation); participation.limitations.push(nativeCatalog.limitation); }
   sources.baselines = evidence("Approved contribution rate bundles", baseline.manifests.map(manifest => manifest.issuedAt).sort()[0] ?? null, query.seasonId, baseline.limitations);
+  sources.participation = evidence(observationEnabled ? "Released modeled participation with official roster-observation continuation proxies"
+    : frozenSkaterParticipation.checksum || frozenGoalieParticipation.checksum || frozenGoalieStarts.checksum
+    ? "Released modeled participation including explicit frozen history"
+    : goalieParticipation.checksum ? "Released modeled skater and goalie participation" : "Released modeled skater participation",
+    participation.sources.map(source => source.issuedAt).sort()[0] ?? null, query.seasonId, participation.limitations);
   forecastProblems.push("Only issued unconditional game forecasts are used. Conditional-only, missing, or out-of-horizon statistics are unknown, not zero.");
   sources.forecasts = evidence("selected FORGE game revisions", forecasts.map((row) => row.issuedAt).sort()[0] ?? null, query.seasonId, [...new Set(forecastProblems)]);
 
   // Ownership is platform-wide context, never league availability. This season-scoped view may be absent/stale.
-  try {
+  if (options.skipOwnership) {
+    sources.ownership = evidence("not_requested", null, query.seasonId, ["Ownership context was not requested by this consumer."]);
+  } else try {
     const ownershipDeadline = Math.min(deadline, Date.now() + 2000);
     const ownership = await pages(() => db.from("yahoo_player_ownership_daily").select("player_key,player_id,ownership_pct,ownership_date,updated_at", { count: "exact" })
       .eq("season_id", query.seasonId).gte("ownership_date", new Date(now.getTime() - 3 * 86400000).toISOString().slice(0, 10))
@@ -148,7 +202,9 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
     sources.ownership = evidence("Yahoo daily ownership", ownership[0]?.updated_at ?? null, query.seasonId, ["Ownership is not league availability; missing or older than three days is unknown."]);
   } catch { sources.ownership = evidence("Yahoo daily ownership", null, query.seasonId, ["Ownership could not be verified."]); }
   let recentFormStage: "games" | "stats" | "processing" = "games";
-  try {
+  if (options.skipRecentForm) {
+    sources.form = evidence("not_requested", null, query.seasonId, ["Recent scoring context was not requested by this consumer."]);
+  } else try {
     const formDeadline = Math.min(deadline, Date.now() + 2000);
     const start = new Date(now.getTime() - 21 * 86400000).toISOString().slice(0, 10);
     const cutoff = new Date(now.getTime() - 24 * 3600000).toISOString().slice(0, 10);
@@ -188,5 +244,6 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
     .filter((row: Row) => Number.isInteger(row.week) && row.week > 0 && /^\d{4}-\d{2}-\d{2}$/.test(row.start_date) && row.start_date <= row.end_date)
     .map((row: Row) => ({ gameKey: String(row.game_key), week: row.week, startDate: row.start_date, endDate: row.end_date })) : [];
   sources.matchupWeeks = evidence("Yahoo matchup weeks", null, query.seasonId, matchupWeeks.length ? [] : ["Matchup week presets are unavailable for this season; use custom dates."]);
-  return { players, games, forecasts, baselineSources: baseline.sources, forecastManifest, evidence: sources, matchupWeeks };
+  return { players, games, forecasts, baselineSources: baseline.sources, participationSources: participation.sources,
+    forecastManifest, evidence: sources, matchupWeeks };
 }

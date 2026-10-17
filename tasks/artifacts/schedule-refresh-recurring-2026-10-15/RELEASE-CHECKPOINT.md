@@ -1,0 +1,19 @@
+# Schedule refresh release checkpoint
+
+Recorded 2026-10-15T23:21:17.168999-05:00 (America/Chicago). **Safe checkpoint; current shared-source drift needs owner reconciliation before combined acceptance.** No app edit, staging, commit, new compiler/test or live operation was performed for this checkpoint. Canonical checkout remains `octoberBranch`, HEAD `a8f58de6178e282acd3a71851c66f4a56b119f14`.
+
+| Owned/shared application path | Current SHA-256 | Acceptance |
+| --- | --- | --- |
+| `web/lib/cron/cronInventory.ts` | `7ce3f8cd67c3dc5749018591899f88885e724d17352247c5bab770b145b9d8eb` | accepted hash matches |
+| `web/lib/rosterScheduleData/recurring.ts` | `e876ef82ec720744588bbc4dc3e984db8669b1861229666b6637d6de1ae46136` | accepted hash matches |
+| `web/lib/rosterScheduleData/source.ts` | `770c0dd5820aaf745441e4b5b10bc5d73d727e3d14d0fc3617ab369bbac9b92e` | later shared drift |
+| `web/pages/api/v1/db/cron-report.ts` | `04db8f08d9cc86bc1ad474cc3aaa33971905a33dfd747966a4e8e01ea0048b55` | accepted hash matches |
+| `web/pages/api/v1/db/refresh-roster-optimizer-schedule.ts` | `f93de7aa936a36d2274330fdd3fa5d30cb4888e63a5f8135f21c4b25ec4282d8` | accepted hash matches |
+
+This lane will hold all five paths stable for frozen combined verification, including the accepted optional-reader seam in shared `source.ts`. The later source changes are preserved: per-day identity coverage, disagreement rejection and `scheduleCoverage`/empty-date metadata. Their owner is currently unconfirmed. FORGE and RSO both report these source changes are not theirs; RSO reports `Complete Forge RSO tasks` (`01a14283-f596-73c3-8590-37d198756c4b`) remains active on related integration/capture preparation. Release inventory must reconcile that owner before treating the current graph as accepted. [Observed diff](release-checkpoint-source-drift.patch). There is also later drift in named dependency pins (`types.ts`, `normalize.ts`, `planningInputs.ts`, existing manual route); hashes are recorded in [RELEASE-CHECKPOINT.json](RELEASE-CHECKPOINT.json). No inference of current acceptance from old green checks.
+
+Prior accepted evidence remains intact: 11 integrated-wrapper cases; 50 guarded-route/source cases; five actual-root TypeScript; five-file lint and scoped whitespace checks passed. The original V2 source/SQL and evidence readbacks were independently ACCEPTED. Retained 32 model/static and 12 real synthetic PostgreSQL cases were not repeated. **No compiler, test, source acquisition or database writer is running/planned by this lane.** FORGE and RSO both confirm no writer/tests/compiler/jobs active in their lanes. FORGE's whole-week inspector was never invoked and its window expired. RSO reports the completion integrator remains active; source authorship/freeze is not confirmed. Unrelated global process state is not asserted.
+
+Release gate: reconcile/attribute changed shared graph and its independent evidence, then coordinate a frozen combined verification slot. Separate production gates remain actual parity preflight, four-function/two-trigger shared DDL, exact candidate release and single-job activation/monitoring. DDL is still uninstalled by this lane; no live/scheduler/credential/forecast/publication authority is inherited.
+
+Application slice is the five named paths only. Proposal/SQL/activation templates, candidate copies, rejected evidence, fixture/log/manifests and this checkpoint under the artifact directory are supporting evidence, excluded from this lane's application release approval. Private one-time approval/attempt/pilot/inspection artifacts and unrelated working files are outside this lane and were not inspected. No files are staged by this lane. Direct reply-message authority to the new release task was not inferred; Scout can retrieve this checkpoint and final response.

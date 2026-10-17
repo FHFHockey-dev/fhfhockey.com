@@ -408,6 +408,7 @@ function buildScheduleRows(args: {
       gameKey: args.gameKey,
       mapping,
       sourceUrl: entry.sourceUrl,
+      scheduleCoverage: entry.scheduleCoverage,
       yahooSeason: args.yahooSeason,
     });
     rows.push(

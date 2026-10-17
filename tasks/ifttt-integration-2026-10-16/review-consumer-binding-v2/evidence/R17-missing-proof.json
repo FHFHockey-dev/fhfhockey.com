@@ -1,0 +1,13 @@
+{
+  "id": "R17_direct_binding_missing_history",
+  "rejected": true,
+  "result": null,
+  "inventory": {
+    "snapshots": 0,
+    "assignments": 0,
+    "queues": 0,
+    "receipts": 0,
+    "forgeQueues": 0
+  },
+  "bindings": []
+}

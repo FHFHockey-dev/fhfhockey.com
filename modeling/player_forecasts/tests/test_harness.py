@@ -4142,3 +4142,325 @@ def test_prospective_freeze_binds_fixed_artifact_and_target_season(tmp_path, mon
     assert evidence["evidenceKind"] == "untouched_prospective"
     assert evidence["tuningPermitted"] is False
     assert evidence["metrics"]["targets"]["goals"]["rows"] == 1
+
+
+def forge_walk_forward_row(day="2026-10-10", game=2026020010, player=9711, value=2, **changes):
+    from modeling.player_forecasts.forge_walk_forward import COHORT
+    row = {"playerId": player, "nhlPlayerId": COHORT[player], "gameId": game, "gameDate": day,
+           "seasonId": 20262027, "teamId": 15, "position": "C", "toiSeconds": 600,
+           "value": value, "status": "positive_TOI", "receivedAt": f"{day}T23:30:00Z",
+           "availableAt": f"{day}T23:40:00Z", "appearance": {}}
+    return {**row, **changes}
+
+
+def test_forge_walk_forward_availability_is_not_event_date_or_hindcast_clock():
+    from modeling.player_forecasts.forge_walk_forward import eligible_history
+    old = forge_walk_forward_row("2025-11-01", 2025020101,
+                                 receivedAt="2026-04-02T12:00:00Z", availableAt="2026-10-13T22:00:00Z")
+    cutoff = "2025-11-17T00:00:00-05:00"
+    assert eligible_history([old], cutoff) == []
+    assert eligible_history([old], cutoff, mode="hindcast") == [old]
+    assert eligible_history([old], "2026-10-14T18:15:00-04:00") == [old]
+    exact = forge_walk_forward_row(availableAt="2026-10-14T22:15:00Z")
+    assert eligible_history([exact], "2026-10-14T18:15:00-04:00") == []
+    same_day = forge_walk_forward_row("2026-10-14")
+    assert eligible_history([same_day], "2026-10-14T23:59:00-04:00") == []
+
+
+@pytest.mark.parametrize("day", ["2026-01-03", "2026-03-15", "2026-04-16", "2026-10-13"])
+def test_forge_walk_forward_rejects_protected_and_exposed_history(day):
+    from modeling.player_forecasts.forge_walk_forward import eligible_history
+    with pytest.raises(ValueError, match="excluded history date"):
+        eligible_history([forge_walk_forward_row(day)], "2026-10-14T18:15:00-04:00")
+
+
+def test_forge_walk_forward_duplicates_never_become_extra_weight():
+    from modeling.player_forecasts.forge_walk_forward import eligible_history
+    row = forge_walk_forward_row()
+    with pytest.raises(ValueError, match="duplicate history"):
+        eligible_history([row, dict(row)], "2026-10-14T18:15:00-04:00")
+
+
+def test_forge_walk_forward_pool_and_bands_are_train_only_and_zero_is_valid():
+    from modeling.player_forecasts.forge_walk_forward import predict
+    history = [forge_walk_forward_row(value=0), forge_walk_forward_row(game=2026020011, player=10305, value=4),
+               forge_walk_forward_row("2026-10-14", game=2026020012, value=999)]
+    candidate = {"playerId": 8157, "nhlPlayerId": 8473512, "teamId": 9}
+    native = lambda history, candidates, cutoff, mode: {c["playerId"]: {"mean": None} for c in candidates}
+    result = predict(history, [candidate], "2026-10-14T18:15:00-04:00", native=native)[0]
+    for method in ("A", "B", "C"):
+        estimate = result["estimates"][method]
+        assert estimate["mean"] == 2 and estimate["basis"] == "prior_only"
+        assert estimate["individualN"] == 0 and estimate["pooledN"] == 2
+        assert estimate["p10"] == 0 and estimate["p90"] == 4
+    empty = predict([], [candidate], "2026-10-14T18:15:00-04:00", native=native)[0]
+    assert all(x["mean"] is None for x in empty["estimates"].values())
+
+
+def test_forge_walk_forward_lagged_history_changes_only_later_predictions():
+    from modeling.player_forecasts.forge_walk_forward import predict
+    candidate = {"playerId": 9711, "nhlPlayerId": 8479400, "teamId": 15}
+    history = [forge_walk_forward_row(value=1)]
+    later = forge_walk_forward_row("2026-10-14", game=2026020110, value=5,
+                                   availableAt="2026-10-15T14:00:00Z")
+    before = "2026-10-14T18:15:00-04:00"
+    after = "2026-10-15T17:45:00-04:00"
+    predict_b = lambda rows, cut: predict(rows, [candidate], cut, methods=("B",))[0]
+    assert predict_b(history, before) == predict_b(history + [later], before)
+    assert predict_b(history, after)["estimates"]["B"]["mean"] == 1
+    assert predict_b(history + [later], after)["estimates"]["B"]["mean"] == 3
+
+
+def test_forge_walk_forward_exact_baseline_denominator_and_late_settlement():
+    from modeling.player_forecasts.forge_walk_forward import select_method
+    def forecast(game, player, a, b, c):
+        return {"playerId": player, "gameId": game, "teamId": 15, "membershipValid": True, "onTime": True,
+                "issuedAt": "2026-10-14T22:00:00Z", "estimates": {m: {"mean": v} for m, v in zip("ABC", [a, b, c])}}
+    rows = [forecast(2026020110, 9711, 2, 0, 2), forecast(2026020111, 10305, 2, None, 2)]
+    labels = [forge_walk_forward_row("2026-10-14", 2026020110, value=0),
+              forge_walk_forward_row("2026-10-14", 2026020111, player=10305, value=0)]
+    result = select_method(rows, labels, "2026-10-15T18:00:00-04:00")
+    assert result["comparisonRows"] == 2 and result["selected"] == "A"
+    assert result["methods"]["B"]["eligible"] is False
+    labels[1]["availableAt"] = "2026-10-16T14:00:00Z"
+    earlier = select_method(rows, labels, "2026-10-15T18:00:00-04:00")
+    assert earlier["selected"] == "B" and earlier["comparisonRows"] == 1
+    assert select_method(rows, labels, "2026-10-16T18:00:00-04:00")["selected"] == "A"
+    assert earlier["selected"] == "B"  # Previously returned decision remains unchanged.
+
+
+def forge_walk_forward_boxscore():
+    game = {"id": 2026020110, "gameDate": "2026-10-14", "seasonId": 20262027,
+            "homeTeamId": 15, "awayTeamId": 8, "scheduledStartAt": "2026-10-14T23:30:00Z"}
+    body = {"id": game["id"], "gameDate": game["gameDate"], "season": game["seasonId"],
+            "gameType": 2, "gameState": "OFF", "startTimeUTC": game["scheduledStartAt"],
+            "homeTeam": {"id": 15}, "awayTeam": {"id": 8}, "playerByGameStats": {
+                "homeTeam": {"forwards": [{"playerId": 8479400, "toi": "12:34", "blockedShots": 0, "position": "C"}], "defense": []},
+                "awayTeam": {"forwards": [], "defense": []}}}
+    return game, body
+
+
+def test_forge_walk_forward_boxscore_zero_missing_and_finality():
+    from modeling.player_forecasts.forge_walk_forward import normalize_blocked_shots
+    game, body = forge_walk_forward_boxscore()
+    settle = lambda: normalize_blocked_shots(body, game, "2026-10-15T14:00:00Z", "2026-10-15T14:01:00Z")
+    result = settle()
+    assert result["rows"][0]["value"] == 0 and result["rows"][0]["status"] == "positive_TOI"
+    assert 10305 in result["unknownPlayerIds"]
+    player = body["playerByGameStats"]["homeTeam"]["forwards"][0]
+    player["toi"] = "00:00"
+    assert settle()["rows"][0]["status"] == "zero_TOI" and settle()["rows"][0]["value"] is None
+    player["toi"] = "12:34"
+    del player["blockedShots"]
+    assert settle()["rows"][0]["status"] == "unknown"
+    body["gameState"] = "FINAL"
+    assert settle()["status"] == "unsettled"
+
+
+def test_forge_walk_forward_historical_team_and_duplicate_labels_are_verified():
+    from modeling.player_forecasts.forge_walk_forward import normalize_blocked_shots
+    game, body = forge_walk_forward_boxscore()
+    body["homeTeam"]["id"] = 9
+    with pytest.raises(ValueError, match="historical teams"):
+        normalize_blocked_shots(body, game, "2026-10-15T14:00:00Z", "2026-10-15T14:01:00Z")
+    body["homeTeam"]["id"] = 15
+    body["playerByGameStats"]["homeTeam"]["forwards"] *= 2
+    with pytest.raises(ValueError, match="duplicate"):
+        normalize_blocked_shots(body, game, "2026-10-15T14:00:00Z", "2026-10-15T14:01:00Z")
+
+
+def test_forge_walk_forward_artifacts_refuse_overwrite(tmp_path):
+    from modeling.player_forecasts.forge_walk_forward import exclusive_json
+    target = tmp_path / "predictions.json"
+    exclusive_json(target, {"mean": 1})
+    with pytest.raises(FileExistsError):
+        exclusive_json(target, {"mean": 2})
+    assert json.loads(target.read_text()) == {"mean": 1}
+
+
+def forge_walk_forward_issuance_fixture(tmp_path, monkeypatch):
+    from modeling.player_forecasts import forge_walk_forward as wf
+    day = {"date": "2026-10-14", "phase": "adaptive", "featureCutoffAt": "2026-10-14T22:15:00Z",
+           "selectionCutoffAt": "2026-10-14T22:15:00Z", "issueDeadlineAt": "2026-10-14T22:30:00Z"}
+    candidate = {"playerId": 9711, "nhlPlayerId": 8479400, "teamId": 15, "gameId": 2026020110,
+                 "gameDate": day["date"], "position": "C", "membershipValid": True,
+                 "membershipAvailableAt": "2026-10-14T22:10:00Z"}
+    wf.exclusive_json(tmp_path / "sources/days/2026-10-14.json", {
+        "status": "captured", "validatedAt": "2026-10-14T22:10:00Z", "candidates": [candidate], "exclusions": []})
+    wf.exclusive_json(tmp_path / "history/seed.json", [forge_walk_forward_row(value=1)])
+    monkeypatch.setattr(wf, "readiness", lambda root: {"codeState": {"fixture": True}})
+    native = lambda history, candidates, cutoff, mode: {c["playerId"]: {"mean": 1, "historyGameIds": [2026020010]} for c in candidates}
+    predictor = lambda history, candidates, cutoff, methods: wf.predict(history, candidates, cutoff, methods=methods, native=native)
+    return wf, day, predictor
+
+
+def test_forge_walk_forward_issuance_is_durable_immutable_and_scores_do_not_feed_it(tmp_path, monkeypatch):
+    wf, day, predictor = forge_walk_forward_issuance_fixture(tmp_path, monkeypatch)
+    clock = lambda: wf.stamp("2026-10-14T22:16:00Z")
+    wf.exclusive_json(tmp_path / "evaluator-sealed/scores.json", {"B": 999999})
+    first = wf.issue_day(tmp_path, {"policyHash": "fixture"}, day, clock=clock, predictor=predictor)
+    path = tmp_path / "predictions/2026-10-14.json"
+    packet = wf.issued_packet(tmp_path, path)
+    assert first["status"] == "issued" and packet["selected"] == "A"
+    before = path.read_bytes()
+    (tmp_path / "evaluator-sealed/scores.json").write_text('{"B": -999999}')
+    second = wf.issue_day(tmp_path, {"policyHash": "fixture"}, day, clock=clock,
+                          predictor=lambda *args, **kwargs: pytest.fail("issued forecast was recomputed"))
+    assert second["status"] == "already_issued" and path.read_bytes() == before
+    # A fresh issuance with identical permitted inputs also ignores the sealed file.
+    other = tmp_path / "independent-fixture"
+    wf, other_day, other_predictor = forge_walk_forward_issuance_fixture(other, monkeypatch)
+    wf.exclusive_json(other / "evaluator-sealed/scores.json", {"B": -999999})
+    wf.issue_day(other, {"policyHash": "fixture"}, other_day, clock=clock, predictor=other_predictor)
+    assert wf.issued_packet(other, other / "predictions/2026-10-14.json")["rows"] == packet["rows"]
+
+
+@pytest.mark.parametrize("late_phase", ["initial", "calculation", "write"])
+def test_forge_walk_forward_missed_deadline_never_retries_or_backdates(tmp_path, monkeypatch, late_phase):
+    wf, day, predictor = forge_walk_forward_issuance_fixture(tmp_path, monkeypatch)
+    early, late = wf.stamp("2026-10-14T22:16:00Z"), wf.stamp(day["issueDeadlineAt"])
+    clocks = {"initial": [late], "calculation": [early, late], "write": [early, early, late]}
+    instants = iter(clocks[late_phase])
+    result = wf.issue_day(tmp_path, {"policyHash": "fixture"}, day, clock=lambda: next(instants), predictor=predictor)
+    assert result["status"].startswith("missed")
+    assert wf.adaptive_rows(tmp_path) == []
+    assert wf.issued_packet(tmp_path, tmp_path / "predictions/2026-10-14.json") is None
+    again = wf.issue_day(tmp_path, {"policyHash": "fixture"}, day, clock=lambda: early,
+                         predictor=lambda *args, **kwargs: pytest.fail("missed issuance retried"))
+    assert again["status"] == "previous_attempt_terminal"
+
+
+def test_forge_walk_forward_interrupted_source_attempt_is_terminal_and_failures_use_budget(tmp_path, monkeypatch):
+    from modeling.player_forecasts import forge_walk_forward as wf
+    calls = []
+    instant = wf.stamp("2026-10-14T22:00:00Z")
+    args = (tmp_path, "schedule-2026-10-14", "schedule", "https://api-web.nhle.com/v1/score/2026-10-14",
+            "2026-10-14T21:50:00Z", "2026-10-14T22:15:00Z")
+    transport = lambda url: (calls.append(url) or (22, b"missing", "fixture failure"))
+    result = wf.source_request(*args, clock=lambda: instant, transport=transport)
+    assert result["status"] == "failed"
+    assert wf.source_request(*args, clock=lambda: instant, transport=transport) == result
+    assert len(calls) == 1
+    monkeypatch.setitem(wf.POLICY["budgets"], "schedule", 1)
+    with pytest.raises(ValueError, match="budget exhausted"):
+        wf.source_request(tmp_path, "schedule-2026-10-15", "schedule", "https://api-web.nhle.com/v1/score/2026-10-15",
+                          args[-2], args[-1], clock=lambda: instant, transport=transport)
+    (tmp_path / "sources/acquisitions/schedule-2026-10-14/receipt.json").unlink()
+    assert wf.source_request(*args, clock=lambda: instant, transport=transport)["status"] == "interrupted"
+    assert len(calls) == 1
+
+
+def test_forge_walk_forward_sealed_readout_and_locked_dependency_refuse_early_or_changed(tmp_path):
+    from modeling.player_forecasts import forge_walk_forward as wf
+    assert wf.final_report(tmp_path, {}, clock=lambda: wf.stamp("2026-10-28T15:59:59Z"))["status"] == "sealed_until_readout"
+    assert not list(tmp_path.iterdir())
+    executable = tmp_path / "executable"
+    executable.write_bytes(b"original")
+    sha = wf.file_hash(executable)
+    state = {"pythonFiles": {str(executable): sha}, "python": {"executable": str(executable), "executableHash": sha},
+             "native": {"modules": {}, "node": {"executablePath": str(executable), "sha256": sha},
+                        "packageLock": {"path": str(executable), "sha256": sha}}}
+    wf.verify_code_state(state)
+    executable.write_bytes(b"changed")
+    with pytest.raises(ValueError, match="dependency changed"):
+        wf.verify_code_state(state)
+
+
+def test_forge_walk_forward_native_band_support_and_cluster_estimand_are_exact():
+    from modeling.player_forecasts import forge_walk_forward as wf
+    rows = [forge_walk_forward_row(game=2026020001 + i, value=i) for i in range(7)]
+    candidate = {"playerId": 9711, "nhlPlayerId": 8479400, "teamId": 15}
+    native = lambda *args: {9711: {"mean": 5, "historyGameIds": [r["gameId"] for r in rows[-2:]]}}
+    prediction = wf.predict(rows, [candidate], "2026-10-14T22:15:00Z", native=native)[0]
+    assert prediction["estimates"]["A"]["individualN"] == 2
+    assert prediction["estimates"]["A"]["bandSource"] == "pool"
+    clustered = wf.cluster_difference([("d1", 1, 1), ("d2", 2, 4), ("d2", 2, 4)], "slate")
+    assert clustered["meanLossReduction"] == 3  # Matches player-game paired MAE estimand.
+
+
+def test_forge_walk_forward_partial_settlement_preserves_first_valid_zero_and_positive(tmp_path, monkeypatch):
+    from modeling.player_forecasts import forge_walk_forward as wf
+    import copy
+    game, first_body = forge_walk_forward_boxscore()
+    game["plannedPlayerIds"] = [9711, 10305, 8157]
+    players = first_body["playerByGameStats"]["homeTeam"]["forwards"]
+    players[0]["toi"] = "00:00"
+    players.extend([{"playerId": 8477949, "toi": "10:00", "blockedShots": 2, "position": "R"},
+                    {"playerId": 8473512, "toi": "10:00", "position": "C"}])
+    second_body = copy.deepcopy(first_body)
+    second_players = second_body["playerByGameStats"]["homeTeam"]["forwards"]
+    second_players[0].update(toi="10:00", blockedShots=9)
+    second_players[1]["blockedShots"] = 8
+    second_players[2]["blockedShots"] = 3
+    current = [wf.stamp("2026-10-15T14:00:00Z")]
+    bodies = iter([first_body, second_body])
+    receipts = []
+    def source(root, key, kind, url, start, end, **kwargs):
+        body = next(bodies)
+        body_path = root / "sources/acquisitions" / key / "body"
+        sha = wf.exclusive_json(body_path, body)
+        receipt = {"status": "received", "receivedAt": current[0].isoformat(), "bodyHash": sha,
+                   "bodyPath": str(body_path.relative_to(root)), "url": url}
+        receipts.append(receipt)
+        return receipt
+    monkeypatch.setattr(wf, "source_request", source)
+    monkeypatch.setattr(wf, "call_native", lambda request: {"rows": [
+        {"playerId": p["playerId"], "appearances": [{"availableAt": current[0].isoformat()}]} for p in request["players"]]})
+    wf.exclusive_json(tmp_path / "history/seed.json", [])
+    first = wf.settle_game(tmp_path, {}, game, 1, clock=lambda: current[0])
+    assert first["complete"] is False
+    first_history = {r["playerId"]: r for r in wf.load_history(tmp_path)}
+    assert first_history[9711]["status"] == "zero_TOI" and first_history[10305]["value"] == 2
+    current[0] = wf.stamp("2026-10-16T14:00:00Z")
+    second = wf.settle_game(tmp_path, {}, game, 2, clock=lambda: current[0])
+    assert second["complete"] is True and len(receipts) == 2
+    history = {r["playerId"]: r for r in wf.load_history(tmp_path)}
+    assert history[9711] == first_history[9711] and history[10305] == first_history[10305]
+    assert history[8157]["value"] == 3
+    assert len(list((tmp_path / "history/settlements").glob("*.json"))) == 2
+
+
+def test_forge_walk_forward_missed_settlement_has_receipt_without_request(tmp_path):
+    from modeling.player_forecasts import forge_walk_forward as wf
+    game, _ = forge_walk_forward_boxscore()
+    game["plannedPlayerIds"] = [9711]
+    result = wf.settle_game(tmp_path, {}, game, 1, clock=lambda: wf.stamp("2026-10-16T15:00:00Z"))
+    assert result["status"] == "unresolved"
+    receipt = wf.read(tmp_path / f'sources/settlements/{game["id"]}-1.json')
+    assert receipt["receipt"]["status"] == "missed"
+    assert not list((tmp_path / "sources/acquisitions").glob("*/attempt.json"))
+
+
+def test_forge_walk_forward_final_lock_requires_timely_evaluator_and_frozen_policy(tmp_path, monkeypatch):
+    wf, initial_day, predictor = forge_walk_forward_issuance_fixture(tmp_path, monkeypatch)
+    day = {k: v.replace("2026-10-14", "2026-10-19") if isinstance(v, str) else v for k, v in initial_day.items()}
+    day["phase"] = "final"
+    protocol = {"days": [{}, {}, {}, {}, {}, day], "policyHash": "fixture", "owners": {"evaluator": "independent-evaluator"}}
+    wf.exclusive_json(tmp_path / "protocol/experiment.json", protocol)
+    clock = lambda: wf.stamp("2026-10-19T22:16:00Z")
+    result = wf.issue_day(tmp_path, protocol, day, clock=clock, predictor=predictor)
+    assert result["status"] == "awaiting_independent_final_lock_review"
+    lock = wf.final_lock(tmp_path, protocol, wf.load_history(tmp_path), clock=clock)
+    assert lock["selected"] == "A" and lock["tuningPermitted"] is False
+    assert wf.review_final_lock(tmp_path, protocol, clock=lambda: wf.stamp(day["issueDeadlineAt"]))["status"] == "outside_final_lock_review_window"
+    assert not (tmp_path / "protocol/final-lock-review.json").exists()
+    assert wf.review_final_lock(tmp_path, protocol, clock=clock)["status"] == "accepted_final_lock"
+    reviewed = wf.read(tmp_path / "protocol/final-lock-review.json")
+    assert reviewed["reviewer"] == "independent-evaluator"
+    assert reviewed["lockHash"] == wf.file_hash(tmp_path / "protocol/final-lock.json")
+    # The fixed final method cannot be selected from changing sealed scores.
+    wf.exclusive_json(tmp_path / "evaluator-sealed/scores.json", {"selected": "B"})
+    assert wf.final_lock(tmp_path, protocol, [], clock=clock) == lock
+
+
+def test_forge_walk_forward_readout_checks_frozen_code_before_opening_labels(tmp_path, monkeypatch):
+    from modeling.player_forecasts import forge_walk_forward as wf
+    wf.exclusive_json(tmp_path / "protocol/final-lock.json", {"selected": "A", "codeState": {"frozen": True}})
+    monkeypatch.setattr(wf, "load_history", lambda root: pytest.fail("labels opened before frozen-code acceptance"))
+    def reject_changed(state):
+        assert state == {"frozen": True}
+        raise ValueError("locked executable/dependency changed")
+    monkeypatch.setattr(wf, "verify_code_state", reject_changed)
+    with pytest.raises(ValueError, match="dependency changed"):
+        wf.final_report(tmp_path, {}, clock=lambda: wf.READOUT)
+    assert not (tmp_path / "reports/final-report.json").exists()

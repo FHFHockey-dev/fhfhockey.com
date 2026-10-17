@@ -1,0 +1,145 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.test.ts --config ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/vitest.config.mjs
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.test.ts (8 tests | 8 failed) 134ms
+   × original52 assertion and evidence accounting > accounts for every original assertion and keeps approved replacements separate 20ms
+     → Read-only dependency changed: web/lib/player-forecasts/contributions.ts
+   × original52 assertion and evidence accounting > rejects missing and duplicate original cases rather than improving the denominator 16ms
+     → Read-only dependency changed: web/lib/player-forecasts/contributions.ts
+   × original52 assertion and evidence accounting > rejects a passing flag that hides changed actual durable evidence 18ms
+     → Read-only dependency changed: web/lib/player-forecasts/contributions.ts
+   × original52 assertion and evidence accounting > rejects omitted or altered original assertions 17ms
+     → Read-only dependency changed: web/lib/player-forecasts/contributions.ts
+   × original52 assertion and evidence accounting > rejects a pure persistence pass without the actual accepted storage boundary 17ms
+     → Read-only dependency changed: web/lib/player-forecasts/contributions.ts
+   × original52 assertion and evidence accounting > requires all original game-separation assertions and zero effects for ambiguous originals 16ms
+     → Read-only dependency changed: web/lib/player-forecasts/contributions.ts
+   × original52 assertion and evidence accounting > requires the deliberate immutable-row rewrite to fail the original oracle 15ms
+     → Read-only dependency changed: web/lib/player-forecasts/contributions.ts
+   × original52 assertion and evidence accounting > rejects collapsed durable game identities or a dispatchable ambiguous carrier 15ms
+     → Read-only dependency changed: web/lib/player-forecasts/contributions.ts
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.test.ts > original52 assertion and evidence accounting > accounts for every original assertion and keeps approved replacements separate
+Error: Read-only dependency changed: web/lib/player-forecasts/contributions.ts
+ ❯ requireFact ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.ts:13:81
+     11| const sha=(path:string)=>createHash("sha256").update(readFileSync(path…
+     12| const read=(path:string)=>JSON.parse(readFileSync(path,"utf8"));
+     13| const requireFact=(condition:unknown,message:string):void=>{if(!condit…
+       |                                                                                 ^
+     14| const paths={
+     15|  original:"handoff/extracted-reviewed/ifttt-claim-replay-tests-2026-10…
+ ❯ loadEvidence ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.ts:34:3
+ ❯ ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.test.ts:7:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.test.ts > original52 assertion and evidence accounting > rejects missing and duplicate original cases rather than improving the denominator
+Error: Read-only dependency changed: web/lib/player-forecasts/contributions.ts
+ ❯ requireFact ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.ts:13:81
+     11| const sha=(path:string)=>createHash("sha256").update(readFileSync(path…
+     12| const read=(path:string)=>JSON.parse(readFileSync(path,"utf8"));
+     13| const requireFact=(condition:unknown,message:string):void=>{if(!condit…
+       |                                                                                 ^
+     14| const paths={
+     15|  original:"handoff/extracted-reviewed/ifttt-claim-replay-tests-2026-10…
+ ❯ loadEvidence ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.ts:34:3
+ ❯ ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.test.ts:15:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.test.ts > original52 assertion and evidence accounting > rejects a passing flag that hides changed actual durable evidence
+Error: Read-only dependency changed: web/lib/player-forecasts/contributions.ts
+ ❯ requireFact ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.ts:13:81
+     11| const sha=(path:string)=>createHash("sha256").update(readFileSync(path…
+     12| const read=(path:string)=>JSON.parse(readFileSync(path,"utf8"));
+     13| const requireFact=(condition:unknown,message:string):void=>{if(!condit…
+       |                                                                                 ^
+     14| const paths={
+     15|  original:"handoff/extracted-reviewed/ifttt-claim-replay-tests-2026-10…
+ ❯ loadEvidence ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.ts:34:3
+ ❯ ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.test.ts:19:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.test.ts > original52 assertion and evidence accounting > rejects omitted or altered original assertions
+Error: Read-only dependency changed: web/lib/player-forecasts/contributions.ts
+ ❯ requireFact ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.ts:13:81
+     11| const sha=(path:string)=>createHash("sha256").update(readFileSync(path…
+     12| const read=(path:string)=>JSON.parse(readFileSync(path,"utf8"));
+     13| const requireFact=(condition:unknown,message:string):void=>{if(!condit…
+       |                                                                                 ^
+     14| const paths={
+     15|  original:"handoff/extracted-reviewed/ifttt-claim-replay-tests-2026-10…
+ ❯ loadEvidence ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.ts:34:3
+ ❯ ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.test.ts:23:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.test.ts > original52 assertion and evidence accounting > rejects a pure persistence pass without the actual accepted storage boundary
+Error: Read-only dependency changed: web/lib/player-forecasts/contributions.ts
+ ❯ requireFact ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.ts:13:81
+     11| const sha=(path:string)=>createHash("sha256").update(readFileSync(path…
+     12| const read=(path:string)=>JSON.parse(readFileSync(path,"utf8"));
+     13| const requireFact=(condition:unknown,message:string):void=>{if(!condit…
+       |                                                                                 ^
+     14| const paths={
+     15|  original:"handoff/extracted-reviewed/ifttt-claim-replay-tests-2026-10…
+ ❯ loadEvidence ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.ts:34:3
+ ❯ ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.test.ts:27:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.test.ts > original52 assertion and evidence accounting > requires all original game-separation assertions and zero effects for ambiguous originals
+Error: Read-only dependency changed: web/lib/player-forecasts/contributions.ts
+ ❯ requireFact ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.ts:13:81
+     11| const sha=(path:string)=>createHash("sha256").update(readFileSync(path…
+     12| const read=(path:string)=>JSON.parse(readFileSync(path,"utf8"));
+     13| const requireFact=(condition:unknown,message:string):void=>{if(!condit…
+       |                                                                                 ^
+     14| const paths={
+     15|  original:"handoff/extracted-reviewed/ifttt-claim-replay-tests-2026-10…
+ ❯ loadEvidence ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.ts:34:3
+ ❯ ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.test.ts:31:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.test.ts > original52 assertion and evidence accounting > requires the deliberate immutable-row rewrite to fail the original oracle
+Error: Read-only dependency changed: web/lib/player-forecasts/contributions.ts
+ ❯ requireFact ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.ts:13:81
+     11| const sha=(path:string)=>createHash("sha256").update(readFileSync(path…
+     12| const read=(path:string)=>JSON.parse(readFileSync(path,"utf8"));
+     13| const requireFact=(condition:unknown,message:string):void=>{if(!condit…
+       |                                                                                 ^
+     14| const paths={
+     15|  original:"handoff/extracted-reviewed/ifttt-claim-replay-tests-2026-10…
+ ❯ loadEvidence ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.ts:34:3
+ ❯ ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.test.ts:36:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.test.ts > original52 assertion and evidence accounting > rejects collapsed durable game identities or a dispatchable ambiguous carrier
+Error: Read-only dependency changed: web/lib/player-forecasts/contributions.ts
+ ❯ requireFact ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.ts:13:81
+     11| const sha=(path:string)=>createHash("sha256").update(readFileSync(path…
+     12| const read=(path:string)=>JSON.parse(readFileSync(path,"utf8"));
+     13| const requireFact=(condition:unknown,message:string):void=>{if(!condit…
+       |                                                                                 ^
+     14| const paths={
+     15|  original:"handoff/extracted-reviewed/ifttt-claim-replay-tests-2026-10…
+ ❯ loadEvidence ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.ts:34:3
+ ❯ ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.test.ts:40:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  8 failed (8)
+   Start at  02:07:09
+   Duration  310ms (transform 28ms, setup 15ms, collect 23ms, tests 134ms, environment 0ms, prepare 33ms)
+

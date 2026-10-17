@@ -3,6 +3,7 @@ import { isValidNhlSeasonId } from "lib/NHL/server";
 import { rosterSeasonForDate } from "lib/sources/playerIdentity";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { fetchNhlRosterPreview, type Player } from "lib/sources/nhlRosterPreview";
+import { syncCurrentCanonicalOrganizations } from "lib/sources/currentOrganizationSync";
 
 export default withCronJobAudit(adminOnly(async function handler(req, res) {
   try {
@@ -13,7 +14,9 @@ export default withCronJobAudit(adminOnly(async function handler(req, res) {
     if (!dryRun && seasonId !== rosterSeasonForDate()) {
       throw new Error("Historical roster refresh is dry-run only; current player memberships must be preserved.");
     }
-    const players = await fetchNhlRosterPreview(seasonId);
+    const players = await fetchNhlRosterPreview(seasonId,
+      seasonId === rosterSeasonForDate() ? { rosterView: "current" } : { rosterView: "season" });
+    const rosterObservedAt = new Date().toISOString();
     if (!players.length) throw new Error("No roster players returned; no writes performed.");
     if (dryRun) return res.json({ success: true, dryRun: true, seasonId,
       playerCount: players.length, teams: [...new Set(players.map((player) => player.teamId))],
@@ -47,9 +50,15 @@ export default withCronJobAudit(adminOnly(async function handler(req, res) {
       seasonId
     });
 
+    // Enable only after the restricted RPC and this exact candidate are approved.
+    const canonicalSync = process.env.CURRENT_CANONICAL_ROSTER_SYNC_ENABLED === "true"
+      ? await syncCurrentCanonicalOrganizations(supabase, { seasonId, observedAt: rosterObservedAt, complete: true, players })
+      : { enabled: false };
+
     res.json({
       message: "Successfully updated the players & rosters tables.",
-      success: true
+      success: true,
+      canonicalSync
     });
   } catch (e: any) {
     res.status(400).json({

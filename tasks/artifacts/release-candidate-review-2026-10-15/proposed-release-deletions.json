@@ -1,0 +1,23 @@
+[
+  {
+    "path": "web/pages/api/internal/forecast-calendar.test.ts",
+    "action": "delete",
+    "sha256": null,
+    "headSha256": "0aeb0fb9e64259203892e9d0597225b0ea2c0c15d02b75d0ac06c948176d4b26",
+    "increment": "api-test-relocation"
+  },
+  {
+    "path": "web/pages/api/underlying-stats/landing.test.ts",
+    "action": "delete",
+    "sha256": null,
+    "headSha256": "a620ca9b8367408071595b140ef8cbaadcc74517b90b9716acb6ca53f46d9fb7",
+    "increment": "api-test-relocation"
+  },
+  {
+    "path": "web/pages/api/v1/account/fantrax/player-data.test.ts",
+    "action": "delete",
+    "sha256": null,
+    "headSha256": "45c939a2c93297dceaf200a8f2556d73dde840a220a53d5f15eaa709d2ca38ad",
+    "increment": "api-test-relocation"
+  }
+]

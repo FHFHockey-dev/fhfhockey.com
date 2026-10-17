@@ -1,0 +1,14 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.test.ts --config ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/vitest.config.mjs
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ ../tasks/ifttt-integration-2026-10-16/full-acceptance-reconciliation/reconcile.test.ts (7 tests) 152ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  01:58:24
+   Duration  349ms (transform 27ms, setup 17ms, collect 22ms, tests 152ms, environment 0ms, prepare 35ms)
+

@@ -1,0 +1,127 @@
+{
+  "result": {
+    "effectId": "fixture-effect-1",
+    "transitionId": "fixture-transition-1",
+    "status": "applied",
+    "receipt": {
+      "queues": [
+        {
+          "id": "001044e0-5b96-42b6-a504-8cd7714b4ddc",
+          "scopeKey": "game:900012:team:12",
+          "sourceHighWatermark": "2026-10-16T02:37:14.045-05:00"
+        },
+        {
+          "id": "aa387a5d-50d2-410b-a582-58b335491292",
+          "scopeKey": "game:900013:team:12",
+          "sourceHighWatermark": "2026-10-16T02:37:14.045-05:00"
+        }
+      ],
+      "version": "tweet-forecast-receipt-v1",
+      "effectId": "fixture-effect-1",
+      "planHash": "f80a049bccf0e8a18b215e4d3258128b351f21435da229459b173f60657d7379",
+      "actionKey": "fixture-effect-1",
+      "snapshotId": "e3d938d3-7212-4efa-b13b-19e95029aa75",
+      "assignmentIds": [
+        "5e026da9-1c2e-4815-ac90-6d366e739aeb"
+      ]
+    },
+    "resendPlanCount": 0
+  },
+  "outbox": [
+    {
+      "action_key": "fixture-effect-1",
+      "scope_key": "consumer-original-scope",
+      "scenario_key": "original-scenario",
+      "revision_key": "original-revision",
+      "payload": {
+        "action": {
+          "key": "fixture-effect-1",
+          "transitionId": "fixture-transition-1"
+        },
+        "observation": {
+          "semantic": {
+            "id": "retained-original:a",
+            "fact": {
+              "kind": "availability",
+              "status": "out",
+              "playerId": 8473533
+            },
+            "scope": {
+              "kind": "game",
+              "group": null,
+              "phase": "entry",
+              "gameId": 900012,
+              "teamId": 12
+            },
+            "support": {
+              "basis": "synthetic_explicit_local_clause",
+              "status": "supported",
+              "validUntil": "2026-10-16T23:36:14.045Z"
+            },
+            "wrapper": {
+              "tweetId": "9900000000000000002",
+              "publishedAt": null
+            },
+            "evidence": {
+              "end": 35,
+              "text": "Jordan Staal will not play tonight.",
+              "start": 0,
+              "offsetUnit": "UTF-16_code_unit"
+            },
+            "modality": "asserted",
+            "original": {
+              "author": "fixture_a",
+              "tweetId": "9900000000000000001",
+              "publishedAt": "2026-10-16T07:36:14.045Z"
+            },
+            "relation": null,
+            "reportId": "offline-fixture:retained:9900000000000000002",
+            "sourceKey": "offline-fixture",
+            "receivedAt": "2026-10-16T07:37:14.045Z",
+            "effectiveAt": "2026-10-16T18:36:14.045Z",
+            "interpretedAt": "2026-10-16T07:38:14.045Z"
+          }
+        }
+      },
+      "status": "delivered",
+      "attempts": 1,
+      "reconciliations": 0,
+      "owner": null,
+      "lease_until": null,
+      "next_attempt_at": "2026-10-16T07:39:14.133Z",
+      "requires_review": false,
+      "last_error": null,
+      "receipt": {
+        "queues": [
+          {
+            "id": "001044e0-5b96-42b6-a504-8cd7714b4ddc",
+            "scopeKey": "game:900012:team:12",
+            "sourceHighWatermark": "2026-10-16T02:37:14.045-05:00"
+          },
+          {
+            "id": "aa387a5d-50d2-410b-a582-58b335491292",
+            "scopeKey": "game:900013:team:12",
+            "sourceHighWatermark": "2026-10-16T02:37:14.045-05:00"
+          }
+        ],
+        "version": "tweet-forecast-receipt-v1",
+        "effectId": "fixture-effect-1",
+        "planHash": "f80a049bccf0e8a18b215e4d3258128b351f21435da229459b173f60657d7379",
+        "actionKey": "fixture-effect-1",
+        "snapshotId": "e3d938d3-7212-4efa-b13b-19e95029aa75",
+        "assignmentIds": [
+          "5e026da9-1c2e-4815-ac90-6d366e739aeb"
+        ]
+      },
+      "created_at": "2026-10-16T07:38:14.092Z",
+      "updated_at": "2026-10-16T07:38:14.133Z"
+    }
+  ],
+  "inventory": {
+    "snapshots": 1,
+    "assignments": 1,
+    "queues": 2,
+    "receipts": 1,
+    "forgeQueues": 1
+  }
+}

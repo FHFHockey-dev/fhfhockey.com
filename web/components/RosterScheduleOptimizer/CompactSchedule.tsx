@@ -9,6 +9,8 @@ import { sanitizeForecastInputs } from "lib/rosterScheduleOptimizer/planning";
 import { resolvePlanningContributions } from "lib/player-forecasts/planningContributions";
 import type { LeagueRules, PlanIntent, PlanningAssignment, PlanningPlayer, PlanningSnapshot, RosterEntry } from "lib/rosterScheduleOptimizer/planningTypes";
 import styles from "./RosterScheduleOptimizer.module.scss";
+import type { PlayerContribution } from "lib/rosterScheduleOptimizer/contributionLedger";
+import InfoTooltip from "./InfoTooltip";
 
 const activePositions = ["C", "LW", "RW", "D", "UTIL", "G", "F", "W"];
 const order = [...activePositions, "BN", "IR", "IR+", "NA", "Plan changes"];
@@ -156,11 +158,12 @@ export function ScheduleIdentity({ player }: { player: PlanningPlayer }) {
     onError={event => { event.currentTarget.src = fallbackTeamLogo; }} /><span>{player.name.split(" ").slice(1).join(" ") || player.name}</span></>;
 }
 
-export default function CompactSchedule({ snapshot, roster, rules, players, assignments, intent, dates, date, today, ready, selectDate, selectPlayer, benchOpen: controlledBenchOpen, onBenchChange }: {
+export default function CompactSchedule({ snapshot, roster, rules, players, assignments, intent, dates, date, today, ready, selectDate, selectPlayer, benchOpen: controlledBenchOpen, onBenchChange, contributions }: {
   snapshot: PlanningSnapshot | null; roster: RosterEntry[]; rules: LeagueRules; players: PlanningPlayer[];
   assignments: PlanningAssignment[]; intent: PlanIntent; dates: string[]; date: string; today: string; ready: boolean;
   selectDate: (date: string) => void; selectPlayer: (id: string) => void;
   benchOpen?: boolean; onBenchChange?: (open: boolean) => void;
+  contributions?: Map<string, PlayerContribution>;
 }) {
   const [localBenchOpen, setLocalBenchOpen] = useState(true);
   const benchOpen = controlledBenchOpen ?? localBenchOpen;
@@ -247,20 +250,15 @@ export default function CompactSchedule({ snapshot, roster, rules, players, assi
     if (nextDate) selectDate(nextDate);
   };
   return <div className={styles.compactSchedule}>
-    <section className={styles.daySummary} aria-label="Selected-day lineup summary">
+
+    <div className={styles.scheduleLegend}><span>{!ready ? "Assignments unverified" : snapshot && date < localDate(snapshot.context.asOf, snapshot.context.timeZone) ? "Past lineup unverified" : "Range totals"}{!completeSchedule && " · partial/unknown"}</span>
+      <details className={styles.scheduleControlDisclosure}><summary>Day capacity · {daySummary.occupied}/{daySummary.capacity}{daySummary.unresolved ? ` · ${daySummary.unresolved} unresolved` : ""}</summary>    <section className={styles.daySummary} aria-label="Selected-day lineup summary">
       <div title="Verified occupied starting fantasy slots, including held slots without an NHL game; excludes Bench and reserves"><span>Active slots</span><strong>{daySummary.occupied}{daySummary.unresolved ? " known" : ""}/{daySummary.capacity}</strong></div>
       <div title="Verified vacant starting fantasy slots; an occupied no-game slot is not open"><span>Open slots</span><strong>{daySummary.unresolved ? `${daySummary.open ? `${daySummary.open} verified · ` : ""}${daySummary.unresolved} unresolved` : daySummary.open}</strong></div>
       <div title="Individual players in the local planning roster with a scheduled, live or completed NHL game on this date; not fantasy starts"><span>Roster games</span><strong>{knownCount(daySummary.rosterGames, daySummary.scheduleComplete && daySummary.rosterComplete)}</strong></div>
       <div title="Distinct league-wide NHL games on this date; not roster-player games or goalie starts"><span>NHL games</span><strong>{knownCount(daySummary.nhlGames, daySummary.scheduleComplete)}</strong></div>
-    </section>
-    <div className={styles.scheduleLegend}>{!ready ? "Assignments pending / unverified" : snapshot && date < localDate(snapshot.context.asOf, snapshot.context.timeZone) ? "Past lineup unverified" : "Local planning lineup"} · GP: scheduled games{!completeSchedule && " · partial/unknown schedule"} · G: ? unknown, ~ projected, ✓ confirmed, ! conflict
-      {previousWeekDisabled && <span id={`${navigationReasonId}-previous`}> · No earlier week in selected range.</span>}
-      {nextWeekDisabled && <span id={`${navigationReasonId}-next`}> · No later week in selected range.</span>}
-      {week.some(day => !dates.includes(day)) && <span id={`${navigationReasonId}-dates`}> · Disabled dates are outside selected range.</span>}
-      {benchCount > 0 && <span id={`${navigationReasonId}-bench-capacity`}> · Local simulated Bench, not Yahoo placement. {benchCapacityNote}</span>}
-    </div>
-    <div ref={scrollElement} className={styles.compactScroll} tabIndex={0} role="region" aria-label="Player weekly schedule scroll area">
-      <div className={styles.dayControls}>
+    </section></details>
+      <details className={styles.scheduleControlDisclosure}><summary>Date controls</summary><div className={styles.dayControls}>
         <div className={styles.dayNavigation}>
           <button aria-label="Previous schedule week" aria-describedby={previousWeekDisabled ? `${navigationReasonId}-previous` : undefined} disabled={previousWeekDisabled} onClick={() => moveWeek(-7)}>‹</button>
           <output aria-live="polite">{dateLabel(date)}</output>
@@ -279,22 +277,37 @@ export default function CompactSchedule({ snapshot, roster, rules, players, assi
               if (included.includes(index)) selectDate(week[index]);
             }} />
         </div>
-      </div>
+      </div></details>
+      <InfoTooltip label="About player schedule and range metrics">Displayed slots are local planning assignments, not provider placement. GP is remaining scheduled games while rostered; AGP is legal active-game assignments; DUST is evaluated bench games. Points exclude banked results. Totals cover the selected date range, which may extend beyond the displayed week. Scheduled goalie games are opportunities: ? unknown, ~ projected, ✓ confirmed, ! starter conflict.</InfoTooltip>
+      {previousWeekDisabled && <span className={styles.scheduleSrOnly} id={`${navigationReasonId}-previous`}> · No earlier week in selected range.</span>}
+      {nextWeekDisabled && <span className={styles.scheduleSrOnly} id={`${navigationReasonId}-next`}> · No later week in selected range.</span>}
+      {week.some(day => !dates.includes(day)) && <span className={styles.scheduleSrOnly} id={`${navigationReasonId}-dates`}> · Disabled dates are outside selected range.</span>}
+      {benchCount > 0 && <span id={`${navigationReasonId}-bench-capacity`} className={benchCapacity === null || benchCount > benchCapacity ? styles.formChip : styles.scheduleSrOnly}>
+        {benchCapacity === null ? "Bench capacity unknown; all players retained." : `${benchCount} / ${benchCapacity} local Bench places${benchCount > benchCapacity ? " · over capacity; all retained" : ""}`}
+        <span className={styles.scheduleSrOnly}>Local simulated Bench, not Yahoo placement. {benchCapacityNote}</span>
+      </span>}
+    </div>
+    <div ref={scrollElement} className={styles.compactScroll} tabIndex={0} role="region" aria-label="Player weekly schedule scroll area">
       <table className={styles.compactTable} aria-label="Individual player weekly schedule">
         <thead><tr><th scope="col">Slot / player</th>{week.map(day => <th scope="col" key={day} className={`${day === date ? styles.chosenDay : ""} ${day < today ? styles.elapsedDay : ""}`}>
           <button aria-label={`Select ${dateLabel(day)}`} aria-pressed={day === date} aria-describedby={!dates.includes(day) ? `${navigationReasonId}-dates` : undefined} disabled={!dates.includes(day)} onClick={() => selectDate(day)}>
             <span>{dateLabel(day).split(", ")[0]}</span><span>{dateLabel(day).split(", ")[1]}</span>
             {dates.includes(day) && <small>{knownCount(new Set(snapshot?.games.filter(game => game.date === day && ["scheduled", "live", "final"].includes(game.status)).map(game => game.id)).size, completeSchedule)} NHL</small>}
           </button>
-        </th>)}<th scope="col" title="Known scheduled games in displayed week; not fantasy or confirmed goalie starts">GP</th></tr></thead>
+        </th>)}{["GP", "AGP", "DUST", "Pts"].map(label => <th scope="col" key={label}>{label}</th>)}</tr></thead>
         {groups.map(group => <tbody key={group.position} className={styles.positionGroup} data-position={group.position === "BN" ? "BENCH" : group.position === "F" ? "FWD" : group.position}
           data-label={group.position === "BN" ? "BENCH" : group.position}
           data-bench-open={group.position === "BN" ? benchOpen : undefined} aria-label={`${group.position} group`}>
           {group.position === "BN" && <tr data-bench-heading="" className={styles.benchHeading}>
             <td className={styles.positionLabel} data-position-label="" rowSpan={group.rows.length + 1} aria-hidden="true"><span>BENCH</span></td>
-            <th colSpan={9}><button aria-label={`Bench ${group.rows.length}, ${benchOpen ? "collapse" : "expand"}`} aria-describedby={`${navigationReasonId}-bench-capacity`} aria-expanded={benchOpen} aria-controls={group.rows.map((_, index) => `rso-bench-${index}`).join(" ")} onClick={toggleBench}><span aria-hidden="true">{benchOpen ? "▾" : "▸"} Bench</span><span className={styles.countChip} aria-hidden="true">{group.rows.length}</span></button></th>
+            <th colSpan={12}><button aria-label={`Bench ${group.rows.length}, ${benchOpen ? "collapse" : "expand"}`} aria-describedby={`${navigationReasonId}-bench-capacity`} aria-expanded={benchOpen} aria-controls={group.rows.map((_, index) => `rso-bench-${index}`).join(" ")} onClick={toggleBench}><span aria-hidden="true">{benchOpen ? "▾" : "▸"} Bench</span><span className={styles.countChip} aria-hidden="true">{group.rows.length}</span></button></th>
           </tr>}
-          {group.rows.map((row, index) => <tr key={row.playerId ?? row.id} data-compact-row="" data-player-id={row.playerId} hidden={group.position === "BN" && !benchOpen} id={group.position === "BN" ? `rso-bench-${index}` : undefined}>
+          {group.rows.map((row, index) => {
+            const contribution = row.playerId ? contributions?.get(row.playerId) : undefined;
+            const count = (value: number | null | undefined, known: number | undefined) => value == null ? known ? `${known}+` : "?" : String(value);
+            const metrics = [count(contribution?.scheduledGames, contribution?.knownScheduledGames), count(contribution?.activeGames, contribution?.knownActiveGames),
+              count(contribution?.benchGames, contribution?.knownBenchGames), contribution?.projectedPoints == null ? "—" : contribution.projectedPoints.toLocaleString("en-US", { maximumFractionDigits: 1 })];
+            return <tr key={row.playerId ?? row.id} data-compact-row="" data-player-id={row.playerId} hidden={group.position === "BN" && !benchOpen} id={group.position === "BN" ? `rso-bench-${index}` : undefined}>
             {index === 0 && group.position !== "BN" && <td className={styles.positionLabel} data-position-label="" rowSpan={group.rows.length} aria-hidden="true"><span>{group.position}</span></td>}
             <th scope="row" title={`${row.slot} · ${row.player?.name ?? row.status} · ${row.status}${row.change ? ` · ${row.change}` : ""}${row.player ? ` · ${row.player.eligibilityVerified === true ? "League positions" : "Positions on file (unconfirmed)"}: ${row.player.eligiblePositions.join("/") || "unknown"}` : ""}`}>
               {row.player ? <button className={styles.schedulePlayer} onClick={() => selectPlayer(row.playerId!)} aria-label={`Schedule details for ${row.player.name}, ${row.slot}, ${row.player.eligibilityVerified === true ? "league positions" : "unconfirmed positions"} ${row.player.eligiblePositions.join("/") || "unknown"}, ${row.status}`}>
@@ -304,8 +317,8 @@ export default function CompactSchedule({ snapshot, roster, rules, players, assi
             </th>
             {week.map(day => { const cell = row.player ? gameLabel(row.player, day) : null; return <td key={day} title={`${dateLabel(day)} · ${cell?.detail ?? row.status}`} aria-label={`${dateLabel(day)} · ${cell?.detail ?? row.status}`}
               className={`${day === date ? styles.chosenDay : ""} ${day < today ? styles.elapsedDay : ""} ${cell?.assigned ? styles.fantasyAssigned : ""}`}>{cell?.text ?? "—"}{cell?.goalie && <sup aria-hidden="true">{cell.goalie}</sup>}</td>; })}
-            <td>{row.player ? (() => { if (!row.player.teamAbbreviation) return "?"; const count = snapshot?.games.filter(game => week.includes(game.date) && dates.includes(game.date) && game.teamAbbreviation === row.player?.teamAbbreviation && !["cancelled", "postponed"].includes(game.status)).length ?? 0; return completeSchedule ? count : count ? `${count}?` : "?"; })() : "—"}</td>
-          </tr>)}
+            {metrics.map((value, index) => <td key={index} className={styles.rangeMetric} aria-label={`${["Range GP", "Range AGP", "Range DUST/bench", "Range active points"][index]}: ${row.playerId ? value === "—" ? "unavailable" : value === "?" ? "unknown" : value.endsWith("+") ? `${value.slice(0, -1)} known; total unknown` : value : "no player"}`}>{row.playerId ? value : "—"}</td>)}
+          </tr>; })}
         </tbody>)}
       </table>
     </div>

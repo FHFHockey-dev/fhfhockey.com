@@ -1,0 +1,68 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-persistence.test.ts --config ../tasks/ifttt-integration-2026-10-16/durable-occurrence-increment/vitest.config.mjs
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-persistence.test.ts (3 tests | 3 failed) 1088ms
+   × exact original persistence cases against disposable storage > CR039 executes the original before-registry-commit interruption and all unchanged assertions 117ms
+     → column "payload" is of type jsonb but expression is of type timestamp with time zone
+   × exact original persistence cases against disposable storage > CR040 executes the original commit-ack-loss/readback and all unchanged assertions 104ms
+     → column "payload" is of type jsonb but expression is of type timestamp with time zone
+   × exact original persistence cases against disposable storage > CR052 executes two original workers from the same actual context with a real CAS loser 102ms
+     → column "payload" is of type jsonb but expression is of type timestamp with time zone
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-persistence.test.ts > exact original persistence cases against disposable storage > CR039 executes the original before-registry-commit interruption and all unchanged assertions
+error: column "payload" is of type jsonb but expression is of type timestamp with time zone
+ ❯ node_modules/pg/lib/client.js:545:17
+ ❯ sql ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-persistence.test.ts:35:87
+     33|   const sql=async(query:string,values:any[]=[],service=true)=>{
+     34|     const db=new Client({host:socket,port:65439,user:"ifttt_exact_test…
+     35|     await db.connect();try{if(service)await db.query("set role service…
+       |                                                                                       ^
+     36|   };
+     37|   const rpc=async(name:string,args:Record<string,unknown>)=>{
+ ❯ seed ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-persistence.test.ts:62:5
+ ❯ ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-persistence.test.ts:100:58
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-persistence.test.ts > exact original persistence cases against disposable storage > CR040 executes the original commit-ack-loss/readback and all unchanged assertions
+error: column "payload" is of type jsonb but expression is of type timestamp with time zone
+ ❯ node_modules/pg/lib/client.js:545:17
+ ❯ sql ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-persistence.test.ts:35:87
+     33|   const sql=async(query:string,values:any[]=[],service=true)=>{
+     34|     const db=new Client({host:socket,port:65439,user:"ifttt_exact_test…
+     35|     await db.connect();try{if(service)await db.query("set role service…
+       |                                                                                       ^
+     36|   };
+     37|   const rpc=async(name:string,args:Record<string,unknown>)=>{
+ ❯ seed ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-persistence.test.ts:62:5
+ ❯ ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-persistence.test.ts:113:58
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-persistence.test.ts > exact original persistence cases against disposable storage > CR052 executes two original workers from the same actual context with a real CAS loser
+error: column "payload" is of type jsonb but expression is of type timestamp with time zone
+ ❯ node_modules/pg/lib/client.js:545:17
+ ❯ sql ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-persistence.test.ts:35:87
+     33|   const sql=async(query:string,values:any[]=[],service=true)=>{
+     34|     const db=new Client({host:socket,port:65439,user:"ifttt_exact_test…
+     35|     await db.connect();try{if(service)await db.query("set role service…
+       |                                                                                       ^
+     36|   };
+     37|   const rpc=async(name:string,args:Record<string,unknown>)=>{
+ ❯ seed ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-persistence.test.ts:62:5
+ ❯ ../tasks/ifttt-integration-2026-10-16/offline-completion/exact-persistence.test.ts:125:58
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed (3)
+   Start at  00:18:11
+   Duration  1.56s (transform 145ms, setup 16ms, collect 264ms, tests 1.09s, environment 0ms, prepare 38ms)
+

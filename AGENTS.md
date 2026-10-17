@@ -11,6 +11,7 @@
 ## Delegation and Review
 
 - For substantial work that can be divided into independent, bounded tasks, follow [mise-en-place.md](mise-en-place.md). The lead agent (Chef) owns scope, staffing, integration, verification, and the final decision to deliver. Verify actual model and reasoning settings before delegation; Chef's reasoning effort must be higher than every worker's. Do not delegate a small or inseparable task merely to create parallel work.
+- The optional [SPRINT-MODE.md](SPRINT-MODE.md) protocol applies only after the user issues `SPRINT MODE` as a command; `STOP SPRINT` stops it. Documentation, quotations, and discussion do not activate it. Normal pacing remains the default, and all existing repository rules and permissions remain in force.
 
 ## Branch Naming
 

@@ -1,0 +1,9 @@
+{
+  "pureNormalResultRowsIdenticalToAcceptedReview": true,
+  "pureMutationResultRowsIdenticalToAcceptedReview": true,
+  "approvedVersionedResultRowsIdenticalToHistoricalOwnerResults": true,
+  "immutableAuditCopyByteIdentical": true,
+  "pureCopyChanges": "Output path and current core-manifest reference; UTF8 string hash overload only. Original API/normalization/assertion logic unchanged.",
+  "versionedCopyChanges": "Local import/input/output paths and TypeScript-only hash/callback/optional-field adaptation. All assertion expressions unchanged.",
+  "originalOracleSha256": "d9fe45ca44042673ff0381cd0f1981074b196da99fb6fdf9da573ac5df84fd8b"
+}

@@ -1,0 +1,43 @@
+
+Running 1 test using 1 worker
+
+  ✘  1 [chromium] › e2e/roster-schedule-optimizer.spec.ts:1565:5 › Audit1 native candidate Worker finds complete swaps before any plan is selected (19.2s)
+
+
+  1) [chromium] › e2e/roster-schedule-optimizer.spec.ts:1565:5 › Audit1 native candidate Worker finds complete swaps before any plan is selected 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeEnabled[2m([22m[2m)[22m failed
+
+    Locator:  locator('[data-rso-candidate-id="fhfh:140"]').getByRole('button', { name: 'Select compared plan' })
+    Expected: enabled
+    Received: disabled
+    Timeout:  15000ms
+
+    Call log:
+    [2m  - Expect "toBeEnabled" with timeout 15000ms[22m
+    [2m  - waiting for locator('[data-rso-candidate-id="fhfh:140"]').getByRole('button', { name: 'Select compared plan' })[22m
+    [2m    34 × locator resolved to <button disabled class="CandidateCard_action__DpVqb">Select compared plan</button>[22m
+    [2m       - unexpected value "disabled"[22m
+
+
+      1603 |   await expect(card).toContainText("Net points +999");
+      1604 |   await expect(card).toContainText("Owned Weak");
+    > 1605 |   await expect(card.getByRole("button", { name: "Select compared plan" })).toBeEnabled();
+           |                                                                            ^
+      1606 |   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).intent.steps)).toEqual([]);
+      1607 |   await writeFile(testInfo.outputPath("audit1-native-worker.json"), JSON.stringify({
+      1608 |     scope: "Native browser Worker and served local UI; intercepted synthetic inputs, not genuine feed acceptance", metrics,
+        at /Users/tim/Code/fhfhockey.com/web/e2e/roster-schedule-optimizer.spec.ts:1605:76
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../tasks/artifacts/forge-rso-completion-2026-10-15/browser-final/roster-schedule-optimizer--ae298-before-any-plan-is-selected-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../tasks/artifacts/forge-rso-completion-2026-10-15/browser-final/roster-schedule-optimizer--ae298-before-any-plan-is-selected-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../tasks/artifacts/forge-rso-completion-2026-10-15/browser-final/roster-schedule-optimizer--ae298-before-any-plan-is-selected-chromium/error-context.md
+
+  1 failed
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:1565:5 › Audit1 native candidate Worker finds complete swaps before any plan is selected 

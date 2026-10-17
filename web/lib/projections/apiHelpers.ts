@@ -2,6 +2,7 @@
 import { z } from "zod";
 
 import supabase from "lib/supabase/server";
+import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "./calibrationEligibility";
 
 export const dateSchema = z
   .string({ required_error: "date is required" })
@@ -38,7 +39,7 @@ export async function requireLatestSucceededRunId(
   if (!supabase) throw new Error("Supabase server client not available");
   const { data, error } = await supabase
     .from("forge_runs")
-    .select("run_id")
+    .select("run_id,metrics")
     .eq("as_of_date", asOfDate)
     .eq("status", "succeeded")
     .order("created_at", { ascending: false })
@@ -52,6 +53,12 @@ export async function requireLatestSucceededRunId(
       `No succeeded projection run found for date=${asOfDate}`,
     );
     (err as any).statusCode = 404;
+    throw err;
+  }
+  if ((data as any)?.metrics?.input_provenance?.external_fantasy_input_contract
+    !== FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT) {
+    const err = new Error("Selected projection run lacks external fantasy exclusion provenance.");
+    (err as any).statusCode = 422;
     throw err;
   }
   return runId;

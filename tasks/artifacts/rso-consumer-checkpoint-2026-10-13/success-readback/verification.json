@@ -1,0 +1,83 @@
+{
+  "observedAt": "2026-10-14T00:13:45.301191+00:00",
+  "expectedRows": 114,
+  "actualRows": 114,
+  "exact57GameIdsMatch": true,
+  "reciprocalSides": true,
+  "allBoundsMatch": true,
+  "allMappedCountable": true,
+  "reconstructedStoredScopeHash": "cd6c7d7ea561a3aaafc9fd7a5289beda09572e4adf6767feefec9f5ce3731adf",
+  "scopeHashMatchesUserInspection": true,
+  "fetchedAt": "2026-10-14T00:12:54.911+00:00",
+  "freshnessSeconds": 50.39,
+  "reader36HourFreshnessPass": true,
+  "audit": {
+    "runTime": "2026-10-14T00:12:55.327488+00:00",
+    "status": "success",
+    "rowsAffected": 114,
+    "rowsDeleted": 0,
+    "finalAudit": {
+      "owner": "withCronJobAudit",
+      "status": "persisted"
+    }
+  },
+  "consumerReplay": {
+    "source": "actual normalizePlanningGames on stored rows; no HTTP/provider/DB writes",
+    "timeZone": "America/Chicago",
+    "startDate": "2026-10-12",
+    "endDate": "2026-10-18",
+    "uniqueGames": 50,
+    "teamGameCells": 100,
+    "byDate": {
+      "2026-10-12": 6,
+      "2026-10-13": 32,
+      "2026-10-14": 4,
+      "2026-10-15": 22,
+      "2026-10-16": 4,
+      "2026-10-17": 28,
+      "2026-10-18": 4
+    },
+    "byTeam": {
+      "BUF": 4,
+      "FLA": 4,
+      "NJD": 4,
+      "OTT": 4,
+      "MIN": 4,
+      "VGK": 4,
+      "DET": 3,
+      "CBJ": 3,
+      "MTL": 3,
+      "CAR": 3,
+      "WSH": 3,
+      "PHI": 3,
+      "SEA": 3,
+      "NYR": 3,
+      "TBL": 3,
+      "STL": 3,
+      "NYI": 3,
+      "VAN": 3,
+      "CHI": 3,
+      "PIT": 3,
+      "WPG": 3,
+      "COL": 3,
+      "DAL": 3,
+      "NSH": 3,
+      "TOR": 3,
+      "UTA": 3,
+      "ANA": 2,
+      "CGY": 3,
+      "EDM": 3,
+      "LAK": 2,
+      "BOS": 3,
+      "SJS": 3
+    },
+    "allStartTimesKnown": true
+  },
+  "changes": {
+    "newRows": 0,
+    "rescheduledRows": 0,
+    "rescheduledSourceGameIds": [],
+    "statusChangedRows": 34,
+    "unchangedRows": 80
+  }
+}

@@ -1,0 +1,14 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts --config ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/vitest.config.mjs
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts (14 tests) 3712ms
+
+ Test Files  1 passed (1)
+      Tests  14 passed (14)
+   Start at  01:19:54
+   Duration  4.16s (transform 170ms, setup 16ms, collect 275ms, tests 3.71s, environment 0ms, prepare 38ms)
+

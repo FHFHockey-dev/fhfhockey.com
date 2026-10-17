@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { evaluatePlan } from "lib/rosterScheduleOptimizer/planning";
+import { acquisitionEffectiveAt } from "lib/rosterScheduleOptimizer/planningTimeline";
 import { supplementProviderRules } from "lib/rosterScheduleOptimizer/providerRules";
 import { defaultIntent } from "lib/rosterScheduleOptimizer/workspace";
+import { candidatePlanMetrics } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
 
 const mocks = vi.hoisted(() => ({ user: { id: "owner-a" }, allowed: false, requireUser: vi.fn(), access: vi.fn(), snapshot: vi.fn(), planningData: vi.fn(), settings: vi.fn(), draftResource: vi.fn(), boardResource: vi.fn(), planningResource: vi.fn() }));
 vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: mocks.requireUser }));
@@ -141,6 +143,140 @@ describe("Yahoo planning parsers", () => {
 });
 
 describe("Yahoo snapshot evidence", () => {
+  it.each(["deadline", "failed-next-page", "stale-next-page", "wrong-league-next-page", "repeated-next-page", "unmapped", "ambiguous", "foreign-game", "eligibility-only", "availability-only", "class-mismatch"])("keeps individually verified partial discovery facts (%s)", async mode => {
+    const network = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("Unexpected network request in synthetic discovery test"));
+    let elapsed = 0;
+    const clock = vi.spyOn(Date, "now").mockImplementation(() => elapsed);
+    const starts: number[] = [];
+    const stopsAfterFirstPage = ["deadline", "unmapped", "ambiguous", "foreign-game", "eligibility-only", "availability-only", "class-mismatch"].includes(mode);
+    try {
+      const mapping = [{ nhl_player_id: "1", yahoo_player_id: "453.p.1" },
+        ...(mode === "unmapped" ? [] : [{ nhl_player_id: "2", yahoo_player_id: "453.p.2" }]),
+        { nhl_player_id: "3", yahoo_player_id: "453.p.3" },
+        ...(mode === "ambiguous" ? [{ nhl_player_id: "99", yahoo_player_id: "453.p.2" }] : [])];
+      const db = { from(table: string) {
+        const query = { select() { return query; }, order() { return query; }, eq() { return query; },
+          async maybeSingle() { return { data: table === "external_teams"
+            ? { id: "team-a", team_metadata: { is_owned: true }, connected_account_id: "account-a", external_league_id: "league-a", external_team_key: "453.l.1.t.1" }
+            : { id: "league-a", connected_account_id: "account-a", external_league_key: "453.l.1" }, error: null }; },
+          async range() { return { data: mapping, error: null }; } };
+        return query;
+      } };
+      const now = new Date("2026-10-01T12:00:00Z");
+      const transport = { responseDate: now.toISOString(), ageSeconds: 0 };
+      mocks.planningData.mockImplementation(async () => ({ players: [1, 2, 3, 4].map(id => ({ id: `canonical-${id}`, nhlId: id,
+        name: `Player ${id}`, teamAbbreviation: "TOR", eligiblePositions: ["C"], eligibilityVerified: false,
+        playerClass: "skater", availability: "unknown", ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] })),
+        games: [{ id: "game", date: "2026-10-02", startsAt: "2026-10-02T23:00:00Z", teamAbbreviation: "TOR", opponent: "OTT", home: true, status: "scheduled" }],
+        forecasts: [], evidence: { schedule: { source: "Synthetic partial schedule", asOf: now.toISOString(), seasonId: 20262027, completeness: "partial", limitations: [] } } }));
+      mocks.settings.mockReturnValue({ rosterType: "date", rosterConfig: { C: 1, BN: 1 }, scoringTypeRecognized: true,
+        unsupportedStatIds: [], unsupportedRosterSlots: [], leagueType: "points", scoringCategories: { GOALS: 1 }, categoryWeights: {}, minimumGoalieStarts: null });
+      mocks.draftResource.mockResolvedValue({ payload: { league_key: "453.l.1", time_zone: "UTC" }, transport });
+      mocks.boardResource.mockImplementation(async ({ resource }: any) => {
+        if (resource.type !== "roster") throw new Error("Synthetic optional read unavailable");
+        return { payload: { team_key: "453.l.1.t.1", is_owned_by_current_login: "1", roster: { date: "2026-10-01", coverage_type: "date", is_editable: "1",
+          players: { count: 1, 0: { player: [{ player_key: "453.p.1" }, { eligible_positions: { position: "C" } }, { selected_position: { position: "C" } }, { is_editable: "1" }] } } } }, transport };
+      });
+      mocks.planningResource.mockImplementation(async ({ resource }: any) => {
+        if (resource.type !== "available_page") throw new Error("Synthetic optional read unavailable");
+        starts.push(resource.start);
+        if (resource.start && mode === "failed-next-page") throw new Error("Synthetic later page failure");
+        const ids = resource.start ? [2] : [2, 3, ...Array.from({ length: 23 }, (_, index) => 100 + index)];
+        if (stopsAfterFirstPage) elapsed = 8000;
+        return { payload: { league_key: resource.start && mode === "wrong-league-next-page" ? "453.l.other" : "453.l.1",
+          players: { count: ids.length, ...Object.fromEntries(ids.map((id, index) => [index, { player: [
+            { player_key: `${mode === "foreign-game" && id === 2 ? "452" : "453"}.p.${id}` },
+            { eligible_positions: id === 2 && mode === "availability-only" ? undefined : { position: id === 2 && mode === "class-mismatch" ? "G" : "LW" } },
+            { ownership: id === 2 && mode === "eligibility-only" ? {} : { ownership_type: "freeagents" } },
+          ] }])) } }, transport: resource.start && mode === "stale-next-page" ? { ...transport, ageSeconds: 61 } : transport };
+      });
+      const actual = await vi.importActual<typeof import("./rosterPlanning")>("./rosterPlanning");
+      const result = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-03", now });
+      expect(result.capabilities.availability).toBe(false);
+      expect(result.snapshot.evidence.availability?.completeness).toBe("partial");
+      expect(starts).toEqual(stopsAfterFirstPage ? [0] : [0, 25]);
+      const candidate = result.snapshot.players.find(player => player.id === "canonical-2")!;
+      const unresolved = ["unmapped", "ambiguous", "foreign-game"].includes(mode);
+      expect(candidate.eligibilityVerified).toBe(!unresolved && mode !== "availability-only");
+      expect(candidate.availability).toBe(unresolved || ["repeated-next-page", "eligibility-only"].includes(mode) ? "unknown" : "free_agent");
+      expect(candidate.eligiblePositions).toEqual(unresolved || mode === "availability-only" ? ["C"] : mode === "class-mismatch" ? ["G"] : ["LW"]);
+      expect(result.snapshot.players.find(player => player.id === "canonical-3")).toMatchObject({ eligibilityVerified: true, eligiblePositions: ["LW"], availability: "free_agent" });
+      expect(result.snapshot.players.find(player => player.id === "canonical-4")).toMatchObject({ eligibilityVerified: false, availability: "unknown" });
+      expect(result.snapshot.roster).toEqual([{ playerId: "canonical-1", position: "active" }]);
+      const metrics = candidatePlanMetrics(result.snapshot, defaultIntent(), { maxCandidates: 1 });
+      const known = metrics.diagnostics.find(row => row.playerId === "canonical-3")!;
+      expect(known.reasons).not.toContain("League positional eligibility is unverified.");
+      expect(known.reasons).not.toContain("League availability is not verified for acquisition.");
+      expect(result.snapshot.rules.acquisitionTiming).toBe("unknown");
+      expect(result.snapshot.rules.acquisitionCost).toBeNull();
+      expect(result.snapshot.rules.periods).toEqual([]);
+      const repeated = mode === "repeated-next-page";
+      const matches = unresolved ? 1 : 2;
+      const both = unresolved || repeated || ["eligibility-only", "availability-only", "class-mismatch"].includes(mode) ? 1 : 2;
+      const eligibilityOnly = repeated || mode === "eligibility-only" ? 1 : 0;
+      const availabilityOnly = ["availability-only", "class-mismatch"].includes(mode) ? 1 : 0;
+      const stop = stopsAfterFirstPage ? "time budget" : repeated ? "end of list with repeated identities"
+        : mode === "failed-next-page" ? "request failure" : mode === "stale-next-page" ? "unverified freshness" : "league scope mismatch";
+      expect(result.capabilities.limitations).toContain(`Yahoo availability read: ${starts.length} pages attempted, ${mode === "failed-next-page" ? 1 : starts.length} returned, ${repeated ? 2 : 1} accepted; ${repeated ? 26 : 25} accepted rows, 25 unique, ${repeated ? 1 : 0} repeats. ${elapsed} ms elapsed; 8000 ms between-page budget. Stopped: ${stop}.`);
+      expect(result.capabilities.limitations).toContain(`Yahoo availability matches: ${matches} unique catalog matches, ${25 - matches} unmatched; 0 rostered/excluded, ${matches} candidate matches.`);
+      expect(result.capabilities.limitations).toContain(`Yahoo provider catalog before search: 3 candidates; ${both} both known, ${eligibilityOnly} eligibility only, ${availabilityOnly} availability only, ${3 - both - eligibilityOnly - availabilityOnly} neither known. Eligibility means usable verified positions; availability means free agent or waivers. Discovery partial; unseen players remain unknown.`);
+      expect(JSON.stringify(result.snapshot)).not.toContain("Yahoo availability read:");
+      expect(mocks.planningResource).toHaveBeenCalledTimes(3 + starts.length);
+      expect(mocks.boardResource).toHaveBeenCalledTimes(2);
+      expect(mocks.draftResource).toHaveBeenCalledTimes(1);
+      expect(network).not.toHaveBeenCalled();
+    } finally { clock.mockRestore(); network.mockRestore(); }
+  });
+  it.each([
+    { waiverDate: 1e100, clearsAt: null },
+    { waiverDate: 8_640_000_000_001, clearsAt: null },
+    { waiverDate: -8_640_000_000_001, clearsAt: null },
+    { waiverDate: "invalid", clearsAt: null },
+    { waiverDate: null, clearsAt: null },
+    { waiverDate: Date.parse("2026-10-02T12:00:00Z") / 1000, clearsAt: "2026-10-02T12:00:00.000Z" },
+  ])("preserves the roster when a candidate waiver date is $waiverDate", async ({ waiverDate, clearsAt }) => {
+    const network = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("Unexpected network request in synthetic waiver test"));
+    try {
+      const db = { from(table: string) {
+        const query = {
+          select() { return query; }, order() { return query; }, eq() { return query; },
+          async maybeSingle() { return { data: table === "external_teams"
+            ? { id: "team-a", team_metadata: { is_owned: true }, connected_account_id: "account-a", external_league_id: "league-a", external_team_key: "453.l.1.t.1" }
+            : { id: "league-a", connected_account_id: "account-a", external_league_key: "453.l.1" }, error: null }; },
+          async range() { return { data: [{ nhl_player_id: 1, yahoo_player_id: 1 }, { nhl_player_id: 2, yahoo_player_id: 2 }], error: null }; },
+        };
+        return query;
+      } };
+      const now = new Date("2026-10-01T12:00:00Z");
+      const transport = { responseDate: now.toISOString(), ageSeconds: 0 };
+      mocks.planningData.mockResolvedValue({ players: [1, 2].map(id => ({ id: `player-${id}`, nhlId: id, name: `Player ${id}`,
+        teamAbbreviation: "TOR", eligiblePositions: ["C"], eligibilityVerified: false, playerClass: "skater", availability: "unknown",
+        ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] })), games: [], forecasts: [], evidence: {} });
+      mocks.settings.mockReturnValue({ rosterType: "date", rosterConfig: { C: 1 }, scoringTypeRecognized: true,
+        unsupportedStatIds: [], unsupportedRosterSlots: [], leagueType: "points", scoringCategories: {}, categoryWeights: {}, minimumGoalieStarts: null });
+      mocks.draftResource.mockResolvedValue({ payload: { league_key: "453.l.1", time_zone: "UTC" }, transport });
+      mocks.boardResource.mockImplementation(async ({ resource }: any) => {
+        if (resource.type !== "roster") throw new Error("Synthetic optional read unavailable");
+        return { payload: { team_key: "453.l.1.t.1", is_owned_by_current_login: "1",
+          roster: { date: "2026-10-01", coverage_type: "date", is_editable: "1", players: { count: 1,
+            0: { player: [{ player_key: "453.p.1" }, { selected_position: { position: "C" } }, { eligible_positions: { position: "C" } }, { is_editable: "1" }] } } } }, transport };
+      });
+      mocks.planningResource.mockImplementation(async ({ resource }: any) => {
+        if (resource.type !== "available_page") throw new Error("Synthetic optional read unavailable");
+        return { payload: { league_key: "453.l.1", players: { count: 1,
+          0: { player: [{ player_key: "453.p.2" }, { ownership: { ownership_type: "waivers", waiver_date: waiverDate } }, { eligible_positions: { position: "C" } }] } } }, transport };
+      });
+      const actual = await vi.importActual<typeof import("./rosterPlanning")>("./rosterPlanning");
+      const result = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-03", now });
+      expect(result.snapshot.roster).toEqual([{ playerId: "player-1", position: "active" }]);
+      const candidate = result.snapshot.players.find(player => player.id === "player-2")!;
+      expect(candidate).toMatchObject({ availability: "waivers", waiverClearsAt: clearsAt });
+      expect(acquisitionEffectiveAt({ ...result.snapshot, rules: { ...result.snapshot.rules, acquisitionTiming: "same_day" } }, candidate, now.toISOString())).toBe(clearsAt);
+      expect(result.capabilities).toMatchObject({ roster: true, rules: false, acquisitions: false });
+      expect(result.snapshot.acquisitionEvidence?.remaining).toBeNull();
+      expect(network).not.toHaveBeenCalled();
+    } finally { network.mockRestore(); }
+  });
   it.each([false, true])("reads nested roster collections and leaves acquisition timing unknown (empty: %s)", async (empty) => {
     const mappingRanges: Array<[number, number]> = [];
     const db = { from(table: string) {

@@ -1,0 +1,160 @@
+
+> web@0.1.0 test
+> vitest --run __tests__/utils/adminOnlyMiddleware.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:75304) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ __tests__/utils/adminOnlyMiddleware.test.ts (24 tests | 13 failed) 11ms
+   ✓ adminOnlyMiddleware > accepts the cron secret bearer token 1ms
+   ✓ adminOnlyMiddleware > fails closed when the cron secret is missing, empty, or whitespace-only 0ms
+   ✓ adminOnlyMiddleware > allows direct loopback peer 127.0.0.1 in explicit development mode 0ms
+   ✓ adminOnlyMiddleware > allows direct loopback peer ::1 in explicit development mode 0ms
+   ✓ adminOnlyMiddleware > allows direct loopback peer ::ffff:127.0.0.1 in explicit development mode 0ms
+   × adminOnlyMiddleware > rejects a forged localhost Host from peer 198.51.100.10 3ms
+     → expected true to be false // Object.is equality
+   × adminOnlyMiddleware > rejects a forged localhost Host from peer 192.168.1.10 0ms
+     → expected true to be false // Object.is equality
+   × adminOnlyMiddleware > rejects a forged localhost Host from peer ::ffff:198.51.100.10 0ms
+     → expected true to be false // Object.is equality
+   × adminOnlyMiddleware > rejects a forged localhost Host from peer 2001:db8::10 0ms
+     → expected true to be false // Object.is equality
+   × adminOnlyMiddleware > rejects a forged localhost Host from peer 127.0.0.1.example.com 0ms
+     → expected true to be false // Object.is equality
+   × adminOnlyMiddleware > rejects a forged localhost Host from peer  0ms
+     → expected true to be false // Object.is equality
+   × adminOnlyMiddleware > rejects a forged localhost Host from peer undefined 0ms
+     → expected true to be false // Object.is equality
+   × adminOnlyMiddleware > fails closed without socket evidence 0ms
+     → expected true to be false // Object.is equality
+   ✓ adminOnlyMiddleware > does not grant development access when NODE_ENV is production 0ms
+   × adminOnlyMiddleware > does not grant development access when NODE_ENV is test 0ms
+     → expected true to be false // Object.is equality
+   × adminOnlyMiddleware > does not grant development access when NODE_ENV is  0ms
+     → expected true to be false // Object.is equality
+   × adminOnlyMiddleware > does not grant development access when NODE_ENV is undefined 0ms
+     → expected true to be false // Object.is equality
+   ✓ adminOnlyMiddleware > does not allow non-local or production requests through the localhost bypass 0ms
+   × adminOnlyMiddleware > denies an unauthenticated remote request with a forged localhost Host 1ms
+     → expected "spy" to be called with arguments: [ 401 ]
+
+Number of calls: 0
+
+   ✓ adminOnlyMiddleware > preserves direct local development handler access 0ms
+   × adminOnlyMiddleware > still requires a verified admin role for a remote request in development 1ms
+     → expected last "spy" call to have been called with [ 403 ]
+   ✓ adminOnlyMiddleware > still requires a verified admin role for a remote request in production 0ms
+   ✓ adminOnlyMiddleware > preserves authenticated remote cron access in production 0ms
+   ✓ adminOnlyMiddleware > returns one fixed denial for missing, malformed, and rejected bearer tokens 0ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 13 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  __tests__/utils/adminOnlyMiddleware.test.ts > adminOnlyMiddleware > rejects a forged localhost Host from peer 198.51.100.10
+ FAIL  __tests__/utils/adminOnlyMiddleware.test.ts > adminOnlyMiddleware > rejects a forged localhost Host from peer 192.168.1.10
+ FAIL  __tests__/utils/adminOnlyMiddleware.test.ts > adminOnlyMiddleware > rejects a forged localhost Host from peer ::ffff:198.51.100.10
+ FAIL  __tests__/utils/adminOnlyMiddleware.test.ts > adminOnlyMiddleware > rejects a forged localhost Host from peer 2001:db8::10
+ FAIL  __tests__/utils/adminOnlyMiddleware.test.ts > adminOnlyMiddleware > rejects a forged localhost Host from peer 127.0.0.1.example.com
+ FAIL  __tests__/utils/adminOnlyMiddleware.test.ts > adminOnlyMiddleware > rejects a forged localhost Host from peer 
+ FAIL  __tests__/utils/adminOnlyMiddleware.test.ts > adminOnlyMiddleware > rejects a forged localhost Host from peer undefined
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ __tests__/utils/adminOnlyMiddleware.test.ts:92:7
+     90|         socket: { remoteAddress },
+     91|       } as never),
+     92|     ).toBe(false);
+       |       ^
+     93|   });
+     94| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/13]⎯
+
+ FAIL  __tests__/utils/adminOnlyMiddleware.test.ts > adminOnlyMiddleware > fails closed without socket evidence
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ __tests__/utils/adminOnlyMiddleware.test.ts:99:7
+     97|     expect(
+     98|       invokedByLocalDev({ headers: { host: "localhost:3000" } } as nev…
+     99|     ).toBe(false);
+       |       ^
+    100|   });
+    101| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/13]⎯
+
+ FAIL  __tests__/utils/adminOnlyMiddleware.test.ts > adminOnlyMiddleware > does not grant development access when NODE_ENV is test
+ FAIL  __tests__/utils/adminOnlyMiddleware.test.ts > adminOnlyMiddleware > does not grant development access when NODE_ENV is 
+ FAIL  __tests__/utils/adminOnlyMiddleware.test.ts > adminOnlyMiddleware > does not grant development access when NODE_ENV is undefined
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ __tests__/utils/adminOnlyMiddleware.test.ts:111:9
+    109|           socket: { remoteAddress: "127.0.0.1" },
+    110|         } as never),
+    111|       ).toBe(false);
+       |         ^
+    112|     },
+    113|   );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/13]⎯
+
+ FAIL  __tests__/utils/adminOnlyMiddleware.test.ts > adminOnlyMiddleware > denies an unauthenticated remote request with a forged localhost Host
+AssertionError: expected "spy" to be called with arguments: [ 401 ]
+
+Number of calls: 0
+
+ ❯ __tests__/utils/adminOnlyMiddleware.test.ts:151:20
+    149|     await adminOnly(handler)(request as never, { status } as never);
+    150| 
+    151|     expect(status).toHaveBeenCalledWith(401);
+       |                    ^
+    152|     expect(handler).not.toHaveBeenCalled();
+    153|     expect(createClientWithToken).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/13]⎯
+
+ FAIL  __tests__/utils/adminOnlyMiddleware.test.ts > adminOnlyMiddleware > still requires a verified admin role for a remote request in development
+AssertionError: expected last "spy" call to have been called with [ 403 ]
+
+- Expected: 
+[
+  403,
+]
+
++ Received: 
+undefined
+
+ ❯ __tests__/utils/adminOnlyMiddleware.test.ts:200:26
+    198|           expect(request).toHaveProperty("supabase", serviceRoleClient…
+    199|         } else {
+    200|           expect(status).toHaveBeenLastCalledWith(403);
+       |                          ^
+    201|           expect(handler).not.toHaveBeenCalled();
+    202|           expect(request).not.toHaveProperty("supabase");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/13]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  13 failed | 11 passed (24)
+   Start at  00:52:26
+   Duration  514ms (transform 30ms, setup 3ms, collect 31ms, tests 11ms, environment 276ms, prepare 34ms)
+

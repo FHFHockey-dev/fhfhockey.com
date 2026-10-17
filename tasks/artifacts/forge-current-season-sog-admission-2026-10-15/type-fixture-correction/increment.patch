@@ -1,0 +1,25 @@
+--- a/web/lib/player-forecasts/currentSeasonSogContribution.test.ts
++++ b/web/lib/player-forecasts/currentSeasonSogContribution.test.ts
+@@ -3,7 +3,8 @@
+ import { describe, expect, it } from "vitest";
+ import { assembleCurrentSeasonSogBaseline, CURRENT_SEASON_SOG_SCOPE as scope } from "./currentSeasonSogBaseline";
+ import { admitsCurrentSeasonSogContribution, buildCurrentSeasonSogContribution,
+-  buildCurrentSeasonSogContributionBundle, CURRENT_SEASON_SOG_INPUT_VERSION } from "./currentSeasonSogContribution";
++  buildCurrentSeasonSogContributionBundle, CURRENT_SEASON_SOG_INPUT_VERSION,
++  type CurrentSeasonSogContributionInput } from "./currentSeasonSogContribution";
+ import { contributionBundleCandidateInputHash, contributionBundleChecksum, loadApprovedContributionBundle, persistContributionBundle } from "./contributionStore";
+ import { loadNativeContributionBundle } from "./nativeContributionAdmission";
+ import { playerForecastSourcePayloadHash as hash } from "./sourceSnapshot";
+@@ -25,10 +26,10 @@
+     playerByGameStats: { homeTeam: { forwards: [{ playerId: 1 }], defense: [], goalies: [{ playerId: 2 }] },
+       awayTeam: { forwards: [{ playerId: scope.nhlPlayerId, toi: "20:00", sog: i * 4 }], defense: [], goalies: [{ playerId: 3 }] } } },
+   `https://api-web.nhle.com/v1/gamecenter/${game.id}/boxscore`)) }, new Date("2026-10-15T20:00:00Z"));
+-  const binding = { playerId: scope.playerId, nhlPlayerId: scope.nhlPlayerId, teamId: scope.teamId,
++  const binding: CurrentSeasonSogContributionInput["binding"] = { playerId: scope.playerId, nhlPlayerId: scope.nhlPlayerId, teamId: scope.teamId,
+     seasonId: scope.seasonId, gameId: scope.targetGameId, scheduledAt: "2026-10-15T23:00:00Z",
+     scheduleRevision: "a".repeat(64), rosterRevision: "b".repeat(64), observedAt: "2026-10-15T22:00:00Z" };
+-  const input = { version: CURRENT_SEASON_SOG_INPUT_VERSION, packet, binding };
++  const input: CurrentSeasonSogContributionInput = { version: CURRENT_SEASON_SOG_INPUT_VERSION, packet, binding };
+   const source = buildCurrentSeasonSogContribution(input, issuedAt, now);
+   const row = { provider: "fhfh", dataset_key: "baseline-inputs-v1", entity_kind: "player",
+     entity_key: `20262027:${scope.playerId}`, available_at: binding.observedAt, payload_hash: hash(input), payload: input };

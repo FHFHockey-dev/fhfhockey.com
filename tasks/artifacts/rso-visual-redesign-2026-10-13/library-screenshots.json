@@ -1,0 +1,29 @@
+{
+  "caption": "Isolated fixture renders of the local RSO implementation.",
+  "results": [
+    {
+      "file_name": "after-complete-1440.png",
+      "file_id": "file_00000000fb8881f5b581d26cfd469ab9",
+      "library_file_id": "libfile_958ad075a22881919086d94e00479d41",
+      "current_version_number": 0,
+      "local_path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-visual-redesign-2026-10-13/after-complete-1440.png",
+      "size_bytes": 239372,
+      "sha256": "2f1ec6e4ebc034575b6bf9020fb20d416ee197fb8cba026b16f1aad4491db5fd",
+      "pixels_unmodified": true,
+      "status": "succeeded",
+      "local_identity_applied": true
+    },
+    {
+      "file_name": "after-complete-390.png",
+      "file_id": "file_00000000707c822f96396d0753de3b81",
+      "library_file_id": "libfile_34921e4a37188191a13d4a5f1ce64813",
+      "current_version_number": 0,
+      "local_path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-visual-redesign-2026-10-13/after-complete-390.png",
+      "size_bytes": 74679,
+      "sha256": "109d0e07bfee18d178a016405e43da3c3b292bfdaf48c2cc3a4d435597b53451",
+      "pixels_unmodified": true,
+      "status": "succeeded",
+      "local_identity_applied": true
+    }
+  ]
+}

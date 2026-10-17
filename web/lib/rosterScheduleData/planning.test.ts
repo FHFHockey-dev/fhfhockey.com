@@ -1,15 +1,30 @@
 // @vitest-environment node
+import { encodePlanningDataTransport, decodePlanningDataTransport, PLANNING_DATA_TRANSPORT_LIMITS, PlanningDataTransportLimitError } from "./planningDataTransport";
+import * as nativeAdmissionModule from "lib/player-forecasts/nativeContributionAdmission";
+import * as planningModule from "./planning";
+import planningHandler from "../../pages/api/v1/roster-schedule-optimizer/data";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { loadGameExpectations } from "lib/player-forecasts/gameExpectationReader";
 import { loadPlanningData, normalizePlanningGames, parsePlanningDataQuery, publicPlanningForecasts } from "./planning";
 import type { ContributionPlanningSnapshot, ForecastDiscoveryExclusion, PlanningPlayer } from "lib/rosterScheduleOptimizer/planningTypes";
 import { resolvePlanningContributions } from "lib/player-forecasts/planningContributions";
+import { buildGoalieParticipationReceipt, buildFrozenWindowGoalieParticipationReceipt, buildFrozenWindowGoalieStartReceipt, type GoalieParticipationInput, buildRosterObservationGoalieParticipationReceipt, buildRosterObservationGoalieStartReceipt } from "lib/player-forecasts/modeledGoalieParticipation";
+import { GOALIE_PARTICIPATION_DATASET, FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASET, FROZEN_WINDOW_GOALIE_START_DATASET, type GoalieParticipationBundle, ROSTER_OBSERVATION_GOALIE_PARTICIPATION_DATASET, ROSTER_OBSERVATION_GOALIE_START_DATASET } from "lib/player-forecasts/modeledGoalieParticipationStore";
+import { buildSkaterParticipationReceipt, buildFrozenWindowSkaterParticipationReceipt, type SkaterParticipationInput, buildRosterObservationSkaterParticipationReceipt } from "lib/player-forecasts/modeledSkaterParticipation";
+import { PARTICIPATION_DATASET, FROZEN_WINDOW_SKATER_PARTICIPATION_DATASET, type SkaterParticipationBundle, ROSTER_OBSERVATION_SKATER_PARTICIPATION_DATASET } from "lib/player-forecasts/modeledSkaterParticipationStore";
+import { playerForecastSourcePayloadHash } from "lib/player-forecasts/sourceSnapshot";
 import type { ForgeGameRevision } from "lib/projections/gameRevisions";
 import { forgeRosterRevision, forgeScheduleRevision, type ForgeIssuedContextV1 } from "lib/projections/issuedContext";
 import { admittedBoardGoalieForecast } from "lib/projections/starterBoardScoring";
 import { normalizeStartChartResponse } from "lib/projections/startChartContract";
 import { buildNativeSkaterParticipationFields } from "lib/projections/nativeGoalAccounting";
+import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
 import { acceptedNewsSupersedes, loadAcceptedForecastNews } from "lib/projections/acceptedNews";
 import { timestampMicros } from "lib/projections/evidenceTime";
+
+import { ROSTER_CONTINUATION_ASSUMPTION } from "lib/player-forecasts/targetRosterObservation";
+
+vi.mock("lib/supabase/server", () => ({ default: {} }));
 
 const membershipCreatedAt = ["2026-09-01T00:00:00Z"];
 const rosterRevision = forgeRosterRevision({ canonicalId: 7, nhlId: 847001, seasonId: 20262027, teamId: 1, membershipCreatedAt });
@@ -31,7 +46,7 @@ const issuedContext: ForgeIssuedContextV1 = { version: "forge-issued-context-v1"
   ], roster: [{ canonicalId: 7, nhlId: 847001, seasonId: 20262027, teamId: 1,
     membershipCreatedAt, identityUpdatedAt: "2026-09-01T00:00:00Z", revision: rosterRevision }],
   observedAt: "2026-10-10T09:00:00Z" };
-const revision = (candidates: unknown[]): ForgeGameRevision => ({ id: "issued-1", run_id: "run-1", game_id: 2026020001, decision_as_of: "2026-10-10T10:00:00Z", published_at: "2026-10-10T10:00:00Z", payload: { players: [], teams: [], goalies: [{ game_id: 2026020001, team_id: 1, horizon_games: 1, as_of_date: "2026-10-10", run_id: "run-1", uncertainty: { daily_board_candidates: candidates } }], codeVersion: "v1", inputProvenance: { rolling_player_history_contract: "test-history", private: "never expose", capturedReads: { version: "forge-captured-reads-v1", hash: "a".repeat(64), readCount: 2, firstReceivedAt: "2026-10-10T09:00:00Z", lastReceivedAt: "2026-10-10T09:01:00Z" }, issuedContexts: [issuedContext] } as ForgeGameRevision["payload"]["inputProvenance"] } });
+const revision = (candidates: unknown[]): ForgeGameRevision => ({ id: "issued-1", run_id: "run-1", game_id: 2026020001, decision_as_of: "2026-10-10T10:00:00Z", published_at: "2026-10-10T10:00:00Z", payload: { players: [], teams: [], goalies: [{ game_id: 2026020001, team_id: 1, horizon_games: 1, as_of_date: "2026-10-10", run_id: "run-1", uncertainty: { daily_board_candidates: candidates } }], codeVersion: "v1", inputProvenance: { rolling_player_history_contract: "test-history", external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT, private: "never expose", capturedReads: { version: "forge-captured-reads-v1", hash: "a".repeat(64), readCount: 2, firstReceivedAt: "2026-10-10T09:00:00Z", lastReceivedAt: "2026-10-10T09:01:00Z" }, issuedContexts: [issuedContext] } as ForgeGameRevision["payload"]["inputProvenance"] } });
 // Fictional captured evidence; never a provider observation or readiness proof.
 function scopedSkaterSelection(row: ForgeGameRevision, probability: 0 | 1 = 1) {
   const evidence = { informationCutoffAt: "2026-10-10T10:00:00Z", assertions: [{
@@ -115,8 +130,168 @@ function newsDb(events: Array<{ id: string; game_id: number; queue_version: numb
 afterEach(() => { vi.unstubAllEnvs(); vi.useRealTimers(); });
 
 describe("public RSO data boundary", () => {
+  it("shared game expectations skip unused ownership and recent outcome reads while RSO defaults retain them", async () => {
+    const { db, calls } = formDb([], []);
+    const scope = { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-10", timeZone: "America/New_York", mode: "calendar" as const, games: 1 };
+    const now = new Date("2026-10-10T12:00:00Z");
+    await loadGameExpectations(db as never, scope, now);
+    const optionalTables = ["yahoo_player_ownership_daily", "yahoo_nhl_player_map_read", "games", "skatersGameStats"];
+    expect(calls.filter(call => optionalTables.includes(call.table))).toEqual([]);
+    calls.length = 0;
+    const result = await loadPlanningData(db as never, scope, { now, forecastsEnabled: false });
+    expect(calls.some(call => call.table === "yahoo_player_ownership_daily")).toBe(true);
+    expect(calls.some(call => call.table === "games")).toBe(true);
+    expect(result.evidence.form?.source).not.toBe("not_requested");
+  });
+
   const publicQuery = { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-11" };
   const publicOptions = { now: new Date("2026-10-10T12:00:00Z"), forecastsEnabled: false };
+
+  it.each(["frozen", "roster observation"].flatMap(family => ["skater", "goalie", "start"].map(kind => ({ family, kind }))))
+  ("loads and revokes the separately approved $family $kind catalog", async ({ family, kind }) => {
+    const observed = family === "roster observation";
+    const { db, tables } = formDb([], []);
+    const evidence = { id: "synthetic-frozen-source", hash: "a".repeat(64),
+      availableAt: "2026-10-16T09:00:00Z", capturedAt: "2026-10-16T09:00:00Z" };
+    const eligibility = { playerId: 7, nhlPlayerId: 847001, teamId: 1, eligible: true,
+      effectiveFrom: "2026-10-01T00:00:00Z", effectiveUntil: "2026-10-17T00:00:00Z", evidence };
+    const common = { cutoffAt: "2026-10-16T10:00:00Z",
+      scope: { playerId: 7, nhlPlayerId: 847001, seasonId: 20262027, teamId: 1, gameId: 2026020001,
+        scheduledAt: "2026-10-17T23:00:00Z", scheduleRevision: "synthetic-schedule", rosterRevision },
+      scheduleEvidence: evidence, rosterEvidence: evidence,
+      history: { complete: true, windowStartAt: "2026-09-29T04:00:00Z", windowEndAt: "2026-10-13T04:00:00Z",
+        scheduleEvidence: evidence, games: [{ gameId: 2026020000, teamId: 1, scheduledAt: "2026-10-13T00:00:00Z",
+          occurred: true, eligibility, positiveMinutes: true, resolution: "positive_toi" as const, outcomeEvidence: evidence,
+          officialStarter: true, starterEvidence: evidence }] } };
+    const clocks = { issuedAt: "2026-10-16T11:00:00Z", expiresAt: "2026-10-16T18:00:00Z" };
+    const observation = { playerId: 7, nhlPlayerId: 847001, teamId: 1, seasonId: 20262027, listed: true,
+      sourceKind: "official_season_roster" as const, knownConflict: null, evidence, continuationAssumptionVersion: ROSTER_CONTINUATION_ASSUMPTION };
+    const input = observed ? kind === "skater"
+      ? { ...common, targetRosterObservation: observation, playerClass: "skater" as const, version: "skater-roster-observation-participation-input-v1" as const }
+      : kind === "start" ? { ...common, targetRosterObservation: observation, playerClass: "goalie" as const, version: "goalie-roster-observation-start-input-v1" as const }
+      : { ...common, targetRosterObservation: observation, playerClass: "goalie" as const, version: "goalie-roster-observation-participation-input-v1" as const }
+      : kind === "skater"
+      ? { ...common, targetEligibility: eligibility, playerClass: "skater" as const, version: "skater-frozen-window-participation-input-v1" as const }
+      : kind === "start" ? { ...common, targetEligibility: eligibility, playerClass: "goalie" as const, version: "goalie-frozen-window-start-input-v1" as const }
+      : { ...common, targetEligibility: eligibility, playerClass: "goalie" as const, version: "goalie-frozen-window-participation-input-v1" as const };
+    const receipt = (() => {
+      switch (input.version) {
+        case "skater-roster-observation-participation-input-v1": return buildRosterObservationSkaterParticipationReceipt(input, clocks);
+        case "goalie-roster-observation-participation-input-v1": return buildRosterObservationGoalieParticipationReceipt(input, clocks);
+        case "goalie-roster-observation-start-input-v1": return buildRosterObservationGoalieStartReceipt(input, clocks);
+        case "skater-frozen-window-participation-input-v1": return buildFrozenWindowSkaterParticipationReceipt(input, clocks);
+        case "goalie-frozen-window-start-input-v1": return buildFrozenWindowGoalieStartReceipt(input, clocks);
+        case "goalie-frozen-window-participation-input-v1": return buildFrozenWindowGoalieParticipationReceipt(input, clocks);
+      }
+    })();
+    const dataset = observed ? kind === "start" ? ROSTER_OBSERVATION_GOALIE_START_DATASET
+      : kind === "skater" ? ROSTER_OBSERVATION_SKATER_PARTICIPATION_DATASET : ROSTER_OBSERVATION_GOALIE_PARTICIPATION_DATASET
+      : kind === "start" ? FROZEN_WINDOW_GOALIE_START_DATASET
+      : kind === "skater" ? FROZEN_WINDOW_SKATER_PARTICIPATION_DATASET : FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASET;
+    const env = observed ? kind === "start" ? "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES"
+      : `PLAYER_FORECAST_ROSTER_OBSERVATION_${kind.toUpperCase()}_PARTICIPATION_RELEASES`
+      : kind === "start" ? "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_START_RELEASES"
+      : `PLAYER_FORECAST_FROZEN_WINDOW_${kind.toUpperCase()}_PARTICIPATION_RELEASES`;
+    const payload = { version: dataset, seasonId: 20262027, ...clocks, released: true,
+      ownerApprovalRef: "synthetic-owner", reviewRef: "synthetic-review", entries: [{ input, receipt }],
+      allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false } };
+    const id = "11111111-1111-4111-8111-111111111111", hash = playerForecastSourcePayloadHash(payload);
+    tables.player_forecast_source_observations = [{ id, provider: "fhfh", dataset_key: dataset,
+      entity_kind: "participation_bundle", entity_key: "20262027", available_at: clocks.issuedAt, payload_hash: hash, payload }];
+    const options = { now: new Date("2026-10-16T12:00:00Z"), forecastsEnabled: false };
+    const disabled = await loadPlanningData(db as never, publicQuery, options);
+    expect(disabled.participationSources).toEqual([]);
+    vi.stubEnv(env, `${id}:${hash}`);
+    const accepted = await loadPlanningData(db as never, publicQuery, options);
+    expect(accepted.participationSources).toHaveLength(1);
+    const catalogChecksum = playerForecastSourcePayloadHash([[id, hash]]);
+    expect(disabled.forecastManifest?.participationChecksum).toBeNull();
+    expect(accepted.forecastManifest?.participationChecksum).toBe(playerForecastSourcePayloadHash(observed
+      ? { existing: null, observedSkater: kind === "skater" ? catalogChecksum : null,
+        observedGoalie: kind === "goalie" ? catalogChecksum : null, observedGoalieStarts: kind === "start" ? catalogChecksum : null }
+      : { legacy: null, frozenSkater: kind === "skater" ? catalogChecksum : null,
+        frozenGoalie: kind === "goalie" ? catalogChecksum : null, ...(kind === "start" ? { frozenGoalieStarts: catalogChecksum } : {}) }));
+    expect(accepted.participationSources![0].model?.version).toContain(observed ? "roster-observation" : "frozen-window");
+    expect(accepted.participationSources![0].basis).toBe(kind === "start" ? "start" : "appearance");
+    if (observed) expect(accepted.evidence.participation.source).toContain("roster-observation continuation proxies");
+    expect(accepted.forecastManifest?.participationRevisionIds).toEqual([accepted.participationSources![0].revisionId]);
+    vi.stubEnv(env, "");
+    const revoked = await loadPlanningData(db as never, publicQuery, options);
+    expect(revoked.participationSources).toEqual([]);
+    expect(revoked.forecastManifest?.id).toBe(disabled.forecastManifest?.id);
+    expect(revoked.forecastManifest?.id).not.toBe(accepted.forecastManifest?.id);
+  });
+
+  it("loads an exact reviewed participation catalog independently of atomic forecasts and manifests its revocation", async () => {
+    const { db, tables } = formDb([], []);
+    const evidence = { id: "synthetic-only", hash: "a".repeat(64), availableAt: "2026-10-10T09:00:00Z", capturedAt: "2026-10-10T09:00:00Z" };
+    const input: SkaterParticipationInput = { version: "skater-participation-input-v1", cutoffAt: "2026-10-10T10:00:00Z",
+      scope: { playerId: 7, nhlPlayerId: 847001, seasonId: 20262027, teamId: 1, gameId: 2026020001,
+        scheduledAt: "2026-10-10T23:00:00Z", scheduleRevision: issuedContext.schedule[0].revision, rosterRevision },
+      scheduleEvidence: evidence, rosterEvidence: evidence,
+      history: { complete: true, windowStartAt: "2026-08-11T10:00:00.000Z", scheduleEvidence: evidence,
+        games: [{ gameId: 2026020000, teamId: 1, scheduledAt: "2026-10-08T23:00:00Z", occurred: true, eligible: true,
+          positiveMinutes: true, resolution: "positive_toi", eligibilityEvidence: evidence, outcomeEvidence: evidence }] } };
+    const clocks = { issuedAt: "2026-10-10T11:00:00Z", expiresAt: "2026-10-10T18:00:00Z" };
+    const payload: SkaterParticipationBundle = { version: PARTICIPATION_DATASET, seasonId: 20262027, ...clocks,
+      released: true, ownerApprovalRef: "synthetic-owner-ref", reviewRef: "synthetic-review-ref",
+      allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false },
+      entries: [{ input, receipt: buildSkaterParticipationReceipt(input, clocks) }] };
+    const id = "11111111-1111-4111-8111-111111111111", payloadHash = playerForecastSourcePayloadHash(payload);
+    tables.player_forecast_source_observations = [{ id, provider: "fhfh", dataset_key: PARTICIPATION_DATASET,
+      entity_kind: "participation_bundle", entity_key: "20262027", available_at: clocks.issuedAt, payload_hash: payloadHash, payload }];
+    vi.stubEnv("PLAYER_FORECAST_PARTICIPATION_RELEASES", `${id}:${payloadHash}`);
+    const accepted = await loadPlanningData(db as never, publicQuery, publicOptions);
+    expect(accepted.forecasts).toEqual([]); expect(accepted.participationSources).toHaveLength(1);
+    expect(accepted.forecastManifest?.participationRevisionIds).toEqual([accepted.participationSources![0].revisionId]);
+    expect(accepted.evidence.participation.limitations.join(" ")).toContain("calibration unavailable");
+    vi.stubEnv("PLAYER_FORECAST_PARTICIPATION_RELEASES", "");
+    const revoked = await loadPlanningData(db as never, publicQuery, publicOptions);
+    expect(revoked.participationSources).toEqual([]); expect(revoked.forecastManifest?.participationRevisionIds).toEqual([]);
+    expect(revoked.forecastManifest?.id).not.toBe(accepted.forecastManifest?.id);
+  });
+
+  it("loads goalie appearance receipts through the released catalog into shared contributions and revokes them", async () => {
+    const { db, tables } = formDb([], []);
+    const evidence = { id: "synthetic-only", hash: "a".repeat(64), availableAt: "2026-10-10T09:00:00Z", capturedAt: "2026-10-10T09:00:00Z" };
+    tables.fhfh_player_identities = [{ id: 7, nhl_player_id: 847001, canonical_name: "Goalie", canonical_position: "G" }];
+    const eligibility = { playerId: 7, nhlPlayerId: 847001, teamId: 1, eligible: true,
+      effectiveFrom: "2026-10-01T00:00:00Z", effectiveUntil: "2026-10-12T00:00:00Z", evidence };
+    const input: GoalieParticipationInput = { version: "goalie-participation-input-v1", playerClass: "goalie", targetEligibility: eligibility, cutoffAt: "2026-10-10T10:00:00Z",
+      scope: { playerId: 7, nhlPlayerId: 847001, seasonId: 20262027, teamId: 1, gameId: 2026020001,
+        scheduledAt: "2026-10-10T23:00:00Z", scheduleRevision: issuedContext.schedule[0].revision, rosterRevision },
+      scheduleEvidence: evidence, rosterEvidence: evidence,
+      history: { complete: true, windowStartAt: "2026-08-11T10:00:00.000Z", scheduleEvidence: evidence,
+        games: [{ gameId: 2026020000, teamId: 1, scheduledAt: "2026-10-08T23:00:00Z", occurred: true, eligibility,
+          positiveMinutes: true, resolution: "positive_toi", outcomeEvidence: evidence }] } };
+    const clocks = { issuedAt: "2026-10-10T11:00:00Z", expiresAt: "2026-10-10T18:00:00Z" };
+    const payload: GoalieParticipationBundle = { version: GOALIE_PARTICIPATION_DATASET, seasonId: 20262027, ...clocks,
+      released: true, ownerApprovalRef: "synthetic-owner-ref", reviewRef: "synthetic-review-ref",
+      allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false },
+      entries: [{ input, receipt: buildGoalieParticipationReceipt(input, clocks) }] };
+    const id = "11111111-1111-4111-8111-111111111111", payloadHash = playerForecastSourcePayloadHash(payload);
+    tables.player_forecast_source_observations = [{ id, provider: "fhfh", dataset_key: GOALIE_PARTICIPATION_DATASET,
+      entity_kind: "participation_bundle", entity_key: "20262027", available_at: clocks.issuedAt, payload_hash: payloadHash, payload }];
+    vi.stubEnv("PLAYER_FORECAST_GOALIE_PARTICIPATION_RELEASES", `${id}:${payloadHash}`);
+    const accepted = await loadPlanningData(db as never, publicQuery, publicOptions);
+    expect(accepted.forecasts).toEqual([]); expect(accepted.participationSources).toHaveLength(1);
+    expect(accepted.forecastManifest?.participationRevisionIds).toEqual([accepted.participationSources![0].revisionId]);
+    expect(accepted.evidence.participation.limitations.join(" ")).toContain("calibration unavailable");
+    const baseline = { ...input.scope, kind: "baseline" as const, sourceId: "synthetic-native-volume",
+      policyVersion: "native-goalie-appearance-volume-rates-v1", targetKey: "SAVES_GOALIE", unit: "count" as const,
+      basis: "per_appearance" as const, mean: 2, participationIntegrated: false, released: true,
+      cutoffAt: input.cutoffAt, ...clocks, allowedUses: payload.allowedUses, sourceWatermark: "synthetic-only" };
+    const context = { ...publicQuery, asOf: publicOptions.now.toISOString() };
+    const resolved = resolvePlanningContributions({ ...accepted, context, baselineSources: [baseline] });
+    expect(resolved.forecasts[0].stats.SAVES_GOALIE).toBe(2);
+    expect(resolved.forecasts[0].startProbability).toBeNull();
+    expect(resolved.forecasts[0].appearanceProbability).toBe(1);
+    vi.stubEnv("PLAYER_FORECAST_GOALIE_PARTICIPATION_RELEASES", "");
+    const revoked = await loadPlanningData(db as never, publicQuery, publicOptions);
+    expect(revoked.participationSources).toEqual([]); expect(revoked.forecastManifest?.participationRevisionIds).toEqual([]);
+    expect(revoked.forecastManifest?.id).not.toBe(accepted.forecastManifest?.id);
+    expect(resolvePlanningContributions({ ...revoked, context, baselineSources: [baseline] }).forecasts[0].stats.SAVES_GOALIE).toBeNull();
+  });
 
   function cappedInputs(options: Parameters<typeof formDb>[3] = {}) {
     const fixture = formDb([], [], undefined, { cap: 1, ...options });
@@ -162,7 +337,7 @@ describe("public RSO data boundary", () => {
     expect(calls).toContainEqual({ table: "fhfh_player_identities", method: "is", args: ["merged_into_id", null] });
   });
 
-  it("checks freshness of returned league dates without letting unrelated padding stale the scope", async () => {
+  it("keeps returned-row freshness separate from unverified horizon coverage", async () => {
     const { db, tables } = cappedInputs();
     tables.roster_optimizer_team_games = [{ ...rows[0], fetched_at: "2026-10-10T09:00:00Z" },
       { ...rows[0], id: 2, source_game_id: 2026020002, game_date: "2026-10-09",
@@ -170,12 +345,15 @@ describe("public RSO data boundary", () => {
     const query = { ...publicQuery, timeZone: "UTC" };
     const fresh = await loadPlanningData(db as any, query, publicOptions);
     expect(fresh.games).toHaveLength(1);
-    expect(fresh.evidence.schedule).toMatchObject({ completeness: "complete", asOf: "2026-10-10T09:00:00Z" });
-    expect(fresh.forecastManifest?.exclusions?.some(row => row.reasons.includes("incomplete_refresh"))).toBe(false);
+    expect(fresh.evidence.schedule).toMatchObject({ completeness: "partial", asOf: "2026-10-10T09:00:00Z" });
+    expect(fresh.evidence.schedule.limitations.join(" ")).toContain("source-day coverage");
+    expect(fresh.evidence.schedule.limitations.join(" ")).not.toContain("may be stale");
+    expect(fresh.forecastManifest?.exclusions?.some(row => row.reasons.includes("incomplete_refresh"))).toBe(true);
     (tables.roster_optimizer_team_games[1] as Record<string, unknown>).start_time = "2026-10-10T00:30:00Z";
     const crossing = await loadPlanningData(db as any, query, publicOptions);
     expect(crossing.games).toHaveLength(2);
     expect(crossing.evidence.schedule.completeness).toBe("partial");
+    expect(crossing.evidence.schedule.limitations.join(" ")).toContain("may be stale");
     expect(crossing.forecastManifest?.exclusions).toContainEqual({ gameId: "2026020002", reasons: ["incomplete_refresh"] });
   });
 
@@ -187,6 +365,36 @@ describe("public RSO data boundary", () => {
       expect(result.evidence.schedule.completeness).toBe("partial");
       expect(result.forecastManifest?.exclusions).toContainEqual({ gameId: "2026020001", reasons: ["incomplete_refresh"] });
     }
+  });
+
+  it("requires a complete captured day, paired games and explicit off days before certifying the horizon", async () => {
+    const { db, tables } = formDb([], []);
+    const coverage = { version: "nhl-source-days-v1", date: "2026-10-10", gameIds: [2026020001], emptyDates: ["2026-10-09", "2026-10-11", "2026-10-12"] };
+    const side = { ...rows[0], fetched_at: "2026-10-10T09:00:00Z", source_metadata: { scheduleCoverage: coverage } };
+    const away = { ...side, id: 2, team_abbreviation: "MTL", opponent_abbreviation: "TOR", home_away: "away" };
+    tables.roster_optimizer_team_games = [side, away];
+    const query = { ...publicQuery, timeZone: "UTC" };
+    const read = () => loadPlanningData(db as never, query, publicOptions);
+    expect((await read()).evidence.schedule.completeness).toBe("complete");
+    tables.roster_optimizer_team_games = [side];
+    expect((await read()).evidence.schedule.completeness).toBe("partial");
+    tables.roster_optimizer_team_games = [side, { ...away, fetched_at: "2026-10-10T10:00:00Z" }];
+    expect((await read()).evidence.schedule.completeness).toBe("partial");
+    tables.roster_optimizer_team_games = [side, away];
+    coverage.gameIds.push(2026020002);
+    expect((await read()).evidence.schedule.completeness).toBe("partial");
+    coverage.gameIds.pop();
+    coverage.emptyDates = ["2026-10-11", "2026-10-12"];
+    expect((await read()).evidence.schedule.completeness).toBe("partial");
+    coverage.emptyDates.push("2026-10-09", "2026-10-10");
+    expect((await read()).evidence.schedule.completeness).toBe("partial");
+    coverage.emptyDates = ["2026-10-09", "2026-10-11", "2026-10-12"];
+    side.fetched_at = away.fetched_at = "2026-10-08T09:00:00Z";
+    expect((await read()).evidence.schedule.completeness).toBe("partial");
+    side.fetched_at = away.fetched_at = "2026-10-10T11:00:00Z";
+    expect((await read()).evidence.schedule.completeness).toBe("complete");
+    tables.roster_optimizer_team_games = [];
+    expect((await read()).evidence.schedule.completeness).toBe("partial");
   });
 
   it("completes capped required scopes before counting games and competing players", async () => {
@@ -255,13 +463,53 @@ describe("public RSO data boundary", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  it("allows the multi-stage native admission sequence beyond eight seconds within the existing route deadline", async () => {
+    vi.useFakeTimers(); const { db } = cappedInputs({});
+    const admission = vi.spyOn(nativeAdmissionModule, "loadNativeContributionBundle").mockImplementation(() => new Promise(resolve => {
+      setTimeout(() => resolve({ sources: [], manifests: [], checksum: "closed-after-nine-seconds", limitations: [] }), 9000);
+    }));
+    try {
+      let settled = false;
+      const pending = loadPlanningData(db as any, publicQuery, { ...publicOptions, skipOwnership: true, skipRecentForm: true }).then(result => { settled = true; return result; });
+      await vi.advanceTimersByTimeAsync(8000); expect(settled).toBe(false);
+      await vi.advanceTimersByTimeAsync(1000); const result = await pending;
+      expect(result.forecastManifest?.baselineChecksum).toBe("closed-after-nine-seconds");
+      expect(result.evidence.baselines.limitations).not.toContain("baseline_read_unavailable");
+      expect(vi.getTimerCount()).toBe(0);
+    } finally { admission.mockRestore(); }
+  });
+  it("retains ordinary inputs and clears every release pin after a catalog-head timeout", async () => {
+    vi.useFakeTimers();
+    const id = "11111111-1111-4111-8111-111111111111";
+    for (const key of ["PLAYER_FORECAST_NATIVE_CATALOG_HEAD_ID", "PLAYER_FORECAST_BASELINE_RELEASE_IDS",
+      "PLAYER_FORECAST_PARTICIPATION_RELEASES", "PLAYER_FORECAST_GOALIE_PARTICIPATION_RELEASES",
+      "PLAYER_FORECAST_FROZEN_WINDOW_SKATER_PARTICIPATION_RELEASES", "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_PARTICIPATION_RELEASES",
+      "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_START_RELEASES", "PLAYER_FORECAST_ROSTER_OBSERVATION_SKATER_PARTICIPATION_RELEASES",
+      "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_PARTICIPATION_RELEASES", "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES"]) vi.stubEnv(key, id);
+    const { db, calls } = cappedInputs({ hangTable: "native_forecast_catalog_heads" });
+    const pending = loadPlanningData(db as any, publicQuery, { ...publicOptions, skipOwnership: true, skipRecentForm: true })
+      .catch(error => ({ error }));
+    await vi.advanceTimersByTimeAsync(8000);
+    const result = await pending;
+    expect(result).not.toHaveProperty("error");
+    if ("error" in result) return;
+    expect(result.players).toHaveLength(2);
+    expect(result.games).toHaveLength(2);
+    expect(result.baselineSources).toEqual([]);
+    expect(result.participationSources).toEqual([]);
+    expect(result.evidence.baselines.limitations).toContain("native_catalog_head_unavailable_or_invalid");
+    expect(calls.some(call => call.table === "player_forecast_source_observations")).toBe(false);
+    const signal = calls.find(call => call.table === "native_forecast_catalog_heads" && call.method === "abortSignal")?.args[0] as AbortSignal;
+    expect(signal.aborted).toBe(true);
+    expect(vi.getTimerCount()).toBe(0);
+  });
   it.each(["yahoo_player_ownership_daily", "player_forecast_source_observations"])(
     "degrades a hung optional %s read within its deadline", async hangTable => {
       vi.useFakeTimers();
       vi.stubEnv("PLAYER_FORECAST_BASELINE_RELEASE_IDS", "11111111-1111-4111-8111-111111111111");
       const { db, calls } = cappedInputs({ hangTable });
       const pending = loadPlanningData(db as any, publicQuery, publicOptions);
-      await vi.advanceTimersByTimeAsync(8000);
+      await vi.advanceTimersByTimeAsync(hangTable === "player_forecast_source_observations" ? 20000 : 8000);
       const result = await pending;
       expect(result.games).toHaveLength(2);
       expect(result.baselineSources).toEqual([]);
@@ -370,6 +618,16 @@ describe("public RSO data boundary", () => {
     const shifted = normalizePlanningGames([{ ...rows[0], start_time: "2026-11-02T01:30:00Z", game_date: "2026-11-02" }], "America/Los_Angeles");
     expect(shifted[0].date).toBe("2026-11-01");
     expect(() => parsePlanningDataQuery({ seasonId: 20262027, startDate: "2026-11-01", endDate: "2026-11-07", timeZone: "bad/zone" })).toThrow(/time zone/);
+  });
+  it("shares schedule revisions across equivalent transport timestamps but rejects a changed start", () => {
+    const original = normalizePlanningGames(rows)[0].scheduleRevision;
+    for (const start_time of ["2026-10-10T23:00:00.000Z", "2026-10-10T23:00:00+00:00", "2026-10-10 23:00:00+00", "2026-10-10T19:00:00-04:00"]) {
+      const row = { ...rows[0], start_time };
+      expect(normalizePlanningGames([row])[0].scheduleRevision).toBe(original);
+      expect(forgeScheduleRevision(row)).toBe(original);
+    }
+    expect(normalizePlanningGames([{ ...rows[0], start_time: "2026-10-11T00:00:00Z" }])[0].scheduleRevision).not.toBe(original);
+    expect(normalizePlanningGames([{ ...rows[0], schedule_status: "PPD" }])[0].scheduleRevision).not.toBe(original);
   });
   it("uses issued goalie expectations once and never exposes research payloads", () => {
     const result = publicPlanningForecasts([revision([{ playerId: 847001, startingProbability: 0.5, conditional: { SAVES_GOALIE: 30 }, probabilityStatus: "uncalibrated_model" }])], [player], normalizePlanningGames(rows), new Date("2026-10-10T12:00:00Z"));
@@ -680,5 +938,63 @@ describe("public RSO data boundary", () => {
       { now: new Date("2026-10-10T12:00:00Z") });
     expect(calls.filter(call => call.table === "skatersGameStats" && call.method === "in").map(call => (call.args[1] as number[]).length))
       .toEqual([100, 1]);
+  });
+});
+
+
+describe("lossless planning data transport", () => {
+  function transportFixture() {
+    const model = { version: "goalie-roster-observation-appearance-frequency-v1" as const, event: "positive_minutes" as const,
+      probabilityStatus: "uncalibrated_model" as const, calibration: "unavailable" as const, inputHash: "input-a",
+      evidenceHashes: ["original-body-hash"], numerator: 1, denominator: 2, selectedGameIds: [2026020001, 2026020002], limitations: ["Uncalibrated; original evidence retained."] };
+    const source = { playerId: 7, nhlPlayerId: 847001, seasonId: 20262027, teamId: 1, gameId: 2026020001,
+      basis: "appearance" as const, probability: 0.5, revisionId: "receipt-a", released: false,
+      allowedUses: { assignment: false, totals: false, comparison: false, conditionalTieBreak: false },
+      scheduleRevision: "schedule", rosterRevision, cutoffAt: "2026-10-10T01:00:00.123456Z",
+      issuedAt: "2026-10-10T02:00:00.123456Z", expiresAt: "2026-10-10T20:00:00.123456Z", model };
+    return { players: [structuredClone(player)], games: normalizePlanningGames(rows), forecasts: [], evidence: {},
+      participationSources: [source, { ...source, gameId: 2026020002, revisionId: "receipt-b", model: { ...model, inputHash: "input-b" } }] };
+  }
+  it("preserves every proof, source clock, flag, optional field and unknown without admitting a receipt", () => {
+    const raw = transportFixture(), encoded = encodePlanningDataTransport(raw), decoded = decodePlanningDataTransport(JSON.parse(JSON.stringify(encoded)));
+    expect(decoded).toEqual(raw); expect(encoded.catalogs.models).toHaveLength(1); expect(encoded.catalogs.hashes).toEqual(["original-body-hash"]);
+    expect(decoded.participationSources?.[0]).toMatchObject({ released: false, model: { inputHash: "input-a", evidenceHashes: ["original-body-hash"] } });
+    expect(decodePlanningDataTransport(raw)).toEqual(raw);
+    const { model: _proof, ...unmodeled } = raw.participationSources[0];
+    const withoutModel = { ...raw, participationSources: [unmodeled] };
+    expect(decodePlanningDataTransport(encodePlanningDataTransport(withoutModel))).toEqual(withoutModel);
+    const optional = { ...raw, participationSources: undefined };
+    expect(decodePlanningDataTransport(encodePlanningDataTransport(optional))).toEqual(optional);
+  });
+  it.each(["version", "metadata", "hash", "tuple", "players", "games", "finite", "proof"])("rejects malformed %s without defaulting missing data", kind => {
+    const wire: any = encodePlanningDataTransport(transportFixture());
+    if (kind === "version") wire.version = "unknown-v2";
+    if (kind === "metadata") wire.data.participationSources[0].model[0] = 99999;
+    if (kind === "hash") wire.data.participationSources[0].model[2] = [-1];
+    if (kind === "tuple") wire.data.participationSources[0].model.push("extra");
+    if (kind === "players") wire.data.players.push(wire.data.players[0]);
+    if (kind === "games") wire.data.games.push(wire.data.games[0]);
+    if (kind === "finite") wire.catalogs.models[0].denominator = Infinity;
+    if (kind === "proof") wire.catalogs.models[0].inputHash = "unexpected-proof";
+    expect(() => decodePlanningDataTransport(wire)).toThrow("Invalid planning response");
+  });
+  it("bounds the complete success envelope and rejects the entire oversized range", () => {
+    const raw = transportFixture(), initial = JSON.stringify({ success: true, data: encodePlanningDataTransport(raw) });
+    raw.players[0].name += "x".repeat(PLANNING_DATA_TRANSPORT_LIMITS.bytes - Buffer.byteLength(initial));
+    const exact = encodePlanningDataTransport(raw);
+    expect(Buffer.byteLength(JSON.stringify({ success: true, data: exact }))).toBe(PLANNING_DATA_TRANSPORT_LIMITS.bytes);
+    expect(decodePlanningDataTransport(exact).players[0].name).toBe(raw.players[0].name);
+    raw.players[0].name += "x";
+    expect(() => encodePlanningDataTransport(raw)).toThrow(PlanningDataTransportLimitError);
+    exact.data.players[0].name += "x";
+    expect(() => decodePlanningDataTransport(exact)).toThrow(PlanningDataTransportLimitError);
+  });
+  it("encodes the real route response and reports overflow as a truthful503", async () => {
+    const raw = transportFixture(), load = vi.spyOn(planningModule, "loadPlanningData").mockResolvedValue(raw);
+    const response = () => { const res: any = { statusCode: 200, body: undefined, setHeader: vi.fn(), status(code: number) { this.statusCode = code; return this; }, json(body: unknown) { this.body = body; return this; } }; return res; };
+    const req: any = { method: "GET", query: { seasonId: "20262027", startDate: "2026-10-10", endDate: "2026-10-10" } }, good = response();
+    await planningHandler(req, good); expect(good.statusCode).toBe(200); expect(decodePlanningDataTransport(good.body.data)).toEqual(raw);
+    load.mockRejectedValueOnce(new PlanningDataTransportLimitError()); const large = response();
+    await planningHandler(req, large); expect(large.statusCode).toBe(503); expect(large.body).toMatchObject({ success: false, code: "planning_range_too_large" }); expect(large.body).not.toHaveProperty("data"); load.mockRestore();
   });
 });

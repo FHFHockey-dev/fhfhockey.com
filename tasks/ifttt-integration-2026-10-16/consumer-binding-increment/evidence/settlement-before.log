@@ -1,0 +1,44 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts -t recovers exact receipt after actual consumer commit --config ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/vitest.config.mjs
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts (10 tests | 1 failed | 9 skipped) 899ms
+   ↓ forecast consumer default > does no work unless explicitly enabled
+   ↓ real forecast capture, queue and retained action binding > CR042 original clocks recover the real retained binding and proof without a new identity or expired dispatch
+   ↓ real forecast capture, queue and retained action binding > CR043 original clocks keep actual partial consumer history unknown without a send or new identity
+   ↓ real forecast capture, queue and retained action binding > CR044 original clocks adopt verified real native capture and queue receipts then suppress replay after caller loss
+   ↓ real forecast capture, queue and retained action binding > atomically captures actual native snapshot, assignments, both queue scopes, news trigger and receipt
+   × real forecast capture, queue and retained action binding > recovers exact receipt after actual consumer commit acknowledgement loss 211ms
+     → expected 'delivering' to be 'delivered' // Object.is equality
+   ↓ real forecast capture, queue and retained action binding > retains receipt and suppresses replay after outbox settlement reply is lost
+   ↓ real forecast capture, queue and retained action binding > rolls back snapshot, assignments, first queue and news trigger when the second queue fails
+   ↓ real forecast capture, queue and retained action binding > rejects same-action changed parent/assignments and incomplete delivered adoption without adding bindings
+   ↓ real forecast capture, queue and retained action binding > serializes two actual consumer workers and fences stale apply ownership
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts > real forecast capture, queue and retained action binding > recovers exact receipt after actual consumer commit acknowledgement loss
+AssertionError: expected 'delivering' to be 'delivered' // Object.is equality
+
+Expected: "delivered"
+Received: "delivering"
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts:159:82
+    157|   const f=await fixture("CR042",true);await bind(f,"verified_not_dispa…
+    158|   const first=await recoverTweetClaimForecastDelivery({db,key:f.key,en…
+    159|   expect((await sql("select status from public.tweet_claim_outbox"))[0…
+       |                                                                                  ^
+    160|   const after=await inventory();expect(await recoverTweetClaimForecast…
+    161|  });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 skipped (10)
+   Start at  01:15:13
+   Duration  1.34s (transform 171ms, setup 16ms, collect 273ms, tests 899ms, environment 0ms, prepare 37ms)
+

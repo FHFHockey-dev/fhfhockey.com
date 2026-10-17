@@ -1,0 +1,802 @@
+[
+  {
+    "path": "tasks/draft-dashboard-youtube-outline.md",
+    "line": 366,
+    "heading": "Release appendix — presenter reference, not an extra chapter",
+    "text": "- Scenarios and analytical reports are queued, not implemented. Keep them out of the present walkthrough; if released, insert them after drafting/DUST and before final recap, with a new time allowance.",
+    "classification": "stale_editorial_status",
+    "authority": "FRESH-06; Draft Pro ledger W07–W10."
+  },
+  {
+    "path": "tasks/rso-goal-handoff.md",
+    "line": 176,
+    "heading": "Exact blockers and questions",
+    "text": "| 3.1/3.2/3.4 | Shared adapter/admission/participation-weighting and missing/partial/unavailable/fallback safeguards; RSO degraded presentation | Bind actual immutable identities/lineage/permissions and input-specific age/recheck/expiry evidence; qualify actual shared-consumer presentations. These tasks are partially covered, not wholly unimplemented | Consumer/native input owners; this goal only for owned RSO paths |",
+    "classification": "existing_owned_remainder",
+    "authority": "RSO consolidated tasks and MISS-FE-COHERENT-REFRESH; no duplicate scope."
+  },
+  {
+    "path": "tasks/tasks-README.md",
+    "line": 197,
+    "heading": "Execution evidence",
+    "text": "- 2026-09-19: Opponent schedule corrected locally: sort/deduplicate by game identity; restrict to selected team/season and preseason/regular/playoff game types; skip postponed/cancelled games for next-game selection; never highlight the final completed game as upcoming. Live scores and explicit postponement/cancellation labels replace stale start-time displays. Invalid timestamps now render TBD instead of throwing again in fallback formatting. Team/season queries share a60-second fresh cache and refresh every30seconds when live or5minutes otherwise. The accessible table label states player participation is not guaranteed. Nine focused tests, lint and TypeScript pass, including away OT/SO results, local UTC-date boundary, missing data, team change and cache reuse. Live-source validation remains open: direct NHL fetch failed DNS resolution; web-tool fallback also could not access the endpoint. No source success is claimed.",
+    "classification": "dated_completion_note",
+    "authority": "Opponent-schedule correction recorded locally; preserve distinct real-data acceptance."
+  },
+  {
+    "path": "tasks/tasks-prd-roster-schedule-optimizer.md",
+    "line": 105,
+    "heading": "Full-plan re-audit — evidence and completion boundaries",
+    "text": "| Batching, caches, invalidation and responsive browser work | **Partial.** Lazy scope and deterministic quotas exist; [worker hook](../web/hooks/useRosterPlanning.ts) creates a fresh worker per input change. Public HTTP caching exists, but shared rate/resolution and complete-evaluation caches are not implemented in these paths. | FE-05b/05d, FE-06b, FE-09a/09b. |",
+    "classification": "existing_owned_remainder",
+    "authority": "RSO consolidated tasks and MISS-FE-COHERENT-REFRESH; no duplicate scope."
+  },
+  {
+    "path": "tasks/artifacts/goalie-stats-filter-semantics-audit.md",
+    "line": 43,
+    "heading": "1. The current shared contract exposes more goalie filter values than the shared server actually supports.",
+    "text": "The following PRD-requested strengths are in the public filter contract but are not implemented in the shared landing aggregation path:",
+    "classification": "explicitly_historical",
+    "authority": "Opening historical-scope notice points to canonical goalie completion/runbook."
+  },
+  {
+    "path": "tasks/artifacts/rso-visual-redesign-2026-10-13/fixture-entry.tsx",
+    "line": 11,
+    "heading": "",
+    "text": "const catalog=[...members,...candidates,player('40','Fixture Opponent X','XXX',4,'D','unknown'),player('41','Fixture Opponent Y','YYY',6,'D','unknown')];",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "tasks/artifacts/rso-visual-redesign-2026-10-13/fixture-entry.tsx",
+    "line": 13,
+    "heading": "",
+    "text": "const games=[...pair('2001','2026-10-13','CCC','XXX'),...pair('2002','2026-10-14','AAA','BBB'),...pair('2003','2026-10-14','DDD','YYY')];",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "tasks/artifacts/rso-visual-redesign-2026-10-13/review-corrections/fixture-entry.tsx",
+    "line": 11,
+    "heading": "",
+    "text": "const catalog=[...members,...candidates,player('40','Fixture Opponent X','XXX',4,'D','unknown'),player('41','Fixture Opponent Y','YYY',6,'D','unknown')];",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "tasks/artifacts/rso-visual-redesign-2026-10-13/review-corrections/fixture-entry.tsx",
+    "line": 13,
+    "heading": "",
+    "text": "const games=[...pair('2001','2026-10-13','CCC','XXX'),...pair('2002','2026-10-14','AAA','BBB'),...pair('2003','2026-10-14','DDD','YYY')];",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "tasks/artifacts/rso-visual-redesign-2026-10-13/page-shell-qa/fixture-entry.tsx",
+    "line": 18,
+    "heading": "",
+    "text": "const catalog = [...members, ...candidates, player(\"40\", \"Fixture Opponent X\", \"XXX\", 4, \"D\", \"unknown\"),",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "tasks/artifacts/rso-visual-redesign-2026-10-13/page-shell-qa/fixture-entry.tsx",
+    "line": 24,
+    "heading": "",
+    "text": "const games = [...pair(\"2001\", \"2026-10-15\", \"CCC\", \"XXX\"), ...pair(\"2002\", \"2026-10-16\", \"AAA\", \"BBB\"),",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "tasks/artifacts/rso-visual-redesign-2026-10-13/page-shell-qa/qualifier-placement-recheck/fixture-entry.tsx",
+    "line": 18,
+    "heading": "",
+    "text": "const catalog = [...members, ...candidates, player(\"40\", \"Fixture Opponent X\", \"XXX\", 4, \"D\", \"unknown\"),",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "tasks/artifacts/rso-visual-redesign-2026-10-13/page-shell-qa/qualifier-placement-recheck/fixture-entry.tsx",
+    "line": 24,
+    "heading": "",
+    "text": "const games = [...pair(\"2001\", \"2026-10-15\", \"CCC\", \"XXX\"), ...pair(\"2002\", \"2026-10-16\", \"AAA\", \"BBB\"),",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "tasks/artifacts/rso-visual-redesign-2026-10-13/page-shell-qa/mobile-tabs-recheck/fixture-entry.tsx",
+    "line": 18,
+    "heading": "",
+    "text": "const catalog = [...members, ...candidates, player(\"40\", \"Fixture Opponent X\", \"XXX\", 4, \"D\", \"unknown\"),",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "tasks/artifacts/rso-visual-redesign-2026-10-13/page-shell-qa/mobile-tabs-recheck/fixture-entry.tsx",
+    "line": 24,
+    "heading": "",
+    "text": "const games = [...pair(\"2001\", \"2026-10-15\", \"CCC\", \"XXX\"), ...pair(\"2002\", \"2026-10-16\", \"AAA\", \"BBB\"),",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "tasks/artifacts/rso-mockup-match-2026-10-14/iteration-1/fixture-entry.tsx",
+    "line": 18,
+    "heading": "",
+    "text": "const catalog = [...members, ...candidates, player(\"40\", \"Fixture Opponent X\", \"XXX\", 4, \"D\", \"unknown\"),",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "tasks/artifacts/rso-mockup-match-2026-10-14/iteration-1/fixture-entry.tsx",
+    "line": 24,
+    "heading": "",
+    "text": "const games = [...pair(\"2001\", \"2026-10-15\", \"CCC\", \"XXX\"), ...pair(\"2002\", \"2026-10-16\", \"AAA\", \"BBB\"),",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "tasks/artifacts/rso-mockup-match-2026-10-14/final-shell/fixture-entry.tsx",
+    "line": 18,
+    "heading": "",
+    "text": "const catalog = [...members, ...candidates, player(\"40\", \"Fixture Opponent X\", \"XXX\", 4, \"D\", \"unknown\"),",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "tasks/artifacts/rso-mockup-match-2026-10-14/final-shell/fixture-entry.tsx",
+    "line": 24,
+    "heading": "",
+    "text": "const games = [...pair(\"2001\", \"2026-10-15\", \"CCC\", \"XXX\"), ...pair(\"2002\", \"2026-10-16\", \"AAA\", \"BBB\"),",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "tasks/artifacts/rso-mockup-match-2026-10-14/baseline-shell/fixture-entry.tsx",
+    "line": 18,
+    "heading": "",
+    "text": "const catalog = [...members, ...candidates, player(\"40\", \"Fixture Opponent X\", \"XXX\", 4, \"D\", \"unknown\"),",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "tasks/artifacts/rso-mockup-match-2026-10-14/baseline-shell/fixture-entry.tsx",
+    "line": 24,
+    "heading": "",
+    "text": "const games = [...pair(\"2001\", \"2026-10-15\", \"CCC\", \"XXX\"), ...pair(\"2002\", \"2026-10-16\", \"AAA\", \"BBB\"),",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "tasks/artifacts/rso-mockup-match-2026-10-14/iteration-2/fixture-entry.tsx",
+    "line": 18,
+    "heading": "",
+    "text": "const catalog = [...members, ...candidates, player(\"40\", \"Fixture Opponent X\", \"XXX\", 4, \"D\", \"unknown\"),",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "tasks/artifacts/rso-mockup-match-2026-10-14/iteration-2/fixture-entry.tsx",
+    "line": 24,
+    "heading": "",
+    "text": "const games = [...pair(\"2001\", \"2026-10-15\", \"CCC\", \"XXX\"), ...pair(\"2002\", \"2026-10-16\", \"AAA\", \"BBB\"),",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/goalie-confirmation-context-snapshot-2026-10-06.md",
+    "line": 28,
+    "heading": "Completed findings and supporting locations",
+    "text": "8. **Consumer semantics to retain.** `web/lib/rosterScheduleOptimizer/planning.ts:684` keeps credited progress separate, leaves unknown starts/appearance minimums unavailable, and identifies goalie-category forfeiture risk. Ratios use components (`:61`), not averaged SV%/GAA. Existing UI distinguishes upcoming confirmations from credited minimum progress. Start Chart currently reduces goalie display to confirmed/projected/TBD (`web/pages/start-chart.tsx:275`); `boardGoalieForecast` currently exposes empty evidence/conflicts arrays, so the richer source contract should survive into public labels.",
+    "classification": "existing_owned_remainder",
+    "authority": "RSO goalie/provider contract; no new start/minimum inference."
+  },
+  {
+    "path": "tasks/TASKS/variance/v1/prd/prd-variance-section.md",
+    "line": 6,
+    "heading": "Document Status",
+    "text": "- Owner: TBD",
+    "classification": "owner_placeholder",
+    "authority": "Canonical project/master ownership controls; an old PRD owner placeholder is not implementation authorization."
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md",
+    "line": 51,
+    "heading": "Configuration and artifact boundary",
+    "text": "Tracked generated/review artifacts are the normalization spec, mapping TODO/reverse/unmatched JSON files, generated database types, production-ledger migrations, and focused migration/matcher tests. They are evidence or reviewed inputs, not permission to run a provider call, database write, promotion, or cleanup.",
+    "classification": "filename_reference",
+    "authority": "Name-mapping TODO artifact is a reviewed input, not permission to write mappings or invoke providers."
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md",
+    "line": 558,
+    "heading": "Implementation Order & Tracking",
+    "text": "| 6 | Virtualized projections table | 2 | Optional / not implemented | Retained as an evidence-gated option; no current interaction-budget failure justifies the accessibility/expansion risk. |",
+    "classification": "historical_or_explicitly_optional",
+    "authority": "Reconciliation table at 558–566 and completed NEW 8.1 distinguish optional measured optimizations from old dialogue."
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md",
+    "line": 563,
+    "heading": "Implementation Order & Tracking",
+    "text": "| 11 | Chunked processing | 3 | Optional / not implemented | The old log overstated this. Processing is synchronous inside a stale-guarded wrapper; measured source recompute is far below budget. |",
+    "classification": "historical_or_explicitly_optional",
+    "authority": "Reconciliation table at 558–566 and completed NEW 8.1 distinguish optional measured optimizations from old dialogue."
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md",
+    "line": 565,
+    "heading": "Implementation Order & Tracking",
+    "text": "| 13 | Worker offload | 4 | Optional / not implemented | Tier-4 work remains evidence-gated. |",
+    "classification": "historical_or_explicitly_optional",
+    "authority": "Reconciliation table at 558–566 and completed NEW 8.1 distinguish optional measured optimizations from old dialogue."
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md",
+    "line": 566,
+    "heading": "Implementation Order & Tracking",
+    "text": "| 14 | Adaptive prefetch | 4 | Optional / not implemented | Tier-4 work remains evidence-gated. |",
+    "classification": "historical_or_explicitly_optional",
+    "authority": "Reconciliation table at 558–566 and completed NEW 8.1 distinguish optional measured optimizations from old dialogue."
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md",
+    "line": 830,
+    "heading": "Files to touch",
+    "text": "- Change done (todo 1 completed).",
+    "classification": "historical_or_explicitly_optional",
+    "authority": "Reconciliation table at 558–566 and completed NEW 8.1 distinguish optional measured optimizations from old dialogue."
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md",
+    "line": 1137,
+    "heading": "Files to touch",
+    "text": "Updated todo list",
+    "classification": "historical_or_explicitly_optional",
+    "authority": "Reconciliation table at 558–566 and completed NEW 8.1 distinguish optional measured optimizations from old dialogue."
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md",
+    "line": 1549,
+    "heading": "Code Frame",
+    "text": "GitHub Copilot: Added 1 todo",
+    "classification": "historical_or_explicitly_optional",
+    "authority": "Reconciliation table at 558–566 and completed NEW 8.1 distinguish optional measured optimizations from old dialogue."
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md",
+    "line": 1695,
+    "heading": "Code Frame",
+    "text": "Let me know if you’d like any of those refinements or the defensive post-fetch full-name refetch (todo #4). Just say the word and I’ll implement.",
+    "classification": "historical_or_explicitly_optional",
+    "authority": "Reconciliation table at 558–566 and completed NEW 8.1 distinguish optional measured optimizations from old dialogue."
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md",
+    "line": 1882,
+    "heading": "Super-goal reconciliation — 2026-07-13",
+    "text": "- [x] NEW 8.1 Correct stale implementation claims/TODO statuses and document which Tier 1–3 paths are implemented, superseded, optional, or unnecessary based on current evidence.",
+    "classification": "historical_or_explicitly_optional",
+    "authority": "Reconciliation table at 558–566 and completed NEW 8.1 distinguish optional measured optimizations from old dialogue."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/prd/prd-projection-model.md",
+    "line": 562,
+    "heading": "Must ship next (highest priority)",
+    "text": "- Baseline quantile scaffolding is implemented (approximate p10/p50/p90 around means); simulation-based uncertainty is still TBD.",
+    "classification": "existing_owned_research",
+    "authority": "OCT14-COMP and F15 distribution/uncertainty gate; no model execution authority."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/ecosystem-audits/prd/prd-forge-trends-combo-project.md",
+    "line": 166,
+    "heading": "8) Implementation Plan",
+    "text": "1) **Create new dashboard page** (new route TBD, e.g., `/forge-trends` or `/dashboard`).",
+    "classification": "historical_design_proposal",
+    "authority": "FORGE command-center/dashboard owning plans supersede a new route name invented from TBD."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/ecosystem-audits/prd/prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md",
+    "line": 424,
+    "heading": "Deprecation / Merge / Delete Candidates",
+    "text": "| `web/pages/api/v1/db/update-power-rankings.ts` | Legacy power-rankings entrypoint | Disabled in pass 3 and still lacks a supported canonical successor | TBD; likely no direct replacement inside the current rolling-to-FORGE chain | Could still feed a niche consumer or stale automation | Audit references and consumer expectations before deletion |",
+    "classification": "superseded_legacy_route",
+    "authority": "Operational route decision matrix retains update-power-rankings as inert 410; no replacement inferred."
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 1095,
+    "heading": "Source: `tasks/TASKS/contextual-hockey-rankings/tasks-prd-contextual-hockey-rankings.md` (467 rows)",
+    "text": "- [x] `SRC::tasks/TASKS/contextual-hockey-rankings/tasks-prd-contextual-hockey-rankings.md::C0315` (original L486) — 57.8 Define and implement the composite/archetype/regression contracts from task `53.0` only after confirming no redundant Supabase writer, function, hook, or scheduled job already exists. Completed contract/writer verification, persisted all-deployment 5v5 composites, and exposed live MCM/BEAST plus snapshot composite values; regression Luck remains planned because the frozen non-overlapping baseline is intentionally not implemented.",
+    "classification": "canonical_source_mirror",
+    "authority": "Super-goal source mirrors/history; retain owning task and its actual acceptance limit."
+  },
+  {
+    "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 1432,
+    "heading": "Source: `tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-post-alignment-gap-audit.md` (63 rows)",
+    "text": "- [x] `SRC::tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-post-alignment-gap-audit.md::C0056` (original L151) — 8.4 Evaluate whether goalie/team Trending, Splits, or Deployment Tiers should become live in this pass; keep unsupported tabs explicit if not implemented.",
+    "classification": "canonical_source_mirror",
+    "authority": "Super-goal source mirrors/history; retain owning task and its actual acceptance limit."
+  },
+  {
+    "path": "tasks/TASKS/super-goal/prd/prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "line": 660,
+    "heading": "FR-16 — Dependency graphs and initial ordering",
+    "text": "B-SKO live schema reconciliation update (2026-07-22): read-only production catalog queries, the production-baseline migration, generated TypeScript types, and current runtime references agree exactly. `predictions_sko` has 13 columns and primary key `(player_id, as_of_date, horizon_games)`; `sko_skater_stats` has 28 columns and primary key `(player_id, date, season_id)`; `sko_skater_years` has 21 columns and primary key `(player_id, season)`. All three enable RLS with public read-only SELECT policies. `predictions_sko_metrics` is absent from the live catalog, baseline, generated types, and runtime code and remains an unimplemented requirements-only contract; no `predictions_next_game` relation exists. Row 2.1 closes without inferring a migration. B-SKO is 4/58; global parity is 4,316/4,864 with 548 open = 88.73%/11.27%; severity remains P0 20/13, P1 139/98, P2 136/121, and P3 22/21. Schema/migration row 2.2 and all runtime/persistence work remain open; no schema, policy, row, writer, schedule, provider, credential, deployment, or production state changed.",
+    "classification": "canonical_source_mirror",
+    "authority": "Super-goal source mirrors/history; retain owning task and its actual acceptance limit."
+  },
+  {
+    "path": "tasks/TASKS/sko-charts/tasks-prd-sko-charts.md",
+    "line": 42,
+    "heading": "Tasks",
+    "text": "- [x] 2.1 Reconcile live schemas/migrations for `sko_skater_stats`, `sko_skater_years`, `predictions_sko`, and `predictions_sko_metrics` with generated types and code. Evidence (2026-07-22): read-only live catalog, production-baseline DDL, generated types, and runtime references agree on three present tables and their exact keys/RLS/read policies; `predictions_sko_metrics` is absent from all four and remains an unimplemented planned contract documented in `sko-ownership-contract.md`.",
+    "classification": "explicit_historical_only",
+    "authority": "SKO ownership contract rejects an automatic v2 pipeline restart."
+  },
+  {
+    "path": "tasks/TASKS/sko-charts/sko-ownership-contract.md",
+    "line": 13,
+    "heading": "Decision hierarchy",
+    "text": "5. `dead-code-cleanup/burn-down-plan.md` is an unimplemented historical alternative, not an approved v2 runtime. No tracked `predictions_next_game` table or generated type exists.",
+    "classification": "explicit_historical_only",
+    "authority": "SKO ownership contract rejects an automatic v2 pipeline restart."
+  },
+  {
+    "path": "tasks/TASKS/sko-charts/sko-ownership-contract.md",
+    "line": 47,
+    "heading": "Ownership matrix",
+    "text": "| `predictions_next_game` v2 proposal                                          | Described only in the historical burn-down plan                                                                                                                         | Unimplemented proposal                                         | Requires an explicit strategy checkpoint; no migration/scaffold work is inferred             |",
+    "classification": "explicit_historical_only",
+    "authority": "SKO ownership contract rejects an automatic v2 pipeline restart."
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/prd/prd-player-underlying-stats-landing-page.md",
+    "line": 6,
+    "heading": "Document Status",
+    "text": "- Owner: TBD",
+    "classification": "owner_placeholder",
+    "authority": "Canonical project/master ownership controls; an old PRD owner placeholder is not implementation authorization."
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/site-roadmap/prd/prd-fhfh-site-surface-expansion-roadmap.md",
+    "line": 5,
+    "heading": "Document Status",
+    "text": "- Owner: TBD",
+    "classification": "owner_placeholder",
+    "authority": "Canonical project/master ownership controls; an old PRD owner placeholder is not implementation authorization."
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-barometer.md",
+    "line": 126,
+    "heading": "Tasks",
+    "text": "- [x] 5.10 Document the canonical scheduled route chain, exact retry identity, prerequisite/failure behavior, bounded read/write contracts, the now-satisfied B-CRON-NST NEW 61 ownership contract, Python offline-only boundary, and unimplemented distribution/retro semantics in the existing Sustainability runbook (verified 2026-07-22; Production handoff 2026-08-01).",
+    "classification": "explicit_offline_boundary",
+    "authority": "Task 5.10/runbook documents Python offline-only and unimplemented persistence; no new production writer."
+  },
+  {
+    "path": "tasks/TASKS/draft-ranker/dr-010-migration-review.md",
+    "line": 41,
+    "heading": "Identity guarantees",
+    "text": "- Merge history is preserved through `merged_into_id`; it is not implemented as destructive deletion.",
+    "classification": "negated_implementation_claim",
+    "authority": "Merge history is deliberately nondestructive; not an unfinished delete."
+  },
+  {
+    "path": "tasks/TASKS/contextual-hockey-rankings/prd-contextual-hockey-rankings.md",
+    "line": 276,
+    "heading": "7.1 Page and Navigation",
+    "text": "**FR-004:** If goalie or team rankings are not yet implemented, selecting those entity types should either be hidden or show a clear “Coming soon” state. Do not show broken or empty tables without explanation.",
+    "classification": "planned_or_explicit_unavailable",
+    "authority": "MS41-088 paused Rankings/model scope; task 57.8/8.4 and workstation policy retain honest planned states."
+  },
+  {
+    "path": "tasks/TASKS/contextual-hockey-rankings/2026-06-07-goal.md",
+    "line": 527,
+    "heading": "10. Acceptance criteria",
+    "text": "17. Composite, archetype, regression, and WAR-style features are visibly planned/unavailable where not implemented.",
+    "classification": "planned_or_explicit_unavailable",
+    "authority": "MS41-088 paused Rankings/model scope; task 57.8/8.4 and workstation policy retain honest planned states."
+  },
+  {
+    "path": "tasks/TASKS/contextual-hockey-rankings/prd-rankings-post-alignment-gap-audit.md",
+    "line": 181,
+    "heading": "P1 - Relative 5v5 GF% and xGF% Are Still Planned",
+    "text": "The original Play Driver/Albatross concept depends on team-without-player baselines and relative impact. Current `relative_5v5_gf_percentage` and `relative_5v5_xgf_percentage` remain planned because the team-without-player baseline is not implemented.",
+    "classification": "planned_or_explicit_unavailable",
+    "authority": "MS41-088 paused Rankings/model scope; task 57.8/8.4 and workstation policy retain honest planned states."
+  },
+  {
+    "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-contextual-hockey-rankings.md",
+    "line": 486,
+    "heading": "Tasks",
+    "text": "- [x] 57.8 Define and implement the composite/archetype/regression contracts from task `53.0` only after confirming no redundant Supabase writer, function, hook, or scheduled job already exists. Completed contract/writer verification, persisted all-deployment 5v5 composites, and exposed live MCM/BEAST plus snapshot composite values; regression Luck remains planned because the frozen non-overlapping baseline is intentionally not implemented.",
+    "classification": "planned_or_explicit_unavailable",
+    "authority": "MS41-088 paused Rankings/model scope; task 57.8/8.4 and workstation policy retain honest planned states."
+  },
+  {
+    "path": "tasks/TASKS/contextual-hockey-rankings/prd-v2-pass-CHR.md",
+    "line": 45,
+    "heading": "Misses / Gaps",
+    "text": "- Relative 5v5 GF% and relative 5v5 xGF% remain planned because the team-without-player baseline is not implemented.",
+    "classification": "planned_or_explicit_unavailable",
+    "authority": "MS41-088 paused Rankings/model scope; task 57.8/8.4 and workstation policy retain honest planned states."
+  },
+  {
+    "path": "tasks/TASKS/contextual-hockey-rankings/prd-v2-pass-CHR.md",
+    "line": 48,
+    "heading": "Misses / Gaps",
+    "text": "- Team rankings cover useful style signals, but most coaching-style ideas are not implemented: line rolling/top-loading, PP unit share, shot location style, one-goal games, home/road, rest splits, period splits, discipline, shorthanded offense, mistake capitalization, ozone time, and physicality.",
+    "classification": "planned_or_explicit_unavailable",
+    "authority": "MS41-088 paused Rankings/model scope; task 57.8/8.4 and workstation policy retain honest planned states."
+  },
+  {
+    "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-post-alignment-gap-audit.md",
+    "line": 151,
+    "heading": "Tasks",
+    "text": "- [x] 8.4 Evaluate whether goalie/team Trending, Splits, or Deployment Tiers should become live in this pass; keep unsupported tabs explicit if not implemented.",
+    "classification": "planned_or_explicit_unavailable",
+    "authority": "MS41-088 paused Rankings/model scope; task 57.8/8.4 and workstation policy retain honest planned states."
+  },
+  {
+    "path": "tasks/TASKS/contextual-hockey-rankings/workstation/goal.md",
+    "line": 131,
+    "heading": "Required Filters",
+    "text": "- unimplemented or unavailable modes -> `Source Pending`, `Unavailable`, or disabled with explanation",
+    "classification": "planned_or_explicit_unavailable",
+    "authority": "MS41-088 paused Rankings/model scope; task 57.8/8.4 and workstation policy retain honest planned states."
+  },
+  {
+    "path": "tasks/draft-pro/LEDGER.md",
+    "line": 300,
+    "heading": "Foundation review checkpoint",
+    "text": "- Progress60%overall/90%initialrelease, weekly62%used38%remaining accountwide; +6points fromlastmeter. Remaining initialgate freeinteractivegeometry and finalaffectedchecks; W08–10 unimplemented. No resets/providerliveactions.",
+    "classification": "historical_diary_state",
+    "authority": "Later accepted W01–W12 local completion supersedes the 60% intermediate entry."
+  },
+  {
+    "path": "web/components/HomePage/homepageGameFormatting.ts",
+    "line": 51,
+    "heading": "",
+    "text": "if (!startTimeUTC) return \"TBD\";",
+    "classification": "honest_unavailable_display",
+    "authority": "Unknown time/date/team/player placeholder; no feature task inferred."
+  },
+  {
+    "path": "web/components/LinemateMatrix/index.tsx",
+    "line": 618,
+    "heading": "",
+    "text": "console.error(\"not implemented\");",
+    "classification": "unsupported_input_guard",
+    "authority": "Default branch/error for unsupported mode or time option; not evidence a named supported mode is missing."
+  },
+  {
+    "path": "web/components/DateRangeMatrix/index.tsx",
+    "line": 156,
+    "heading": "",
+    "text": "console.error(\"Mode not implemented:\", mode);",
+    "classification": "unsupported_input_guard",
+    "authority": "Default branch/error for unsupported mode or time option; not evidence a named supported mode is missing."
+  },
+  {
+    "path": "web/components/DateRangeMatrix/index.tsx",
+    "line": 294,
+    "heading": "",
+    "text": "console.error(\"not implemented\");",
+    "classification": "unsupported_input_guard",
+    "authority": "Default branch/error for unsupported mode or time option; not evidence a named supported mode is missing."
+  },
+  {
+    "path": "web/components/TeamDashboard/TeamDashboard.test.tsx",
+    "line": 437,
+    "heading": "",
+    "text": "teamAbbrev: \"XXX\",",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "web/components/PlayerStats/PlayerRadarChart.tsx",
+    "line": 190,
+    "heading": "",
+    "text": "// TODO: Replace this with actual database queries",
+    "classification": "fresh_verified_component_gap",
+    "authority": "FRESH-01/02/03; current DB queries exist, but inverse direction, scope coherence and partial fallback need bounded acceptance."
+  },
+  {
+    "path": "web/components/GameGrid/utils/calcWinOdds.test.js",
+    "line": 970,
+    "heading": "",
+    "text": "winOdds: 0.20536098451382614, // temporarily hack, to be fixed",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "web/components/GameGrid/utils/calcWinOdds.test.js",
+    "line": 1020,
+    "heading": "",
+    "text": "winOdds: 0.2683926775876456, // temporarily hack, to be fixed",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "web/components/TimeOnIceChart/TimeOnIceChart.tsx",
+    "line": 94,
+    "heading": "",
+    "text": "throw new Error(\"This time option is not implemented.\");",
+    "classification": "unsupported_input_guard",
+    "authority": "Default branch/error for unsupported mode or time option; not evidence a named supported mode is missing."
+  },
+  {
+    "path": "web/components/WiGO/OpponentGamelog.tsx",
+    "line": 173,
+    "heading": "",
+    "text": "return \"Time TBD\";",
+    "classification": "honest_unavailable_display",
+    "authority": "Unknown time/date/team/player placeholder; no feature task inferred."
+  },
+  {
+    "path": "web/components/WiGO/OpponentGamelog.tsx",
+    "line": 182,
+    "heading": "",
+    "text": "if (!Number.isFinite(gameDateLocal.getTime())) return \"Date TBD\";",
+    "classification": "honest_unavailable_display",
+    "authority": "Unknown time/date/team/player placeholder; no feature task inferred."
+  },
+  {
+    "path": "web/components/WiGO/OpponentGamelog.tsx",
+    "line": 190,
+    "heading": "",
+    "text": "return \"Date TBD\";",
+    "classification": "honest_unavailable_display",
+    "authority": "Unknown time/date/team/player placeholder; no feature task inferred."
+  },
+  {
+    "path": "web/components/WiGO/OpponentGamelog.test.tsx",
+    "line": 59,
+    "heading": "",
+    "text": "await screen.findByText(\"Time TBD\");",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "web/components/WiGO/OpponentGamelog.test.tsx",
+    "line": 60,
+    "heading": "",
+    "text": "expect(screen.getByText(\"Date TBD\")).toBeTruthy();",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "web/components/GameStateAnalysis/GameStateAnalysis.tsx",
+    "line": 606,
+    "heading": "",
+    "text": "<h4>League Comparisons Coming Soon</h4>",
+    "classification": "owner_decision",
+    "authority": "FRESH-07; reachable comparison placeholder, no exact approved feature scope found."
+  },
+  {
+    "path": "web/components/TeamScheduleCalendar/TeamScheduleCalendar.tsx",
+    "line": 2094,
+    "heading": "",
+    "text": "{gameData.result?.toUpperCase() || \"TBD\"}",
+    "classification": "honest_unavailable_display",
+    "authority": "Unknown time/date/team/player placeholder; no feature task inferred."
+  },
+  {
+    "path": "web/components/NewsFeed/NewsCard.tsx",
+    "line": 193,
+    "heading": "",
+    "text": "<span className={styles.lineupSlotName}>{name || \"TBD\"}</span>",
+    "classification": "honest_unavailable_display",
+    "authority": "Unknown time/date/team/player placeholder; no feature task inferred."
+  },
+  {
+    "path": "web/__tests__/pages/start-chart.test.tsx",
+    "line": 1263,
+    "heading": "",
+    "text": "expect(screen.getAllByText(\"Goalie TBD\")).toHaveLength(2);",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "web/hooks/useTeamSchedule.ts",
+    "line": 384,
+    "heading": "",
+    "text": "default: \"TBD\", // Would need venue lookup",
+    "classification": "unused_presentation_field",
+    "authority": "Venue is assigned TBD; no venue consumer found in the inspected TeamDashboard/TeamScheduleCalendar paths."
+  },
+  {
+    "path": "web/hooks/usePlayerStats.ts",
+    "line": 102,
+    "heading": "",
+    "text": "// TODO: Add playoff goalie stats table when available",
+    "classification": "unused_legacy_hook",
+    "authority": "No literal source caller found; current player page uses its SSR path. Do not build a table from this comment."
+  },
+  {
+    "path": "web/lib/getTimes.ts",
+    "line": 64,
+    "heading": "",
+    "text": "throw new Error(\"This time option is not implemented.\");",
+    "classification": "unsupported_input_guard",
+    "authority": "Default branch/error for unsupported mode or time option; not evidence a named supported mode is missing."
+  },
+  {
+    "path": "web/lib/supabase/Upserts/Yahoo/populate_yahoo_nhl_mapping.py",
+    "line": 97,
+    "heading": "-----------------------------------------------------------------------------",
+    "text": "# Also fold in any corrections directly placed in the TODO file",
+    "classification": "filename_reference",
+    "authority": "Name-mapping TODO artifact is a reviewed input, not permission to write mappings or invoke providers."
+  },
+  {
+    "path": "web/lib/supabase/Upserts/Yahoo/populate_yahoo_nhl_mapping.py",
+    "line": 580,
+    "heading": "-----------------------------------------------------------------------------",
+    "text": "# 7. Produce a consolidated manual mapping TODO file combining both directions",
+    "classification": "filename_reference",
+    "authority": "Name-mapping TODO artifact is a reviewed input, not permission to write mappings or invoke providers."
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/optimizer.test.ts",
+    "line": 456,
+    "heading": "",
+    "text": "roster: [player(\"lost\", \"C\", 1, \"XXX\")],",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "web/lib/NHL/seasonAwareScheduleTeam.test.ts",
+    "line": 125,
+    "heading": "",
+    "text": "[999, { id: 999, abbreviation: \"XXX\", name: \"Unknown\" }, 20252026],",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "web/pages/start-chart.tsx",
+    "line": 201,
+    "heading": "",
+    "text": "if (!value) return \"Time TBD\";",
+    "classification": "honest_unavailable_display",
+    "authority": "Unknown time/date/team/player placeholder; no feature task inferred."
+  },
+  {
+    "path": "web/pages/start-chart.tsx",
+    "line": 203,
+    "heading": "",
+    "text": "if (Number.isNaN(parsed.getTime())) return \"Time TBD\";",
+    "classification": "honest_unavailable_display",
+    "authority": "Unknown time/date/team/player placeholder; no feature task inferred."
+  },
+  {
+    "path": "web/pages/start-chart.tsx",
+    "line": 303,
+    "heading": "",
+    "text": "if (!likely) return <span className={styles.goalieUnavailable}>Goalie TBD</span>;",
+    "classification": "honest_unavailable_display",
+    "authority": "Unknown time/date/team/player placeholder; no feature task inferred."
+  },
+  {
+    "path": "web/pages/start-chart.tsx",
+    "line": 779,
+    "heading": "",
+    "text": "<strong>{awayAbbrev ?? \"TBD\"}</strong><span>@</span>",
+    "classification": "honest_unavailable_display",
+    "authority": "Unknown time/date/team/player placeholder; no feature task inferred."
+  },
+  {
+    "path": "web/pages/start-chart.tsx",
+    "line": 781,
+    "heading": "",
+    "text": "<strong>{homeAbbrev ?? \"TBD\"}</strong>",
+    "classification": "honest_unavailable_display",
+    "authority": "Unknown time/date/team/player placeholder; no feature task inferred."
+  },
+  {
+    "path": "web/pages/start-chart.tsx",
+    "line": 1155,
+    "heading": "",
+    "text": "\"Team TBD\"",
+    "classification": "honest_unavailable_display",
+    "authority": "Unknown time/date/team/player placeholder; no feature task inferred."
+  },
+  {
+    "path": "web/pages/start-chart.tsx",
+    "line": 1163,
+    "heading": "",
+    "text": "\"Opponent TBD\"",
+    "classification": "honest_unavailable_display",
+    "authority": "Unknown time/date/team/player placeholder; no feature task inferred."
+  },
+  {
+    "path": "web/pages/db/tweet-pattern-review.tsx",
+    "line": 2114,
+    "heading": "",
+    "text": "{draftLineupCard.goalies[slotIndex] ?? \"TBD\"}",
+    "classification": "honest_unavailable_display",
+    "authority": "Unknown time/date/team/player placeholder; no feature task inferred."
+  },
+  {
+    "path": "web/pages/api/v1/projections.ts",
+    "line": 51,
+    "heading": "",
+    "text": "// TODO: wire up projections once model pipeline is implemented.",
+    "classification": "legacy_scaffold_disposition",
+    "authority": "Start Chart task 5.1/5.3/5.5 names canonical /api/v1/start-chart; no literal old caller found. Retire/retain decision, not second engine."
+  },
+  {
+    "path": "web/pages/api/v1/rankings.ts",
+    "line": 68,
+    "heading": "",
+    "text": "// TODO: populate with ranked projection output when model is wired up.",
+    "classification": "deprecated_compatibility",
+    "authority": "Route explicitly advertises deprecation/successor; no fresh model-wiring task."
+  },
+  {
+    "path": "web/pages/api/v1/db/shift-charts.ts",
+    "line": 82,
+    "heading": "",
+    "text": "// TODO : integrate home_or_away, opponent_team_id and opponent_team_abbreviation",
+    "classification": "already_implemented_comment",
+    "authority": "All named fields written at 809–811."
+  },
+  {
+    "path": "web/pages/api/v1/db/update-player/[playerId].ts",
+    "line": 95,
+    "heading": "",
+    "text": "teamAbbreviation: data.currentTeamAbbrev ?? \"XXX\",",
+    "classification": "honest_unavailable_display",
+    "authority": "Unknown time/date/team/player placeholder; no feature task inferred."
+  },
+  {
+    "path": "web/pages/api/v1/db/cron/update-stats-cron.ts",
+    "line": 86,
+    "heading": "",
+    "text": "// todo: temporarily disable this as it takes a while to run.",
+    "classification": "obsolete_fanout_comment",
+    "authority": "Disabled processGameIDs comment precedes active bounded stats work; do not reactivate it."
+  },
+  {
+    "path": "docs/player-projections/project-data-availability.md",
+    "line": 106,
+    "heading": "Operational environment",
+    "text": "| Python serverless | `functions/vercel.json` gives Python APIs 240 seconds and 1 GB; requirements include numerical/ML libraries | Useful for bounded offline-compatible calls, but the mapped `/sko/pipeline` file is absent and the surviving Flask step returns unimplemented behavior |",
+    "classification": "prior_stale_doc_correction",
+    "authority": "Prior RETIREMENT-CORRECTION-01 already identifies current SKO handler/rewrite; not a new missing handler."
+  },
+  {
+    "path": "supabase/tests/goalie_team_resolution.sql",
+    "line": 98,
+    "heading": "",
+    "text": "select pg_temp.expect_error('XXX',20262027,'2026-10-01',null,null,'TEAM_MISSING');",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "functions/tests/test_sko_pipeline.py",
+    "line": 140,
+    "heading": "",
+    "text": "\"message\": \"SKO pipeline stage execution is not implemented.\",",
+    "classification": "test_fixture_or_assertion",
+    "authority": "Synthetic identifiers/expected unavailable behavior; GameGrid legacy expected-value comments are not independent requirements."
+  },
+  {
+    "path": "functions/lib/sustainability/config_loader.py",
+    "line": 322,
+    "heading": "Metrics requiring reliability k_r constants (subset of weights)",
+    "text": "\"upsert_new_config_version not implemented: provide DB persistence layer integration.\"",
+    "classification": "explicit_offline_boundary",
+    "authority": "Task 5.10/runbook documents Python offline-only and unimplemented persistence; no new production writer."
+  },
+  {
+    "path": "functions/api/index.py",
+    "line": 131,
+    "heading": "",
+    "text": "\"message\": \"SKO pipeline stage execution is not implemented.\",",
+    "classification": "intentional_501_boundary",
+    "authority": "SKO historical-only stage execution explicitly unimplemented; authenticated honest 501 is the accepted disposition."
+  }
+]

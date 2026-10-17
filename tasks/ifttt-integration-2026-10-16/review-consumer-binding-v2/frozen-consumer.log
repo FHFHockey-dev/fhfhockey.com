@@ -1,0 +1,17 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/review-consumer-binding-v2/consumer-binding.test.ts --no-file-parallelism --config ../tasks/ifttt-integration-2026-10-16/review-consumer-binding-v2/vitest.review.config.mjs --reporter=default --reporter=json --outputFile=../tasks/ifttt-integration-2026-10-16/review-consumer-binding-v2/frozen-consumer-results.json
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-consumer-binding-v2/consumer-binding.test.ts (26 tests) 6804ms
+   ✓ real forecast capture, queue and retained action binding > enforces every required proof field and exact identities on direct service inserts, including ON CONFLICT  578ms
+   ✓ real forecast capture, queue and retained action binding > authenticates the complete next-ten prefix and holds omitted scopes even with a recomputed hash  333ms
+
+ Test Files  1 passed (1)
+      Tests  26 passed (26)
+   Start at  01:47:26
+   Duration  7.21s (transform 174ms, setup 15ms, collect 277ms, tests 6.80s, environment 0ms, prepare 28ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/review-consumer-binding-v2/frozen-consumer-results.json

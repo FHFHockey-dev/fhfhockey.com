@@ -1,0 +1,111 @@
+{
+  "status": "local_integration_complete",
+  "recordedAtUTC": "2026-10-16T01:47:49.099717+00:00",
+  "checkout": "/Users/tim/Code/fhfhockey.com",
+  "branch": "octoberBranch",
+  "unchangedHead": "a8f58de6178e282acd3a71851c66f4a56b119f14",
+  "candidateManifestSha256": "2515e4b9e1391484656cf6a0a81d8f74c3ed6589d6309532df95edee2e8ebc41",
+  "implementationPatchSha256": "c8ff0740e81dd0760da2a5a6588e1dfe3fed5205bc9f1ce9e95916452c67e276",
+  "databasePrerequisiteSha256": "2175a73ba14f776547303721ec06554a65fe6e32b00882a5a18e53c97eff4570",
+  "integratedPathsSha256": {
+    "web/lib/cron/cronInventory.ts": "7ce3f8cd67c3dc5749018591899f88885e724d17352247c5bab770b145b9d8eb",
+    "web/lib/rosterScheduleData/recurring.ts": "e876ef82ec720744588bbc4dc3e984db8669b1861229666b6637d6de1ae46136",
+    "web/lib/rosterScheduleData/source.ts": "1aad10ae23f6a3585900b79f918d71872db3fbe28c9a9c2233011c02797406c5",
+    "web/pages/api/v1/db/cron-report.ts": "04db8f08d9cc86bc1ad474cc3aaa33971905a33dfd747966a4e8e01ea0048b55",
+    "web/pages/api/v1/db/refresh-roster-optimizer-schedule.ts": "f93de7aa936a36d2274330fdd3fa5d30cb4888e63a5f8135f21c4b25ec4282d8"
+  },
+  "exactReviewedBytes": true,
+  "patchAdditions": 216,
+  "patchDeletions": 1,
+  "ownership": {
+    "FORGE": "owner01a135c8-567b-71d2-b610-6b78f3cc40d7 explicitly confirmed no conflict",
+    "RSO": "owner01a13df3-0374-727c-a8bd-a932723c2032 explicitly confirmed none of the5paths owned/edited; accepted RSO files frozen"
+  },
+  "reconciliation": "All15 original reviewed source pins matched before integration; all5target before hashes/absence rechecked immediately before atomic patch application; no conflicting drift.",
+  "unchangedProtectedPathsSha256": {
+    "web/pages/api/v1/db/update-roster-optimizer-schedule.ts": "04c91b0b33693b241207f41b094c1d4215b241955b89c9fe6d82f6ce5caa12e1",
+    "web/lib/rosterScheduleData/refreshGuard.ts": "4b5cdd04b3688ccc528d28148ac60cc1ed2c38a6010d662fce7c9e87bfcbcc78",
+    "web/vercel.json": "57a9c5f6ec90097e9a8f669bd7287fbf5366718407fc8a447c1d4c035efef782",
+    "tasks/TASKS/cron-operations/cron-schedule.md": "a6bcacf7281947c76da48b3f3f31daa0315350769be9988471d30895a27406fe"
+  },
+  "checks": [
+    {
+      "name": "Integrated native auth/method/audit/timing wrapper cases",
+      "command": "node --test ../tasks/artifacts/schedule-refresh-recurring-2026-10-15/verify-integrated.cjs",
+      "cwd": "web",
+      "exitCode": 0,
+      "passed": 11,
+      "failed": 0,
+      "transport": "synthetic only; fixture loads actual repository paths, no candidate overlay"
+    },
+    {
+      "name": "Existing guarded route/source compatibility",
+      "command": "npm test -- --run __tests__/pages/api/v1/db/update-roster-optimizer-schedule.test.ts lib/rosterScheduleData/source.test.ts",
+      "cwd": "web",
+      "exitCode": 0,
+      "passed": 50,
+      "failed": 0,
+      "transport": "existing mocks; child environment allowlist and explicit synthetic Supabase values"
+    },
+    {
+      "name": "Actual five-root TypeScript",
+      "command": "node --max-old-space-size=8192 ../tasks/artifacts/schedule-refresh-recurring-2026-10-15/typecheck-integrated.cjs",
+      "cwd": "web",
+      "exitCode": 0,
+      "actualRoots": 5,
+      "candidateOverlay": false,
+      "emit": false,
+      "incrementalWrite": false
+    },
+    {
+      "name": "Five-file lint",
+      "command": "./node_modules/.bin/eslint --report-unused-disable-directives-severity warn lib/cron/cronInventory.ts lib/rosterScheduleData/recurring.ts lib/rosterScheduleData/source.ts pages/api/v1/db/cron-report.ts pages/api/v1/db/refresh-roster-optimizer-schedule.ts",
+      "cwd": "web",
+      "exitCode": 0,
+      "outputBytes": 0
+    },
+    {
+      "name": "Scoped diff whitespace",
+      "command": "git diff --check -- <exact5paths>",
+      "exitCode": 0
+    }
+  ],
+  "reusedWithoutRepeating": {
+    "acceptedV2ModelStaticChecks": 32,
+    "isolatedPostgresqlCases": 12,
+    "independentSourceSqlAndEvidenceAcceptance": true
+  },
+  "evidenceSha256": {
+    "local-integration-baseline.json": "9d197c9c05d3da6ffb77f8285ecaf7e3a73bc73111bfa9f5db5d519b25aca4d9",
+    "local-integration-apply.log": "fab5db1539160b739b6e9dfd9c89a3a79d07e206cc5ee029aac1253da6315fe8",
+    "verify-integrated.cjs": "1900f63ade9fd20985cbaaaa6a1192ef78e45c5f6093da97fa341ae9465d3312",
+    "typecheck-integrated.cjs": "5d285ddacafb4487fd61f27a33a976001c3946c282fc05ccf03c0f1db922e1a5",
+    "integrated-native-wrapper.tap": "83b312f8d1f19f7bbfcf29afaec2893744ec122246e8c0ea85fbc54397ebbf44",
+    "integrated-existing-tests.log": "639ae8829c1b62fef021e7c1781c7f49001e754151973e4265b76f3fa779692d",
+    "integrated-typecheck.log": "60be80f0f64c1e8706c27d28869d761fe0ba2dae95244e6feea553d478d2a50f",
+    "integrated-lint.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "applicationChangesOnly": [
+    "web/lib/cron/cronInventory.ts",
+    "web/lib/rosterScheduleData/recurring.ts",
+    "web/lib/rosterScheduleData/source.ts",
+    "web/pages/api/v1/db/cron-report.ts",
+    "web/pages/api/v1/db/refresh-roster-optimizer-schedule.ts"
+  ],
+  "frozenEvidenceModified": false,
+  "guardedRepairRouteModified": false,
+  "productionDdlApplied": false,
+  "schedulerActivated": false,
+  "canonicalRegisterModified": false,
+  "credentialChanges": false,
+  "commits": 0,
+  "pushes": 0,
+  "builds": 0,
+  "deployments": 0,
+  "liveRequests": 0,
+  "databaseConnections": 0,
+  "newDatabaseClusters": 0,
+  "productionActions": "Pending separately approved parity preflight, shared DDL, exact release and recurring activation; none attempted.",
+  "localRollback": "Only after current hashes match this receipt, reverse the exact five-path patch; refuse concurrent drift. Do not reset shared checkout.",
+  "sqlRollback": "DDL not installed. Future migration error rolls back its transaction. Operational rollback holds/removes only new cron job while preserving cache/audit/guards; removing2triggers/4functions needs separate approved dependency review with no CASCADE."
+}

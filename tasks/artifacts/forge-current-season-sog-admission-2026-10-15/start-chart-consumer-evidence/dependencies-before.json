@@ -1,0 +1,16 @@
+{
+  "web/lib/player-forecasts/currentSeasonSogContribution.ts": "2b1d6a1b6f1ba87ff018d2664bb745889b240d50ef889565fd6fb2a8c293b299",
+  "web/lib/player-forecasts/currentSeasonSogContribution.test.ts": "eb6bd88148118b6383579cc24bfdd4582672bb6aab57f81a7fd3540b1b6f6441",
+  "web/lib/player-forecasts/contributions.ts": "d23d776cf9fbd1dc301803347367f213aba050ceed0d18d2118bcc5a962e3f1c",
+  "web/lib/player-forecasts/contributions.test.ts": "e11536cf9446839281beb0c7e1ab01ea9e7fb9c530b679bb3a6259c056f3afee",
+  "web/lib/player-forecasts/contributionStore.ts": "a890ffccf09bac914201be46f6af1325b9a1651309cd6ee8ade00f7c2241ca7b",
+  "web/lib/player-forecasts/nativeContributionAdmission.ts": "4f8e415ba059c56d8b52bf7259763ff435834537d6770b8ae1c0d79cb5762b0b",
+  "web/pages/forge/forecasts.tsx": "5e94ca3c7f515666022de64310ded76bc2e5f4d246f87cf4cb8fa37616007157",
+  "web/__tests__/pages/forge/forecasts.test.tsx": "7dabc6fd2e42c1e14fec5a17ba986b934258bc67ed1dc193fb252f078597ee11",
+  "web/lib/player-forecasts/gameExpectations.ts": "e00bf2c58aba1eed1d6b2616b063163564daa69a9044465eb37025f9304bc573",
+  "web/lib/player-forecasts/planningContributions.ts": "7e07a8da35da81192bdf668e620f12640c9b14e39d1316b81d21bc4f3270d240",
+  "web/lib/player-forecasts/resolvedPlanningForecast.ts": "4ecc5d722108b2c62f3addfbb84c894c2ee0463c98c26fcdfbe94a430411b69f",
+  "web/lib/projections/startChartContract.ts": "48d3e00e9aff10e381a61ea04dd69fe30af53eb4bb2be68025bdbffba1963033",
+  "web/pages/start-chart.tsx": "0022b0d6b5a575aac0386495d277ce14d553cc5bc490601e0b0167f22d6dfa15",
+  "web/pages/api/v1/start-chart.ts": "29a743a0a9b5f9f623f851697a8cfcbc6552091f43478c85d6798cf022465890"
+}

@@ -1,0 +1,39 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v3/exact-persistence.test.ts --no-file-parallelism --config ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v3/vitest.review.config.mjs --reporter=default --reporter=json --outputFile=../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v3/exact-and-independent-storage-results.json
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+stdout | ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v3/exact-persistence.test.ts > exact original persistence cases against disposable storage > independent actual explicit date policy: valid
+independent explicit-date policy {"variant":"valid","effects":1,"holds":[],"rawEffectiveAt":"2026-10-17T23:00:00Z"}
+
+stdout | ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v3/exact-persistence.test.ts > exact original persistence cases against disposable storage > independent actual explicit date policy: missing
+independent explicit-date policy {"variant":"missing","effects":0,"holds":[{"reason":"dated_identity_team_league_or_role_conflict","observationId":"tweet-observation-v2:3201a93e1cb072e290b05534fb39962b56c77d16a3e4d043a19cd81e728da1a7"}],"rawEffectiveAt":"2026-10-17T23:00:00Z"}
+
+stdout | ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v3/exact-persistence.test.ts > exact original persistence cases against disposable storage > independent actual explicit date policy: wrong-game
+independent explicit-date policy {"variant":"wrong-game","effects":0,"holds":[{"reason":"explicit_game_date_evidence_invalid","observationId":"tweet-observation-v2:a95b6400c942b04ae6f96bce67b03f6aabdced775371dfa2d57f646c9fcce5d6"}],"rawEffectiveAt":"2026-10-17T23:00:00Z"}
+
+stdout | ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v3/exact-persistence.test.ts > exact original persistence cases against disposable storage > independent actual explicit date policy: wrong-date
+independent explicit-date policy {"variant":"wrong-date","effects":0,"holds":[{"reason":"explicit_game_date_evidence_invalid","observationId":"tweet-observation-v2:5d1ee9fc5d681821d6d670169d2b2fd302bbe6b81687839e8c1200d348fb7abb"}],"rawEffectiveAt":"2026-10-17T23:00:00Z"}
+
+stdout | ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v3/exact-persistence.test.ts > exact original persistence cases against disposable storage > independent actual explicit date policy: raw-clock
+independent explicit-date policy {"variant":"raw-clock","effects":0,"holds":[{"reason":"explicit_game_date_evidence_invalid","observationId":"tweet-observation-v2:66decec4153ec509cee7e5eb450866aff7527a2f88f899b3a73fc90e862ca681"}],"rawEffectiveAt":"2026-10-16T23:00:00Z"}
+
+stdout | ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v3/exact-persistence.test.ts > exact original persistence cases against disposable storage > independent actual explicit date policy: late-identity
+independent explicit-date policy {"variant":"late-identity","effects":0,"holds":[{"reason":"dated_official_game_roster_missing_at_source_time","observationId":"tweet-observation-v2:779426827d658460d53833bb0963fdc237ee8b5cd03a5df4804b55abfdb6e17d"}],"rawEffectiveAt":"2026-10-17T23:00:00Z"}
+
+stdout | ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v3/exact-persistence.test.ts > exact original persistence cases against disposable storage > independent actual explicit date policy: wrong-identity-date
+independent explicit-date policy {"variant":"wrong-identity-date","effects":0,"holds":[{"reason":"dated_identity_team_league_or_role_conflict","observationId":"tweet-observation-v2:779426827d658460d53833bb0963fdc237ee8b5cd03a5df4804b55abfdb6e17d"}],"rawEffectiveAt":"2026-10-17T23:00:00Z"}
+
+stdout | ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v3/exact-persistence.test.ts > exact original persistence cases against disposable storage > independent actual explicit date policy: offset-equivalent
+independent explicit-date policy {"variant":"offset-equivalent","effects":1,"holds":[],"rawEffectiveAt":"2026-10-17T19:00:00-04:00"}
+
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v3/exact-persistence.test.ts (17 tests) 3256ms
+
+ Test Files  1 passed (1)
+      Tests  17 passed (17)
+   Start at  00:41:02
+   Duration  3.64s (transform 142ms, setup 15ms, collect 226ms, tests 3.26s, environment 0ms, prepare 28ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v3/exact-and-independent-storage-results.json

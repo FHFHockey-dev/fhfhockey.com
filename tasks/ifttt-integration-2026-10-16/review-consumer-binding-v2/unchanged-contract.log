@@ -1,0 +1,15 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/review-consumer-binding-v2/unchanged-contract.test.ts -t independent --no-file-parallelism --config ../tasks/ifttt-integration-2026-10-16/review-consumer-binding-v2/vitest.review.config.mjs --reporter=default --reporter=json --outputFile=../tasks/ifttt-integration-2026-10-16/review-consumer-binding-v2/unchanged-contract-results.json
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ ../tasks/ifttt-integration-2026-10-16/review-consumer-binding-v2/unchanged-contract.test.ts (20 tests | 15 skipped) 1967ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed | 15 skipped (20)
+   Start at  01:46:33
+   Duration  2.46s (transform 190ms, setup 17ms, collect 347ms, tests 1.97s, environment 0ms, prepare 33ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/review-consumer-binding-v2/unchanged-contract-results.json

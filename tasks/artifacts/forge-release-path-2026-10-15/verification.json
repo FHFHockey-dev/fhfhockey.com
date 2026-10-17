@@ -1,0 +1,33 @@
+{
+  "focusedChecks": [
+    {
+      "command": "npm test -- --run scripts/preview-native-baseline.test.ts lib/player-forecasts/gameExpectations.test.ts __tests__/pages/api/v1/forge/forecasts.test.ts __tests__/pages/forge/forecasts.test.tsx",
+      "result": "38 passed,4 files",
+      "scope": "synthetic engineering only"
+    },
+    {
+      "command": "npm test -- --run lib/player-forecasts/gameExpectations.test.ts __tests__/pages/forge/forecasts.test.tsx",
+      "result": "18 passed after preserving game/target limitations"
+    },
+    {
+      "command": "npm test -- --run __tests__/pages/forge/forecasts.test.tsx",
+      "result": "4 passed after lazy game-detail rendering"
+    }
+  ],
+  "eslint": "Scoped ESLint over10ownedTS/TSX files passed; affected page/helper/producer files rerun after final corrections,0 errors/warnings",
+  "typeScript": {
+    "firstAttempt": "exit2,oneTS18048 Start Chart diagnostic,retained unchanged",
+    "replacement": "exit0,emptylog,49.003seconds",
+    "receipt": "typescript-receipt-v2.json",
+    "sourceInputs": 2701,
+    "sourceDrift": [],
+    "cohortFiles": 21,
+    "onlyInterAttemptChange": "Start Chart optional boardScore access"
+  },
+  "databaseObservability": "1 harmless project-metadata call,2 bounded SQL metadata reads,0 writes,0 numeric outcome/forecast bodies/private artifacts",
+  "browser": "Not run; React DOM page readback with mocked API only",
+  "modelExecution": "No genuine producer/native capture/model/research run; synthetic preview tests only",
+  "deployment": "Not run",
+  "sharedSourceEdits": "None; existing resolver/admission/producer formula files preserved",
+  "diffChecks": "Owned tracked diff whitespace and reverse application of the complete11-file patch pass."
+}

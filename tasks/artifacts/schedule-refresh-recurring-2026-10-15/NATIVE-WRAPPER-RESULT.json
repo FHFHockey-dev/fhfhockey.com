@@ -1,0 +1,109 @@
+{
+  "status": "passed",
+  "commandExitCode": 0,
+  "recordedAtUTC": "2026-10-16T01:33:49.953977+00:00",
+  "command": "node --test tasks/artifacts/schedule-refresh-recurring-2026-10-15/native-wrapper-verification.cjs",
+  "candidateManifestSha256": "2515e4b9e1391484656cf6a0a81d8f74c3ed6589d6309532df95edee2e8ebc41",
+  "databasePrerequisiteSha256": "2175a73ba14f776547303721ec06554a65fe6e32b00882a5a18e53c97eff4570",
+  "nativeWrapperPinsSha256": "46e4679a7772c44f5b80d8c49fddb6d16eadf49c16bd219106654bd649636de2",
+  "harnessSha256": "cd9c7e2b70dba4215f40e5e55766610bc4f340d6619ba4ac4622104c73702f43",
+  "tapSha256": "57fd63b28bbb7bba1d14d85cf2e2d6e3828da6f30d41008a5f46fc68bd277e44",
+  "casesRun": 11,
+  "casesPassed": 11,
+  "casesFailed": 0,
+  "cases": [
+    {
+      "name": "real auth/audit chain acknowledges cron write and persists one exact scheduled audit before response",
+      "status": "passed"
+    },
+    {
+      "name": "real wrapper withholds response until the synthetic audit acknowledgement arrives",
+      "status": "passed"
+    },
+    {
+      "name": "failed or thrown audit transport preserves cache acknowledgement but marks final audit failed once",
+      "status": "passed"
+    },
+    {
+      "name": "stale busy and rejected transaction receipts remain zero-row HTTP409 failure audits",
+      "status": "passed"
+    },
+    {
+      "name": "committed but lost RPC acknowledgement stays unknown and is recorded as failure without invented zero rows",
+      "status": "passed"
+    },
+    {
+      "name": "default inspection traverses real authentication with no commit or audit insertion",
+      "status": "passed"
+    },
+    {
+      "name": "real authentication rejects absent invalid unverified nonadmin and empty-secret callers before schedule/audit work",
+      "status": "passed"
+    },
+    {
+      "name": "real verified administrator authorization retains the existing browser-admin contract",
+      "status": "passed"
+    },
+    {
+      "name": "authentication precedes real method enforcement and rejected methods cannot audit or call sources",
+      "status": "passed"
+    },
+    {
+      "name": "localhost headers cannot create a development bypass for a nonloopback peer",
+      "status": "passed"
+    },
+    {
+      "name": "malformed explicit write is audited as not-attempted failure before any source or transaction",
+      "status": "passed"
+    }
+  ],
+  "unchangedNativeModules": [
+    "web/lib/cron/withOperationalRouteAuth.ts",
+    "web/utils/adminOnlyMiddleware.ts",
+    "web/lib/cron/withCronJobAudit.ts",
+    "web/lib/cron/timingContract.ts",
+    "web/lib/cron/formatDuration.ts"
+  ],
+  "transports": {
+    "database": "synthetic in-memory",
+    "auth": "synthetic verified/invalid responses",
+    "NHL": "synthetic bounded fetch"
+  },
+  "realSdkClientLoaded": false,
+  "providerRequests": 0,
+  "productionRequests": 0,
+  "databaseConnections": 0,
+  "productionCredentialsLoaded": false,
+  "httpServerStarted": false,
+  "frozenFilesVerified": 22,
+  "frozenFilesModified": false,
+  "applicationPatchApplied": false,
+  "productionDdlApplied": false,
+  "schedulerActivated": false,
+  "buildsOrDeployments": 0,
+  "unappliedApplicationAnchorSha256": {
+    "web/lib/cron/cronInventory.ts": "09913069eb4c0a01004de2750a6291d6346eb8fe1e74a9eee324cfe1f5f8f874",
+    "web/lib/rosterScheduleData/source.ts": "062d925308086f2cd63682a68e9ce1991ea9432692c5e85c222b0e2a56094c1a",
+    "web/pages/api/v1/db/cron-report.ts": "f32b78a8c29b2aea2e715587f014968e9b391fe9022cbd745fd40a19610dff93",
+    "web/pages/api/v1/db/update-roster-optimizer-schedule.ts": "04c91b0b33693b241207f41b094c1d4215b241955b89c9fe6d82f6ce5caa12e1"
+  },
+  "initialHarnessFailure": {
+    "cause": "Missing utils/ import alias in test-only module resolver",
+    "candidateDefect": false,
+    "retainedEvidence": "native-wrapper-initial-harness-error.tap"
+  },
+  "reusedWithoutRepeating": {
+    "V2VmModelStatic": 32,
+    "existingRouteSource": 50,
+    "virtualCandidateRootsTypechecked": 5,
+    "isolatedPostgresqlCases": 12,
+    "patchApplicability": "previously passed"
+  },
+  "limits": [
+    "No deployed HTTP/JWT/PostgREST integration proof",
+    "No provider freshness or whole-week inventory",
+    "No production schema/role/cancellation parity",
+    "No report generation or delivery proof"
+  ],
+  "remainingBoundary": "Local integration plus separately authorized bounded production preflight, shared DDL, exact candidate release and recurring activation"
+}

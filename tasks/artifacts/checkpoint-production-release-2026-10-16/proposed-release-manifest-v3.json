@@ -1,0 +1,307 @@
+{
+  "status": "frozen proposed candidate;39physical paths including3test-source deletions; independent review ongoing",
+  "createdAt": "2026-10-16T04:26:30.241532+00:00",
+  "baseMaster": "90d3d5963f47dccfe690d5582dae3d23a598e16d",
+  "sourceOctoberHead": "a8f58de6178e282acd3a71851c66f4a56b119f14",
+  "candidateDirectory": "/tmp/fhf-release-checkpoint-20261016-0424/candidate",
+  "candidateGitBranch": null,
+  "candidateCommitSha": null,
+  "files": [
+    {
+      "path": "web/__tests__/pages/api/cors.test.ts",
+      "sha256": "a3ca848360947fd8546502137415d01a478e24f9efa1cadfccd267c6ff5ee89e",
+      "increment": "ssrf-proxy",
+      "action": "add",
+      "headSha256": null
+    },
+    {
+      "path": "web/__tests__/pages/api/internal/forecast-calendar.test.ts",
+      "sha256": "e3ffe37abbbf343cd1814f5f62b113d74fd0dd105e86849d4c7123420a2a02dc",
+      "increment": "api-test-relocation",
+      "action": "add",
+      "headSha256": null
+    },
+    {
+      "path": "web/__tests__/pages/api/underlying-stats/landing.test.ts",
+      "sha256": "e374d8dc98cdc17edafe6ce65517cac6d2bf10849b62444d7dafc35ba3ab94ef",
+      "increment": "api-test-relocation",
+      "action": "add",
+      "headSha256": null
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/account/fantrax/player-data.test.ts",
+      "sha256": "09083ec9e0ca297c75cf0aa4bb3bc567c59197a0b07ac952f2e3166d40e50c3e",
+      "increment": "api-test-relocation",
+      "action": "add",
+      "headSha256": null
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/sources/ifttt/DFOFantasy-tweet.test.ts",
+      "sha256": "bfef75482329c49b6c7b30a8302348a695da21df9f44c035e78e6f61028ce54a",
+      "increment": "ifttt-dedicated-receivers",
+      "action": "add",
+      "headSha256": null
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/sources/ifttt/NHL-Rosters-tweet.test.ts",
+      "sha256": "2931986c16110fb9ba5ee4defa993737bff7130e20f33dc58e63d18f7ae1af52",
+      "increment": "ifttt-dedicated-receivers",
+      "action": "add",
+      "headSha256": null
+    },
+    {
+      "path": "web/__tests__/pages/auth/reset-password.test.tsx",
+      "sha256": "f2854c8fe6d7a1978006bd74088b1500d7ed566f86d94314cb4c93673bac30cc",
+      "increment": "reset-password-state",
+      "action": "modify",
+      "headSha256": "522bd03b765b7ead4863df424e5eb4c17bca9b5caf9710679070cf8710eeef8b"
+    },
+    {
+      "path": "web/__tests__/pages/game.test.tsx",
+      "sha256": "ba2d549ba1768ff6890c5d5e6225f5d173180623a268a5d7d5d50cdb41fa7a46",
+      "increment": "game-page-recovery",
+      "action": "add",
+      "headSha256": null
+    },
+    {
+      "path": "web/__tests__/pages/lines/index.test.tsx",
+      "sha256": "49157af828313e4a1e899b675364377bae389a9704d42cc998e8af5802bf5fe4",
+      "increment": "public-page-usability",
+      "action": "add",
+      "headSha256": null
+    },
+    {
+      "path": "web/__tests__/pages/stats/index.test.tsx",
+      "sha256": "2ff130d4b25f5e25190d5bdc16fca12c6a41a0da07998a9cace564d23cc6dc4c",
+      "increment": "public-page-usability",
+      "action": "modify",
+      "headSha256": "5937f463c653fef55c7268f00cad9ce2a774b4abdd9b2105e18298c1768d6614"
+    },
+    {
+      "path": "web/__tests__/pages/stats/player/playerId.test.ts",
+      "sha256": "d512fb03c6156883a85ec0564574635ed96774140b3d8e3a60e483f2da23931c",
+      "increment": "radar-scope",
+      "action": "modify",
+      "headSha256": "b2fd434af94fc69c3b3e483391cf4e5e2ae4e83dee9873e27012ef65f7203bd2"
+    },
+    {
+      "path": "web/__tests__/utils/adminOnlyMiddleware.test.ts",
+      "sha256": "baf3783a3103f06b5db2a28779636b56c454e2bcbace76986a9545c7067ac05c",
+      "increment": "admin-bypass",
+      "action": "modify",
+      "headSha256": "6d0a66f9a58298982a9aab37d3f9ac8d3d775a560ccbb4071b3bb457a62a5ef2"
+    },
+    {
+      "path": "web/components/PlayerStats/PlayerRadarChart.test.tsx",
+      "sha256": "fd792ad3ea182ec9eda455a04f77104db9e8ce9d31b6d21d8ffd1236deb859af",
+      "increment": "radar-scope",
+      "action": "modify",
+      "headSha256": "c4e267f530e2635ed8276c11ea6410fcc48267b4a6d404eed13a23d69278780f"
+    },
+    {
+      "path": "web/components/PlayerStats/PlayerRadarChart.tsx",
+      "sha256": "34e7bb44efc45627a2f710f27eca9c396bf9f6c3ff691af199da87153e1f53b9",
+      "increment": "radar-scope",
+      "action": "modify",
+      "headSha256": "bc20900709ff07447f6078dcf0fda7de7b62b18a5f365cc1136f429baa1a2954"
+    },
+    {
+      "path": "web/components/StatsPage/MobileTabInterface.tsx",
+      "sha256": "fb73fa26500c57ed2da2474491d53731b09065c46c64ab0894844ae8f1cc4117",
+      "increment": "public-page-usability",
+      "action": "modify",
+      "headSha256": "65a39979cb29aba4975ad7ba53f502ff098559c188afabe5012a1b12a2c66968"
+    },
+    {
+      "path": "web/components/underlying-stats/UnderlyingStatsDashboard.module.scss",
+      "sha256": "47454f23dde232ecd98a4270dd79abe514277339ee46a6c803f9d63084babc08",
+      "increment": "public-page-usability",
+      "action": "modify",
+      "headSha256": "b7cf09143eaefd922f64357f8c152948b88b2841ec31c4578c8bcff47b578b69"
+    },
+    {
+      "path": "web/lib/NHL/corsProxy.test.ts",
+      "sha256": "458a7ef2d8311bc6f7f270e7e4ed0b1c79e8d3b444378349d068ae52960144d0",
+      "increment": "ssrf-proxy",
+      "action": "add",
+      "headSha256": null
+    },
+    {
+      "path": "web/lib/NHL/corsProxy.ts",
+      "sha256": "f3236baf1b01b283fcf35e29862ae1d208eccc60383a7d7fa413829f2303fe50",
+      "increment": "ssrf-proxy",
+      "action": "add",
+      "headSha256": null
+    },
+    {
+      "path": "web/lib/NHL/statsPageFetch.test.ts",
+      "sha256": "a4deea7bd6d546252df360d4ab10bb8ca9d0666c5258d3d349badd5a542342c3",
+      "increment": "public-page-usability",
+      "action": "modify",
+      "headSha256": "4c7bc925bec6adff66503055150a4bafce92e576af3a255c33ff8c8ee0ca7b1b"
+    },
+    {
+      "path": "web/lib/NHL/statsPageFetch.ts",
+      "sha256": "896756cc6f8f892693189818393d29ec62b62d6af6c8d008eeab072a268ee25d",
+      "increment": "public-page-usability",
+      "action": "modify",
+      "headSha256": "9d658390ae09833cf1896cda6859b217a38740fa4be53456e9e8b1873c690a12"
+    },
+    {
+      "path": "web/lib/NHL/statsPageTypes.ts",
+      "sha256": "207bc7e50966ff9e54061a21f64cd2a8b76790099147d383274ca0f5a4a65d0f",
+      "increment": "public-page-usability",
+      "action": "modify",
+      "headSha256": "b61817cdd9545b6e5edfb93686a63f258d3bc7b55e76074eb6fc511ef8e30e2b"
+    },
+    {
+      "path": "web/lib/sources/lineSourceIftttReceiver.test.ts",
+      "sha256": "4f7ef78a364f396f8940babfc66200a3dd4a2d253985a30d51bc7ad35ba07597",
+      "increment": "ifttt-dedicated-receivers",
+      "action": "modify",
+      "headSha256": "ec639303d55b194a459ea9228916a46d311a679baf17cf7c71056b7968248e99"
+    },
+    {
+      "path": "web/lib/sources/lineSourceIftttReceiver.ts",
+      "sha256": "8d70c81d893fd96d428f85e783c4d2f530a8bd6e1da6912582a16ee39ace99d1",
+      "increment": "ifttt-dedicated-receivers",
+      "action": "modify",
+      "headSha256": "70f15ecccf871bc0a8177f1a28ec263fa93287774698ceaffcb13b10cd1d08f9"
+    },
+    {
+      "path": "web/lib/sources/playerIdentity.compactInitial.test.ts",
+      "sha256": "039a1d3d5bc1cb14bc174d1442dae85de1ff242cfcf4f8558eb00643683dc16b",
+      "increment": "compact-initials",
+      "action": "add",
+      "headSha256": null
+    },
+    {
+      "path": "web/lib/sources/playerIdentity.ts",
+      "sha256": "af843bd6df9ec932ff67bdfd08dba337224d133ac87b1fe94113e0f5ec75bcb4",
+      "increment": "compact-initials",
+      "action": "modify",
+      "headSha256": "73205daa7a17437f5179bf53d21c8b331710405a369ac4ebb2a61b5c2d1694d0"
+    },
+    {
+      "path": "web/pages/api/cors/index.ts",
+      "sha256": "592944a99828fac71490cab3a239a6802a7c87a346f08cbd594bd7fec082c064",
+      "increment": "ssrf-proxy",
+      "action": "modify",
+      "headSha256": "cb4362d45c1f72f3490225f135bbc88f8c45f63b08b84d8dad698c7022a8f05f"
+    },
+    {
+      "path": "web/pages/api/internal/forecast-calendar.test.ts",
+      "action": "delete",
+      "sha256": null,
+      "headSha256": "0aeb0fb9e64259203892e9d0597225b0ea2c0c15d02b75d0ac06c948176d4b26",
+      "increment": "api-test-relocation"
+    },
+    {
+      "path": "web/pages/api/underlying-stats/landing.test.ts",
+      "action": "delete",
+      "sha256": null,
+      "headSha256": "a620ca9b8367408071595b140ef8cbaadcc74517b90b9716acb6ca53f46d9fb7",
+      "increment": "api-test-relocation"
+    },
+    {
+      "path": "web/pages/api/v1/account/fantrax/player-data.test.ts",
+      "action": "delete",
+      "sha256": null,
+      "headSha256": "45c939a2c93297dceaf200a8f2556d73dde840a220a53d5f15eaa709d2ca38ad",
+      "increment": "api-test-relocation"
+    },
+    {
+      "path": "web/pages/api/v1/sources/ifttt/DFOFantasy-tweet.ts",
+      "sha256": "9ec7741a360ae4c351d7b1f4659d87e87dd3b7e1d927c46cea825ca89e6fd799",
+      "increment": "ifttt-dedicated-receivers",
+      "action": "add",
+      "headSha256": null
+    },
+    {
+      "path": "web/pages/api/v1/sources/ifttt/NHL-Rosters-tweet.ts",
+      "sha256": "4b60c09c93c94b261891847c7c29e4bd8636c03db2431c7f1b02573e3e24ae5e",
+      "increment": "ifttt-dedicated-receivers",
+      "action": "add",
+      "headSha256": null
+    },
+    {
+      "path": "web/pages/auth/reset-password.tsx",
+      "sha256": "90b8f9331cde84fd7f85d8579d1185b6f890fa4552b107059d52ed4b45caf4a0",
+      "increment": "reset-password-state",
+      "action": "modify",
+      "headSha256": "3bbb729cec814c1390a4d34c913850711669a223d8f0c617182420416f80129c"
+    },
+    {
+      "path": "web/pages/game/[gameId].tsx",
+      "sha256": "c49f1b63fa21f61ef99496925688b340776a2e82a77514ee72f025559258e151",
+      "increment": "game-page-recovery",
+      "action": "modify",
+      "headSha256": "44baeb56c0d160feeae4919c95c5352260e743e5cb1421a1753bee2834bc1737"
+    },
+    {
+      "path": "web/pages/lines/index.tsx",
+      "sha256": "0a964b47a1712ac92e75d613d1e8a639720a2fc18e881e7e6eaa477331815acc",
+      "increment": "public-page-usability",
+      "action": "modify",
+      "headSha256": "e82be2976016be097b3efef1d5a6d51d1e11c299628262d577dd90717695e624"
+    },
+    {
+      "path": "web/pages/stats/index.tsx",
+      "sha256": "ecfb482e898e3529ae7c590ef82e85704af03316255c985938d512db1105f10a",
+      "increment": "public-page-usability",
+      "action": "modify",
+      "headSha256": "f577f5cc8b607466dbe9125a18aaacb5e4c69288cb7b27504790d9c631bb91cb"
+    },
+    {
+      "path": "web/pages/stats/player/[playerId].tsx",
+      "sha256": "7ff3429d9bc7d57705b8acb8be3d654f395cb6271eac61d97c55583bef116785",
+      "increment": "radar-scope",
+      "action": "modify",
+      "headSha256": "255097f6289c49bc6e111bd0ba6c5705d29c21be8bdd57dcbe7d8321252d79f6"
+    },
+    {
+      "path": "web/styles/Lines.module.scss",
+      "sha256": "f09fc5f2fd2e7c717393a2ff13f7f52e4b4788364dbde91fa9c615dbc010ffd5",
+      "increment": "public-page-usability",
+      "action": "modify",
+      "headSha256": "fb12665666e5bcbdb28131d3ba08b01f6eb3a02124922868c2d20e6509ec9017"
+    },
+    {
+      "path": "web/styles/Stats.module.scss",
+      "sha256": "66596f49ac1246ea9911df5cf607fa8cf4a1b2e7f90775becb9d74da6cd12312",
+      "increment": "public-page-usability",
+      "action": "modify",
+      "headSha256": "0cb8c72cef75d9e792653d17efa1e0debb28f51f6b4dc43346af7c139e502e49"
+    },
+    {
+      "path": "web/utils/adminOnlyMiddleware.ts",
+      "sha256": "491c123b5e765546bcda1e81c0b0ae7d197d58413236a399d458ec80177c924f",
+      "increment": "admin-bypass",
+      "action": "modify",
+      "headSha256": "8e12d24a374fcb2237cc8c4a5c82996dc35efa9c6aeb56f2e7731bd72bdb34c3"
+    }
+  ],
+  "increments": {
+    "ssrf-proxy": 4,
+    "api-test-relocation": 6,
+    "ifttt-dedicated-receivers": 6,
+    "reset-password-state": 2,
+    "game-page-recovery": 2,
+    "public-page-usability": 11,
+    "radar-scope": 4,
+    "admin-bypass": 2,
+    "compact-initials": 2
+  },
+  "baseExportPaths": 3498,
+  "omittedEnvPaths": [
+    "web/.env.development",
+    "web/.env.production",
+    "web/.env.test"
+  ],
+  "excluded": "New forecast, RSO, claim integration, scheduler, SQL, tasks/private/research artifacts and unrelated unreleased octoberBranch history; two Yahoo planning paths superseded by the new RSO graph. Source pin capture remains separate from release membership.",
+  "scopeRationale": "Nine independently reviewed increments at exact matching pins, based on deployed production tree. No conditional default-off feature integration.",
+  "candidateTree": "2dfa6024a2840aab1951390285c3006b680da4da",
+  "baselineNoopPaths": [],
+  "sourceManifest": "proposed-release-manifest-v1.json",
+  "correction": "v2 misclassified three relocation source deletions because Git default rename detection elided them. Review used --no-renames; no source/tree bytes changed."
+}

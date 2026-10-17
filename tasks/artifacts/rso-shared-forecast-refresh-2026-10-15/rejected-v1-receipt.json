@@ -1,0 +1,34 @@
+{
+  "createdAt": "2026-10-15T19:05:42.563335+00:00",
+  "branch": "octoberBranch",
+  "scope": "RSO consumer only; shared forecast reload for connected roster",
+  "files": {
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx": "f13be006670e1ba34f4ca6b65e9206dfb0bfba7bdb2ef64c1fb525283022ade3",
+    "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx": "1d620494dc2883114dac6679262dff3d5a01329494b117e65109ef38b0fbc2f0",
+    "web/lib/rosterScheduleOptimizer/refreshForecastInputs.ts": "04e000d4d4b65fe2157a7bc45b0fe206ad9120fb491c2d9baaed8c334cbbe3a6",
+    "web/lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts": "9deddddc4ed42adcbbcb4cfd73f4910527251836adbc028b354b42bbe51187eb"
+  },
+  "patchSha256": "25856be434acfcc4cf0129be1890f0f676038e97db363f93ee85afb6e918a41a",
+  "verification": {
+    "helperTests": "24/24 passed",
+    "componentFile": "195/195 passed; after final request-context capture adjustment, affected three reload cases passed",
+    "scopedEslint": "0 errors; 3 existing warnings outside changed blocks",
+    "diffCheck": "passed",
+    "compiler": "not run; coordinated owner required",
+    "runtimeBrowser": "not run; mocked component and pure synthetic contract tests only"
+  },
+  "syntheticOnly": true,
+  "liveRequests": 0,
+  "sourceOwnersPreserved": [
+    "FORGE",
+    "Start Chart",
+    "waiver adapter pair",
+    "diagnostic packet",
+    "accepted UI styling and target mockup",
+    "planner/net metrics/ledger",
+    "workspace persistence"
+  ],
+  "independentReview": "pending",
+  "releaseInclusion": "pending separate reviewed candidate decision",
+  "nextDependency": "Qualified released public-safe baseline tuple in unchanged shared PlanningData; sanitized real roster/rules/candidates and valid authenticated local acceptance scope (last diagnostic normal_session_unavailable). No model tuning prerequisite."
+}

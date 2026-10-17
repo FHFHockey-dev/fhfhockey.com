@@ -1,0 +1,26 @@
+{
+  "id": "CR011-POSITIVE-v2",
+  "scopes": [
+    {
+      "scope": "tweet-scope-v1:28b9724897d3e90489ea3d335142276a96bd3435902e9c6bfbb64a7558645e17",
+      "effects": 1,
+      "holds": [],
+      "ledgerOccurrences": 1
+    },
+    {
+      "scope": "tweet-scope-v1:7fe6deb730ad6246d55e16f8e7bb4dac373979d6bb08c7ec74873dd63096811b",
+      "effects": 0,
+      "holds": [
+        {
+          "reason": "dated_official_game_roster_missing_at_source_time",
+          "observationId": "tweet-observation-v2:62d47050d969f14f97dc9ccf992709dd11deb41b5863dc56892e4613984b2488"
+        },
+        {
+          "reason": "dated_identity_team_league_or_role_conflict",
+          "observationId": "tweet-observation-v2:a50b4593aa23eb53024f2a45dcd5f1d7e9bba369f7d9b7ae0206f2b0e962944a"
+        }
+      ],
+      "ledgerOccurrences": 2
+    }
+  ]
+}

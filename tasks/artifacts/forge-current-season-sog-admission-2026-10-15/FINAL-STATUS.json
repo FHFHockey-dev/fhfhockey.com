@@ -1,0 +1,53 @@
+{
+  "status": "accepted_local_source_and_nonexecuting_plan_only",
+  "recordedUTC": "2026-10-15T22:28:45.546827+00:00",
+  "sourcePins": {
+    "web/lib/player-forecasts/currentSeasonSogContribution.ts": "2b1d6a1b6f1ba87ff018d2664bb745889b240d50ef889565fd6fb2a8c293b299",
+    "web/lib/player-forecasts/currentSeasonSogContribution.test.ts": "eb6bd88148118b6383579cc24bfdd4582672bb6aab57f81a7fd3540b1b6f6441",
+    "web/lib/player-forecasts/contributions.ts": "d23d776cf9fbd1dc301803347367f213aba050ceed0d18d2118bcc5a962e3f1c",
+    "web/lib/player-forecasts/contributions.test.ts": "e11536cf9446839281beb0c7e1ab01ea9e7fb9c530b679bb3a6259c056f3afee",
+    "web/lib/player-forecasts/contributionStore.ts": "a890ffccf09bac914201be46f6af1325b9a1651309cd6ee8ade00f7c2241ca7b",
+    "web/lib/player-forecasts/nativeContributionAdmission.ts": "4f8e415ba059c56d8b52bf7259763ff435834537d6770b8ae1c0d79cb5762b0b",
+    "web/pages/forge/forecasts.tsx": "5e94ca3c7f515666022de64310ded76bc2e5f4d246f87cf4cb8fa37616007157",
+    "web/__tests__/pages/forge/forecasts.test.tsx": "7dabc6fd2e42c1e14fec5a17ba986b934258bc67ed1dc193fb252f078597ee11"
+  },
+  "evidenceSHA256": {
+    "final-readback-and-plan-review.md": "7595f539c18170a65efc59f75290b7717652f7fedd8ea615182d0d8767fce811",
+    "clock-guard/independent-review.md": "9953294526cc63c38e31ca42bd12c483f64bfbdc11dc45ad10a6a5dfd4ab50e8",
+    "independent-review-v2.md": "16d4ea035b45b5ae539f2d5509a88e80f286b4e594faccc917edcdd1080b2821",
+    "final-candidate.sha256": "4901fe13121e2752611effb28b902e434effad64964f66e09b8c2e426d60e84c",
+    "final-increment.patch": "7f41385bbf71115af7303183cd26cef97883f21783bb11b47c9e7ecad262f768",
+    "final-verification.json": "6f059d6519932bf9237090181979ae4f80b41a94986d09d244af98b9220735d1",
+    "GENUINE-READBACK-AND-PUBLICATION-PLAN-v2.md": "cc530e5db48779c700d9b7a010bbf17be74f9dcf67239cae36a47581329e34e0"
+  },
+  "checks": {
+    "focusedTests": 255,
+    "eslintErrors": 0,
+    "eslintWarnings": 0,
+    "scopedSemanticTypeScriptDiagnostics": 0,
+    "scopedProjectInputs": 41,
+    "scopedProgramInputs": 831,
+    "inputDrift": [],
+    "fullTreeCompiler": "not run",
+    "browser": "not run"
+  },
+  "remaining": {
+    "genuineBinding": "not captured or authenticated",
+    "genuineAdapterReadback": "not executed",
+    "publishedTuple": false,
+    "twoCompetingEligiblePlayers": false,
+    "namedDatabaseTarget": "not yet supplied/verified",
+    "boundWrapperCandidateBundleHashes": "unknown until separately approved binding succeeds",
+    "approvalNeeded": "bounded genuine packet/context reads; actual conditional-use approval/review; exact four immutable rows; separate exact allowlist activation and any code deployment",
+    "originalPacketExpiryUTC": "2026-10-15T23:00:00Z"
+  },
+  "currentSliceActions": {
+    "sourceRequests": 0,
+    "genuinePacketOrOutcomeBodyReads": 0,
+    "databaseWrites": 0,
+    "activations": 0,
+    "gitWrites": 0,
+    "buildsOrDeployments": 0,
+    "pilotOrSchedulerChanges": 0
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "sourceManifestSha256": "72e36e2e1ea8b405222f5f9d9517f60c6406265df2caa19e16ce66f82106ea23",
+  "sourceFilesVerified": 103,
+  "snapshotsVerified": 15,
+  "artifactManifestSha256": "3e7c12361962d554537abcb8cd9aded6ee6b067c6ebcd8b397b188228e7b201b",
+  "artifactFilesVerified": 69,
+  "priorReviewFilesVerified": 1382,
+  "priorStatusAddendumUnchanged": true,
+  "ownerHarnessCopiesByteIdentical": true,
+  "sourceSnapshotHoldReleasedAfterThisCheck": true
+}

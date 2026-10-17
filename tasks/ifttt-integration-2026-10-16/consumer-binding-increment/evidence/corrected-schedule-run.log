@@ -1,0 +1,104 @@
+
+> web@0.1.0 test
+> vitest --run ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts --config ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/vitest.config.mjs
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts (10 tests | 5 failed) 2530ms
+   ✓ forecast consumer default > does no work unless explicitly enabled 1ms
+   ✓ real forecast capture, queue and retained action binding > CR042 original clocks recover the real retained binding and proof without a new identity or expired dispatch 227ms
+   ✓ real forecast capture, queue and retained action binding > CR043 original clocks keep actual partial consumer history unknown without a send or new identity 206ms
+   ✓ real forecast capture, queue and retained action binding > CR044 original clocks adopt verified real native capture and queue receipts then suppress replay after caller loss 215ms
+   × real forecast capture, queue and retained action binding > atomically captures actual native snapshot, assignments, both queue scopes, news trigger and receipt 186ms
+     → expected 'unknown' to be 'applied' // Object.is equality
+   × real forecast capture, queue and retained action binding > recovers exact receipt after actual consumer commit acknowledgement loss 182ms
+     → expected 'unknown' to be 'applied' // Object.is equality
+   × real forecast capture, queue and retained action binding > retains receipt and suppresses replay after outbox settlement reply is lost 195ms
+     → queue caller acknowledgement lost
+   × real forecast capture, queue and retained action binding > rolls back snapshot, assignments, first queue and news trigger when the second queue fails 238ms
+     → expected 'unknown' to be 'applied' // Object.is equality
+   ✓ real forecast capture, queue and retained action binding > rejects same-action changed parent/assignments and incomplete delivered adoption without adding bindings 195ms
+   × real forecast capture, queue and retained action binding > serializes two actual consumer workers and fences stale apply ownership 186ms
+     → expected false to be true // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts > real forecast capture, queue and retained action binding > atomically captures actual native snapshot, assignments, both queue scopes, news trigger and receipt
+AssertionError: expected 'unknown' to be 'applied' // Object.is equality
+
+Expected: "applied"
+Received: "unknown"
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts:150:183
+    148|  });
+    149|  it("atomically captures actual native snapshot, assignments, both que…
+    150|   const f=await fixture("CR042",true);await bind(f,"verified_not_dispa…
+       |                                                                                                                                                                                       ^
+    151|   expect(await inventory()).toEqual({snapshots:1,assignments:1,queues:…
+    152|   const before=await inventory();expect(await recoverTweetClaimForecas…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts > real forecast capture, queue and retained action binding > recovers exact receipt after actual consumer commit acknowledgement loss
+AssertionError: expected 'unknown' to be 'applied' // Object.is equality
+
+Expected: "applied"
+Received: "unknown"
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts:157:105
+    155|  it("recovers exact receipt after actual consumer commit acknowledgeme…
+    156|   const f=await fixture("CR042",true);await bind(f,"verified_not_dispa…
+    157|   const first=await recoverTweetClaimForecastDelivery({db,key:f.key,en…
+       |                                                                                                         ^
+    158|   const after=await inventory();expect(await recoverTweetClaimForecast…
+    159|  });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts > real forecast capture, queue and retained action binding > retains receipt and suppresses replay after outbox settlement reply is lost
+Error: queue caller acknowledgement lost
+ ❯ Object.rpc ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts:37:89
+
+ ❯ rpc lib/sources/tweetClaimForecastDelivery.ts:16:18
+ ❯ recoverTweetClaimForecastDelivery lib/sources/tweetClaimForecastDelivery.ts:90:5
+ ❯ ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts:162:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts > real forecast capture, queue and retained action binding > rolls back snapshot, assignments, first queue and news trigger when the second queue fails
+AssertionError: expected 'unknown' to be 'applied' // Object.is equality
+
+Expected: "applied"
+Received: "unknown"
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts:172:89
+    170|   await sql("drop trigger fixture_fail_second_queue on public.player_f…
+    171|   expect((await recoverTweetClaimForecastDelivery({db,key:f.key,enable…
+    172|   expect((await recoverTweetClaimForecastDelivery({db,key:f.key,enable…
+       |                                                                                         ^
+    173|  });
+    174|  it("rejects same-action changed parent/assignments and incomplete del…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts > real forecast capture, queue and retained action binding > serializes two actual consumer workers and fences stale apply ownership
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ ../tasks/ifttt-integration-2026-10-16/consumer-binding-increment/consumer-binding.test.ts:182:210
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 5 passed (10)
+   Start at  01:14:04
+   Duration  2.98s (transform 170ms, setup 16ms, collect 271ms, tests 2.53s, environment 0ms, prepare 32ms)
+

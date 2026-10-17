@@ -1,0 +1,21 @@
+{
+  "timestamp_utc": "2026-10-15T05:19:53.131Z",
+  "corpus_files": 3546,
+  "content_excluded": 2234,
+  "import_edges": 7167,
+  "unresolved": 4,
+  "dynamic": 6,
+  "no_static_inbound": 1267,
+  "assets": 185,
+  "assets_without_runtime_literal": 115,
+  "duplicate_document_groups": 1,
+  "duplicate_source_groups": 1,
+  "documents": 441,
+  "documents_with_unchecked": 29,
+  "limitations": [
+    "Static imports are not complete runtime reachability. Next routes, scripts, CSS links, JSON/file readers, scheduled jobs and external/manual users require independent ownership checks.",
+    "Literal asset references include basename matches; absence is not proof of non-use. Dynamic/CMS/external asset consumers are not observed.",
+    "No artifact/evidence/output bodies, environment files, Git object bodies or data files are included. Metadata inventory covers excluded paths.",
+    "No application import, execution, test, network or database call occurred."
+  ]
+}

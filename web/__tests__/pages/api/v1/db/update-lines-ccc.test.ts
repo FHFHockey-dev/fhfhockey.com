@@ -1,5 +1,6 @@
 // @vitest-environment node
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as claimIntake from "lib/sources/tweetClaimEvaluationIntake";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 function paginatedRoster(result: { data: any[]; error: null }) {
   const query: any = {
@@ -47,6 +48,8 @@ vi.mock("lib/cron/withCronJobAudit", () => ({
 }));
 
 import handler from "../../../../../pages/api/v1/db/update-lines-ccc";
+import * as tweetClaimRegistry from "lib/sources/tweetClaimRegistry";
+import * as tweetProjectionStorage from "lib/sources/tweetProjectionStorage";
 
 function createMockReq(overrides: Record<string, unknown> = {}) {
   return {
@@ -232,6 +235,7 @@ function createSupabaseMocks(args?: {
                 players: {
                   fullName: "Jakub Dobes",
                   lastName: "Dobes",
+                  position: "G",
                 },
               },
             ],
@@ -286,6 +290,7 @@ function createSupabaseMocks(args?: {
 }
 
 describe("/api/v1/db/update-lines-ccc", () => {
+  afterEach(() => vi.unstubAllEnvs());
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllGlobals();
@@ -314,6 +319,29 @@ describe("/api/v1/db/update-lines-ccc", () => {
     expect(mocks.getCurrentSeason).not.toHaveBeenCalled();
     expect(mocks.getTeams).not.toHaveBeenCalled();
     expect(eventUpdateMock).not.toHaveBeenCalled();
+  });
+
+  it("stops a closed prospective intake budget before roster or enrichment work", async () => {
+    createSupabaseMocks();
+    const intake = vi.spyOn(claimIntake,"admitTweetClaimEvaluationIntake").mockResolvedValue({ active: true,events: [],reason: "ended" });
+    try {
+      const res = createMockRes();await handler(createMockReq(),res);
+      expect(res.body).toMatchObject({ mode: "claim_shadow_stopped",delivery: "not_requested",reason: "ended" });
+      expect(mocks.getCurrentSeason).not.toHaveBeenCalled();expect(mocks.getTeams).not.toHaveBeenCalled();
+    } finally { intake.mockRestore(); }
+  });
+
+  it("isolates CCC shadow capture from legacy snapshots, projections and review queues", async () => {
+    const db = createSupabaseMocks(); vi.stubEnv("TWEET_CLAIMS_MODE", "shadow");
+    vi.stubEnv("TWEET_PIPELINE_PUBLISHING_ENABLED", "true");
+    const shadow = vi.spyOn(tweetClaimRegistry, "processTweetClaimShadowBatch").mockResolvedValue({ mode: "claim_shadow", capture: { skipped: false, scopes: [] }, eventsProcessed: 2, eventsDeferred: 0, delivery: "not_requested" });
+    const legacy = vi.spyOn(tweetProjectionStorage, "persistTweetProjectionReports");
+    try {
+      const res = createMockRes(); await handler(createMockReq(), res);
+      expect(res.statusCode).toBe(200); expect(res.body).toMatchObject({ mode: "claim_shadow", delivery: "not_requested" });
+      expect(shadow).toHaveBeenCalledWith(expect.objectContaining({ table: "lines_ccc_ifttt_events" }));
+      expect(db.linesCccUpsertMock).not.toHaveBeenCalled(); expect(db.unresolvedNamesUpsertMock).not.toHaveBeenCalled(); expect(legacy).not.toHaveBeenCalled();
+    } finally { shadow.mockRestore(); legacy.mockRestore(); }
   });
 
   it("reports a failed queue read instead of skipping work", async () => {

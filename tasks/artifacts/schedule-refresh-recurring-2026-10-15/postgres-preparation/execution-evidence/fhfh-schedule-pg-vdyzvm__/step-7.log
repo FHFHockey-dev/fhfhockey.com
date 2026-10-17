@@ -1,0 +1,13 @@
+PASS reviewer interleaving, READ COMMITTED: later LIVE wins, delayed FUT skips
+PASS older REPEATABLE READ snapshot cannot overwrite newer commit
+PASS older SERIALIZABLE snapshot cannot overwrite newer commit
+PASS equal-clock conflicting replay is a whole-batch no-op
+PASS one stale identity rejects mixed existing/new-game batch
+PASS busy shared transaction returns no-op and blocks direct manual statement
+PASS recurring newer observation rejects delayed direct/manual ON CONFLICT
+PASS direct/manual newer observation fences recurring older observation
+PASS late stale row rolls back earlier direct/manual batch updates
+PASS newer identity outside refreshed date range still fences a moved incoming game
+PASS missing cached identity rejects without writes
+PASS anonymous/authenticated cannot execute clock/commit RPC or mutate cache
+12 real PostgreSQL fixture cases passed. No HTTP/audit-delivery claim.

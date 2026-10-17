@@ -1,0 +1,95 @@
+"""Compose the local-only next revision from frozen v4 definitions and explicit additions."""
+from pathlib import Path
+
+here = Path(__file__).resolve().parent
+draft = here / "20261016044953_tweet_claim_occurrence_identity.sql.draft"
+output = here / "20261016044953_tweet_claim_occurrence_identity.sql"
+source = (here.parent / "next-increment/20261016073000_tweet_claim_qualification.sql").read_text()
+prefix = draft.read_text().split("create function public.commit_tweet_claim_occurrence_identity(")[0]
+prefix = prefix.replace("next->'anchors' @> prior->'anchors'", "(next->'anchors') @> (prior->'anchors')")
+for field in ["derivations", "bindings"]:
+    prefix = prefix.replace(f"p_new->'{field}' @> old->'{field}'", f"(p_new->'{field}') @> (old->'{field}')")
+
+start = source.index("create function public.read_tweet_claim_context(")
+end = source.index("\ncreate function public.commit_qualified_tweet_claim_scope(", start)
+read = source[start:end].replace("create function", "create or replace function", 1)
+read = read.replace("meanings jsonb;", "meanings jsonb; identity_context jsonb;")
+marker = "  if jsonb_array_length(observations)>256 then raise exception 'global lineage context exceeds 256; review required'; end if;"
+assert marker in read
+read = read.replace(marker, marker + """
+  identity_context:=public.read_tweet_claim_occurrence_context(observations||p_incoming,links,v);
+  if jsonb_array_length(identity_context->'componentIds')=1 then
+    receipts:=receipts||array(select key from public.tweet_claim_occurrence_component_links where kind='receipt' and namespace=(identity_context->'componentIds'->>0));
+    origins:=origins||array(select key from public.tweet_claim_occurrence_component_links where kind='original' and namespace=(identity_context->'componentIds'->>0));
+    select coalesce(jsonb_agg(payload),'[]') into links from public.tweet_claim_lineage_links where receipt=any(receipts) or origin_id=any(origins);
+    select coalesce(jsonb_agg(payload order by ordinal),'[]') into observations from (select payload,ordinal from public.tweet_claim_observations
+      where scope_key=p_scope or lineage_key=any(receipts) or origin_id=any(origins) order by ordinal limit 257) bounded;
+    if jsonb_array_length(observations)>256 then raise exception 'complete occurrence component exceeds 256; review required'; end if;
+  end if;
+""")
+marker = "'scope',public.read_tweet_claim_scope(p_scope)"
+assert marker in read
+read = read.replace(marker, "'occurrenceContext',public.read_tweet_claim_occurrence_context(observations||p_incoming,links,v)," + marker)
+
+start = end + 1
+end = source.index("\nrevoke all on function", start)
+commit = source[start:end].replace("create function", "create or replace function", 1)
+commit = commit.replace("affected text[];", "affected text[]; identity_context jsonb; identity_plan jsonb; identity_state jsonb; identity_item jsonb; identity_anchor jsonb; selected_namespace text;")
+marker = "  if not public.commit_tweet_claim_scope"
+assert marker in commit
+commit = commit.replace(marker, """  identity_plan:=p_qualified->'occurrenceIdentity';
+  identity_context:=public.read_tweet_claim_context(p_scope,p_observations,(identity_plan->>'asOf')::timestamptz)->'occurrenceContext';
+""" + marker)
+marker = "  for link in select value from jsonb_array_elements"
+assert marker in commit
+commit = commit.replace(marker, """  if identity_plan->>'protocol' is distinct from 'durable-tweet-occurrence-v1'
+    or identity_plan->>'namespace' is distinct from identity_context->>'namespace'
+    or identity_plan->'componentIds' is distinct from identity_context->'componentIds'
+    or identity_plan->'expectedFingerprint' is distinct from identity_context->'fingerprint'
+    then raise exception 'occurrence context mismatch'; end if;
+  if identity_plan->>'globalHold' is not null then
+    if identity_plan->>'globalHold' not in ('multiple_durable_occurrence_components_require_proof','legacy_canonical_state_requires_occurrence_mapping')
+      or identity_plan->'state' is distinct from identity_context->'state' then raise exception 'invalid occurrence hold'; end if;
+  else
+    if identity_context->>'hold' is not null then raise exception 'ambiguous occurrence context cannot allocate'; end if;
+    selected_namespace:=identity_context->>'namespace'; identity_state:=identity_plan->'state';
+    perform public.validate_tweet_claim_occurrence_transition(nullif(identity_context->'state','null'),identity_state,selected_namespace,(identity_plan->>'asOf')::timestamptz);
+    insert into public.tweet_claim_occurrence_components(namespace,payload) values(selected_namespace,identity_state)
+      on conflict on constraint tweet_claim_occurrence_components_pkey do update set payload=excluded.payload;
+    for identity_item in select value from jsonb_array_elements(identity_state->'occurrences') loop
+      for identity_anchor in select value from jsonb_array_elements(identity_item->'anchors') loop
+        insert into public.tweet_claim_occurrence_component_links values('receipt',identity_anchor->>'receiptId',selected_namespace) on conflict do nothing;
+      end loop;
+    end loop;
+    for identity_item in select value from jsonb_array_elements(identity_state->'bindings') loop
+      insert into public.tweet_claim_occurrence_component_links values('original',identity_item->'original'->>'tweetId',selected_namespace) on conflict do nothing;
+    end loop;
+  end if;
+""" + marker, 1)
+marker = "  update public.tweet_claim_context_clock set version=version+1 where singleton;"
+assert marker in commit
+commit = commit.replace(marker, """  if identity_plan->>'globalHold' is not null then
+    select array[p_scope]||coalesce(array_agg(distinct o.scope_key),'{}') into affected
+      from public.tweet_claim_observations o join public.tweet_claim_occurrence_component_links l
+        on (l.kind='receipt' and l.key=o.lineage_key) or (l.kind='original' and l.key=o.origin_id)
+      where l.namespace in (select jsonb_array_elements_text(identity_context->'componentIds'));
+    update public.tweet_claim_scopes set qualification_state=jsonb_set(jsonb_set(qualification_state,
+      '{plan,reviewableEffects}','[]'),'{globalHolds}',jsonb_build_array(identity_plan->>'globalHold'))
+      where scope_key=any(affected) and qualification_state is not null;
+    update public.tweet_claim_outbox set requires_review=true,status=case when status in ('held','pending','retry') then 'blocked' else status end,
+      last_error=identity_plan->>'globalHold' where scope_key=p_scope or scope_key in (
+        select distinct o.scope_key from public.tweet_claim_observations o join public.tweet_claim_occurrence_component_links l
+          on (l.kind='receipt' and l.key=o.lineage_key) or (l.kind='original' and l.key=o.origin_id)
+        where l.namespace in (select jsonb_array_elements_text(identity_context->'componentIds')));
+  end if;
+""" + marker)
+
+acl = """
+revoke all on function public.read_tweet_claim_occurrence_context(jsonb,jsonb,bigint),public.tweet_claim_occurrence_json(jsonb),
+  public.tweet_claim_occurrence_input(jsonb),public.tweet_claim_occurrence_anchor(jsonb),public.validate_tweet_claim_occurrence_transition(jsonb,jsonb,text,timestamptz) from public,anon,authenticated;
+grant execute on function public.read_tweet_claim_occurrence_context(jsonb,jsonb,bigint),public.tweet_claim_occurrence_json(jsonb),
+  public.tweet_claim_occurrence_input(jsonb),public.tweet_claim_occurrence_anchor(jsonb),public.validate_tweet_claim_occurrence_transition(jsonb,jsonb,text,timestamptz) to service_role;
+commit;
+"""
+output.write_text(prefix + read + "\n" + commit + acl)
+print(output)

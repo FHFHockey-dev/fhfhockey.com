@@ -1,10 +1,14 @@
 // @vitest-environment node
+import { createHash } from "node:crypto";
+import { nativeGoalieSummaryUrl } from "./nativeGoalieOutcomes";
 import { describe, expect, it } from "vitest";
 import { buildGoalieBaselineRates, buildGoalieContributionBundle,
-  dryRunCapturedGoalieBundle } from "./goalieBaselineRates";
+  dryRunCapturedGoalieBundle, buildNativeGoalieWinRates, NATIVE_GOALIE_WIN_POLICY_VERSION,
+  nativeGoalieWinDefinitionHash, buildNativeGoalieVolumeRates, NATIVE_GOALIE_VOLUME_POLICY_VERSION,
+  nativeGoalieVolumeDefinitionHash, buildNativeGoalieShutoutRates, NATIVE_GOALIE_SHUTOUT_POLICY_VERSION, buildNativeGoalieSummaryWinRates, NATIVE_GOALIE_SUMMARY_WIN_POLICY_VERSION } from "./goalieBaselineRates";
 import { captureCurrentGoalieBaselineInputs, persistCapturedGoalieBaselineInputs } from "./goalieBaselineInputCapture";
 import { BASELINE_CANDIDATE_POLICY, baselineDefinitionHash, baselineProjectionSchemas } from "./baselinePolicy";
-import { baselineProjectionFromRow, baselineProjectionContentHash, baselineHistoricalSources,
+import { baselineAppearanceFromBoxscore, type BaselineBoxscoreReceipt, baselineProjectionFromRow, baselineProjectionContentHash, baselineHistoricalSources,
   baselineHistoricalSourceLimitations, baselineProjectionSelectionReceipt,
   baselineProjectionSelectionLimitations } from "./baselineSourceLineage";
 import { readStableCurrentInputs } from "./baselineInputCapture";
@@ -59,7 +63,320 @@ function goalieCaptureDb(rows: Record<string, any[]>,
   } };
 }
 
+function nativeGoalieOutcomeRows(): Record<string, any[]> {
+  const goalie = (playerId: number, goalsAgainst: number, decision: string) => ({
+    playerId, position: "G", starter: true, decision, toi: "60:00", saves: 24,
+    shotsAgainst: 24 + goalsAgainst, goalsAgainst, saveShotsAgainst: `24/${24 + goalsAgainst}`,
+  });
+  return {
+    goaliesGameStats: [{ playerId: 77, gameId: 30, saveShotsAgainst: "24/24", goalsAgainst: 0, toi: "60:00",
+      games: { id: 30, date: "2026-09-27", seasonId: 20262027, type: 2, startTime: "2026-09-27T01:00:00Z",
+        homeTeamId: 4, awayTeamId: 5 } }],
+    nhl_api_game_roster_spots: [{ game_id: 30, player_id: 77, team_id: 4,
+      season_id: 20262027, game_date: "2026-09-27" }],
+    nhl_api_game_payloads_raw: [{ id: 3001, game_id: 30, season_id: 20262027, endpoint: "boxscore",
+      payload_hash: "a".repeat(64), fetched_at: "2026-09-27T10:00:00.000123+00:00", payload: {
+        id: 30, season: 20262027, gameDate: "2026-09-27", gameType: 2, gameState: "FINAL",
+        startTimeUTC: "2026-09-27T01:00:00Z", homeTeam: { id: 4, score: 1 }, awayTeam: { id: 5, score: 0 },
+        periodDescriptor: { number: 3, periodType: "REG", maxRegulationPeriods: 3 },
+        playerByGameStats: {
+          homeTeam: { forwards: [{ playerId: 1001 }], defense: [], goalies: [goalie(77, 0, "W")] },
+          awayTeam: { forwards: [{ playerId: 1002 }], defense: [], goalies: [goalie(1003, 1, "L")] },
+        },
+      } }],
+  };
+}
+
+function captureNativeGoalieOutcomes(rows: Record<string, any[]>) {
+  return captureCurrentGoalieBaselineInputs({ db: goalieCaptureDb(rows) as never, seasonId: 20262027,
+    players: [{ playerId: 7, nhlPlayerId: 77, teamId: 4, rosterRevision: "r" }],
+    projectionSelection: Object.fromEntries(BASELINE_CANDIDATE_POLICY.sourceIds.goalie.map(id => [id, {}])),
+    now: () => new Date("2026-09-28T12:00:00Z") });
+}
+
 describe("goalie baseline denominators", () => {
+  it("produces coherent current-only native volume means on one joint appearance population, including relief", async () => {
+    const full = await captureNativeGoalieOutcomes(nativeGoalieOutcomeRows()), reliefRows = nativeGoalieOutcomeRows();
+    const history = reliefRows.goaliesGameStats[0], raw = reliefRows.nhl_api_game_payloads_raw[0];
+    history.gameId = 31; history.games.id = 31;
+    Object.assign(history, { toi: "30:00", goalsAgainst: 2, saveShotsAgainst: "12/14" });
+    reliefRows.nhl_api_game_roster_spots[0].game_id = 31;
+    raw.id = 3101; raw.game_id = 31; raw.payload.id = 31;
+    raw.payload.homeTeam.score = 1; raw.payload.awayTeam.score = 2;
+    Object.assign(raw.payload.playerByGameStats.homeTeam.goalies[0], { starter: false, toi: "30:00", saves: 12,
+      goalsAgainst: 2, shotsAgainst: 14, saveShotsAgainst: "12/14", decision: null });
+    const relief = await captureNativeGoalieOutcomes(reliefRows);
+    const input = { ...full.players[0], seasonId: 20262027, cutoffAt: full.cutoffAt,
+      appearances: [...full.players[0].appearances, ...relief.players[0].appearances] };
+    expect(buildGoalieBaselineRates(input).targets).toEqual([]);
+    const snapshot = buildNativeGoalieVolumeRates(input);
+    expect(snapshot).toMatchObject({ policyVersion: NATIVE_GOALIE_VOLUME_POLICY_VERSION,
+      definitionHash: nativeGoalieVolumeDefinitionHash(20262027), validation: "unvalidated" });
+    expect(snapshot.targets).toEqual([
+      expect.objectContaining({ targetKey: "SAVES_GOALIE", rate: 18, basis: "per_appearance", recentGameIds: [31, 30] }),
+      expect.objectContaining({ targetKey: "GOALS_AGAINST_GOALIE", rate: 1, recentGameIds: [31, 30] }),
+      expect.objectContaining({ targetKey: "SHOTS_AGAINST_GOALIE", rate: 19, recentGameIds: [31, 30] }),
+      expect.objectContaining({ targetKey: "GOALIE_MINUTES", rate: 45, recentGameIds: [31, 30] }),
+    ]);
+    expect(snapshot.missingTargetKeys).toEqual(["SHUTOUTS_GOALIE", "WINS_GOALIE"]);
+    const bundle = buildGoalieContributionBundle({ seasonId: 20262027, cutoffAt: full.cutoffAt,
+      issuedAt: "2026-09-28T13:00:00Z", expiresAt: "2026-10-04T00:00:00Z", scheduleRevision: "schedule-a",
+      snapshots: [{ snapshot, teamId: 4, rosterRevision: "r" }] });
+    expect(bundle.sources).toHaveLength(4);
+    expect(bundle.sources.every(source => !source.released && !source.participationIntegrated && source.basis === "per_appearance")).toBe(true);
+    expect(bundle.sources.find(source => source.targetKey === "GOALIE_MINUTES")?.unit).toBe("minutes");
+    const partial = structuredClone(input); partial.appearances[0].goalsAgainst = null;
+    expect(() => buildNativeGoalieVolumeRates(partial)).toThrow(/retained boxscore content/);
+    const unbound = structuredClone(input); delete unbound.appearances[0].finalBoxscore;
+    expect(() => buildNativeGoalieVolumeRates(unbound)).toThrow(/bound retained boxscore content/);
+    expect(() => buildNativeGoalieVolumeRates({ ...input, projections: [projection] })).toThrow(/without projections/);
+    expect(buildNativeGoalieVolumeRates({ ...input, appearances: [] }).targets).toEqual([]);
+  });
+
+  it("rejects an original current-only goalie appearance above the regular-season minutes bound", async () => {
+    const rows = nativeGoalieOutcomeRows();
+    rows.goaliesGameStats[0].toi = "66:00";
+    rows.nhl_api_game_payloads_raw[0].payload.playerByGameStats.homeTeam.goalies[0].toi = "66:00";
+    const capture = await captureNativeGoalieOutcomes(rows);
+    expect(() => buildNativeGoalieVolumeRates({ ...capture.players[0], seasonId: 20262027, cutoffAt: capture.cutoffAt })).toThrow(/at most 65/);
+  });
+
+  it("produces a separate credited SO mean and withholds missing/ambiguous selected credits", async () => {
+    const capture = await captureNativeGoalieOutcomes(nativeGoalieOutcomeRows()), player = capture.players[0];
+    const appearance = player.appearances[0], scope = { nhlPlayerId: player.nhlPlayerId, seasonId: 20262027,
+      startDate: appearance.gameDate, endDate: appearance.gameDate, approvedGameIds: [appearance.gameId] };
+    const data = [{ playerId: player.nhlPlayerId, gameId: appearance.gameId, seasonId: 20262027, gameDate: appearance.gameDate,
+      gamesPlayed: 1, shutouts: 1, saves: appearance.saves, goalsAgainst: appearance.goalsAgainst,
+      shotsAgainst: appearance.shotsAgainst, timeOnIce: 3600 }];
+    const summary = (rows: unknown[]) => { const rawBody = JSON.stringify({ data: rows, total: rows.length });
+      return { scope, receipts: [{ url: nativeGoalieSummaryUrl(scope), rawBody, capturedAt: capture.cutoffAt,
+        bodySha256: createHash("sha256").update(rawBody).digest("hex") }] }; };
+    const input = { ...player, seasonId: 20262027, cutoffAt: capture.cutoffAt, shutoutSummary: summary(data) };
+    const result = buildNativeGoalieShutoutRates(input);
+    expect(result.policyVersion).toBe(NATIVE_GOALIE_SHUTOUT_POLICY_VERSION);
+    expect(result.targets).toEqual([expect.objectContaining({ targetKey: "SHUTOUTS_GOALIE", basis: "per_appearance", rate: 1 })]);
+    expect(buildNativeGoalieShutoutRates({ ...input, shutoutSummary: undefined }).targets).toEqual([]);
+    expect(buildNativeGoalieShutoutRates({ ...input, shutoutSummary: summary([]) }).targets).toEqual([]);
+    expect(buildNativeGoalieShutoutRates({ ...input, shutoutSummary: summary([...data, ...data]) }).targets).toEqual([]);
+    const original = structuredClone(appearance.finalBoxscore) as any;
+    const secondGame = { ...original.game, id: 31, date: "2026-09-26", startTime: "2026-09-26T01:00:00Z" };
+    Object.assign(original.rawRow, { game_id: 31, fetched_at: "2026-09-26T10:00:00Z" });
+    Object.assign(original.rawRow.payload, { id: 31, gameDate: secondGame.date, startTimeUTC: secondGame.startTime });
+    const second = baselineAppearanceFromBoxscore({ rawRow: original.rawRow, game: secondGame, nhlPlayerId: player.nhlPlayerId,
+      teamId: appearance.teamId, cutoffAt: capture.cutoffAt, population: "goalie" })!;
+    const twoScope = { ...scope, startDate: secondGame.date, approvedGameIds: [appearance.gameId, second.gameId] };
+    const twoSummary = summary(data); twoSummary.scope = twoScope; twoSummary.receipts[0].url = nativeGoalieSummaryUrl(twoScope);
+    expect(buildNativeGoalieShutoutRates({ ...input, appearances: [appearance, second], shutoutSummary: twoSummary }).targets).toEqual([]);
+    const fullBody = JSON.stringify({ total: 2, data: [...data, { ...data[0], gameId: second.gameId, gameDate: second.gameDate, shutouts: 0 }] });
+    twoSummary.receipts[0].rawBody = fullBody;
+    twoSummary.receipts[0].bodySha256 = createHash("sha256").update(fullBody).digest("hex");
+    expect(buildNativeGoalieShutoutRates({ ...input, appearances: [appearance, second], shutoutSummary: twoSummary }).targets[0].rate).toBe(0.5);
+    const bundle = buildGoalieContributionBundle({ seasonId: 20262027, cutoffAt: capture.cutoffAt,
+      issuedAt: "2026-09-28T13:00:00Z", expiresAt: "2026-10-01T00:00:00Z", scheduleRevision: "schedule",
+      snapshots: [{ snapshot: result, teamId: player.teamId, rosterRevision: player.rosterRevision }] });
+    expect(bundle.sources[0]).toMatchObject({ targetKey: "SHUTOUTS_GOALIE", mean: 1, released: false, basis: "per_appearance" });
+    expect(bundle.sources[0].allowedUses).toBeUndefined();
+  });
+  it("uses explicit summary credits across the full appearance denominator including relief while preserving old W policy", async () => {
+    const full = await captureNativeGoalieOutcomes(nativeGoalieOutcomeRows()), player = full.players[0];
+    const reliefRows = nativeGoalieOutcomeRows(), history = reliefRows.goaliesGameStats[0], raw = reliefRows.nhl_api_game_payloads_raw[0];
+    history.gameId = 31; history.games.id = 31;
+    Object.assign(history, { toi: "30:00", goalsAgainst: 2, saveShotsAgainst: "12/14" });
+    reliefRows.nhl_api_game_roster_spots[0].game_id = 31;
+    raw.id = 3101; raw.game_id = 31; raw.payload.id = 31;
+    raw.payload.homeTeam.score = 1; raw.payload.awayTeam.score = 2;
+    Object.assign(raw.payload.playerByGameStats.homeTeam.goalies[0], { starter: false, toi: "30:00", saves: 12,
+      goalsAgainst: 2, shotsAgainst: 14, saveShotsAgainst: "12/14", decision: null });
+    raw.payload.playerByGameStats.homeTeam.goalies.push({ playerId: 78, position: "G", starter: true, toi: "30:00",
+      saves: 0, shotsAgainst: 0, goalsAgainst: 0, saveShotsAgainst: "0/0", decision: "L" });
+    raw.payload.playerByGameStats.awayTeam.goalies[0].decision = "W";
+    const relief = await captureNativeGoalieOutcomes(reliefRows);
+    const appearances = [...player.appearances, ...relief.players[0].appearances];
+    const input = { ...player, appearances, seasonId: 20262027, cutoffAt: full.cutoffAt };
+    const oldHash = playerForecastSourcePayloadHash(buildNativeGoalieWinRates(input));
+    expect(buildNativeGoalieWinRates(input).targets).toEqual([]);
+    const scope = { nhlPlayerId: player.nhlPlayerId, seasonId: 20262027, startDate: "2026-09-27", endDate: "2026-09-27", approvedGameIds: [30, 31] };
+    const data = appearances.map(a => ({ playerId: player.nhlPlayerId, gameId: a.gameId, gameDate: a.gameDate,
+      gamesPlayed: 1, wins: a.gameId === 30 ? 1 : 0, losses: 0, otLosses: 0,
+      saves: a.saves, shotsAgainst: a.shotsAgainst, goalsAgainst: a.goalsAgainst,
+      timeOnIce: (a.finalBoxscore as BaselineBoxscoreReceipt).appearanceSeconds }));
+    const summary = (rows: typeof data) => { const rawBody = JSON.stringify({ total: rows.length, data: rows });
+      return { scope, receipts: [{ url: nativeGoalieSummaryUrl(scope), rawBody, capturedAt: full.cutoffAt,
+        bodySha256: createHash("sha256").update(rawBody).digest("hex") }] }; };
+    const result = buildNativeGoalieSummaryWinRates({ ...input, winSummary: summary(data) });
+    expect(result.policyVersion).toBe(NATIVE_GOALIE_SUMMARY_WIN_POLICY_VERSION);
+    expect(result.targets).toEqual([expect.objectContaining({ targetKey: "WINS_GOALIE", basis: "per_appearance", rate: 0.5,
+      recentGameIds: expect.arrayContaining([30, 31]) })]);
+    expect(buildNativeGoalieSummaryWinRates(input).targets).toEqual([]);
+    expect(buildNativeGoalieSummaryWinRates({ ...input, winSummary: summary(data.slice(0, 1)) }).targets).toEqual([]);
+    expect(playerForecastSourcePayloadHash(buildNativeGoalieWinRates(input))).toBe(oldHash);
+    const bundle = buildGoalieContributionBundle({ seasonId: 20262027, cutoffAt: full.cutoffAt,
+      issuedAt: "2026-09-28T13:00:00Z", expiresAt: "2026-10-01T00:00:00Z", scheduleRevision: "schedule",
+      snapshots: [{ snapshot: result, teamId: player.teamId, rosterRevision: player.rosterRevision }] });
+    expect(bundle.sources[0]).toMatchObject({ policyVersion: NATIVE_GOALIE_SUMMARY_WIN_POLICY_VERSION, mean: 0.5,
+      targetKey: "WINS_GOALIE", basis: "per_appearance", released: false });
+  });
+
+  it("explicitly produces native appearance-based win means without changing legacy rates or inventing shutouts", async () => {
+    const capture = await captureNativeGoalieOutcomes(nativeGoalieOutcomeRows()), player = capture.players[0];
+    const input = { ...player, seasonId: 20262027, cutoffAt: capture.cutoffAt };
+    expect(buildGoalieBaselineRates(input).targets).toEqual([]);
+    const snapshot = buildNativeGoalieWinRates(input);
+    expect(snapshot).toMatchObject({ policyVersion: NATIVE_GOALIE_WIN_POLICY_VERSION,
+      definitionHash: nativeGoalieWinDefinitionHash(20262027), validation: "unvalidated" });
+    expect(snapshot.targets).toEqual([expect.objectContaining({ targetKey: "WINS_GOALIE", basis: "per_appearance",
+      rate: 1, recentGameIds: [30], previousGameIds: [], sourceRows: [] })]);
+    expect(snapshot.missingTargetKeys).toContain("SHUTOUTS_GOALIE");
+    const bundle = buildGoalieContributionBundle({ seasonId: 20262027, cutoffAt: capture.cutoffAt,
+      issuedAt: "2026-09-28T13:00:00Z", expiresAt: "2026-10-04T00:00:00Z", scheduleRevision: "schedule-a",
+      snapshots: [{ snapshot, teamId: player.teamId, rosterRevision: player.rosterRevision }] });
+    expect(bundle.manifest).toMatchObject({ policyVersion: NATIVE_GOALIE_WIN_POLICY_VERSION, released: false });
+    expect(bundle.sources).toEqual([expect.objectContaining({ targetKey: "WINS_GOALIE", mean: 1,
+      basis: "per_appearance", participationIntegrated: false, released: false })]);
+    expect(bundle.sources[0].allowedUses).toBeUndefined();
+  });
+
+  it.each(["missing decision", "missing starter", "relief win", "loss"])("preserves the native appearance denominator for %s", async problem => {
+    const rows = nativeGoalieOutcomeRows(), own = rows.nhl_api_game_payloads_raw[0].payload.playerByGameStats.homeTeam;
+    if (problem === "missing decision") delete own.goalies[0].decision;
+    if (problem === "missing starter") delete own.goalies[0].starter;
+    if (problem === "relief win") {
+      own.goalies[0].starter = false;
+      own.goalies.push({ playerId: 78, position: "G", starter: true, toi: "00:01", saves: 0,
+        shotsAgainst: 0, goalsAgainst: 0, saveShotsAgainst: "0/0" });
+    }
+    if (problem === "loss") {
+      const body = rows.nhl_api_game_payloads_raw[0].payload;
+      body.homeTeam.score = 0; body.awayTeam.score = 1;
+      Object.assign(own.goalies[0], { decision: "L", goalsAgainst: 1, shotsAgainst: 25, saveShotsAgainst: "24/25" });
+      Object.assign(rows.goaliesGameStats[0], { goalsAgainst: 1, saveShotsAgainst: "24/25" });
+      Object.assign(body.playerByGameStats.awayTeam.goalies[0], { decision: "W", goalsAgainst: 0, shotsAgainst: 24, saveShotsAgainst: "24/24" });
+    }
+    const capture = await captureNativeGoalieOutcomes(rows);
+    const snapshot = buildNativeGoalieWinRates({ ...capture.players[0], seasonId: 20262027, cutoffAt: capture.cutoffAt });
+    if (problem.startsWith("missing")) {
+      expect(snapshot.targets).toEqual([]);
+      expect(snapshot.limitations.join(" ")).toContain("selected games: 30");
+    } else expect(snapshot.targets).toEqual([expect.objectContaining({ basis: "per_appearance", rate: problem === "loss" ? 0 : 1 })]);
+    expect(snapshot.missingTargetKeys).toContain("SHUTOUTS_GOALIE");
+  });
+
+  it("withholds all native win means when one selected appearance has missing outcome evidence", async () => {
+    const win = await captureNativeGoalieOutcomes(nativeGoalieOutcomeRows()), missingRows = nativeGoalieOutcomeRows();
+    const history = missingRows.goaliesGameStats[0], raw = missingRows.nhl_api_game_payloads_raw[0];
+    history.gameId = 31; history.games.id = 31;
+    missingRows.nhl_api_game_roster_spots[0].game_id = 31;
+    raw.id = 3101; raw.game_id = 31; raw.payload.id = 31;
+    delete raw.payload.playerByGameStats.homeTeam.goalies[0].decision;
+    const missing = await captureNativeGoalieOutcomes(missingRows);
+    const input = { ...win.players[0], seasonId: 20262027, cutoffAt: win.cutoffAt,
+      appearances: [...win.players[0].appearances, ...missing.players[0].appearances] };
+    expect(buildNativeGoalieWinRates(input).targets).toEqual([]);
+    const forged = structuredClone(input);
+    (forged.appearances[0].finalBoxscore as any).rawRow.payload.playerByGameStats.homeTeam.goalies[0].decision = "L";
+    expect(() => buildNativeGoalieWinRates(forged)).toThrow(/bound retained boxscore content/);
+    expect(() => buildNativeGoalieWinRates({ ...input, appearances: [input.appearances[0], input.appearances[0]] })).toThrow(/unique games/);
+    expect(() => buildNativeGoalieWinRates({ ...input, projections: [projection] })).toThrow(/without projections/);
+    const body = raw.payload;
+    body.homeTeam.score = 0; body.awayTeam.score = 1;
+    Object.assign(body.playerByGameStats.homeTeam.goalies[0], { decision: "L", goalsAgainst: 1, shotsAgainst: 25, saveShotsAgainst: "24/25" });
+    Object.assign(history, { goalsAgainst: 1, saveShotsAgainst: "24/25" });
+    Object.assign(body.playerByGameStats.awayTeam.goalies[0], { decision: "W", goalsAgainst: 0, shotsAgainst: 24, saveShotsAgainst: "24/24" });
+    const loss = await captureNativeGoalieOutcomes(missingRows);
+    expect(buildNativeGoalieWinRates({ ...input, appearances: [...win.players[0].appearances, ...loss.players[0].appearances] }).targets)
+      .toEqual([expect.objectContaining({ rate: 0.5, basis: "per_appearance", recentGameIds: [31, 30] })]);
+  });
+
+  it("captures native starter/decision provenance without creating W or SO forecast rates", async () => {
+    const capture = await captureNativeGoalieOutcomes(nativeGoalieOutcomeRows());
+    const player = capture.players[0];
+    expect(player.projections).toEqual([]);
+    expect(player.nativeOutcomes![0]).toMatchObject({ gameId: 30 });
+    expect(player.nativeOutcomes![0].receipt).toMatchObject({ officialStarter: true, officialDecision: "W",
+      winCredit: 1, shutoutCredit: null, qualificationEligible: false, forecastIssued: false,
+      conditioning: "positive_minute_historical_appearance", cutoffAt: capture.capturedAt,
+      sourceReceipt: { rawRowId: 3001, providerPayloadHash: "a".repeat(64),
+        fetchedAt: "2026-09-27T10:00:00.000123+00:00" } });
+    const before = JSON.stringify(capture);
+    await expect(persistCapturedGoalieBaselineInputs({ db: {} as never, seasonId: 20262027, capture }))
+      .resolves.toMatchObject({ dryRun: true, receipts: [{ payloadHash: player.sourceWatermark, inserted: false }] });
+    expect(JSON.stringify(capture)).toBe(before);
+    const rates = buildGoalieBaselineRates({ ...player, seasonId: 20262027, cutoffAt: capture.cutoffAt });
+    expect(player.appearances[0].saves).toBe(24);
+    // A current-season appearance alone cannot create the missing ability prior.
+    expect(rates.targets).toEqual([]);
+    expect(rates.missingTargetKeys).toEqual(expect.arrayContaining(["WINS_GOALIE", "SHUTOUTS_GOALIE"]));
+    const legacy = structuredClone(capture);
+    delete legacy.players[0].nativeOutcomes;
+    const { sourceWatermark: _old, ...legacyPlayer } = legacy.players[0];
+    legacy.players[0].sourceWatermark = playerForecastSourcePayloadHash({ basis: legacy.basis,
+      capturedAt: legacy.capturedAt, ...legacyPlayer });
+    await expect(persistCapturedGoalieBaselineInputs({ db: {} as never, seasonId: 20262027, capture: legacy }))
+      .resolves.toMatchObject({ dryRun: true });
+  });
+
+  it.each(["missing starter", "missing decision", "contradictory decision", "relief win", "invalid opposing components"])(
+    "keeps native captured outcomes honest for %s without losing volume evidence", async problem => {
+      const rows = nativeGoalieOutcomeRows(), own = rows.nhl_api_game_payloads_raw[0].payload.playerByGameStats.homeTeam;
+      if (problem === "missing starter") delete own.goalies[0].starter;
+      if (problem === "missing decision") delete own.goalies[0].decision;
+      if (problem === "contradictory decision") own.goalies[0].decision = "L";
+      if (problem === "invalid opposing components") {
+        const opposing = rows.nhl_api_game_payloads_raw[0].payload.playerByGameStats.awayTeam.goalies[0];
+        opposing.shotsAgainst = 26; opposing.saveShotsAgainst = "24/26";
+      }
+      if (problem === "relief win") {
+        own.goalies[0].starter = false;
+        own.goalies.push({ playerId: 78, position: "G", starter: true, toi: "00:01",
+          saves: 0, shotsAgainst: 0, goalsAgainst: 0, saveShotsAgainst: "0/0" });
+      }
+      const capture = await captureNativeGoalieOutcomes(rows), appearance = capture.players[0].appearances[0],
+        outcome = capture.players[0].nativeOutcomes![0].receipt;
+      expect(appearance.saves).toBe(24);
+      if (problem === "missing decision") expect(outcome).toMatchObject({
+        officialStarter: true, officialDecision: null, winCredit: null, shutoutCredit: null });
+      else if (problem === "relief win") expect(outcome).toMatchObject({
+        officialStarter: false, officialDecision: "W", winCredit: 1, shutoutCredit: null });
+      else expect(outcome).toBeNull();
+      await expect(persistCapturedGoalieBaselineInputs({ db: {} as never, seasonId: 20262027, capture }))
+        .resolves.toMatchObject({ dryRun: true });
+      const rates = buildGoalieBaselineRates({ ...capture.players[0], seasonId: 20262027, cutoffAt: capture.cutoffAt });
+      expect(rates.targets.some(row => row.basis === "per_start")).toBe(false);
+    });
+
+  it("rejects rehashed verified outcomes for invalid auxiliary context while preserving selected volume", async () => {
+    const verified = await captureNativeGoalieOutcomes(nativeGoalieOutcomeRows()), rows = nativeGoalieOutcomeRows();
+    const opposing = rows.nhl_api_game_payloads_raw[0].payload.playerByGameStats.awayTeam.goalies[0];
+    opposing.shotsAgainst = 26; opposing.saveShotsAgainst = "24/26";
+    const capture = await captureNativeGoalieOutcomes(rows);
+    expect(capture.players[0].appearances[0].saves).toBe(24);
+    expect(capture.players[0].nativeOutcomes![0].receipt).toBeNull();
+    await expect(persistCapturedGoalieBaselineInputs({ db: {} as never, seasonId: 20262027, capture }))
+      .resolves.toMatchObject({ dryRun: true });
+    capture.players[0].nativeOutcomes = structuredClone(verified.players[0].nativeOutcomes);
+    const { sourceWatermark: _old, ...player } = capture.players[0];
+    capture.players[0].sourceWatermark = playerForecastSourcePayloadHash({ basis: capture.basis,
+      capturedAt: capture.capturedAt, ...player });
+    await expect(persistCapturedGoalieBaselineInputs({ db: {} as never, seasonId: 20262027, capture }))
+      .rejects.toThrow(/native goalie outcomes do not match/);
+  });
+
+  it.each(["win", "starter", "source clock", "withheld receipt", "wrong game", "duplicate game"])(
+    "rejects rehashed captured native outcome tampering: %s", async problem => {
+      const capture = await captureNativeGoalieOutcomes(nativeGoalieOutcomeRows()), entry = capture.players[0].nativeOutcomes![0];
+      if (problem === "win") entry.receipt!.winCredit = 0;
+      if (problem === "starter") entry.receipt!.officialStarter = false;
+      if (problem === "source clock") entry.receipt!.sourceReceipt.fetchedAt = "2026-09-27T10:00:01Z";
+      if (problem === "withheld receipt") entry.receipt = null;
+      if (problem === "wrong game") entry.gameId = 31;
+      if (problem === "duplicate game") capture.players[0].nativeOutcomes!.push(structuredClone(entry));
+      const { sourceWatermark: _old, ...player } = capture.players[0];
+      capture.players[0].sourceWatermark = playerForecastSourcePayloadHash({ basis: capture.basis,
+        capturedAt: capture.capturedAt, ...player });
+      await expect(persistCapturedGoalieBaselineInputs({ db: {} as never, seasonId: 20262027, capture }))
+        .rejects.toThrow(/native goalie outcomes do not match/);
+    });
+
   it("retains per-target source exclusions and never supplies missing priors or legacy starts", () => {
     const input = { playerId: 7, nhlPlayerId: 77, seasonId: 20262027,
       cutoffAt, sourceWatermark: "w", projections: [projection], appearances: [] };
@@ -481,6 +798,25 @@ describe("goalie planning use", () => {
     const forecast = resolvePlanningContributions(goalieFixture([appearance], original)).forecasts[0];
     expect(forecast.stats.SAVES_GOALIE).toBeNull();
     expect(forecast.contributions?.SAVES_GOALIE.allowedUses.totals).toBe(false);
+  });
+  it("uses appearance probability for native win means and never substitutes pStart", () => {
+    const wins = { ...source, policyVersion: NATIVE_GOALIE_WIN_POLICY_VERSION, basis: "per_appearance" as const };
+    const known = resolvePlanningContributions(goalieFixture([wins], { ...original, appearanceProbability: 0.8 })).forecasts[0];
+    expect(known.stats.WINS_GOALIE).toBeCloseTo(0.4);
+    const unknown = resolvePlanningContributions(goalieFixture([wins], original)).forecasts[0];
+    expect(unknown.stats.WINS_GOALIE).toBeNull();
+  });
+  it("preserves coherent volume means through appearance conditioning without inferring missing participation", () => {
+    const volumes: ContributionSource[] = Object.entries({ SAVES_GOALIE: 18, GOALS_AGAINST_GOALIE: 1,
+      SHOTS_AGAINST_GOALIE: 19, GOALIE_MINUTES: 45 }).map(([targetKey, mean]) => ({ ...source,
+      sourceId: `volume-${targetKey}`, policyVersion: NATIVE_GOALIE_VOLUME_POLICY_VERSION, targetKey, mean,
+      unit: targetKey === "GOALIE_MINUTES" ? "minutes" : "count", basis: "per_appearance" }));
+    const known = resolvePlanningContributions(goalieFixture(volumes, { ...original, startProbability: 0.3, appearanceProbability: 0.5 })).forecasts[0];
+    expect(known.stats).toMatchObject({ SAVES_GOALIE: 9, GOALS_AGAINST_GOALIE: 0.5,
+      SHOTS_AGAINST_GOALIE: 9.5, GOALIE_MINUTES: 22.5 });
+    expect(known.startProbability).toBeNull();
+    const unknown = resolvePlanningContributions(goalieFixture(volumes, original)).forecasts[0];
+    expect(volumes.every(volume => unknown.stats[volume.targetKey] === null)).toBe(true);
   });
   it("rejects overfull competing starter mass, including an unconditional original", () => {
     const snapshot = goalieFixture([source], { ...original, stats: { WINS_GOALIE: 0.3 } });

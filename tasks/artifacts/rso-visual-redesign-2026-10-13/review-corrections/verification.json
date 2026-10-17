@@ -1,0 +1,68 @@
+{
+  "sourceFrozen": true,
+  "ownedPaths": [
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx",
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx",
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss"
+  ],
+  "combinedSourcePaths": 28,
+  "changedSinceCacheFreeze": [
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx",
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx",
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss"
+  ],
+  "tests": {
+    "command": "npm test -- --run components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx components/RosterScheduleOptimizer/CandidateCard.test.tsx components/RosterScheduleOptimizer/InfoTooltip.test.tsx components/RosterScheduleOptimizer/TeamScheduleContext.test.tsx __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx --reporter=json --outputFile=../tasks/artifacts/rso-visual-redesign-2026-10-13/review-corrections/tests.json",
+    "passed": 208,
+    "failed": 0,
+    "files": 5,
+    "success": true
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 0,
+    "exitCode": 0,
+    "paths": [
+      "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx",
+      "web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx"
+    ]
+  },
+  "browser": {
+    "freshContexts": 8,
+    "externalRequests": 0,
+    "productionRequests": 0,
+    "accountRequests": 0,
+    "desktop": [
+      1440,
+      900
+    ],
+    "mobile": [
+      390,
+      844
+    ],
+    "narrowMobile": [
+      320,
+      844
+    ],
+    "newChecks": [
+      "Manage minimum width/height 40 desktop,44 mobile",
+      "Protection target nonoverlap",
+      "Repeated Manage keyboard and corner pointer/touch toggle",
+      "Find & filter keyboard toggle/minimum width/height40 desktop,44mobile"
+    ],
+    "pixelsInspected": [
+      "after-complete-1440.png",
+      "after-complete-390.png",
+      "after-complete-320.png",
+      "after-candidates-390.png"
+    ]
+  },
+  "sharedTypeScript": {
+    "runByThisConsumer": false,
+    "ownerThreadId": "01a135c8-567b-71d2-b610-6b78f3cc40d7",
+    "status": "pending_owner_combined_check"
+  },
+  "reviewStatus": "resubmitted_pending_independent_review",
+  "mainSha256": "62e8342f337d7a1a106e14504fe688ddf739f733442482b9f1083274c34cbae7",
+  "nearestTestSha256": "634b7428d566fcba65fc44c33e8c6b86bcc562d025c034fb688490f8df37d6c5"
+}

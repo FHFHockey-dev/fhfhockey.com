@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest __tests__/pages/api/v1/db/update-roster-optimizer-schedule.test.ts -t forwards captured source-day coverage
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:50664) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/api/v1/db/update-roster-optimizer-schedule.test.ts (44 tests | 43 skipped) 3ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 43 skipped (44)
+   Start at  21:30:42
+   Duration  536ms (transform 73ms, setup 3ms, collect 100ms, tests 3ms, environment 233ms, prepare 42ms)
+

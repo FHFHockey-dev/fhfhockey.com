@@ -1,0 +1,6 @@
+
+Running 1 test using 1 worker
+
+  ✓  1 [chromium] › e2e/roster-schedule-optimizer.spec.ts:1565:5 › Audit1 native candidate Worker finds complete swaps before any plan is selected (1.2s)
+
+  1 passed (1.8s)

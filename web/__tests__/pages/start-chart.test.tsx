@@ -1,15 +1,17 @@
 import React from "react";
 import { selectTeamFormGames, summarizeTeamForm } from "lib/projections/startChartTeamForm";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildBoardValidationDisclosure } from "lib/projections/starterBoardValidation";
 import { BOARD_CATEGORIES } from "lib/projections/starterBoardScoring";
+import { normalizeStartChartResponse } from "lib/projections/startChartContract";
 
 const swrState = vi.hoisted(() => ({
   data: null as any,
   error: null as Error | null,
   isLoading: false,
   mutate: vi.fn(),
+  request: vi.fn(),
 }));
 
 const deploymentState = vi.hoisted(() => ({ data: undefined as any, error: null as Error | null, request: vi.fn(), mutate: vi.fn() }));
@@ -169,6 +171,20 @@ const player = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
+function expiringExpectationData(date: string, expiresAt: string, goals = 1) {
+  return normalizeStartChartResponse({ ...buildApiData(), date, requestedDate: date, resolvedDate: date,
+    contractVersion: 2, gameExpectations: { version: "forge-game-expectations-v1", readAsOf: new Date().toISOString(),
+      basis: "expected", expiresAt },
+    games: [{ id: date === "2026-02-07" ? 1001 : 1002, date, homeTeamId: 10, awayTeamId: 8,
+      homeGoalies: [{ player_id: 9001, name: "Synthetic expiring goalie", start_probability: 0.75 }] }],
+    players: [player({ name: `Synthetic expiring player ${date}`, game_id: date === "2026-02-07" ? 1001 : 1002,
+      forecast: { conditioning: "unconditional", participationProbability: null, expected: { GOALS: goals } },
+      gameExpectation: { playerId: "7", scheduleRevision: `schedule-${date}`, targets: { GOALS: {
+        expected: goals, conditional: null, basis: "unconditional_game", unit: "count",
+        allowedUses: { totals: true, comparison: true }, expiresAt,
+      } } } })] });
+}
+
 vi.mock("next/head", () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
@@ -193,6 +209,7 @@ vi.mock("swr", () => ({
       deploymentState.request(key);
       return deploymentState;
     }
+    swrState.request(key);
     return ({
     data: swrState.data,
     error: swrState.error,
@@ -334,6 +351,7 @@ describe("StartChartPage", () => {
     swrState.data = buildApiData();
     swrState.error = null;
     swrState.isLoading = false;
+    swrState.request.mockClear();
     routerState.router.query = {};
     routerState.router.replace.mockImplementation(async (location: any) => {
       routerState.router.query = location.query ?? {};
@@ -373,6 +391,63 @@ describe("StartChartPage", () => {
     expect(screen.queryByText("Published game forecasts are disabled.")).toBeNull();
   });
 
+  it("preserves only public forecast rejection details through the contract", () => {
+    const normalized = normalizeStartChartResponse({ ...buildApiData(), forecastAdmission: {
+      exclusionCounts: { missing_participation: 1, missing_target: 2, stale_source: -1, future_input: "3" },
+      exclusions: [{ gameId: "1001", playerId: "7", targetKey: "GOALS", reasons: ["missing_target"],
+        privateEvidence: { raw: "private-source" } }, { gameId: "1001", reasons: ["missing_participation"] }],
+      privateReceipt: "private-receipt",
+    } });
+    expect(normalized.forecastAdmission).toEqual({
+      exclusionCounts: { missing_participation: 1, missing_target: 2 },
+      exclusions: [{ gameId: "1001", playerId: "7", targetKey: "GOALS", reasons: ["missing_target"] },
+        { gameId: "1001", reasons: ["missing_participation"] }],
+    });
+    expect(JSON.stringify(normalized)).not.toContain("private-source");
+    expect(JSON.stringify(normalized)).not.toContain("private-receipt");
+    expect(normalizeStartChartResponse(buildApiData()).forecastAdmission).toBeUndefined();
+  });
+
+  it("explains withheld forecasts without claiming publication or inventing values", () => {
+    swrState.data = normalizeStartChartResponse({ ...buildApiData(), contractVersion: 2,
+      games: [{ id: 1001, date: "2026-02-07", homeTeamId: 10, awayTeamId: 8 }],
+      forecastAdmission: { exclusionCounts: { missing_participation: 1, use_not_approved: 1 }, exclusions: [
+        { gameId: "1001", reasons: ["missing_participation", "use_not_approved"] },
+      ] },
+    });
+    render(<StartChartPage />);
+    const exclusions = screen.getByRole("status", { name: "Forecast exclusions" });
+    expect(exclusions.textContent).toContain("Participation evidence unavailable: 1");
+    expect(exclusions.textContent).toContain("Forecast use not approved: 1");
+    expect(screen.getByText("No admitted game forecasts")).toBeTruthy();
+    expect(screen.queryByText("Latest published projections")).toBeNull();
+    expect(screen.queryByText(/canonical projection rows are not ready/)).toBeNull();
+    expect(document.querySelectorAll('[class*="cardList"] li')).toHaveLength(0);
+  });
+
+  it.each([false, true])("describes overdue updates with admitted forecasts=%s", admitted => {
+    swrState.data = normalizeStartChartResponse({ ...buildApiData(), contractVersion: 2,
+      games: [{ id: 1001, date: "2026-02-07", homeTeamId: 10, awayTeamId: 8 }],
+      gameRevisions: admitted ? [{ gameId: 1001, revisionId: "fixture-revision", runId: "fixture-run",
+        decisionAsOf: "2026-02-07T12:00:00Z", publishedAt: "2026-02-07T12:01:00Z" }] : [],
+      players: admitted ? [player()] : [],
+      sourceStatus: { ...readySourceStatus, projection: { ...readySourceStatus.projection,
+        updatedAt: admitted ? "2026-02-07T12:01:00Z" : null } },
+      newsStatus: { available: true, pendingGames: 1, freshnessBreachedGames: 1, unresolvedConflicts: 0 },
+    });
+    const view = render(<StartChartPage />);
+    expect(screen.getByText(/Five-minute update target exceeded/).textContent).toContain(admitted
+      ? "Showing the last successful projections."
+      : "No admitted forecasts are available while updates are pending.");
+    if (!admitted) {
+      expect(screen.queryByText(/Showing the last successful projections/)).toBeNull();
+      swrState.data = { ...swrState.data, newsStatus: { ...swrState.data.newsStatus, pendingGames: 0 } };
+      view.rerender(<StartChartPage />);
+      expect(screen.getByText(/Five-minute update target exceeded/).textContent).toContain("No admitted forecasts are available.");
+      expect(screen.queryByText(/Showing the last successful projections/)).toBeNull();
+    }
+  });
+
   it("replaces historical URLs with today and prevents past-date selection", () => {
     routerState.router.query = { date: "2026-02-05", position: "LW" };
     render(<StartChartPage />);
@@ -395,13 +470,16 @@ describe("StartChartPage", () => {
     })] };
     routerState.router.query = { position: "C" };
     const view = render(<StartChartPage />);
+    expect(screen.getByText(/Point total unavailable: missing/)).toBeTruthy();
     fireEvent.change(screen.getByLabelText("Compare"), { target: { value: "categories" } });
     expect((screen.getByLabelText("Category") as HTMLSelectElement).value).toBe("PP_POINTS");
     const panel = document.getElementById("start-chart-panel-C")!;
     expect(panel.querySelector("strong")?.textContent).toBe(value.toFixed(2));
     expect(panel.querySelector("ol li")?.textContent).toContain("PP POINTS");
+    expect(screen.queryByText(/Point total unavailable: missing/)).toBeNull();
     fireEvent.change(screen.getByLabelText("Category"), { target: { value: "SHOTS_ON_GOAL" } });
     expect(panel.querySelector("strong")?.textContent).toBe("—");
+    expect(screen.getByText("SHOTS ON GOAL unavailable for this player.")).toBeTruthy();
     view.rerender(<StartChartPage />);
     expect((screen.getByLabelText("Category") as HTMLSelectElement).value).toBe("SHOTS_ON_GOAL");
     fireEvent.change(screen.getByLabelText("Compare"), { target: { value: "points" } });
@@ -420,6 +498,304 @@ describe("StartChartPage", () => {
     render(<StartChartPage />);
     fireEvent.change(screen.getByLabelText("Compare"), { target: { value: "categories" } });
     expect((screen.getByLabelText("Category") as HTMLSelectElement).value).toBe("SHOTS_ON_GOAL");
+  });
+
+  it.each([0, 0.4])("keeps conditional PPP value %s labeled if playing after category selection", value => {
+    swrState.data = normalizeStartChartResponse({ ...buildApiData(), contractVersion: 2, players: [player({
+      forecast: { conditioning: "conditional_playing", participationProbability: null, probabilityStatus: "missing",
+        expected: null, conditional: { PP_POINTS: value }, distributionStatus: "means_only_unvalidated",
+        evidence: [], conflicts: [] },
+    })] });
+    const original = JSON.stringify(swrState.data);
+    routerState.router.query = { position: "C" };
+    render(<StartChartPage />);
+    const row = document.querySelector("#start-chart-panel-C ol > li")!;
+    expect(screen.getByText("FP if playing", { exact: true })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Compare"), { target: { value: "categories" } });
+    expect((screen.getByLabelText("Category") as HTMLSelectElement).value).toBe("PP_POINTS");
+    expect(row.querySelector('[class*="primaryProjection"] strong')?.textContent).toBe(value.toFixed(2));
+    expect(screen.getByText("PP POINTS if playing", { exact: true })).toBeTruthy();
+    expect(row.querySelector('[class*="playerRank"]')?.textContent).toBe("1");
+    expect(JSON.stringify(swrState.data)).toBe(original);
+  });
+
+  it("consumer: exact-game conditional SOG shows support and original clocks without participation, totals or primary rank", () => {
+    // Synthetic canonical DTO; no retained private packet or release permission is substituted.
+    const support = "SOG support: 2 positive-minute appearances; dates 2026-02-01, 2026-02-04.";
+    const originalClock = "Original conditional forecast generated: 2026-02-07T15:30:00Z; original input cutoff: 2026-02-07T15:00:00Z.";
+    swrState.data = normalizeStartChartResponse({ ...buildApiData(), contractVersion: 2, projectionRunId: null,
+      gameRevisions: [], gameExpectations: { version: "forge-game-expectations-v1", readAsOf: "2026-02-07T17:00:00Z", basis: "per_appearance" },
+      games: [{ id: 1001, date: "2026-02-07", homeTeamId: 10, awayTeamId: 8 }],
+      players: [player({ player_id: 77, name: "Synthetic exact-game SOG skater", row_key: "synthetic-sog:1001:7",
+        forecast: { conditioning: "conditional_playing", participationProbability: null, probabilityStatus: "missing",
+          expected: null, conditional: { SHOTS_ON_GOAL: 2.5 } },
+        gameExpectation: { playerId: "7", scheduleRevision: "schedule-original", rosterRevision: "roster-7",
+          appearanceProbability: null, startProbability: null, targets: { SHOTS_ON_GOAL: {
+            expected: null, conditional: 2.5, basis: "per_appearance", unit: "count",
+            allowedUses: { assignment: false, totals: false, comparison: false, conditionalTieBreak: true },
+            sourceKind: "baseline", sourceIds: ["synthetic-exact-game-sog"], methodVersions: ["current-season-sog-appearance-mean-v1"],
+            cutoffAt: "2026-02-07T15:00:00Z", issuedAt: "2026-02-07T16:00:00Z", expiresAt: "2026-02-07T22:00:00Z",
+            sources: [{ sourceId: "synthetic-exact-game-sog", kind: "baseline", methodVersion: "current-season-sog-appearance-mean-v1",
+              sourceWatermark: "synthetic-input", cutoffAt: "2026-02-07T15:00:00Z", issuedAt: "2026-02-07T16:00:00Z", expiresAt: "2026-02-07T22:00:00Z" }],
+            participation: null, participationRevisionId: null, reasons: ["missing_participation"],
+            limitations: [support, originalClock, "Calibration unavailable. This source covers only the bound game."] } } } })] });
+    const original = JSON.stringify(swrState.data);
+    render(<StartChartPage />);
+    const row = document.querySelector("#start-chart-panel-C ol > li")!;
+    const value = () => row.querySelector('[class*="primaryProjection"] strong')?.textContent;
+    expect(value()).toBe("—");
+    expect(screen.getByText("Participation unknown", { exact: true })).toBeTruthy();
+    expect(screen.getByText(/Primary rank unavailable/)).toBeTruthy();
+    const details = screen.getByText("Projection details and evidence").closest("details")!;
+    details.open = true; fireEvent(details, new Event("toggle"));
+    const sources = screen.getByText("Category sources and freshness").closest("details")!;
+    sources.open = true; fireEvent(sources, new Event("toggle"));
+    expect(details.open && sources.open).toBe(true);
+    expect(sources.textContent).toContain(support); expect(sources.textContent).toContain(originalClock);
+    expect(sources.textContent).toContain("Original baseline cutoff 2026-02-07T15:00:00Z; issued 2026-02-07T16:00:00Z");
+    expect(sources.textContent).toContain("Calibration unavailable. This source covers only the bound game.");
+    expect(screen.queryByText(/Participation model estimate|Confirmed out/)).toBeNull();
+    fireEvent.change(screen.getByLabelText("Compare"), { target: { value: "categories" } });
+    expect(screen.getByText("SHOTS ON GOAL if playing", { exact: true })).toBeTruthy(); expect(value()).toBe("2.50");
+    expect(row.querySelector('[class*="playerRank"]')?.textContent).toBe("—");
+    fireEvent.change(screen.getByLabelText("Comparison basis"), { target: { value: "expected" } });
+    expect(value()).toBe("—"); expect(row.querySelector('[class*="playerRank"]')?.textContent).toBe("—");
+    fireEvent.change(screen.getByLabelText("Comparison basis"), { target: { value: "per_appearance" } });
+    expect(value()).toBe("2.50"); expect(JSON.stringify(swrState.data)).toBe(original);
+  });
+
+  it("uses a single daily expectation basis across players and retains source clocks when switching", () => {
+    const target = (expected: number | null, conditional: number | null) => ({ expected, conditional,
+      basis: "per_appearance", unit: "count", allowedUses: { totals: true, comparison: true, conditionalTieBreak: true },
+      sourceKind: "baseline", sourceIds: ["synthetic-original"], methodVersions: ["fixture-v1"], sourceWatermarks: ["raw-fixture"],
+      cutoffAt: "2026-02-07T10:00:00Z", issuedAt: "2026-02-07T11:00:00Z", expiresAt: "2026-02-07T23:00:00Z", reasons: [] });
+    swrState.data = normalizeStartChartResponse({ ...buildApiData(), contractVersion: 2,
+      gameExpectations: { version: "forge-game-expectations-v1", readAsOf: "2026-02-07T17:00:00Z", basis: "per_appearance" },
+      players: [player({ name: "Synthetic conditional", forecast: { participationProbability: null },
+        gameExpectation: { playerId: "7", scheduleRevision: "schedule-original", rosterRevision: "roster-original",
+          targets: { PP_POINTS: target(0.1, 0.4) } } }),
+      player({ player_id: 88, row_key: "synthetic-88", name: "Synthetic expected", forecast: { participationProbability: null },
+        gameExpectation: { playerId: "8", scheduleRevision: "schedule-original", targets: { PP_POINTS: target(0.3, null) } } })] });
+    const original = JSON.stringify(swrState.data);
+    render(<StartChartPage />);
+    expect(swrState.request).toHaveBeenCalledWith("/api/v1/start-chart?date=2026-02-07&forecast_source=game_expectations");
+    expect(screen.getByText("Daily game expectations")).toBeTruthy();
+    expect(screen.getByText(/Read 2026-02-07T17:00:00Z/)).toBeTruthy();
+    expect(screen.queryByText(/Published 2026-02-07T17:00:00Z/)).toBeNull();
+    fireEvent.change(screen.getByLabelText("Compare"), { target: { value: "categories" } });
+    const values = () => Array.from(document.querySelectorAll('#start-chart-panel-C [class*="primaryProjection"] strong')).map(row => row.textContent);
+    expect(values()).toEqual(["0.40", "—"]);
+    expect(screen.getAllByText("PP POINTS if playing", { exact: true })).toHaveLength(2);
+    expect(screen.getAllByText("Power-play role: Unavailable. Current role evidence is unavailable.")).toHaveLength(2);
+    fireEvent.change(screen.getByLabelText("Comparison basis"), { target: { value: "expected" } });
+    expect(values()).toEqual(["0.30", "0.10"]);
+    expect(screen.queryByText("PP POINTS if playing", { exact: true })).toBeNull();
+    expect(screen.getAllByText(/Valid from cutoff 2026-02-07T10:00:00Z; composite issuance 2026-02-07T11:00:00Z; expires 2026-02-07T23:00:00Z/)).toHaveLength(2);
+    expect(JSON.stringify(swrState.data)).toBe(original);
+  });
+
+  it.each(["per_start", "per_appearance"])("keeps conditional goalie %s heads separate and labels their actual basis", basis => {
+    swrState.data = normalizeStartChartResponse({ ...buildApiData(), contractVersion: 2,
+      gameExpectations: { version: "forge-game-expectations-v1", readAsOf: "2026-02-07T17:00:00Z", basis },
+      players: [player({ positions: ["G"], forecast: { participationProbability: null },
+        gameExpectation: { playerId: "7", scheduleRevision: "schedule-original",
+          powerPlayRole: { value: null, status: "not_applicable", reason: "not_applicable", source: null }, targets: { SAVES_GOALIE: {
+          expected: null, conditional: 25, basis, unit: "count", allowedUses: { conditionalTieBreak: true },
+        }, WINS_GOALIE: { expected: null, conditional: 0.5, basis: basis === "per_start" ? "per_appearance" : "per_start",
+          unit: "count", allowedUses: { conditionalTieBreak: true } } } } })] });
+    routerState.router.query = { position: "G" };
+    render(<StartChartPage />);
+    const condition = basis === "per_start" ? "if starting" : "if playing";
+    expect(screen.getByText("Power-play role: Not applicable (goalie).")).toBeTruthy();
+    expect(screen.getByText(`FP ${condition}`, { exact: true })).toBeTruthy();
+    expect(screen.getByText(/start unknown/)).toBeTruthy();
+    expect(screen.getByText(`Saves ${condition}`, { exact: true }).nextSibling?.textContent).toBe("25.0");
+    expect(screen.getByText("Win", { exact: true }).nextSibling?.textContent).toBe("—");
+    expect(screen.getByText(/Primary rank unavailable/)).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Compare"), { target: { value: "categories" } });
+    expect(screen.getByText(`SAVES GOALIE ${condition}`, { exact: true })).toBeTruthy();
+    expect(document.querySelector('#start-chart-panel-G [class*="primaryProjection"] strong')?.textContent).toBe("25.00");
+    expect(document.querySelector('#start-chart-panel-G [class*="playerRank"]')?.textContent).toBe("—");
+  });
+
+  it("preserves source assumptions and a supplied probability without inventing confirmation or model status", () => {
+    swrState.data = normalizeStartChartResponse({ ...buildApiData(), contractVersion: 2,
+      gameExpectations: { version: "forge-game-expectations-v1", readAsOf: "2026-02-07T17:00:00Z", basis: "per_start" },
+      players: [player({ positions: ["G"], start_probability: 0.75, confirmed_status: null,
+        forecast: { participationProbability: 0.75 },
+        gameExpectation: { playerId: "7", scheduleRevision: "schedule-original", startProbability: 0.75,
+          limitations: ["Fixture source assumes zero relief minutes."], targets: { SAVES_GOALIE: {
+            expected: null, conditional: 25, basis: "per_start", unit: "count", allowedUses: { conditionalTieBreak: true },
+            limitations: ["Saves conditional on starting; no relief contribution."],
+          } } } })] });
+    routerState.router.query = { position: "G" };
+    render(<StartChartPage />);
+    expect(screen.getByText(/Starting probability 75.*calibration unavailable/)).toBeTruthy();
+    expect(screen.getByText("Fixture source assumes zero relief minutes.")).toBeTruthy();
+    expect(screen.getByText(/Saves conditional on starting; no relief contribution/)).toBeTruthy();
+    expect(screen.queryByText(/uncalibrated model|confirmed evidence|Modeled participation/)).toBeNull();
+  });
+
+  it.each([
+    { name: "explicit model", version: "skater-participation-frequency-v1", event: "positive_minutes", probability: 0.75, totals: true, recognized: true },
+    { name: "frozen skater model", version: "skater-frozen-window-appearance-frequency-v1", event: "positive_minutes", probability: 0.75, totals: true, recognized: true },
+    { name: "goalie appearance model", version: "goalie-appearance-frequency-v1", event: "positive_minutes", probability: 0.75, totals: true, recognized: true },
+    { name: "frozen goalie appearance model", version: "goalie-frozen-window-appearance-frequency-v1", event: "positive_minutes", probability: 0.75, totals: true, recognized: true },
+    { name: "modeled zero", version: "skater-participation-frequency-v1", event: "positive_minutes", probability: 0, totals: true, recognized: true },
+    { name: "totals denied", version: "skater-participation-frequency-v1", event: "positive_minutes", probability: 0.75, totals: false, recognized: true },
+    { name: "absent metadata", version: null, event: "positive_minutes", probability: 0.75, totals: true, recognized: false },
+    { name: "unknown version", version: "skater-participation-frequency-v2", event: "positive_minutes", probability: 0.75, totals: true, recognized: false },
+    { name: "different event", version: "skater-participation-frequency-v1", event: "started", probability: 0.75, totals: true, recognized: false },
+  ])("preserves only the public participation model contract and labels $name truthfully", ({ version, event, probability, totals, recognized }) => {
+    const model = { version, event, probabilityStatus: "uncalibrated_model", calibration: "unavailable",
+      inputHash: "a".repeat(64), evidenceHashes: ["b".repeat(64)], sampleSize: 20,
+      limitations: ["Synthetic model is uncalibrated."], numerator: 15, denominator: 20,
+      selectedGameIds: [1234], historyIDs: ["PRIVATE_HISTORY_SENTINEL"] };
+    const input = { ...buildApiData(), contractVersion: 2,
+      gameExpectations: { version: "forge-game-expectations-v1", readAsOf: "2026-02-07T17:00:00Z", basis: "per_appearance" },
+      players: [player({ forecast: { participationProbability: totals ? probability : null },
+        gameExpectation: { playerId: "7", scheduleRevision: "schedule-original", appearanceProbability: totals ? probability : null,
+          targets: { GOALS: { expected: probability * 2, conditional: 2, basis: "per_appearance", unit: "count",
+            allowedUses: { totals, comparison: totals, conditionalTieBreak: true }, participationRevisionId: "synthetic-participation",
+            participation: { revisionId: "synthetic-participation", basis: "appearance", probability,
+              cutoffAt: "2026-02-07T15:00:00Z", issuedAt: "2026-02-07T16:00:00Z", expiresAt: "2026-02-07T23:00:00Z",
+              ...(version ? { model } : {}) } } } } })] };
+    const original = JSON.stringify(input);
+    swrState.data = normalizeStartChartResponse(input);
+    const receipt = swrState.data.players[0].gameExpectation.targets.GOALS.participation;
+    expect(receipt.probability).toBe(totals ? probability : null);
+    if (recognized) expect(receipt.model).toEqual({ version, event: "positive_minutes",
+      probabilityStatus: "uncalibrated_model", calibration: "unavailable", inputHash: model.inputHash,
+      evidenceHashes: model.evidenceHashes, limitations: model.limitations, sampleSize: totals ? 20 : null });
+    else expect(receipt.model).toBeUndefined();
+    expect(JSON.stringify(receipt)).not.toMatch(/numerator|denominator|selectedGameIds|historyIDs|PRIVATE_HISTORY_SENTINEL/);
+    expect(JSON.stringify(input)).toBe(original);
+    render(<StartChartPage />);
+    if (recognized) {
+      expect(screen.getByText(/Participation model estimate · calibration unavailable/)).toBeTruthy();
+      expect(screen.getByText(/Synthetic model is uncalibrated/)).toBeTruthy();
+      if (totals) expect(screen.getByText(`Participation model estimate ${Math.round(probability * 100)}%`, { exact: true })).toBeTruthy();
+      else expect(screen.getByText("Participation unknown", { exact: true })).toBeTruthy();
+    } else {
+      expect(screen.queryByText(/Participation model estimate/)).toBeNull();
+      expect(screen.getByText(/Participation probability 75.*calibration unavailable/)).toBeTruthy();
+    }
+    expect(screen.queryByText("Confirmed out", { exact: true })).toBeNull();
+  });
+
+  it("labels independently admitted goalie starts as model estimates", () => {
+    swrState.data = normalizeStartChartResponse({ ...buildApiData(), contractVersion: 2,
+      gameExpectations: { version: "forge-game-expectations-v1", readAsOf: "2026-02-07T17:00:00Z", basis: "expected" },
+      players: [player({ positions: ["G"], start_probability: 0.25,
+        forecast: { participationProbability: 0.25, conditioning: "unconditional", expected: { SAVES_GOALIE: 10 } },
+        gameExpectation: { playerId: "7", scheduleRevision: "synthetic-schedule", startProbability: 0.25,
+          startParticipation: { revisionId: "synthetic-start", basis: "start", probability: 0.25,
+            cutoffAt: "2026-02-07T15:00:00Z", issuedAt: "2026-02-07T16:00:00Z", expiresAt: "2026-02-07T23:00:00Z",
+            model: { version: "goalie-frozen-window-start-frequency-v1", event: "official_starter", probabilityStatus: "uncalibrated_model",
+              calibration: "unavailable", inputHash: "a".repeat(64), evidenceHashes: ["b".repeat(64)], sampleSize: 4,
+              limitations: ["Synthetic finite start frequency."] } },
+          targets: { SAVES_GOALIE: { expected: 10, conditional: 20, basis: "per_appearance", unit: "count",
+            allowedUses: { totals: true, comparison: true, conditionalTieBreak: true } } } } })] });
+    routerState.router.query = { position: "G" };
+    render(<StartChartPage />);
+    expect(screen.getByText("Start model estimate 25%", { exact: true })).toBeTruthy();
+    expect(screen.getByText(/Starting probability 25.*model estimate · calibration unavailable/)).toBeTruthy();
+    expect(screen.queryByText(/Confirmed start/)).toBeNull();
+  });
+
+  it("ranks goalies by the selected probability without requiring unavailable point totals", () => {
+    const goalie = (id: number, probability: number | null) => player({
+      player_id: id, row_key: `fixture:1001:${id}`, name: `Fixture goalie ${id}`, positions: ["G"],
+      start_probability: probability, confirmed_status: false, proj_fantasy_points: null,
+      forecast: { conditioning: "unconditional", participationProbability: probability,
+        probabilityStatus: "uncalibrated_model", expected: { WINS_GOALIE: probability == null ? null : probability * 0.5 },
+        conditional: null, distributionStatus: "means_only_unvalidated", evidence: [], conflicts: [] },
+    });
+    swrState.data = normalizeStartChartResponse({ ...buildApiData(), contractVersion: 2,
+      players: [goalie(9001, 0.2), goalie(9002, 0.7), goalie(9003, null)],
+    });
+    routerState.router.query = { position: "G" };
+    render(<StartChartPage />);
+    const panel = document.getElementById("start-chart-panel-G")!;
+    const rows = () => Array.from(panel.querySelectorAll("ol > li"));
+    const order = () => rows().map(row => row.querySelector('a[href^="/forge/player/"]')?.textContent);
+    expect(order()).toEqual(["Fixture goalie 9001", "Fixture goalie 9002", "Fixture goalie 9003"]);
+    fireEvent.change(screen.getByLabelText("Goalie order"), { target: { value: "start_probability" } });
+    expect(order()).toEqual(["Fixture goalie 9002", "Fixture goalie 9001", "Fixture goalie 9003"]);
+    expect(rows().map(row => row.querySelector('[class*="playerRank"]')?.textContent)).toEqual(["1", "2", "—"]);
+    expect(rows().every(row => row.querySelector('[class*="primaryProjection"] strong')?.textContent === "—")).toBe(true);
+    expect(screen.queryByText(/Confirmed start/)).toBeNull();
+    fireEvent.change(screen.getByLabelText("Compare"), { target: { value: "categories" } });
+    expect((screen.getByLabelText("Category") as HTMLSelectElement).value).toBe("WINS_GOALIE");
+    expect((screen.getByLabelText("Goalie order") as HTMLSelectElement).disabled).toBe(true);
+    expect(order()).toEqual(["Fixture goalie 9002", "Fixture goalie 9001", "Fixture goalie 9003"]);
+    fireEvent.change(screen.getByLabelText("Compare"), { target: { value: "points" } });
+    fireEvent.change(screen.getByLabelText("Goalie order"), { target: { value: "fantasy" } });
+    expect(order()).toEqual(["Fixture goalie 9001", "Fixture goalie 9002", "Fixture goalie 9003"]);
+    expect(rows().map(row => row.querySelector('[class*="playerRank"]')?.textContent)).toEqual(["—", "—", "—"]);
+  });
+
+  it("re-scores custom points and ascending goalie categories without changing forecast inputs", () => {
+    const forecast = (stats: Record<string, number>) => ({ conditioning: "unconditional", participationProbability: 0.5,
+      probabilityStatus: "uncalibrated_model", expected: stats, conditional: null,
+      distributionStatus: "means_only_unvalidated", evidence: [], conflicts: [] });
+    const stats = { GOALS: 0, ASSISTS: 0, PP_POINTS: 0, SHOTS_ON_GOAL: 0, HITS: 0, BLOCKED_SHOTS: 0 };
+    const goalieStats = { SAVES_GOALIE: 20, GOALS_AGAINST_GOALIE: 0, WINS_GOALIE: 0, SHUTOUTS_GOALIE: 0 };
+    swrState.data = normalizeStartChartResponse({ ...buildApiData(), contractVersion: 2, players: [
+      player({ player_id: 1, name: "Fixture goals skater", row_key: "fixture:1", forecast: forecast({ ...stats, GOALS: 1 }) }),
+      player({ player_id: 2, name: "Fixture shots skater", row_key: "fixture:2", forecast: forecast({ ...stats, SHOTS_ON_GOAL: 20 }) }),
+      player({ player_id: 3, name: "Fixture three GA goalie", row_key: "fixture:3", positions: ["G"], forecast: forecast({ ...goalieStats, GOALS_AGAINST_GOALIE: 3 }) }),
+      player({ player_id: 4, name: "Fixture one GA goalie", row_key: "fixture:4", positions: ["G"], forecast: forecast({ ...goalieStats, GOALS_AGAINST_GOALIE: 1 }) }),
+    ] });
+    const original = JSON.stringify(swrState.data);
+    routerState.router.query = { position: "C" };
+    render(<StartChartPage />);
+    const first = (position: string) => document.querySelector(`#start-chart-panel-${position} ol > li a[href^="/forge/player/"]`)?.textContent;
+    expect(first("C")).toBe("Fixture shots skater");
+    const form = screen.getByRole("button", { name: "Apply scoring" }).closest("form")!;
+    for (const input of form.querySelectorAll<HTMLInputElement>('input[name^="skater."]')) {
+      fireEvent.change(input, { target: { value: input.name === "skater.GOALS" ? "1" : "0" } });
+    }
+    fireEvent.submit(form);
+    expect(first("C")).toBe("Fixture goals skater");
+    const goalsWeight = form.querySelector<HTMLInputElement>('input[name="skater.GOALS"]')!;
+    fireEvent.change(goalsWeight, { target: { value: "101" } });
+    fireEvent.submit(form);
+    expect(screen.getByRole("alert").textContent).toContain("Invalid scoring weight: GOALS");
+    expect(first("C")).toBe("Fixture goals skater");
+    fireEvent.click(screen.getByRole("tab", { name: /^G 2$/ }));
+    fireEvent.change(screen.getByLabelText("Compare"), { target: { value: "categories" } });
+    fireEvent.change(screen.getByLabelText("Category"), { target: { value: "GOALS_AGAINST_GOALIE" } });
+    expect(first("G")).toBe("Fixture one GA goalie");
+    expect(document.querySelector('#start-chart-panel-G ol > li [class*="primaryProjection"] strong')?.textContent).toBe("1.00");
+    expect(JSON.stringify(swrState.data)).toBe(original);
+  });
+
+  it.each([
+    { position: "C", probability: 0, status: "uncalibrated_model", outEvidence: false, label: "Modeled participation 0%", confirmedOut: false },
+    { position: "C", probability: 0, status: "confirmed_evidence", outEvidence: true, label: "Confirmed out", confirmedOut: true },
+    { position: "C", probability: null, status: "missing", outEvidence: false, label: "Participation unknown", confirmedOut: false },
+    { position: "C", probability: 0.7, status: "uncalibrated_model", outEvidence: false, label: "Modeled participation 70%", confirmedOut: false },
+    { position: "C", probability: 0, status: "confirmed_evidence", outEvidence: false, label: "Participation 0%", confirmedOut: false },
+    { position: "G", probability: 0, status: "uncalibrated_model", outEvidence: false, label: "Start 0%", confirmedOut: false },
+  ])("labels $position participation $probability from $status without inferring an exclusion", ({ position, probability, status, outEvidence, label, confirmedOut }) => {
+    const stats = Object.fromEntries(BOARD_CATEGORIES.map(key => [key, 0]));
+    swrState.data = normalizeStartChartResponse({ ...buildApiData(), contractVersion: 2, players: [player({
+      positions: [position], start_probability: position === "G" ? probability : null, confirmed_status: false,
+      forecast: { conditioning: "unconditional", participationProbability: probability, probabilityStatus: status,
+        expected: probability == null ? null : stats, conditional: null,
+        distributionStatus: "means_only_unvalidated", conflicts: [],
+        evidence: outEvidence ? [{ dimension: "availability", value: "out", publishedAt: "2026-02-07T12:00:00Z", receivedAt: "2026-02-07T12:01:00Z" }] : [] },
+    })] });
+    const original = JSON.stringify(swrState.data);
+    routerState.router.query = { position };
+    render(<StartChartPage />);
+    const row = document.querySelector(`#start-chart-panel-${position} ol > li`)!;
+    expect(row.querySelector('[class*="uncertainty"]')?.textContent).toContain(label);
+    expect(row.textContent?.includes("Confirmed out")).toBe(confirmedOut);
+    expect(row.querySelector('[class*="playerRank"]')?.textContent).toBe(probability == null ? "—" : "1");
+    expect(row.querySelector('[class*="primaryProjection"] strong')?.textContent).toBe(probability == null ? "—" : "0.00");
+    expect(JSON.stringify(swrState.data)).toBe(original);
   });
 
   it("displays the versioned fantasy scoring formula supplied by the API", () => {
@@ -1019,6 +1395,79 @@ describe("StartChartPage", () => {
     expect(screen.queryByText("0 Games Remaining")).toBeNull();
     const row = screen.getByRole("link", { name: "Nick Suzuki" }).closest("li");
     expect(row?.querySelector('[class*="playerRank"]')?.textContent).toBe("—");
+  });
+
+  it("withholds cached values at their source deadline and recovers the selected category after a failed refresh", () => {
+    vi.useRealTimers();
+    vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
+    vi.setSystemTime(new Date("2026-02-07T17:00:00Z"));
+    const first = expiringExpectationData("2026-02-07", "2026-02-07T17:00:01Z");
+    const original = JSON.stringify(first); swrState.data = first;
+    const view = render(<StartChartPage />);
+    expect(screen.getByText(/Point total unavailable: missing/)).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Compare"), { target: { value: "categories" } });
+    const value = () => document.querySelector('#start-chart-panel-C [class*="primaryProjection"] strong')?.textContent;
+    expect((screen.getByLabelText("Category") as HTMLSelectElement).value).toBe("GOALS");
+    expect(value()).toBe("1.00");
+    expect(screen.getByText(/Synthetic expiring goalie · Projected 75%/)).toBeTruthy();
+    expect(document.querySelector('#start-chart-panel-C [class*="playerRank"]')?.textContent).toBe("1");
+    act(() => vi.advanceTimersByTime(1000));
+    expect(screen.queryByText("Synthetic expiring player 2026-02-07", { exact: true })).toBeNull();
+    expect(screen.queryByText(/Synthetic expiring goalie/)).toBeNull();
+    expect(screen.getByRole("status", { name: "Starter Board status" }).textContent).toContain("Forecasts expired");
+    expect(screen.getByRole("status", { name: "Forecast validity" }).textContent).toContain("Forecast values expired.");
+    expect(screen.queryByText("No player projections found.")).toBeNull();
+    expect(swrState.mutate).not.toHaveBeenCalled();
+    swrState.error = new Error("fixture refresh failed"); view.rerender(<StartChartPage />);
+    expect(screen.getByRole("alert").textContent).toContain("fixture refresh failed");
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(swrState.mutate).toHaveBeenCalledTimes(1);
+    swrState.error = null; swrState.data = expiringExpectationData("2026-02-07", "2026-02-07T17:01:00Z", 0);
+    view.rerender(<StartChartPage />);
+    expect(screen.queryByRole("status", { name: "Forecast validity" })).toBeNull();
+    expect((screen.getByLabelText("Category") as HTMLSelectElement).value).toBe("GOALS");
+    expect(value()).toBe("0.00");
+    expect(document.querySelector('#start-chart-panel-C [class*="playerRank"]')?.textContent).toBe("1");
+    expect(JSON.stringify(first)).toBe(original);
+  });
+
+  it("clears the previous date's expiry timer through loading and a fresh date response", () => {
+    vi.useRealTimers();
+    vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
+    vi.setSystemTime(new Date("2026-02-07T17:00:00Z"));
+    swrState.data = expiringExpectationData("2026-02-07", "2026-02-07T17:00:01Z");
+    const view = render(<StartChartPage />);
+    fireEvent.change(screen.getByLabelText("Compare"), { target: { value: "categories" } });
+    swrState.data = null; swrState.isLoading = true;
+    fireEvent.change(screen.getByLabelText("Date"), { target: { value: "2026-02-08" } });
+    expect(screen.getAllByText("Loading projections…")).toHaveLength(5);
+    swrState.isLoading = false; swrState.data = expiringExpectationData("2026-02-08", "2026-02-07T17:00:30Z", 0);
+    view.rerender(<StartChartPage />);
+    act(() => vi.advanceTimersByTime(1000));
+    expect((screen.getByLabelText("Date") as HTMLInputElement).value).toBe("2026-02-08");
+    expect(swrState.request).toHaveBeenCalledWith("/api/v1/start-chart?date=2026-02-08&forecast_source=game_expectations");
+    expect(screen.queryByText("Synthetic expiring player 2026-02-07", { exact: true })).toBeNull();
+    expect(screen.getByText("Synthetic expiring player 2026-02-08", { exact: true })).toBeTruthy();
+    expect(screen.queryByRole("status", { name: "Forecast validity" })).toBeNull();
+    expect(document.querySelector('#start-chart-panel-C [class*="primaryProjection"] strong')?.textContent).toBe("0.00");
+    expect(swrState.mutate).not.toHaveBeenCalled();
+  });
+
+  it.each(["expected", "per_appearance"] as const)("withholds an already-expired %s response on first render and after changing comparison basis", basis => {
+    swrState.data = expiringExpectationData("2026-02-07", "2026-02-07T16:59:59Z");
+    swrState.data.gameExpectations.basis = basis;
+    if (basis === "per_appearance") {
+      const target = swrState.data.players[0].gameExpectation.targets.GOALS;
+      target.expected = null; target.conditional = 1;
+      target.allowedUses = { totals: false, comparison: false, conditionalTieBreak: true };
+    }
+    render(<StartChartPage />);
+    expect(screen.getByRole("status", { name: "Forecast validity" })).toBeTruthy();
+    expect(screen.queryByText("Synthetic expiring player 2026-02-07", { exact: true })).toBeNull();
+    fireEvent.change(screen.getByLabelText("Comparison basis"), { target: { value: basis === "expected" ? "per_appearance" : "expected" } });
+    expect(document.querySelectorAll('#start-chart-panel-C ol > li')).toHaveLength(0);
+    fireEvent.click(screen.getByRole("button", { name: "Refresh forecasts" }));
+    expect(swrState.mutate).toHaveBeenCalledTimes(1);
   });
 
   it("renders loading and fetch-error retry states explicitly", () => {
