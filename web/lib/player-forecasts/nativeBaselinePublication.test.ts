@@ -461,6 +461,20 @@ describe("bounded publication coordinator (synthetic only)", () => {
       const acquisition = setup(); acquisition.command.requiredAcquisitionScopes["native-inputs"].cutoffAt = "2026-10-15T09:59:59Z";
       await expect(prepareNativeCadenceOutputs(acquisition.command, acquisition.proof, now)).rejects.toThrow("acquisition_scope_mismatch");
     });
+    it("reissues frozen means after their original expiry under one stated daily expiry, keeping approved candidate hashes", async () => {
+      const { command, proof, bundle } = setup(), later = new Date("2026-10-15T19:00:00.000Z");
+      await expect(prepareNativeCadenceOutputs(command, proof, later, nextId)).rejects.toThrow("original_source_expired");
+      const daily = { ...command, daily: { expiresAt: "2026-10-15T22:59:59.999Z", participationOwnerApprovalRef: "synthetic-owner" } };
+      const result = await prepareNativeCadenceOutputs(daily, proof, later, nextId);
+      const reissued = result.plan.rows.find(row => row.entity_kind === "seasonal_rate_bundle")!.payload as any;
+      expect(reissued.manifest).toMatchObject({ issuedAt: later.toISOString(), expiresAt: "2026-10-15T22:59:59.999Z" });
+      expect(reissued.sources.map((s: any) => [s.sourceId, s.mean, s.cutoffAt])).toEqual(bundle.sources.map((s: any) => [s.sourceId, s.mean, s.cutoffAt]));
+      expect(contributionBundleCandidateInputHash(reissued)).toBe(contributionBundleCandidateInputHash(bundle as any));
+      expect(result.receipt).toMatchObject({ dailyExpiresAt: "2026-10-15T22:59:59.999Z", participationEntries: 0 });
+      await expect(prepareNativeCadenceOutputs({ ...daily, daily: { ...daily.daily, expiresAt: later.toISOString() } }, proof, later, nextId)).rejects.toThrow("invalid_daily_issuance");
+      const withParticipation = { ...daily, reviewedPlan: { ...daily.reviewedPlan, rows: [...daily.reviewedPlan.rows, fixture().rows[0]] } };
+      await expect(prepareNativeCadenceOutputs(withParticipation, proof, later, nextId)).rejects.toThrow("invalid_daily_issuance");
+    });
     it("runs the prepare CLI offline with exact files and refuses an execution target", async () => {
       const { command, proof } = setup(), directory = mkdtempSync(join(tmpdir(), "native-cadence-prepare-"));
       const write = (name: string, value: unknown) => { const bytes = JSON.stringify(value), path = join(directory, name); writeFileSync(path, bytes);

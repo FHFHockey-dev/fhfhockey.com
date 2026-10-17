@@ -19,7 +19,7 @@ const HEAD_COLUMNS = "id,season_id,revision,observation_id,payload_hash,selected
 const RELEASE_COLUMNS = "id,provider,dataset_key,entity_key,available_at,payload_hash,payload";
 const sha = (bytes: Uint8Array | string) => createHash("sha256").update(bytes).digest("hex");
 const fail = (reason: string): never => { throw new Error(reason); };
-function boundedFile(path: string, expected: string, limit: number) {
+export function boundedFile(path: string, expected: string, limit: number) {
   if (!/^[a-f0-9]{64}$/.test(expected)) fail("exact_file_hash_required");
   const fd = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW);
   try {
@@ -32,7 +32,7 @@ function boundedFile(path: string, expected: string, limit: number) {
     return JSON.parse(new TextDecoder("utf-8", { ignoreBOM: true }).decode(bytes.subarray(0, length)));
   } finally { closeSync(fd); }
 }
-function privateWrite(path: string, value: unknown) {
+export function privateWrite(path: string, value: unknown) {
   const fd = openSync(path, "wx", 0o600);
   try { writeFileSync(fd, JSON.stringify(value)); fsyncSync(fd); } finally { closeSync(fd); }
 }

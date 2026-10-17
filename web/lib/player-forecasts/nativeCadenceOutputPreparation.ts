@@ -7,6 +7,7 @@ import { verifyBaselineHistoricalSources } from "./baselineSourceLineage";
 import { buildRosterObservationSkaterParticipationReceipt } from "./modeledSkaterParticipation";
 import { buildRosterObservationGoalieParticipationReceipt, buildRosterObservationGoalieStartReceipt } from "./modeledGoalieParticipation";
 import { contributionBundleCandidateInputHash, contributionBundleChecksum, persistContributionBundle } from "./contributionStore";
+import { SKATER_PARTICIPATION_RELEASE_LIMITS } from "./modeledSkaterParticipationStore";
 import { nativeCadenceClosureScope, nativeCadenceInputManifest, publishObservedNativeBaselineCadence } from "./nativeBaselineCadence";
 import type { NativeBaselinePublicationPlan } from "./nativeBaselinePublication";
 import { playerForecastSourcePayloadHash as hash, type PlannedSourceObservation } from "./sourceSnapshot";
@@ -14,7 +15,10 @@ import { timestampMicros } from "../projections/evidenceTime";
 
 /** Offline issuance of later same-method outputs from one closed materialization.
  * It reproduces the reviewed plan's means, identities, expiries and nulls exactly;
- * only issuance changes. Reviews come back pending, and the catalog head stays null. */
+ * only issuance changes. Reviews come back pending, and the catalog head stays null.
+ * With `daily`, the frozen native means are issued anew under one explicit new expiry
+ * (cutoffs and means unchanged, so the approved candidate hashes still hold) and
+ * participation bundles are built from the proof's fresh participation inputs. */
 export type NativeOutputPreparationCommand = {
   version: "native-output-preparation-v1";
   slotKey: string; dueAt: string;
@@ -23,6 +27,7 @@ export type NativeOutputPreparationCommand = {
   requiredAcquisitionScopes: Record<string, { scopeHash: string; cutoffAt: string }>;
   /** Previously reviewed plan over the same inputs: policies, reviews, bundles and selected participation bundles. */
   reviewedPlan: NativeBaselinePublicationPlan;
+  daily?: { expiresAt: string; participationOwnerApprovalRef: string };
 };
 type ClosedProof = { status: string; rows: PlannedSourceObservation[]; report: PlannedSourceObservation;
   closure: PlannedSourceObservation; manifest: ReturnType<typeof nativeCadenceInputManifest> };
@@ -37,6 +42,9 @@ const participationBuilders: Record<string, (input: any, clocks: { issuedAt: str
   "skater-roster-observation-participation-bundle-v1": buildRosterObservationSkaterParticipationReceipt,
   "goalie-roster-observation-participation-bundle-v1": buildRosterObservationGoalieParticipationReceipt,
   "goalie-roster-observation-start-bundle-v1": buildRosterObservationGoalieStartReceipt };
+// Leaves headroom under the 8 MiB publication row bound for the envelope and metadata;
+// bundles also stay within the participation stores' per-bundle entry cap.
+const DAILY_PARTICIPATION_BUNDLE_BYTES = 7 * 1024 * 1024;
 const withoutIssuance = ({ issuedAt: _issued, released: _released, ...rest }: any) => rest;
 const withoutIssuedAt = ({ issuedAt: _issued, ...rest }: any) => rest;
 
@@ -59,7 +67,12 @@ export async function prepareNativeCadenceOutputs(command: NativeOutputPreparati
   if (new Set(proof.rows.map(row => row.id)).size !== proof.rows.length || reported.size !== proof.rows.length
     || proof.rows.some(row => hash(row.payload) !== row.payload_hash || (reported.get(row.id) as any)?.hash !== row.payload_hash
     || (reported.get(row.id) as any)?.dataset !== row.dataset_key)) fail("materialized_row_mismatch");
-  if (hash(nativeCadenceInputManifest(reviewedPlan)) !== hash(proof.manifest)) fail("reviewed_plan_input_manifest_mismatch");
+  const daily = command.daily;
+  if (daily && (micros(daily.expiresAt) <= micros(issuedAt) || micros(daily.expiresAt) > micros(issuedAt) + BigInt(12 * 3600 * 1000000)
+    || !daily.participationOwnerApprovalRef?.trim()
+    || reviewedPlan.rows.some(row => row.entity_kind === "participation_bundle"))) fail("invalid_daily_issuance");
+  // Daily runs replace participation, so only the native inputs must match the reviewed plan (checked per source below).
+  if (!daily && hash(nativeCadenceInputManifest(reviewedPlan)) !== hash(proof.manifest)) fail("reviewed_plan_input_manifest_mismatch");
   const byId = new Map(reviewedPlan.rows.map(row => [row.id, row]));
   const oldBundles = reviewedPlan.rows.filter(row => row.entity_kind === "seasonal_rate_bundle");
   const oldSources = oldBundles.flatMap(row => (row.payload as any).sources);
@@ -67,9 +80,10 @@ export async function prepareNativeCadenceOutputs(command: NativeOutputPreparati
   for (const row of inputs) {
     const payload = row.payload as any, prior = oldSources.filter((source: any) => source.sourceWatermark === row.payload_hash);
     if (!prior.length) fail("reviewed_sources_missing_for_input");
-    const { expiresAt, scheduleRevision } = prior[0];
-    if (prior.some((source: any) => source.expiresAt !== expiresAt || source.scheduleRevision !== scheduleRevision)) fail("reviewed_source_clock_conflict");
-    // Original source expiry is never renewed by later issuance.
+    const { scheduleRevision } = prior[0], expiresAt = daily?.expiresAt ?? prior[0].expiresAt;
+    if (prior.some((source: any) => (!daily && source.expiresAt !== expiresAt) || source.scheduleRevision !== scheduleRevision)) fail("reviewed_source_clock_conflict");
+    // Reissuing never renews an original expiry. A daily run is a new issuance with its own stated
+    // expiry (at most twelve hours), new row identities, and unchanged cutoffs and means.
     if (micros(expiresAt) <= micros(issuedAt)) fail("original_source_expired");
     const calculation = { ...payload, seasonId, cutoffAt: payload.capturedAt, sourceWatermark: row.payload_hash };
     let snapshot: any;
@@ -85,7 +99,8 @@ export async function prepareNativeCadenceOutputs(command: NativeOutputPreparati
     if (generated.sources.length !== prior.length) fail("reproduced_source_count_changed");
     for (const source of generated.sources) {
       const old = prior.find((value: any) => value.sourceId === source.sourceId);
-      if (!old || hash(withoutIssuance(source)) !== hash(withoutIssuance(old))) fail("reproduced_source_changed");
+      const comparable = (value: any) => daily ? withoutIssuance({ ...value, expiresAt: null }) : withoutIssuance(value);
+      if (!old || hash(comparable(source)) !== hash(comparable(old))) fail("reproduced_source_changed");
       if (fresh.has(source.sourceId)) fail("duplicate_source_identity");
       fresh.set(source.sourceId, { ...source, released: true });
     }
@@ -98,9 +113,9 @@ export async function prepareNativeCadenceOutputs(command: NativeOutputPreparati
   for (const original of oldBundles) {
     const old = original.payload as any, policy = byId.get(old.manifest.evaluationPolicyId), previousReview = byId.get(old.manifest.reviewId);
     if (!policy || !previousReview) fail("reviewed_policy_or_review_missing");
-    if (micros(old.manifest.expiresAt) <= micros(issuedAt)) fail("original_bundle_expired");
+    if (!daily && micros(old.manifest.expiresAt) <= micros(issuedAt)) fail("original_bundle_expired");
     const reviewId = newId(), sources = old.sources.map((source: any) => fresh.get(source.sourceId));
-    const { checksum: _checksum, ...unsigned } = { ...old.manifest, issuedAt, reviewId };
+    const { checksum: _checksum, ...unsigned } = { ...old.manifest, issuedAt, reviewId, ...(daily ? { expiresAt: daily.expiresAt } : {}) };
     const bundle = { manifest: { ...unsigned, checksum: contributionBundleChecksum({ manifest: unsigned as any, sources }) }, sources };
     const candidateInputHash = contributionBundleCandidateInputHash(bundle as any);
     if (candidateInputHash !== contributionBundleCandidateInputHash(old) || candidateInputHash !== (policy!.payload as any).candidateInputHash) fail("candidate_input_changed");
@@ -109,14 +124,47 @@ export async function prepareNativeCadenceOutputs(command: NativeOutputPreparati
     const bundleRow = envelope("contribution-bundle-v1", "seasonal_rate_bundle", bundle, bundle.manifest.inputCutoff, bundle.manifest.checksum,
       { policyVersion: bundle.manifest.policyVersion, released: true });
     if (!policies.has(policy!.id)) { policies.add(policy!.id); rows.push(policy!); }
+    // Daily issuance states what it re-issues; consumers and reviewers see the original clocks and cutoff.
+    const disclosure = daily ? { dailyReissueOf: original.id, originalIssuedAt: old.manifest.issuedAt, originalExpiresAt: old.manifest.expiresAt,
+      nativeInputCutoff: old.manifest.inputCutoff,
+      disclosure: "Frozen means re-issued unchanged under a new stated expiry; their history excludes every game after the native input cutoff." } : {};
     rows.push(envelope("baseline-validation-review-v1", "baseline_validation_review", review, issuedAt, candidateInputHash,
-      { pendingIndependentReview: true }, reviewId), bundleRow);
+      { pendingIndependentReview: true, ...disclosure }, reviewId), bundleRow);
     // Dry validation only; any database access fails.
     await persistContributionBundle({ from() { throw new Error("No database permitted"); } } as any, { ...bundle, dryRun: true, snapshotId: bundleRow.id } as any);
     reviews.push({ policyVersion: bundle.manifest.policyVersion, reviewId, bundleId: bundleRow.id, originalBundleId: original.id, candidateInputHash });
   }
   let participationEntries = 0, nullParticipation = 0;
-  for (const original of reviewedPlan.rows.filter(row => row.entity_kind === "participation_bundle")) {
+  if (daily) {
+    const groups = new Map<string, any[]>();
+    for (const row of proof.rows.filter(value => value.dataset_key === "native-participation-input-v1")) {
+      const payload = row.payload as any; groups.set(payload.dataset, [...(groups.get(payload.dataset) ?? []), ...payload.inputs]);
+    }
+    for (const [dataset, inputs] of [...groups].sort(([a], [b]) => a.localeCompare(b))) {
+      const build = participationBuilders[dataset] ?? fail("unsupported_participation_method");
+      const entries = inputs.map((input: any) => {
+        const receipt = build(input, { issuedAt, expiresAt: daily.expiresAt });
+        participationEntries++; if (receipt.probability === null) nullParticipation++;
+        return { input, receipt };
+      });
+      // Partition entries into bundles under the per-row byte bound; no player/game appears twice.
+      const groupsOfEntries: any[][] = [[]]; let bytes = 0;
+      for (const entry of entries) {
+        const size = Buffer.byteLength(JSON.stringify(entry)) + 1;
+        if ((bytes + size > DAILY_PARTICIPATION_BUNDLE_BYTES || groupsOfEntries.at(-1)!.length >= SKATER_PARTICIPATION_RELEASE_LIMITS.bundleEntries)
+          && groupsOfEntries.at(-1)!.length) { groupsOfEntries.push([]); bytes = 0; }
+        groupsOfEntries.at(-1)!.push(entry); bytes += size;
+      }
+      for (const group of groupsOfEntries) {
+        const payload = { version: dataset, seasonId, issuedAt, expiresAt: daily.expiresAt, released: true,
+          allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: true },
+          ownerApprovalRef: daily.participationOwnerApprovalRef, reviewRef: "", entries: group };
+        rows.push({ ...envelope(dataset, "participation_bundle", payload, issuedAt, null, { pendingIndependentReview: true }),
+          source_revision_key: hash(payload) });
+      }
+    }
+  }
+  for (const original of daily ? [] : reviewedPlan.rows.filter(row => row.entity_kind === "participation_bundle")) {
     const old = original.payload as any, build = participationBuilders[old.version] ?? fail("unsupported_participation_method");
     if (micros(old.expiresAt) <= micros(issuedAt)) fail("original_participation_expired");
     const entries = old.entries.map((entry: any) => {
@@ -140,5 +188,6 @@ export async function prepareNativeCadenceOutputs(command: NativeOutputPreparati
     producerReceiptIds: { [request.sourceKey]: proof.closure.id }, catalogHead: null },
   receipt: { status: "outputs_built_pending_independent_review_and_catalog_head", issuedAt, dueAt: command.dueAt, closedAt: closure.closedAt,
     nativeInputs: inputs.length, nativeSources: fresh.size, participationEntries, nullParticipation, rows: rows.length, reviews,
+    ...(daily ? { dailyExpiresAt: daily.expiresAt, nativeMeansFrozenAtCutoff: [...new Set(inputs.map(row => (row.payload as any).capturedAt))].sort() } : {}),
     planHash: hash(plan), networkRequests: 0, databaseWrites: 0, publicationExecuted: false, headSelection: false } };
 }
