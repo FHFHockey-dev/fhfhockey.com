@@ -1,0 +1,31 @@
+--- a/web/components/PlayerPickupTable/PlayerPickupTable.module.scss	2026-10-18 14:52:30
++++ b/web/components/PlayerPickupTable/PlayerPickupTable.module.scss	2026-10-18 14:52:30
+@@ -1745,22 +1745,22 @@
+ 
+ .yahooContext {
+   padding: 12px 16px;
+-  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
++  border-bottom: 1px solid rgba(v.$color-white, 0.16);
+   font-size: 0.85rem;
+ 
+   p { margin: 0 0 8px; }
+-  a { color: #77cfff; margin-right: 12px; }
++  a { color: v.$color-blue; margin-right: 12px; }
+   button {
+     margin: 0 8px 8px 0;
+     padding: 6px 10px;
+-    border: 1px solid rgba(255, 255, 255, 0.25);
++    border: 1px solid rgba(v.$color-white, 0.25);
+     border-radius: 4px;
+-    background: #20252d;
++    background: v.$background-dark;
+     color: inherit;
+     cursor: pointer;
+-    &[aria-pressed="true"] { border-color: #77cfff; background: #10384e; }
++    &[aria-pressed="true"] { border-color: v.$color-blue; background: rgba(v.$primary-color, 0.25); }
+     &:disabled { opacity: 0.5; cursor: wait; }
+-    &:focus-visible { outline: 2px solid #77cfff; outline-offset: 2px; }
++    &:focus-visible { outline: 2px solid v.$color-blue; outline-offset: 2px; }
+   }
+   summary { cursor: pointer; }
+ }

@@ -13,6 +13,9 @@ type OwnedBytes = Uint8Array<ArrayBuffer>;
 
 function bytesFrom(value: ArrayBuffer | ArrayLike<number>): OwnedBytes { return value instanceof ArrayBuffer ? new Uint8Array(value) : Uint8Array.from(value); }
 function bytesEqual(left: OwnedBytes, right: OwnedBytes) { return left.byteLength === right.byteLength && left.every((value, index) => value === right[index]); }
+// Caller-correctable upload/stage problems answer 400 with their message;
+// untyped errors (storage/RPC failures) are left for the route's fixed 500.
+function invalidPrivateImport(message: string) { return Object.assign(new Error(message), { statusCode: 400 }); }
 
 function requireRow<T>(rows: T[] | null, message = "Private import transaction returned no result."): T {
   const value = rows?.[0];
@@ -23,8 +26,10 @@ function requireRow<T>(rows: T[] | null, message = "Private import transaction r
 async function ownedUpload(userId: string, uploadId: string) {
   const { data, error } = await client.rpc("read_draft_pro_private_import_upload", { p_user_id: userId, p_upload_id: uploadId });
   if (error) throw error;
-  const upload: UploadRow = requireRow(data);
-  if (upload.save_session_status !== "pending" || Date.parse(upload.save_session_expires_at) <= Date.now() || Date.parse(upload.expires_at) <= Date.now()) throw new Error("Private import upload is unavailable.");
+  // A missing row (absent or another user's upload) reads the same as an expired one.
+  if (!data?.[0]) throw invalidPrivateImport("Private import upload is unavailable.");
+  const upload: UploadRow = data[0];
+  if (upload.save_session_status !== "pending" || Date.parse(upload.save_session_expires_at) <= Date.now() || Date.parse(upload.expires_at) <= Date.now()) throw invalidPrivateImport("Private import upload is unavailable.");
   return upload;
 }
 
@@ -44,12 +49,12 @@ export async function beginPrivateImport(args: { userId: string; draftId: string
 export async function putPrivateImportChunk(args: { userId: string; uploadId: string; prefix: string; ordinal: number; bytes: ArrayLike<number> }) {
   const uploadRecord = await ownedUpload(args.userId, args.uploadId);
   const chunkBytes = bytesFrom(args.bytes);
-  if (uploadRecord.status !== "uploading") throw new Error("Private import upload is unavailable.");
-  if (chunkBytes.byteLength === 0 || chunkBytes.byteLength > PRIVATE_IMPORT_CHUNK_BYTES) throw new Error("Private import chunks must be between 1 byte and 750 KiB.");
+  if (uploadRecord.status !== "uploading") throw invalidPrivateImport("Private import upload is unavailable.");
+  if (chunkBytes.byteLength === 0 || chunkBytes.byteLength > PRIVATE_IMPORT_CHUNK_BYTES) throw invalidPrivateImport("Private import chunks must be between 1 byte and 750 KiB.");
   const maxChunks = Math.ceil(uploadRecord.declared_max_bytes / PRIVATE_IMPORT_CHUNK_BYTES);
-  if (!Number.isInteger(args.ordinal) || args.ordinal < 0 || args.ordinal >= maxChunks || args.prefix !== uploadRecord.storage_prefix) throw new Error("Invalid private import chunk ordinal.");
+  if (!Number.isInteger(args.ordinal) || args.ordinal < 0 || args.ordinal >= maxChunks || args.prefix !== uploadRecord.storage_prefix) throw invalidPrivateImport("Invalid private import chunk ordinal.");
   const remaining = uploadRecord.declared_max_bytes - args.ordinal * PRIVATE_IMPORT_CHUNK_BYTES;
-  if (chunkBytes.byteLength > Math.min(PRIVATE_IMPORT_CHUNK_BYTES, remaining)) throw new Error("Chunk exceeds its upload reservation.");
+  if (chunkBytes.byteLength > Math.min(PRIVATE_IMPORT_CHUNK_BYTES, remaining)) throw invalidPrivateImport("Chunk exceeds its upload reservation.");
   const path = `${uploadRecord.storage_prefix}/${args.ordinal}`;
   // Chunks encode the normalized JSON document; keep the bucket MIME policy
   // aligned with its explicit private-import allowlist.
@@ -58,44 +63,44 @@ export async function putPrivateImportChunk(args: { userId: string; uploadId: st
     if (!/already exists/i.test(upload.error.message)) throw upload.error;
     const existing = await client.storage.from(BUCKET).download(path);
     if (existing.error) throw existing.error;
-    if (!bytesEqual(bytesFrom(await existing.data.arrayBuffer()), chunkBytes)) throw new Error("Private import retry chunk differs from the existing chunk.");
+    if (!bytesEqual(bytesFrom(await existing.data.arrayBuffer()), chunkBytes)) throw invalidPrivateImport("Private import retry chunk differs from the existing chunk.");
   }
   return path;
 }
 
 export async function stagePrivateImport(args: { userId: string; uploadId: string; chunkPaths: string[] }) {
   const uploadRecord = await ownedUpload(args.userId, args.uploadId);
-  if (uploadRecord.status !== "uploading" && uploadRecord.status !== "staged") throw new Error("Private import upload is unavailable.");
+  if (uploadRecord.status !== "uploading" && uploadRecord.status !== "staged") throw invalidPrivateImport("Private import upload is unavailable.");
   const maxChunks = Math.ceil(uploadRecord.declared_max_bytes / PRIVATE_IMPORT_CHUNK_BYTES);
-  if (!args.chunkPaths.length || args.chunkPaths.length > Math.min(32, maxChunks)) throw new Error("Private import requires a bounded set of chunks.");
+  if (!args.chunkPaths.length || args.chunkPaths.length > Math.min(32, maxChunks)) throw invalidPrivateImport("Private import requires a bounded set of chunks.");
   const derivedPaths = args.chunkPaths.map((_path, ordinal) => `${uploadRecord.storage_prefix}/${ordinal}`);
-  if (args.chunkPaths.some((path, ordinal) => path !== derivedPaths[ordinal])) throw new Error("Private import paths are not server-owned.");
+  if (args.chunkPaths.some((path, ordinal) => path !== derivedPaths[ordinal])) throw invalidPrivateImport("Private import paths are not server-owned.");
   const chunks: OwnedBytes[] = [];
   let totalBytes = 0;
   for (const path of derivedPaths) {
     const downloaded = await client.storage.from(BUCKET).download(path);
     if (downloaded.error) throw downloaded.error;
     const chunk = bytesFrom(await downloaded.data.arrayBuffer());
-    if (!chunk.byteLength || chunk.byteLength > PRIVATE_IMPORT_CHUNK_BYTES || totalBytes + chunk.byteLength > uploadRecord.declared_max_bytes) throw new Error("Private import chunks exceed their reservation.");
+    if (!chunk.byteLength || chunk.byteLength > PRIVATE_IMPORT_CHUNK_BYTES || totalBytes + chunk.byteLength > uploadRecord.declared_max_bytes) throw invalidPrivateImport("Private import chunks exceed their reservation.");
     totalBytes += chunk.byteLength;
     chunks.push(chunk);
   }
   const body = new Uint8Array(totalBytes);
   let bodyOffset = 0;
   for (const chunk of chunks) { body.set(chunk, bodyOffset); bodyOffset += chunk.byteLength; }
-  if (body.byteLength > uploadRecord.declared_max_bytes) throw new Error("Normalized private import exceeds its reservation.");
+  if (body.byteLength > uploadRecord.declared_max_bytes) throw invalidPrivateImport("Normalized private import exceeds its reservation.");
   let rows: unknown;
-  try { rows = JSON.parse(new TextDecoder().decode(body)); } catch { throw new Error("Normalized private import must be valid JSON."); }
-  if (!Array.isArray(rows) || rows.some((entry) => !entry || typeof entry !== "object" || Array.isArray(entry))) throw new Error("Normalized private import rows are invalid.");
-  if (rows.length > 100_000) throw new Error("Normalized private import exceeds the 100,000-row limit.");
+  try { rows = JSON.parse(new TextDecoder().decode(body)); } catch { throw invalidPrivateImport("Normalized private import must be valid JSON."); }
+  if (!Array.isArray(rows) || rows.some((entry) => !entry || typeof entry !== "object" || Array.isArray(entry))) throw invalidPrivateImport("Normalized private import rows are invalid.");
+  if (rows.length > 100_000) throw invalidPrivateImport("Normalized private import exceeds the 100,000-row limit.");
   const hash = createHash("sha256").update(body).digest("hex");
   const finalPath = uploadRecord.final_storage_path;
   if (uploadRecord.status === "staged") {
-    if (uploadRecord.actual_bytes !== body.byteLength || uploadRecord.row_count !== rows.length || uploadRecord.content_sha256 !== hash) throw new Error("Private import retry content differs from the staged upload.");
+    if (uploadRecord.actual_bytes !== body.byteLength || uploadRecord.row_count !== rows.length || uploadRecord.content_sha256 !== hash) throw invalidPrivateImport("Private import retry content differs from the staged upload.");
     const existing = await client.storage.from(BUCKET).download(finalPath);
     if (existing.error) throw existing.error;
     const existingHash = createHash("sha256").update(bytesFrom(await existing.data.arrayBuffer())).digest("hex");
-    if (existingHash !== hash) throw new Error("Private import retry content differs from the existing staged object.");
+    if (existingHash !== hash) throw invalidPrivateImport("Private import retry content differs from the existing staged object.");
     const { data: stagedRows, error: stagedError } = await client.rpc("stage_draft_pro_private_import_upload", { p_user_id: args.userId, p_upload_id: args.uploadId, p_chunk_paths: derivedPaths, p_actual_bytes: body.byteLength, p_row_count: rows.length, p_content_sha256: hash });
     if (stagedError) throw stagedError;
     const staged = requireRow(stagedRows);
@@ -108,7 +113,7 @@ export async function stagePrivateImport(args: { userId: string; uploadId: strin
     const existing = await client.storage.from(BUCKET).download(finalPath);
     if (existing.error) throw existing.error;
     const existingHash = createHash("sha256").update(bytesFrom(await existing.data.arrayBuffer())).digest("hex");
-    if (existingHash !== hash) throw new Error("Private import retry content differs from the existing staged object.");
+    if (existingHash !== hash) throw invalidPrivateImport("Private import retry content differs from the existing staged object.");
   }
   const { data: stagedRows, error: stagedError } = await client.rpc("stage_draft_pro_private_import_upload", { p_user_id: args.userId, p_upload_id: args.uploadId, p_chunk_paths: derivedPaths, p_actual_bytes: body.byteLength, p_row_count: rows.length, p_content_sha256: hash });
   if (stagedError) throw stagedError;

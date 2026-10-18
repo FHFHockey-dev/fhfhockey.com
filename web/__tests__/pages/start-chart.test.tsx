@@ -4,7 +4,10 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildBoardValidationDisclosure } from "lib/projections/starterBoardValidation";
 import { BOARD_CATEGORIES } from "lib/projections/starterBoardScoring";
-import { normalizeStartChartResponse } from "lib/projections/startChartContract";
+import { normalizeStartChartResponse, scoreStartChartPayload, startChartFromGameExpectations } from "lib/projections/startChartContract";
+import { parseBoardScoringRequest } from "lib/projections/starterBoardScoring";
+import { buildGameExpectations } from "lib/player-forecasts/gameExpectations";
+import type { PlanningData } from "lib/rosterScheduleOptimizer/planningTypes";
 
 const swrState = vi.hoisted(() => ({
   data: null as any,
@@ -1453,6 +1456,104 @@ describe("StartChartPage", () => {
     expect(document.querySelector('#start-chart-panel-C [class*="primaryProjection"] strong')?.textContent).toBe("0.00");
     expect(swrState.mutate).not.toHaveBeenCalled();
   });
+
+  it("parity receipt (UI): renders the same per-appearance values the shared reader resolved for each player", () => {
+    // Evidence class: retained-fixture replay through the API's board builder; mocked transport, current local UI.
+    const now = new Date("2026-02-07T17:00:00Z");
+    const scope = { seasonId: 20252026, startDate: "2026-02-07", endDate: "2026-02-07", timeZone: "America/New_York", mode: "calendar" as const, games: 1 };
+    const data: PlanningData = { players: [7, 8].map(id => ({ id: String(id), nhlId: id * 11, nhlTeamId: 8, name: `Parity skater ${id}`,
+      rosterRevision: `roster-${id}`, teamAbbreviation: "MTL", eligiblePositions: ["C"], playerClass: "skater", availability: "unknown",
+      ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] })),
+      games: [{ id: "1001", date: scope.startDate, startsAt: "2026-02-07T23:00:00Z", teamAbbreviation: "MTL", opponent: "TOR",
+        home: false, status: "scheduled", scheduleRevision: "schedule-original" }], forecasts: [],
+      evidence: { schedule: { source: "synthetic", asOf: now.toISOString(), seasonId: scope.seasonId, completeness: "complete", limitations: [] } },
+      baselineSources: [7, 8].flatMap(id => Object.entries({ GOALS: 1, ASSISTS: 2, PP_POINTS: 0, SHOTS_ON_GOAL: 3 }).map(([targetKey, mean]) => ({
+        kind: "baseline" as const, sourceId: `parity:${id}:${targetKey}`, policyVersion: "native-fixture-v1", released: true,
+        playerId: id, nhlPlayerId: id * 11, seasonId: scope.seasonId, teamId: 8, rosterRevision: `roster-${id}`, scheduleRevision: "catalog-original",
+        targetKey, unit: "count" as const, basis: "per_appearance" as const, mean: mean * (id === 7 ? 1 : 2), participationIntegrated: false,
+        cutoffAt: "2026-02-07T15:00:00Z", issuedAt: "2026-02-07T16:00:00Z", expiresAt: "2026-02-07T22:00:00Z", sourceWatermark: "parity-raw",
+        allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: true } }))) };
+    const response = buildGameExpectations(data, scope, now);
+    const wire = JSON.parse(JSON.stringify(scoreStartChartPayload(startChartFromGameExpectations(response), parseBoardScoringRequest({}))));
+    swrState.data = normalizeStartChartResponse(wire);
+    routerState.router.query = { position: "C" };
+    render(<StartChartPage />);
+    fireEvent.change(screen.getByLabelText("Compare"), { target: { value: "categories" } });
+    for (const key of ["GOALS", "ASSISTS", "SHOTS_ON_GOAL"]) {
+      fireEvent.change(screen.getByLabelText("Category"), { target: { value: key } });
+      for (const player of response.players) {
+        const target = player.games[0].targets[key];
+        const row = screen.getByRole("link", { name: player.name }).closest("li");
+        expect(row?.querySelector('[class*="primaryProjection"] strong')?.textContent, `${player.name} ${key}`)
+          .toBe(target.conditional!.toFixed(2));
+      }
+    }
+  });
+
+  it("shows values until the exact expiry millisecond and withholds them at it", () => {
+    vi.useRealTimers();
+    vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
+    vi.setSystemTime(new Date("2026-02-07T17:00:00.000Z"));
+    swrState.data = expiringExpectationData("2026-02-07", "2026-02-07T17:00:00.250Z");
+    render(<StartChartPage />);
+    act(() => vi.advanceTimersByTime(249));
+    expect(screen.getByText("Synthetic expiring player 2026-02-07", { exact: true })).toBeTruthy();
+    expect(screen.queryByRole("status", { name: "Forecast validity" })).toBeNull();
+    act(() => vi.advanceTimersByTime(1));
+    expect(screen.queryByText("Synthetic expiring player 2026-02-07", { exact: true })).toBeNull();
+    expect(screen.getByRole("status", { name: "Forecast validity" }).textContent).toContain("Forecast values expired.");
+    expect(swrState.mutate).not.toHaveBeenCalled();
+  });
+
+  it("withholds an already-expired payload that arrives after a fresh one, then accepts a valid replacement", () => {
+    vi.useRealTimers();
+    vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
+    vi.setSystemTime(new Date("2026-02-07T17:00:00Z"));
+    swrState.data = expiringExpectationData("2026-02-07", "2026-02-07T17:05:00Z", 1);
+    const view = render(<StartChartPage />);
+    fireEvent.change(screen.getByLabelText("Compare"), { target: { value: "categories" } });
+    const value = () => document.querySelector('#start-chart-panel-C [class*="primaryProjection"] strong')?.textContent;
+    expect(value()).toBe("1.00");
+    // A stale cached copy (already past its source expiry) wins a revalidation race.
+    swrState.data = expiringExpectationData("2026-02-07", "2026-02-07T16:59:00Z", 3);
+    view.rerender(<StartChartPage />);
+    expect(screen.queryByText("Synthetic expiring player 2026-02-07", { exact: true })).toBeNull();
+    expect(screen.getByRole("status", { name: "Forecast validity" }).textContent).toContain("Forecast values expired.");
+    swrState.data = expiringExpectationData("2026-02-07", "2026-02-07T17:10:00Z", 2);
+    view.rerender(<StartChartPage />);
+    expect(screen.queryByRole("status", { name: "Forecast validity" })).toBeNull();
+    expect(value()).toBe("2.00");
+  });
+
+  it("drops players a partial refresh no longer covers instead of keeping their previous values", () => {
+    const payload = (names: string[], goals: number) => normalizeStartChartResponse({ ...buildApiData(), contractVersion: 2,
+      serving: { mode: names.length > 1 ? "exact" : "partial", message: names.length > 1 ? null : "Partial refresh." },
+      gameExpectations: { version: "forge-game-expectations-v1", readAsOf: new Date().toISOString(), basis: "expected",
+        expiresAt: "2026-02-07T23:00:00Z" },
+      players: names.map((name, index) => player({ row_key: `partial-${index}`, player_id: 8478400 + index, name,
+        forecast: { conditioning: "unconditional", participationProbability: null, expected: { GOALS: goals } },
+        gameExpectation: { playerId: String(70 + index), scheduleRevision: "schedule-partial", targets: { GOALS: {
+          expected: goals, conditional: null, basis: "unconditional_game", unit: "count",
+          allowedUses: { totals: true, comparison: true }, expiresAt: "2026-02-07T23:00:00Z" } } } })) });
+    swrState.data = payload(["Partial kept", "Partial dropped"], 1);
+    const view = render(<StartChartPage />);
+    expect(screen.getByText("Partial dropped", { exact: true })).toBeTruthy();
+    swrState.data = payload(["Partial kept"], 2);
+    view.rerender(<StartChartPage />);
+    expect(screen.queryByText("Partial dropped", { exact: true })).toBeNull();
+    expect(screen.getByText("Partial kept", { exact: true })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Compare"), { target: { value: "categories" } });
+    expect(document.querySelector('#start-chart-panel-C [class*="primaryProjection"] strong')?.textContent).toBe("2.00");
+  });
+
+  it.each([["2026-02-08T04:59:59.999Z", "2026-02-07"], ["2026-02-08T05:00:00.000Z", "2026-02-08"]])(
+    "selects the Eastern slate date at %s", (now, expected) => {
+      vi.setSystemTime(new Date(now));
+      routerState.router.query = {};
+      render(<StartChartPage />);
+      expect((screen.getByLabelText("Date") as HTMLInputElement).value).toBe(expected);
+      expect(swrState.request).toHaveBeenCalledWith(`/api/v1/start-chart?date=${expected}&forecast_source=game_expectations`);
+    });
 
   it.each(["expected", "per_appearance"] as const)("withholds an already-expired %s response on first render and after changing comparison basis", basis => {
     swrState.data = expiringExpectationData("2026-02-07", "2026-02-07T16:59:59Z");

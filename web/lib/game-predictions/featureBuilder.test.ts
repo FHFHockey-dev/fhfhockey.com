@@ -1389,7 +1389,7 @@ describe("game prediction feature builder", () => {
       snapshot_date: "2026-01-10",
       model_name: "baseline_logistic",
       model_version: "v0",
-      feature_set_version: "game_features_v5_accuracy_candidates",
+      feature_set_version: "game_features_v6_trusted_ctpi_single_game_form",
       home_team_id: 1,
       away_team_id: 2,
     });
@@ -1397,7 +1397,7 @@ describe("game prediction feature builder", () => {
       prediction_contract: {
         modelName: "baseline_logistic",
         modelVersion: "v0",
-        featureSetVersion: "game_features_v5_accuracy_candidates",
+        featureSetVersion: "game_features_v6_trusted_ctpi_single_game_form",
         asOfDate: "2026-01-10",
         fallbackFlags: {
           away_wgo_team_fallback: true,

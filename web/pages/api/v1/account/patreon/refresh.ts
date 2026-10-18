@@ -28,13 +28,16 @@ export default async function handler(
     if (error instanceof PatreonApiError && error.retryAfterSeconds) {
       res.setHeader("Retry-After", String(error.retryAfterSeconds));
     }
+    // Patreon's own 4xx text is safe to show; anything else stays in logs.
+    if (error instanceof PatreonApiError && error.statusCode < 500) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    console.error("Patreon refresh failed", error);
     return res
       .status(error instanceof PatreonApiError ? error.statusCode : 500)
       .json({
-        error:
-          error instanceof Error
-            ? error.message
-            : "Patreon membership could not be refreshed.",
+        error: "Patreon membership could not be refreshed.",
+        code: "PATREON_REFRESH_UNAVAILABLE",
       });
   }
 }

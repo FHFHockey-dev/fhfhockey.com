@@ -170,6 +170,53 @@ describe("/api/v1/debug/rolling-player-metrics", () => {
     });
   });
 
+  it("passes 5v5 through instead of coercing it to all", async () => {
+    const req: any = {
+      method: "GET",
+      query: { playerId: "8478402", season: "20252026", strength: "5v5" }
+    };
+    const res = createMockRes();
+
+    await rollingPlayerMetricsDebugHandler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(buildPayloadMock).toHaveBeenCalledWith(
+      expect.objectContaining({ strength: "5v5" })
+    );
+  });
+
+  it("defaults a missing strength to all", async () => {
+    const req: any = {
+      method: "GET",
+      query: { playerId: "8478402", season: "20252026" }
+    };
+    const res = createMockRes();
+
+    await rollingPlayerMetricsDebugHandler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(buildPayloadMock).toHaveBeenCalledWith(
+      expect.objectContaining({ strength: "all" })
+    );
+  });
+
+  it("rejects an unsupported strength instead of silently using all", async () => {
+    const req: any = {
+      method: "GET",
+      query: { playerId: "8478402", season: "20252026", strength: "4v4" }
+    };
+    const res = createMockRes();
+
+    await rollingPlayerMetricsDebugHandler(req, res);
+
+    expect(res.statusCode).toBe(400);
+    expect(buildPayloadMock).not.toHaveBeenCalled();
+    expect(res.body).toEqual({
+      success: false,
+      error: "Unsupported strength; expected one of all, 5v5, ev, pp, pk"
+    });
+  });
+
   it("parses the request and returns the validation payload", async () => {
     const req: any = {
       method: "GET",

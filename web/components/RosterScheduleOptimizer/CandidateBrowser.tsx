@@ -56,6 +56,7 @@ export default function CandidateBrowser({ searchQuery, changeSearch, calendar, 
   const requestedIds = requested.snapshotId === (snapshot?.id ?? null) ? requested.ids : [];
   const compare = (id: string) => setRequested({ snapshotId: snapshot?.id ?? null, ids: [...new Set([...requestedIds, id])] });
   const { metrics, loading, error } = useCandidateMetrics(snapshot, intent, requestedIds);
+  const goalieBoost = metrics?.goalieBoost === true;
   // Discovery uses this render's clock; saved planning cutoffs remain immutable.
   const discoveryAsOf = Date.now();
   const candidates = useMemo(() => {
@@ -122,12 +123,14 @@ export default function CandidateBrowser({ searchQuery, changeSearch, calendar, 
   const row = ({ player, plan, comparison, diagnostic, upcomingGames }: Candidate, index: number, ranked = true) => <CandidateCard key={player.id}
     player={player} rank={ranked ? index + 1 : null} calendar={calendar} upcomingGames={upcomingGames} plan={plan} comparison={comparison} snapshot={snapshot} categories={categories}
     diagnostic={diagnostic} evaluationState={loading ? "loading" : error ? "error" : !snapshot ? "no_snapshot" : "completed"}
-    excluded={intent.excludedPlayerIds.includes(player.id)} details={planDetail} nameOf={nameOf}
+    excluded={intent.excludedPlayerIds.includes(player.id)} details={planDetail} nameOf={nameOf} goalieBoost={goalieBoost}
     select={select} add={add} selectPlan={selectPlan} canSelectPlan={canSelectPlan} manual={manual} markAvailable={markAvailable} compare={compare} />;
+  // A goalie minimum at risk lists goalie options that add expected starts first.
+  const boosted = (row: Candidate) => Number(goalieBoost && (row.plan?.netGoalieStarts ?? 0) > 0);
   const lists = (rows: Candidate[]) => {
     const pointsFirst = !categories && sort === "points";
-    const forecasted = pointsFirst ? rows.filter(item => item.activePoints !== null).sort((a, b) => compareCandidateFits(a, b, "points")) : [];
-    const schedule = rows.filter(item => item.activeGames !== null && (!pointsFirst || item.activePoints === null)).sort(byFit);
+    const forecasted = pointsFirst ? rows.filter(item => item.activePoints !== null).sort((a, b) => boosted(b) - boosted(a) || compareCandidateFits(a, b, "points")) : [];
+    const schedule = rows.filter(item => item.activeGames !== null && (!pointsFirst || item.activePoints === null)).sort((a, b) => boosted(b) - boosted(a) || byFit(a, b));
     const unranked = rows.filter(item => item.activeGames === null && (!pointsFirst || item.activePoints === null))
       .sort(compareDiscovery);
     const visibleForecasted = forecasted.slice(0, limit);
@@ -171,6 +174,7 @@ export default function CandidateBrowser({ searchQuery, changeSearch, calendar, 
         {metrics?.search && <p>{metrics.search.evaluated}/{metrics.search.maxEvaluations} evaluations · {metrics.search.candidates}/{metrics.search.eligibleCandidates} eligible candidates · {metrics.search.complete ? "Candidate proposals exhausted within this single-acquisition scope." : "Bounded search; other candidates, times or drops may be unevaluated."} Best found with the existing lineup/search bounds; not proven optimal.</p>}
       </InfoTooltip></div>
     {categories && <p className={styles.limitation}>Category leagues · net AGP order; review category tradeoffs.</p>}
+    {goalieBoost && <p className={styles.limitation}>The goalie minimum may be missed, so goalie options that add expected starts are listed first.</p>}
 
     {loading && <p aria-live="polite">Calculating candidate metrics within the bounded search…</p>}
     {error && <p aria-live="polite">{error}</p>}

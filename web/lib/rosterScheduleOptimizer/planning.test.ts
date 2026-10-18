@@ -1514,6 +1514,23 @@ describe("planning engine", () => {
     expect(category.recommendation?.exclusions?.[0]).toMatchObject({ reason: "unresolved_quality" });
     expect(category.recommendation?.exclusions?.[0].evidence).toBeUndefined();
   });
+  it("bypasses goalie-minimum checks for a league without a minimum and reports expected starts", () => {
+    const data = snapshot();
+    data.players = ["a", "b"].map((id, index) => ({ ...player(id, index ? "B" : "A"), eligiblePositions: ["G"], playerClass: "goalie" as const }));
+    data.roster = data.players.map(player => ({ playerId: player.id, position: "active" }));
+    data.games = data.games.filter(game => game.id === "A0" || game.id === "B0");
+    data.forecasts = data.players.map((player, index) => issuedForecast(data, player.id, index ? "B0" : "A0",
+      { stats: { GOALS_AGAINST_GOALIE: 1 }, startProbability: index ? 0.25 : 1, confirmedStart: index === 0 }));
+    data.rules.rosterSlots = { G: 2 };
+    data.rules.goalieMinimum = { required: 0, credited: null, counts: "unknown", penalty: "unknown" };
+    const cover = { ...intent, goalieCoverage: "cover" as const };
+    const none = evaluatePlan(data, cover, "agp");
+    expect(none.goalie).toMatchObject({ required: 0, risk: false, minimumSatisfied: true, expectedStarts: 1.25 });
+    expect(none.limitations.filter(item => /goalie/i.test(item))).toEqual([]);
+    const unknown = evaluatePlan({ ...data, rules: { ...data.rules, goalieMinimum: { ...data.rules.goalieMinimum, required: 3 } } }, cover, "agp");
+    expect(unknown.goalie).toMatchObject({ risk: true, minimumSatisfied: false, expectedStarts: 1.25 });
+    expect(unknown.limitations).toContain("Goalie minimum semantics are incomplete.");
+  });
   it("sits harmful goalie points and ratio starts after the minimum is credited", () => {
     const data = snapshot();
     const goalie = { ...player("g", "G"), eligiblePositions: ["G"], playerClass: "goalie" as const };

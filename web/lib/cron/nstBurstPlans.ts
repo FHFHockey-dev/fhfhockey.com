@@ -1,6 +1,7 @@
 import {
   assessNstRequestPlan,
   canBurstNstRequests,
+  NST_MAX_BURST_REQUESTS,
   selectNstSafeInterval
 } from "./nstRateLimitPolicy";
 import { getNstCronBurstClearance } from "./nstCoordination";
@@ -167,7 +168,9 @@ export function resolveNstGamelogRequestPlan(options: {
 }) {
   // Day count is the scheduled-date aperture, not a proxy derived from URL count.
   // Actual rolling budgets (including retries/other workers) are enforced at dispatch.
-  const burstAllowed = options.queuedDates > 0 && options.queuedDates <= 2 && options.requestCount <= 40;
+  // The shared burst cap is 39 requests (one below the 40/minute window).
+  const burstAllowed = options.queuedDates > 0 && options.queuedDates <= 2 &&
+    options.requestCount <= NST_MAX_BURST_REQUESTS;
   return {
     ...options,
     burstAllowed,

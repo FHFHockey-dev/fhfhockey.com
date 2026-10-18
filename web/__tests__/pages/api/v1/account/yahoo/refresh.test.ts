@@ -109,4 +109,25 @@ describe("/api/v1/account/yahoo/refresh", () => {
     expect(res.statusCode).toBe(405);
     expect(requireApiUserMock).not.toHaveBeenCalled();
   });
+
+  it("returns a stable error without dependency details", async () => {
+    for (const failure of [
+      new Error("relation private.connected_account_tokens denied Bearer secret"),
+      new YahooRefreshErrorMock("Upstream relation private.connected_account_tokens denied Bearer secret", 502),
+    ]) {
+      runYahooManualRefreshMock.mockRejectedValueOnce(failure);
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+      const res = createMockRes();
+
+      await handler({ method: "POST", headers: {} } as any, res);
+
+      expect(res.statusCode).toBe(500);
+      expect(res.body).toEqual({
+        error: "Yahoo refresh failed.",
+        code: "YAHOO_REFRESH_UNAVAILABLE",
+      });
+      expect(JSON.stringify(res.body)).not.toContain("secret");
+      consoleError.mockRestore();
+    }
+  });
 });

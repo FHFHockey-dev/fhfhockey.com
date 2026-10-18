@@ -236,12 +236,31 @@ export const BASELINE_FEATURE_FAMILY_PRESETS = {
   }
 >;
 
-const FORBIDDEN_BASELINE_FEATURE_INPUT_KEYS = new Set([
+// Post-event/outcome fields that must never feed an xG model. Shared by the
+// dataset builder, the training approval gate, and the artifact feature audit.
+export const FORBIDDEN_BASELINE_FEATURE_INPUT_KEYS: ReadonlySet<string> = new Set([
   "shotEventType",
   "missReasonBucket",
   "isShortSideMiss",
 ]);
-const FORBIDDEN_BASELINE_FEATURE_KEY_PREFIXES = ["shotEventType:"];
+// Encoded categorical keys take the form `${feature}:${level}`.
+export const FORBIDDEN_BASELINE_FEATURE_KEY_PREFIXES: readonly string[] = Array.from(
+  FORBIDDEN_BASELINE_FEATURE_INPUT_KEYS,
+  (key) => `${key}:`
+);
+
+export function findForbiddenBaselineFeatureKeys(keys: Iterable<string>): string[] {
+  const forbidden = new Set<string>();
+  for (const key of keys) {
+    if (
+      FORBIDDEN_BASELINE_FEATURE_INPUT_KEYS.has(key) ||
+      FORBIDDEN_BASELINE_FEATURE_KEY_PREFIXES.some((prefix) => key.startsWith(prefix))
+    ) {
+      forbidden.add(key);
+    }
+  }
+  return Array.from(forbidden);
+}
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
@@ -320,12 +339,12 @@ function resolveFeatureSelection(
     ? selection.categoricalKeys
     : [...preset.categoricalKeys];
 
-  const forbiddenInputs = [...numericKeys, ...booleanKeys, ...categoricalKeys].filter((key) =>
-    FORBIDDEN_BASELINE_FEATURE_INPUT_KEYS.has(String(key))
+  const forbiddenInputs = findForbiddenBaselineFeatureKeys(
+    [...numericKeys, ...booleanKeys, ...categoricalKeys].map(String)
   );
   if (forbiddenInputs.length) {
     throw new Error(
-      `Forbidden baseline feature inputs were requested: ${Array.from(new Set(forbiddenInputs)).join(", ")}.`
+      `Forbidden baseline feature inputs were requested: ${forbiddenInputs.join(", ")}.`
     );
   }
 
@@ -492,12 +511,10 @@ export function buildEncodedBaselineDataset(
     ),
   ];
 
-  const forbiddenFeatureKeys = featureKeys.filter((featureKey) =>
-    FORBIDDEN_BASELINE_FEATURE_KEY_PREFIXES.some((prefix) => featureKey.startsWith(prefix))
-  );
+  const forbiddenFeatureKeys = findForbiddenBaselineFeatureKeys(featureKeys);
   if (forbiddenFeatureKeys.length) {
     throw new Error(
-      `Forbidden baseline feature keys were generated: ${Array.from(new Set(forbiddenFeatureKeys)).join(", ")}.`
+      `Forbidden baseline feature keys were generated: ${forbiddenFeatureKeys.join(", ")}.`
     );
   }
 

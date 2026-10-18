@@ -1,0 +1,294 @@
+{
+  "generatedBy": "tasks/artifacts/social-share-lane-2026-10-18/harness/render-previews.mjs",
+  "synthetic": true,
+  "fixtureWeek": "2026-10-19",
+  "note": "Fictional matchups for mechanics review. Not NHL data, not a captured edition, not a recommendation, not cleared for posting.",
+  "checks": {
+    "weeklyReady": true,
+    "weeklyProviderUpdateUnknown": true,
+    "remainingDefaultsThuToSun": true,
+    "remainingCountsOnlyFutureSelected": true,
+    "lateWednesdayGameStaysWednesday": true,
+    "allDaysExcludesElapsedMonTue": true,
+    "partialIsNotReady": true,
+    "rerenderIsNewEditionNotRenewal": true
+  },
+  "reasons": {
+    "weekly": [],
+    "remaining": [],
+    "partial": [
+      "Game 2026020121 has an unknown start or state on a selected date."
+    ]
+  },
+  "files": [
+    {
+      "file": "weekly-top3.png",
+      "sha256": "c82a83ae32265f782ea981551634dd09499a0a73f4f8aca8090d9144913d91c4",
+      "width": 1080,
+      "height": 1080,
+      "edition": "schedule-a42ad4d4",
+      "format": "game-grid",
+      "state": "ready",
+      "label": "SYNTHETIC FIXTURE",
+      "generatedAt": "2026-10-19T14:00:00.000Z",
+      "checkedAt": "2026-10-19T13:58:00.000Z",
+      "providerUpdatedAt": null,
+      "expiresAt": "2026-10-19T17:00:00.000Z",
+      "renderClock": "2026-10-19T14:01:00.000Z",
+      "selectedDates": [
+        "2026-10-19",
+        "2026-10-20",
+        "2026-10-21",
+        "2026-10-22",
+        "2026-10-23",
+        "2026-10-24",
+        "2026-10-25"
+      ],
+      "focusTeamId": null,
+      "clientExpired": false,
+      "deterministicRepeat": true,
+      "geometry": {
+        "scale": 0.5,
+        "outside": [],
+        "outsideSafeArea": [],
+        "horizontalOverflow": [],
+        "fontsLoaded": {
+          "Share Roboto Condensed": true,
+          "Share Train One": true,
+          "Share Martian Mono": true
+        },
+        "smallestFontPx": 24,
+        "watermark": "SCHEDULE ONLY",
+        "status": "NHL schedule checked Oct 19, 9:58 AM EDT · Provider update Not available · Remaining after Oct 19, 10:00 AM EDT",
+        "downloadEnabled": true
+      },
+      "realExport": {
+        "suggestedFilename": "fhfh-game-grid-2026-10-19-schedule-a42ad4d4.png",
+        "sha256": "c82a83ae32265f782ea981551634dd09499a0a73f4f8aca8090d9144913d91c4",
+        "matchesHarnessCapture": true
+      },
+      "path": "real downloadSharePng export"
+    },
+    {
+      "file": "weekly-team-focus-cbj.png",
+      "sha256": "f613f40eb502b100148ad3981a41e87b385c3f3503057deb647891ba3cda2dc3",
+      "width": 1080,
+      "height": 1080,
+      "edition": "schedule-a42ad4d4",
+      "format": "game-grid",
+      "state": "ready",
+      "label": "SYNTHETIC FIXTURE",
+      "generatedAt": "2026-10-19T14:00:00.000Z",
+      "checkedAt": "2026-10-19T13:58:00.000Z",
+      "providerUpdatedAt": null,
+      "expiresAt": "2026-10-19T17:00:00.000Z",
+      "renderClock": "2026-10-19T14:01:00.000Z",
+      "selectedDates": [
+        "2026-10-19",
+        "2026-10-20",
+        "2026-10-21",
+        "2026-10-22",
+        "2026-10-23",
+        "2026-10-24",
+        "2026-10-25"
+      ],
+      "focusTeamId": 29,
+      "clientExpired": false,
+      "deterministicRepeat": true,
+      "geometry": {
+        "scale": 0.5,
+        "outside": [],
+        "outsideSafeArea": [],
+        "horizontalOverflow": [],
+        "fontsLoaded": {
+          "Share Roboto Condensed": true,
+          "Share Train One": true,
+          "Share Martian Mono": true
+        },
+        "smallestFontPx": 24,
+        "watermark": "SCHEDULE ONLY",
+        "status": "NHL schedule checked Oct 19, 9:58 AM EDT · Provider update Not available · Remaining after Oct 19, 10:00 AM EDT",
+        "downloadEnabled": true
+      },
+      "realExport": {
+        "suggestedFilename": "fhfh-game-grid-2026-10-19-schedule-a42ad4d4.png",
+        "sha256": "f613f40eb502b100148ad3981a41e87b385c3f3503057deb647891ba3cda2dc3",
+        "matchesHarnessCapture": true
+      },
+      "path": "real downloadSharePng export"
+    },
+    {
+      "file": "remaining-week-top3.png",
+      "sha256": "8c1b4100737deec28d314b767fd08252d44822429a5e6bfee4dff532b4e0fb82",
+      "width": 1080,
+      "height": 1080,
+      "edition": "schedule-dffb19a7",
+      "format": "remaining-week",
+      "state": "ready",
+      "label": "SYNTHETIC FIXTURE",
+      "generatedAt": "2026-10-21T16:00:00.000Z",
+      "checkedAt": "2026-10-21T15:58:00.000Z",
+      "providerUpdatedAt": null,
+      "expiresAt": "2026-10-21T21:58:00.000Z",
+      "renderClock": "2026-10-21T16:01:00.000Z",
+      "selectedDates": [
+        "2026-10-22",
+        "2026-10-23",
+        "2026-10-24",
+        "2026-10-25"
+      ],
+      "focusTeamId": null,
+      "clientExpired": false,
+      "deterministicRepeat": true,
+      "geometry": {
+        "scale": 0.5,
+        "outside": [],
+        "outsideSafeArea": [],
+        "horizontalOverflow": [],
+        "fontsLoaded": {
+          "Share Roboto Condensed": true,
+          "Share Train One": true,
+          "Share Martian Mono": true
+        },
+        "smallestFontPx": 24,
+        "watermark": "SCHEDULE ONLY",
+        "status": "NHL schedule checked Oct 21, 11:58 AM EDT · Provider update Not available · Remaining after Oct 21, 12:00 PM EDT",
+        "downloadEnabled": true
+      },
+      "realExport": {
+        "suggestedFilename": "fhfh-remaining-week-2026-10-19-schedule-dffb19a7.png",
+        "sha256": "8c1b4100737deec28d314b767fd08252d44822429a5e6bfee4dff532b4e0fb82",
+        "matchesHarnessCapture": true
+      },
+      "path": "real downloadSharePng export"
+    },
+    {
+      "file": "remaining-week-partial.png",
+      "sha256": "5c43183a289d914a784682177f28932bf84b97723449d3a13a7def1d6594f41b",
+      "width": 1080,
+      "height": 1080,
+      "edition": "schedule-9615d770",
+      "format": "remaining-week",
+      "state": "partial",
+      "label": "SYNTHETIC · PARTIAL EDITION",
+      "generatedAt": "2026-10-21T16:00:00.000Z",
+      "checkedAt": "2026-10-21T15:58:00.000Z",
+      "providerUpdatedAt": null,
+      "expiresAt": "2026-10-21T21:58:00.000Z",
+      "renderClock": "2026-10-21T16:01:00.000Z",
+      "selectedDates": [
+        "2026-10-22",
+        "2026-10-23",
+        "2026-10-24",
+        "2026-10-25"
+      ],
+      "focusTeamId": null,
+      "clientExpired": false,
+      "deterministicRepeat": true,
+      "geometry": {
+        "scale": 0.5,
+        "outside": [],
+        "outsideSafeArea": [],
+        "horizontalOverflow": [],
+        "fontsLoaded": {
+          "Share Roboto Condensed": true,
+          "Share Train One": true,
+          "Share Martian Mono": true
+        },
+        "smallestFontPx": 24,
+        "watermark": "PREVIEW ONLY · REFRESH / CHECK SOURCE",
+        "status": "NHL schedule checked Oct 21, 11:58 AM EDT · Provider update Not available · Remaining after Oct 21, 12:00 PM EDT\n\nSchedule partial: Game 2026020121 has an unknown start or state on a selected date.",
+        "downloadEnabled": false
+      },
+      "path": "harness capture (export gate closed)"
+    },
+    {
+      "file": "weekly-expired.png",
+      "sha256": "05d740450eb9db898e7c3595b9b7a458c30b31fd881031aad817c5c885a745dd",
+      "width": 1080,
+      "height": 1080,
+      "edition": "schedule-a42ad4d4",
+      "format": "game-grid",
+      "state": "ready",
+      "label": "SYNTHETIC · EXPIRED EDITION",
+      "generatedAt": "2026-10-19T14:00:00.000Z",
+      "checkedAt": "2026-10-19T13:58:00.000Z",
+      "providerUpdatedAt": null,
+      "expiresAt": "2026-10-19T17:00:00.000Z",
+      "renderClock": "2026-10-19T17:01:00.000Z",
+      "selectedDates": [
+        "2026-10-19",
+        "2026-10-20",
+        "2026-10-21",
+        "2026-10-22",
+        "2026-10-23",
+        "2026-10-24",
+        "2026-10-25"
+      ],
+      "focusTeamId": null,
+      "clientExpired": true,
+      "deterministicRepeat": true,
+      "geometry": {
+        "scale": 0.5,
+        "outside": [],
+        "outsideSafeArea": [],
+        "horizontalOverflow": [],
+        "fontsLoaded": {
+          "Share Roboto Condensed": true,
+          "Share Train One": true,
+          "Share Martian Mono": true
+        },
+        "smallestFontPx": 24,
+        "watermark": "PREVIEW ONLY · REFRESH / CHECK SOURCE",
+        "status": "NHL schedule checked Oct 19, 9:58 AM EDT · Provider update Not available · Remaining after Oct 19, 10:00 AM EDT\n\nThis edition has expired. Refresh the schedule to download.",
+        "downloadEnabled": false
+      },
+      "path": "harness capture (export gate closed)"
+    },
+    {
+      "file": "studio-mobile-390.png",
+      "sha256": "025ed2b348d7dca90dd5e03b5b8a2ae33ea42289bf43f35bdaa6b296edd291a5",
+      "width": 390,
+      "height": 3663,
+      "path": "page screenshot",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalPageOverflowPx": 0,
+      "edition": "schedule-a42ad4d4"
+    },
+    {
+      "file": "studio-mobile-320.png",
+      "sha256": "fac3d3a1a386d442a026e427ae8a254e7a61cc146aced3a2748ef7e1b7eae9f1",
+      "width": 320,
+      "height": 4730,
+      "path": "page screenshot",
+      "viewport": {
+        "width": 320,
+        "height": 700
+      },
+      "horizontalPageOverflowPx": 0,
+      "edition": "schedule-a42ad4d4"
+    },
+    {
+      "file": "weekly-top3-feed-390.png",
+      "sha256": "6b96fe8da461bc98d6bca939e73422adbca3f1dc97dd84881cb52cff69380f16",
+      "width": 390,
+      "height": 390,
+      "path": "1080 export downscaled to a 390px feed width",
+      "smallestFontEffectivePx": 8.7
+    },
+    {
+      "file": "tuesday-trends-blocked.png",
+      "sha256": "95cdac0fd81ccdc1b8675009cf5854c0c8c2f648704b352b30c0eafe1fb5661e",
+      "width": 1280,
+      "height": 1400,
+      "path": "page screenshot",
+      "format": "tuesday-trends",
+      "state": "blocked",
+      "apiRequests": 0
+    }
+  ],
+  "externalRequestsBlocked": []
+}

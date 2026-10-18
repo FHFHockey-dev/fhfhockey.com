@@ -7,6 +7,8 @@ import type { PlanEvaluation, PlanIntent, PlanningSnapshot, PlanStep } from "./p
 export type CandidatePlan = {
   objective: "agp" | "outcome"; steps: PlanStep[];
   netAGP: number | null; netPoints: number | null;
+  /** Expected goalie starts added against the original roster; null when a start probability is missing. */
+  netGoalieStarts?: number | null;
   categoryComparisonVerified?: boolean;
   dropped: Array<{ playerId: string; lostAGP: number | null; lostPoints: number | null }>;
   displacedPlayerIds: string[];
@@ -50,6 +52,11 @@ export function candidatePlanMetrics(snapshot: PlanningSnapshot, intent: PlanInt
   const baseline = snapshot.rules.scoring.mode === "points" && outcomeBaseline.comparisonEligible
     ? outcomeBaseline : agpBaseline;
   const baselineLedger = contributionLedger(snapshot, baseline, originalIntent);
+  // Only a league goalie minimum that the original roster may miss boosts goalie candidates.
+  // Unknown progress counts as zero credited starts; leagues without a minimum get no boost.
+  const required = snapshot.rules.goalieMinimum.required ?? 0;
+  const goalieBoost = required > 0 && baseline.goalie.minimumSatisfied !== true && (baseline.goalie.expectedStarts == null
+    || (snapshot.rules.goalieMinimum.credited ?? 0) + baseline.goalie.expectedStarts < required);
   const capacity = expandActiveSlots(snapshot.rules.rosterSlots);
   const vacant = snapshot.roster.filter(row => !["IR", "IR+", "NA"].includes(row.position)).length
     < capacity.activeSlots.length + capacity.benchCapacity;
@@ -84,8 +91,11 @@ export function candidatePlanMetrics(snapshot: PlanningSnapshot, intent: PlanInt
     return gameCount(b.teamAbbreviation) - gameCount(a.teamAbbreviation) || a.id.localeCompare(b.id);
   });
   const requested = new Set(options.requestedPlayerIds ?? []);
-  const selected = [...eligible.filter(player => requested.has(player.id)),
-    ...eligible.filter(player => !requested.has(player.id))].slice(0, maxCandidates);
+  // A boost reserves a quarter of the bounded set for the leading goalie candidates.
+  const boosted = new Set(goalieBoost ? eligible.filter(player => player.playerClass === "goalie" && !requested.has(player.id))
+    .slice(0, Math.ceil(maxCandidates / 4)).map(player => player.id) : []);
+  const selected = [...eligible.filter(player => requested.has(player.id)), ...eligible.filter(player => boosted.has(player.id)),
+    ...eligible.filter(player => !requested.has(player.id) && !boosted.has(player.id))].slice(0, maxCandidates);
   const diagnostics: CandidateDiagnostic[] = inputs.map(({ player, reasons }) => ({ playerId: player.id,
     status: reasons.length ? "filtered" : "not_selected", stopReason: reasons.length ? "filtered" : "candidate_limit",
     generated: 0, skipped: 0, evaluated: 0, illegal: 0, unverifiedBudget: 0, retained: 0,
@@ -139,6 +149,8 @@ export function candidatePlanMetrics(snapshot: PlanningSnapshot, intent: PlanInt
       ...(snapshot.rules.scoring.mode === "categories" ? { categoryComparisonVerified } : {}),
       netAGP: scheduleKnown ? evaluation.activeGames - baseline.activeGames : null,
       netPoints: pointsKnown ? evaluation.projectedValue! - baseline.projectedValue! : null,
+      netGoalieStarts: evaluation.goalie.expectedStarts != null && baseline.goalie.expectedStarts != null
+        ? evaluation.goalie.expectedStarts - baseline.goalie.expectedStarts : null,
       dropped: [], displacedPlayerIds: [...new Set(baseline.assignments.filter(row => !evaluation.assignments.some(next =>
         next.date === row.date && next.gameId === row.gameId && next.playerId === row.playerId && next.slotId === row.slotId)).map(row => row.playerId))].sort() };
     const rows = comparisons[index].plans;
@@ -198,7 +210,7 @@ export function candidatePlanMetrics(snapshot: PlanningSnapshot, intent: PlanInt
   }
   const representative = comparisons.map(row => ({ playerId: row.playerId, plan: candidatePlanForSort(row.plans, "points") }));
   const activePoints = representative.map(({ playerId, plan }): [string, number | null] => [playerId, plan?.netPoints ?? null]);
-  return { candidates: comparisons, diagnostics, points: activePoints, activePoints,
+  return { candidates: comparisons, diagnostics, points: activePoints, activePoints, goalieBoost,
     activeGames: representative.map(({ playerId, plan }): [string, number | null] => [playerId, plan?.netAGP ?? null]),
     baseline: { objective: baseline.objective, activeGames: baseline.activeGames,
       projectedPoints: snapshot.rules.scoring.mode === "points" && baseline.comparisonEligible ? baseline.projectedValue : null },

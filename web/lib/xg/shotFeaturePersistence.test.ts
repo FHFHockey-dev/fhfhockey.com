@@ -155,6 +155,77 @@ describe("shotFeaturePersistence", () => {
     ).toThrow(/missing selected numeric feature "shotDistanceFeet"/);
   });
 
+  it("rejects approved artifacts that select forbidden post-event features", () => {
+    const artifact: PersistedXgModelArtifact = {
+      artifactKind: "nhl_xg_model",
+      artifactTag: "pre-fix-leaky-artifact",
+      family: "logistic_l2",
+      featureVersion: 1,
+      approvalGradeEligibility: { isEligible: true, blockingReasons: [] },
+      selectedFeatures: {
+        numeric: ["shotDistanceFeet"],
+        boolean: ["isShortSideMiss"],
+        categorical: ["missReasonBucket"],
+      },
+      categoricalLevels: { missReasonBucket: ["wide", "high"] },
+      featureKeys: [
+        "shotDistanceFeet",
+        "isShortSideMiss",
+        "missReasonBucket:wide",
+        "missReasonBucket:high",
+      ],
+      model: { featureCount: 4, weights: [0.1, 0.2, 0.3, 0.4], bias: 0 },
+    };
+
+    const audit = auditXgArtifactFeatureContract({ artifact });
+
+    expect(audit.passed).toBe(false);
+    expect(audit.issues).toEqual([
+      expect.objectContaining({
+        code: "forbidden_feature",
+        feature: "isShortSideMiss",
+        featureGroup: "boolean",
+      }),
+      expect.objectContaining({
+        code: "forbidden_feature",
+        feature: "missReasonBucket",
+        featureGroup: "categorical",
+      }),
+      expect.objectContaining({
+        code: "forbidden_feature",
+        message: expect.stringContaining("missReasonBucket:wide, missReasonBucket:high"),
+      }),
+    ]);
+    expect(() =>
+      predictShotGoalProbabilities(
+        { gameId: 2025020001, eventId: 101, shotDistanceFeet: 20 } as any,
+        artifact
+      )
+    ).toThrow(/forbidden post-event feature "isShortSideMiss"/);
+  });
+
+  it("rejects artifacts whose encoded keys carry the shotEventType prefix", () => {
+    const artifact: PersistedXgModelArtifact = {
+      artifactKind: "nhl_xg_model",
+      artifactTag: "leaky-encoded-keys",
+      family: "logistic_l2",
+      featureVersion: 1,
+      selectedFeatures: { numeric: ["shotDistanceFeet"], boolean: [], categorical: [] },
+      featureKeys: ["shotDistanceFeet", "shotEventType:goal"],
+      model: { featureCount: 2, weights: [0.1, 0.2], bias: 0 },
+    };
+
+    const audit = auditXgArtifactFeatureContract({ artifact });
+
+    expect(audit.passed).toBe(false);
+    expect(audit.issues).toContainEqual(
+      expect.objectContaining({
+        code: "forbidden_feature",
+        message: expect.stringContaining("shotEventType:goal"),
+      })
+    );
+  });
+
   it("flags encoded feature count mismatches before scoring", () => {
     const artifact: PersistedXgModelArtifact = {
       artifactKind: "nhl_xg_model",

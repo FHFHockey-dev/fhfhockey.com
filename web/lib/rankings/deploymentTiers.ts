@@ -491,6 +491,7 @@ async function fetchRollingRowsForExactSnapshot(args: {
       .eq("season", args.request.season)
       .eq("strength_state", args.strength)
       .eq("game_date", args.snapshotDate)
+      .order("player_id", { ascending: true })
       .range(from, from + ROLLING_QUERY_PAGE_SIZE - 1);
     if (args.request.teamId != null) {
       query = query.eq("team_id", args.request.teamId);

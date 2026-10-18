@@ -10,7 +10,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
 import { getLatestStartedSeasonForDate } from "lib/NHL/server";
 import { teamsInfo } from "lib/teamsInfo";
-import { evaluateForgeCalibrationEligibility, FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
+import { evaluateForgeCalibrationEligibility } from "lib/projections/calibrationEligibility";
 import { buildStartChartCompatibility } from "lib/projections/compatibilityInventory";
 import {
   extractDegradedProjectionContext,
@@ -735,13 +735,15 @@ export const computeDefenseEaseGrades = (
   return grades;
 };
 
-// State rows use null for a non-participating state; only an all-null stat is unavailable.
+// ES and PP are modeled heads: a null head is unknown (withheld), so the total is
+// unknown rather than a partial sum. PK is not modeled (writers store null) and
+// adds nothing until it is.
 export const sumProjectionParts = (
-  ...values: Array<number | null>
+  es: number | null,
+  pp: number | null,
+  pk: number | null = null,
 ): number | null =>
-  values.every((value) => value == null)
-    ? null
-    : values.reduce<number>((sum, value) => sum + (value ?? 0), 0);
+  es == null || pp == null ? null : es + pp + (pk ?? 0);
 
 const MAX_ONE_GAME_SKATER_TOI_SECONDS = 65 * 60;
 
@@ -908,9 +910,9 @@ async function fetchSlate(
     ? null
     : ((runResponse.data as unknown as ForgeRunWithProjectionsRow | null) ??
       null);
-  const forgeRun = selectedRun?.git_sha?.startsWith("local:")
-    || (selectedRun?.metrics as any)?.input_provenance?.external_fantasy_input_contract !== FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT
-    ? null : selectedRun;
+  // As in production, an unlabelled (externally blended) run is still served;
+  // provenance eligibility below flags its rows unverified_projection_provenance.
+  const forgeRun = selectedRun?.git_sha?.startsWith("local:") ? null : selectedRun;
   let projections = (forgeRun?.forge_player_projections ?? []).filter(
     (row) =>
       row.as_of_date === targetDate &&

@@ -1,0 +1,95 @@
+@use "styles/vars" as v;
+
+.page {
+  min-height: 100vh;
+  padding: 16px;
+  background: v.$background-dark;
+  color: v.$text-primary;
+  font-family: v.$font-family-primary;
+}
+
+.container { max-width: 1280px; margin: 0 auto; display: grid; gap: 16px; }
+
+.title { margin: 0; font-size: 1.6rem; letter-spacing: 0.04em; text-transform: uppercase; }
+.subtitle { margin: 4px 0 0; color: v.$text-secondary; font-size: v.$font-size-sm; }
+
+.fixtureBanner {
+  padding: 10px 12px;
+  border: 2px dashed v.$warning-color;
+  border-radius: 6px;
+  color: v.$warning-color;
+  font-weight: 700;
+  font-size: v.$font-size-sm;
+}
+
+.controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.control { display: grid; gap: 4px; font-size: v.$font-size-xs; color: v.$text-secondary; }
+.control select, .control input {
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 1px solid v.$border-secondary;
+  border-radius: 4px;
+  background: v.$background-darker;
+  color: v.$text-primary;
+}
+
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.tab {
+  min-height: 36px;
+  padding: 4px 14px;
+  border: 1px solid v.$border-secondary;
+  border-radius: 4px;
+  background: transparent;
+  color: v.$text-primary;
+  cursor: pointer;
+}
+.tab[aria-pressed="true"] { border-color: v.$primary-color; color: v.$primary-color; font-weight: 700; }
+
+.tab:focus-visible, .control select:focus-visible, .control input:focus-visible, .rowButton:focus-visible, .smallButton:focus-visible {
+  outline: 2px solid v.$focus-color;
+  outline-offset: 2px;
+}
+
+.tableWrap { overflow-x: auto; border: 1px solid v.$border-soft; border-radius: 6px; }
+.table { width: 100%; border-collapse: collapse; font-size: v.$font-size-sm; }
+.table th, .table td { padding: 8px; border-bottom: 1px solid v.$border-soft; text-align: left; vertical-align: top; }
+.table th { color: v.$text-secondary; font-size: v.$font-size-xs; text-transform: uppercase; }
+.num { font-family: v.$font-family-numbers; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.muted { color: v.$text-secondary; font-size: v.$font-size-xs; }
+
+/* Status text always accompanies color. */
+.rebound { color: v.$success-color; }
+.cooling { color: v.$danger-color; }
+.unavailable, .level { color: v.$text-secondary; }
+.warn { color: v.$warning-color; }
+
+.rowButton, .smallButton {
+  min-height: 32px;
+  padding: 2px 10px;
+  border: 1px solid v.$border-secondary;
+  border-radius: 4px;
+  background: transparent;
+  color: v.$text-link;
+  cursor: pointer;
+}
+
+.detail { display: grid; gap: 12px; padding: 12px; border: 1px solid v.$primary-color-opaque; border-radius: 6px; background: v.$background-medium; }
+.detail h2, .detail h3 { margin: 0; font-size: 1rem; }
+.grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.list { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: v.$font-size-sm; }
+.panel { display: grid; gap: 8px; padding: 12px; border: 1px solid v.$border-soft; border-radius: 6px; }
+.issues { margin: 0; padding-left: 18px; color: v.$warning-color; font-size: v.$font-size-sm; }
+
+@media (max-width: 640px) {
+  .page { padding: 12px; }
+  .hideNarrow { display: none; }
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

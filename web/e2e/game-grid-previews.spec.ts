@@ -344,3 +344,68 @@ test('keyboard refresh keeps focus in the open preview during delayed loading, s
   await expect(trigger(page)).toBeFocused();
   await expect(trigger(page)).toHaveAttribute('aria-expanded', 'false');
 });
+
+// Real 2025-03-17 week replayed on the fixture week (see fixtures/game-grid-previews/README.md).
+async function realWeek(page: Page) {
+  // Before the fixture week, so no day is auto-excluded as already played.
+  await page.clock.install({ time: new Date('2026-10-04T16:00:00Z') });
+  await page.route('**/*', (route) => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
+  await page.goto('/?teams=32');
+}
+const realRows = (page: Page, width: number) => width >= 1024
+  ? page.locator('tbody tr:has([id^="game-grid-master-trigger-"])')
+  : page.locator('table').filter({ has: page.getByRole('button', { name: 'Sort by games played', exact: true }) }).locator('tbody tr:has(td:first-child a)');
+const column = (rows: Locator, index: number) => rows.evaluateAll((trs, i) => trs.map((tr) => tr.querySelectorAll('td')[i]?.textContent?.trim() ?? ''), index);
+const gpSum = async (rows: Locator) => (await column(rows, 8)).reduce((sum, value) => sum + Number(value), 0);
+
+for (const width of [1920, 1180, 390, 320]) test(`32-team real week keeps rows, totals and rankings through day masks and schedule states at ${width}px`, async ({ page }, testInfo) => {
+  await page.setViewportSize({ width, height: width >= 1024 ? 1000 : 844 });
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(String(error)));
+  await realWeek(page);
+  const rows = realRows(page, width);
+  await expect(rows).toHaveCount(32);
+  expect(await gpSum(rows)).toBe(104);
+  if (width >= 1024) {
+    const totals = page.locator('tr', { hasText: 'GP/Day' }).first().locator('td');
+    expect((await totals.allTextContents()).slice(1, 9)).toEqual(['5', '9', '2', '14', '1', '14', '7', '52']);
+    await page.getByRole('button', { name: 'Sort by Score descending' }).first().click();
+    const scores = (await column(rows, 10)).map(Number);
+    expect(scores.every((score, i) => i === 0 || scores[i - 1] >= score)).toBe(true);
+  } else {
+    const fit = await rows.first().evaluate((tr) => ({ cells: tr.querySelectorAll('td').length,
+      scroll: tr.closest('table')!.parentElement!.scrollWidth, client: tr.closest('table')!.parentElement!.clientWidth }));
+    expect(fit.cells).toBe(11);
+    expect(fit.scroll).toBeLessThanOrEqual(fit.client + 1);
+  }
+  await page.screenshot({ path: testInfo.outputPath(`real-week-32-${width}.png`), fullPage: false });
+  // Excluding Thursday (14 games) leaves 2 × 38 team games; restoring it returns all 52.
+  await page.getByRole('switch', { name: 'Include THU games' }).first().click();
+  await expect.poll(() => gpSum(rows)).toBe(76);
+  await page.getByRole('switch', { name: 'Include THU games' }).first().click();
+  await expect.poll(() => gpSum(rows)).toBe(104);
+  // A postponement removes one game from both teams and from Thursday's slate only.
+  await page.getByRole('button', { name: 'Postponed schedule fixture' }).click();
+  await expect.poll(() => gpSum(rows)).toBe(102);
+  if (width >= 1024) expect((await page.locator('tr', { hasText: 'GP/Day' }).first().locator('td').allTextContents())[4]).toBe('13');
+  await page.getByRole('button', { name: 'Partial schedule fixture' }).click();
+  await expect(page.getByText(/Selected schedule incomplete: 6\/7 days covered/)).toBeVisible();
+  await expect(rows).toHaveCount(0);
+  await page.getByRole('button', { name: 'Empty schedule fixture' }).click();
+  await expect(rows).toHaveCount(32);
+  expect(await gpSum(rows)).toBe(0);
+  expect(new Set(await column(rows, 10))).toEqual(new Set(['-']));
+  expect(errors).toEqual([]);
+});
+
+test('32-team stale schedule receipts are disclosed in previews and never become forecast totals', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await realWeek(page);
+  await page.getByRole('button', { name: 'Stale schedule fixture' }).click();
+  const bos = page.getByRole('button', { name: /Show Real Week BOS (?:upcoming category forecasts|team preview)/ });
+  const id = await bos.getAttribute('aria-controls');
+  await bos.click();
+  const details = page.locator(`#${id}`);
+  await expect(details.getByText(/Schedule retrieved: 2026-09-30T12:00:00Z\. Provider source freshness unavailable\./).first()).toBeVisible();
+  await expect(details.getByLabel('Remaining-week category forecasts').getByText('Unavailable', { exact: true })).toHaveCount(7);
+});

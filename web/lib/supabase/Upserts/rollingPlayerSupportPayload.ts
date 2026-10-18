@@ -31,3 +31,29 @@ export type RollingPlayerMetricSupportPayloadRow = {
   support_payload: RollingPlayerSupportPayload;
   updated_at?: string;
 };
+
+/**
+ * Restores the scalar fields the rolling writer moved from a wide
+ * `rolling_player_game_metrics` row into its support payload. Only columns the
+ * row already carries are filled, and a non-null wide value always wins.
+ */
+export function mergeRollingSupportPayloadFields<TRow extends Record<string, unknown>>(
+  row: TRow,
+  supportPayload: Pick<
+    RollingPlayerSupportPayload,
+    "historicalCompatibility" | "deprecatedCompatibility"
+  > | null | undefined
+): TRow {
+  const merged: Record<string, unknown> = { ...row };
+  for (const fields of [
+    supportPayload?.historicalCompatibility,
+    supportPayload?.deprecatedCompatibility
+  ]) {
+    if (!fields || typeof fields !== "object" || Array.isArray(fields)) continue;
+    for (const [field, value] of Object.entries(fields)) {
+      if (value == null || !(field in merged) || merged[field] != null) continue;
+      merged[field] = value;
+    }
+  }
+  return merged as TRow;
+}

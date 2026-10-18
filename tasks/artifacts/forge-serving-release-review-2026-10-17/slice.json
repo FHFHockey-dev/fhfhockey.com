@@ -1,9 +1,9 @@
 {
- "generatedAt": "2026-10-17T22:47:17Z",
+ "generatedAt": "2026-10-18T19:05:41Z",
  "previousGeneratedAt": "2026-10-17T21:50:17Z",
  "production": "457435eb3010c5b3dd92d2e1a46d9c75d851780a",
- "head": "ceceb407a29b45f2e5b0c090ecfcff0c27e15d4c",
- "note": "blob = git hash-object of working-tree bytes; sha256 of the same bytes. Candidate = production + runtimeSlice + scheduleWriters + testSupport + candidateTests.. Candidate = production + runtimeSlice + scheduleWriters + testSupport + candidateTests.",
+ "head": "0de97e77d38db5f6fbefc1dd38f846cc515e22cb",
+ "note": "blob = git hash-object of working-tree bytes; sha256 of the same bytes. Candidate = production + runtimeSlice + scheduleWriters + testSupport + candidateTests.. Candidate = production + runtimeSlice + scheduleWriters + testSupport + candidateTests.. Candidate = production + runtimeSlice + scheduleWriters + testSupport + candidateTests.. Candidate = production + runtimeSlice + scheduleWriters + testSupport + candidateTests.. Candidate = production + runtimeSlice + scheduleWriters + testSupport + candidateTests.. Candidate = production + runtimeSlice + scheduleWriters + testSupport + candidateTests.",
  "runtimeSlice": [
   {
    "path": "web/components/RosterScheduleOptimizer/AcquisitionPeriodTimes.tsx",
@@ -32,11 +32,11 @@
    "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx",
    "status": "M",
    "worktree": "uncommitted",
-   "blob": "39b5ec90e33d15c9eb361ecbeb68380c7e565ebb",
-   "sha256": "97e5916c669d655afa88ba6feff50a64341f7154af264676490ca2be05af1d96",
-   "bytes": 19265,
+   "blob": "0dd4743d4245da58bf306c54545d1f8b5451aabb",
+   "sha256": "9035b88185eb6b73dda5a214519aa6c63250342411dd37f2feb46bdbc963ef42",
+   "bytes": 19749,
    "productionBlob": "be15f11d12491036119013d71ada3d692658f406",
-   "headBlob": "e8da39f16a6e2d8fe1bd07cd47e814aa987fe753",
+   "headBlob": "39b5ec90e33d15c9eb361ecbeb68380c7e565ebb",
    "ledgerEvidence": "E1",
    "ledgerBlobMatchesCurrent": false,
    "acceptedReceipts": [
@@ -52,7 +52,9 @@
    ],
    "importedByInSlice": [
     "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx"
-   ]
+   ],
+   "previousSha256": "97e5916c669d655afa88ba6feff50a64341f7154af264676490ca2be05af1d96",
+   "changedBy": "other session uncommitted edit after 0de97e77d (2026-10-18); pinned at the bytes the candidate tested, not reviewed"
   },
   {
    "path": "web/components/RosterScheduleOptimizer/CandidateCard.module.scss",
@@ -84,11 +86,11 @@
    "path": "web/components/RosterScheduleOptimizer/CandidateCard.tsx",
    "status": "A",
    "worktree": "uncommitted",
-   "blob": "482f43e916ffdaf3a832b95004a3921d62bacd61",
-   "sha256": "26748a79cb6e4a5009a602dc323f368423065c38bcb5b6f07947319922067476",
-   "bytes": 10358,
+   "blob": "fb0b59c09e5cddde544155a4f77dfb6a31802caa",
+   "sha256": "edcae0a527548183c4100a303e7b12e292942597dd2766f20d3df971f15a2274",
+   "bytes": 10597,
    "productionBlob": null,
-   "headBlob": "b3eaa290a3298b153418c7e7fb9fe7573711fc81",
+   "headBlob": "482f43e916ffdaf3a832b95004a3921d62bacd61",
    "ledgerEvidence": "E4",
    "ledgerBlobMatchesCurrent": false,
    "acceptedReceipts": [],
@@ -97,7 +99,9 @@
    ],
    "importedByInSlice": [
     "components/RosterScheduleOptimizer/CandidateBrowser.tsx"
-   ]
+   ],
+   "previousSha256": "26748a79cb6e4a5009a602dc323f368423065c38bcb5b6f07947319922067476",
+   "changedBy": "other session uncommitted edit after 0de97e77d (2026-10-18); pinned at the bytes the candidate tested, not reviewed"
   },
   {
    "path": "web/components/RosterScheduleOptimizer/CategoryGains.tsx",
@@ -287,19 +291,21 @@
   {
    "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
    "status": "M",
-   "worktree": "committed",
-   "blob": "4cb8c50f528d003ea8eeacc79388f444837a105b",
-   "sha256": "38106572657bc6b180d1be4e94f2ce96c45e5a2f4795f201c70fd460dde31a4f",
-   "bytes": 165565,
+   "worktree": "uncommitted",
+   "blob": "849575acc6957f6a786db5009ab52eb3a600f539",
+   "sha256": "9a861daff5af0f1ec3781616be97546f910edd28315f5779268b2ed00d922901",
+   "bytes": 166526,
    "productionBlob": "d3c5178a48d09ebd49b3457358b25c9d7b9adf4b",
-   "headBlob": "4cb8c50f528d003ea8eeacc79388f444837a105b",
+   "headBlob": "cb2632e87f00185912930bd112d824c72b5553a2",
    "ledgerEvidence": "E6",
    "ledgerBlobMatchesCurrent": true,
    "acceptedReceipts": [],
    "ownerPins": [],
    "importedByInSlice": [
     "seed"
-   ]
+   ],
+   "previousSha256": "38106572657bc6b180d1be4e94f2ce96c45e5a2f4795f201c70fd460dde31a4f",
+   "changedBy": "other session edit, committed in 0de97e77d (TJ checkpoint); re-pinned at current bytes, not reviewed in this pass; other session uncommitted edit after 0de97e77d (2026-10-18); pinned at the bytes the candidate tested, not reviewed"
   },
   {
    "path": "web/components/RosterScheduleOptimizer/TeamScheduleContext.module.scss",
@@ -369,12 +375,12 @@
   {
    "path": "web/hooks/candidateMetrics.worker.ts",
    "status": "M",
-   "worktree": "uncommitted",
+   "worktree": "committed",
    "blob": "2b1709c344b2dce7bdc1caa793b8021c9d8e6a24",
    "sha256": "6bd2629ad5c6dd9650d058bb69436a90a1507c503f2243b1dc5cf217b3f267e8",
    "bytes": 619,
    "productionBlob": "8fd7450f8f51725ab46a01de32f7cdcb85e891c5",
-   "headBlob": "cb950cb0ee020c4023e9bcfa758d93f433689ea2",
+   "headBlob": "2b1709c344b2dce7bdc1caa793b8021c9d8e6a24",
    "ledgerEvidence": "E4",
    "ledgerBlobMatchesCurrent": false,
    "acceptedReceipts": [],
@@ -393,12 +399,12 @@
   {
    "path": "web/hooks/useCandidateMetrics.ts",
    "status": "M",
-   "worktree": "uncommitted",
+   "worktree": "committed",
    "blob": "e6a2bbc75830b8709e8aab495b5832751a4e7317",
    "sha256": "10e129a291310bf5db09d272f3bc5154747aab8510c43f20a64d870602408ab5",
    "bytes": 2528,
    "productionBlob": "e7a42de7bef6862a8ed7e05c2cb54b9ee7926e08",
-   "headBlob": "ea5a90a5780c40760991fbf5cb648c7a5978944c",
+   "headBlob": "e6a2bbc75830b8709e8aab495b5832751a4e7317",
    "ledgerEvidence": "E4",
    "ledgerBlobMatchesCurrent": false,
    "acceptedReceipts": [],
@@ -440,12 +446,12 @@
   {
    "path": "web/lib/in-season/workspaceSchema.ts",
    "status": "M",
-   "worktree": "uncommitted",
-   "blob": "ef9a566903a48ff83f8e9388e33022535596f5db",
-   "sha256": "6fd84b6384e997aef35404e2581c435404fd3b98a4af16cef6975268304d366f",
-   "bytes": 16582,
+   "worktree": "committed",
+   "blob": "ca9fda5885e1400fe3345dd92c9f1c8e9e7357f9",
+   "sha256": "5e3ee8995d3c8af8df1178fbb70b458022d8f106b17f606c43d57dd139ab9cad",
+   "bytes": 16615,
    "productionBlob": "9ea4178523714e78e42c8d51344f9b033e972860",
-   "headBlob": "ecee6875c118e5dc33ee4358960357dbb28dd684",
+   "headBlob": "ca9fda5885e1400fe3345dd92c9f1c8e9e7357f9",
    "ledgerEvidence": "E1",
    "ledgerBlobMatchesCurrent": false,
    "acceptedReceipts": [
@@ -461,7 +467,7 @@
     "lib/rosterScheduleOptimizer/workspace.ts"
    ],
    "previousSha256": "ba918a4f55c1bcded16b4645c33f90d4c552c319fc9f8c40368bf14d77f1b546",
-   "changedBy": "W1: contributionSource accepts catalogExpiresAt (instant, optional); other sessions' uncommitted edits preserved"
+   "changedBy": "W1: contributionSource accepts catalogExpiresAt (instant, optional); other sessions' uncommitted edits preserved; other session edit, committed in 0de97e77d (TJ checkpoint); re-pinned at current bytes, not reviewed in this pass (+1 line: timeZone optional)"
   },
   {
    "path": "web/lib/player-forecasts/baselineGeneration.ts",
@@ -581,12 +587,12 @@
   {
    "path": "web/lib/player-forecasts/currentSeasonSogContribution.ts",
    "status": "A",
-   "worktree": "uncommitted",
+   "worktree": "committed",
    "blob": "61cc9debdae4136df9813d2b108eaa953c7b9b93",
    "sha256": "f5dc3e77654e8fed9ae0d063c9553b48285919bb41599226a152b28d0d4aedc7",
    "bytes": 6467,
    "productionBlob": null,
-   "headBlob": "4bb96c24dca39b9a9064554566be715d5268fc11",
+   "headBlob": "61cc9debdae4136df9813d2b108eaa953c7b9b93",
    "ledgerEvidence": "E5",
    "ledgerBlobMatchesCurrent": false,
    "acceptedReceipts": [],
@@ -618,12 +624,12 @@
   {
    "path": "web/lib/player-forecasts/gameExpectationView.ts",
    "status": "A",
-   "worktree": "uncommitted",
+   "worktree": "committed",
    "blob": "b56036cb8a26db1cb0e07b61566a3783bad7eea6",
    "sha256": "204e4aa33ab5df3ca5b31a7e5565f49e72f28e789295fc0185f3ddabf71351c1",
    "bytes": 15890,
    "productionBlob": null,
-   "headBlob": "9fd51af1206dadce76dfec964ee2811a18c21286",
+   "headBlob": "b56036cb8a26db1cb0e07b61566a3783bad7eea6",
    "ledgerEvidence": "E6",
    "ledgerBlobMatchesCurrent": true,
    "acceptedReceipts": [],
@@ -953,12 +959,12 @@
   {
    "path": "web/lib/projections/calibrationEligibility.ts",
    "status": "M",
-   "worktree": "uncommitted",
+   "worktree": "committed",
    "blob": "188021e5f0b798fd02151cbbe90c7254a7236d2c",
    "sha256": "9b93cc5cf9a80b0c695bd54f6bd6a6e232bd90170b8efdedd1e7106e3aa6e852",
    "bytes": 2372,
    "productionBlob": "33560d57096be3e57ee632d6ed92413fc4e32a11",
-   "headBlob": "9285d2818eba84e96d4d1e081292f48b1152554a",
+   "headBlob": "188021e5f0b798fd02151cbbe90c7254a7236d2c",
    "ledgerEvidence": "E4",
    "ledgerBlobMatchesCurrent": true,
    "acceptedReceipts": [],
@@ -1048,11 +1054,11 @@
    "path": "web/lib/projections/startChartContract.ts",
    "status": "M",
    "worktree": "uncommitted",
-   "blob": "d9dc8f3b8b20ab1d25a06d79b06175ae4833dd0e",
-   "sha256": "000706e29df7140ac1f00f93f403a1f1e163d442adff7b917e457966c72e414d",
-   "bytes": 42959,
+   "blob": "7a2618ecdab1c1f41f4e1639e958af48e401be83",
+   "sha256": "740bf8d8a14232405e8110bee1ebed0e2b8052e5abc67d06b25c3796760833d2",
+   "bytes": 43486,
    "productionBlob": "1b63ba345f5b04112a8982c0078903583ff47506",
-   "headBlob": "47bf2a6b8a3dc35d810ab9298a43ecfbbf22f2b5",
+   "headBlob": "d9dc8f3b8b20ab1d25a06d79b06175ae4833dd0e",
    "ledgerEvidence": "E6",
    "ledgerBlobMatchesCurrent": true,
    "acceptedReceipts": [],
@@ -1062,7 +1068,7 @@
     "pages/start-chart.tsx"
    ],
    "previousSha256": "82d9937255c50224127e590ba29d093002128ed8eeeca24fc0852cb0c382b0ec",
-   "changedBy": "N1: board omits per-target participation input/evidence proofs"
+   "changedBy": "N1: board omits per-target participation input/evidence proofs; Q-01: games whose team cannot be identified surface as partial coverage (unmapped_slate_team) instead of a silent no-games board"
   },
   {
    "path": "web/lib/rosterScheduleData/normalize.ts",
@@ -1180,11 +1186,11 @@
    "path": "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.ts",
    "status": "A",
    "worktree": "uncommitted",
-   "blob": "bac1159a3bb8140c46cb80b7275866f7ab07ee34",
-   "sha256": "b0e06a29c30fd8cb5cc5f951ef3f83a58415ed57dc4a81758b2658c630e127d1",
-   "bytes": 15587,
+   "blob": "6f3bc840c7ab846ae507ab048820f2d6b916bdab",
+   "sha256": "96e420a185899f585a9075994e66e3ab30d53851406e5672d23bd6eddd9f082c",
+   "bytes": 16777,
    "productionBlob": null,
-   "headBlob": "132652021b44d8228f3ae0e9cc9b57f8438d7f37",
+   "headBlob": "bac1159a3bb8140c46cb80b7275866f7ab07ee34",
    "ledgerEvidence": "E4",
    "ledgerBlobMatchesCurrent": false,
    "acceptedReceipts": [],
@@ -1196,7 +1202,9 @@
     "hooks/useCandidateMetrics.ts",
     "components/RosterScheduleOptimizer/CandidateCard.tsx",
     "hooks/candidateMetrics.worker.ts"
-   ]
+   ],
+   "previousSha256": "b0e06a29c30fd8cb5cc5f951ef3f83a58415ed57dc4a81758b2658c630e127d1",
+   "changedBy": "other session uncommitted edit after 0de97e77d (2026-10-18); pinned at the bytes the candidate tested, not reviewed"
   },
   {
    "path": "web/lib/rosterScheduleOptimizer/contributionLedger.ts",
@@ -1252,10 +1260,10 @@
   {
    "path": "web/lib/rosterScheduleOptimizer/planning.ts",
    "status": "M",
-   "worktree": "committed",
-   "blob": "c0aba8f5a025c5bb2dd4b06840112f6f82f1ab86",
-   "sha256": "706af5ea9559866c3971a5677baffd41abcab29833a70a3cae605e2c918a140d",
-   "bytes": 98946,
+   "worktree": "uncommitted",
+   "blob": "ebd0e4d542543ed956dc031bec14f5a27065a156",
+   "sha256": "3bd150f17d621736260fabe47d34969fded52f16a4af8c737876fad790fc482d",
+   "bytes": 99247,
    "productionBlob": "b3a6c0ef5d8632e2cd8b7337c292c53e2922ed40",
    "headBlob": "c0aba8f5a025c5bb2dd4b06840112f6f82f1ab86",
    "ledgerEvidence": "E6",
@@ -1267,7 +1275,9 @@
     "lib/rosterScheduleOptimizer/contributionLedger.ts",
     "components/RosterScheduleOptimizer/CompactSchedule.tsx",
     "lib/rosterScheduleOptimizer/candidatePlanMetrics.ts"
-   ]
+   ],
+   "previousSha256": "706af5ea9559866c3971a5677baffd41abcab29833a70a3cae605e2c918a140d",
+   "changedBy": "other session uncommitted edit after 0de97e77d (2026-10-18); pinned at the bytes the candidate tested, not reviewed"
   },
   {
    "path": "web/lib/rosterScheduleOptimizer/planningTimeline.ts",
@@ -1302,12 +1312,12 @@
   {
    "path": "web/lib/rosterScheduleOptimizer/planningTypes.ts",
    "status": "M",
-   "worktree": "committed",
-   "blob": "d9a95c2e581a2574b105522487bd03323c0bae15",
-   "sha256": "b372bf556d1bcb90be6bbca1abe3df21aa2f2995e50bd95ca510502c8bee2b8a",
-   "bytes": 14326,
+   "worktree": "uncommitted",
+   "blob": "4b63f6be30e234c47e73797389bc6fe696f781b8",
+   "sha256": "c87c3c662fe80aadf5d4984a7119b1cc257bb2725a45cf5be68dbde93d5a5ea8",
+   "bytes": 14572,
    "productionBlob": "644d57d0c3d5e7910166b71a3faba912028364e2",
-   "headBlob": "d9a95c2e581a2574b105522487bd03323c0bae15",
+   "headBlob": "14d64c9cf1100effc906536672c69180ba0fc774",
    "ledgerEvidence": "E4",
    "ledgerBlobMatchesCurrent": true,
    "acceptedReceipts": [],
@@ -1342,7 +1352,9 @@
     "lib/rosterScheduleOptimizer/candidatePlanMetrics.ts",
     "components/RosterScheduleOptimizer/CandidateCard.tsx",
     "hooks/candidateMetrics.worker.ts"
-   ]
+   ],
+   "previousSha256": "b372bf556d1bcb90be6bbca1abe3df21aa2f2995e50bd95ca510502c8bee2b8a",
+   "changedBy": "other session edit, committed in 0de97e77d (TJ checkpoint); re-pinned at current bytes, not reviewed in this pass; other session uncommitted edit after 0de97e77d (2026-10-18); pinned at the bytes the candidate tested, not reviewed"
   },
   {
    "path": "web/lib/rosterScheduleOptimizer/providerRules.ts",
@@ -1493,12 +1505,12 @@
   {
    "path": "web/pages/api/v1/forge/forecasts.ts",
    "status": "A",
-   "worktree": "uncommitted",
+   "worktree": "committed",
    "blob": "06e3faa9ea47164d1b705f9f574935659602397d",
    "sha256": "e79d44e3d01c411583b0a013fa24d02f5101f71779bad18b75cca5979b31f657",
    "bytes": 2497,
    "productionBlob": null,
-   "headBlob": "acb2e66eec02696adc40bb705fb10804c4976ae9",
+   "headBlob": "06e3faa9ea47164d1b705f9f574935659602397d",
    "ledgerEvidence": "E6",
    "ledgerBlobMatchesCurrent": true,
    "acceptedReceipts": [],
@@ -1570,11 +1582,11 @@
    "path": "web/pages/api/v1/start-chart.ts",
    "status": "M",
    "worktree": "uncommitted",
-   "blob": "da71eecb1da1e22f15ad869e3181bb422b9fc26f",
-   "sha256": "e85c8b870005d5db4e73551b3d10e815a3caedbdfb3d78a8db2be849c1ff0250",
-   "bytes": 84225,
+   "blob": "766f1a7224fcda3326e108e90a8e714d5386ed5a",
+   "sha256": "60aa07da3b2d2b694cadf05d2ce1602d3c614988611a3b9b4f6c72732a57fee0",
+   "bytes": 84288,
    "productionBlob": "3889215e27ac768b249b0346db0310365522aaf4",
-   "headBlob": "b88c5565450aced8aa1c56304661126c6bfbd214",
+   "headBlob": "da71eecb1da1e22f15ad869e3181bb422b9fc26f",
    "ledgerEvidence": "E4",
    "ledgerBlobMatchesCurrent": true,
    "acceptedReceipts": [],
@@ -1590,7 +1602,7 @@
     "seed"
    ],
    "previousSha256": "29a743a0a9b5f9f623f851697a8cfcbc6552091f43478c85d6798cf022465890",
-   "changedBy": "N1: 4,000,000-byte bound, typed 503 start_chart_too_large"
+   "changedBy": "N1: 4,000,000-byte bound, typed 503 start_chart_too_large; TJ-approved: legacy run gate restored to production 457435eb (unlabelled runs served flagged unverified_projection_provenance); S-01: sumProjectionParts returns null when an ES or PP head is withheld (PK, never modeled, still adds nothing)"
   },
   {
    "path": "web/pages/start-chart.tsx",
@@ -1682,22 +1694,22 @@
   {
    "path": "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
    "status": "M",
-   "worktree": "committed",
-   "blob": "7184f322933b68d8c9ab19abd428823c2b330966",
-   "sha256": "9611962e9df1c984bd21dc942067f9439a178b51397fdf41318fbdd72ace57e6",
-   "bytes": 265887,
+   "worktree": "uncommitted",
+   "blob": "3fb09bc85309872e0c851bbf2ec72947bf981d34",
+   "sha256": "faf7f57f61f498f6ecdeeb39239072ddc358a9b84e17b24e81f56cf976be748e",
+   "bytes": 266473,
    "productionBlob": "e412e4951f806d8e7837144da2472b1c7772eac3",
-   "headBlob": "7184f322933b68d8c9ab19abd428823c2b330966"
+   "headBlob": "5a738316bb310d2ac7b8c902e9570fc30a782c8d"
   },
   {
    "path": "web/__tests__/pages/api/v1/forge/forecasts.test.ts",
    "status": "A",
-   "worktree": "uncommitted",
+   "worktree": "committed",
    "blob": "264d866947eddd31b2b1d291f690f16ec42d6fc0",
    "sha256": "99f4f2b33cce045d904a0645a6a07803e62409a231268718d98d5d20fad7d8e2",
    "bytes": 4871,
    "productionBlob": null,
-   "headBlob": "f5a9d73c0cce616faf006fb2d9b2a6ebd504d0b7"
+   "headBlob": "264d866947eddd31b2b1d291f690f16ec42d6fc0"
   },
   {
    "path": "web/__tests__/pages/api/v1/roster-schedule-optimizer/eligibility.test.ts",
@@ -1713,31 +1725,31 @@
    "path": "web/__tests__/pages/api/v1/start-chart.test.ts",
    "status": "M",
    "worktree": "uncommitted",
-   "blob": "2fbbb40e00eec60fc328253af48fe76402075e5d",
-   "sha256": "3e39b8770fa05fb05489edf0c7a7321aa134406686ab1b7bcab23b73c80dee35",
-   "bytes": 109669,
+   "blob": "4001fc73d23cd21779e87f05b27c96f1ee6182d1",
+   "sha256": "45c91fb53c5bdb7b2a8ba564d3d73b2f74f1267ddd60c26dcab0886a7846874e",
+   "bytes": 119411,
    "productionBlob": "b11be4d218890f86e19d604a8d645758af446cfe",
-   "headBlob": "49dc6a0dba31f81513284305da0328a4faa536d3"
+   "headBlob": "2fbbb40e00eec60fc328253af48fe76402075e5d"
   },
   {
    "path": "web/__tests__/fixtures/consumerGameRevision.ts",
    "status": "M",
-   "worktree": "uncommitted",
+   "worktree": "committed",
    "blob": "73eae7848ef0d0ab38cc79aa61bb11f38ef8fab5",
    "sha256": "50497085e083073ce21696c3dcddb511cc72085cefce4e2028619ed4d090a68d",
    "bytes": 5784,
    "productionBlob": "9dd03806cbf014bfc109a98ef1a1f082eb7877ff",
-   "headBlob": "69ad5e9e4e5aa0f15269586bc1d72a43103d4df2"
+   "headBlob": "73eae7848ef0d0ab38cc79aa61bb11f38ef8fab5"
   },
   {
    "path": "web/__tests__/pages/start-chart.test.tsx",
    "status": "M",
    "worktree": "uncommitted",
-   "blob": "5770084c75fe2122893f868aafde6f60e856049b",
-   "sha256": "412da731e88cdaf8587f7e93725ff13d2d58f740fe501a9c6f15be66e020e246",
-   "bytes": 81707,
+   "blob": "f981b4731a4c565cc6dfd156f968650d4255f1e8",
+   "sha256": "a50506fd62794d78ca36088df629cad69e8e7f384af6a7ca60335d1211938a10",
+   "bytes": 89403,
    "productionBlob": "5f8519b4fab643afeae1f3cc967acbc6b04eebcd",
-   "headBlob": "5b455201ed03189116cad8d750179eb51ae51f15"
+   "headBlob": "5770084c75fe2122893f868aafde6f60e856049b"
   },
   {
    "path": "web/components/RosterScheduleOptimizer/AcquisitionPeriodTimes.test.tsx",
@@ -1752,32 +1764,32 @@
   {
    "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.integration.test.tsx",
    "status": "A",
-   "worktree": "uncommitted",
+   "worktree": "committed",
    "blob": "13044757d0c4dddd34960513f7a5f241e8cbeeb0",
    "sha256": "688c21c5ea4903f5d7c463e448d7bdad205837eada350918ab54287ec5d08805",
    "bytes": 9409,
    "productionBlob": null,
-   "headBlob": "d06f184b9c0f9b498148328c874d5dfc57da83dd"
+   "headBlob": "13044757d0c4dddd34960513f7a5f241e8cbeeb0"
   },
   {
    "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx",
    "status": "A",
-   "worktree": "committed",
-   "blob": "968aabbad148e65ab067bd32a62c13c514d82fc4",
-   "sha256": "8000c9329446d17a5cfd203ef12625467dc84c4c54be94fa0e4da25ccb985cb4",
-   "bytes": 25205,
+   "worktree": "uncommitted",
+   "blob": "cd78929b74367fe62a2065abb8dd67de304a03b5",
+   "sha256": "c6e15a498d84ba52c7dcceb955cfd7e3c8b22c0f8ad46feead1f6630a6cbe580",
+   "bytes": 26782,
    "productionBlob": null,
    "headBlob": "968aabbad148e65ab067bd32a62c13c514d82fc4"
   },
   {
    "path": "web/components/RosterScheduleOptimizer/CandidateCard.test.tsx",
    "status": "A",
-   "worktree": "uncommitted",
+   "worktree": "committed",
    "blob": "5c882ce4bf2b696fde3a849ad7f6f40852ca1efb",
    "sha256": "c6155a201233734dd4d7e2d18f2033e1e37220f01f69771f8b639eba3febbe37",
    "bytes": 7141,
    "productionBlob": null,
-   "headBlob": "f651a27076dd9822aa9f501ad7ebb6ad31ceef8b"
+   "headBlob": "5c882ce4bf2b696fde3a849ad7f6f40852ca1efb"
   },
   {
    "path": "web/components/RosterScheduleOptimizer/InfoTooltip.test.tsx",
@@ -1812,12 +1824,12 @@
   {
    "path": "web/hooks/useCandidateMetrics.test.tsx",
    "status": "M",
-   "worktree": "uncommitted",
+   "worktree": "committed",
    "blob": "0abba76c3c710bd71f32d6a1d9ae10192e5da5eb",
    "sha256": "0e4d9224ea74b10795fc503ab2974e134cbf10b526cf78f7fd3a6b3440619450",
    "bytes": 4101,
    "productionBlob": "8dd24ef97460ca1ce56cd08f92bd1f8da986d407",
-   "headBlob": "9e89de9ab57b98f1a77f7c0f535c77bd5e35473b"
+   "headBlob": "0abba76c3c710bd71f32d6a1d9ae10192e5da5eb"
   },
   {
    "path": "web/hooks/useYahooEligibility.test.tsx",
@@ -1842,12 +1854,12 @@
   {
    "path": "web/lib/in-season/workspaceSchema.test.ts",
    "status": "M",
-   "worktree": "uncommitted",
+   "worktree": "committed",
    "blob": "c0a9e8dc24ef10904b614ba47bbc3a5401de853b",
    "sha256": "8f06bb48353683297ec7077bc3185ba38e0f4408e81f192a26134fa89e4772dc",
    "bytes": 25306,
    "productionBlob": "9077219ee46c436336d5ed42efeb822742e9e363",
-   "headBlob": "bbdebc26e2c6a187238550879ca8d5893d21626b"
+   "headBlob": "c0a9e8dc24ef10904b614ba47bbc3a5401de853b"
   },
   {
    "path": "web/lib/player-forecasts/contributionStore.test.ts",
@@ -1973,11 +1985,11 @@
    "path": "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts",
    "status": "A",
    "worktree": "uncommitted",
-   "blob": "3e01abb9ffc5f97eead96089efc91946a434ffd4",
-   "sha256": "9182e1d7f20f4c4428951312819f2bc457172baecf0e210b4dd9aaa633daa39f",
-   "bytes": 30971,
+   "blob": "09a7b2f1ed066d2108ecfb462a204f10bda5d3f7",
+   "sha256": "14092d7339fbd6045a1508fed9569a3f8d7ac7f99c9516d1893a776dd0c00270",
+   "bytes": 32272,
    "productionBlob": null,
-   "headBlob": "bdbec1f31b33a46fec2a0b7bb8cdc253a594661c"
+   "headBlob": "3e01abb9ffc5f97eead96089efc91946a434ffd4"
   },
   {
    "path": "web/lib/rosterScheduleOptimizer/contributionLedger.test.ts",
@@ -2003,21 +2015,21 @@
    "path": "web/lib/rosterScheduleOptimizer/planning.test.ts",
    "status": "M",
    "worktree": "uncommitted",
-   "blob": "965f91fa5d584fc907228461f00e566400b3c99e",
-   "sha256": "8b9256530df8dd1bf202af24d5a20b5d6059a80c367cfc10c2d9485f8f4dfdaf",
-   "bytes": 121837,
+   "blob": "083e6ca13c05f70f7e8e6de835a9db6f2ebec212",
+   "sha256": "e0ac03763d8aade7b43019ee0903d1060d925f4628ab4e88e0a26f524cdefb92",
+   "bytes": 123318,
    "productionBlob": "52f407d9dfc5fd3083fd985adda9469c7049f1d1",
-   "headBlob": "c0302e1a6e7128310f5c95fee0c9a605d0eec66e"
+   "headBlob": "965f91fa5d584fc907228461f00e566400b3c99e"
   },
   {
    "path": "web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts",
    "status": "M",
-   "worktree": "uncommitted",
+   "worktree": "committed",
    "blob": "7b5b2794dbdd60870f349ada53094ea9d51c0c00",
    "sha256": "acb325f8d7d6b80d8db5b7e565468d1c44df3d69ca9b1747ebbbb42eda1758d2",
    "bytes": 26460,
    "productionBlob": "ca3f70888674c52754993d42ef9061345c912bef",
-   "headBlob": "c8aa9bc68870d00b40e0e1f1cbb8bb48e1f0772a"
+   "headBlob": "7b5b2794dbdd60870f349ada53094ea9d51c0c00"
   },
   {
    "path": "web/lib/rosterScheduleOptimizer/providerRules.test.ts",
@@ -2072,62 +2084,62 @@
   {
    "path": "web/lib/projections/run-forge-projections.local-attempt.test.ts",
    "status": "M",
-   "worktree": "uncommitted",
+   "worktree": "committed",
    "blob": "73dc32104760415980131dce3a262685ec91b970",
    "sha256": "dcd916dc3a7be134cfcbeea1987da0fd6826c6c729d3e0a474a3317ed3fca1b8",
    "bytes": 17393,
    "productionBlob": "8c68f74954d8051861dd0b0190789cfdf2f2e1d8",
-   "headBlob": "c348b1ea5952fb7a3da8a433fda43efce831e087"
+   "headBlob": "73dc32104760415980131dce3a262685ec91b970"
   },
   {
    "path": "web/lib/rosterScheduleData/planning.test.ts",
    "status": "M",
-   "worktree": "uncommitted",
+   "worktree": "committed",
    "blob": "7ce06c2f319e420e33a132f6789b5977e6e42028",
    "sha256": "a44b313f8556faccd8cc46639b37cb49c24eaf4482bb19ca8345451c37254d2a",
    "bytes": 81624,
    "productionBlob": "c9c7401d065c200c6b56eb8d3479df8c367ad41a",
-   "headBlob": "b30fff1cada03b5ee64f1b3bc8e4139e020ed82f"
+   "headBlob": "7ce06c2f319e420e33a132f6789b5977e6e42028"
   },
   {
    "path": "web/lib/player-forecasts/gameExpectations.test.ts",
    "status": "A",
-   "worktree": "uncommitted",
+   "worktree": "committed",
    "blob": "e04a20d481c5c342a32077c46add8c1c0ed15a37",
    "sha256": "2ab6fdc5de9304e9393131f604de55fa1809c29383005164bee7205ece7713be",
    "bytes": 36892,
    "productionBlob": null,
-   "headBlob": "31111f69732a9663dd8b799fcb08a67683af085a"
+   "headBlob": "e04a20d481c5c342a32077c46add8c1c0ed15a37"
   },
   {
    "path": "web/lib/player-forecasts/nativeCatalogHead.test.ts",
    "status": "A",
-   "worktree": "uncommitted",
+   "worktree": "committed",
    "blob": "27c8b20e1a5455da276af88884bce1d0322dbd2a",
    "sha256": "cc331086ef4583f8a07793394211f76a5682ff1cab908c2f56dcb6a054e79461",
    "bytes": 4921,
    "productionBlob": null,
-   "headBlob": null
+   "headBlob": "27c8b20e1a5455da276af88884bce1d0322dbd2a"
   },
   {
    "path": "web/lib/projections/apiHelpers.test.ts",
    "status": "M",
-   "worktree": "uncommitted",
+   "worktree": "committed",
    "blob": "42c5022240164b23d816c07bf3271382ef267000",
    "sha256": "5f012e0ee196bffe373976864b2ed865ca1b23206e2f40756a754607515cae25",
    "bytes": 3883,
    "productionBlob": "91559110c246e736514ef9daa15d09221c6c297f",
-   "headBlob": "3ee68afaa2da3d916a0b027453a54eb023d30f6d"
+   "headBlob": "42c5022240164b23d816c07bf3271382ef267000"
   },
   {
    "path": "web/lib/projections/runProjectionV2.test.ts",
    "status": "M",
-   "worktree": "uncommitted",
+   "worktree": "committed",
    "blob": "e620ef943eef45024b583ae8a1bcbce296694025",
    "sha256": "49bbf954506624ca5e8c5adbd57800609d4c1468dfd0785fac2a51beb8ebc428",
    "bytes": 69274,
    "productionBlob": "0b0ab2ea0b649490c7a7b2c1cfc8e2244c1a5db3",
-   "headBlob": "78a26d39af84ca816ec6ab25d112ab5b23303b70"
+   "headBlob": "e620ef943eef45024b583ae8a1bcbce296694025"
   },
   {
    "path": "web/lib/rosterScheduleData/source.test.ts",
@@ -2176,12 +2188,12 @@
   {
    "path": "web/lib/projections/run-forge-projections.ts",
    "status": "M",
-   "worktree": "uncommitted",
+   "worktree": "committed",
    "blob": "976cd66857e44cbf23f62953cd16d452824c754d",
    "sha256": "bcfec8a325b249ea08dc84e3496c7b1b86e7aa9c2dcd3fb701e5dd18cd9f32a1",
    "bytes": 44925,
    "productionBlob": "5a4a1007686cda6bcceb1c772dc48d62857621aa",
-   "headBlob": "5a4a1007686cda6bcceb1c772dc48d62857621aa",
+   "headBlob": "976cd66857e44cbf23f62953cd16d452824c754d",
    "note": "B1: the native pipeline opts into the exclusion label. Stays at production bytes in the release, so production runs carry no label"
   }
  ]

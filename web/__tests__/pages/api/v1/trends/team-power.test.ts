@@ -134,4 +134,24 @@ describe("/api/v1/trends/team-power", () => {
       "Team trend coverage is incomplete for the current season.",
     ]);
   });
+
+  it("redacts dependency details from internal-error responses", async () => {
+    fetchCurrentSeasonMock.mockRejectedValueOnce(
+      new Error("relation private_seasons denied Bearer secret"),
+    );
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const res = createMockRes();
+
+    await handler({ method: "GET", query: {} } as any, res);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({
+      message: "Failed to compute team trends.",
+      error: "TEAM_TRENDS_UNAVAILABLE",
+    });
+    expect(JSON.stringify(res.body)).not.toContain("secret");
+    consoleError.mockRestore();
+  });
 });

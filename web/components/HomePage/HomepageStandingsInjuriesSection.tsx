@@ -1,5 +1,11 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import moment from "moment-timezone";
+import {
+  formatClock,
+  formatMonthDay,
+  formatMonthDayYear,
+  parseMomentLike,
+  zonedParts,
+} from "./homepageTime";
 import Link from "next/link";
 
 import ExternalNewsLink from "components/common/ExternalNewsLink";
@@ -29,22 +35,23 @@ type HomepageStandingsInjuriesSectionProps = {
 const HOMEPAGE_UPDATES_PER_PAGE = 10;
 const HOMEPAGE_TIME_ZONE = "America/New_York";
 
-function formatHomepageDate(value: string | null | undefined): string {
+export function formatHomepageDate(value: string | null | undefined): string {
   if (!value) return "N/A";
-  const parsed = moment(value);
-  return parsed.isValid()
-    ? parsed.tz(HOMEPAGE_TIME_ZONE).format("M/D/YY")
-    : "N/A";
+  const parsed = parseMomentLike(value);
+  if (!parsed) return "N/A";
+  const parts = zonedParts(parsed, HOMEPAGE_TIME_ZONE);
+  return `${parts.month}/${parts.day}/${String(parts.year).slice(-2)}`;
 }
 
-function formatHomepageTimestamp(value: string | null | undefined): string {
+export function formatHomepageTimestamp(value: string | null | undefined): string {
   if (!value) return "";
-  const parsed = moment(value);
-  if (!parsed.isValid()) return "";
+  const parsed = parseMomentLike(value);
+  if (!parsed) return "";
   const hasTime = /T\d{2}:\d{2}/.test(value);
-  return parsed
-    .tz(HOMEPAGE_TIME_ZONE)
-    .format(hasTime ? "MMM D, h:mm A" : "MMM D, YYYY");
+  const parts = zonedParts(parsed, HOMEPAGE_TIME_ZONE);
+  return hasTime
+    ? `${formatMonthDay(parts)}, ${formatClock(parts)}`
+    : formatMonthDayYear(parts);
 }
 
 export function buildHomepageTransactionTitle(_transaction: any): string {

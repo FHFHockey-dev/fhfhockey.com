@@ -3,6 +3,7 @@
 **Owner:** TJ  
 **Prepared:** October 15, 2026  
 **Status:** Planning draft for review. No implementation, live data collection, model fitting or deployment performed.  
+**Implementation status (2026-10-18, sprint lane S-16):** fixture-stage contract `sko-interpretation-v0.1` and diagnostic preview exist locally and are uncommitted (`web/lib/skoElement/`, `web/components/skoElement/`, `/sko-element/preview`, which returns 404 in production builds). FORGE `forge-game-expectations-v1` is reused unchanged. There is no live reader, no normalized score and no VuDu gap (pending adapter). Reconciliation, ledger and open decisions: `tasks/artifacts/sko-blsh-lane-2026-10-18/README.md`.  
 **Companion:** `tasks/tasks-prd-sko-element.md`  
 **Related product:** `tasks/TASKS/prd-buy-low-sell-high.md`
 

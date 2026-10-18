@@ -89,6 +89,7 @@ import {
   type CanonicalRollingGameWindow
 } from "lib/predictions/rollingWindows";
 import { ROLLING_RANKING_SELECT_FIELDS } from "lib/rankings/rollingRankingSelectFields";
+import { resolveRollingFullRefreshMode } from "lib/rollingPlayerOperationalPolicy";
 
 export type StrengthState = "all" | "5v5" | "ev" | "pp" | "pk";
 type FullRefreshMode = "rpc_truncate" | "overwrite_only" | "delete";
@@ -2871,6 +2872,7 @@ async function fetchGames(): Promise<GameRow[]> {
           .from("games")
           .select("id, date, homeTeamId, awayTeamId, seasonId")
           .order("date", { ascending: true })
+          .order("id", { ascending: true })
           .range(from, from + pageSize - 1);
         if (error) throw error;
         return (data ?? []) as GameRow[];
@@ -4150,6 +4152,12 @@ export async function main(
     "[fetchRollingPlayerAverages] Starting run",
     JSON.stringify(options)
   );
+  const fullRefresh = options.forceFullRefresh
+    ? resolveRollingFullRefreshMode(options)
+    : null;
+  if (fullRefresh?.refusal) {
+    throw new Error(fullRefresh.refusal);
+  }
   try {
     const urlHost = (() => {
       try {
@@ -4221,8 +4229,8 @@ export async function main(
   });
   let resumePlayerId = options.resumePlayerId;
 
-  if (options.forceFullRefresh) {
-    const requestedMode: FullRefreshMode = options.fullRefreshMode ?? "rpc_truncate";
+  if (fullRefresh) {
+    const requestedMode: FullRefreshMode = fullRefresh.mode;
     console.info(
       `[fetchRollingPlayerAverages] Full refresh requested: mode=${requestedMode}; skipping auto-resume.`
     );
@@ -4628,6 +4636,7 @@ export async function main(
 
 export const __testables = {
   fetchCounts,
+  fetchGames,
   buildGameRecords,
   buildRunSummary,
   summarizeSourceTracking,

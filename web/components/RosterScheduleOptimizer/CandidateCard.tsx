@@ -7,13 +7,13 @@ import styles from "./CandidateCard.module.scss";
 const metric = (value: number | null) => value === null ? "unavailable" : `${value > 0 ? "+" : ""}${Number.isInteger(value) ? value : value.toFixed(1)}`;
 
 export default function CandidateCard({ player, rank, plan, comparison, diagnostic, evaluationState = "completed", snapshot, categories, excluded, details,
-  select, add, selectPlan, canSelectPlan, manual, markAvailable, compare, calendar, upcomingGames, nameOf = id => snapshot?.players?.find(row => row.id === id)?.name ?? id }: {
+  select, add, selectPlan, canSelectPlan, manual, markAvailable, compare, calendar, upcomingGames, goalieBoost, nameOf = id => snapshot?.players?.find(row => row.id === id)?.name ?? id }: {
   player: PlanningPlayer; rank: number | null; calendar?: CanonicalSchedule; upcomingGames?: number | null; plan?: CandidatePlan; comparison?: CandidateComparison;
   snapshot: PlanningSnapshot | null; categories: boolean; excluded: boolean; details: (plan: CandidatePlan) => ReactNode;
   diagnostic?: CandidateDiagnostic; evaluationState?: "no_snapshot" | "loading" | "error" | "completed";
   select: (id: string) => void; add: (player: PlanningPlayer) => void;
   selectPlan?: (steps: PlanStep[]) => void; canSelectPlan?: boolean; manual: boolean; markAvailable: (player: PlanningPlayer) => void;
-  compare?: (id: string) => void; nameOf?: (id: string) => string;
+  compare?: (id: string) => void; nameOf?: (id: string) => string; goalieBoost?: boolean;
 }) {
   const drops = plan?.steps.flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : []) ?? [];
   const conditional = plan?.steps.some(step => step.conditional);
@@ -56,6 +56,8 @@ export default function CandidateCard({ player, rank, plan, comparison, diagnost
       {!categories && <span>Net points <strong data-positive={plan?.netPoints != null && plan.netPoints > 0}>{metric(plan?.netPoints ?? null)}</strong></span>}
       {!categories && " "}<span>Net AGP <strong data-positive={plan?.netAGP != null && plan.netAGP > 0}>{metric(plan?.netAGP ?? null)}</strong></span>
     </div></div>
+    {goalieBoost && plan?.netGoalieStarts != null && plan.netGoalieStarts > 0
+      && <p className={styles.scheduleLabel}>Helps the goalie minimum · {metric(plan.netGoalieStarts)} expected starts</p>}
     {excluded && <p className={styles.warning}>Excluded from suggestions</p>}
     {conditional && <p className={styles.warning}>Conditional · recheck availability</p>}
     {reserves.map(step => <p key={step.id} className={styles.warning}>Reserve {nameOf(step.playerId)} in {step.reservePosition} first</p>)}

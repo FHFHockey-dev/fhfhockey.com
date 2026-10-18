@@ -248,6 +248,153 @@ describe("game prediction workflow", () => {
     expect(from).toHaveBeenCalledTimes(1);
   });
 
+  it("separates no-production-model skips from per-game failures in forecast windows", async () => {
+    vi.resetModules();
+    vi.doMock("./featureBuilder", async (importOriginal) => ({
+      ...(await importOriginal<typeof import("./featureBuilder")>()),
+      fetchGamePredictionFeatureInputs: vi.fn(async (_client: unknown, gameId: number) => ({
+        game: { id: gameId, date: "2026-01-10", startTime: "2026-01-11T00:00:00.000Z" },
+      })),
+      buildGamePredictionFeatureSnapshotPayload: vi.fn(() => ({
+        featureSetVersion: GAME_PREDICTION_FEATURE_SET_VERSION,
+      })),
+    }));
+    vi.doMock("./baselineModel", async (importOriginal) => ({
+      ...(await importOriginal<typeof import("./baselineModel")>()),
+      predictGameWithBaselineModel: vi.fn(() => ({
+        homeWinProbability: 0.55,
+        awayWinProbability: 0.45,
+      })),
+    }));
+    let workflow: typeof import("./workflow");
+    try {
+      workflow = await import("./workflow");
+    } finally {
+      vi.doUnmock("./featureBuilder");
+      vi.doUnmock("./baselineModel");
+    }
+
+    const games = [1, 2].map((id) => ({
+      id,
+      date: "2026-01-10",
+      startTime: "2026-01-11T00:00:00.000Z",
+      seasonId: 20252026,
+      homeTeamId: 10,
+      awayTeamId: 20,
+      type: 2,
+    }));
+    const createClient = (modelVersionLookups: Array<{ data: unknown; error: unknown }>) => ({
+      from() {
+        const query: Record<string, unknown> = {};
+        for (const method of ["select", "gte", "lte", "order", "eq"]) {
+          query[method] = () => query;
+        }
+        query.limit = async () => ({ data: games, error: null });
+        query.maybeSingle = async () => modelVersionLookups.shift();
+        return query;
+      },
+    });
+    const runWindow = (client: unknown) =>
+      workflow.generatePregamePredictionsForWindow({
+        client: client as any,
+        fromDate: "2026-01-10",
+        toDate: "2026-01-10",
+        predictionCutoffAt: "2026-01-10T12:00:00.000Z",
+      });
+
+    // Production today: the compiled baseline has no production model row.
+    const noModel = await runWindow(
+      createClient([
+        { data: null, error: null },
+        { data: { status: "candidate" }, error: null },
+      ]),
+    );
+    expect(noModel.results.map((row) => row.skippedReason)).toEqual([
+      workflow.NO_PRODUCTION_MODEL_VERSION_SKIP_REASON,
+      workflow.NO_PRODUCTION_MODEL_VERSION_SKIP_REASON,
+    ]);
+    expect(workflow.summarizePredictionWindowOutcome(noModel)).toEqual({
+      status: "no_production_model",
+      persistedPredictions: 0,
+      skippedGames: 2,
+      noProductionModelGames: 2,
+      failedGames: 0,
+    });
+
+    const lookupFailure = await runWindow(
+      createClient([
+        { data: null, error: null },
+        { data: null, error: { message: "model version lookup failed" } },
+      ]),
+    );
+    expect(workflow.summarizePredictionWindowOutcome(lookupFailure)).toEqual({
+      status: "failed",
+      persistedPredictions: 0,
+      skippedGames: 2,
+      noProductionModelGames: 1,
+      failedGames: 1,
+    });
+  });
+
+  it("summarizes empty, cutoff-only, dry-run and persisted forecast windows", async () => {
+    const { summarizePredictionWindowOutcome } = await import("./workflow");
+    const window = {
+      fromDate: "2026-01-10",
+      toDate: "2026-01-10",
+      sourceAsOfDate: "2026-01-10",
+      stoppedForDeadline: false,
+      dryRun: false,
+    };
+    const row = {
+      featureSnapshotId: null,
+      predictionId: null,
+      homeWinProbability: null,
+      awayWinProbability: null,
+      skippedReason: null,
+      dryRun: false,
+    };
+
+    expect(
+      summarizePredictionWindowOutcome({
+        ...window,
+        requestedGames: 0,
+        processedGames: 0,
+        skippedGames: 0,
+        results: [],
+      }).status,
+    ).toBe("no_games");
+    expect(
+      summarizePredictionWindowOutcome({
+        ...window,
+        requestedGames: 1,
+        processedGames: 0,
+        skippedGames: 1,
+        results: [
+          { ...row, gameId: 1, skippedReason: "prediction_cutoff_at_or_after_puck_drop" },
+        ],
+      }),
+    ).toMatchObject({ status: "nothing_persisted", failedGames: 0 });
+    expect(
+      summarizePredictionWindowOutcome({
+        ...window,
+        dryRun: true,
+        requestedGames: 1,
+        processedGames: 1,
+        skippedGames: 0,
+        results: [{ ...row, gameId: 1, homeWinProbability: 0.5, awayWinProbability: 0.5, dryRun: true }],
+      }),
+    ).toMatchObject({ status: "dry_run", persistedPredictions: 0 });
+    expect(
+      summarizePredictionWindowOutcome({
+        ...window,
+        requestedGames: 1,
+        processedGames: 1,
+        skippedGames: 0,
+        results: [{ ...row, gameId: 1, featureSnapshotId: "snap", predictionId: "pred" }],
+      }),
+    ).toMatchObject({ status: "persisted", persistedPredictions: 1 });
+  });
+
   it("requires meaningful metric improvement before promotion", () => {
     expect(
       decidePromotion({

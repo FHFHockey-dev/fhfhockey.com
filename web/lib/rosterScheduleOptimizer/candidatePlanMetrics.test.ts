@@ -143,6 +143,22 @@ describe("complete timed candidate metrics", () => {
     expect(result.diagnostics.filter(row => row.stopReason === "candidate_limit")).toHaveLength(1);
   });
 
+  it("boosts goalie candidates into the bounded set only while a league goalie minimum may be missed", () => {
+    const data = auditSearchFixture(44), [template] = data.players, [forecast] = data.forecasts;
+    data.players.push({ ...template, id: "g1", nhlId: 20000, name: "Synthetic goalie", eligiblePositions: ["G"], playerClass: "goalie", availability: "free_agent" });
+    data.forecasts.push({ ...forecast, playerId: "g1", stats: { GOALS: 0 }, startProbability: 0.8, revisionId: "audit-g1",
+      issuedContext: { ...forecast.issuedContext!, playerId: "g1", nhlPlayerId: 20000 } });
+    data.rules.rosterSlots = { C: 3, G: 1, BN: 0 };
+    data.rules.goalieMinimum = { ...data.rules.goalieMinimum, required: 2, credited: null };
+    const boosted = candidateMetrics(data, defaultIntent());
+    expect(boosted.goalieBoost).toBe(true);
+    expect(boosted.diagnostics.find(row => row.playerId === "g1")?.status).not.toBe("not_selected");
+    expect(boosted.candidates.find(row => row.playerId === "g1")?.plans[0]).toMatchObject({ netGoalieStarts: 0.8 });
+    data.rules.goalieMinimum.required = 0;
+    const none = candidateMetrics(data, defaultIntent());
+    expect(none.goalieBoost).toBe(false);
+    expect(none.diagnostics.find(row => row.playerId === "g1")?.status).toBe("not_selected");
+  });
   it("evaluates a requested player outside the bounded set without bypassing checks or the cap", () => {
     const data = auditSearchFixture(41);
     const bounded = candidateMetrics(data, defaultIntent());

@@ -73,6 +73,117 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+describe("fetchRollingPlayerAverages fetchGames", () => {
+  it("pages games by date with a unique id tie-breaker", async () => {
+    const games = Array.from({ length: 1001 }, (_, index) => ({
+      id: 2025020001 + index,
+      date: "2026-01-01",
+      homeTeamId: 1,
+      awayTeamId: 2,
+      seasonId: 20252026
+    }));
+    const pageOrders: Array<Array<{ key: string; ascending: boolean }>> = [];
+    const client = {
+      from(table: string) {
+        expect(table).toBe("games");
+        const orders: Array<{ key: string; ascending: boolean }> = [];
+        const query = {
+          select: () => query,
+          order(key: string, options?: { ascending?: boolean }) {
+            orders.push({ key, ascending: options?.ascending ?? true });
+            return query;
+          },
+          async range(from: number, to: number) {
+            pageOrders.push(orders);
+            return { data: games.slice(from, to + 1), error: null };
+          }
+        };
+        return query;
+      }
+    };
+
+    vi.resetModules();
+    vi.doMock("@supabase/supabase-js", () => ({ createClient: () => client }));
+    try {
+      const { __testables } = await import("./fetchRollingPlayerAverages");
+      const rows = await __testables.fetchGames();
+
+      expect(rows).toHaveLength(1001);
+      expect(pageOrders).toEqual([
+        [
+          { key: "date", ascending: true },
+          { key: "id", ascending: true }
+        ],
+        [
+          { key: "date", ascending: true },
+          { key: "id", ascending: true }
+        ]
+      ]);
+    } finally {
+      vi.doUnmock("@supabase/supabase-js");
+    }
+  });
+});
+
+describe("fetchRollingPlayerAverages main full refresh", () => {
+  function createEmptyClient() {
+    const result = { data: [], error: null, count: 0 };
+    const tables: string[] = [];
+    const rpc = vi.fn(async () => ({ data: null, error: null }));
+    const client = {
+      rpc,
+      from(table: string) {
+        tables.push(table);
+        const query: Record<string, unknown> = {};
+        for (const method of ["select", "eq", "neq", "in", "gt", "gte", "lt", "lte", "is", "not", "or", "order", "limit", "range", "delete"]) {
+          query[method] = () => query;
+        }
+        query.maybeSingle = async () => ({ data: null, error: null });
+        query.single = async () => ({ data: null, error: null });
+        query.then = (resolve: (value: typeof result) => unknown, reject?: (reason: unknown) => unknown) =>
+          Promise.resolve(result).then(resolve, reject);
+        return query;
+      }
+    };
+    return { client, tables, rpc };
+  }
+
+  async function importMainWithClient(client: unknown) {
+    vi.resetModules();
+    vi.doMock("@supabase/supabase-js", () => ({ createClient: () => client }));
+    try {
+      return (await import("./fetchRollingPlayerAverages")).main;
+    } finally {
+      vi.doUnmock("@supabase/supabase-js");
+    }
+  }
+
+  it.each([
+    [{ playerId: 8478402 }, "playerId"],
+    [{ dryRunUpsert: true }, "dryRunUpsert"],
+    [{ maxPlayers: 5 }, "maxPlayers"],
+    [{ season: 20252026, startDate: "2026-03-01" }, "season, startDate"]
+  ] as const)("refuses an explicit truncate with %o before touching the database", async (scope, flags) => {
+    const { client, tables, rpc } = createEmptyClient();
+    const main = await importMainWithClient(client);
+
+    await expect(
+      main({ forceFullRefresh: true, fullRefreshMode: "rpc_truncate", ...scope })
+    ).rejects.toThrow(`cannot be combined with ${flags}`);
+    expect(rpc).not.toHaveBeenCalled();
+    expect(tables).toEqual([]);
+  });
+
+  it("never truncates for a full refresh that does not opt in", async () => {
+    const { client, rpc } = createEmptyClient();
+    const main = await importMainWithClient(client);
+
+    await main({ forceFullRefresh: true, dryRunUpsert: true, playerId: 8478402 });
+
+    expect(rpc).not.toHaveBeenCalled();
+  });
+});
+
 describe("fetchRollingPlayerAverages buildGameRecords", () => {
   it.each([
     ["ev", { es_toi_per_game: 866 }, 866],

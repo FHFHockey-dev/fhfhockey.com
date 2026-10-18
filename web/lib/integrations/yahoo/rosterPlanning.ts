@@ -263,6 +263,10 @@ export async function loadYahooPlanningSnapshot(args: {
   const periods: LeagueRules["periods"] = remaining !== null && week.week !== null && week.startDate && week.endDate && week.containsHorizon
     ? [{ id: `yahoo-week-${week.week}`, start: zonedMidnight(week.startDate, timeZone), end: nextLocalMidnight(week.endDate, timeZone),
       remaining, source: "provider", ...(timeZone === "UTC" || timeZone.includes("/") ? { timeZone } : {}) }] : [];
+  // The goalie minimum covers the current matchup week from yahoo_matchup_weeks, including
+  // combined two-week matchups; the rule's period end is exclusive.
+  const goaliePeriod = week.startDate && week.endDate ? { periodStart: week.startDate,
+    periodEnd: new Date(Date.parse(`${week.endDate}T12:00:00Z`) + 86400000).toISOString().slice(0, 10) } : { periodStart: null, periodEnd: null };
   const reserveSlots = Object.fromEntries(Object.entries(settings.excludedInjurySlots ?? {})
     .filter(([slot]) => ["IR", "IR+", "NA"].includes(slot.trim().toUpperCase())));
   const rules: LeagueRules = {
@@ -271,7 +275,7 @@ export async function loadYahooPlanningSnapshot(args: {
     // A lineup deadline does not establish when a transaction becomes effective.
     acquisitionTiming: "unknown",
     acquisitionCost: periods.length ? 1 : null, periods, scoring: { mode: settings.leagueType, weights: { ...settings.scoringCategories }, categories: yahooPlanningCategories(Object.keys(settings.categoryWeights)) },
-    goalieMinimum: { required: settings.minimumGoalieStarts, credited: null, counts: "unknown", penalty: "unknown" }, unsupported,
+    goalieMinimum: { required: settings.minimumGoalieStarts, credited: null, counts: "unknown", penalty: "unknown", ...goaliePeriod }, unsupported,
   };
   const unverifiedRules = [...(periods.length ? [] : ["remaining acquisitions, reset periods and counting rules"]),
     ...(rules.goalieMinimum.required === 0 ? [] : ["goalie minimum progress"])];

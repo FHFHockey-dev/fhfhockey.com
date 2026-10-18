@@ -103,9 +103,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     });
   } catch (error: any) {
+    console.error("forge run detail API error", error);
     return res.status(500).json({
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
-      error: error?.message ?? String(error)
+      error: "FORGE_RUN_DETAIL_UNAVAILABLE"
     });
   }
 }

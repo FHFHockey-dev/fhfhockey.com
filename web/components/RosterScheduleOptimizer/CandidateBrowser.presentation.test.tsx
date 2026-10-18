@@ -5,9 +5,9 @@ import { defaultWorkspace } from "lib/rosterScheduleOptimizer/workspace";
 import type { PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 import type { CandidateComparison, CandidateDiagnostic } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
 
-const fixture = vi.hoisted(() => ({ candidates: undefined as CandidateComparison[] | undefined, diagnostics: undefined as CandidateDiagnostic[] | undefined }));
-vi.mock("hooks/useCandidateMetrics", () => ({ useCandidateMetrics: () => ({ metrics: fixture.candidates ? { candidates: fixture.candidates, diagnostics: fixture.diagnostics } : undefined, loading: false, error: null }) }));
-afterEach(() => { cleanup(); fixture.candidates = undefined; fixture.diagnostics = undefined; vi.useRealTimers(); });
+const fixture = vi.hoisted(() => ({ candidates: undefined as CandidateComparison[] | undefined, diagnostics: undefined as CandidateDiagnostic[] | undefined, goalieBoost: undefined as boolean | undefined }));
+vi.mock("hooks/useCandidateMetrics", () => ({ useCandidateMetrics: () => ({ metrics: fixture.candidates ? { candidates: fixture.candidates, diagnostics: fixture.diagnostics, goalieBoost: fixture.goalieBoost } : undefined, loading: false, error: null }) }));
+afterEach(() => { cleanup(); fixture.candidates = undefined; fixture.diagnostics = undefined; fixture.goalieBoost = undefined; vi.useRealTimers(); });
 it("starts with individual cards and respects the selected result count when filtering and expanding", () => {
   const workspace = defaultWorkspace();
   const players: PlanningPlayer[] = Array.from({ length: 12 }, (_, index) => ({ id: String(index), nhlId: null, name: `Candidate ${index}`,
@@ -28,6 +28,25 @@ it("starts with individual cards and respects the selected result count when fil
   expect(screen.getAllByRole("article")).toHaveLength(5);
   view.rerender(<CandidateBrowser {...props} intent={{ ...props.intent, alternativeCount: 10 }} />);
   expect(screen.getAllByRole("article")).toHaveLength(10);
+});
+
+it("lists goalie options that add expected starts first only while the goalie minimum may be missed", () => {
+  const workspace = defaultWorkspace();
+  const players: PlanningPlayer[] = ["skater", "goalie"].map(id => ({ id, nhlId: null, name: id, teamAbbreviation: "CAR",
+    eligiblePositions: [id === "goalie" ? "G" : "C"], playerClass: id === "goalie" ? "goalie" : "skater", availability: "free_agent",
+    ownership: null, canDrop: true, holdValue: null, reserveEligibility: [] }));
+  fixture.candidates = players.map(player => ({ playerId: player.id, complete: true, plans: [{ objective: "outcome", steps: [], netAGP: 1,
+    netPoints: player.id === "goalie" ? 1 : 5, netGoalieStarts: player.id === "goalie" ? 0.8 : 0, dropped: [], displacedPlayerIds: [] }] }));
+  const props = { players, rosterIds: new Set<string>(), snapshot: null, intent: workspace.intent, fits: [], manual: true,
+    select: vi.fn(), add: vi.fn(), markAvailable: vi.fn() };
+  const ids = () => screen.getAllByRole("article").map(article => article.getAttribute("data-rso-candidate-id"));
+  const view = render(<CandidateBrowser {...props} />);
+  expect(ids()).toEqual(["skater", "goalie"]);
+  expect(screen.queryByText(/Helps the goalie minimum/)).toBeNull();
+  fixture.goalieBoost = true;
+  view.rerender(<CandidateBrowser {...props} />);
+  expect(ids()).toEqual(["goalie", "skater"]);
+  expect(screen.getByText("Helps the goalie minimum · +0.8 expected starts")).toBeTruthy();
 });
 
 it.each([6, 3])("shares one display budget across %i supported and unavailable points candidates", count => {

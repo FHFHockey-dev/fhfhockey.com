@@ -17,11 +17,13 @@
  * - maxPlayers (number, optional): Cap the number of players processed in a single run. Useful for bounded serverless invocations.
  * 
  * Refresh Strategy:
- * - fullRefresh (boolean, optional): If true, clears existing data for the target scope and reprocesses everything. Defaults to false.
+ * - fullRefresh (boolean, optional): If true, skips auto-resume and reprocesses everything. Defaults to false.
  * - fullRefreshMode (string, optional): Strategy for full refresh clear step.
- *   - "rpc_truncate" (default): DB-side RPC truncates table quickly. Best for complete wipes.
- *   - "overwrite_only": Skip pre-delete and rely on upsert overwrite. Good for targeted recalculation.
- *   - "delete": Legacy chunked delete by player_id range.
+ *   - "overwrite_only" (default): Skip pre-delete and rely on upsert overwrite. Good for targeted recalculation.
+ *   - "rpc_truncate" (explicit opt-in): DB-side RPC truncates the whole table quickly. Best for complete wipes.
+ *   - "delete" (explicit opt-in): Legacy chunked delete of the whole table by player_id range.
+ *   The two table-clearing modes are refused (400) with dryRunUpsert or any scope flag
+ *   (playerId, season, startDate, endDate, strength(s), resumeFrom, maxPlayers, autoResume).
  * 
  * Performance Tuning:
  * - deleteChunkSize (number, optional): Batch size for deleting rows during a full refresh (legacy delete mode). Defaults to 50000.
@@ -40,7 +42,8 @@
  * Example URLs:
  * - Process a single player: /api/v1/db/update-rolling-player-averages?playerId=8478402
  * - Process a specific season: /api/v1/db/update-rolling-player-averages?season=20232024
- * - Full refresh for all players: /api/v1/db/update-rolling-player-averages?fullRefresh=true
+ * - Full refresh for all players (upsert overwrite): /api/v1/db/update-rolling-player-averages?fullRefresh=true
+ * - Truncate, then rebuild every player: /api/v1/db/update-rolling-player-averages?fullRefresh=true&fullRefreshMode=rpc_truncate
  * - Full refresh with concurrency limit: /api/v1/db/update-rolling-player-averages?fullRefresh=true&playerConcurrency=2&upsertBatchSize=1000
  * - Resume from a player ID: /api/v1/db/update-rolling-player-averages?resumeFrom=8477000
  * - Date range: /api/v1/db/update-rolling-player-averages?startDate=2023-10-01&endDate=2023-11-01
@@ -49,7 +52,7 @@
  * - Deliberate broad true 5v5 recompute: /api/v1/db/update-rolling-player-averages?season=20252026&startDate=2026-03-01&endDate=2026-04-16&strength=5v5&fastMode=true&skipDiagnostics=true&executionProfile=overnight
  *
  * Notes:
- * - Do not combine `playerId` with `fullRefresh=true`; full refresh modes operate on the entire table.
+ * - Table-clearing full refresh modes operate on the entire table, so the route refuses them for scoped or dry-run requests.
  * - For targeted backfills or corrections, prefer `playerId`, `season`, or an explicit `resumeFrom` without `fullRefresh=true`.
  * - A bare GET/POST call with no scope params uses the `daily_incremental` profile plus an implicit recent lookback window for maintenance convenience; that default is not a one-day smoke test.
  * - For a true one-day operational probe, pass explicit `startDate` and `endDate` with the same YYYY-MM-DD value.
@@ -69,6 +72,7 @@ import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import {
   inferRollingExecutionProfile,
   isRollingExecutionProfile,
+  resolveRollingFullRefreshMode,
   ROLLING_EXECUTION_PROFILE_BUDGETS_MS,
   ROLLING_EXECUTION_PROFILE_DEFAULTS,
   type RollingExecutionProfile
@@ -519,6 +523,36 @@ export async function handler(
       endDate,
       implicitDailyWindowApplied: implicitDailyWindow != null
     });
+    const fullRefreshPlan = fullRefresh
+      ? resolveRollingFullRefreshMode({
+          fullRefreshMode,
+          dryRunUpsert,
+          playerId,
+          season,
+          startDate,
+          endDate,
+          strengths,
+          resumePlayerId: resumeFrom,
+          maxPlayers: effectiveMaxPlayers
+        })
+      : null;
+    if (fullRefreshPlan?.refusal) {
+      logEndpointPhase({
+        phase: "response",
+        status: "complete",
+        details: {
+          statusCode: 400,
+          fullRefreshMode: fullRefreshPlan.mode,
+          reason: "table_clearing_full_refresh_with_scope"
+        }
+      });
+      return res.status(400).json({
+        message: fullRefreshPlan.refusal,
+        success: false,
+        operationStatus: "blocked"
+      });
+    }
+
     const isUnboundedBroadDateWindowRun =
       executionProfile !== "overnight" &&
       implicitDailyWindow == null &&

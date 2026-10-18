@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildStaleSourceFilter,
   classifySustainabilitySourceAdvance,
   detectSustainabilitySourceAdvance,
   sourceDateFromComponents
 } from "./incremental";
 
 const WINDOW_CODES = ["l3", "l5", "l10", "l20"] as const;
+const SNAPSHOT = "2026-10-17";
 
 type ScoreRow = {
   player_id: number;
@@ -14,11 +16,12 @@ type ScoreRow = {
   window_code: string;
   sourceCutoffs: unknown;
 };
+type StatRow = { player_id: number; date: string };
 
 function scoreRowsFor(
   playerIds: number[],
   snapshotDate: string,
-  sourceDateFor: (playerId: number) => string
+  sourceDateFor: (playerId: number, windowCode: string) => string | null
 ): ScoreRow[] {
   return playerIds.flatMap((playerId) =>
     WINDOW_CODES.map((windowCode) => ({
@@ -26,71 +29,102 @@ function scoreRowsFor(
       snapshot_date: snapshotDate,
       window_code: windowCode,
       sourceCutoffs: {
-        observed: { player_stats_unified: sourceDateFor(playerId) }
+        observed: { player_stats_unified: sourceDateFor(playerId, windowCode) }
       }
     }))
   );
 }
 
-// Applies only the eq/in filters the detector uses; ordering and ranges are
+function statRows(latestByPlayer: Record<number, string>): StatRow[] {
+  return Object.entries(latestByPlayer).flatMap(([playerId, date]) => [
+    { player_id: Number(playerId), date: "2026-10-01" },
+    { player_id: Number(playerId), date }
+  ]);
+}
+
+// Interprets the PostgREST filters the detector sends; ordering and ranges are
 // irrelevant for a single in-memory page.
-function fakeClient(latestSourceDate: string | null, scoreRows: ScoreRow[]) {
+function matchesStaleFilter(filter: string, row: StatRow) {
+  const groups = filter.matchAll(
+    /and\(date\.gt\.([\d-]+),player_id\.in\.\(([\d,]+)\)\)|player_id\.in\.\(([\d,]+)\)/g
+  );
+  for (const [, cutoff, cutoffIds, nullIds] of groups) {
+    const ids = (cutoffIds ?? nullIds).split(",").map(Number);
+    if (ids.includes(row.player_id) && (!cutoff || row.date > cutoff)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function fakeClient(scoreRows: ScoreRow[], stats: StatRow[]) {
   return {
     from(table: string) {
-      const filters: Array<(row: ScoreRow) => boolean> = [];
+      let rows: any[] = table === "sustainability_scores" ? scoreRows : stats;
+      let limit = Infinity;
       const builder: any = {
         select: () => builder,
-        lte: () => builder,
         order: () => builder,
-        limit: () => builder,
         range: () => builder,
-        eq: (column: keyof ScoreRow, value: unknown) => {
-          filters.push((row) => row[column] === value);
+        eq: (column: string, value: unknown) => {
+          rows = rows.filter((row) => row[column] === value);
           return builder;
         },
-        in: (column: keyof ScoreRow, values: unknown[]) => {
-          filters.push((row) => values.includes(row[column]));
+        in: (column: string, values: unknown[]) => {
+          rows = rows.filter((row) => values.includes(row[column]));
           return builder;
         },
-        maybeSingle: async () => ({
-          data: latestSourceDate ? { date: latestSourceDate } : null,
-          error: null
-        }),
+        lte: (column: string, value: string) => {
+          rows = rows.filter((row) => row[column] <= value);
+          return builder;
+        },
+        or: (filter: string) => {
+          rows = rows.filter((row) => matchesStaleFilter(filter, row));
+          return builder;
+        },
+        limit: (count: number) => {
+          limit = count;
+          return builder;
+        },
         then: (resolve: (value: unknown) => unknown) =>
-          resolve({
-            data:
-              table === "sustainability_scores"
-                ? scoreRows.filter((row) => filters.every((keep) => keep(row)))
-                : [],
-            error: null
-          })
+          resolve({ data: rows.slice(0, limit), error: null })
       };
       return builder;
     }
   } as any;
 }
 
-describe("sustainability incremental source detection", () => {
-  it("processes only a source date newer than the persisted source cutoff", () => {
-    expect(classifySustainabilitySourceAdvance({
-      latestSourceDate: "2026-03-22",
-      latestProcessedSourceDate: "2026-03-21"
-    })).toEqual({ shouldProcess: true, reason: "new_source_date" });
-    expect(classifySustainabilitySourceAdvance({
-      latestSourceDate: "2026-03-21",
-      latestProcessedSourceDate: "2026-03-21"
-    })).toEqual({ shouldProcess: false, reason: "source_already_processed" });
+function detect(client: unknown, playerIds: number[]) {
+  return detectSustainabilitySourceAdvance(client as any, {
+    snapshotDate: SNAPSHOT,
+    playerIds,
+    windowCodes: WINDOW_CODES
   });
+}
 
-  it("fails open into prerequisite validation when either cutoff is unavailable", () => {
-    expect(classifySustainabilitySourceAdvance({
-      latestSourceDate: null,
-      latestProcessedSourceDate: "2026-03-21"
-    }).shouldProcess).toBe(true);
-    expect(classifySustainabilitySourceAdvance({
-      latestSourceDate: "2026-03-21",
-      latestProcessedSourceDate: null
-    }).shouldProcess).toBe(true);
+describe("sustainability incremental source detection", () => {
+  it("skips only a complete batch with no newer source rows", () => {
+    expect(
+      classifySustainabilitySourceAdvance({
+        batchPlayers: 3,
+        missingBatchRows: 0,
+        hasStaleRows: false
+      })
+    ).toEqual({ shouldProcess: false, reason: "source_already_processed" });
+    expect(
+      classifySustainabilitySourceAdvance({
+        batchPlayers: 3,
+        missingBatchRows: 0,
+        hasStaleRows: true
+      })
+    ).toEqual({ shouldProcess: true, reason: "new_source_date" });
+    expect(
+      classifySustainabilitySourceAdvance({
+        batchPlayers: 0,
+        missingBatchRows: 0,
+        hasStaleRows: false
+      })
+    ).toEqual({ shouldProcess: true, reason: "empty_batch" });
   });
 
   it("reads current provenance and retains the legacy key as compatibility", () => {
@@ -110,83 +144,125 @@ describe("sustainability incremental source detection", () => {
     ).toBe("2026-04-15");
   });
 
-  it("processes a later offset batch after an earlier batch wrote the new cutoff", async () => {
-    // Offset 0 (players 1-3) already wrote snapshot 2026-10-17 with the new
-    // source date; offset 250 (players 4-6) has no rows for that snapshot.
-    const client = fakeClient(
-      "2026-10-16",
-      scoreRowsFor([1, 2, 3], "2026-10-17", (playerId) =>
-        playerId === 2 ? "2026-10-16" : "2026-10-14"
+  it("groups players by cutoff in the stale-source filter", () => {
+    expect(
+      buildStaleSourceFilter(
+        new Map([
+          [1, "2026-10-16"],
+          [2, null],
+          [3, "2026-10-16"]
+        ])
       )
+    ).toBe("and(date.gt.2026-10-16,player_id.in.(1,3)),player_id.in.(2)");
+  });
+
+  it("processes a later offset batch after an earlier batch wrote the new cutoff", async () => {
+    // Offset 0 (players 1-3) already wrote the snapshot; offset 250 (4-6) has no rows.
+    const stats = statRows({ 1: "2026-10-14", 2: "2026-10-16", 3: "2026-10-14", 4: "2026-10-16" });
+    const client = fakeClient(
+      scoreRowsFor([1, 2, 3], SNAPSHOT, (playerId) =>
+        playerId === 2 ? "2026-10-16" : "2026-10-14"
+      ),
+      stats
     );
 
-    const laterBatch = await detectSustainabilitySourceAdvance(client, {
-      snapshotDate: "2026-10-17",
-      playerIds: [4, 5, 6],
-      windowCodes: WINDOW_CODES
-    });
-    expect(laterBatch).toMatchObject({
+    await expect(detect(client, [4, 5, 6])).resolves.toMatchObject({
       shouldProcess: true,
       reason: "snapshot_batch_incomplete",
       missing_batch_rows: 12
     });
-
-    const rerun = await detectSustainabilitySourceAdvance(client, {
-      snapshotDate: "2026-10-17",
-      playerIds: [1, 2, 3],
-      windowCodes: WINDOW_CODES
-    });
-    expect(rerun).toMatchObject({
+    await expect(detect(client, [1, 2, 3])).resolves.toMatchObject({
       shouldProcess: false,
       reason: "source_already_processed",
       missing_batch_rows: 0,
-      latest_processed_source_date: "2026-10-16"
+      stale_source_rows: false
     });
   });
 
-  it("does not count another snapshot's rows or a stale batch as current", async () => {
-    const rows = [
-      ...scoreRowsFor([1, 2], "2026-10-16", () => "2026-10-16"),
-      ...scoreRowsFor([3, 4], "2026-10-17", () => "2026-10-15")
-    ];
+  it("processes a batch with mixed cutoffs when any one player is stale", async () => {
+    // Player 1 is current, player 3 legitimately last played 10-10, but player 2
+    // gained a 10-15 game after its rows were built with 10-14.
+    const stats = statRows({ 1: "2026-10-16", 2: "2026-10-15", 3: "2026-10-10" });
+    const cutoffs: Record<number, string> = {
+      1: "2026-10-16",
+      2: "2026-10-14",
+      3: "2026-10-10"
+    };
+    const rows = scoreRowsFor([1, 2, 3], SNAPSHOT, (playerId) => cutoffs[playerId]);
 
+    await expect(detect(fakeClient(rows, stats), [1, 2, 3])).resolves.toMatchObject({
+      shouldProcess: true,
+      reason: "new_source_date",
+      stale_source_rows: true
+    });
+    await expect(detect(fakeClient(rows, stats), [1, 3])).resolves.toMatchObject({
+      shouldProcess: false,
+      reason: "source_already_processed"
+    });
+  });
+
+  it("uses a player's oldest window cutoff and treats a null cutoff as no source yet", async () => {
+    const mixedWindows = scoreRowsFor([1], SNAPSHOT, (_, windowCode) =>
+      windowCode === "l20" ? "2026-10-14" : "2026-10-16"
+    );
     await expect(
-      detectSustainabilitySourceAdvance(fakeClient("2026-10-16", rows), {
-        snapshotDate: "2026-10-17",
-        playerIds: [1, 2],
-        windowCodes: WINDOW_CODES
-      })
-    ).resolves.toMatchObject({
+      detect(fakeClient(mixedWindows, statRows({ 1: "2026-10-16" })), [1])
+    ).resolves.toMatchObject({ shouldProcess: true, reason: "new_source_date" });
+
+    const noSource = scoreRowsFor([2], SNAPSHOT, () => null);
+    await expect(detect(fakeClient(noSource, []), [2])).resolves.toMatchObject({
+      shouldProcess: false,
+      reason: "source_already_processed"
+    });
+    await expect(
+      detect(fakeClient(noSource, statRows({ 2: "2026-10-16" })), [2])
+    ).resolves.toMatchObject({ shouldProcess: true, reason: "new_source_date" });
+  });
+
+  it("processes when batch membership changes between runs", async () => {
+    // Baselines gained player 7, which now falls inside this batch.
+    const rows = scoreRowsFor([1, 2], SNAPSHOT, () => "2026-10-16");
+    const stats = statRows({ 1: "2026-10-16", 2: "2026-10-16", 7: "2026-10-16" });
+
+    await expect(detect(fakeClient(rows, stats), [1, 2, 7])).resolves.toMatchObject({
+      shouldProcess: true,
+      reason: "snapshot_batch_incomplete",
+      missing_batch_rows: 4
+    });
+  });
+
+  it("does not count another snapshot's rows and treats a missing window as incomplete", async () => {
+    const stats = statRows({ 1: "2026-10-16", 2: "2026-10-16" });
+    const otherSnapshot = scoreRowsFor([1], "2026-10-16", () => "2026-10-16");
+    await expect(detect(fakeClient(otherSnapshot, stats), [1])).resolves.toMatchObject({
       shouldProcess: true,
       reason: "snapshot_batch_incomplete"
     });
-    await expect(
-      detectSustainabilitySourceAdvance(fakeClient("2026-10-16", rows), {
-        snapshotDate: "2026-10-17",
-        playerIds: [3, 4],
-        windowCodes: WINDOW_CODES
-      })
-    ).resolves.toMatchObject({
-      shouldProcess: true,
-      reason: "new_source_date"
-    });
-  });
 
-  it("treats a batch missing one window as incomplete", async () => {
-    const rows = scoreRowsFor([1], "2026-10-17", () => "2026-10-16").filter(
+    const missingWindow = scoreRowsFor([2], SNAPSHOT, () => "2026-10-16").filter(
       (row) => row.window_code !== "l20"
     );
-
-    await expect(
-      detectSustainabilitySourceAdvance(fakeClient("2026-10-16", rows), {
-        snapshotDate: "2026-10-17",
-        playerIds: [1],
-        windowCodes: WINDOW_CODES
-      })
-    ).resolves.toMatchObject({
+    await expect(detect(fakeClient(missingWindow, stats), [2])).resolves.toMatchObject({
       shouldProcess: true,
       reason: "snapshot_batch_incomplete",
       missing_batch_rows: 1
+    });
+  });
+
+  it("skips a re-run of the same snapshot once every player is current", async () => {
+    const stats = statRows({ 1: "2026-10-16", 2: "2026-10-12" });
+    const rows = scoreRowsFor([1, 2], SNAPSHOT, (playerId) =>
+      playerId === 1 ? "2026-10-16" : "2026-10-12"
+    );
+    const client = fakeClient(rows, stats);
+
+    await expect(detect(client, [1, 2])).resolves.toMatchObject({
+      shouldProcess: false,
+      reason: "source_already_processed"
+    });
+    await expect(detect(client, [2, 1, 2])).resolves.toMatchObject({
+      shouldProcess: false,
+      batch_players: 2
     });
   });
 });

@@ -1,11 +1,18 @@
 import React, { createElement, useSyncExternalStore } from 'react';
 import { DAYS, GameData, Team } from 'lib/NHL/types';
 import { addDays, format, parseISO } from 'date-fns';
+import { REAL_WEEK_32 } from './real-week-32';
 
-export const teams: Record<number, Team> = Object.fromEntries(Array.from({ length: 24 }, (_, index) => {
-  const id = index + 1;
-  return [id, { id, name: `Fixture Team ${String(id).padStart(2, '0')}`, abbreviation: `F${id}`, logo: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="32" height="32"%3E%3Crect width="32" height="32" rx="8" fill="%232d9cdb"/%3E%3C/svg%3E' }];
-}));
+const logo = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="32" height="32"%3E%3Crect width="32" height="32" rx="8" fill="%232d9cdb"/%3E%3C/svg%3E';
+// `?teams=32` replays a real 32-team week; the default 24-team fixture is unchanged.
+const real32 = typeof location !== 'undefined' && new URLSearchParams(location.search).get('teams') === '32';
+const realAbbreviations = Object.keys(REAL_WEEK_32).sort();
+export const teams: Record<number, Team> = real32
+  ? Object.fromEntries(realAbbreviations.map((abbreviation, index) => [index + 1, { id: index + 1, name: `Real Week ${abbreviation}`, abbreviation, logo }]))
+  : Object.fromEntries(Array.from({ length: 24 }, (_, index) => {
+    const id = index + 1;
+    return [id, { id, name: `Fixture Team ${String(id).padStart(2, '0')}`, abbreviation: `F${id}`, logo }];
+  }));
 export const useTeamsMap = () => teams;
 export const useCurrentSeason = () => ({ seasonId: 20262027 });
 const summaries = Object.keys(teams).map((id) => ({ teamId: Number(id), gamesPlayed: 2, pointPct: .5 }));
@@ -30,7 +37,7 @@ export function useSchedule(start: string, extended: boolean) {
   const key = `${start}/${extended}/${status}`;
   if (!snapshots.has(key)) {
     const dates = Array.from({ length: extended ? 10 : 7 }, (_, index) => format(addDays(parseISO(start), index), 'yyyy-MM-dd'));
-    const rows = Object.values(teams).map((team) => {
+    const rows = real32 ? realWeekRows(dates, status) : Object.values(teams).map((team) => {
       const opponent = team.id % 2 ? team.id + 1 : team.id - 1;
       const game = (day: number): GameData & { startTimeUTC: string } => ({
         id: Math.ceil(team.id / 2) * 100 + day, season: 20262027, gameType: 2,
@@ -41,9 +48,28 @@ export function useSchedule(start: string, extended: boolean) {
       return { teamId: team.id, ...(status === 'empty' ? {} : { THU: game(3), SUN: game(6), ...(team.id > 12 ? { SAT: game(5) } : {}), ...(extended ? { nMON: game(7) } : {}) }) };
     });
     const coveredDates = status === 'partial' ? dates.slice(0, 6) : dates;
-    snapshots.set(key, [rows, DAYS.map(() => 0), false, { coveredDates, coverage: { known: coveredDates.length, expected: dates.length }, error: null, retrievedAtByDate: Object.fromEntries(dates.map(date => [date, '2026-10-07T15:59:00Z'])) }]);
+    const retrievedAt = status === 'stale' ? '2026-09-30T12:00:00Z' : '2026-10-07T15:59:00Z';
+    snapshots.set(key, [rows, DAYS.map(() => 0), false, { coveredDates, coverage: { known: coveredDates.length, expected: dates.length }, error: null, retrievedAtByDate: Object.fromEntries(dates.map(date => [date, retrievedAt])) }]);
   }
   return snapshots.get(key);
+}
+/** Real matchups on the fixture week; `postponed` marks S.J vs CAR (Thursday) PPD. */
+function realWeekRows(dates: string[], status: string) {
+  const idOf = (abbreviation: string) => realAbbreviations.indexOf(abbreviation) + 1;
+  return realAbbreviations.map((abbreviation) => {
+    const row: Record<string, unknown> = { teamId: idOf(abbreviation) };
+    if (status === 'empty') return row;
+    REAL_WEEK_32[abbreviation].split(',').forEach((cell, day) => {
+      if (!cell) return;
+      const self = idOf(abbreviation), opponent = idOf(cell.replace('@', ''));
+      const [home, away] = cell.startsWith('@') ? [opponent, self] : [self, opponent];
+      row[DAYS[day]] = { id: 2026020000 + day * 100 + Math.min(home, away), season: 20262027, gameType: 2,
+        gameDate: dates[day], startTimeUTC: dates[day] + 'T23:00:00Z', gameState: 'FUT',
+        ...(status === 'postponed' && day === 3 && home === idOf('S.J') ? { gameScheduleState: 'PPD' } : {}),
+        homeTeam: { ...teams[home] }, awayTeam: { ...teams[away] } };
+    });
+    return row;
+  });
 }
 const fourWeeks = [[], [], false, { start: '2026-10-05', end: '2026-11-01', knownDays: 0, expectedDays: 28, error: null }];
 export const useFourWeekSchedule = () => fourWeeks;

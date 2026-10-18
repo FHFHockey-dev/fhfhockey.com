@@ -4,6 +4,11 @@ import { requireApiUser } from "lib/api/requireApiUser";
 import serviceRoleClient from "lib/supabase/server";
 import { YAHOO_PROVIDER } from "lib/integrations/yahoo/config";
 
+const DISCONNECT_UNAVAILABLE = {
+  error: "Unable to disconnect Yahoo.",
+  code: "YAHOO_DISCONNECT_UNAVAILABLE",
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -23,7 +28,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     .maybeSingle();
 
   if (accountError) {
-    return res.status(500).json({ error: accountError.message });
+    console.error("Yahoo disconnect account lookup failed", accountError);
+    return res.status(500).json(DISCONNECT_UNAVAILABLE);
   }
 
   if (connectedAccount?.id) {
@@ -33,7 +39,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq("id", connectedAccount.id);
 
     if (error) {
-      return res.status(500).json({ error: error.message });
+      console.error("Yahoo disconnect delete failed", error);
+      return res.status(500).json(DISCONNECT_UNAVAILABLE);
     }
   }
 
@@ -45,7 +52,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     .eq("user_id", user.id);
 
   if (settingsError) {
-    return res.status(500).json({ error: settingsError.message });
+    console.error("Yahoo disconnect settings reset failed", settingsError);
+    return res.status(500).json(DISCONNECT_UNAVAILABLE);
   }
 
   return res.status(200).json({

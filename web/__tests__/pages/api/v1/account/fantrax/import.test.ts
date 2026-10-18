@@ -165,4 +165,28 @@ describe("/api/v1/account/fantrax/import", () => {
     expect(methodRes.statusCode).toBe(405);
     expect(requireApiUserMock).toHaveBeenCalledTimes(1);
   });
+
+  it("returns a stable error without dependency details", async () => {
+    for (const failure of [
+      new Error("relation private.connected_account_tokens denied Bearer secret"),
+      new FantraxImportErrorMock("Upstream relation private.connected_account_tokens denied Bearer secret", 503),
+    ]) {
+      runFantraxManualImportMock.mockRejectedValueOnce(failure);
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+      const res = createMockRes();
+
+      await handler(
+        { method: "POST", body: { content: "{}", format: "json" }, headers: {} } as any,
+        res,
+      );
+
+      expect(res.statusCode).toBe(500);
+      expect(res.body).toEqual({
+        error: "Fantrax import failed.",
+        code: "FANTRAX_IMPORT_UNAVAILABLE",
+      });
+      expect(JSON.stringify(res.body)).not.toContain("secret");
+      consoleError.mockRestore();
+    }
+  });
 });

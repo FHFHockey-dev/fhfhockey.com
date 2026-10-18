@@ -615,7 +615,7 @@ export default function TeamUnderlyingStatsLandingRoute() {
         />
 
         {!validation.isValid ? (
-          <section role="alert" style={{ color: "#8a1c1c" }}>
+          <section role="alert" className={styles.explorerAlert}>
             Team filters are invalid: {validation.issues.join(", ")}
           </section>
         ) : isLoading ? (
@@ -623,7 +623,7 @@ export default function TeamUnderlyingStatsLandingRoute() {
             Loading team results...
           </section>
         ) : tableError ? (
-          <section role="alert" style={{ color: "#8a1c1c" }}>
+          <section role="alert" className={styles.explorerAlert}>
             {tableError}
           </section>
         ) : rows.length === 0 ? (
@@ -635,12 +635,12 @@ export default function TeamUnderlyingStatsLandingRoute() {
         ) : (
           <section>
             {coverage && coverage.summarizedGames < coverage.completedGames ? (
-              <div role="status" style={{ marginBottom: "8px", color: "#8a5a00" }}>
+              <div role="status" className={styles.explorerNotice}>
                 Partial season: team data covers {coverage.summarizedGames} of{" "}
                 {coverage.completedGames} completed games, so totals may lag official standings.
               </div>
             ) : null}
-            <div style={{ marginBottom: "16px", color: "#555" }}>
+            <div className={styles.explorerSummary}>
               Showing {rows.length} of {landingData?.pagination.totalRows ?? rows.length} teams.
             </div>
             <PlayerStatsTable

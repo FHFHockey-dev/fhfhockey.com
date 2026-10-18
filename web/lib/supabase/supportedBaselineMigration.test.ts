@@ -65,8 +65,8 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     ).toEqual(activeMigrationNames);
 
     expect(migrationAuthority.schemaVersion).toBe(1);
-    expect(migrationAuthorityRows).toHaveLength(83);
-    expect(new Set(activeMigrationNames)).toHaveLength(83);
+    expect(migrationAuthorityRows).toHaveLength(85);
+    expect(new Set(activeMigrationNames)).toHaveLength(85);
     expect(
       migrationAuthorityRows.map((row) => row.order),
     ).toEqual(migrationAuthorityRows.map((_row, index) => index + 1));
@@ -85,7 +85,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       migrationAuthorityRows.filter(
         (row) => row.deploymentState === "pending",
       ),
-    ).toHaveLength(2);
+    ).toHaveLength(4);
 
     for (const row of migrationAuthorityRows) {
       expect(row.path).toBe(
@@ -202,6 +202,79 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     expect(truncateRevocation).not.toMatch(
       /\b(?:select|call)\s+public\.truncate_rolling_player_game_metrics\b/i,
     );
+  });
+
+  it("leaves browser roles only owner-scoped reads of provider-linkage tables", () => {
+    const migration = readMigration(
+      "20261018184229_restrict_provider_linkage_browser_writes.sql",
+    );
+    const tables = [
+      "connected_accounts",
+      "external_leagues",
+      "external_teams",
+      "provider_sync_runs",
+    ];
+    const statements = migration
+      .replace(/--[^\n]*/g, "")
+      .split(";")
+      .map((statement) => statement.trim().replace(/\s+/g, " "))
+      .filter(Boolean);
+    const tableList = tables.map((table) => `public.${table}`).join(", ");
+
+    // Freeze the whole ACL-only scope: no data, function or schema changes.
+    expect(statements).toEqual([
+      "begin",
+      "set local lock_timeout = '5s'",
+      "set local statement_timeout = '30s'",
+      `revoke all on table ${tableList} from public, anon, authenticated`,
+      `grant select on table ${tableList} to authenticated`,
+      ...tables.flatMap((table) =>
+        ["insert", "update", "delete"].map(
+          (command) =>
+            `drop policy if exists ${table}_${command}_own on public.${table}`,
+        ),
+      ),
+      "commit",
+    ]);
+    expect(migration).not.toMatch(/\bservice_role\b/);
+    expect(migration).not.toMatch(/user_provider_preferences_\w+_own/);
+  });
+
+  it("restores the private token vault the baseline wrappers call", () => {
+    const baseline = readMigration("20260716112908_production_schema_baseline.sql");
+    const migration = readMigration(
+      "20261018190022_restore_private_token_vault.sql",
+    );
+
+    // The baseline wrappers depend on these routines but never create them.
+    expect(baseline).toContain("private.upsert_connected_account_tokens(");
+    expect(baseline).toContain("private.get_connected_account_tokens(");
+    expect(baseline).not.toMatch(/CREATE SCHEMA (IF NOT EXISTS )?private/i);
+
+    for (const fragment of [
+      "create schema if not exists private;",
+      "revoke all on schema private from public, anon, authenticated;",
+      "create table if not exists private.connected_account_tokens (",
+      "revoke all on table private.connected_account_tokens from public, anon, authenticated;",
+      "add constraint connected_account_tokens_connected_account_user_fk",
+      "create or replace function private.upsert_connected_account_tokens(",
+      "create or replace function private.get_connected_account_tokens(",
+      "create or replace function private.cleanup_connected_account_token_secrets()",
+      "execute function private.cleanup_connected_account_token_secrets();",
+    ]) {
+      expect(migration).toContain(fragment);
+    }
+    // Vault ids only: raw tokens never become columns again, token rows are
+    // never touched, and browser roles get nothing.
+    const tokenTable = migration.slice(
+      migration.indexOf("create table if not exists private.connected_account_tokens ("),
+      migration.indexOf("alter table private.connected_account_tokens"),
+    );
+    expect(tokenTable).toContain("access_token_secret_id uuid null");
+    expect(tokenTable).not.toMatch(/\b(access|refresh)_token text/);
+    expect(migration).not.toMatch(/^(insert|update|delete)\b/im);
+    expect(migration).not.toMatch(/\bto (anon|authenticated|public)\b/i);
+    expect(migration.match(/security definer/g)).toHaveLength(3);
   });
 
   it("keeps credential-bearing routines out of the current-schema baseline", () => {

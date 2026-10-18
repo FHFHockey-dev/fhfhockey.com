@@ -836,7 +836,8 @@ async function fetchSummaryRows(args: {
       .eq("strength", args.state.primary.strength)
       .eq("score_state", args.state.primary.scoreState)
       .order("game_date", { ascending: false })
-      .order("game_id", { ascending: false });
+      .order("game_id", { ascending: false })
+      .order("team_id", { ascending: true });
 
     if (args.state.expandable.teamId != null) {
       query = query.eq("team_id", args.state.expandable.teamId);

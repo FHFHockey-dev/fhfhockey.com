@@ -75,6 +75,8 @@ describe("Yahoo live draft parser", () => {
     const result = parseYahooBoardSettings({ fantasy_content: { league: [{ league_key: "477.l.1" },
       { settings: [{ scoring_type: "head", max_weekly_adds: "4" }, { min_games_played: "3" }] }] } });
     expect(result.minimumGoalieStarts).toBe(3);
+    expect(parseYahooBoardSettings({ min_games_played: "0" }).minimumGoalieStarts).toBe(0);
+    expect(parseYahooBoardSettings({ min_games_played: "" }).minimumGoalieStarts).toBeNull();
     expect(parseYahooBoardSettings({ min_goalie_appearances: "3" }).minimumGoalieStarts).toBeNull();
   });
   it("uses Yahoo's explicit playoff range and preserves unknown data", () => {

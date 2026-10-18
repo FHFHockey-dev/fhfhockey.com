@@ -325,6 +325,10 @@ describe("adminOnlyMiddleware", () => {
     { data: { user: { id: "" } }, error: null },
     { data: { user: {} }, error: null },
     { error: null },
+    {
+      data: { user: { id: "unverified-user-id" } },
+      error: { message: "invalid JWT" },
+    },
   ])(
     "denies a token whose getUser result has no verified id: %j",
     async (getUserResult) => {

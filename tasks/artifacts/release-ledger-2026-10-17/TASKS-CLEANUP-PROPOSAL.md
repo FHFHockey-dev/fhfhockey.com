@@ -52,3 +52,13 @@ Or revert the untracking commit.
   | `tasks/TASKS/lines-gdl-ingestion/audit/*` | lines and tweet tests |
   | `tasks/ifttt-integration-2026-10-16/{migrations,next-increment,durable-occurrence-increment,game-scope-fixtures-v2}/` | IFTTT tests |
   | `tasks/TASKS/super-goal/super-goal-final-summary.md` | count sentence kept in step with the migration test |
+
+## Addendum, 2026-10-18: audit G8 widens the scope
+
+The Super Goal audit (`super-goal-audit-2026-10-17/findings/G8-draft-yahoo-cleanup-drm.md`) rates the cache commit P2 REGRESSED. It also finds two more classes of tracked generated files:
+- 11 Playwright `.last-run.json` / `error-context.md` files under `output/ui-acceptance-20261002/` and `tasks/artifacts/forge-rso-completion-2026-10-15/browser*/`
+- 8 `supabase/.temp/cli-latest` files under `tasks/ifttt-integration-2026-10-16/*`
+
+They are listed with mode, blob and size in `cleanup-manifest-generated-artifacts.tsv`. Restoring them works the same way as for the cache. Approval C2 now covers all three classes in one untrack-only commit.
+
+`output/**` is not ignored, so the proposal adds `output/**/*-results/`, `**/.last-run.json` and `**/supabase/.temp/` guards. Only the Playwright `error-context.md` files inside those result folders are untracked; any other `error-context.md` stays tracked.

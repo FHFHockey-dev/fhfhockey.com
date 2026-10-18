@@ -1,7 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database, Json } from "lib/supabase/database-generated.types";
-import { fetchAllSupabaseFilterChunks } from "lib/supabase/pagination";
+import {
+  DEFAULT_SUPABASE_FILTER_CHUNK_SIZE,
+  fetchAllSupabaseFilterChunks
+} from "lib/supabase/pagination";
 
 export function sourceDateFromComponents(value: Json | null): string | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
@@ -18,40 +21,49 @@ export function sourceDateFromComponents(value: Json | null): string | null {
 }
 
 export function classifySustainabilitySourceAdvance(args: {
-  latestSourceDate: string | null;
-  latestProcessedSourceDate: string | null;
-  missingBatchRows?: number;
+  batchPlayers: number;
+  missingBatchRows: number;
+  hasStaleRows: boolean;
 }) {
-  if (!args.latestSourceDate) {
-    return { shouldProcess: true, reason: "source_date_unavailable" as const };
+  if (args.batchPlayers === 0) {
+    return { shouldProcess: true, reason: "empty_batch" as const };
   }
-  if (args.missingBatchRows) {
+  if (args.missingBatchRows > 0) {
     return { shouldProcess: true, reason: "snapshot_batch_incomplete" as const };
   }
-  if (!args.latestProcessedSourceDate) {
-    return { shouldProcess: true, reason: "no_processed_source_cutoff" as const };
-  }
-  return args.latestSourceDate > args.latestProcessedSourceDate
+  return args.hasStaleRows
     ? { shouldProcess: true, reason: "new_source_date" as const }
     : { shouldProcess: false, reason: "source_already_processed" as const };
 }
 
-// Each score row records its player's own newest game date, so the batch is
-// current when every player/window row exists and the newest cutoff among them
-// has reached the newest source date.
+// Each score row records its player's own newest game date at build time. A
+// player's rows are current when all windows exist and no player_stats_unified
+// row for that player is newer than the oldest of those cutoffs (a null cutoff
+// means the player had no source rows yet).
 export function summarizeSustainabilityBatchScores(args: {
   playerIds: number[];
   windowCodes: readonly string[];
   rows: Array<{ player_id: number; window_code: string; source_date: string | null }>;
 }) {
-  const present = new Set(
-    args.rows.map((row) => `${row.player_id}:${row.window_code}`)
+  const cutoffsByKey = new Map(
+    args.rows.map((row) => [`${row.player_id}:${row.window_code}`, row.source_date])
   );
   let missingBatchRows = 0;
+  const cutoffByPlayer = new Map<number, string | null>();
   for (const playerId of new Set(args.playerIds)) {
+    let oldest: string | null | undefined;
     for (const windowCode of args.windowCodes) {
-      if (!present.has(`${playerId}:${windowCode}`)) missingBatchRows += 1;
+      const key = `${playerId}:${windowCode}`;
+      if (!cutoffsByKey.has(key)) {
+        missingBatchRows += 1;
+        continue;
+      }
+      const cutoff = cutoffsByKey.get(key) ?? null;
+      if (oldest === undefined || cutoff === null || (oldest !== null && cutoff < oldest)) {
+        oldest = cutoff;
+      }
     }
+    if (oldest !== undefined) cutoffByPlayer.set(playerId, oldest);
   }
   const processedDates = args.rows
     .map((row) => row.source_date)
@@ -59,8 +71,25 @@ export function summarizeSustainabilityBatchScores(args: {
     .sort();
   return {
     missingBatchRows,
+    cutoffByPlayer,
     latestProcessedSourceDate: processedDates.at(-1) ?? null
   };
+}
+
+// PostgREST `or` filter matching any source row newer than its player's cutoff,
+// grouped by cutoff so a batch needs one short filter.
+export function buildStaleSourceFilter(cutoffByPlayer: Map<number, string | null>) {
+  const playersByCutoff = new Map<string | null, number[]>();
+  for (const [playerId, cutoff] of cutoffByPlayer) {
+    playersByCutoff.set(cutoff, [...(playersByCutoff.get(cutoff) ?? []), playerId]);
+  }
+  return [...playersByCutoff]
+    .map(([cutoff, playerIds]) =>
+      cutoff === null
+        ? `player_id.in.(${playerIds.join(",")})`
+        : `and(date.gt.${cutoff},player_id.in.(${playerIds.join(",")}))`
+    )
+    .join(",");
 }
 
 export async function detectSustainabilitySourceAdvance(
@@ -71,15 +100,9 @@ export async function detectSustainabilitySourceAdvance(
     windowCodes: readonly string[];
   }
 ) {
-  const [sourceResult, scoreRows] = await Promise.all([
-    client
-      .from("player_stats_unified")
-      .select("date")
-      .lte("date", args.snapshotDate)
-      .order("date", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    fetchAllSupabaseFilterChunks(args.playerIds, (chunk, range) =>
+  const scoreRows = await fetchAllSupabaseFilterChunks(
+    args.playerIds,
+    (chunk, range) =>
       client
         .from("sustainability_scores")
         .select("player_id, window_code, sourceCutoffs:components->sourceCutoffs")
@@ -88,11 +111,8 @@ export async function detectSustainabilitySourceAdvance(
         .order("player_id", { ascending: true })
         .order("window_code", { ascending: true })
         .range(range.from, range.to)
-    )
-  ]);
-  if (sourceResult.error) throw sourceResult.error;
-  const latestSourceDate = sourceResult.data?.date ?? null;
-  const { missingBatchRows, latestProcessedSourceDate } =
+  );
+  const { missingBatchRows, cutoffByPlayer, latestProcessedSourceDate } =
     summarizeSustainabilityBatchScores({
       playerIds: args.playerIds,
       windowCodes: args.windowCodes,
@@ -104,16 +124,39 @@ export async function detectSustainabilitySourceAdvance(
         })
       }))
     });
+  let hasStaleRows = false;
+  if (cutoffByPlayer.size > 0 && missingBatchRows === 0) {
+    const entries = [...cutoffByPlayer];
+    for (
+      let index = 0;
+      index < entries.length && !hasStaleRows;
+      index += DEFAULT_SUPABASE_FILTER_CHUNK_SIZE
+    ) {
+      const { data, error } = await client
+        .from("player_stats_unified")
+        .select("player_id")
+        .lte("date", args.snapshotDate)
+        .or(
+          buildStaleSourceFilter(
+            new Map(entries.slice(index, index + DEFAULT_SUPABASE_FILTER_CHUNK_SIZE))
+          )
+        )
+        .limit(1);
+      if (error) throw error;
+      hasStaleRows = (data ?? []).length > 0;
+    }
+  }
+  const batchPlayers = new Set(args.playerIds).size;
   return {
     snapshot_date: args.snapshotDate,
-    batch_players: new Set(args.playerIds).size,
+    batch_players: batchPlayers,
     missing_batch_rows: missingBatchRows,
-    latest_source_date: latestSourceDate,
+    stale_source_rows: hasStaleRows,
     latest_processed_source_date: latestProcessedSourceDate,
     ...classifySustainabilitySourceAdvance({
-      latestSourceDate,
-      latestProcessedSourceDate,
-      missingBatchRows
+      batchPlayers,
+      missingBatchRows,
+      hasStaleRows
     })
   };
 }

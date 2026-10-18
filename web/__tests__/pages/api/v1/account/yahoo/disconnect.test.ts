@@ -96,4 +96,23 @@ describe("/api/v1/account/yahoo/disconnect", () => {
       message: "Yahoo Fantasy disconnected.",
     });
   });
+
+  it("returns a stable error without Supabase details", async () => {
+    deleteEqMock.mockResolvedValue({
+      error: { message: "relation private.connected_account_tokens denied Bearer secret", code: "42501" },
+    });
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const res = createMockRes();
+
+    await handler({ method: "POST", headers: {} } as any, res);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({
+      error: "Unable to disconnect Yahoo.",
+      code: "YAHOO_DISCONNECT_UNAVAILABLE",
+    });
+    expect(JSON.stringify(res.body)).not.toContain("secret");
+    expect(updateEqMock).not.toHaveBeenCalled();
+    consoleError.mockRestore();
+  });
 });

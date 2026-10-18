@@ -1,0 +1,183 @@
+diff --git a/web/__tests__/pages/api/v1/db/cron-auth-boundaries.test.ts b/web/__tests__/pages/api/v1/db/cron-auth-boundaries.test.ts
+index 56e4e8b5e47853db91984feed0861840eefecaeb..e8d1b2787e5859021ce2c289a66daa819470069f 100644
+--- a/web/__tests__/pages/api/v1/db/cron-auth-boundaries.test.ts
++++ b/web/__tests__/pages/api/v1/db/cron-auth-boundaries.test.ts
+@@ -41,7 +41,9 @@ vi.mock("lib/supabase", () => ({
+     },
+     from: vi.fn(() => ({
+       select: vi.fn(() => ({
+-        maybeSingle: authMaybeSingleMock,
++        eq: vi.fn(() => ({
++          maybeSingle: authMaybeSingleMock,
++        })),
+       })),
+     })),
+   })),
+@@ -310,7 +312,10 @@ describe("season and WGO cron authorization boundaries", () => {
+   });
+ 
+   it("allows an authenticated admin into both route handlers", async () => {
+-    authGetUserMock.mockResolvedValue({ error: null });
++    authGetUserMock.mockResolvedValue({
++      data: { user: { id: "admin-user-id" } },
++      error: null,
++    });
+     authMaybeSingleMock.mockResolvedValue({ data: { role: "admin" } });
+ 
+     for (const route of protectedRoutes) {
+diff --git a/web/__tests__/pages/api/v1/db/operational-route-auth.test.ts b/web/__tests__/pages/api/v1/db/operational-route-auth.test.ts
+index 006ed4a09f9f34bd45725815589247100ea4acd9..dca6882a0d84b2671207dd5779eb5655acf3cf07 100644
+--- a/web/__tests__/pages/api/v1/db/operational-route-auth.test.ts
++++ b/web/__tests__/pages/api/v1/db/operational-route-auth.test.ts
+@@ -98,10 +98,19 @@ describe("operational route authorization contracts", () => {
+       insert: mocks.auditInsert,
+     }));
+     mocks.createClientWithToken.mockReset().mockReturnValue({
+-      auth: { getUser: vi.fn().mockResolvedValue({ error: null }) },
++      auth: {
++        getUser: vi.fn().mockResolvedValue({
++          data: { user: { id: "verified-admin-id" } },
++          error: null,
++        }),
++      },
+       from: vi.fn(() => ({
+         select: vi.fn(() => ({
+-          maybeSingle: vi.fn().mockResolvedValue({ data: { role: "admin" } }),
++          eq: vi.fn(() => ({
++            maybeSingle: vi
++              .fn()
++              .mockResolvedValue({ data: { role: "admin" } }),
++          })),
+         })),
+       })),
+     });
+diff --git a/web/__tests__/utils/adminOnlyMiddleware.test.ts b/web/__tests__/utils/adminOnlyMiddleware.test.ts
+index b7376225d437d8a2f3980ab24bee17616fd65c66..e129dd38b1e189b16bae0786fbf01a880956fd94 100644
+--- a/web/__tests__/utils/adminOnlyMiddleware.test.ts
++++ b/web/__tests__/utils/adminOnlyMiddleware.test.ts
+@@ -248,11 +248,16 @@ describe("adminOnlyMiddleware", () => {
+     "still requires a verified admin role for a remote request in %s",
+     async (environment) => {
+       vi.stubEnv("NODE_ENV", environment);
+-      const getUser = vi.fn().mockResolvedValue({ error: null });
++      const getUser = vi.fn().mockResolvedValue({
++        data: { user: { id: "synthetic-user-id" } },
++        error: null,
++      });
+       const maybeSingle = vi.fn();
+       vi.mocked(createClientWithToken).mockReturnValue({
+         auth: { getUser },
+-        from: vi.fn(() => ({ select: vi.fn(() => ({ maybeSingle })) })),
++        from: vi.fn(() => ({
++          select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle })) })),
++        })),
+       } as never);
+       const json = vi.fn();
+       const status = vi.fn().mockReturnValue({ json });
+@@ -282,6 +287,78 @@ describe("adminOnlyMiddleware", () => {
+     },
+   );
+ 
++  it("binds the role lookup to the verified user id", async () => {
++    vi.stubEnv("NODE_ENV", "production");
++    const maybeSingle = vi
++      .fn()
++      .mockResolvedValue({ data: { role: "admin" } });
++    const eq = vi.fn(() => ({ maybeSingle }));
++    const select = vi.fn(() => ({ eq }));
++    const from = vi.fn(() => ({ select }));
++    vi.mocked(createClientWithToken).mockReturnValue({
++      auth: {
++        getUser: vi.fn().mockResolvedValue({
++          data: { user: { id: "verified-user-id" } },
++          error: null,
++        }),
++      },
++      from,
++    } as never);
++    const handler = vi.fn();
++    const request = {
++      headers: { authorization: "Bearer synthetic-user-token" },
++      socket: { remoteAddress: "198.51.100.10" },
++    };
++
++    await adminOnly(handler)(request as never, {} as never);
++
++    expect(from).toHaveBeenCalledWith("users");
++    expect(select).toHaveBeenCalledWith("role");
++    expect(eq).toHaveBeenCalledOnce();
++    expect(eq).toHaveBeenCalledWith("user_id", "verified-user-id");
++    expect(handler).toHaveBeenCalledOnce();
++    expect(request).toHaveProperty("supabase", serviceRoleClient);
++  });
++
++  it.each([
++    { data: { user: null }, error: null },
++    { data: { user: { id: "" } }, error: null },
++    { data: { user: {} }, error: null },
++    { error: null },
++    {
++      data: { user: { id: "unverified-user-id" } },
++      error: { message: "invalid JWT" },
++    },
++  ])(
++    "denies a token whose getUser result has no verified id: %j",
++    async (getUserResult) => {
++      vi.stubEnv("NODE_ENV", "production");
++      const from = vi.fn();
++      vi.mocked(createClientWithToken).mockReturnValue({
++        auth: { getUser: vi.fn().mockResolvedValue(getUserResult) },
++        from,
++      } as never);
++      const json = vi.fn();
++      const status = vi.fn().mockReturnValue({ json });
++      const handler = vi.fn();
++      const request = {
++        headers: { authorization: "Bearer synthetic-user-token" },
++        socket: { remoteAddress: "198.51.100.10" },
++      };
++
++      await adminOnly(handler)(request as never, { status } as never);
++
++      expect(status).toHaveBeenCalledWith(401);
++      expect(json).toHaveBeenCalledWith({
++        message: "Unauthorized.",
++        success: false,
++      });
++      expect(from).not.toHaveBeenCalled();
++      expect(handler).not.toHaveBeenCalled();
++      expect(request).not.toHaveProperty("supabase");
++    },
++  );
++
+   it("preserves authenticated remote cron access in production", async () => {
+     vi.stubEnv("NODE_ENV", "production");
+     vi.stubEnv("CRON_SECRET", "synthetic-cron-secret");
+diff --git a/web/utils/adminOnlyMiddleware.ts b/web/utils/adminOnlyMiddleware.ts
+index 9d3e473e72de28b2abe96290a9597cc5ec6238f0..c8ac51a8b6dc3ea4d45ae825f8bea942b5dbd971 100644
+--- a/web/utils/adminOnlyMiddleware.ts
++++ b/web/utils/adminOnlyMiddleware.ts
+@@ -30,17 +30,21 @@ export default function adminOnly(handler: Handler): Handler {
+       }
+       const access_token = bearerMatch[1];
+       const authClient = createClientWithToken(access_token);
+-      const { error: userError } = await authClient.auth.getUser();
+-      if (userError) {
++      const { data: userData, error: userError } =
++        await authClient.auth.getUser();
++      const userId = userData?.user?.id;
++      if (userError || !userId) {
+         return res.status(401).json({
+           message: "Unauthorized.",
+           success: false,
+         });
+       }
+ 
++      // Bind the role lookup to the verified user rather than relying on RLS alone.
+       const { data } = await authClient
+         .from("users")
+         .select("role")
++        .eq("user_id", userId)
+         .maybeSingle();
+       if (data?.role !== "admin") {
+         return res.status(403).json({

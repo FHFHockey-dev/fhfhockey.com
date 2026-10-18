@@ -33,7 +33,15 @@ export async function fetchCachedJson<T>(
   const request = fetch(url, options.init)
     .then(async (response) => {
       if (!response.ok) {
-        throw new Error(`Request failed (${response.status}) for ${url}`);
+        // Keep the route and status out of the error message, which callers
+        // may render; they stay in the development console only.
+        if (process.env.NODE_ENV !== "production") {
+          console.warn("Dashboard request failed", {
+            status: response.status,
+            url
+          });
+        }
+        throw new Error("Request failed.");
       }
       const value = (await response.json()) as T;
       responseCache.set(key, {

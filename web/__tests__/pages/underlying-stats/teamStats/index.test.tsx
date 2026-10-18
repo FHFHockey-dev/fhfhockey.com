@@ -79,10 +79,12 @@ function expectLastTeamLandingFetch(path: string) {
 describe("TeamUnderlyingStatsLandingRoute", () => {
   let teamCoverage: { completedGames: number; summarizedGames: number } | null = null;
   let returnNoRows = false;
+  let failLanding = false;
 
   beforeEach(() => {
     teamCoverage = null;
     returnNoRows = false;
+    failLanding = false;
     routerMock.isReady = true;
     routerMock.pathname = "/underlying-stats/teamStats";
     routerMock.query = {};
@@ -113,6 +115,14 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
                 modelMarketFlags: createStatusSnapshot(),
               },
             }),
+          };
+        }
+
+        if (failLanding) {
+          return {
+            ok: false,
+            status: 500,
+            json: async () => ({ success: false, error: "Team landing unavailable." }),
           };
         }
 
@@ -192,9 +202,9 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
     teamCoverage = { completedGames: 120, summarizedGames: 65 };
     const { unmount } = render(<TeamUnderlyingStatsLandingRoute />);
 
-    expect(
-      await screen.findByText(/team data covers 65 of\s+120 completed games/)
-    ).toBeTruthy();
+    const partialNotice = await screen.findByText(/team data covers 65 of\s+120 completed games/);
+    // Messages on the dark panel use readable token classes, not inline dark colors.
+    expect(partialNotice.style.color).toBe("");
     unmount();
 
     teamCoverage = { completedGames: 120, summarizedGames: 0 };
@@ -222,9 +232,20 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
       screen.getByRole("heading", { name: "Team Table Explorer" })
     ).toBeTruthy();
     expect(screen.getByText("FLA")).toBeTruthy();
-    expect(screen.getByText("Showing 1 of 1 teams.")).toBeTruthy();
+    expect(screen.getByText("Showing 1 of 1 teams.").style.color).toBe("");
     expect(screen.getByText("Points")).toBeTruthy();
     expect(routerMock.replace).not.toHaveBeenCalled();
+  });
+
+  it("announces a failed team load as a readable alert", async () => {
+    routerMock.query = createCanonicalQuery();
+    failLanding = true;
+
+    render(<TeamUnderlyingStatsLandingRoute />);
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toBeTruthy();
+    expect(alert.style.color).toBe("");
   });
 
   it("switches to rates mode, rewrites the canonical query, and refetches from the rates API path", async () => {

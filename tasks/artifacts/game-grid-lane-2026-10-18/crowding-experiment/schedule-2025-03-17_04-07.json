@@ -1,0 +1,1447 @@
+{
+ "source": "Frozen Tools Schedule Planner export (TJ Downloads), schedule cells only",
+ "dates": [
+  "2025-03-17",
+  "2025-03-18",
+  "2025-03-19",
+  "2025-03-20",
+  "2025-03-21",
+  "2025-03-22",
+  "2025-03-23",
+  "2025-03-24",
+  "2025-03-25",
+  "2025-03-26",
+  "2025-03-27",
+  "2025-03-28",
+  "2025-03-29",
+  "2025-03-30",
+  "2025-03-31",
+  "2025-04-01",
+  "2025-04-02",
+  "2025-04-03",
+  "2025-04-04",
+  "2025-04-05",
+  "2025-04-06",
+  "2025-04-07"
+ ],
+ "gamesPerDate": [
+  5,
+  9,
+  2,
+  14,
+  1,
+  14,
+  7,
+  4,
+  10,
+  4,
+  10,
+  6,
+  11,
+  8,
+  4,
+  10,
+  5,
+  9,
+  3,
+  13,
+  8,
+  5
+ ],
+ "teams": [
+  "ANA",
+  "BOS",
+  "BUF",
+  "CAR",
+  "CBJ",
+  "CGY",
+  "CHI",
+  "COL",
+  "DAL",
+  "DET",
+  "EDM",
+  "FLA",
+  "L.A",
+  "MIN",
+  "MTL",
+  "N.J",
+  "NSH",
+  "NYI",
+  "NYR",
+  "OTT",
+  "PHI",
+  "PIT",
+  "S.J",
+  "SEA",
+  "STL",
+  "T.B",
+  "TOR",
+  "UTA",
+  "VAN",
+  "VGK",
+  "WPG",
+  "WSH"
+ ],
+ "schedule": {
+  "CGY": {
+   "2025-03-17": {
+    "opponent": "TOR",
+    "home": false
+   },
+   "2025-03-18": {
+    "opponent": "NYR",
+    "home": false
+   },
+   "2025-03-20": {
+    "opponent": "N.J",
+    "home": false
+   },
+   "2025-03-22": {
+    "opponent": "NYI",
+    "home": false
+   },
+   "2025-03-25": {
+    "opponent": "SEA",
+    "home": true
+   },
+   "2025-03-27": {
+    "opponent": "DAL",
+    "home": true
+   },
+   "2025-03-29": {
+    "opponent": "EDM",
+    "home": false
+   },
+   "2025-03-31": {
+    "opponent": "COL",
+    "home": false
+   },
+   "2025-04-01": {
+    "opponent": "UTA",
+    "home": false
+   },
+   "2025-04-03": {
+    "opponent": "ANA",
+    "home": true
+   },
+   "2025-04-05": {
+    "opponent": "VGK",
+    "home": true
+   },
+   "2025-04-07": {
+    "opponent": "S.J",
+    "home": false
+   }
+  },
+  "L.A": {
+   "2025-03-17": {
+    "opponent": "MIN",
+    "home": false
+   },
+   "2025-03-20": {
+    "opponent": "CHI",
+    "home": false
+   },
+   "2025-03-22": {
+    "opponent": "CAR",
+    "home": true
+   },
+   "2025-03-23": {
+    "opponent": "BOS",
+    "home": true
+   },
+   "2025-03-25": {
+    "opponent": "NYR",
+    "home": true
+   },
+   "2025-03-27": {
+    "opponent": "COL",
+    "home": false
+   },
+   "2025-03-29": {
+    "opponent": "TOR",
+    "home": true
+   },
+   "2025-03-30": {
+    "opponent": "S.J",
+    "home": true
+   },
+   "2025-04-01": {
+    "opponent": "WPG",
+    "home": true
+   },
+   "2025-04-03": {
+    "opponent": "UTA",
+    "home": false
+   },
+   "2025-04-05": {
+    "opponent": "EDM",
+    "home": true
+   },
+   "2025-04-07": {
+    "opponent": "SEA",
+    "home": true
+   }
+  },
+  "BUF": {
+   "2025-03-17": {
+    "opponent": "BOS",
+    "home": false
+   },
+   "2025-03-20": {
+    "opponent": "UTA",
+    "home": false
+   },
+   "2025-03-22": {
+    "opponent": "MIN",
+    "home": false
+   },
+   "2025-03-23": {
+    "opponent": "WPG",
+    "home": false
+   },
+   "2025-03-25": {
+    "opponent": "OTT",
+    "home": true
+   },
+   "2025-03-27": {
+    "opponent": "PIT",
+    "home": true
+   },
+   "2025-03-29": {
+    "opponent": "PHI",
+    "home": false
+   },
+   "2025-03-30": {
+    "opponent": "WSH",
+    "home": false
+   },
+   "2025-04-01": {
+    "opponent": "OTT",
+    "home": false
+   },
+   "2025-04-05": {
+    "opponent": "T.B",
+    "home": true
+   },
+   "2025-04-06": {
+    "opponent": "BOS",
+    "home": true
+   }
+  },
+  "DAL": {
+   "2025-03-18": {
+    "opponent": "ANA",
+    "home": true
+   },
+   "2025-03-20": {
+    "opponent": "T.B",
+    "home": true
+   },
+   "2025-03-22": {
+    "opponent": "PHI",
+    "home": true
+   },
+   "2025-03-24": {
+    "opponent": "MIN",
+    "home": true
+   },
+   "2025-03-26": {
+    "opponent": "EDM",
+    "home": false
+   },
+   "2025-03-27": {
+    "opponent": "CGY",
+    "home": false
+   },
+   "2025-03-29": {
+    "opponent": "SEA",
+    "home": false
+   },
+   "2025-03-31": {
+    "opponent": "SEA",
+    "home": false
+   },
+   "2025-04-03": {
+    "opponent": "NSH",
+    "home": true
+   },
+   "2025-04-05": {
+    "opponent": "PIT",
+    "home": true
+   },
+   "2025-04-06": {
+    "opponent": "MIN",
+    "home": false
+   }
+  },
+  "MIN": {
+   "2025-03-17": {
+    "opponent": "L.A",
+    "home": true
+   },
+   "2025-03-19": {
+    "opponent": "SEA",
+    "home": true
+   },
+   "2025-03-22": {
+    "opponent": "BUF",
+    "home": true
+   },
+   "2025-03-24": {
+    "opponent": "DAL",
+    "home": false
+   },
+   "2025-03-25": {
+    "opponent": "VGK",
+    "home": true
+   },
+   "2025-03-27": {
+    "opponent": "WSH",
+    "home": true
+   },
+   "2025-03-29": {
+    "opponent": "N.J",
+    "home": true
+   },
+   "2025-03-31": {
+    "opponent": "N.J",
+    "home": false
+   },
+   "2025-04-02": {
+    "opponent": "NYR",
+    "home": false
+   },
+   "2025-04-04": {
+    "opponent": "NYI",
+    "home": false
+   },
+   "2025-04-06": {
+    "opponent": "DAL",
+    "home": true
+   }
+  },
+  "MTL": {
+   "2025-03-18": {
+    "opponent": "OTT",
+    "home": true
+   },
+   "2025-03-20": {
+    "opponent": "NYI",
+    "home": false
+   },
+   "2025-03-22": {
+    "opponent": "COL",
+    "home": true
+   },
+   "2025-03-25": {
+    "opponent": "STL",
+    "home": false
+   },
+   "2025-03-27": {
+    "opponent": "PHI",
+    "home": false
+   },
+   "2025-03-28": {
+    "opponent": "CAR",
+    "home": false
+   },
+   "2025-03-30": {
+    "opponent": "FLA",
+    "home": false
+   },
+   "2025-04-01": {
+    "opponent": "FLA",
+    "home": true
+   },
+   "2025-04-03": {
+    "opponent": "BOS",
+    "home": true
+   },
+   "2025-04-05": {
+    "opponent": "PHI",
+    "home": true
+   },
+   "2025-04-06": {
+    "opponent": "NSH",
+    "home": false
+   }
+  },
+  "NSH": {
+   "2025-03-18": {
+    "opponent": "STL",
+    "home": true
+   },
+   "2025-03-20": {
+    "opponent": "ANA",
+    "home": true
+   },
+   "2025-03-22": {
+    "opponent": "TOR",
+    "home": true
+   },
+   "2025-03-23": {
+    "opponent": "STL",
+    "home": false
+   },
+   "2025-03-25": {
+    "opponent": "CAR",
+    "home": false
+   },
+   "2025-03-27": {
+    "opponent": "STL",
+    "home": true
+   },
+   "2025-03-29": {
+    "opponent": "VGK",
+    "home": true
+   },
+   "2025-03-31": {
+    "opponent": "PHI",
+    "home": false
+   },
+   "2025-04-01": {
+    "opponent": "CBJ",
+    "home": false
+   },
+   "2025-04-03": {
+    "opponent": "DAL",
+    "home": false
+   },
+   "2025-04-06": {
+    "opponent": "MTL",
+    "home": true
+   }
+  },
+  "OTT": {
+   "2025-03-18": {
+    "opponent": "MTL",
+    "home": false
+   },
+   "2025-03-20": {
+    "opponent": "COL",
+    "home": true
+   },
+   "2025-03-22": {
+    "opponent": "N.J",
+    "home": false
+   },
+   "2025-03-25": {
+    "opponent": "BUF",
+    "home": false
+   },
+   "2025-03-27": {
+    "opponent": "DET",
+    "home": false
+   },
+   "2025-03-29": {
+    "opponent": "CBJ",
+    "home": true
+   },
+   "2025-03-30": {
+    "opponent": "PIT",
+    "home": false
+   },
+   "2025-04-01": {
+    "opponent": "BUF",
+    "home": true
+   },
+   "2025-04-03": {
+    "opponent": "T.B",
+    "home": true
+   },
+   "2025-04-05": {
+    "opponent": "FLA",
+    "home": true
+   },
+   "2025-04-06": {
+    "opponent": "CBJ",
+    "home": true
+   }
+  },
+  "STL": {
+   "2025-03-18": {
+    "opponent": "NSH",
+    "home": false
+   },
+   "2025-03-20": {
+    "opponent": "VAN",
+    "home": true
+   },
+   "2025-03-22": {
+    "opponent": "CHI",
+    "home": true
+   },
+   "2025-03-23": {
+    "opponent": "NSH",
+    "home": true
+   },
+   "2025-03-25": {
+    "opponent": "MTL",
+    "home": true
+   },
+   "2025-03-27": {
+    "opponent": "NSH",
+    "home": false
+   },
+   "2025-03-29": {
+    "opponent": "COL",
+    "home": false
+   },
+   "2025-04-01": {
+    "opponent": "DET",
+    "home": true
+   },
+   "2025-04-03": {
+    "opponent": "PIT",
+    "home": true
+   },
+   "2025-04-05": {
+    "opponent": "COL",
+    "home": true
+   },
+   "2025-04-07": {
+    "opponent": "WPG",
+    "home": false
+   }
+  },
+  "T.B": {
+   "2025-03-17": {
+    "opponent": "PHI",
+    "home": true
+   },
+   "2025-03-20": {
+    "opponent": "DAL",
+    "home": false
+   },
+   "2025-03-22": {
+    "opponent": "UTA",
+    "home": false
+   },
+   "2025-03-23": {
+    "opponent": "VGK",
+    "home": false
+   },
+   "2025-03-25": {
+    "opponent": "PIT",
+    "home": true
+   },
+   "2025-03-27": {
+    "opponent": "UTA",
+    "home": true
+   },
+   "2025-03-29": {
+    "opponent": "NYI",
+    "home": true
+   },
+   "2025-04-01": {
+    "opponent": "NYI",
+    "home": false
+   },
+   "2025-04-03": {
+    "opponent": "OTT",
+    "home": false
+   },
+   "2025-04-05": {
+    "opponent": "BUF",
+    "home": false
+   },
+   "2025-04-07": {
+    "opponent": "NYR",
+    "home": false
+   }
+  },
+  "ANA": {
+   "2025-03-18": {
+    "opponent": "DAL",
+    "home": false
+   },
+   "2025-03-20": {
+    "opponent": "NSH",
+    "home": false
+   },
+   "2025-03-23": {
+    "opponent": "CAR",
+    "home": true
+   },
+   "2025-03-26": {
+    "opponent": "BOS",
+    "home": true
+   },
+   "2025-03-28": {
+    "opponent": "NYR",
+    "home": true
+   },
+   "2025-03-30": {
+    "opponent": "TOR",
+    "home": true
+   },
+   "2025-04-01": {
+    "opponent": "S.J",
+    "home": true
+   },
+   "2025-04-03": {
+    "opponent": "CGY",
+    "home": false
+   },
+   "2025-04-05": {
+    "opponent": "VAN",
+    "home": false
+   },
+   "2025-04-07": {
+    "opponent": "EDM",
+    "home": true
+   }
+  },
+  "BOS": {
+   "2025-03-17": {
+    "opponent": "BUF",
+    "home": true
+   },
+   "2025-03-20": {
+    "opponent": "VGK",
+    "home": false
+   },
+   "2025-03-22": {
+    "opponent": "S.J",
+    "home": false
+   },
+   "2025-03-23": {
+    "opponent": "L.A",
+    "home": false
+   },
+   "2025-03-26": {
+    "opponent": "ANA",
+    "home": false
+   },
+   "2025-03-29": {
+    "opponent": "DET",
+    "home": false
+   },
+   "2025-04-01": {
+    "opponent": "WSH",
+    "home": true
+   },
+   "2025-04-03": {
+    "opponent": "MTL",
+    "home": false
+   },
+   "2025-04-05": {
+    "opponent": "CAR",
+    "home": true
+   },
+   "2025-04-06": {
+    "opponent": "BUF",
+    "home": false
+   }
+  },
+  "CBJ": {
+   "2025-03-17": {
+    "opponent": "N.J",
+    "home": true
+   },
+   "2025-03-20": {
+    "opponent": "FLA",
+    "home": true
+   },
+   "2025-03-21": {
+    "opponent": "PIT",
+    "home": false
+   },
+   "2025-03-24": {
+    "opponent": "NYI",
+    "home": false
+   },
+   "2025-03-28": {
+    "opponent": "VAN",
+    "home": true
+   },
+   "2025-03-29": {
+    "opponent": "OTT",
+    "home": false
+   },
+   "2025-04-01": {
+    "opponent": "NSH",
+    "home": true
+   },
+   "2025-04-03": {
+    "opponent": "COL",
+    "home": true
+   },
+   "2025-04-05": {
+    "opponent": "TOR",
+    "home": false
+   },
+   "2025-04-06": {
+    "opponent": "OTT",
+    "home": false
+   }
+  },
+  "CHI": {
+   "2025-03-18": {
+    "opponent": "SEA",
+    "home": true
+   },
+   "2025-03-20": {
+    "opponent": "L.A",
+    "home": true
+   },
+   "2025-03-22": {
+    "opponent": "STL",
+    "home": false
+   },
+   "2025-03-23": {
+    "opponent": "PHI",
+    "home": true
+   },
+   "2025-03-26": {
+    "opponent": "N.J",
+    "home": true
+   },
+   "2025-03-28": {
+    "opponent": "VGK",
+    "home": true
+   },
+   "2025-03-30": {
+    "opponent": "UTA",
+    "home": true
+   },
+   "2025-04-02": {
+    "opponent": "COL",
+    "home": true
+   },
+   "2025-04-04": {
+    "opponent": "WSH",
+    "home": false
+   },
+   "2025-04-06": {
+    "opponent": "PIT",
+    "home": true
+   }
+  },
+  "COL": {
+   "2025-03-19": {
+    "opponent": "TOR",
+    "home": false
+   },
+   "2025-03-20": {
+    "opponent": "OTT",
+    "home": false
+   },
+   "2025-03-22": {
+    "opponent": "MTL",
+    "home": false
+   },
+   "2025-03-25": {
+    "opponent": "DET",
+    "home": true
+   },
+   "2025-03-27": {
+    "opponent": "L.A",
+    "home": true
+   },
+   "2025-03-29": {
+    "opponent": "STL",
+    "home": true
+   },
+   "2025-03-31": {
+    "opponent": "CGY",
+    "home": true
+   },
+   "2025-04-02": {
+    "opponent": "CHI",
+    "home": false
+   },
+   "2025-04-03": {
+    "opponent": "CBJ",
+    "home": false
+   },
+   "2025-04-05": {
+    "opponent": "STL",
+    "home": false
+   }
+  },
+  "EDM": {
+   "2025-03-18": {
+    "opponent": "UTA",
+    "home": true
+   },
+   "2025-03-20": {
+    "opponent": "WPG",
+    "home": true
+   },
+   "2025-03-22": {
+    "opponent": "SEA",
+    "home": true
+   },
+   "2025-03-26": {
+    "opponent": "DAL",
+    "home": true
+   },
+   "2025-03-27": {
+    "opponent": "SEA",
+    "home": false
+   },
+   "2025-03-29": {
+    "opponent": "CGY",
+    "home": true
+   },
+   "2025-04-01": {
+    "opponent": "VGK",
+    "home": false
+   },
+   "2025-04-03": {
+    "opponent": "S.J",
+    "home": false
+   },
+   "2025-04-05": {
+    "opponent": "L.A",
+    "home": false
+   },
+   "2025-04-07": {
+    "opponent": "ANA",
+    "home": false
+   }
+  },
+  "NYI": {
+   "2025-03-18": {
+    "opponent": "PIT",
+    "home": false
+   },
+   "2025-03-20": {
+    "opponent": "MTL",
+    "home": true
+   },
+   "2025-03-22": {
+    "opponent": "CGY",
+    "home": true
+   },
+   "2025-03-24": {
+    "opponent": "CBJ",
+    "home": true
+   },
+   "2025-03-26": {
+    "opponent": "VAN",
+    "home": true
+   },
+   "2025-03-29": {
+    "opponent": "T.B",
+    "home": false
+   },
+   "2025-03-30": {
+    "opponent": "CAR",
+    "home": false
+   },
+   "2025-04-01": {
+    "opponent": "T.B",
+    "home": true
+   },
+   "2025-04-04": {
+    "opponent": "MIN",
+    "home": true
+   },
+   "2025-04-06": {
+    "opponent": "WSH",
+    "home": true
+   }
+  },
+  "SEA": {
+   "2025-03-18": {
+    "opponent": "CHI",
+    "home": false
+   },
+   "2025-03-19": {
+    "opponent": "MIN",
+    "home": false
+   },
+   "2025-03-22": {
+    "opponent": "EDM",
+    "home": false
+   },
+   "2025-03-25": {
+    "opponent": "CGY",
+    "home": false
+   },
+   "2025-03-27": {
+    "opponent": "EDM",
+    "home": true
+   },
+   "2025-03-29": {
+    "opponent": "DAL",
+    "home": true
+   },
+   "2025-03-31": {
+    "opponent": "DAL",
+    "home": true
+   },
+   "2025-04-02": {
+    "opponent": "VAN",
+    "home": false
+   },
+   "2025-04-05": {
+    "opponent": "S.J",
+    "home": false
+   },
+   "2025-04-07": {
+    "opponent": "L.A",
+    "home": false
+   }
+  },
+  "TOR": {
+   "2025-03-17": {
+    "opponent": "CGY",
+    "home": true
+   },
+   "2025-03-19": {
+    "opponent": "COL",
+    "home": true
+   },
+   "2025-03-20": {
+    "opponent": "NYR",
+    "home": false
+   },
+   "2025-03-22": {
+    "opponent": "NSH",
+    "home": false
+   },
+   "2025-03-25": {
+    "opponent": "PHI",
+    "home": true
+   },
+   "2025-03-27": {
+    "opponent": "S.J",
+    "home": false
+   },
+   "2025-03-29": {
+    "opponent": "L.A",
+    "home": false
+   },
+   "2025-03-30": {
+    "opponent": "ANA",
+    "home": false
+   },
+   "2025-04-02": {
+    "opponent": "FLA",
+    "home": true
+   },
+   "2025-04-05": {
+    "opponent": "CBJ",
+    "home": true
+   }
+  },
+  "UTA": {
+   "2025-03-18": {
+    "opponent": "EDM",
+    "home": false
+   },
+   "2025-03-20": {
+    "opponent": "BUF",
+    "home": true
+   },
+   "2025-03-22": {
+    "opponent": "T.B",
+    "home": true
+   },
+   "2025-03-24": {
+    "opponent": "DET",
+    "home": true
+   },
+   "2025-03-27": {
+    "opponent": "T.B",
+    "home": false
+   },
+   "2025-03-28": {
+    "opponent": "FLA",
+    "home": false
+   },
+   "2025-03-30": {
+    "opponent": "CHI",
+    "home": false
+   },
+   "2025-04-01": {
+    "opponent": "CGY",
+    "home": true
+   },
+   "2025-04-03": {
+    "opponent": "L.A",
+    "home": true
+   },
+   "2025-04-05": {
+    "opponent": "WPG",
+    "home": true
+   }
+  },
+  "VAN": {
+   "2025-03-18": {
+    "opponent": "WPG",
+    "home": true
+   },
+   "2025-03-20": {
+    "opponent": "STL",
+    "home": false
+   },
+   "2025-03-22": {
+    "opponent": "NYR",
+    "home": false
+   },
+   "2025-03-24": {
+    "opponent": "N.J",
+    "home": false
+   },
+   "2025-03-26": {
+    "opponent": "NYI",
+    "home": false
+   },
+   "2025-03-28": {
+    "opponent": "CBJ",
+    "home": false
+   },
+   "2025-03-30": {
+    "opponent": "WPG",
+    "home": false
+   },
+   "2025-04-02": {
+    "opponent": "SEA",
+    "home": true
+   },
+   "2025-04-05": {
+    "opponent": "ANA",
+    "home": true
+   },
+   "2025-04-06": {
+    "opponent": "VGK",
+    "home": true
+   }
+  },
+  "VGK": {
+   "2025-03-20": {
+    "opponent": "BOS",
+    "home": true
+   },
+   "2025-03-22": {
+    "opponent": "DET",
+    "home": true
+   },
+   "2025-03-23": {
+    "opponent": "T.B",
+    "home": true
+   },
+   "2025-03-25": {
+    "opponent": "MIN",
+    "home": false
+   },
+   "2025-03-28": {
+    "opponent": "CHI",
+    "home": false
+   },
+   "2025-03-29": {
+    "opponent": "NSH",
+    "home": false
+   },
+   "2025-04-01": {
+    "opponent": "EDM",
+    "home": true
+   },
+   "2025-04-03": {
+    "opponent": "WPG",
+    "home": true
+   },
+   "2025-04-05": {
+    "opponent": "CGY",
+    "home": false
+   },
+   "2025-04-06": {
+    "opponent": "VAN",
+    "home": false
+   }
+  },
+  "WPG": {
+   "2025-03-18": {
+    "opponent": "VAN",
+    "home": false
+   },
+   "2025-03-20": {
+    "opponent": "EDM",
+    "home": false
+   },
+   "2025-03-23": {
+    "opponent": "BUF",
+    "home": true
+   },
+   "2025-03-25": {
+    "opponent": "WSH",
+    "home": true
+   },
+   "2025-03-28": {
+    "opponent": "N.J",
+    "home": true
+   },
+   "2025-03-30": {
+    "opponent": "VAN",
+    "home": true
+   },
+   "2025-04-01": {
+    "opponent": "L.A",
+    "home": false
+   },
+   "2025-04-03": {
+    "opponent": "VGK",
+    "home": false
+   },
+   "2025-04-05": {
+    "opponent": "UTA",
+    "home": false
+   },
+   "2025-04-07": {
+    "opponent": "STL",
+    "home": true
+   }
+  },
+  "WSH": {
+   "2025-03-18": {
+    "opponent": "DET",
+    "home": true
+   },
+   "2025-03-20": {
+    "opponent": "PHI",
+    "home": true
+   },
+   "2025-03-22": {
+    "opponent": "FLA",
+    "home": true
+   },
+   "2025-03-25": {
+    "opponent": "WPG",
+    "home": false
+   },
+   "2025-03-27": {
+    "opponent": "MIN",
+    "home": false
+   },
+   "2025-03-30": {
+    "opponent": "BUF",
+    "home": true
+   },
+   "2025-04-01": {
+    "opponent": "BOS",
+    "home": false
+   },
+   "2025-04-02": {
+    "opponent": "CAR",
+    "home": false
+   },
+   "2025-04-04": {
+    "opponent": "CHI",
+    "home": true
+   },
+   "2025-04-06": {
+    "opponent": "NYI",
+    "home": false
+   }
+  },
+  "CAR": {
+   "2025-03-20": {
+    "opponent": "S.J",
+    "home": false
+   },
+   "2025-03-22": {
+    "opponent": "L.A",
+    "home": false
+   },
+   "2025-03-23": {
+    "opponent": "ANA",
+    "home": false
+   },
+   "2025-03-25": {
+    "opponent": "NSH",
+    "home": true
+   },
+   "2025-03-28": {
+    "opponent": "MTL",
+    "home": true
+   },
+   "2025-03-30": {
+    "opponent": "NYI",
+    "home": true
+   },
+   "2025-04-02": {
+    "opponent": "WSH",
+    "home": true
+   },
+   "2025-04-04": {
+    "opponent": "DET",
+    "home": false
+   },
+   "2025-04-05": {
+    "opponent": "BOS",
+    "home": false
+   }
+  },
+  "DET": {
+   "2025-03-18": {
+    "opponent": "WSH",
+    "home": false
+   },
+   "2025-03-22": {
+    "opponent": "VGK",
+    "home": false
+   },
+   "2025-03-24": {
+    "opponent": "UTA",
+    "home": false
+   },
+   "2025-03-25": {
+    "opponent": "COL",
+    "home": false
+   },
+   "2025-03-27": {
+    "opponent": "OTT",
+    "home": true
+   },
+   "2025-03-29": {
+    "opponent": "BOS",
+    "home": true
+   },
+   "2025-04-01": {
+    "opponent": "STL",
+    "home": false
+   },
+   "2025-04-04": {
+    "opponent": "CAR",
+    "home": true
+   },
+   "2025-04-06": {
+    "opponent": "FLA",
+    "home": true
+   }
+  },
+  "FLA": {
+   "2025-03-20": {
+    "opponent": "CBJ",
+    "home": false
+   },
+   "2025-03-22": {
+    "opponent": "WSH",
+    "home": false
+   },
+   "2025-03-23": {
+    "opponent": "PIT",
+    "home": true
+   },
+   "2025-03-28": {
+    "opponent": "UTA",
+    "home": true
+   },
+   "2025-03-30": {
+    "opponent": "MTL",
+    "home": true
+   },
+   "2025-04-01": {
+    "opponent": "MTL",
+    "home": false
+   },
+   "2025-04-02": {
+    "opponent": "TOR",
+    "home": false
+   },
+   "2025-04-05": {
+    "opponent": "OTT",
+    "home": false
+   },
+   "2025-04-06": {
+    "opponent": "DET",
+    "home": false
+   }
+  },
+  "N.J": {
+   "2025-03-17": {
+    "opponent": "CBJ",
+    "home": false
+   },
+   "2025-03-20": {
+    "opponent": "CGY",
+    "home": true
+   },
+   "2025-03-22": {
+    "opponent": "OTT",
+    "home": true
+   },
+   "2025-03-24": {
+    "opponent": "VAN",
+    "home": true
+   },
+   "2025-03-26": {
+    "opponent": "CHI",
+    "home": false
+   },
+   "2025-03-28": {
+    "opponent": "WPG",
+    "home": false
+   },
+   "2025-03-29": {
+    "opponent": "MIN",
+    "home": false
+   },
+   "2025-03-31": {
+    "opponent": "MIN",
+    "home": true
+   },
+   "2025-04-05": {
+    "opponent": "NYR",
+    "home": true
+   }
+  },
+  "NYR": {
+   "2025-03-18": {
+    "opponent": "CGY",
+    "home": true
+   },
+   "2025-03-20": {
+    "opponent": "TOR",
+    "home": true
+   },
+   "2025-03-22": {
+    "opponent": "VAN",
+    "home": true
+   },
+   "2025-03-25": {
+    "opponent": "L.A",
+    "home": false
+   },
+   "2025-03-28": {
+    "opponent": "ANA",
+    "home": false
+   },
+   "2025-03-29": {
+    "opponent": "S.J",
+    "home": false
+   },
+   "2025-04-02": {
+    "opponent": "MIN",
+    "home": true
+   },
+   "2025-04-05": {
+    "opponent": "N.J",
+    "home": false
+   },
+   "2025-04-07": {
+    "opponent": "T.B",
+    "home": true
+   }
+  },
+  "PHI": {
+   "2025-03-17": {
+    "opponent": "T.B",
+    "home": false
+   },
+   "2025-03-20": {
+    "opponent": "WSH",
+    "home": false
+   },
+   "2025-03-22": {
+    "opponent": "DAL",
+    "home": false
+   },
+   "2025-03-23": {
+    "opponent": "CHI",
+    "home": false
+   },
+   "2025-03-25": {
+    "opponent": "TOR",
+    "home": false
+   },
+   "2025-03-27": {
+    "opponent": "MTL",
+    "home": true
+   },
+   "2025-03-29": {
+    "opponent": "BUF",
+    "home": true
+   },
+   "2025-03-31": {
+    "opponent": "NSH",
+    "home": true
+   },
+   "2025-04-05": {
+    "opponent": "MTL",
+    "home": false
+   }
+  },
+  "PIT": {
+   "2025-03-18": {
+    "opponent": "NYI",
+    "home": true
+   },
+   "2025-03-21": {
+    "opponent": "CBJ",
+    "home": true
+   },
+   "2025-03-23": {
+    "opponent": "FLA",
+    "home": false
+   },
+   "2025-03-25": {
+    "opponent": "T.B",
+    "home": false
+   },
+   "2025-03-27": {
+    "opponent": "BUF",
+    "home": false
+   },
+   "2025-03-30": {
+    "opponent": "OTT",
+    "home": true
+   },
+   "2025-04-03": {
+    "opponent": "STL",
+    "home": false
+   },
+   "2025-04-05": {
+    "opponent": "DAL",
+    "home": false
+   },
+   "2025-04-06": {
+    "opponent": "CHI",
+    "home": false
+   }
+  },
+  "S.J": {
+   "2025-03-20": {
+    "opponent": "CAR",
+    "home": true
+   },
+   "2025-03-22": {
+    "opponent": "BOS",
+    "home": true
+   },
+   "2025-03-27": {
+    "opponent": "TOR",
+    "home": true
+   },
+   "2025-03-29": {
+    "opponent": "NYR",
+    "home": true
+   },
+   "2025-03-30": {
+    "opponent": "L.A",
+    "home": false
+   },
+   "2025-04-01": {
+    "opponent": "ANA",
+    "home": false
+   },
+   "2025-04-03": {
+    "opponent": "EDM",
+    "home": true
+   },
+   "2025-04-05": {
+    "opponent": "SEA",
+    "home": true
+   },
+   "2025-04-07": {
+    "opponent": "CGY",
+    "home": true
+   }
+  }
+ }
+}

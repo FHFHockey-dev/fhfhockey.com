@@ -267,7 +267,9 @@ export type PlanEvaluation = {
   projectedValue: number | null;
   projectedStats: StatLine;
   categoryResults: Array<{ key: string; own: number | null; opponent: number | null; result: "win" | "tie" | "loss" | "unknown" }>;
-  goalie: { minimumSatisfied?: boolean | null; credited: number | null; confirmed: number; projected: number | null; required: number | null; risk: boolean };
+  goalie: { minimumSatisfied?: boolean | null; credited: number | null; confirmed: number; projected: number | null;
+    /** Expected starts from this plan's active goalie assignments; null when a start probability is missing. */
+    expectedStarts?: number | null; required: number | null; risk: boolean };
   acquisitions: Record<string, number>;
   limitations: string[];
 };

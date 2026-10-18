@@ -13,6 +13,7 @@ import {
   buildEncodedBaselineDataset,
   BOOLEAN_FEATURE_KEYS,
   CATEGORICAL_FEATURE_KEYS,
+  findForbiddenBaselineFeatureKeys,
   type BaselinePredictionType,
   type BaselineFeatureFamilyName,
   NUMERIC_FEATURE_KEYS,
@@ -476,13 +477,32 @@ function buildApprovalGradeEligibility(args: {
   testEvaluation: SplitEvaluation;
   calibrationAssessment: CalibrationAssessment;
   featureCoverage?: XgFeatureCoverageProfile | null;
+  selectedFeatures: {
+    numeric: string[];
+    boolean: string[];
+    categorical: string[];
+  };
+  featureKeys: string[];
 }): ApprovalGradeEligibility {
+  const forbiddenFeatures = findForbiddenBaselineFeatureKeys([
+    ...args.selectedFeatures.numeric,
+    ...args.selectedFeatures.boolean,
+    ...args.selectedFeatures.categorical,
+    ...args.featureKeys,
+  ]);
+  const forbiddenFeatureReason = forbiddenFeatures.length
+    ? `Artifact uses forbidden post-event features: ${forbiddenFeatures.join(", ")}.`
+    : null;
+
   if (args.predictionType === "rebound_creation") {
     const blockingReasons = buildReboundCreationApprovalBlockingReasons({
       evaluation: args.evaluation,
       holdoutEvaluation: args.holdoutEvaluation,
       calibrationAssessment: args.calibrationAssessment,
     });
+    if (forbiddenFeatureReason) {
+      blockingReasons.unshift(forbiddenFeatureReason);
+    }
     for (const reason of args.featureCoverage?.blockingReasons ?? []) {
       if (!blockingReasons.includes(reason)) {
         blockingReasons.push(reason);
@@ -495,7 +515,7 @@ function buildApprovalGradeEligibility(args: {
     };
   }
 
-  const blockingReasons: string[] = [];
+  const blockingReasons: string[] = forbiddenFeatureReason ? [forbiddenFeatureReason] : [];
 
   for (const reason of args.featureCoverage?.blockingReasons ?? []) {
     if (!blockingReasons.includes(reason)) {
@@ -1649,6 +1669,8 @@ export function buildBaselineArtifactPayloads(args: {
     testEvaluation: args.evaluation.test,
     calibrationAssessment: args.calibrationAssessment,
     featureCoverage: args.featureCoverage ?? null,
+    selectedFeatures: args.selectedFeatures,
+    featureKeys: args.dataset.featureKeys,
   });
 
   const datasetArtifact: DatasetArtifactPayload = {

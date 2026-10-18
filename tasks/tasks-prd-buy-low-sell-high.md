@@ -19,21 +19,21 @@
 ## Tasks
 
 - [ ] 1.0 Reconcile the market-page boundary and shared contract
-  - [ ] 1.1 Inspect current page, nearest tests and local diff; record keep/replace decisions and protect unrelated work. Confirm the old route's compatibility behavior.
-  - [ ] 1.2 Agree on the Sko Element interpretation record, permitted forecast uses, unavailable states and score direction. Record exact dependency/version and separate file ownership.
-  - [ ] 1.3 Define initial route/component layout using the existing design system; identify the fixture-only design checkpoint and later real-data acceptance gate.
+  - [x] 1.1 Inspect current page, nearest tests and local diff; record keep/replace decisions and protect unrelated work. Confirm the old route's compatibility behavior. _S-16 2026-10-18: legacy page reconciled and unchanged; see artifact `sko-blsh-lane-2026-10-18`._
+  - [x] 1.2 Agree on the Sko Element interpretation record, permitted forecast uses, unavailable states and score direction. Record exact dependency/version and separate file ownership. _S-16 2026-10-18: consumes `sko-interpretation-v0.1` read-only._
+  - [x] 1.3 Define initial route/component layout using the existing design system; identify the fixture-only design checkpoint and later real-data acceptance gate. _S-16 2026-10-18: fixture preview at `/buy-low-sell-high/preview` (404 in production builds)._
 - [ ] 2.0 Implement pure watchlist and comparison view models
-  - [ ] 2.1 Map shared records into rebound/cooling rows, deterministic ranking and evidence explanations without inventing price or probabilities. Include F/D classes and VuDu workload/efficiency.
-  - [ ] 2.2 Implement 5/10/20 scheduled-team-game selection, actual date-span labels and expected appearances. Require explicit common-date inputs for date-aligned comparisons.
-  - [ ] 2.3 Implement canonical Give/Receive selection validation and category totals/net differences. Handle duplicate identities, empty sides, missing heads and incompatible bases/versions explicitly.
-  - [ ] 2.4 Apply supplied league points weights; preserve category vectors and proper lower-is-better display. Aggregate goalie ratios from counts/minutes and label limitations.
-  - [ ] 2.5 Add typed market-reference metadata and comparability checks. Keep raw offer comparisons distinct from RSO startable net value; never substitute ownership for price.
-  - [ ] 2.6 Test arithmetic, sign, unavailable handling and parity with the shared interpretation using fixed fixtures. Test that changing a quote never changes a forecast, that start/appearance probabilities are not applied twice, and that unsupported joint uncertainty is withheld.
+  - [x] 2.1 Map shared records into rebound/cooling rows, deterministic ranking and evidence explanations without inventing price or probabilities. Include F/D classes and VuDu workload/efficiency. _S-16 2026-10-18: `web/lib/buyLowSellHigh/market.ts` `buildWatchlists`._
+  - [ ] 2.2 Implement 5/10/20 scheduled-team-game selection, actual date-span labels and expected appearances. Require explicit common-date inputs for date-aligned comparisons. _S-16 2026-10-18: 5/10/20 and per-player date spans done; expected appearances not shown on this page; no common-date mode offered._
+  - [x] 2.3 Implement canonical Give/Receive selection validation and category totals/net differences. Handle duplicate identities, empty sides, missing heads and incompatible bases/versions explicitly. _S-16 2026-10-18: `trade.ts` validation._
+  - [x] 2.4 Apply supplied league points weights; preserve category vectors and proper lower-is-better display. Aggregate goalie ratios from counts/minutes and label limitations. _S-16 2026-10-18: weights, lower-is-better and pooled goalie ratios._
+  - [x] 2.5 Add typed market-reference metadata and comparability checks. Keep raw offer comparisons distinct from RSO startable net value; never substitute ownership for price. _S-16 2026-10-18: `compareMarketReference`._
+  - [x] 2.6 Test arithmetic, sign, unavailable handling and parity with the shared interpretation using fixed fixtures. Test that changing a quote never changes a forecast, that start/appearance probabilities are not applied twice, and that unsupported joint uncertainty is withheld. _S-16 2026-10-18: `market.test.ts`, `trade.test.ts`._
 - [ ] 3.0 Build the separate dashboard and manual trade workspace
-  - [ ] 3.1 Build compact filters, Rebound/Cooling views, sortable candidate rows and a detail panel with opportunity, volatility, confidence and observed duration.
-  - [ ] 3.2 Build the Give/Receive comparison flow with scoring selection, totals/net changes, uneven-roster and incomplete-input warnings. Keep unsupported overall recommendations absent.
-  - [ ] 3.3 Add versioned, isolated device-local watchlists and draft comparisons with remove/reset controls and safe migration/failure behavior.
-  - [ ] 3.4 Create mobile list/detail/trade layouts, keyboard/touch-accessible explanation controls and visible essential limitations. Capture desktop/mobile fixture screenshots for owner review.
+  - [ ] 3.1 Build compact filters, Rebound/Cooling views, sortable candidate rows and a detail panel with opportunity, volatility, confidence and observed duration. _S-16 2026-10-18: filters, Rebound/Cooling and rows done; per-player detail panel and observed duration column not built on this page._
+  - [x] 3.2 Build the Give/Receive comparison flow with scoring selection, totals/net changes, uneven-roster and incomplete-input warnings. Keep unsupported overall recommendations absent. _S-16 2026-10-18: Give/Receive flow with issues and no unsupported winner._
+  - [x] 3.3 Add versioned, isolated device-local watchlists and draft comparisons with remove/reset controls and safe migration/failure behavior. _S-16 2026-10-18: `storage.ts` with reset and corrupt-data recovery._
+  - [ ] 3.4 Create mobile list/detail/trade layouts, keyboard/touch-accessible explanation controls and visible essential limitations. Capture desktop/mobile fixture screenshots for owner review. _S-16 2026-10-18: keyboard-accessible controls tested; screenshots not taken (no dev servers in sprint)._
 - [ ] 4.0 Connect supported records and verify end-to-end behavior
   - [ ] 4.1 After shared serving is ready, replace fixture inputs with the existing batched reader. Preserve as-of/model/source identity, allowed uses, freshness and missingness; avoid per-player external fetches.
   - [ ] 4.2 Verify one genuine supported skater and goalie trace and both-page parity. Report unsupported coverage separately rather than marking the whole feature complete.

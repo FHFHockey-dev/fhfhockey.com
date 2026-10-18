@@ -186,3 +186,59 @@ describe("initial monthly charge threshold and separate proposed arithmetic", ()
     expect(() => previewInitialMonthlyCharge(signup)).toThrow("Activation must precede");
   });
 });
+
+describe("grant event order, duplicates and reactivation", () => {
+  const purchase = (reference: string, from: string, to: string, status = "active"): InSeasonGrant => ({
+    source: "purchase", reference, status, effectiveFrom: from, effectiveTo: to,
+  });
+  const marchStart = new Date("2027-03-01T00:00:00-05:00");
+  const aprilStart = new Date("2027-04-01T00:00:00-04:00");
+  const march = purchase("pi_march", ...Object.values(capInSeasonPurchasedCoverage(marchStart, aprilStart)) as [string, string]);
+  const may = purchase("pi_may", "2027-05-01T04:00:00.000Z", "2027-06-01T04:00:00.000Z");
+
+  it("resolves the same access whatever order the grants arrive in", () => {
+    const grants = [
+      march,
+      purchase("pi_revoked", "2027-03-01T05:00:00.000Z", "2027-07-01T04:00:00.000Z", "revoked"),
+      purchase("pi_future", "2027-03-20T04:00:00.000Z", "2027-04-20T04:00:00.000Z"),
+      { source: "grandfather", reference: "first-100:7", status: "active", effectiveFrom: "2026-09-01T04:00:00.000Z", effectiveTo: cutoff.toISOString() } as InSeasonGrant,
+    ];
+    const now = new Date("2027-03-15T16:00:00Z");
+    // grantingSources lists sources in input order; the reader orders rows by id.
+    const normalized = (access: ReturnType<typeof resolveInSeasonAccess>) => ({ ...access, grantingSources: [...access.grantingSources].sort() });
+    const expected = normalized(resolveInSeasonAccess(grants, now));
+    for (const order of [[3, 2, 1, 0], [1, 3, 0, 2], [2, 0, 3, 1]]) {
+      expect(normalized(resolveInSeasonAccess(order.map((index) => grants[index]), now))).toEqual(expected);
+    }
+    expect(expected).toMatchObject({ eligible: true, grantingSources: ["grandfather", "purchase"], expiresAt: cutoff.toISOString() });
+  });
+
+  it("counts a replayed duplicate grant once", () => {
+    const now = new Date("2027-03-15T16:00:00Z");
+    expect(resolveInSeasonAccess([march, { ...march }], now)).toEqual(resolveInSeasonAccess([march], now));
+  });
+
+  it("ends monthly coverage exactly at the Eastern first across the March DST change", () => {
+    expect(march.effectiveTo).toBe("2027-04-01T04:00:00.000Z");
+    expect(resolveInSeasonAccess([march], new Date(aprilStart.getTime() - 1)).eligible).toBe(true);
+    expect(resolveInSeasonAccess([march], aprilStart)).toMatchObject({ eligible: false, reason: "expired" });
+  });
+
+  it("reports a lapse between periods and reactivates on the next verified grant", () => {
+    const gap = new Date("2027-04-15T16:00:00Z");
+    expect(resolveInSeasonAccess([march, may], gap)).toMatchObject({ eligible: false, reason: "expired", capabilities: [] });
+    expect(resolveInSeasonAccess([march, may], new Date(may.effectiveFrom!))).toMatchObject({
+      eligible: true, grantingSources: ["purchase"], expiresAt: may.effectiveTo,
+    });
+  });
+
+  it("grants nothing for missing, pending, past-due or blank-reference entitlements", () => {
+    const now = new Date("2027-03-15T16:00:00Z");
+    expect(resolveInSeasonAccess([], now)).toEqual({
+      eligible: false, capabilities: [], grantingSources: [], expiresAt: null, reason: "no_active_grant",
+    });
+    for (const grant of [{ ...march, status: "pending" }, { ...march, status: "past_due" }, { ...march, reference: "  " }]) {
+      expect(resolveInSeasonAccess([grant], now).eligible, JSON.stringify(grant)).toBe(false);
+    }
+  });
+});

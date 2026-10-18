@@ -43,7 +43,7 @@
   - [x] 3.1 Add a `Simple` mode in `web/pages/underlying-stats/index.tsx` that shows `Rank`, `Team`, `Power Score`, `Trend`, `SoS Future`, and `Why moving`.
   - [x] 3.2 Keep `Advanced` mode as the fuller analytical surface with component columns, sparklines, and explanatory affordances.
   - [x] 3.3 Build client-side sorting for the visible columns and ensure display labels such as tiers or `Hot/Cold/Normal` sort by hidden numeric values.
-  - [x] 3.4 Preserve clear defaults so the page opens in the more approachable mode without removing access to the advanced view.
+  - [x] 3.4 Preserve clear defaults so the page opens in the more approachable mode without removing access to the advanced view. _(Superseded by 2026-10-17 audit row NEW 9.0.)_
   - [x] 3.5 Add route-level coverage for mode switching, default presentation, and representative sort interactions.
 
 - [x] 4.0 Extend schedule context beyond a single SoS value so upcoming schedule texture is easier to read
@@ -56,7 +56,7 @@
   - [x] 5.1 Add popovers for the primary rating components that show raw inputs, weights, current values, league baselines or z-scores, and whether higher or lower is better.
   - [x] 5.2 Use `web/lib/power-ratings.ts` as the source-of-truth for offense, defense, and pace inputs so the popovers match the real ranking model.
   - [x] 5.3 Ensure popovers help users audit the math for context metrics such as `Scoring`, `Goaltending`, and `Puck Luck` without implying they are equal ranking drivers.
-  - [x] 5.4 Add focused interaction coverage for popover rendering and accessibility on both desktop and mobile layouts.
+  - [x] 5.4 Add focused interaction coverage for popover rendering and accessibility on both desktop and mobile layouts. _(Superseded by 2026-10-17 audit row NEW 8.0.)_
 
 - [x] 6.0 Audit the two remaining model-design questions before deeper ranking changes are made
   - [x] 6.1 Review whether `Pace` should remain a full peer of `Offense` and `Defense` in the `Power Score` formula or be reduced to a smaller modifier or context dimension.
@@ -64,3 +64,6 @@
   - [x] 6.3 Document the recommendation, the expected UX impact, and any migration work needed before changing the live score formula.
 
 - [x] NEW 7.0 **P2 narrative-history PostgREST truncation:** paginate the complete 120-day `team_power_ratings_daily` narrative cohort with stable date/team ordering so the prior-10 explanation baseline cannot silently omit teams after the first 1,000 rows. Evidence: the shared pagination helper now reads every page, the focused >1,000-row regression proves the exact ranges and ordering, and the five-file landing cohort passes 19/19 (discovered and closed 2026-07-29).
+
+- [ ] NEW 8.0 **P2 `MetricPopover` has no test coverage (2026-10-17 completion audit):** `MetricPopover` (`web/pages/underlying-stats/index.tsx:292-318`, a `<details>/<summary>`) is not exercised by any unit or e2e test under `web/__tests__/pages/underlying-stats`, `web/e2e/underlying-stats.spec.ts`, `components/underlying-stats` or `lib/underlying-stats`. Supersedes 5.4 (C0026) and the accessible-popover clause of master 5.3.4. Close with a focused interaction test. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G4-underlying-site-ux.md`.
+- [ ] NEW 9.0 **P3 landing table now opens in Advanced mode (2026-10-17 completion audit):** `web/pages/underlying-stats/index.tsx:346` defaults the view to `"advanced"` since `25c89d795` (production line 343 is identical); Simple mode is still reachable and tested. Supersedes 3.4 (C0015). Close by restoring the default or recording the owner's supersession. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G4-underlying-site-ux.md`.

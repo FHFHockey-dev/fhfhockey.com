@@ -8,6 +8,7 @@ vi.mock("../../../../lib/rankings/comparison", () => ({
   buildContextualRankingComparisonSurface: buildComparisonSurfaceMock,
 }));
 
+import { ContextualRankingsQueryError } from "../../../../lib/rankings/rankingTypes";
 import handler from "../../../../pages/api/v1/contextual-rankings/comparison";
 
 function createMockRes() {
@@ -91,5 +92,51 @@ describe("/api/v1/contextual-rankings/comparison", () => {
       },
     });
     expect(buildComparisonSurfaceMock).toHaveBeenCalledWith(req.query);
+  });
+
+  it("keeps query-validation messages and details for the caller", async () => {
+    buildComparisonSurfaceMock.mockRejectedValueOnce(
+      new ContextualRankingsQueryError("No team matched XYZ", {
+        team: "must be a numeric id, team abbreviation, or team name",
+      }),
+    );
+    const req: any = { method: "GET", query: { entity: "teams", teams: "XYZ" } };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toEqual({
+      success: false,
+      error: "No team matched XYZ",
+      details: {
+        team: "must be a numeric id, team abbreviation, or team name",
+      },
+    });
+  });
+
+  it("redacts dependency details from internal-error responses", async () => {
+    buildComparisonSurfaceMock.mockRejectedValueOnce(
+      Object.assign(new Error("relation private_rankings denied Bearer secret"), {
+        statusCode: 503,
+        details: "column secret_value does not exist",
+      }),
+    );
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const req: any = { method: "GET", query: { entity: "teams", teams: "DAL" } };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({
+      success: false,
+      message: "Failed to build contextual ranking comparison.",
+      error: "CONTEXTUAL_RANKINGS_UNAVAILABLE",
+    });
+    expect(JSON.stringify(res.body)).not.toContain("secret");
+    consoleError.mockRestore();
   });
 });

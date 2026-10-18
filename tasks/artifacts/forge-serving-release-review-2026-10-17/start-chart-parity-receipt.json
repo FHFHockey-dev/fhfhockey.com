@@ -1,0 +1,65 @@
+{
+ "version": "start-chart-parity-receipt-v1",
+ "evidenceClass": "retained-fixture replay, mocked transport (no network, no database)",
+ "fixture": "dailyExpectationFixture() in __tests__/pages/api/v1/start-chart.test.ts",
+ "scope": {
+  "seasonId": 20252026,
+  "startDate": "2026-02-07",
+  "endDate": "2026-02-07",
+  "timeZone": "America/New_York",
+  "mode": "calendar",
+  "games": 1
+ },
+ "readAt": "2026-02-07T17:00:00.000Z",
+ "manifest": {
+  "manifestId": null,
+  "baselineChecksum": null
+ },
+ "expectedKeys": 16,
+ "consumers": [
+  "forge-view-decode",
+  "rso-transport-roundtrip+resolver",
+  "start-chart-api-body",
+  "start-chart-ui-parse"
+ ],
+ "mismatches": [],
+ "nullHeads": [
+  {
+   "playerId": "7",
+   "gameId": "1001",
+   "key": "PENALTY_MINUTES",
+   "reasons": [
+    "missing_target"
+   ]
+  },
+  {
+   "playerId": "7",
+   "gameId": "1001",
+   "key": "TIME_ON_ICE_PER_GAME",
+   "reasons": [
+    "missing_target"
+   ]
+  },
+  {
+   "playerId": "8",
+   "gameId": "1001",
+   "key": "PENALTY_MINUTES",
+   "reasons": [
+    "missing_target"
+   ]
+  },
+  {
+   "playerId": "8",
+   "gameId": "1001",
+   "key": "TIME_ON_ICE_PER_GAME",
+   "reasons": [
+    "missing_target"
+   ]
+  }
+ ],
+ "sha256": {
+  "gameExpectations": "6e625bdac478471d6b2d57c7ca48d541a2d94c2e6d9c2b05a636948395eb0904",
+  "apiBody": "621facfe06c1c8c73b8023a65c410f67a584bef08d62edab8db2267757f0709e",
+  "uiParse": "7ee9e8cbbb01549e990e015e44a0efe84867f01786bfabe88381764357a07714"
+ }
+}

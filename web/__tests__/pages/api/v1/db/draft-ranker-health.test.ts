@@ -216,4 +216,42 @@ describe("admin Draft Ranker health operations", () => {
     expect(res.body).toMatchObject({ success: false, code, failedRows: 1 });
     expect(JSON.stringify(res.body)).not.toContain("private_");
   });
+
+  it.each([
+    {
+      name: "community asOf",
+      handler: refreshDraftRankerCommunityHandler,
+      query: { asOf: "not-a-date" },
+      error: "asOf must be a valid ISO timestamp.",
+    },
+    {
+      name: "community operationId",
+      handler: refreshDraftRankerCommunityHandler,
+      query: { operationId: "not-a-uuid" },
+      error: "operationId must be a UUID.",
+    },
+    {
+      name: "discovery asOf",
+      handler: refreshDraftRankerDiscoveryHandler,
+      query: { asOf: "not-a-date" },
+      error: "asOf must be a valid ISO timestamp.",
+    },
+    {
+      name: "discovery operationId",
+      handler: refreshDraftRankerDiscoveryHandler,
+      query: { operationId: "not-a-uuid" },
+      error: "operationId must be a UUID.",
+    },
+  ])("rejects invalid $name with 400", async ({ handler, query, error }) => {
+    const res = response();
+    await handler(
+      { method: "GET", headers: {}, query, body: {}, supabase: {} } as any,
+      res as any,
+    );
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toEqual({ success: false, error, failedRows: 1 });
+    expect(buildCommunityMock).not.toHaveBeenCalled();
+    expect(buildDiscoveryMock).not.toHaveBeenCalled();
+    expect(console.error).not.toHaveBeenCalled();
+  });
 });

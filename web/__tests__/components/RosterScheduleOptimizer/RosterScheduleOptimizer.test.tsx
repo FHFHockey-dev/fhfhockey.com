@@ -1110,6 +1110,8 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(screen.getByText(/Daily mode and roster slots are proposed defaults/)).toBeTruthy();
   });
   it("requires input review and renews it after rule changes without certifying unknown scoring", async () => {
+    // Mid-week clock: "tomorrow" must stay inside the current Mon–Sun week (it does not on Sundays).
+    vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date("2026-10-14T16:00:00Z"));
     const workspace = defaultWorkspace();
     const tomorrow = new Date(Date.now() + 86_400_000).toISOString();
     const members = [player, { ...player, id: "fhfh:2", nhlId: 2, name: "Bravo Center", availability: "manager_available" as const }];

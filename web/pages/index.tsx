@@ -7,7 +7,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { NextSeo } from "next-seo";
 import moment from "moment";
-import "moment-timezone"; // Import moment-timezone
 
 import Container from "components/Layout/Container";
 import ClientOnly from "components/ClientOnly";

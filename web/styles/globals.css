@@ -25,7 +25,15 @@ a {
   box-sizing: border-box;
 }
 
-textarea:focus,
-input:focus {
+textarea:focus:not(:focus-visible),
+input:focus:not(:focus-visible) {
   outline: none;
+}
+
+/* Keyboard focus stays visible; component rules with their own focus
+   treatment have higher specificity and still apply. Matches $focus-color. */
+textarea:focus-visible,
+input:focus-visible {
+  outline: 3px solid rgb(255, 193, 8);
+  outline-offset: 2px;
 }

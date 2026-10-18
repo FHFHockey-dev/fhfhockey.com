@@ -20,8 +20,9 @@ import {
 } from "./nstBurstPlans";
 
 describe("NST route burst plans", () => {
-  it("allows two actual gamelog days with 40 URLs, but paces larger day apertures even with fewer URLs", () => {
-    expect(resolveNstGamelogRequestPlan({ queuedDates: 2, requestCount: 40 }).requestIntervalMs).toBe(0);
+  it("allows two actual gamelog days within the 39-request burst cap, but paces larger day apertures even with fewer URLs", () => {
+    expect(resolveNstGamelogRequestPlan({ queuedDates: 2, requestCount: 39 }).requestIntervalMs).toBe(0);
+    expect(resolveNstGamelogRequestPlan({ queuedDates: 2, requestCount: 40 })).toMatchObject({ burstAllowed: false, requestIntervalMs: 21_000 });
     expect(resolveNstGamelogRequestPlan({ queuedDates: 3, requestCount: 3 }).requestIntervalMs).toBe(21_000);
     expect(resolveNstGamelogRequestPlan({ queuedDates: 2, requestCount: 41 }).burstAllowed).toBe(false);
   });

@@ -2,9 +2,9 @@ import {
   buildSnapshotFirstContextualRankingsSurface,
 } from "lib/rankings/rankingQueries";
 import {
-  ContextualRankingsQueryError,
   parseContextualRankingsRequestWithResolvedTeam,
 } from "lib/rankings/rankingTypes";
+import { sendContextualRankingsError } from "lib/rankings/apiErrorResponse";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(
@@ -26,17 +26,10 @@ export default async function handler(
     const payload = await buildSnapshotFirstContextualRankingsSurface(request);
     return res.status(200).json(payload);
   } catch (error) {
-    const statusCode =
-      error instanceof ContextualRankingsQueryError
-        ? error.statusCode
-        : (error as any)?.statusCode ?? 500;
-    return res.status(statusCode).json({
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to build contextual rankings",
-      details: (error as any)?.details,
-    });
+    return sendContextualRankingsError(
+      res,
+      error,
+      "Failed to build contextual rankings",
+    );
   }
 }

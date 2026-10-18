@@ -450,9 +450,11 @@ describe("Forge command center page", () => {
     render(<ForgeCommandCenterPage />);
 
     expect((await screen.findAllByText("Error")).length).toBe(3);
-    expect(screen.getByText("Request failed (500) for top adds")).toBeTruthy();
-    expect(screen.getByText("Request failed (500) for skater power")).toBeTruthy();
-    expect(screen.getByText("Request failed (500) for goalie context")).toBeTruthy();
+    expect(screen.getByText("Top Adds Watchlist is unavailable right now.")).toBeTruthy();
+    expect(screen.getByText("Player Insight Core is unavailable right now.")).toBeTruthy();
+    expect(screen.getByText("Goalie Context is unavailable right now.")).toBeTruthy();
+    // Raw request details stay out of the rendered page.
+    expect(screen.queryByText(/Request failed/)).toBeNull();
     expect(screen.queryByText("Empty")).toBeNull();
   });
 });

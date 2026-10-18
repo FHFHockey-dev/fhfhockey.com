@@ -1,0 +1,155 @@
+{
+  "generatedAt": "2026-10-18T18:45:08.557165+00:00",
+  "postgres": "17.11 (Homebrew)",
+  "transport": "Unix socket only (listen_addresses empty); disposable cluster removed afterwards",
+  "baseline": {
+    "path": "supabase/migrations/20260716112908_production_schema_baseline.sql",
+    "sha256": "27067d2221516be147d5cf71492b1fee3f0fd377d0ccd14e49557931ad1b791d",
+    "fixtureStatements": 99
+  },
+  "migration": {
+    "path": "supabase/migrations/20261018184229_restrict_provider_linkage_browser_writes.sql",
+    "sha256": "e3a90e1a3bfd45424c9714f2232fdc1880f6ec25e11196270beb0a1bb89148f7"
+  },
+  "passed": true,
+  "cases": [
+    {
+      "case": "baseline: authenticated user can insert a connected_accounts row for any provider identity",
+      "expected": "success",
+      "observed": "00000000-0000-4000-8000-00000000000a",
+      "passed": true
+    },
+    {
+      "case": "baseline: authenticated user can truncate provider_sync_runs (TRUNCATE ignores RLS)",
+      "expected": "success",
+      "observed": "00000000-0000-4000-8000-00000000000a",
+      "passed": true
+    },
+    {
+      "case": "migration applies cleanly (attempt 1)",
+      "expected": "success",
+      "observed": "success",
+      "passed": true
+    },
+    {
+      "case": "migration applies cleanly (attempt 2)",
+      "expected": "success",
+      "observed": "success",
+      "passed": true
+    },
+    {
+      "case": "authenticated cannot insert connected_accounts (identity squat closed)",
+      "expected": "42501",
+      "observed": "42501",
+      "passed": true
+    },
+    {
+      "case": "authenticated cannot insert external_leagues",
+      "expected": "42501",
+      "observed": "42501",
+      "passed": true
+    },
+    {
+      "case": "authenticated cannot insert external_teams",
+      "expected": "42501",
+      "observed": "42501",
+      "passed": true
+    },
+    {
+      "case": "authenticated cannot insert provider_sync_runs",
+      "expected": "42501",
+      "observed": "42501",
+      "passed": true
+    },
+    {
+      "case": "authenticated cannot update its own connected account",
+      "expected": "42501",
+      "observed": "42501",
+      "passed": true
+    },
+    {
+      "case": "authenticated cannot delete its own external team",
+      "expected": "42501",
+      "observed": "42501",
+      "passed": true
+    },
+    {
+      "case": "authenticated cannot truncate provider_sync_runs",
+      "expected": "42501",
+      "observed": "42501",
+      "passed": true
+    },
+    {
+      "case": "anon cannot read connected_accounts",
+      "expected": "42501",
+      "observed": "42501",
+      "passed": true
+    },
+    {
+      "case": "authenticated still reads only its own connected account",
+      "expected": "yahoo-guid-a",
+      "observed": "yahoo-guid-a",
+      "passed": true
+    },
+    {
+      "case": "authenticated still reads its own teams joined to leagues",
+      "expected": "team-a/league-a",
+      "observed": "team-a/league-a",
+      "passed": true
+    },
+    {
+      "case": "authenticated still reads only its own sync runs",
+      "expected": "1",
+      "observed": "1",
+      "passed": true
+    },
+    {
+      "case": "browser upsert of its own provider preferences still works",
+      "expected": "f",
+      "observed": "f",
+      "passed": true
+    },
+    {
+      "case": "browser upsert conflict path still updates its own preferences",
+      "expected": "t",
+      "observed": "t",
+      "passed": true
+    },
+    {
+      "case": "preferences cannot point at another user's connected account",
+      "expected": "23503",
+      "observed": "23503",
+      "passed": true
+    },
+    {
+      "case": "service role still writes connected accounts and sync runs",
+      "expected": "ok",
+      "observed": "ok",
+      "passed": true
+    },
+    {
+      "case": "only the owner SELECT policies remain on the four tables",
+      "expected": "connected_accounts_select_own,external_leagues_select_own,external_teams_select_own,provider_sync_runs_select_own",
+      "observed": "connected_accounts_select_own,external_leagues_select_own,external_teams_select_own,provider_sync_runs_select_own",
+      "passed": true
+    },
+    {
+      "case": "user_provider_preferences keeps its four owner policies",
+      "expected": "4",
+      "observed": "4",
+      "passed": true
+    },
+    {
+      "case": "browser roles hold only authenticated SELECT on the four tables",
+      "expected": "authenticated:connected_accounts:SELECT,authenticated:external_leagues:SELECT,authenticated:external_teams:SELECT,authenticated:provider_sync_runs:SELECT",
+      "observed": "authenticated:connected_accounts:SELECT,authenticated:external_leagues:SELECT,authenticated:external_teams:SELECT,authenticated:provider_sync_runs:SELECT",
+      "passed": true
+    },
+    {
+      "case": "service_role keeps SELECT/INSERT/UPDATE/DELETE",
+      "expected": "t",
+      "observed": "t",
+      "passed": true
+    }
+  ]
+}

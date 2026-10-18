@@ -1,11 +1,62 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const { supabaseFromMock, rangeCalls } = vi.hoisted(() => {
+  type QueryState = {
+    table: string;
+    orders: Array<{ key: string; ascending: boolean }>;
+  };
+  const rangeCalls: QueryState[] = [];
+
+  function createQuery(table: string) {
+    const state: QueryState = { table, orders: [] };
+    const result = { data: [] as unknown[], error: null };
+    const query: Record<string, unknown> = {};
+    for (const method of ["select", "eq", "gte", "lte", "in", "limit"]) {
+      query[method] = () => query;
+    }
+    query.order = (key: string, options?: { ascending?: boolean }) => {
+      state.orders.push({ key, ascending: options?.ascending ?? true });
+      return query;
+    };
+    query.range = () => {
+      rangeCalls.push(state);
+      return query;
+    };
+    query.maybeSingle = () =>
+      Promise.resolve({
+        data: SNAPSHOT_ROWS[table] ?? null,
+        error: null,
+      });
+    query.then = (
+      resolve: (value: typeof result) => unknown,
+      reject?: (reason: unknown) => unknown,
+    ) => Promise.resolve(result).then(resolve, reject);
+    return query;
+  }
+
+  const SNAPSHOT_ROWS: Record<string, unknown> = {
+    team_power_ratings_daily: { date: "2026-04-16" },
+    team_unit_toi: { snapshot_date: "2026-04-16" },
+  };
+
+  return {
+    rangeCalls,
+    supabaseFromMock: vi.fn((table: string) => createQuery(table)),
+  };
+});
+
+vi.mock("lib/supabase/server", () => ({
+  default: { from: supabaseFromMock },
+}));
 
 import { buildContextualRankingsAvailableFilters } from "./availableFilters";
 import {
   aggregateTeamGameContextRows,
   aggregateTeamStyleRows,
   aggregateTeamUnitToiRows,
+  buildTeamMatrixSurface,
   buildTeamUnitMetricInterpretation,
+  clearTeamMatrixSurfaceCachesForTests,
   parseTeamMatrixRequest,
   rankTeamMetricValues,
 } from "./teamMatrix";
@@ -326,5 +377,25 @@ describe("teamMatrix", () => {
       qualifiedPeerCount: 3,
     });
     expect(ranks.has("UTA")).toBe(false);
+  });
+
+  describe("paged source reads", () => {
+    beforeEach(() => {
+      rangeCalls.length = 0;
+      clearTeamMatrixSurfaceCachesForTests();
+    });
+
+    it("orders every paged source read by a unique key", async () => {
+      await buildTeamMatrixSurface(parseTeamMatrixRequest({ season: "20252026" }));
+
+      const ordersByTable = new Map(
+        rangeCalls.map((call) => [call.table, call.orders.map((order) => order.key)]),
+      );
+      expect(Object.fromEntries(ordersByTable)).toEqual({
+        team_underlying_stats_summary: ["game_date", "game_id", "team_id"],
+        wgo_team_stats: ["date", "id"],
+        team_unit_toi: ["game_date", "id"],
+      });
+    });
   });
 });

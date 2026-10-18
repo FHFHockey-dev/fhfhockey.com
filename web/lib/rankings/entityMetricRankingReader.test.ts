@@ -243,6 +243,19 @@ describe("entityMetricRankingReader", () => {
     expect(surfaces.get("points_per_60")?.rankings[0]?.metric).toMatchObject({ rawRank: 2, percentile: 0, qualifiedPeerCount: 2 });
   });
 
+  it("reads the full cohort but hydrates metadata only for returned rows", async () => {
+    scenario.rows = [snapshotRow(1), snapshotRow(2), snapshotRow(3, { team_id: 11 })];
+    const surfaces = await buildEntityMetricRankingSurfaces(request({ entityIds: [3], limit: 1 }), ["points_per_60"]);
+    expect(surfaces.get("points_per_60")?.rankings).toMatchObject([
+      { entity: { id: 3, name: "Fixture 3" }, metric: { rawRank: 2, qualifiedPeerCount: 2 } },
+    ]);
+    const rankingCall = queryCalls.find(call => call.table === "entity_metric_rankings" && call.selectFields !== "snapshot_date");
+    expect(rankingCall?.filters).not.toHaveProperty("entity_id");
+    expect(rankingCall?.limitCount).toBeNull();
+    expect(queryCalls.find(call => call.table === "players")?.filters.id).toEqual([3]);
+    expect(queryCalls.find(call => call.table === "teams")?.filters.id).toEqual([11]);
+  });
+
   it("ranks newly qualified rows when a selected minimum is relaxed", async () => {
     scenario.rows = [snapshotRow(1, { raw_rank: null, percentile: null, minimum_sample_met: false }), snapshotRow(2), snapshotRow(3)];
     const surfaces = await buildEntityMetricRankingSurfaces(request({ minGp: 1 }), ["points_per_60"]);

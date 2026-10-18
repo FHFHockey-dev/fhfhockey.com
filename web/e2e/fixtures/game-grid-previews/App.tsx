@@ -47,6 +47,9 @@ function App() {
       <button onClick={() => setFixtureState('refreshed')}>Refresh schedule fixture</button>
       <button onClick={() => setFixtureState('partial')}>Partial schedule fixture</button>
       <button onClick={() => setFixtureState('empty')}>Empty schedule fixture</button>
+      <button onClick={() => setFixtureState('postponed')}>Postponed schedule fixture</button>
+      <button onClick={() => setFixtureState('stale')}>Stale schedule fixture</button>
+      <button onClick={() => setFixtureState('ready')}>Ready schedule fixture</button>
       <GameGrid mode={mode} setMode={setMode} />
     </>}
   </main></>;

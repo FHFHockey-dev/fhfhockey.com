@@ -136,7 +136,7 @@ export function explainBenchDecisions(args: {
         const other = best!.categoryResults.find(item => item.key === category.key);
         return { key: category.key, selected: category.own, withPlayer: other?.own ?? null, opponent: category.opponent,
           selectedResult: category.result, withPlayerResult: other?.result ?? "unknown" };
-      }), goalie: snapshot.rules.goalieMinimum.required === null ? undefined : {
+      }), goalie: !snapshot.rules.goalieMinimum.required ? undefined : {
         counts: snapshot.rules.goalieMinimum.counts, credited: evaluation.goalie.credited, required: evaluation.goalie.required,
         selectedProjected: evaluation.goalie.projected, withPlayerProjected: best.goalie.projected,
       }, sources: [...sources].sort(([a], [b]) => a.localeCompare(b)).map(([playerId, source]) => ({ playerId,

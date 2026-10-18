@@ -1078,6 +1078,7 @@ async function fetchAllGoalieGameRows(request: GoalieMatrixRequest) {
       )
       .eq("season_id", request.season)
       .order("date", { ascending: false })
+      .order("player_id", { ascending: true })
       .range(from, from + GOALIE_QUERY_PAGE_SIZE - 1);
     if (request.asOfDate != null) {
       query = query.lte("date", request.asOfDate);
@@ -1134,6 +1135,8 @@ async function fetchLatestStartProjections(args: {
       )
       .gte("game_date", `${String(args.season).slice(0, 4)}-07-01`)
       .order("game_date", { ascending: false })
+      .order("game_id", { ascending: true })
+      .order("player_id", { ascending: true })
       .range(from, from + GOALIE_QUERY_PAGE_SIZE - 1);
     if (args.asOfDate != null) {
       query = query.lte("game_date", args.asOfDate);

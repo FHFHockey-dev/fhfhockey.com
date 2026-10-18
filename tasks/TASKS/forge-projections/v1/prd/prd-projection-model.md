@@ -567,8 +567,8 @@ The ingest endpoint considers a game “complete” and will skip when:
 
 ### Task 1: Make uncertainty and outputs understandable to laypeople
 - [x] Parent task complete.
-- [x] Translate uncertainty ranges into plain-language labels and explanations on the FORGE page.
-- [x] Replace raw P10/P50/P90 blocks with a short "low/typical/high" presentation and a tooltip/legend.
+- [x] Translate uncertainty ranges into plain-language labels and explanations on the FORGE page. _(Superseded by 2026-10-17 audit row NEW 8.0 in tasks-prd-projection-model.md.)_
+- [x] Replace raw P10/P50/P90 blocks with a short "low/typical/high" presentation and a tooltip/legend. _(Superseded by 2026-10-17 audit row NEW 8.0 in tasks-prd-projection-model.md.)_
 
 ### Task 2: Add model accuracy transparency (priority)
 - [x] Parent task complete.

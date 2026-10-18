@@ -80,6 +80,14 @@ describe("Yahoo planning parsers", () => {
     expect(evidence.counter.used).toBe(3);
     expect(evidence.limitations).toContain("Yahoo did not report a positive weekly add limit. Remaining allowance is unknown; zero is not assumed to mean unlimited.");
   });
+  it("derives three remaining adds from the Oct 16 Yahoo capture values (limit 4, week counter 1)", () => {
+    const args = acquisitionInputs();
+    args.settings = args.response({ settings: { max_weekly_adds: "4", weekly_deadline: "intraday" } });
+    args.team = args.response({ team: [{ team_key: args.teamKey }, { is_owned_by_current_login: 1 },
+      { roster_adds: { coverage_type: "week", coverage_value: 1, value: "1" } }] });
+    expect(yahooPlanningAcquisitions(args)).toMatchObject({ remaining: 3, limit: { present: true, reportedValue: "4", verified: true },
+      counter: { used: 1, coverageWeek: 1 }, limitations: [] });
+  });
   it("keeps remaining unknown when weekly usage exceeds the limit or the counter is unverified", () => {
     const args = acquisitionInputs();
     args.settings = args.response({ settings: { max_weekly_adds: "2" } });
@@ -374,6 +382,8 @@ describe("Yahoo snapshot evidence", () => {
     expect(limited.snapshot.acquisitionEvidence).toMatchObject({ remaining: 4, limit: { verified: true } });
     expect(limited.snapshot.rules).toMatchObject({ acquisitionCost: 1, periods: [{ id: "yahoo-week-1", start: "2026-09-29T04:00:00.000Z",
       end: "2026-10-05T04:00:00.000Z", remaining: 4, source: "provider", timeZone: "America/New_York" }] });
+    // The goalie minimum covers the same matchup week; its end date is exclusive.
+    expect(limited.snapshot.rules.goalieMinimum).toMatchObject({ periodStart: "2026-09-29", periodEnd: "2026-10-05" });
     expect(limited.capabilities.acquisitions).toBe(true);
     expect(limited.capabilities.limitations).toContain("Verify goalie minimum progress; these are not inferred from season transaction totals.");
     expect(limited.capabilities.limitations.some(item => /weekly add limit|remaining acquisitions|time zone/i.test(item))).toBe(false);

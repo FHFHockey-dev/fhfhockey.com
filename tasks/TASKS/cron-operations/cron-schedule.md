@@ -28,9 +28,9 @@
 -- was intentionally disabled at TJ's request; cron.job reads back
 -- active=false and its last run was 2026-10-15 21:15 UTC. The Vercel cron
 -- `0 13 * * *` /api/v1/db/cron-report (web/vercel.json) is the sole daily
--- report, so job 234 is no longer an expected run. Live active jobs 394, 396
--- and 397 (player-forecasts) remain absent from this inventory; that gap is
--- tracked in tasks/artifacts/ops-health-2026-10-17/ and is not changed here.
+-- report, so job 234 is no longer an expected run. Live active SQL jobs 394,
+-- 396 and 397 (player-forecasts, created by the player-forecast migrations)
+-- were absent and are now listed from the same read-only cron.job snapshot.
 
 # ALL CRON JOBS:
 ```json
@@ -421,6 +421,36 @@
     "route": "/api/v1/db/run-projection-v2?horizonGames=5",
     "auth": "Supabase Vault cron_secret",
     "verification": "Old token rejected 401; new token authorized 200; zero-game horizon-5 no-op returned HTTP 200 in 430 ms on production deployment dpl_D8gth3djEPB1JLZ6B2fAL44oETVE"
+  },
+  {
+    "jobid": 394,
+    "jobname": "player-forecasts-daily-seed",
+    "schedule": "0 10 * * *",
+    "run_time_utc": "10:00 UTC",
+    "active": true,
+    "method": "SQL",
+    "command": "select fhfh_internal.invoke_player_forecast_endpoint('/api/v1/player-forecasts/jobs/daily')",
+    "verification": "Live cron.job read-only snapshot 2026-10-17 (tasks/artifacts/ops-health-2026-10-17/live-cron-job-2026-10-17.json); SQL wrapper submits the endpoint, so route execution is evidenced only by that endpoint's own audit"
+  },
+  {
+    "jobid": 396,
+    "jobname": "player-forecasts-settlement",
+    "schedule": "20 * * * *",
+    "run_time_utc": null,
+    "active": true,
+    "method": "SQL",
+    "command": "select fhfh_internal.invoke_player_forecast_endpoint('/api/v1/player-forecasts/jobs/settle')",
+    "verification": "Live cron.job read-only snapshot 2026-10-17 (tasks/artifacts/ops-health-2026-10-17/live-cron-job-2026-10-17.json); SQL wrapper submits the endpoint, so route execution is evidenced only by that endpoint's own audit"
+  },
+  {
+    "jobid": 397,
+    "jobname": "player-forecasts-queue-drain",
+    "schedule": "*/5 * * * *",
+    "run_time_utc": null,
+    "active": true,
+    "method": "SQL",
+    "command": "select fhfh_internal.invoke_player_forecast_endpoint('/api/v1/player-forecasts/jobs/drain?dryRun=true')",
+    "verification": "Live cron.job read-only snapshot 2026-10-17 (tasks/artifacts/ops-health-2026-10-17/live-cron-job-2026-10-17.json); SQL wrapper submits the endpoint, so route execution is evidenced only by that endpoint's own audit"
   },
   {
     "jobid": 318,

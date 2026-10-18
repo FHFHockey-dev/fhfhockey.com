@@ -1,0 +1,878 @@
+diff --git a/web/lib/in-season/workspaceSchema.test.ts b/web/lib/in-season/workspaceSchema.test.ts
+index c0a9e8d..840bea8 100644
+--- a/web/lib/in-season/workspaceSchema.test.ts
++++ b/web/lib/in-season/workspaceSchema.test.ts
+@@ -171,8 +171,8 @@ describe("saved in-season workspace validation", () => {
+       expiresAt: "2026-10-08T00:00:00Z", model: { ...modeledMetadata, ...invalid } };
+     expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...snapshot, participationSources: [receipt] }, expectedVersion: null }).success).toBe(false);
+   });
+-  it("round-trips a resolved goalie forecast carrying modeled start metadata", () => {
+-    const startModel = { ...modeledMetadata, version: "goalie-roster-observation-start-frequency-v1", event: "official_starter",
++  it.each(["goalie-roster-observation-start-frequency-v1", "goalie-rolling-14d-start-frequency-v1"])("round-trips a resolved goalie forecast carrying %s start metadata", version => {
++    const startModel = { ...modeledMetadata, version, event: "official_starter",
+       numerator: 3, denominator: 4, selectedGameIds: [101, 102, 103, 104] };
+     const start = { playerId: 30, nhlPlayerId: 8480030, seasonId: 20262027, gameId: 31, teamId: 6,
+       scheduledAt: "2026-10-05T23:00:00Z", scheduleRevision: "schedule-a", rosterRevision: "roster-a", basis: "start",
+diff --git a/web/lib/in-season/workspaceSchema.ts b/web/lib/in-season/workspaceSchema.ts
+index ca9fda5..4e718bc 100644
+--- a/web/lib/in-season/workspaceSchema.ts
++++ b/web/lib/in-season/workspaceSchema.ts
+@@ -51,7 +51,8 @@ const contributionSource = z.object({ kind: z.enum(["detailed", "baseline"]), so
+ const hash = z.string().regex(/^[a-f0-9]{64}$/);
+ const participationModel = z.object({ version: z.enum(["skater-participation-frequency-v1", "goalie-appearance-frequency-v1",
+   "skater-frozen-window-appearance-frequency-v1", "goalie-frozen-window-appearance-frequency-v1", "goalie-frozen-window-start-frequency-v1",
+-  "skater-roster-observation-appearance-frequency-v1", "goalie-roster-observation-appearance-frequency-v1", "goalie-roster-observation-start-frequency-v1"]),
++  "skater-roster-observation-appearance-frequency-v1", "goalie-roster-observation-appearance-frequency-v1", "goalie-roster-observation-start-frequency-v1",
++  "skater-rolling-14d-appearance-frequency-v1", "goalie-rolling-14d-appearance-frequency-v1", "goalie-rolling-14d-start-frequency-v1"]),
+   event: z.enum(["positive_minutes", "official_starter"]), probabilityStatus: z.literal("uncalibrated_model"),
+   calibration: z.literal("unavailable"), inputHash: hash, evidenceHashes: z.array(hash).max(1000),
+   numerator: z.number().int().min(0).max(20), denominator: z.number().int().min(1).max(20),
+diff --git a/web/lib/player-forecasts/contributions.ts b/web/lib/player-forecasts/contributions.ts
+index ab48ca9..07205da 100644
+--- a/web/lib/player-forecasts/contributions.ts
++++ b/web/lib/player-forecasts/contributions.ts
+@@ -98,7 +98,9 @@ export type ContributionParticipation = {
+       | "skater-frozen-window-appearance-frequency-v1" | "goalie-frozen-window-appearance-frequency-v1"
+       | "goalie-frozen-window-start-frequency-v1"
+       | "skater-roster-observation-appearance-frequency-v1" | "goalie-roster-observation-appearance-frequency-v1"
+-      | "goalie-roster-observation-start-frequency-v1"; event: "positive_minutes" | "official_starter";
++      | "goalie-roster-observation-start-frequency-v1"
++      | "skater-rolling-14d-appearance-frequency-v1" | "goalie-rolling-14d-appearance-frequency-v1"
++      | "goalie-rolling-14d-start-frequency-v1"; event: "positive_minutes" | "official_starter";
+     probabilityStatus: "uncalibrated_model"; calibration: "unavailable";
+     inputHash: string; evidenceHashes: string[]; numerator: number; denominator: number;
+     selectedGameIds: number[]; limitations: string[];
+@@ -205,7 +207,8 @@ function participationProbability(participation: ContributionParticipation | und
+     || !validClock(participation.expiresAt)
+     || clock(participation.expiresAt) <= clock(now)) return null;
+   const startModel = model?.version === "goalie-frozen-window-start-frequency-v1"
+-    || model?.version === "goalie-roster-observation-start-frequency-v1";
++    || model?.version === "goalie-roster-observation-start-frequency-v1"
++    || model?.version === "goalie-rolling-14d-start-frequency-v1";
+   if (model && (model.event !== (startModel ? "official_starter" : "positive_minutes") || model.probabilityStatus !== "uncalibrated_model" || model.calibration !== "unavailable"
+     || !/^[a-f0-9]{64}$/.test(model.inputHash) || !Array.isArray(model.evidenceHashes) || !model.evidenceHashes.length
+     || model.evidenceHashes.length > (startModel ? 196 : model.version === "skater-participation-frequency-v1" ? 131 : 132) || model.evidenceHashes.some(value => !/^[a-f0-9]{64}$/.test(value))
+@@ -229,7 +232,8 @@ function participationProbability(participation: ContributionParticipation | und
+ export function admittedModeledStart(participation: ContributionParticipation | undefined,
+   game: ContributionGame, now: string): ContributionParticipation | undefined {
+   return (participation?.model?.version === "goalie-frozen-window-start-frequency-v1"
+-    || participation?.model?.version === "goalie-roster-observation-start-frequency-v1")
++    || participation?.model?.version === "goalie-roster-observation-start-frequency-v1"
++    || participation?.model?.version === "goalie-rolling-14d-start-frequency-v1")
+     && participation.allowedUses?.totals === true
+     && participationProbability(participation, now, game, "start") !== null ? participation : undefined;
+ }
+@@ -242,10 +246,12 @@ function participationFor(source: ContributionSource, participation: Contributio
+   const model = participation?.model;
+   const skaterModel = model?.version === "skater-participation-frequency-v1"
+     || model?.version === "skater-frozen-window-appearance-frequency-v1"
+-    || model?.version === "skater-roster-observation-appearance-frequency-v1";
++    || model?.version === "skater-roster-observation-appearance-frequency-v1"
++    || model?.version === "skater-rolling-14d-appearance-frequency-v1";
+   const goalieModel = model?.version === "goalie-appearance-frequency-v1"
+     || model?.version === "goalie-frozen-window-appearance-frequency-v1"
+-    || model?.version === "goalie-roster-observation-appearance-frequency-v1";
++    || model?.version === "goalie-roster-observation-appearance-frequency-v1"
++    || model?.version === "goalie-rolling-14d-appearance-frequency-v1";
+   const compatibleModel = skaterModel
+     ? ["skater-baseline-rates-v1", "current-appearance-skater-rates-v1", "native-prior-appearance-skater-rates-v1"].includes(source.policyVersion) && !source.targetKey.endsWith("_GOALIE") && source.targetKey !== "GOALIE_MINUTES"
+     : goalieModel && ["native-goalie-appearance-win-rates-v1", "native-goalie-appearance-summary-win-rates-v1",
+diff --git a/web/lib/player-forecasts/gameExpectations.test.ts b/web/lib/player-forecasts/gameExpectations.test.ts
+index e04a20d..22f70b7 100644
+--- a/web/lib/player-forecasts/gameExpectations.test.ts
++++ b/web/lib/player-forecasts/gameExpectations.test.ts
+@@ -71,7 +71,7 @@ describe("shared per-game expectation view (synthetic engineering fixtures)", ()
+     expect(buildGameExpectations(data, { ...scope, games: 1 }, now).players[0].games[0].powerPlayRole)
+       .toEqual({ value: null, status: "not_applicable", reason: "not_applicable", source: null });
+   });
+-  it.each(["frozen-window", "roster-observation"] as const)("retains independent %s modeled starts through the shared view and StartChart without reweighting appearance means", method => {
++  it.each(["frozen-window", "roster-observation", "rolling-14d"] as const)("retains independent %s modeled starts through the shared view and StartChart without reweighting appearance means", method => {
+     const data = fixture(), game = data.games[0]; data.players[0].playerClass = "goalie";
+     data.baselineSources = [baseline({ policyVersion: "native-goalie-appearance-volume-rates-v1", targetKey: "SAVES_GOALIE", mean: 20 })];
+     const appearance: ContributionParticipation = { playerId: 7, nhlPlayerId: 77, seasonId: 20262027, teamId: 1,
+diff --git a/web/lib/player-forecasts/modeledGoalieParticipation.ts b/web/lib/player-forecasts/modeledGoalieParticipation.ts
+index 3cf1f20..5e7741f 100644
+--- a/web/lib/player-forecasts/modeledGoalieParticipation.ts
++++ b/web/lib/player-forecasts/modeledGoalieParticipation.ts
+@@ -6,6 +6,7 @@ import { buildSkaterParticipationReceipt, type ParticipationEvidence, type Skate
+ import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
+ import { ROSTER_CONTINUATION_ASSUMPTION } from "./targetRosterObservation";
+ import { timestampMicros } from "../projections/evidenceTime";
++import type { RollingWindowGoalieParticipationReceipt, RollingWindowGoalieStartReceipt } from "./rollingWindowParticipation";
+ 
+ export const GOALIE_PARTICIPATION_METHOD = "goalie-appearance-frequency-v1" as const;
+ export type GoalieEligibility = {
+@@ -78,7 +79,8 @@ export function buildGoalieParticipationReceipt(input: GoalieParticipationInput,
+ }
+ 
+ /** Call only after exact bundle release admission, never as automatic publication. */
+-export function goalieParticipationFromReceipt(receipt: GoalieParticipationReceipt | FrozenWindowGoalieParticipationReceipt | FrozenWindowGoalieStartReceipt | RosterObservationGoalieParticipationReceipt | RosterObservationGoalieStartReceipt,
++export function goalieParticipationFromReceipt(receipt: GoalieParticipationReceipt | FrozenWindowGoalieParticipationReceipt | FrozenWindowGoalieStartReceipt | RosterObservationGoalieParticipationReceipt | RosterObservationGoalieStartReceipt
++  | RollingWindowGoalieParticipationReceipt | RollingWindowGoalieStartReceipt,
+   allowedUses: NonNullable<ContributionParticipation["allowedUses"]>): ContributionParticipation | null {
+   if (receipt.probability === null) return null;
+   return { ...receipt.scope, basis: receipt.event === "official_starter" ? "start" : "appearance", probability: receipt.probability,
+diff --git a/web/lib/player-forecasts/modeledGoalieParticipationStore.ts b/web/lib/player-forecasts/modeledGoalieParticipationStore.ts
+index 2b7a3b8..04535f0 100644
+--- a/web/lib/player-forecasts/modeledGoalieParticipationStore.ts
++++ b/web/lib/player-forecasts/modeledGoalieParticipationStore.ts
+@@ -6,6 +6,9 @@ import { buildGoalieParticipationReceipt, goalieParticipationFromReceipt,
+   type FrozenWindowGoalieStartInput, type FrozenWindowGoalieStartReceipt, buildRosterObservationGoalieParticipationReceipt, buildRosterObservationGoalieStartReceipt,
+   type RosterObservationGoalieParticipationInput, type RosterObservationGoalieParticipationReceipt,
+   type RosterObservationGoalieStartInput, type RosterObservationGoalieStartReceipt } from "./modeledGoalieParticipation";
++import { buildRollingWindowGoalieParticipationReceipt, buildRollingWindowGoalieStartReceipt,
++  type RollingWindowGoalieParticipationInput, type RollingWindowGoalieParticipationReceipt,
++  type RollingWindowGoalieStartInput, type RollingWindowGoalieStartReceipt } from "./rollingWindowParticipation";
+ import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
+ import { timestampMicros } from "../projections/evidenceTime";
+ 
+@@ -14,6 +17,8 @@ export const FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASET = "goalie-frozen-window-
+ export const FROZEN_WINDOW_GOALIE_START_DATASET = "goalie-frozen-window-start-bundle-v1";
+ export const ROSTER_OBSERVATION_GOALIE_PARTICIPATION_DATASET = "goalie-roster-observation-participation-bundle-v1";
+ export const ROSTER_OBSERVATION_GOALIE_START_DATASET = "goalie-roster-observation-start-bundle-v1";
++export const ROLLING_WINDOW_GOALIE_PARTICIPATION_DATASET = "goalie-rolling-14d-participation-bundle-v1";
++export const ROLLING_WINDOW_GOALIE_START_DATASET = "goalie-rolling-14d-start-bundle-v1";
+ export type GoalieParticipationBundle = {
+   version: typeof GOALIE_PARTICIPATION_DATASET; seasonId: number; issuedAt: string; expiresAt: string;
+   released: boolean; allowedUses: ContributionAllowedUses;
+@@ -37,6 +42,14 @@ export type RosterObservationGoalieStartBundle = Omit<GoalieParticipationBundle,
+   version: typeof ROSTER_OBSERVATION_GOALIE_START_DATASET;
+   entries: Array<{ input: RosterObservationGoalieStartInput; receipt: RosterObservationGoalieStartReceipt }>;
+ };
++export type RollingWindowGoalieParticipationBundle = Omit<GoalieParticipationBundle, "version" | "entries"> & {
++  version: typeof ROLLING_WINDOW_GOALIE_PARTICIPATION_DATASET;
++  entries: Array<{ input: RollingWindowGoalieParticipationInput; receipt: RollingWindowGoalieParticipationReceipt }>;
++};
++export type RollingWindowGoalieStartBundle = Omit<GoalieParticipationBundle, "version" | "entries"> & {
++  version: typeof ROLLING_WINDOW_GOALIE_START_DATASET;
++  entries: Array<{ input: RollingWindowGoalieStartInput; receipt: RollingWindowGoalieStartReceipt }>;
++};
+ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+ const HASH = /^[0-9a-f]{64}$/;
+ const nonempty = (value: unknown) => typeof value === "string" && value.trim().length > 0;
+@@ -46,16 +59,21 @@ const time = (value: string) => { const parsed = timestampMicros(value); return
+  * Reproduction authenticates arithmetic, not source truth: publication review must
+  * establish genuine complete eligibility/label inputs before allowlisting bytes. */
+ async function loadGoalieParticipation(db: SupabaseClient<any>, seasonId: number, now: Date,
+-  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal }, mode: "current" | "frozen_appearance" | "frozen_start" | "roster_appearance" | "roster_start"): Promise<{
++  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal },
++  mode: "current" | "frozen_appearance" | "frozen_start" | "roster_appearance" | "roster_start" | "rolling_appearance" | "rolling_start"): Promise<{
+     sources: ContributionParticipation[]; checksum: string | null; limitations: string[];
+   }> {
+   const frozen = mode !== "current";
+-  const dataset = mode === "roster_start" ? ROSTER_OBSERVATION_GOALIE_START_DATASET
++  const dataset = mode === "rolling_start" ? ROLLING_WINDOW_GOALIE_START_DATASET
++    : mode === "rolling_appearance" ? ROLLING_WINDOW_GOALIE_PARTICIPATION_DATASET
++    : mode === "roster_start" ? ROSTER_OBSERVATION_GOALIE_START_DATASET
+     : mode === "roster_appearance" ? ROSTER_OBSERVATION_GOALIE_PARTICIPATION_DATASET
+     : mode === "frozen_start" ? FROZEN_WINDOW_GOALIE_START_DATASET
+     : frozen ? FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASET : GOALIE_PARTICIPATION_DATASET;
+   const empty = (reason: string) => ({ sources: [], checksum: null, limitations: [reason] });
+-  const releases = (options.environment ?? process.env)[mode === "roster_start" ? "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES"
++  const releases = (options.environment ?? process.env)[mode === "rolling_start" ? "PLAYER_FORECAST_ROLLING_14D_GOALIE_START_RELEASES"
++    : mode === "rolling_appearance" ? "PLAYER_FORECAST_ROLLING_14D_GOALIE_PARTICIPATION_RELEASES"
++    : mode === "roster_start" ? "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES"
+     : mode === "roster_appearance" ? "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_PARTICIPATION_RELEASES"
+     : mode === "frozen_start" ? "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_START_RELEASES"
+     : frozen ? "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_PARTICIPATION_RELEASES" : "PLAYER_FORECAST_GOALIE_PARTICIPATION_RELEASES"]
+@@ -77,7 +95,7 @@ async function loadGoalieParticipation(db: SupabaseClient<any>, seasonId: number
+   try {
+     for (const row of data) {
+       const pin = pins.find(value => value[0] === row.id), payload = row.payload as GoalieParticipationBundle | FrozenWindowGoalieParticipationBundle | FrozenWindowGoalieStartBundle
+-        | RosterObservationGoalieParticipationBundle | RosterObservationGoalieStartBundle;
++        | RosterObservationGoalieParticipationBundle | RosterObservationGoalieStartBundle | RollingWindowGoalieParticipationBundle | RollingWindowGoalieStartBundle;
+       bytes += Buffer.byteLength(JSON.stringify(payload), "utf8");
+       const uses = payload?.allowedUses;
+       if (!pin || seen.has(`release:${row.id}`) || bytes > 8 * 1024 * 1024 || row.provider !== "fhfh"
+@@ -98,7 +116,9 @@ async function loadGoalieParticipation(db: SupabaseClient<any>, seasonId: number
+         if (sources.length >= 500 || entry.input.scope.seasonId !== seasonId
+           || entry.receipt.issuedAt !== payload.issuedAt || entry.receipt.expiresAt !== payload.expiresAt) return empty("invalid_participation_release");
+         const clocks = { issuedAt: payload.issuedAt, expiresAt: payload.expiresAt };
+-        const rebuilt = mode === "roster_start" ? buildRosterObservationGoalieStartReceipt(entry.input as RosterObservationGoalieStartInput, clocks)
++        const rebuilt = mode === "rolling_start" ? buildRollingWindowGoalieStartReceipt(entry.input as RollingWindowGoalieStartInput, clocks)
++          : mode === "rolling_appearance" ? buildRollingWindowGoalieParticipationReceipt(entry.input as RollingWindowGoalieParticipationInput, clocks)
++          : mode === "roster_start" ? buildRosterObservationGoalieStartReceipt(entry.input as RosterObservationGoalieStartInput, clocks)
+           : mode === "roster_appearance" ? buildRosterObservationGoalieParticipationReceipt(entry.input as RosterObservationGoalieParticipationInput, clocks)
+           : mode === "frozen_start" ? buildFrozenWindowGoalieStartReceipt(entry.input as FrozenWindowGoalieStartInput, clocks)
+           : frozen ? buildFrozenWindowGoalieParticipationReceipt(entry.input as FrozenWindowGoalieParticipationInput, clocks)
+@@ -113,7 +133,8 @@ async function loadGoalieParticipation(db: SupabaseClient<any>, seasonId: number
+     }
+   } catch { return empty("invalid_participation_release"); }
+   return { sources, checksum: playerForecastSourcePayloadHash(pins.slice().sort((a, b) => a[0].localeCompare(b[0]))),
+-    limitations: [mode.startsWith("roster_") ? "Experimental official season-roster observation continuation proxy; calibration unavailable; source completeness is owner-reviewed."
++    limitations: [mode.startsWith("rolling_") ? "Experimental rolling 14-day history with official season-roster observation continuation proxy; calibration unavailable; source completeness is owner-reviewed."
++      : mode.startsWith("roster_") ? "Experimental official season-roster observation continuation proxy; calibration unavailable; source completeness is owner-reviewed."
+       : mode === "frozen_start" ? "Experimental frozen-window goalie official starter frequency; calibration unavailable; source completeness is owner-reviewed."
+       : frozen ? "Experimental frozen-window goalie appearance frequency; calibration unavailable; source completeness is owner-reviewed."
+       : "Experimental modeled goalie participation; calibration unavailable; source completeness is owner-reviewed."] };
+@@ -148,3 +169,13 @@ export function loadRosterObservationGoalieStarts(db: SupabaseClient<any>, seaso
+   options: { environment?: Record<string, string | undefined>; signal?: AbortSignal } = {}) {
+   return loadGoalieParticipation(db, seasonId, now, options, "roster_start");
+ }
++
++/** Rolling 14-day window: separate appearance and start allowlists; never inherits roster-observation approval. */
++export function loadRollingWindowGoalieParticipation(db: SupabaseClient<any>, seasonId: number, now: Date,
++  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal } = {}) {
++  return loadGoalieParticipation(db, seasonId, now, options, "rolling_appearance");
++}
++export function loadRollingWindowGoalieStarts(db: SupabaseClient<any>, seasonId: number, now: Date,
++  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal } = {}) {
++  return loadGoalieParticipation(db, seasonId, now, options, "rolling_start");
++}
+diff --git a/web/lib/player-forecasts/modeledSkaterParticipation.ts b/web/lib/player-forecasts/modeledSkaterParticipation.ts
+index e11df9a..13db79e 100644
+--- a/web/lib/player-forecasts/modeledSkaterParticipation.ts
++++ b/web/lib/player-forecasts/modeledSkaterParticipation.ts
+@@ -2,6 +2,7 @@ import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
+ import type { ContributionGame, ContributionParticipation } from "./contributions";
+ import { rosterObservationReasons, ROSTER_CONTINUATION_ASSUMPTION, type TargetRosterObservation } from "./targetRosterObservation";
+ import { timestampMicros } from "../projections/evidenceTime";
++import type { RollingWindowSkaterParticipationReceipt } from "./rollingWindowParticipation";
+ 
+ export const SKATER_PARTICIPATION_METHOD = "skater-participation-frequency-v1" as const;
+ const DAY = 86400000000;
+@@ -131,7 +132,8 @@ function buildSkaterParticipationKernel(input: SkaterParticipationInput,
+   };
+ }
+ 
+-export function participationFromReceipt(receipt: SkaterParticipationReceipt | FrozenWindowSkaterParticipationReceipt | RosterObservationSkaterParticipationReceipt,
++export function participationFromReceipt(receipt: SkaterParticipationReceipt | FrozenWindowSkaterParticipationReceipt | RosterObservationSkaterParticipationReceipt
++  | RollingWindowSkaterParticipationReceipt,
+   allowedUses: NonNullable<ContributionParticipation["allowedUses"]>): ContributionParticipation | null {
+   if (receipt.probability === null) return null;
+   return { ...receipt.scope, basis: "appearance", probability: receipt.probability,
+diff --git a/web/lib/player-forecasts/modeledSkaterParticipationStore.ts b/web/lib/player-forecasts/modeledSkaterParticipationStore.ts
+index 379f5c1..bb042dc 100644
+--- a/web/lib/player-forecasts/modeledSkaterParticipationStore.ts
++++ b/web/lib/player-forecasts/modeledSkaterParticipationStore.ts
+@@ -4,12 +4,15 @@ import { buildSkaterParticipationReceipt, participationFromReceipt,
+   type SkaterParticipationInput, type SkaterParticipationReceipt, buildFrozenWindowSkaterParticipationReceipt,
+   type FrozenWindowSkaterParticipationInput, type FrozenWindowSkaterParticipationReceipt, buildRosterObservationSkaterParticipationReceipt,
+   type RosterObservationSkaterParticipationInput, type RosterObservationSkaterParticipationReceipt } from "./modeledSkaterParticipation";
++import { buildRollingWindowSkaterParticipationReceipt, type RollingWindowSkaterParticipationInput,
++  type RollingWindowSkaterParticipationReceipt } from "./rollingWindowParticipation";
+ import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
+ import { timestampMicros } from "../projections/evidenceTime";
+ 
+ export const PARTICIPATION_DATASET = "skater-participation-bundle-v1";
+ export const FROZEN_WINDOW_SKATER_PARTICIPATION_DATASET = "skater-frozen-window-participation-bundle-v1";
+ export const ROSTER_OBSERVATION_SKATER_PARTICIPATION_DATASET = "skater-roster-observation-participation-bundle-v1";
++export const ROLLING_WINDOW_SKATER_PARTICIPATION_DATASET = "skater-rolling-14d-participation-bundle-v1";
+ export const SKATER_PARTICIPATION_RELEASE_LIMITS = Object.freeze({
+   releases: 8, bundleEntries: 500, bundleBytes: 8 * 1024 * 1024,
+   // Owned17 + candidate45 skaters ×20games =1240entries. The measured600-entry
+@@ -31,6 +34,10 @@ export type RosterObservationSkaterParticipationBundle = Omit<SkaterParticipatio
+   version: typeof ROSTER_OBSERVATION_SKATER_PARTICIPATION_DATASET;
+   entries: Array<{ input: RosterObservationSkaterParticipationInput; receipt: RosterObservationSkaterParticipationReceipt }>;
+ };
++export type RollingWindowSkaterParticipationBundle = Omit<SkaterParticipationBundle, "version" | "entries"> & {
++  version: typeof ROLLING_WINDOW_SKATER_PARTICIPATION_DATASET;
++  entries: Array<{ input: RollingWindowSkaterParticipationInput; receipt: RollingWindowSkaterParticipationReceipt }>;
++};
+ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+ const HASH = /^[0-9a-f]{64}$/;
+ const nonempty = (value: unknown) => typeof value === "string" && value.trim().length > 0;
+@@ -40,14 +47,16 @@ const time = (value: string) => { const parsed = timestampMicros(value); return
+  * Reproduction authenticates arithmetic, not source truth: publication review must
+  * establish genuine complete eligibility/label inputs before allowlisting bytes. */
+ async function loadSkaterParticipation(db: SupabaseClient<any>, seasonId: number, now: Date,
+-  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal }, mode: "current" | "frozen" | "roster_observation"): Promise<{
++  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal }, mode: "current" | "frozen" | "roster_observation" | "rolling"): Promise<{
+     sources: ContributionParticipation[]; checksum: string | null; limitations: string[];
+   }> {
+   const frozen = mode !== "current";
+-  const dataset = mode === "roster_observation" ? ROSTER_OBSERVATION_SKATER_PARTICIPATION_DATASET
++  const dataset = mode === "rolling" ? ROLLING_WINDOW_SKATER_PARTICIPATION_DATASET
++    : mode === "roster_observation" ? ROSTER_OBSERVATION_SKATER_PARTICIPATION_DATASET
+     : frozen ? FROZEN_WINDOW_SKATER_PARTICIPATION_DATASET : PARTICIPATION_DATASET;
+   const empty = (reason: string) => ({ sources: [], checksum: null, limitations: [reason] });
+-  const releases = (options.environment ?? process.env)[mode === "roster_observation" ? "PLAYER_FORECAST_ROSTER_OBSERVATION_SKATER_PARTICIPATION_RELEASES"
++  const releases = (options.environment ?? process.env)[mode === "rolling" ? "PLAYER_FORECAST_ROLLING_14D_SKATER_PARTICIPATION_RELEASES"
++    : mode === "roster_observation" ? "PLAYER_FORECAST_ROSTER_OBSERVATION_SKATER_PARTICIPATION_RELEASES"
+     : frozen ? "PLAYER_FORECAST_FROZEN_WINDOW_SKATER_PARTICIPATION_RELEASES" : "PLAYER_FORECAST_PARTICIPATION_RELEASES"]
+     ?.split(",").map(value => value.trim()).filter(Boolean) ?? [];
+   if (!releases.length) return empty("modeled_participation_serving_disabled");
+@@ -66,7 +75,8 @@ async function loadSkaterParticipation(db: SupabaseClient<any>, seasonId: number
+   let bytes = 0, entries = 0;
+   try {
+     for (const row of data) {
+-      const pin = pins.find(value => value[0] === row.id), payload = row.payload as SkaterParticipationBundle | FrozenWindowSkaterParticipationBundle | RosterObservationSkaterParticipationBundle;
++      const pin = pins.find(value => value[0] === row.id), payload = row.payload as SkaterParticipationBundle | FrozenWindowSkaterParticipationBundle | RosterObservationSkaterParticipationBundle
++        | RollingWindowSkaterParticipationBundle;
+       const rowBytes = Buffer.byteLength(JSON.stringify(payload), "utf8");
+       bytes += rowBytes;
+       const uses = payload?.allowedUses;
+@@ -89,7 +99,8 @@ async function loadSkaterParticipation(db: SupabaseClient<any>, seasonId: number
+         if (sources.length >= SKATER_PARTICIPATION_RELEASE_LIMITS.aggregateEntries || entry.input.scope.seasonId !== seasonId
+           || entry.receipt.issuedAt !== payload.issuedAt || entry.receipt.expiresAt !== payload.expiresAt) return empty("invalid_participation_release");
+         const clocks = { issuedAt: payload.issuedAt, expiresAt: payload.expiresAt };
+-        const rebuilt = mode === "roster_observation" ? buildRosterObservationSkaterParticipationReceipt(entry.input as RosterObservationSkaterParticipationInput, clocks)
++        const rebuilt = mode === "rolling" ? buildRollingWindowSkaterParticipationReceipt(entry.input as RollingWindowSkaterParticipationInput, clocks)
++          : mode === "roster_observation" ? buildRosterObservationSkaterParticipationReceipt(entry.input as RosterObservationSkaterParticipationInput, clocks)
+           : frozen ? buildFrozenWindowSkaterParticipationReceipt(entry.input as FrozenWindowSkaterParticipationInput, clocks)
+           : buildSkaterParticipationReceipt(entry.input as SkaterParticipationInput, clocks);
+         if (playerForecastSourcePayloadHash(rebuilt) !== playerForecastSourcePayloadHash(entry.receipt)) return empty("participation_receipt_mismatch");
+@@ -102,7 +113,8 @@ async function loadSkaterParticipation(db: SupabaseClient<any>, seasonId: number
+     }
+   } catch { return empty("invalid_participation_release"); }
+   return { sources, checksum: playerForecastSourcePayloadHash(pins.slice().sort((a, b) => a[0].localeCompare(b[0]))),
+-    limitations: [mode === "roster_observation" ? "Experimental official season-roster observation continuation proxy; calibration unavailable; source completeness is owner-reviewed."
++    limitations: [mode === "rolling" ? "Experimental rolling 14-day history with official season-roster observation continuation proxy; calibration unavailable; source completeness is owner-reviewed."
++      : mode === "roster_observation" ? "Experimental official season-roster observation continuation proxy; calibration unavailable; source completeness is owner-reviewed."
+       : frozen ? "Experimental frozen-window skater appearance frequency; calibration unavailable; source completeness is owner-reviewed."
+       : "Experimental modeled skater participation; calibration unavailable; source completeness is owner-reviewed."] };
+ }
+@@ -125,3 +137,9 @@ export function loadRosterObservationSkaterParticipation(db: SupabaseClient<any>
+   options: { environment?: Record<string, string | undefined>; signal?: AbortSignal } = {}) {
+   return loadSkaterParticipation(db, seasonId, now, options, "roster_observation");
+ }
++
++/** Rolling 14-day window: its own exact-hash allowlist; never inherits roster-observation approval. */
++export function loadRollingWindowSkaterParticipation(db: SupabaseClient<any>, seasonId: number, now: Date,
++  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal } = {}) {
++  return loadSkaterParticipation(db, seasonId, now, options, "rolling");
++}
+diff --git a/web/lib/player-forecasts/nativeBaselinePublication.test.ts b/web/lib/player-forecasts/nativeBaselinePublication.test.ts
+index a86bd80..5bdb105 100644
+--- a/web/lib/player-forecasts/nativeBaselinePublication.test.ts
++++ b/web/lib/player-forecasts/nativeBaselinePublication.test.ts
+@@ -13,6 +13,7 @@ import { materializeNativeInputs, prepareNativeInputMaterialization, verifyNativ
+ import { assembleCurrentRosterNativeInputs } from "./currentRosterNativeInputs";
+ import { buildSkaterParticipationReceipt } from "./modeledSkaterParticipation";
+ import { buildRosterObservationSkaterParticipationReceipt } from "./modeledSkaterParticipation";
++import { buildRollingParticipationHistories } from "./rollingParticipationFrame";
+ import { buildSkaterBaselineRates } from "./baselineRates";
+ import { baselineAppearanceFromBoxscore } from "./baselineSourceLineage";
+ import { buildBaselineContributionBundle, buildNativeSkaterBaselineSnapshot } from "./baselineGeneration";
+@@ -623,6 +624,39 @@ describe("bounded publication coordinator (synthetic only)", () => {
+       expect(() => prepareNativeInputMaterialization(changed, now.toISOString())).toThrow("missing");
+     } finally { vi.useRealTimers(); }
+   });
++  it("materializes rolling-window inputs whose frame evidence resolves to the frame's own parents", async () => {
++    const request = materializationFixture(), boxscore = request.acquisition.receipts[0];
++    const week = (start: string) => {
++      const rawBody = JSON.stringify({ gameWeek: Array.from({ length: 7 }, (_, i) => {
++        const date = new Date(Date.parse(`${start}T12:00:00Z`) + i * 86400000).toISOString().slice(0, 10);
++        return { date, games: date === "2026-10-01" ? [{ id: 2026020001, season: 20262027, gameType: 2, startTimeUTC: "2026-10-01T23:00:00Z",
++          gameState: "OFF", gameScheduleState: "OK", homeTeam: { id: 1, abbrev: "AAA" }, awayTeam: { id: 2, abbrev: "BBB" } }] : [] };
++      }) });
++      return { url: `https://api-web.nhle.com/v1/schedule/${start}`, capturedAt: "2026-10-15T09:00:00Z", rawBody,
++        bodySha256: createHash("sha256").update(rawBody).digest("hex") };
++    };
++    const frame = buildRollingParticipationHistories({ cutoffAt: request.acquisition.cutoffAt, seasonId: 20262027,
++      players: [{ playerId: 7, nhlPlayerId: 77, teamId: 1, playerClass: "skater" }], scheduleReceipts: [week("2026-10-01"), week("2026-10-08")],
++      boxscoreReceipts: [boxscore] });
++    request.parents = frame.parents;
++    request.requiredParents = frame.parents.map(parent => ({ id: parent.id, hash: parent.hash, availableAt: parent.availableAt,
++      capturedAt: parent.capturedAt, url: parent.original?.url ?? null }));
++    request.participationInputs = [{ version: "skater-rolling-14d-participation-input-v1", playerClass: "skater", cutoffAt: request.acquisition.cutoffAt,
++      scope: { playerId: 7, nhlPlayerId: 77, teamId: 1, seasonId: 20262027, gameId: 30, scheduledAt: "2026-10-15T23:00:00Z",
++        scheduleRevision: "schedule", rosterRevision: "roster" },
++      scheduleEvidence: frame.evidence, rosterEvidence: frame.evidence, targetRosterObservation: null, history: frame.histories.get(7)! }];
++    vi.useFakeTimers(); vi.setSystemTime(now);
++    try {
++      const db = database(), result = await materializeNativeInputs(request, { now, dryRun: false, db: db.db });
++      expect(result.status).toBe("closed");
++      const row = result.rows.find(value => value.entity_kind === "participation_input")!;
++      expect(row.payload).toMatchObject({ dataset: "skater-rolling-14d-participation-bundle-v1", inputs: request.participationInputs });
++      const unparented = structuredClone(request);
++      unparented.parents = unparented.parents!.filter(parent => parent.hash !== frame.evidence.hash);
++      unparented.requiredParents = unparented.requiredParents!.filter(parent => parent.hash !== frame.evidence.hash);
++      expect(() => prepareNativeInputMaterialization(unparented, now.toISOString())).toThrow("Participation evidence lacks required acquired parent");
++    } finally { vi.useRealTimers(); }
++  });
+   it("holds caller-complete inputs without an actual durable closed producer receipt", async () => {
+     const request = cadenceRequest(), db = database();
+     expect(await observeClosedNativeCadenceSources(request, db.db)).toMatchObject({ complete: false, reason: "producer_closed_receipt_missing:native-inputs" });
+@@ -630,13 +664,30 @@ describe("bounded publication coordinator (synthetic only)", () => {
+       .toMatchObject({ status: "held", cadenceComplete: false });
+     expect(db.writes).toEqual([]);
+   });
++  it("selects rolling-window participation pins only under their own dataset keys", async () => {
++    const plan = nativeFixture(now.toISOString()), validation = await validateNativeBaselinePublication(plan, now);
++    const payload = { version: "skater-rolling-14d-participation-bundle-v1", expiresAt: "2026-10-15T18:00:00Z", entries: [] };
++    const rolling = { ...plan.rows[0], id: "00000000-0000-4000-8000-0000000000aa", dataset_key: payload.version,
++      entity_kind: "participation_bundle", payload, payload_hash: hash(payload) };
++    const withRolling = { ...plan, rows: [...plan.rows, rolling] }, pin = `${rolling.id}:${rolling.payload_hash}`;
++    const observation = prepareNativeCatalogObservation({ plan: withRolling, observationId: ids[1], issuedAt: now.toISOString(),
++      pins: { ...validation.proposedPins, PLAYER_FORECAST_ROLLING_14D_SKATER_PARTICIPATION_RELEASES: pin } });
++    expect((observation.payload as any).pins.PLAYER_FORECAST_ROLLING_14D_SKATER_PARTICIPATION_RELEASES).toBe(pin);
++    expect((observation.payload as any).releases).toContainEqual({ id: rolling.id, payloadHash: rolling.payload_hash, dataset: payload.version });
++    expect(() => prepareNativeCatalogObservation({ plan: withRolling, observationId: ids[1], issuedAt: now.toISOString(),
++      pins: { ...validation.proposedPins, PLAYER_FORECAST_ROLLING_14D_GOALIE_START_RELEASES: pin } })).toThrow("pin/hash mismatch");
++  });
+   it("atomically selects all four exact pinsets and resolves them once without weakening native admission", async () => {
+     const plan = nativeFixture(now.toISOString()), validation = await validateNativeBaselinePublication(plan, now), db = database(plan.rows);
+     const observation = prepareNativeCatalogObservation({ plan, pins: validation.proposedPins, observationId: ids[1], issuedAt: now.toISOString() });
+     const selection = await advanceNativeCatalogHead({ db: db.db, headId: ids[0], expectedRevision: 0, expectedHash: null, observation, now, dryRun: false });
+     expect(selection).toMatchObject({ status: "selected", selectedCatalogUpdated: true });
+-    const resolved = await resolveNativeCatalogEnvironment(db.db, plan.seasonId, now, { PLAYER_FORECAST_NATIVE_CATALOG_HEAD_ID: ids[0], PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES: "stale" });
++    const resolved = await resolveNativeCatalogEnvironment(db.db, plan.seasonId, now, { PLAYER_FORECAST_NATIVE_CATALOG_HEAD_ID: ids[0],
++      PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES: "stale", PLAYER_FORECAST_ROLLING_14D_SKATER_PARTICIPATION_RELEASES: "stale" });
+     expect(resolved.selection?.revision).toBe(1); expect(resolved.environment.PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES).toBe("");
++    // A selection without the added rolling groups keeps its original shape and still clears their stale pins.
++    expect(Object.keys((observation.payload as any).pins)).toEqual(NATIVE_CATALOG_PIN_KEYS.slice(0, 4));
++    expect(resolved.environment.PLAYER_FORECAST_ROLLING_14D_SKATER_PARTICIPATION_RELEASES).toBe("");
+     expect((await loadNativeContributionBundle(db.db, plan.seasonId, now, { environment: resolved.environment })).sources.length).toBeGreaterThan(0);
+     const stale = await advanceNativeCatalogHead({ db: db.db, headId: ids[0], expectedRevision: 0, expectedHash: null, observation: { ...observation, id: "00000000-0000-4000-8000-000000000009" }, now, dryRun: false });
+     // Same immutable semantic tuple under a fresh UUID is rejected before CAS, so selection stays unacknowledged.
+diff --git a/web/lib/player-forecasts/nativeBaselinePublication.ts b/web/lib/player-forecasts/nativeBaselinePublication.ts
+index 1d48011..ecf2e26 100644
+--- a/web/lib/player-forecasts/nativeBaselinePublication.ts
++++ b/web/lib/player-forecasts/nativeBaselinePublication.ts
+@@ -3,9 +3,11 @@ import { capturePlayerForecastSourceObservation, matchesPlannedObservation, play
+   SOURCE_OBSERVATION_COLUMNS, validPlannedObservationId, type PlannedSourceObservation } from "./sourceSnapshot";
+ import { persistContributionBundle } from "./contributionStore";
+ import { loadNativeContributionBundle } from "./nativeContributionAdmission";
+-import { loadModeledSkaterParticipation, loadFrozenWindowSkaterParticipation, loadRosterObservationSkaterParticipation } from "./modeledSkaterParticipationStore";
++import { loadModeledSkaterParticipation, loadFrozenWindowSkaterParticipation, loadRosterObservationSkaterParticipation,
++  loadRollingWindowSkaterParticipation } from "./modeledSkaterParticipationStore";
+ import { loadModeledGoalieParticipation, loadFrozenWindowGoalieParticipation, loadFrozenWindowGoalieStarts,
+-  loadRosterObservationGoalieParticipation, loadRosterObservationGoalieStarts } from "./modeledGoalieParticipationStore";
++  loadRosterObservationGoalieParticipation, loadRosterObservationGoalieStarts, loadRollingWindowGoalieParticipation,
++  loadRollingWindowGoalieStarts } from "./modeledGoalieParticipationStore";
+ import { timestampMicros } from "../projections/evidenceTime";
+ 
+ // Actual complete six-policy/three-method selection measured 35,355,173 bytes.
+@@ -23,6 +25,9 @@ const participationMethods = [
+   ["goalie-frozen-window-start-bundle-v1", "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_START_RELEASES", loadFrozenWindowGoalieStarts],
+   ["goalie-roster-observation-participation-bundle-v1", "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_PARTICIPATION_RELEASES", loadRosterObservationGoalieParticipation],
+   ["goalie-roster-observation-start-bundle-v1", "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES", loadRosterObservationGoalieStarts],
++  ["skater-rolling-14d-participation-bundle-v1", "PLAYER_FORECAST_ROLLING_14D_SKATER_PARTICIPATION_RELEASES", loadRollingWindowSkaterParticipation],
++  ["goalie-rolling-14d-participation-bundle-v1", "PLAYER_FORECAST_ROLLING_14D_GOALIE_PARTICIPATION_RELEASES", loadRollingWindowGoalieParticipation],
++  ["goalie-rolling-14d-start-bundle-v1", "PLAYER_FORECAST_ROLLING_14D_GOALIE_START_RELEASES", loadRollingWindowGoalieStarts],
+ ] as const;
+ const kinds: Record<string, string> = { "baseline-inputs-v1": "player", "goalie-baseline-inputs-v1": "player",
+   "baseline-evaluation-policy-v1": "baseline_evaluation_policy", "baseline-validation-review-v1": "baseline_validation_review",
+diff --git a/web/lib/player-forecasts/nativeCadenceOutputPreparation.ts b/web/lib/player-forecasts/nativeCadenceOutputPreparation.ts
+index fbc4e2c..244a4d6 100644
+--- a/web/lib/player-forecasts/nativeCadenceOutputPreparation.ts
++++ b/web/lib/player-forecasts/nativeCadenceOutputPreparation.ts
+@@ -6,6 +6,8 @@ import { PRIOR_APPEARANCE_POLICY_VERSION } from "./baselineRates";
+ import { verifyBaselineHistoricalSources } from "./baselineSourceLineage";
+ import { buildRosterObservationSkaterParticipationReceipt } from "./modeledSkaterParticipation";
+ import { buildRosterObservationGoalieParticipationReceipt, buildRosterObservationGoalieStartReceipt } from "./modeledGoalieParticipation";
++import { buildRollingWindowGoalieParticipationReceipt, buildRollingWindowGoalieStartReceipt,
++  buildRollingWindowSkaterParticipationReceipt } from "./rollingWindowParticipation";
+ import { contributionBundleCandidateInputHash, contributionBundleChecksum, persistContributionBundle } from "./contributionStore";
+ import { SKATER_PARTICIPATION_RELEASE_LIMITS } from "./modeledSkaterParticipationStore";
+ import { nativeCadenceClosureScope, nativeCadenceInputManifest, publishObservedNativeBaselineCadence } from "./nativeBaselineCadence";
+@@ -41,7 +43,10 @@ const goalieBuilders: Record<string, (input: any) => any> = {
+ const participationBuilders: Record<string, (input: any, clocks: { issuedAt: string; expiresAt: string }) => any> = {
+   "skater-roster-observation-participation-bundle-v1": buildRosterObservationSkaterParticipationReceipt,
+   "goalie-roster-observation-participation-bundle-v1": buildRosterObservationGoalieParticipationReceipt,
+-  "goalie-roster-observation-start-bundle-v1": buildRosterObservationGoalieStartReceipt };
++  "goalie-roster-observation-start-bundle-v1": buildRosterObservationGoalieStartReceipt,
++  "skater-rolling-14d-participation-bundle-v1": buildRollingWindowSkaterParticipationReceipt,
++  "goalie-rolling-14d-participation-bundle-v1": buildRollingWindowGoalieParticipationReceipt,
++  "goalie-rolling-14d-start-bundle-v1": buildRollingWindowGoalieStartReceipt };
+ // Leaves headroom under the 8 MiB publication row bound for the envelope and metadata;
+ // bundles also stay within the participation stores' per-bundle entry cap.
+ const DAILY_PARTICIPATION_BUNDLE_BYTES = 7 * 1024 * 1024;
+diff --git a/web/lib/player-forecasts/nativeCatalogHead.ts b/web/lib/player-forecasts/nativeCatalogHead.ts
+index e4bcbbd..09a7c02 100644
+--- a/web/lib/player-forecasts/nativeCatalogHead.ts
++++ b/web/lib/player-forecasts/nativeCatalogHead.ts
+@@ -6,19 +6,26 @@ import { capturePlayerForecastSourceObservation, playerForecastSourcePayloadHash
+   SOURCE_OBSERVATION_COLUMNS, validPlannedObservationId, verifyPlannedObservation, type PlannedSourceObservation } from "./sourceSnapshot";
+ 
+ export const NATIVE_CATALOG_PIN_KEYS = ["PLAYER_FORECAST_BASELINE_RELEASE_IDS", "PLAYER_FORECAST_ROSTER_OBSERVATION_SKATER_PARTICIPATION_RELEASES",
+-  "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_PARTICIPATION_RELEASES", "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES"] as const;
++  "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_PARTICIPATION_RELEASES", "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES",
++  "PLAYER_FORECAST_ROLLING_14D_SKATER_PARTICIPATION_RELEASES", "PLAYER_FORECAST_ROLLING_14D_GOALIE_PARTICIPATION_RELEASES",
++  "PLAYER_FORECAST_ROLLING_14D_GOALIE_START_RELEASES"] as const;
++/** Groups added after the first published selections. Absent means nothing selected, so earlier
++ * heads still parse and hash unchanged, and a selection without them is byte-identical to before. */
++const ADDED_PIN_KEYS = new Set<string>(NATIVE_CATALOG_PIN_KEYS.slice(4));
+ const legacyKeys = ["PLAYER_FORECAST_PARTICIPATION_RELEASES", "PLAYER_FORECAST_GOALIE_PARTICIPATION_RELEASES",
+   "PLAYER_FORECAST_FROZEN_WINDOW_SKATER_PARTICIPATION_RELEASES", "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_PARTICIPATION_RELEASES", "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_START_RELEASES"];
+ const emptyPins = Object.fromEntries([...NATIVE_CATALOG_PIN_KEYS, ...legacyKeys].map(key => [key, ""]));
+ export function unavailableNativeCatalogEnvironment(environment: Record<string, string | undefined>) {
+   return { environment: Object.freeze({ ...environment, ...emptyPins }), selection: null, limitation: "native_catalog_head_unavailable_or_invalid" };
+ }
+-const datasets = ["contribution-bundle-v1", "skater-roster-observation-participation-bundle-v1", "goalie-roster-observation-participation-bundle-v1", "goalie-roster-observation-start-bundle-v1"];
++const datasets = ["contribution-bundle-v1", "skater-roster-observation-participation-bundle-v1", "goalie-roster-observation-participation-bundle-v1", "goalie-roster-observation-start-bundle-v1",
++  "skater-rolling-14d-participation-bundle-v1", "goalie-rolling-14d-participation-bundle-v1", "goalie-rolling-14d-start-bundle-v1"];
+ const time = (value: unknown) => typeof value === "string" ? Number(timestampMicros(value) ?? NaN) : NaN;
+ const selectionVersion = "native-catalog-selection-v1";
+ const uuid = z.string().refine(validPlannedObservationId), digest = z.string().regex(/^[a-f0-9]{64}$/), clock = z.string().refine(value => Number.isFinite(time(value)));
+ const selectionShape = z.object({ version: z.literal(selectionVersion), seasonId: z.number().int().positive(), issuedAt: clock, expiresAt: clock,
+-  packageHash: digest, pins: z.object(Object.fromEntries(NATIVE_CATALOG_PIN_KEYS.map(key => [key, z.string()])) as Record<typeof NATIVE_CATALOG_PIN_KEYS[number], z.ZodString>).strict(),
++  packageHash: digest, pins: z.object(Object.fromEntries(NATIVE_CATALOG_PIN_KEYS.map(key => [key, ADDED_PIN_KEYS.has(key) ? z.string().optional() : z.string()])) as
++    Record<typeof NATIVE_CATALOG_PIN_KEYS[number], z.ZodString | z.ZodOptional<z.ZodString>>).strict(),
+   releases: z.array(z.object({ id: uuid, payloadHash: digest, dataset: z.string() }).strict()).min(1).max(32) }).strict();
+ export type NativeCatalogSelection = z.infer<typeof selectionShape>;
+ export type NativeCatalogHead = { id: string; season_id: number; revision: number; observation_id: string; payload_hash: string; selected_at: string };
+@@ -30,7 +37,7 @@ function validateSelection(value: unknown, seasonId: number, now: Date): NativeC
+     || new Set(selection.releases.map(row => row.id)).size !== selection.releases.length) throw new Error("Invalid native catalog selection.");
+   const expected: NativeCatalogSelection["releases"] = [];
+   for (const [index, key] of NATIVE_CATALOG_PIN_KEYS.entries()) {
+-    for (const entry of selection.pins[key].split(",").filter(Boolean)) {
++    for (const entry of (selection.pins[key] ?? "").split(",").filter(Boolean)) {
+       const parts = entry.split(":");
+       const release = selection.releases.find(row => row.id === parts[0]);
+       if (!release || release.dataset !== datasets[index] || (index === 0 ? parts.length !== 1 : parts.length !== 2 || parts[1] !== release.payloadHash)) throw new Error("Native catalog pin/hash mismatch.");
+@@ -97,8 +104,9 @@ export function prepareNativeCatalogObservation(args: { plan: { seasonId: number
+   observationId: string; issuedAt: string }) {
+   if (!validPlannedObservationId(args.observationId)) throw new Error("Invalid catalog observation ID.");
+   if (Object.keys(args.pins).some(key => !NATIVE_CATALOG_PIN_KEYS.includes(key as typeof NATIVE_CATALOG_PIN_KEYS[number]))) throw new Error("Unsupported catalog pin group.");
+-  const pins = Object.fromEntries(NATIVE_CATALOG_PIN_KEYS.map(key => [key, args.pins[key] ?? ""])) as NativeCatalogSelection["pins"];
+-  const selected = new Set(Object.values(pins).flatMap(value => value.split(",").filter(Boolean).map(value => value.split(":")[0])));
++  const pins = Object.fromEntries(NATIVE_CATALOG_PIN_KEYS.flatMap(key => ADDED_PIN_KEYS.has(key) && !args.pins[key] ? []
++    : [[key, args.pins[key] ?? ""]])) as NativeCatalogSelection["pins"];
++  const selected = new Set(Object.values(pins).flatMap(value => (value ?? "").split(",").filter(Boolean).map(value => value.split(":")[0])));
+   const rows = args.plan.rows.filter(row => selected.has(row.id));
+   const expiries = rows.map(row => { const value = row.payload as any; return value.manifest?.expiresAt ?? value.expiresAt; }).sort((a, b) => time(a) - time(b));
+   const payload = validateSelection({ version: selectionVersion, seasonId: args.plan.seasonId, issuedAt: args.issuedAt, expiresAt: expiries[0], packageHash: hash(args.plan), pins,
+diff --git a/web/lib/player-forecasts/nativeInputMaterialization.ts b/web/lib/player-forecasts/nativeInputMaterialization.ts
+index 907c4a4..3f7835a 100644
+--- a/web/lib/player-forecasts/nativeInputMaterialization.ts
++++ b/web/lib/player-forecasts/nativeInputMaterialization.ts
+@@ -10,12 +10,15 @@ import { verifyBaselineHistoricalSources } from "./baselineSourceLineage";
+ import { buildRosterObservationSkaterParticipationReceipt, type RosterObservationSkaterParticipationInput } from "./modeledSkaterParticipation";
+ import { buildRosterObservationGoalieParticipationReceipt, buildRosterObservationGoalieStartReceipt,
+   type RosterObservationGoalieParticipationInput, type RosterObservationGoalieStartInput } from "./modeledGoalieParticipation";
++import { buildRollingWindowGoalieParticipationReceipt, buildRollingWindowGoalieStartReceipt, buildRollingWindowSkaterParticipationReceipt,
++  type RollingWindowGoalieParticipationInput, type RollingWindowGoalieStartInput, type RollingWindowSkaterParticipationInput } from "./rollingWindowParticipation";
+ import { withinDeadline } from "../rosterScheduleData/planningInputs";
+ import { timestampMicros } from "../projections/evidenceTime";
+ import { capturePlayerForecastSourceObservation, matchesPlannedObservation, SOURCE_OBSERVATION_COLUMNS,
+   playerForecastSourcePayloadHash as hash, validPlannedObservationId, type PlannedSourceObservation } from "./sourceSnapshot";
+ 
+-type ParticipationInput = RosterObservationSkaterParticipationInput | RosterObservationGoalieParticipationInput | RosterObservationGoalieStartInput;
++type ParticipationInput = RosterObservationSkaterParticipationInput | RosterObservationGoalieParticipationInput | RosterObservationGoalieStartInput
++  | RollingWindowSkaterParticipationInput | RollingWindowGoalieParticipationInput | RollingWindowGoalieStartInput;
+ type ParentIdentity = { id: string; hash: string; availableAt: string; capturedAt: string };
+ export type NativeMaterializationParent = ParentIdentity & (
+   { original: { url: string; rawBody: string; bodySha256: string }; derived?: never }
+@@ -229,11 +232,17 @@ export function prepareNativeInputMaterialization(request: NativeMaterialization
+     const clocks = { issuedAt: closedAt, expiresAt: new Date(new Date(closedAt).getTime() + 1).toISOString() };
+     const dataset = input.version === "skater-roster-observation-participation-input-v1" ? "skater-roster-observation-participation-bundle-v1"
+       : input.version === "goalie-roster-observation-participation-input-v1" ? "goalie-roster-observation-participation-bundle-v1"
+-        : input.version === "goalie-roster-observation-start-input-v1" ? "goalie-roster-observation-start-bundle-v1" : null;
++        : input.version === "goalie-roster-observation-start-input-v1" ? "goalie-roster-observation-start-bundle-v1"
++          : input.version === "skater-rolling-14d-participation-input-v1" ? "skater-rolling-14d-participation-bundle-v1"
++            : input.version === "goalie-rolling-14d-participation-input-v1" ? "goalie-rolling-14d-participation-bundle-v1"
++              : input.version === "goalie-rolling-14d-start-input-v1" ? "goalie-rolling-14d-start-bundle-v1" : null;
+     if (!dataset) throw new Error("Unsupported materialized participation method.");
+     if (input.version === "skater-roster-observation-participation-input-v1") buildRosterObservationSkaterParticipationReceipt(input, clocks);
+     else if (input.version === "goalie-roster-observation-participation-input-v1") buildRosterObservationGoalieParticipationReceipt(input, clocks);
+-    else buildRosterObservationGoalieStartReceipt(input, clocks);
++    else if (input.version === "goalie-roster-observation-start-input-v1") buildRosterObservationGoalieStartReceipt(input, clocks);
++    else if (input.version === "skater-rolling-14d-participation-input-v1") buildRollingWindowSkaterParticipationReceipt(input, clocks);
++    else if (input.version === "goalie-rolling-14d-participation-input-v1") buildRollingWindowGoalieParticipationReceipt(input, clocks);
++    else buildRollingWindowGoalieStartReceipt(input, clocks);
+     items.push({ key: `${dataset}:${input.scope.playerId}:${input.scope.gameId}`, hash: hash(input), availableAt: input.cutoffAt });
+     const group = groups.get(dataset) ?? []; group.push(input); groups.set(dataset, group);
+   }
+diff --git a/web/lib/player-forecasts/planningContributions.test.ts b/web/lib/player-forecasts/planningContributions.test.ts
+index 3872c70..3334b99 100644
+--- a/web/lib/player-forecasts/planningContributions.test.ts
++++ b/web/lib/player-forecasts/planningContributions.test.ts
+@@ -53,7 +53,8 @@ function modeledParticipation(): ContributionParticipation {
+ 
+ describe("independent modeled participation catalog", () => {
+   const nativeRate = { ...rate, policyVersion: "skater-baseline-rates-v1" };
+-  it.each(["skater-participation-frequency-v1", "skater-frozen-window-appearance-frequency-v1", "skater-roster-observation-appearance-frequency-v1"] as const)
++  it.each(["skater-participation-frequency-v1", "skater-frozen-window-appearance-frequency-v1", "skater-roster-observation-appearance-frequency-v1",
++    "skater-rolling-14d-appearance-frequency-v1"] as const)
+   ("admits current-appearance skater means with %s without weakening participation gates", version => {
+     const data = fixture([{ ...nativeRate, policyVersion: "current-appearance-skater-rates-v1" }]);
+     data.participationSources = [modeledParticipation()];
+@@ -70,7 +71,8 @@ describe("independent modeled participation catalog", () => {
+   });
+   it.each(["native-goalie-appearance-win-rates-v1", "native-goalie-appearance-volume-rates-v1",
+     "native-goalie-appearance-shutout-rates-v1"].flatMap(policyVersion =>
+-    (["goalie-appearance-frequency-v1", "goalie-frozen-window-appearance-frequency-v1", "goalie-roster-observation-appearance-frequency-v1"] as const)
++    (["goalie-appearance-frequency-v1", "goalie-frozen-window-appearance-frequency-v1", "goalie-roster-observation-appearance-frequency-v1",
++      "goalie-rolling-14d-appearance-frequency-v1"] as const)
+       .map(version => ({ policyVersion, version }))))("uses $version with $policyVersion, keeping starts separate", ({ policyVersion, version }) => {
+     const goalieRate = { ...rate, policyVersion, targetKey: policyVersion.includes("win") ? "WINS_GOALIE"
+       : policyVersion.includes("shutout") ? "SHUTOUTS_GOALIE" : "SAVES_GOALIE" };
+diff --git a/web/lib/player-forecasts/planningContributions.ts b/web/lib/player-forecasts/planningContributions.ts
+index 348b9ec..fe89304 100644
+--- a/web/lib/player-forecasts/planningContributions.ts
++++ b/web/lib/player-forecasts/planningContributions.ts
+@@ -217,8 +217,10 @@ export function resolvePlanningContributions(snapshot: ContributionPlanningSnaps
+         if (!participation) {
+           const candidate = catalogParticipation(snapshot.participationSources, identity);
+           if (candidate?.model && (player.playerClass === "goalie"
+-            ? ["goalie-appearance-frequency-v1", "goalie-frozen-window-appearance-frequency-v1", "goalie-roster-observation-appearance-frequency-v1"]
+-            : ["skater-participation-frequency-v1", "skater-frozen-window-appearance-frequency-v1", "skater-roster-observation-appearance-frequency-v1"]).includes(candidate.model.version)
++            ? ["goalie-appearance-frequency-v1", "goalie-frozen-window-appearance-frequency-v1", "goalie-roster-observation-appearance-frequency-v1",
++              "goalie-rolling-14d-appearance-frequency-v1"]
++            : ["skater-participation-frequency-v1", "skater-frozen-window-appearance-frequency-v1", "skater-roster-observation-appearance-frequency-v1",
++              "skater-rolling-14d-appearance-frequency-v1"]).includes(candidate.model.version)
+             && (!snapshot.forecastManifest?.participationRevisionIds
+             || snapshot.forecastManifest.participationRevisionIds.includes(candidate.revisionId))) participation = candidate;
+         }
+diff --git a/web/lib/player-forecasts/rollingWindowParticipation.test.ts b/web/lib/player-forecasts/rollingWindowParticipation.test.ts
+index 04b0e95..dff3349 100644
+--- a/web/lib/player-forecasts/rollingWindowParticipation.test.ts
++++ b/web/lib/player-forecasts/rollingWindowParticipation.test.ts
+@@ -1,5 +1,5 @@
+ // @vitest-environment node
+-import { describe, expect, it } from "vitest";
++import { describe, expect, it, vi } from "vitest";
+ import { createHash } from "node:crypto";
+ import { buildRosterObservationSkaterParticipationReceipt, type RosterObservationSkaterParticipationInput } from "./modeledSkaterParticipation";
+ import { buildRosterObservationGoalieParticipationReceipt, buildRosterObservationGoalieStartReceipt,
+@@ -8,6 +8,9 @@ import { buildRollingWindowGoalieParticipationReceipt, buildRollingWindowGoalieS
+   rollingParticipationWindow, type RollingWindowGoalieStartInput, type RollingWindowSkaterParticipationInput } from "./rollingWindowParticipation";
+ import { ROSTER_CONTINUATION_ASSUMPTION } from "./targetRosterObservation";
+ import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
++import { loadRollingWindowSkaterParticipation, ROLLING_WINDOW_SKATER_PARTICIPATION_DATASET } from "./modeledSkaterParticipationStore";
++import { loadRollingWindowGoalieParticipation, loadRollingWindowGoalieStarts, ROLLING_WINDOW_GOALIE_PARTICIPATION_DATASET,
++  ROLLING_WINDOW_GOALIE_START_DATASET } from "./modeledGoalieParticipationStore";
+ 
+ const HOUR = 3600000;
+ const digest = (value: string) => createHash("sha256").update(value).digest("hex");
+@@ -223,3 +226,38 @@ describe("rolling goalie relief versus start", () => {
+       clocks(value.cutoffAt))).toThrow("rolling-window goalie participation");
+   });
+ });
++
++describe("rolling-window release stores", () => {
++  const cases = [
++    { kind: "skater", dataset: ROLLING_WINDOW_SKATER_PARTICIPATION_DATASET, env: "PLAYER_FORECAST_ROLLING_14D_SKATER_PARTICIPATION_RELEASES",
++      legacy: "PLAYER_FORECAST_ROSTER_OBSERVATION_SKATER_PARTICIPATION_RELEASES", load: loadRollingWindowSkaterParticipation,
++      entry: () => { const value = skater(input()); return { input: value, receipt: buildRollingWindowSkaterParticipationReceipt(value, clocks(value.cutoffAt)) }; },
++      basis: "appearance", version: "skater-rolling-14d-appearance-frequency-v1", probability: 2 / 3 },
++    { kind: "goalie", dataset: ROLLING_WINDOW_GOALIE_PARTICIPATION_DATASET, env: "PLAYER_FORECAST_ROLLING_14D_GOALIE_PARTICIPATION_RELEASES",
++      legacy: "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_PARTICIPATION_RELEASES", load: loadRollingWindowGoalieParticipation,
++      entry: () => { const value = { ...input(), version: "goalie-rolling-14d-participation-input-v1" as const };
++        return { input: value, receipt: buildRollingWindowGoalieParticipationReceipt(value, clocks(value.cutoffAt)) }; },
++      basis: "appearance", version: "goalie-rolling-14d-appearance-frequency-v1", probability: 2 / 3 },
++    { kind: "start", dataset: ROLLING_WINDOW_GOALIE_START_DATASET, env: "PLAYER_FORECAST_ROLLING_14D_GOALIE_START_RELEASES",
++      legacy: "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES", load: loadRollingWindowGoalieStarts,
++      entry: () => { const value = input(); return { input: value, receipt: buildRollingWindowGoalieStartReceipt(value, clocks(value.cutoffAt)) }; },
++      basis: "start", version: "goalie-rolling-14d-start-frequency-v1", probability: 1 / 3 },
++  ] as const;
++  it.each(cases)("admits only exact $kind bundles under their own allowlist", async ({ dataset, env, legacy, load, entry, basis, version, probability }) => {
++    const issuance = clocks(input().cutoffAt), payload = { version: dataset, seasonId: 20262027, ...issuance, released: true,
++      ownerApprovalRef: "synthetic-owner", reviewRef: "synthetic-review", entries: [entry()],
++      allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false } };
++    const id = "11111111-1111-4111-8111-111111111111", row = { id, provider: "fhfh", dataset_key: dataset, entity_kind: "participation_bundle",
++      entity_key: "20262027", available_at: issuance.issuedAt, payload_hash: playerForecastSourcePayloadHash(payload), payload };
++    const reply = Promise.resolve({ data: [row], error: null });
++    const chain: any = new Proxy({}, { get: (_, key) => key === "then" ? reply.then.bind(reply) : () => chain });
++    const db = { from: vi.fn(() => chain) }, at = new Date(issuance.issuedAt);
++    expect((await load(db as never, 20262027, at, { environment: { [legacy]: `${id}:${row.payload_hash}` } })).sources).toEqual([]);
++    expect(db.from).not.toHaveBeenCalled();
++    expect((await load(db as never, 20262027, at, { environment: { [env]: `${id}:${row.payload_hash}` } })).sources[0])
++      .toMatchObject({ basis, probability, model: { version } });
++    (row.payload.entries[0].receipt as { numerator: number }).numerator = 3;
++    row.payload_hash = playerForecastSourcePayloadHash(row.payload);
++    expect((await load(db as never, 20262027, at, { environment: { [env]: `${id}:${row.payload_hash}` } })).sources).toEqual([]);
++  });
++});
+diff --git a/web/lib/projections/startChartContract.ts b/web/lib/projections/startChartContract.ts
+index d9dc8f3..e1334e7 100644
+--- a/web/lib/projections/startChartContract.ts
++++ b/web/lib/projections/startChartContract.ts
+@@ -221,11 +221,13 @@ const stringOrNull = (value: unknown): string | null =>
+ function normalizeParticipationModel(value: unknown, totalsAllowed: boolean): StartChartParticipation["model"] {
+   const model = asRecord(value);
+   const start = model.version === "goalie-frozen-window-start-frequency-v1"
+-    || model.version === "goalie-roster-observation-start-frequency-v1";
++    || model.version === "goalie-roster-observation-start-frequency-v1" || model.version === "goalie-rolling-14d-start-frequency-v1";
+   if (!["skater-participation-frequency-v1", "goalie-appearance-frequency-v1",
+     "skater-frozen-window-appearance-frequency-v1", "goalie-frozen-window-appearance-frequency-v1",
+     "goalie-frozen-window-start-frequency-v1", "skater-roster-observation-appearance-frequency-v1",
+-    "goalie-roster-observation-appearance-frequency-v1", "goalie-roster-observation-start-frequency-v1"].includes(model.version)
++    "goalie-roster-observation-appearance-frequency-v1", "goalie-roster-observation-start-frequency-v1",
++    "skater-rolling-14d-appearance-frequency-v1", "goalie-rolling-14d-appearance-frequency-v1",
++    "goalie-rolling-14d-start-frequency-v1"].includes(model.version)
+     || model.event !== (start ? "official_starter" : "positive_minutes")
+     || model.probabilityStatus !== "uncalibrated_model" || model.calibration !== "unavailable"
+     || !stringOrNull(model.inputHash)) return undefined;
+diff --git a/web/lib/rosterScheduleData/planning.test.ts b/web/lib/rosterScheduleData/planning.test.ts
+index 7ce06c2..a546e77 100644
+--- a/web/lib/rosterScheduleData/planning.test.ts
++++ b/web/lib/rosterScheduleData/planning.test.ts
+@@ -23,6 +23,10 @@ import { acceptedNewsSupersedes, loadAcceptedForecastNews } from "lib/projection
+ import { timestampMicros } from "lib/projections/evidenceTime";
+ 
+ import { ROSTER_CONTINUATION_ASSUMPTION } from "lib/player-forecasts/targetRosterObservation";
++import { buildRollingWindowGoalieParticipationReceipt, buildRollingWindowGoalieStartReceipt, buildRollingWindowSkaterParticipationReceipt,
++  rollingParticipationWindow } from "lib/player-forecasts/rollingWindowParticipation";
++import { ROLLING_WINDOW_GOALIE_PARTICIPATION_DATASET, ROLLING_WINDOW_GOALIE_START_DATASET } from "lib/player-forecasts/modeledGoalieParticipationStore";
++import { ROLLING_WINDOW_SKATER_PARTICIPATION_DATASET } from "lib/player-forecasts/modeledSkaterParticipationStore";
+ import { fetchBoundedNhlSchedule } from "./source";
+ import { normalizeNhlGameToTeamRows } from "./normalize";
+ 
+@@ -149,9 +153,9 @@ describe("public RSO data boundary", () => {
+   const publicQuery = { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-11" };
+   const publicOptions = { now: new Date("2026-10-10T12:00:00Z"), forecastsEnabled: false };
+ 
+-  it.each(["frozen", "roster observation"].flatMap(family => ["skater", "goalie", "start"].map(kind => ({ family, kind }))))
++  it.each(["frozen", "roster observation", "rolling"].flatMap(family => ["skater", "goalie", "start"].map(kind => ({ family, kind }))))
+   ("loads and revokes the separately approved $family $kind catalog", async ({ family, kind }) => {
+-    const observed = family === "roster observation";
++    const observed = family === "roster observation", rolling = family === "rolling";
+     const { db, tables } = formDb([], []);
+     const evidence = { id: "synthetic-frozen-source", hash: "a".repeat(64),
+       availableAt: "2026-10-16T09:00:00Z", capturedAt: "2026-10-16T09:00:00Z" };
+@@ -168,7 +172,14 @@ describe("public RSO data boundary", () => {
+     const clocks = { issuedAt: "2026-10-16T11:00:00Z", expiresAt: "2026-10-16T18:00:00Z" };
+     const observation = { playerId: 7, nhlPlayerId: 847001, teamId: 1, seasonId: 20262027, listed: true,
+       sourceKind: "official_season_roster" as const, knownConflict: null, evidence, continuationAssumptionVersion: ROSTER_CONTINUATION_ASSUMPTION };
+-    const input = observed ? kind === "skater"
++    const window = rollingParticipationWindow(common.cutoffAt);
++    const rollingCommon = { ...common, targetRosterObservation: observation,
++      history: { ...common.history, windowStartAt: window.startAt, windowEndAt: window.endAt } };
++    const input = rolling ? kind === "skater"
++      ? { ...rollingCommon, playerClass: "skater" as const, version: "skater-rolling-14d-participation-input-v1" as const }
++      : kind === "start" ? { ...rollingCommon, playerClass: "goalie" as const, version: "goalie-rolling-14d-start-input-v1" as const }
++      : { ...rollingCommon, playerClass: "goalie" as const, version: "goalie-rolling-14d-participation-input-v1" as const }
++      : observed ? kind === "skater"
+       ? { ...common, targetRosterObservation: observation, playerClass: "skater" as const, version: "skater-roster-observation-participation-input-v1" as const }
+       : kind === "start" ? { ...common, targetRosterObservation: observation, playerClass: "goalie" as const, version: "goalie-roster-observation-start-input-v1" as const }
+       : { ...common, targetRosterObservation: observation, playerClass: "goalie" as const, version: "goalie-roster-observation-participation-input-v1" as const }
+@@ -184,13 +195,20 @@ describe("public RSO data boundary", () => {
+         case "skater-frozen-window-participation-input-v1": return buildFrozenWindowSkaterParticipationReceipt(input, clocks);
+         case "goalie-frozen-window-start-input-v1": return buildFrozenWindowGoalieStartReceipt(input, clocks);
+         case "goalie-frozen-window-participation-input-v1": return buildFrozenWindowGoalieParticipationReceipt(input, clocks);
++        case "skater-rolling-14d-participation-input-v1": return buildRollingWindowSkaterParticipationReceipt(input, clocks);
++        case "goalie-rolling-14d-participation-input-v1": return buildRollingWindowGoalieParticipationReceipt(input, clocks);
++        case "goalie-rolling-14d-start-input-v1": return buildRollingWindowGoalieStartReceipt(input, clocks);
+       }
+     })();
+-    const dataset = observed ? kind === "start" ? ROSTER_OBSERVATION_GOALIE_START_DATASET
++    const dataset = rolling ? kind === "start" ? ROLLING_WINDOW_GOALIE_START_DATASET
++      : kind === "skater" ? ROLLING_WINDOW_SKATER_PARTICIPATION_DATASET : ROLLING_WINDOW_GOALIE_PARTICIPATION_DATASET
++      : observed ? kind === "start" ? ROSTER_OBSERVATION_GOALIE_START_DATASET
+       : kind === "skater" ? ROSTER_OBSERVATION_SKATER_PARTICIPATION_DATASET : ROSTER_OBSERVATION_GOALIE_PARTICIPATION_DATASET
+       : kind === "start" ? FROZEN_WINDOW_GOALIE_START_DATASET
+       : kind === "skater" ? FROZEN_WINDOW_SKATER_PARTICIPATION_DATASET : FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASET;
+-    const env = observed ? kind === "start" ? "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES"
++    const env = rolling ? kind === "start" ? "PLAYER_FORECAST_ROLLING_14D_GOALIE_START_RELEASES"
++      : `PLAYER_FORECAST_ROLLING_14D_${kind.toUpperCase()}_PARTICIPATION_RELEASES`
++      : observed ? kind === "start" ? "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES"
+       : `PLAYER_FORECAST_ROSTER_OBSERVATION_${kind.toUpperCase()}_PARTICIPATION_RELEASES`
+       : kind === "start" ? "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_START_RELEASES"
+       : `PLAYER_FORECAST_FROZEN_WINDOW_${kind.toUpperCase()}_PARTICIPATION_RELEASES`;
+@@ -208,14 +226,18 @@ describe("public RSO data boundary", () => {
+     expect(accepted.participationSources).toHaveLength(1);
+     const catalogChecksum = playerForecastSourcePayloadHash([[id, hash]]);
+     expect(disabled.forecastManifest?.participationChecksum).toBeNull();
+-    expect(accepted.forecastManifest?.participationChecksum).toBe(playerForecastSourcePayloadHash(observed
++    expect(accepted.forecastManifest?.participationChecksum).toBe(playerForecastSourcePayloadHash(rolling
++      ? { existing: null, rollingSkater: kind === "skater" ? catalogChecksum : null,
++        rollingGoalie: kind === "goalie" ? catalogChecksum : null, rollingGoalieStarts: kind === "start" ? catalogChecksum : null }
++      : observed
+       ? { existing: null, observedSkater: kind === "skater" ? catalogChecksum : null,
+         observedGoalie: kind === "goalie" ? catalogChecksum : null, observedGoalieStarts: kind === "start" ? catalogChecksum : null }
+       : { legacy: null, frozenSkater: kind === "skater" ? catalogChecksum : null,
+         frozenGoalie: kind === "goalie" ? catalogChecksum : null, ...(kind === "start" ? { frozenGoalieStarts: catalogChecksum } : {}) }));
+-    expect(accepted.participationSources![0].model?.version).toContain(observed ? "roster-observation" : "frozen-window");
++    expect(accepted.participationSources![0].model?.version).toContain(rolling ? "rolling-14d" : observed ? "roster-observation" : "frozen-window");
+     expect(accepted.participationSources![0].basis).toBe(kind === "start" ? "start" : "appearance");
+     if (observed) expect(accepted.evidence.participation.source).toContain("roster-observation continuation proxies");
++    if (rolling) expect(accepted.evidence.participation.source).toContain("rolling 14-day history and official roster-observation");
+     expect(accepted.forecastManifest?.participationRevisionIds).toEqual([accepted.participationSources![0].revisionId]);
+     vi.stubEnv(env, "");
+     const revoked = await loadPlanningData(db as never, publicQuery, options);
+@@ -507,7 +529,9 @@ describe("public RSO data boundary", () => {
+       "PLAYER_FORECAST_PARTICIPATION_RELEASES", "PLAYER_FORECAST_GOALIE_PARTICIPATION_RELEASES",
+       "PLAYER_FORECAST_FROZEN_WINDOW_SKATER_PARTICIPATION_RELEASES", "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_PARTICIPATION_RELEASES",
+       "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_START_RELEASES", "PLAYER_FORECAST_ROSTER_OBSERVATION_SKATER_PARTICIPATION_RELEASES",
+-      "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_PARTICIPATION_RELEASES", "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES"]) vi.stubEnv(key, id);
++      "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_PARTICIPATION_RELEASES", "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES",
++      "PLAYER_FORECAST_ROLLING_14D_SKATER_PARTICIPATION_RELEASES", "PLAYER_FORECAST_ROLLING_14D_GOALIE_PARTICIPATION_RELEASES",
++      "PLAYER_FORECAST_ROLLING_14D_GOALIE_START_RELEASES"]) vi.stubEnv(key, id);
+     const { db, calls } = cappedInputs({ hangTable: "native_forecast_catalog_heads" });
+     const pending = loadPlanningData(db as any, publicQuery, { ...publicOptions, skipOwnership: true, skipRecentForm: true })
+       .catch(error => ({ error }));
+diff --git a/web/lib/rosterScheduleData/planning.ts b/web/lib/rosterScheduleData/planning.ts
+index cc76828..06b4368 100644
+--- a/web/lib/rosterScheduleData/planning.ts
++++ b/web/lib/rosterScheduleData/planning.ts
+@@ -7,8 +7,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
+ import { playerForecastSourcePayloadHash } from "lib/player-forecasts/sourceSnapshot";
+ import { resolveNativeCatalogEnvironment, unavailableNativeCatalogEnvironment } from "lib/player-forecasts/nativeCatalogHead";
+ import { loadNativeContributionBundle } from "lib/player-forecasts/nativeContributionAdmission";
+-import { loadModeledGoalieParticipation, loadFrozenWindowGoalieParticipation, loadFrozenWindowGoalieStarts, loadRosterObservationGoalieParticipation, loadRosterObservationGoalieStarts } from "lib/player-forecasts/modeledGoalieParticipationStore";
+-import { loadModeledSkaterParticipation, loadFrozenWindowSkaterParticipation, loadRosterObservationSkaterParticipation } from "lib/player-forecasts/modeledSkaterParticipationStore";
++import { loadModeledGoalieParticipation, loadFrozenWindowGoalieParticipation, loadFrozenWindowGoalieStarts, loadRosterObservationGoalieParticipation, loadRosterObservationGoalieStarts,
++  loadRollingWindowGoalieParticipation, loadRollingWindowGoalieStarts } from "lib/player-forecasts/modeledGoalieParticipationStore";
++import { loadModeledSkaterParticipation, loadFrozenWindowSkaterParticipation, loadRosterObservationSkaterParticipation,
++  loadRollingWindowSkaterParticipation } from "lib/player-forecasts/modeledSkaterParticipationStore";
+ import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
+ import type { ForgeGameRevision } from "lib/projections/gameRevisions";
+ import { starterBoardCanaryGameIds, starterBoardFlags } from "lib/projections/starterBoardFlags";
+@@ -48,7 +50,8 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
+   const calendarPolicy = forecastCalendarPolicy(Number(process.env.STARTER_BOARD_CALENDAR_HORIZON_DAYS ?? 14));
+   const [{ players, games, scheduleRows, scheduleProblems, evidence: sources }, weeks, baseline, skaterParticipation, goalieParticipation,
+     frozenSkaterParticipation, frozenGoalieParticipation, frozenGoalieStarts,
+-    observedSkaterParticipation, observedGoalieParticipation, observedGoalieStarts] = await Promise.all([
++    observedSkaterParticipation, observedGoalieParticipation, observedGoalieStarts,
++    rollingSkaterParticipation, rollingGoalieParticipation, rollingGoalieStarts] = await Promise.all([
+     loadPlanningInputs(db, query, now, inputDeadline),
+     pages(() => db.from("yahoo_matchup_weeks").select("id,game_key,week,start_date,end_date", { count: "exact" })
+       .eq("season", String(query.seasonId).slice(0, 4)).order("week").order("id"), inputDeadline, 500).catch(() => []),
+@@ -72,6 +75,12 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
+       .catch(() => ({ sources: [], checksum: null, limitations: ["roster_observation_goalie_participation_read_unavailable"] })),
+     withinDeadline(inputDeadline, signal => loadRosterObservationGoalieStarts(db, query.seasonId, now, { signal, environment: selectedEnvironment }))
+       .catch(() => ({ sources: [], checksum: null, limitations: ["roster_observation_goalie_starts_read_unavailable"] })),
++    withinDeadline(inputDeadline, signal => loadRollingWindowSkaterParticipation(db, query.seasonId, now, { signal, environment: selectedEnvironment }))
++      .catch(() => ({ sources: [], checksum: null, limitations: ["rolling_skater_participation_read_unavailable"] })),
++    withinDeadline(inputDeadline, signal => loadRollingWindowGoalieParticipation(db, query.seasonId, now, { signal, environment: selectedEnvironment }))
++      .catch(() => ({ sources: [], checksum: null, limitations: ["rolling_goalie_participation_read_unavailable"] })),
++    withinDeadline(inputDeadline, signal => loadRollingWindowGoalieStarts(db, query.seasonId, now, { signal, environment: selectedEnvironment }))
++      .catch(() => ({ sources: [], checksum: null, limitations: ["rolling_goalie_starts_read_unavailable"] })),
+   ]);
+   // Preserve the existing skater checksum and disabled behavior when no goalie
+   // releases are admitted; goalie revisions are an independently pinned catalog.
+@@ -82,15 +91,22 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
+       frozenGoalie: frozenGoalieParticipation.checksum,
+       ...(frozenGoalieStarts.checksum ? { frozenGoalieStarts: frozenGoalieStarts.checksum } : {}) }) : legacyParticipationChecksum;
+   const observationEnabled = observedSkaterParticipation.checksum || observedGoalieParticipation.checksum || observedGoalieStarts.checksum;
++  const observedParticipationChecksum = observationEnabled ? playerForecastSourcePayloadHash({ existing: frozenParticipationChecksum,
++    observedSkater: observedSkaterParticipation.checksum, observedGoalie: observedGoalieParticipation.checksum,
++    observedGoalieStarts: observedGoalieStarts.checksum }) : frozenParticipationChecksum;
++  // Rolling catalogs extend the checksum only when admitted, so earlier manifests keep their identity.
++  const rollingEnabled = rollingSkaterParticipation.checksum || rollingGoalieParticipation.checksum || rollingGoalieStarts.checksum;
+   const participation = { sources: [...skaterParticipation.sources, ...goalieParticipation.sources,
+     ...frozenSkaterParticipation.sources, ...frozenGoalieParticipation.sources, ...frozenGoalieStarts.sources,
+-    ...observedSkaterParticipation.sources, ...observedGoalieParticipation.sources, ...observedGoalieStarts.sources],
+-    checksum: observationEnabled ? playerForecastSourcePayloadHash({ existing: frozenParticipationChecksum,
+-      observedSkater: observedSkaterParticipation.checksum, observedGoalie: observedGoalieParticipation.checksum,
+-      observedGoalieStarts: observedGoalieStarts.checksum }) : frozenParticipationChecksum,
++    ...observedSkaterParticipation.sources, ...observedGoalieParticipation.sources, ...observedGoalieStarts.sources,
++    ...rollingSkaterParticipation.sources, ...rollingGoalieParticipation.sources, ...rollingGoalieStarts.sources],
++    checksum: rollingEnabled ? playerForecastSourcePayloadHash({ existing: observedParticipationChecksum,
++      rollingSkater: rollingSkaterParticipation.checksum, rollingGoalie: rollingGoalieParticipation.checksum,
++      rollingGoalieStarts: rollingGoalieStarts.checksum }) : observedParticipationChecksum,
+     limitations: [...skaterParticipation.limitations, ...[...goalieParticipation.limitations,
+       ...frozenSkaterParticipation.limitations, ...frozenGoalieParticipation.limitations, ...frozenGoalieStarts.limitations,
+-      ...observedSkaterParticipation.limitations, ...observedGoalieParticipation.limitations, ...observedGoalieStarts.limitations]
++      ...observedSkaterParticipation.limitations, ...observedGoalieParticipation.limitations, ...observedGoalieStarts.limitations,
++      ...rollingSkaterParticipation.limitations, ...rollingGoalieParticipation.limitations, ...rollingGoalieStarts.limitations]
+       .filter(reason => reason !== "modeled_participation_serving_disabled")] };
+   const revisions: ForgeGameRevision[] = [];
+   const exclusionCounts: Record<string, number> = {};
+@@ -167,7 +183,8 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
+     forecastedOpportunities: forecasts.length, exclusionCounts, exclusions: exclusionRows };
+   if (nativeCatalog.limitation) { baseline.limitations.push(nativeCatalog.limitation); participation.limitations.push(nativeCatalog.limitation); }
+   sources.baselines = evidence("Approved contribution rate bundles", baseline.manifests.map(manifest => manifest.issuedAt).sort()[0] ?? null, query.seasonId, baseline.limitations);
+-  sources.participation = evidence(observationEnabled ? "Released modeled participation with official roster-observation continuation proxies"
++  sources.participation = evidence(rollingEnabled ? "Released modeled participation with rolling 14-day history and official roster-observation continuation proxies"
++    : observationEnabled ? "Released modeled participation with official roster-observation continuation proxies"
+     : frozenSkaterParticipation.checksum || frozenGoalieParticipation.checksum || frozenGoalieStarts.checksum
+     ? "Released modeled participation including explicit frozen history"
+     : goalieParticipation.checksum ? "Released modeled skater and goalie participation" : "Released modeled skater participation",
+diff --git a/web/lib/rosterScheduleData/planningDataTransport.ts b/web/lib/rosterScheduleData/planningDataTransport.ts
+index 1d4abac..bc120ee 100644
+--- a/web/lib/rosterScheduleData/planningDataTransport.ts
++++ b/web/lib/rosterScheduleData/planningDataTransport.ts
+@@ -22,7 +22,8 @@ const powerPlayRole = z.discriminatedUnion("status", [
+ ]);
+ const model = z.object({ version: z.enum(["skater-participation-frequency-v1", "goalie-appearance-frequency-v1",
+   "skater-frozen-window-appearance-frequency-v1", "goalie-frozen-window-appearance-frequency-v1", "goalie-frozen-window-start-frequency-v1",
+-  "skater-roster-observation-appearance-frequency-v1", "goalie-roster-observation-appearance-frequency-v1", "goalie-roster-observation-start-frequency-v1"]),
++  "skater-roster-observation-appearance-frequency-v1", "goalie-roster-observation-appearance-frequency-v1", "goalie-roster-observation-start-frequency-v1",
++  "skater-rolling-14d-appearance-frequency-v1", "goalie-rolling-14d-appearance-frequency-v1", "goalie-rolling-14d-start-frequency-v1"]),
+   event: z.enum(["positive_minutes", "official_starter"]), probabilityStatus: z.literal("uncalibrated_model"), calibration: z.literal("unavailable"),
+   inputHash: z.string(), evidenceHashes: strings, numerator: finite.nonnegative(), denominator: finite.nonnegative(),
+   selectedGameIds: z.array(positive), limitations: strings }).strict();

@@ -85,11 +85,14 @@ const fetcher = async <T,>(url: string) => {
   const response = await fetch(url);
   const payload = await response.json();
   if (!response.ok) {
+    // 500s carry a stable code in `error` and the readable text in `message`.
     const message =
-      payload != null &&
-      typeof payload === "object" &&
-      typeof payload.error === "string"
-        ? payload.error
+      payload != null && typeof payload === "object"
+        ? typeof payload.message === "string"
+          ? payload.message
+          : typeof payload.error === "string"
+            ? payload.error
+            : "Unable to load rankings."
         : "Unable to load rankings.";
     throw new Error(message);
   }

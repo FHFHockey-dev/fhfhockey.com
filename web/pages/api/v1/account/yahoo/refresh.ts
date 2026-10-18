@@ -33,7 +33,7 @@ export default async function handler(
       ...result,
     });
   } catch (error) {
-    if (error instanceof YahooRefreshError) {
+    if (error instanceof YahooRefreshError && error.statusCode < 500) {
       if (error.retryAfterSeconds) {
         res.setHeader("Retry-After", String(error.retryAfterSeconds));
       }
@@ -43,8 +43,10 @@ export default async function handler(
       });
     }
 
+    console.error("Yahoo refresh failed", error);
     return res.status(500).json({
-      error: error instanceof Error ? error.message : "Yahoo refresh failed.",
+      error: "Yahoo refresh failed.",
+      code: "YAHOO_REFRESH_UNAVAILABLE",
     });
   }
 }

@@ -170,4 +170,89 @@ describe("Patreon account API routes", () => {
     );
     expect(methodRes.statusCode).toBe(405);
   });
+
+  it("keeps dependency details out of every Patreon route response", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const leak = () => new Error("relation private.connected_account_tokens denied Bearer secret");
+
+    mocks.getPatreonState.mockRejectedValueOnce(leak());
+    const statusRes = response();
+    await statusHandler({ method: "GET", headers: {} } as any, statusRes);
+    expect(statusRes.body).toEqual({
+      error: "Patreon account state could not be loaded.",
+      code: "PATREON_STATE_UNAVAILABLE",
+    });
+
+    mocks.buildPatreonAuthorizationUrl.mockImplementationOnce(() => {
+      throw new Error("PATREON_CLIENT_SECRET is not configured");
+    });
+    const connectRes = response();
+    await connectHandler({ method: "POST", body: {}, headers: {} } as any, connectRes);
+    expect(connectRes.body).toEqual({
+      error: "Patreon authorization could not be started.",
+      code: "PATREON_CONNECT_UNAVAILABLE",
+    });
+
+    mocks.disconnectPatreonAccount.mockRejectedValueOnce(leak());
+    const disconnectRes = response();
+    await disconnectHandler({ method: "POST", headers: {} } as any, disconnectRes);
+    expect(disconnectRes.body).toEqual({
+      error: "Patreon could not be disconnected.",
+      code: "PATREON_DISCONNECT_UNAVAILABLE",
+    });
+
+    for (const [failure, status] of [
+      [leak(), 500],
+      [new mocks.TestPatreonApiError("Upstream relation private.connected_account_tokens denied Bearer secret", 502), 502],
+    ] as const) {
+      mocks.refreshPatreonAccount.mockRejectedValueOnce(failure);
+      const refreshRes = response();
+      await refreshHandler({ method: "POST", headers: {} } as any, refreshRes);
+      expect(refreshRes.statusCode).toBe(status);
+      expect(refreshRes.body).toEqual({
+        error: "Patreon membership could not be refreshed.",
+        code: "PATREON_REFRESH_UNAVAILABLE",
+      });
+    }
+
+    for (const res of [statusRes, connectRes, disconnectRes]) {
+      expect(res.statusCode).toBe(500);
+      expect(JSON.stringify(res.body)).not.toMatch(/secret/i);
+    }
+    consoleError.mockRestore();
+  });
+
+  it("puts only Patreon's own client-error text in the callback redirect", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.buildPatreonAccountRedirect.mockImplementation(
+      (_next: string, status: string, message: string) =>
+        `/account?patreon_status=${status}&patreon_message=${encodeURIComponent(message)}`,
+    );
+
+    mocks.connectPatreonAccount.mockRejectedValueOnce(
+      new Error("duplicate key value violates unique constraint relation private.connected_account_tokens denied Bearer secret"),
+    );
+    const dbRes = response();
+    await callbackHandler(
+      { method: "GET", query: { code: "code", state: "signed" } } as any,
+      dbRes,
+    );
+    expect(decodeURIComponent(dbRes.redirectTarget)).toContain(
+      "Patreon connection could not be completed.",
+    );
+    expect(dbRes.redirectTarget).not.toMatch(/secret|duplicate/i);
+
+    mocks.verifyPatreonOAuthState.mockImplementationOnce(() => {
+      throw new mocks.TestPatreonApiError("Patreon OAuth state has expired.", 400);
+    });
+    const stateRes = response();
+    await callbackHandler(
+      { method: "GET", query: { code: "code", state: "old" } } as any,
+      stateRes,
+    );
+    expect(decodeURIComponent(stateRes.redirectTarget)).toContain(
+      "Patreon OAuth state has expired.",
+    );
+    consoleError.mockRestore();
+  });
 });

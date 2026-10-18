@@ -9,9 +9,12 @@ import { consumerGameRevisionFixture, setConsumerSkaterEvidence } from "../../..
 import { normalizePlanningGames, publicPlanningForecasts } from "lib/rosterScheduleData/planning";
 import { evaluatePlan } from "lib/rosterScheduleOptimizer/planning";
 import type { PlanIntent, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
-import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
+import { buildForgeInputProvenance, FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
 import type { ForgeGameRevision } from "lib/projections/gameRevisions";
 import { buildGameExpectations } from "lib/player-forecasts/gameExpectations";
+import { buildGameExpectationView, decodeGameExpectationView } from "lib/player-forecasts/gameExpectationView";
+import { decodePlanningDataTransport, encodePlanningDataTransport } from "lib/rosterScheduleData/planningDataTransport";
+import { BOARD_CATEGORIES } from "lib/projections/starterBoardScoring";
 import type { ContributionSource } from "lib/player-forecasts/contributions";
 import type { PlanningData } from "lib/rosterScheduleOptimizer/planningTypes";
 
@@ -307,7 +310,11 @@ describe("/api/v1/start-chart", () => {
       50,
     );
     expect(sumProjectionParts(0.4, 0.2, 0)).toBeCloseTo(0.6, 6);
-    expect(sumProjectionParts(0.4, null, 0)).toBeCloseTo(0.4, 6);
+    expect(sumProjectionParts(0.4, 0.2, null)).toBeCloseTo(0.6, 6);
+    expect(sumProjectionParts(0.4, 0.2)).toBeCloseTo(0.6, 6);
+    // A withheld ES or PP head makes the total unknown, never a partial sum.
+    expect(sumProjectionParts(0.4, null, 0)).toBeNull();
+    expect(sumProjectionParts(null, 0.2, null)).toBeNull();
     expect(sumProjectionParts(null, null, null)).toBeNull();
     expect(normalizeProjectedToiMinutes(900, 180, null)).toBe(18);
     expect(normalizeProjectedToiMinutes(null, null, null)).toBeNull();
@@ -674,6 +681,94 @@ describe("/api/v1/start-chart", () => {
     expect(JSON.stringify(fixture.response)).toBe(original);
   });
 
+  it.each([["2026-02-08T04:59:59.999Z", "2026-02-07"], ["2026-02-08T05:00:00.000Z", "2026-02-08"]])(
+    "defaults the native slate to the Eastern date at %s", async (now, expected) => {
+      vi.setSystemTime(new Date(now));
+      const fixture = dailyExpectationFixture();
+      loadGameExpectationsMock.mockResolvedValue({ ...fixture.response, players: [] });
+      vi.resetModules();
+      const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+      const res = createMockRes();
+      await handler({ method: "GET", query: { forecast_source: "game_expectations" } } as any, res);
+      expect(res.statusCode).toBe(200);
+      expect(loadGameExpectationsMock.mock.calls.at(-1)?.[1]).toMatchObject({ startDate: expected, endDate: expected,
+        timeZone: "America/New_York", mode: "calendar", games: 1 });
+    });
+
+  it("distinguishes a no-game date from scheduled games whose team cannot be identified", async () => {
+    const fixture = dailyExpectationFixture();
+    const read = async (response: unknown) => {
+      loadGameExpectationsMock.mockResolvedValue(response);
+      vi.resetModules(); // fresh module: the route keeps a per-date response cache
+      const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+      const res = createMockRes();
+      await handler({ method: "GET", query: { date: fixture.scope.startDate, forecast_source: "game_expectations" } } as any, res);
+      expect(res.statusCode).toBe(200);
+      return res.body;
+    };
+    const empty = await read({ ...fixture.response, players: fixture.response.players.map(player => ({ ...player, games: [] })) });
+    expect(empty.serving).toMatchObject({ mode: "no_games", reason: "no_upcoming_games_on_selected_date" });
+    expect(empty.games).toEqual([]); expect(empty.players).toEqual([]);
+    const unmapped = structuredClone(fixture.response);
+    for (const player of unmapped.players) for (const game of player.games) { game.opponent = "XXX"; game.homeTeam = "XXX"; }
+    const unknownTeam = await read(unmapped);
+    expect(unknownTeam.serving.mode).toBe("partial");
+    expect(unknownTeam.serving.reason).toBe("unmapped_slate_teams");
+    expect(unknownTeam.serving.message).toContain("1 scheduled game(s) are omitted");
+    expect(unknownTeam.sourceStatus.degradedReasons).toContain("unmapped_slate_team");
+    expect(unknownTeam.players).toEqual([]);
+  });
+
+  it("parity receipt: one pinned fixture gives the same per-game target values in FORGE, RSO, the Start Chart API and its UI parse", async () => {
+    // Evidence class: retained-fixture replay with mocked transport; not current public forecasts.
+    const fixture = dailyExpectationFixture();
+    loadGameExpectationsMock.mockResolvedValue(fixture.response);
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: fixture.scope.startDate, forecast_source: "game_expectations" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    const wire = JSON.parse(JSON.stringify(res.body));
+    const ui = normalizeStartChartResponse(wire);
+    const forge = decodeGameExpectationView(JSON.parse(JSON.stringify(buildGameExpectationView(fixture.response))));
+    const rsoData = decodePlanningDataTransport(JSON.parse(JSON.stringify(encodePlanningDataTransport(fixture.data))));
+    expect(rsoData).toEqual(fixture.data);
+    const rso = buildGameExpectations(rsoData, fixture.scope, fixture.now);
+    const fields = ["expected", "conditional", "basis", "unit", "allowedUses", "sourceIds", "participationRevisionId",
+      "cutoffAt", "issuedAt", "expiresAt", "reasons"] as const;
+    const pick = (target: any) => target ? Object.fromEntries(fields.map(key => [key, target[key] ?? null])) : undefined;
+    // Count expected keys independently of any consumer: player × game on the slate date × board target.
+    const expectedKeys = fixture.response.players.flatMap(player => player.games.filter(game => game.date === fixture.scope.startDate)
+      .flatMap(game => BOARD_CATEGORIES.filter(key => key in game.targets).map(key => ({ player, game, key }))));
+    const mismatches: string[] = [];
+    for (const { player, game, key } of expectedKeys) {
+      const id = `${player.playerId}:${game.gameId}:${key}`, source = pick(game.targets[key]);
+      const at = (response: typeof fixture.response) => pick(response.players.find(row => row.playerId === player.playerId)
+        ?.games.find(row => row.gameId === game.gameId)?.targets[key]);
+      const board = (body: any) => pick(body.players.find((row: any) => row.gameExpectation?.playerId === player.playerId
+        && String(row.game_id) === game.gameId)?.gameExpectation.targets[key]);
+      for (const [consumer, value] of Object.entries({ forge: at(forge as any), rso: at(rso), api: board(wire), ui: board(ui) })) {
+        if (JSON.stringify(value) !== JSON.stringify(source)) mismatches.push(`${consumer}:${id}`);
+      }
+    }
+    expect(expectedKeys).toHaveLength(2 * 1 * 8);
+    expect(mismatches).toEqual([]);
+    const nullHeads = expectedKeys.filter(({ game, key }) => game.targets[key].expected === null && game.targets[key].conditional === null);
+    expect(nullHeads.map(({ key }) => key).sort()).toEqual(["PENALTY_MINUTES", "PENALTY_MINUTES", "TIME_ON_ICE_PER_GAME", "TIME_ON_ICE_PER_GAME"]);
+    expect(nullHeads.every(({ game, key }) => game.targets[key].reasons.length > 0)).toBe(true);
+    if (process.env.START_CHART_PARITY_RECEIPT) {
+      const sha = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
+      (await import("node:fs")).writeFileSync(process.env.START_CHART_PARITY_RECEIPT, JSON.stringify({
+        version: "start-chart-parity-receipt-v1", evidenceClass: "retained-fixture replay, mocked transport (no network, no database)",
+        fixture: "dailyExpectationFixture() in __tests__/pages/api/v1/start-chart.test.ts", scope: fixture.scope, readAt: fixture.now.toISOString(),
+        manifest: { manifestId: fixture.response.manifestId, baselineChecksum: fixture.response.baselineChecksum },
+        expectedKeys: expectedKeys.length, consumers: ["forge-view-decode", "rso-transport-roundtrip+resolver", "start-chart-api-body", "start-chart-ui-parse"],
+        mismatches, nullHeads: nullHeads.map(({ player, game, key }) => ({ playerId: player.playerId, gameId: game.gameId, key,
+          reasons: game.targets[key].reasons })),
+        sha256: { gameExpectations: sha(fixture.response), apiBody: sha(wire), uiParse: sha(ui) } }, null, 1) + "\n");
+    }
+  });
+
   it("returns a typed uncached 503 rather than an oversized board", async () => {
     const fixture = dailyExpectationFixture();
     vi.resetModules();
@@ -1010,20 +1105,54 @@ describe("/api/v1/start-chart", () => {
     expect(JSON.stringify(fixture.revision)).toBe(original);
   });
 
-  it("withholds an unclassified raw run", async () => {
+  it("never scores a scoring line with a withheld ES or PP head as complete", async () => {
     vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "false");
+    const masked = { ...defaultProjection, player_id: 8478403, proj_goals_pp: null, proj_assists_pp: null };
     const prior = fromMock.getMockImplementation()!;
     fromMock.mockImplementation((table: string) => table === "forge_runs" ? createQueryBuilder(() => ({
-      data: [{ run_id: "external-run", as_of_date: "2026-02-07", git_sha: null, metrics: null,
-        forge_player_projections: [defaultProjection] }], error: null,
+      data: [{ run_id: "masked-run", as_of_date: "2026-02-07", git_sha: null,
+        metrics: { input_provenance: buildForgeInputProvenance({ externalFantasyInputsExcluded: true }) },
+        forge_player_projections: [defaultProjection, masked] }], error: null,
     })) : prior(table));
     vi.resetModules();
     const handler = (await import("../../../../pages/api/v1/start-chart")).default;
     const res = createMockRes();
     await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
     expect(res.statusCode).toBe(200);
-    expect(res.body.projectionRunId).toBeNull();
-    expect(res.body.players.every((row: any) => row.player_id !== defaultProjection.player_id)).toBe(true);
+    const row = (id: number) => res.body.players.find((player: any) => player.player_id === id);
+    expect(row(defaultProjection.player_id)).toMatchObject({ proj_goals: expect.closeTo(0.6, 6), proj_pp_points: expect.closeTo(0.3, 6) });
+    expect(row(defaultProjection.player_id).proj_fantasy_points).toBeGreaterThan(0);
+    // ES heads alone are not the goals or assists total: withheld PP heads make them unknown.
+    expect(row(masked.player_id)).toMatchObject({ proj_goals: null, proj_assists: null, proj_pp_points: null,
+      proj_fantasy_points: null, position_ranks: {} });
+    expect(row(masked.player_id).proj_shots).toBeCloseTo(3.5, 6);
+  });
+
+  it("serves an unlabelled raw run flagged unverified while a labelled run stays verified", async () => {
+    vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "false");
+    const prior = fromMock.getMockImplementation()!;
+    const read = async (metrics: unknown) => {
+      fromMock.mockImplementation((table: string) => table === "forge_runs" ? createQueryBuilder(() => ({
+        data: [{ run_id: "external-run", as_of_date: "2026-02-07", git_sha: null, metrics,
+          forge_player_projections: [defaultProjection] }], error: null,
+      })) : prior(table));
+      vi.resetModules();
+      const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+      const res = createMockRes();
+      await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+      expect(res.statusCode).toBe(200);
+      return { body: res.body, row: res.body.players.find((row: any) => row.player_id === defaultProjection.player_id) };
+    };
+    // Production 457435eb behaviour: an externally blended run is served, but never labelled native.
+    const unlabelled = await read(null);
+    expect(unlabelled.body.projectionRunId).toBe("external-run");
+    expect(unlabelled.row.context.flags).toContain("unverified_projection_provenance");
+    expect(unlabelled.body.sourceStatus.projection.state).toBe("partial");
+    expect(unlabelled.body.sourceStatus.degradedReasons).toContain("quarantined_or_missing_provenance");
+    const labelled = await read({ input_provenance: buildForgeInputProvenance({ externalFantasyInputsExcluded: true }) });
+    expect(labelled.body.projectionRunId).toBe("external-run");
+    expect(labelled.row.context.flags).not.toContain("unverified_projection_provenance");
+    expect(labelled.body.sourceStatus.projection.state).toBe("ready");
   });
 
   async function serveAdmissionFixture(fixture: ReturnType<typeof consumerGameRevisionFixture>) {

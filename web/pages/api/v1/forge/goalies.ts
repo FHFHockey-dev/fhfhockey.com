@@ -152,7 +152,7 @@ function normalizeLikelyStarterWinProbabilities<
     team_id: number;
     opponent_team_id: number;
     starter_probability: number;
-    proj_win_prob: number;
+    proj_win_prob: number | null;
   },
 >(rows: T[]): { rows: T[]; adjustedMatchups: number } {
   const normalizedRows = rows.map((row) => ({ ...row }));
@@ -169,6 +169,9 @@ function normalizeLikelyStarterWinProbabilities<
   let adjustedMatchups = 0;
   for (const indices of matchupIndexMap.values()) {
     if (indices.length < 2) continue;
+    // A null win probability is unknown (missing team goals); never invent one
+    // from starter weights or rescale a known opponent against it.
+    if (indices.some((idx) => normalizedRows[idx].proj_win_prob == null)) continue;
     const positiveMass = indices.reduce(
       (sum, idx) =>
         sum + Math.max(0, Number(normalizedRows[idx].proj_win_prob ?? 0)),
@@ -435,7 +438,7 @@ export default async function handler(
         proj_shots_against: row.proj_shots_against ?? 0,
         proj_saves: row.proj_saves ?? 0,
         proj_goals_allowed: row.proj_goals_allowed ?? 0,
-        proj_win_prob: row.proj_win_prob ?? 0,
+        proj_win_prob: row.proj_win_prob ?? null,
         proj_shutout_prob: row.proj_shutout_prob ?? 0,
         modeled_save_pct: model.save_pct ?? null,
         volatility_index: model.volatility_index ?? null,

@@ -1,0 +1,175 @@
+diff --git a/web/__tests__/utils/adminOnlyMiddleware.test.ts b/web/__tests__/utils/adminOnlyMiddleware.test.ts
+index 8bf17dc1f6bb38db84d39325c398f184cbcc21f1..b7376225d437d8a2f3980ab24bee17616fd65c66 100644
+--- a/web/__tests__/utils/adminOnlyMiddleware.test.ts
++++ b/web/__tests__/utils/adminOnlyMiddleware.test.ts
+@@ -112,7 +112,20 @@ describe("adminOnlyMiddleware", () => {
+     },
+   );
+ 
+-  it.each(["fhfhockey.com", "localhost.example.com", "", undefined])(
++  it.each([
++    "fhfhockey.com",
++    "localhost.example.com",
++    "localhost.",
++    "localhost:abc",
++    "localhost:3000:evil",
++    "localhost:3000, fhfhockey.com",
++    "127.0.0.1.example.com",
++    "::1",
++    "[::1",
++    "[::1]evil",
++    "",
++    undefined,
++  ])(
+     "retains the Host restriction for a loopback peer with Host %s",
+     (host) => {
+       vi.stubEnv("NODE_ENV", "development");
+@@ -125,6 +138,79 @@ describe("adminOnlyMiddleware", () => {
+     },
+   );
+ 
++  it("accepts the bracketed IPv6 loopback Host from a loopback peer", () => {
++    vi.stubEnv("NODE_ENV", "development");
++    expect(
++      invokedByLocalDev({
++        headers: { host: "[::1]:3000" },
++        socket: { remoteAddress: "::1" },
++      } as never),
++    ).toBe(true);
++  });
++
++  it.each(["127.0.0.1", "::1", "::ffff:127.0.0.1"])(
++    "accepts Next.js-filled local forwarding headers from loopback peer %s",
++    (remoteAddress) => {
++      vi.stubEnv("NODE_ENV", "development");
++      expect(
++        invokedByLocalDev({
++          headers: {
++            host: "localhost:3000",
++            "x-forwarded-for": remoteAddress,
++            "x-forwarded-host": "localhost:3000",
++            "x-forwarded-port": "3000",
++            "x-forwarded-proto": "http",
++          },
++          socket: { remoteAddress },
++        } as never),
++      ).toBe(true);
++    },
++  );
++
++  it.each([
++    { "x-forwarded-for": "203.0.113.7" },
++    { "x-forwarded-for": "127.0.0.1, 203.0.113.7" },
++    { "x-forwarded-for": "" },
++    { "x-real-ip": "203.0.113.7" },
++    { "x-forwarded-host": "abc123.tunnel.example" },
++    { "x-forwarded-host": "localhost:3000, abc123.tunnel.example" },
++    { forwarded: "for=127.0.0.1;host=localhost:3000" },
++    { via: "1.1 local-tunnel" },
++  ])(
++    "withdraws the exception when a loopback peer relays another origin: %j",
++    (relayHeaders) => {
++      vi.stubEnv("NODE_ENV", "development");
++      expect(
++        invokedByLocalDev({
++          headers: { host: "localhost:3000", ...relayHeaders },
++          socket: { remoteAddress: "127.0.0.1" },
++        } as never),
++      ).toBe(false);
++    },
++  );
++
++  it("denies an unauthenticated tunneled request that reaches a loopback socket", async () => {
++    vi.stubEnv("NODE_ENV", "development");
++    const json = vi.fn();
++    const status = vi.fn().mockReturnValue({ json });
++    const handler = vi.fn();
++    const request = {
++      headers: {
++        host: "localhost:3000",
++        "x-forwarded-for": "203.0.113.7",
++        "x-forwarded-host": "abc123.tunnel.example",
++      },
++      socket: { remoteAddress: "127.0.0.1" },
++    };
++
++    await adminOnly(handler)(request as never, { status } as never);
++
++    expect(status).toHaveBeenCalledWith(401);
++    expect(handler).not.toHaveBeenCalled();
++    expect(createClientWithToken).not.toHaveBeenCalled();
++    expect(request).not.toHaveProperty("supabase");
++  });
++
+   it("denies an unauthenticated remote request with a forged localhost Host", async () => {
+     vi.stubEnv("NODE_ENV", "development");
+     const json = vi.fn();
+diff --git a/web/utils/adminOnlyMiddleware.ts b/web/utils/adminOnlyMiddleware.ts
+index a0e860e37409ddc02a5045a7a27b9a0053eb93a2..9d3e473e72de28b2abe96290a9597cc5ec6238f0 100644
+--- a/web/utils/adminOnlyMiddleware.ts
++++ b/web/utils/adminOnlyMiddleware.ts
+@@ -67,29 +67,50 @@ export function invokedByCron(authHeader: string) {
+   return authHeader === `Bearer ${cronSecret}`;
+ }
+ 
+-function isLocalHostHeader(hostHeader: string | undefined) {
+-  if (typeof hostHeader !== "string" || hostHeader.length === 0) {
+-    return false;
+-  }
++const LOOPBACK_ADDRESSES = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
+ 
+-  const normalizedHost = hostHeader.toLowerCase().split(":")[0];
++function isLocalHostHeader(hostHeader: string | string[] | undefined) {
+   return (
+-    normalizedHost === "localhost" ||
+-    normalizedHost === "127.0.0.1" ||
+-    normalizedHost === "::1"
++    typeof hostHeader === "string" &&
++    /^(?:localhost|127\.0\.0\.1|\[::1\])(?::\d{1,5})?$/.test(
++      hostHeader.toLowerCase(),
++    )
+   );
+ }
+ 
++// Next.js fills x-forwarded-* from the socket and Host when they are absent, so a
++// direct local request carries only loopback/local values. Anything else means a
++// relay (tunnel, reverse proxy) or the client claims another origin. These headers
++// can only withdraw the local exception, never grant it.
++function hasOnlyLocalForwarding(headers: NextApiRequest["headers"]) {
++  if (headers["forwarded"] !== undefined || headers["via"] !== undefined) {
++    return false;
++  }
++  const forwardedHost = headers["x-forwarded-host"];
++  if (forwardedHost !== undefined && !isLocalHostHeader(forwardedHost)) {
++    return false;
++  }
++  return ["x-forwarded-for", "x-real-ip"].every((name) => {
++    const value = headers[name];
++    return (
++      value === undefined ||
++      [value]
++        .flat()
++        .join(",")
++        .split(",")
++        .every((entry) => LOOPBACK_ADDRESSES.has(entry.trim()))
++    );
++  });
++}
++
+ export function invokedByLocalDev(req: NextApiRequest) {
+   // Host/forwarded headers cannot establish that a caller is local.
+   const remoteAddress = req.socket?.remoteAddress;
+-  const isLoopbackPeer =
+-    remoteAddress === "127.0.0.1" ||
+-    remoteAddress === "::1" ||
+-    remoteAddress === "::ffff:127.0.0.1";
+   return (
+     process.env.NODE_ENV === "development" &&
+-    isLoopbackPeer &&
+-    isLocalHostHeader(req.headers.host)
++    typeof remoteAddress === "string" &&
++    LOOPBACK_ADDRESSES.has(remoteAddress) &&
++    isLocalHostHeader(req.headers.host) &&
++    hasOnlyLocalForwarding(req.headers)
+   );
+ }

@@ -1,0 +1,386 @@
+diff --git a/web/components/HomePage/HomepageGamesSection.tsx b/web/components/HomePage/HomepageGamesSection.tsx
+index 56db04d5f..950d37676 100644
+--- a/web/components/HomePage/HomepageGamesSection.tsx
++++ b/web/components/HomePage/HomepageGamesSection.tsx
+@@ -10,10 +10,16 @@ import {
+ import { createPortal } from "react-dom";
+ 
+ import Link from "next/link";
+-import moment from "moment-timezone";
+-import "moment-timezone";
++import moment from "moment";
+ 
+ import ClientOnly from "components/ClientOnly";
++import {
++  formatClock,
++  formatMonthDayYear,
++  parseMomentLike,
++  zonedMidnight,
++  zonedParts,
++} from "./homepageTime";
+ import PanelStatus from "components/common/PanelStatus";
+ import OptimizedImage from "components/common/OptimizedImage";
+ import { buildHomepageModulePresentation } from "lib/dashboard/freshness";
+@@ -523,13 +529,13 @@ export default function HomepageGamesSection({
+     const date = openingNightDate?.slice(0, 10);
+     if (!date) return null;
+ 
+-    const scheduledStart = openingNightStartTime
+-      ? moment(openingNightStartTime).tz("America/New_York")
++    // Official puck drop when known, otherwise midnight in New York.
++    const instant =
++      (openingNightStartTime ? parseMomentLike(openingNightStartTime) : null) ??
++      zonedMidnight(date, "America/New_York");
++    return instant
++      ? { instant, parts: zonedParts(instant, "America/New_York") }
+       : null;
+-    const target = scheduledStart?.isValid()
+-      ? scheduledStart
+-      : moment.tz(date, "YYYY-MM-DD", "America/New_York").startOf("day");
+-    return target.isValid() ? target : null;
+   }, [openingNightDate, openingNightStartTime]);
+ 
+   useEffect(() => {
+@@ -631,7 +637,7 @@ export default function HomepageGamesSection({
+ 
+   const openingNightCountdown = useMemo(() => {
+     if (!openingNightTarget || countdownNow === null) return null;
+-    const remaining = Math.max(openingNightTarget.valueOf() - countdownNow, 0);
++    const remaining = Math.max(openingNightTarget.instant.getTime() - countdownNow, 0);
+ 
+     return {
+       days: Math.floor(remaining / 86_400_000),
+@@ -647,8 +653,8 @@ export default function HomepageGamesSection({
+     (!openingNightCountdown || !openingNightCountdown.complete),
+   );
+   const openingNightSeasonLabel = openingNightTarget
+-    ? `${openingNightTarget.year()}-${String(
+-        openingNightTarget.year() + 1,
++    ? `${openingNightTarget.parts.year}-${String(
++        openingNightTarget.parts.year + 1,
+       ).slice(-2)} season`
+     : "Next season";
+   const displayedCalendarMonth = useMemo(
+@@ -1139,10 +1145,11 @@ export default function HomepageGamesSection({
+                 </h3>
+                 <p>
+                   The season opens on{" "}
+-                  <time dateTime={openingNightTarget?.toISOString()}>
+-                    {hasOfficialPuckDrop
+-                      ? openingNightTarget?.format("MMM D, YYYY · h:mm A z")
+-                      : openingNightTarget?.format("MMM D, YYYY")}.
++                  <time dateTime={openingNightTarget?.instant.toISOString()}>
++                    {openingNightTarget &&
++                      (hasOfficialPuckDrop
++                        ? `${formatMonthDayYear(openingNightTarget.parts)} · ${formatClock(openingNightTarget.parts)} ${openingNightTarget.parts.zoneName}`
++                        : formatMonthDayYear(openingNightTarget.parts))}.
+                   </time>
+                 </p>
+                 <small>
+diff --git a/web/components/HomePage/HomepageStandingsInjuriesSection.tsx b/web/components/HomePage/HomepageStandingsInjuriesSection.tsx
+index 8e5e07b65..0afb69dba 100644
+--- a/web/components/HomePage/HomepageStandingsInjuriesSection.tsx
++++ b/web/components/HomePage/HomepageStandingsInjuriesSection.tsx
+@@ -1,5 +1,11 @@
+ import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+-import moment from "moment-timezone";
++import {
++  formatClock,
++  formatMonthDay,
++  formatMonthDayYear,
++  parseMomentLike,
++  zonedParts,
++} from "./homepageTime";
+ import Link from "next/link";
+ 
+ import ExternalNewsLink from "components/common/ExternalNewsLink";
+@@ -29,22 +35,23 @@ type HomepageStandingsInjuriesSectionProps = {
+ const HOMEPAGE_UPDATES_PER_PAGE = 10;
+ const HOMEPAGE_TIME_ZONE = "America/New_York";
+ 
+-function formatHomepageDate(value: string | null | undefined): string {
++export function formatHomepageDate(value: string | null | undefined): string {
+   if (!value) return "N/A";
+-  const parsed = moment(value);
+-  return parsed.isValid()
+-    ? parsed.tz(HOMEPAGE_TIME_ZONE).format("M/D/YY")
+-    : "N/A";
++  const parsed = parseMomentLike(value);
++  if (!parsed) return "N/A";
++  const parts = zonedParts(parsed, HOMEPAGE_TIME_ZONE);
++  return `${parts.month}/${parts.day}/${String(parts.year).slice(-2)}`;
+ }
+ 
+-function formatHomepageTimestamp(value: string | null | undefined): string {
++export function formatHomepageTimestamp(value: string | null | undefined): string {
+   if (!value) return "";
+-  const parsed = moment(value);
+-  if (!parsed.isValid()) return "";
++  const parsed = parseMomentLike(value);
++  if (!parsed) return "";
+   const hasTime = /T\d{2}:\d{2}/.test(value);
+-  return parsed
+-    .tz(HOMEPAGE_TIME_ZONE)
+-    .format(hasTime ? "MMM D, h:mm A" : "MMM D, YYYY");
++  const parts = zonedParts(parsed, HOMEPAGE_TIME_ZONE);
++  return hasTime
++    ? `${formatMonthDay(parts)}, ${formatClock(parts)}`
++    : formatMonthDayYear(parts);
+ }
+ 
+ export function buildHomepageTransactionTitle(_transaction: any): string {
+diff --git a/web/components/HomePage/homepageGameFormatting.ts b/web/components/HomePage/homepageGameFormatting.ts
+index ecf715ee4..a9b525c82 100644
+--- a/web/components/HomePage/homepageGameFormatting.ts
++++ b/web/components/HomePage/homepageGameFormatting.ts
+@@ -1,5 +1,4 @@
+-import moment from "moment";
+-import "moment-timezone";
++import { formatClock, localTimeZone, zonedParts } from "./homepageTime";
+ 
+ const LIVE_STATES = new Set(["LIVE", "CRIT"]);
+ const FINAL_STATES = new Set(["OVER", "FINAL", "OFF"]);
+@@ -36,32 +35,31 @@ export const formatPeriodText = (
+   return `${periodNumber}${periodSuffix} Period`;
+ };
+ 
+-export const formatLocalStartTime = (startTimeUTC: string) => {
++/** moment `h:mm A z` in the viewer's time zone. */
++export const formatLocalStartTime = (
++  startTimeUTC: string,
++  timeZone = localTimeZone(),
++) => {
+   if (!startTimeUTC) return "";
++  const start = new Date(startTimeUTC);
++  if (Number.isNaN(start.getTime())) return "Invalid date";
+ 
+-  try {
+-    const timezone = moment.tz.guess();
+-    return moment.tz(startTimeUTC, "UTC").tz(timezone).format("h:mm A z");
+-  } catch {
+-    return moment.utc(startTimeUTC).local().format("h:mm A");
+-  }
++  const parts = zonedParts(start, timeZone);
++  return `${formatClock(parts)} ${parts.zoneName}`;
+ };
+ 
+-export const formatLocalPlayoffStart = (startTimeUTC: string) => {
++/** moment `M-D-YYYY | hA z`, or `h:mmA z` off the hour, in the viewer's time zone. */
++export const formatLocalPlayoffStart = (
++  startTimeUTC: string,
++  timeZone = localTimeZone(),
++) => {
+   if (!startTimeUTC) return "TBD";
++  const start = new Date(startTimeUTC);
++  if (Number.isNaN(start.getTime())) return "Invalid date | Invalid date";
+ 
+-  try {
+-    const timezone = moment.tz.guess();
+-    const local = moment.tz(startTimeUTC, "UTC").tz(timezone);
+-    const timeFormat = local.minutes() === 0 ? "hA z" : "h:mmA z";
+-
+-    return `${local.format("M-D-YYYY")} | ${local.format(timeFormat)}`;
+-  } catch {
+-    const local = moment.utc(startTimeUTC).local();
+-    const timeFormat = local.minutes() === 0 ? "hA" : "h:mmA";
+-
+-    return `${local.format("M-D-YYYY")} | ${local.format(timeFormat)}`;
+-  }
++  const parts = zonedParts(start, timeZone);
++  const minutes = parts.minute === 0 ? "" : `:${String(parts.minute).padStart(2, "0")}`;
++  return `${parts.month}-${parts.day}-${parts.year} | ${parts.hour12}${minutes}${parts.dayPeriod} ${parts.zoneName}`;
+ };
+ 
+ export const isLiveGameState = (gameState?: string | null) =>
+diff --git a/web/pages/index.tsx b/web/pages/index.tsx
+index 7f56c4470..226a2683e 100755
+--- a/web/pages/index.tsx
++++ b/web/pages/index.tsx
+@@ -7,7 +7,6 @@ import Link from "next/link";
+ import Image from "next/image";
+ import { NextSeo } from "next-seo";
+ import moment from "moment";
+-import "moment-timezone"; // Import moment-timezone
+ 
+ import Container from "components/Layout/Container";
+ import ClientOnly from "components/ClientOnly";
+diff --git a/web/components/HomePage/homepageTime.ts b/web/components/HomePage/homepageTime.ts
+new file mode 100644
+index 000000000..847d339db
+--- /dev/null
++++ b/web/components/HomePage/homepageTime.ts
+@@ -0,0 +1,94 @@
++// Intl-based zoned formatting for homepage client code, so the homepage does
++// not ship moment-timezone's zone database. Outputs mirror the moment format
++// strings they replace; see homepageTime.test.ts for the parity oracle.
++
++const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
++const formatters = new Map<string, Intl.DateTimeFormat>();
++
++export type ZonedParts = {
++  year: number;
++  month: number;
++  day: number;
++  hour12: number;
++  minute: number;
++  dayPeriod: "AM" | "PM";
++  zoneName: string;
++};
++
++export function localTimeZone(): string | undefined {
++  try {
++    return Intl.DateTimeFormat().resolvedOptions().timeZone;
++  } catch {
++    return undefined;
++  }
++}
++
++function formatterFor(timeZone: string | undefined) {
++  const key = timeZone ?? "";
++  let formatter = formatters.get(key);
++  if (!formatter) {
++    formatter = new Intl.DateTimeFormat("en-US", {
++      timeZone,
++      year: "numeric",
++      month: "numeric",
++      day: "numeric",
++      hour: "numeric",
++      minute: "2-digit",
++      hourCycle: "h23",
++      timeZoneName: "short",
++    });
++    formatters.set(key, formatter);
++  }
++  return formatter;
++}
++
++export function zonedParts(date: Date, timeZone?: string): ZonedParts {
++  const values: Record<string, string> = {};
++  for (const part of formatterFor(timeZone).formatToParts(date)) values[part.type] = part.value;
++  const hour24 = Number(values.hour) % 24;
++  return {
++    year: Number(values.year),
++    month: Number(values.month),
++    day: Number(values.day),
++    hour12: hour24 % 12 === 0 ? 12 : hour24 % 12,
++    minute: Number(values.minute),
++    dayPeriod: hour24 < 12 ? "AM" : "PM",
++    zoneName: values.timeZoneName ?? "",
++  };
++}
++
++/** Parses the way `moment(value)` does for the inputs the homepage receives: date-only strings are local midnight. */
++export function parseMomentLike(value: string): Date | null {
++  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
++  const date = dateOnly
++    ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
++    : new Date(value);
++  return Number.isNaN(date.getTime()) ? null : date;
++}
++
++const pad2 = (value: number) => String(value).padStart(2, "0");
++
++/** moment "h:mm A". */
++export const formatClock = (parts: ZonedParts) => `${parts.hour12}:${pad2(parts.minute)} ${parts.dayPeriod}`;
++
++/** moment "MMM D, YYYY". */
++export const formatMonthDayYear = (parts: ZonedParts) => `${MONTHS[parts.month - 1]} ${parts.day}, ${parts.year}`;
++
++/** moment "MMM D". */
++export const formatMonthDay = (parts: ZonedParts) => `${MONTHS[parts.month - 1]} ${parts.day}`;
++
++/** The instant of local midnight for a calendar date in a time zone (DST-safe). */
++export function zonedMidnight(ymd: string, timeZone: string): Date | null {
++  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd);
++  if (!match) return null;
++  const wallClock = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
++  let instant = wallClock;
++  // Two passes settle the offset when the first guess lands across a DST change.
++  for (let pass = 0; pass < 2; pass += 1) {
++    const parts = zonedParts(new Date(instant), timeZone);
++    const hour24 = parts.hour12 % 12 + (parts.dayPeriod === "PM" ? 12 : 0);
++    const observed = Date.UTC(parts.year, parts.month - 1, parts.day, hour24, parts.minute);
++    instant += wallClock - observed;
++  }
++  return new Date(instant);
++}
+diff --git a/web/components/HomePage/homepageTime.test.ts b/web/components/HomePage/homepageTime.test.ts
+new file mode 100644
+index 000000000..9ccfb94e5
+--- /dev/null
++++ b/web/components/HomePage/homepageTime.test.ts
+@@ -0,0 +1,74 @@
++import moment from "moment-timezone";
++import { describe, expect, it } from "vitest";
++import { formatLocalPlayoffStart, formatLocalStartTime } from "./homepageGameFormatting";
++import { formatHomepageDate, formatHomepageTimestamp } from "./HomepageStandingsInjuriesSection";
++import { zonedMidnight } from "./homepageTime";
++
++// moment-timezone stays installed for server code, so it is the parity oracle here.
++const NORTH_AMERICAN_ZONES = [
++  "America/New_York", "America/Toronto", "America/Chicago", "America/Winnipeg", "America/Denver",
++  "America/Edmonton", "America/Phoenix", "America/Regina", "America/Los_Angeles", "America/Vancouver",
++  "America/Anchorage", "Pacific/Honolulu", "America/Halifax",
++];
++// Puck drops and edge times on both sides of the 2026-11-01 and 2027-03-14 DST changes.
++const INSTANTS = [
++  "2026-10-31T23:00:00Z", "2026-11-01T05:30:00Z", "2026-11-01T06:00:00Z", "2026-11-02T00:07:00Z",
++  "2027-03-14T06:59:00Z", "2027-03-14T07:00:00Z", "2027-03-14T23:00:00Z", "2026-12-31T05:00:00Z",
++  "2026-10-18T17:00:00Z", "2026-10-18T16:00:00Z",
++];
++
++describe("homepage game times without moment-timezone", () => {
++  it("matches moment's 'h:mm A z' and playoff formats for North American zones", () => {
++    for (const zone of NORTH_AMERICAN_ZONES) {
++      for (const instant of INSTANTS) {
++        const local = moment.tz(instant, "UTC").tz(zone);
++        expect(formatLocalStartTime(instant, zone)).toBe(local.format("h:mm A z"));
++        const timeFormat = local.minutes() === 0 ? "hA z" : "h:mmA z";
++        expect(formatLocalPlayoffStart(instant, zone)).toBe(`${local.format("M-D-YYYY")} | ${local.format(timeFormat)}`);
++      }
++    }
++  });
++
++  it("keeps the clock and changes only the zone label elsewhere", () => {
++    // Intl names zones without North American abbreviations by offset (GMT+1 where moment says BST).
++    const instant = "2027-06-01T18:30:00Z";
++    expect(formatLocalStartTime(instant, "Europe/London")).toBe("7:30 PM GMT+1");
++    expect(moment.tz(instant, "Europe/London").format("h:mm A")).toBe("7:30 PM");
++  });
++
++  it("keeps empty and invalid inputs as before", () => {
++    expect(formatLocalStartTime("")).toBe("");
++    expect(formatLocalPlayoffStart("")).toBe("TBD");
++    expect(formatLocalStartTime("not a date", "America/New_York")).toBe("Invalid date");
++  });
++});
++
++describe("homepage New York dates without moment-timezone", () => {
++  const values = [
++    "2026-10-18", "2026-11-01", "2027-03-14", "2026-10-18T03:30:00Z", "2026-10-18T03:30:00+00:00",
++    "2026-11-01T05:59:00Z", "2026-11-01T06:01:00Z", "2026-10-18T22:15:00", "2027-01-05T12:00:00-08:00",
++  ];
++
++  it("matches moment for the standings and transaction labels", () => {
++    for (const value of values) {
++      const parsed = moment(value);
++      expect(formatHomepageDate(value)).toBe(parsed.clone().tz("America/New_York").format("M/D/YY"));
++      const hasTime = /T\d{2}:\d{2}/.test(value);
++      expect(formatHomepageTimestamp(value)).toBe(
++        parsed.clone().tz("America/New_York").format(hasTime ? "MMM D, h:mm A" : "MMM D, YYYY"),
++      );
++    }
++    expect(formatHomepageDate(null)).toBe("N/A");
++    expect(formatHomepageDate("garbage")).toBe("N/A");
++    expect(formatHomepageTimestamp(undefined)).toBe("");
++  });
++
++  it("finds midnight in New York across DST changes", () => {
++    for (const date of ["2026-10-07", "2026-11-01", "2026-11-02", "2027-03-14", "2027-03-15", "2026-12-31"]) {
++      expect(zonedMidnight(date, "America/New_York")?.getTime()).toBe(
++        moment.tz(date, "YYYY-MM-DD", "America/New_York").startOf("day").valueOf(),
++      );
++    }
++    expect(zonedMidnight("10/07/2026", "America/New_York")).toBeNull();
++  });
++});

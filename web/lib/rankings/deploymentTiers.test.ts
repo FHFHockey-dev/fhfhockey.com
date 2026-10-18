@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { buildContextualRankingsSurfacesMock, supabaseFromMock } = vi.hoisted(() => {
+const { buildContextualRankingsSurfacesMock, rangeCalls, supabaseFromMock } = vi.hoisted(() => {
   type QueryState = {
     table: string;
     selectFields: string | null;
     filters: Record<string, unknown>;
+    orders: Array<{ key: string; ascending: boolean }>;
   };
+  const rangeCalls: QueryState[] = [];
 
   function rollingSpecialRows(strength: unknown) {
     const base = {
@@ -82,6 +84,7 @@ const { buildContextualRankingsSurfacesMock, supabaseFromMock } = vi.hoisted(() 
       table,
       selectFields: null,
       filters: {},
+      orders: [],
     };
     const query = {
       select(fields: string) {
@@ -96,7 +99,8 @@ const { buildContextualRankingsSurfacesMock, supabaseFromMock } = vi.hoisted(() 
         state.filters[key] = value;
         return query;
       },
-      order() {
+      order(key: string, options?: { ascending?: boolean }) {
+        state.orders.push({ key, ascending: options?.ascending ?? true });
         return query;
       },
       in(key: string, value: unknown) {
@@ -107,7 +111,14 @@ const { buildContextualRankingsSurfacesMock, supabaseFromMock } = vi.hoisted(() 
         return Promise.resolve(resolveQuery(state));
       },
       range() {
-        return Promise.resolve(resolveQuery(state));
+        rangeCalls.push(state);
+        return query;
+      },
+      then(
+        resolve: (value: ReturnType<typeof resolveQuery>) => unknown,
+        reject?: (reason: unknown) => unknown,
+      ) {
+        return Promise.resolve(resolveQuery(state)).then(resolve, reject);
       },
     };
     return query;
@@ -115,6 +126,7 @@ const { buildContextualRankingsSurfacesMock, supabaseFromMock } = vi.hoisted(() 
 
   return {
     buildContextualRankingsSurfacesMock: vi.fn(),
+    rangeCalls,
     supabaseFromMock: vi.fn((table: string) => createQuery(table)),
   };
 });
@@ -198,6 +210,7 @@ function rankingRow(args: {
 describe("deploymentTiers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    rangeCalls.length = 0;
     buildContextualRankingsSurfacesMock.mockImplementation(
       async (request: ContextualRankingsRequest, metricKeys: string[]) => {
         const surfaces = new Map();
@@ -333,5 +346,33 @@ describe("deploymentTiers", () => {
       name: "Player 1",
       percentile: 90,
     });
+  });
+
+  it("pages exact-snapshot rolling rows by the unique player key", async () => {
+    await buildDeploymentTiersSurface(
+      parseDeploymentTiersRequest({
+        entity: "skaters",
+        season: "20252026",
+        window: "season",
+        position: "all",
+        strength: "5v5",
+        min_gp: "1",
+        min_toi: "300",
+        // A distinct team keeps this request out of the module's snapshot cache.
+        team: "7",
+        metrics: "points_per_60",
+      }),
+    );
+
+    const snapshotPages = rangeCalls.filter(
+      (call) =>
+        call.table === "rolling_player_game_metrics" &&
+        call.selectFields !== "game_date" &&
+        call.filters.game_date != null,
+    );
+    expect(snapshotPages.length).toBeGreaterThan(0);
+    for (const page of snapshotPages) {
+      expect(page.orders).toContainEqual({ key: "player_id", ascending: true });
+    }
   });
 });

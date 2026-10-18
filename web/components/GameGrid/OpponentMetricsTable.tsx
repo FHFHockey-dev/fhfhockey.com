@@ -9,6 +9,12 @@ import OptimizedImage from "components/common/OptimizedImage";
 import { getLocalTeamLogoPath } from "lib/images";
 import { useTeamsMap } from "hooks/useTeams";
 import { TeamNumeric, toRankMaps } from "./utils/metricRanks";
+import OpponentRoleToggle from "./OpponentRoleToggle";
+import {
+  getOpponentViewDirections,
+  OPPONENT_VIEW_LEGEND,
+  OpponentRole
+} from "./utils/opponentCategoryEffects";
 import {
   OpponentMetricAverages,
   UseOpponentMetricsDataResult
@@ -41,6 +47,8 @@ export default function OpponentMetricsTable({
   const isMobile = useIsMobile();
   const [isMobileMinimized, setIsMobileMinimized] = useState(false);
   const teamsMap = useTeamsMap();
+  const [role, setRole] = useState<OpponentRole>("skater");
+  const directions = useMemo(() => getOpponentViewDirections(role), [role]);
   const [sortConfig, setSortConfig] = useState<{
     key: keyof OpponentMetricAverages | "teamName";
     direction: "ascending" | "descending";
@@ -123,16 +131,6 @@ export default function OpponentMetricsTable({
   }, [teamsAverages, sortConfig, teamsMap]);
 
   const rankMaps = useMemo(() => {
-    const directions: Record<keyof OpponentMetricAverages, "asc" | "desc"> = {
-      avgXgf: "asc",
-      avgXga: "desc",
-      avgSf: "asc",
-      avgSa: "desc",
-      avgGoalFor: "asc",
-      avgGoalAgainst: "desc",
-      avgWinPct: "asc"
-    };
-
     return metricColumns.reduce<
       Record<
         keyof OpponentMetricAverages,
@@ -140,17 +138,19 @@ export default function OpponentMetricsTable({
       >
     >((acc, { key }) => {
       const entries: TeamNumeric[] = [];
+      const direction = directions[key];
       teamsAverages.forEach(({ team, averages }) => {
         const value = averages[key];
         if (typeof value === "number") entries.push({ teamId: team.teamId, value });
       });
-      acc[key] = toRankMaps(entries, directions[key]);
+      // Mixed-sign or unrelated metrics stay uncolored for this role.
+      acc[key] = direction ? toRankMaps(entries, direction) : { best: new Map(), worst: new Map() };
       return acc;
     }, {} as Record<
       keyof OpponentMetricAverages,
       { best: Map<number, number>; worst: Map<number, number> }
     >);
-  }, [teamsAverages, metricColumns]);
+  }, [teamsAverages, metricColumns, directions]);
 
   const getRankClass = (
     key: keyof OpponentMetricAverages,
@@ -204,8 +204,10 @@ export default function OpponentMetricsTable({
           ? ["Some opponent averages are unavailable. Check back after the next stats update."] : []}>
           <p>Opponent stats (Natural Stat Trick): {sourceLabel}</p>
           <p>Metrics per game; PTS% = points / (2 × GP). Missing or incomplete opponent averages show “-”.</p>
-          <p>xG = expected goals; GF/GA = goals for/against; SF/SA = shots for/against. Lower xGF, GF, SF and PTS% are favorable; higher xGA, GA and SA are favorable.</p>
+          <p>xG = expected goals; GF/GA = goals for/against; SF/SA = shots for/against.</p>
+          <p>{OPPONENT_VIEW_LEGEND[role]}</p>
         </MetricInfoDisclosure>
+        {hasData && !statsLoading && !statsError && <OpponentRoleToggle role={role} onChange={setRole} />}
         {statsLoading ? (
           <PanelStatus state="loading" message="Loading opponent stats..." />
         ) : statsError ? (
@@ -241,7 +243,11 @@ export default function OpponentMetricsTable({
                   </button>
                 </th>
                 {metricColumns.map((metric) => (
-                  <th key={metric.key}>
+                  <th
+                    key={metric.key}
+                    data-uncolored={directions[metric.key] ? undefined : true}
+                    title={directions[metric.key] ? undefined : `${metric.label} is not colored in the ${role} view`}
+                  >
                     <button
                       type="button"
                       onClick={() => handleSort(metric.key)}

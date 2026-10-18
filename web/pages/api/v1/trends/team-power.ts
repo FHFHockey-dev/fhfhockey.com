@@ -246,7 +246,7 @@ export default async function handler(
     console.error("team-power API error", error);
     return res.status(500).json({
       message: "Failed to compute team trends.",
-      error: error?.message ?? "Unknown error",
+      error: "TEAM_TRENDS_UNAVAILABLE",
     });
   }
 }

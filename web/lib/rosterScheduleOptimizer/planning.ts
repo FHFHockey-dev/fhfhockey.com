@@ -646,7 +646,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
   const coverageTarget = snapshot.rules.scoring.mode === "categories" ? categoryCoverageTarget : pointsCoverageTarget;
   const requestedMinimum = snapshot.rules.goalieMinimum;
   const categoryCoverageRequested = snapshot.rules.scoring.mode === "categories" && intent.goalieCoverage === "cover"
-    && requestedMinimum.required !== null && !(finite(requestedMinimum.credited) && requestedMinimum.credited >= requestedMinimum.required);
+    && finite(requestedMinimum.required) && requestedMinimum.required > 0 && !(finite(requestedMinimum.credited) && requestedMinimum.credited >= requestedMinimum.required);
   const categoryCoverageSupported = !categoryCoverageRequested || categoryCoverageTarget !== null;
   const goalieSlots = expandActiveSlots(snapshot.rules.rosterSlots).activeSlots.filter(slot => slot.type === "G");
   const coverageKnown = categoryCoverageSupported && (coverageTarget === null || [...playsByDate].flatMap(([date, plays]) => {
@@ -724,33 +724,36 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
     projectedValue = !missingSelectedForecast && (scheduledGames === 0 || forecastedOpportunities > 0) && categoryResults.every(row => row.result !== "unknown") && categoryResults.length ? categoryResults.reduce((sum, row) => sum + (row.result === "win" ? 1 : row.result === "loss" ? -1 : 0), 0) : null;
   }
   const minimum = snapshot.rules.goalieMinimum;
+  // A zero requirement means the league has no goalie minimum, so its checks are bypassed.
+  const hasMinimum = finite(minimum.required) && minimum.required > 0;
   const minimumWindowVerified = goalieMinimumWindowVerified(snapshot);
-  if (minimum.required !== null && !minimumWindowVerified) limitations.add("Goalie minimum progress applies to an unverified or narrower period; coverage cannot be confirmed for this range.");
-  let projected = minimum.credited, confirmed = 0;
-  const minimumAlreadyMet = minimum.required !== null && finite(minimum.credited) && minimum.credited >= minimum.required;
+  if (hasMinimum && !minimumWindowVerified) limitations.add("Goalie minimum progress applies to an unverified or narrower period; coverage cannot be confirmed for this range.");
+  let projected = minimum.credited, confirmed = 0, startsKnown = true;
+  const minimumAlreadyMet = minimum.required === 0 || minimum.required !== null && finite(minimum.credited) && minimum.credited >= minimum.required;
   const goalieByTeamGame = new Map<string, number>();
   for (const play of chosen.values()) if (play.player.playerClass === "goalie") {
     if (play.forecast?.confirmedStart) confirmed++;
     const probability = play.forecast?.confirmedStart ? 1 : play.forecast?.startProbability;
     const key = `${play.game.id}:${play.player.teamAbbreviation}`;
     if (finite(probability)) goalieByTeamGame.set(key, Math.min(1, (goalieByTeamGame.get(key) ?? 0) + probability));
-    else if (!minimumAlreadyMet) projected = null;
+    else { startsKnown = false; if (!minimumAlreadyMet) projected = null; }
   }
-  if (minimum.counts === "appearances" && minimum.required !== null) {
+  const expectedStarts = startsKnown ? [...goalieByTeamGame.values()].reduce((sum, value) => sum + value, 0) : null;
+  if (minimum.counts === "appearances" && hasMinimum) {
     if (!minimumAlreadyMet) { projected = null; limitations.add("Appearance probabilities are unavailable; starter probabilities cannot verify this goalie minimum."); }
-  } else if (minimum.required !== null && minimum.counts === "unknown" && !minimumAlreadyMet) projected = null;
+  } else if (hasMinimum && minimum.counts === "unknown" && !minimumAlreadyMet) projected = null;
   else if (finite(projected)) projected += [...goalieByTeamGame.values()].reduce((sum, value) => sum + value, 0);
-  if (!minimumWindowVerified && minimum.required !== null) projected = null;
-  const risk = minimum.required !== null && (projected === null || projected < minimum.required);
+  if (!minimumWindowVerified && hasMinimum) projected = null;
+  const risk = hasMinimum && (projected === null || projected < (minimum.required ?? 0));
   if (risk && intent.goalieCoverage === "cover") limitations.add("Goalie minimum coverage is not verified.");
-  if (minimum.required !== null && intent.goalieCoverage === "cover" && intent.goalieWindow !== "any") {
+  if (hasMinimum && intent.goalieCoverage === "cover" && intent.goalieWindow !== "any") {
     const available = games.some(game => preferredGoalieDate(game.date, intent) && snapshot.players.some(player => player.playerClass === "goalie" && player.teamAbbreviation === game.teamAbbreviation &&
       (snapshot.roster.some(entry => entry.playerId === player.id) || ["free_agent", "manager_available", "waivers"].includes(player.availability)) &&
       (forecasts.get(`${player.id}:${game.id}`)?.confirmedStart || (forecasts.get(`${player.id}:${game.id}`)?.startProbability ?? 0) > 0)));
     if (!available) limitations.add("Preferred goalie coverage window has no verified usable start; coverage is infeasible with current evidence.");
     else if (![...chosen.values()].some(play => play.player.playerClass === "goalie" && preferredGoalieDate(play.game.date, intent))) limitations.add("This plan does not cover the preferred goalie window.");
   }
-  if (minimum.required !== null && (minimum.counts === "unknown" || minimum.penalty === "unknown")) limitations.add("Goalie minimum semantics are incomplete.");
+  if (hasMinimum && (minimum.counts === "unknown" || minimum.penalty === "unknown")) limitations.add("Goalie minimum semantics are incomplete.");
   if (risk && minimum.penalty === "lose_goalie_categories" && snapshot.rules.scoring.mode === "categories") { projectedValue = null; limitations.add("Goalie-category forfeiture risk makes the matchup projection incomplete."); }
   if (unresolved.length || !opportunitiesComplete) projectedValue = null;
   const legal = timeline.legal && !invalidLocks && !weeklyEvidenceMissing && snapshot.rules.lineupMode !== "unsupported" && (snapshot.rules.lineupMode !== "weekly" || dates.every(date => !!lineupPeriodForDate(date)?.lockAt)) && !slotDiagnostics.some(item => item.severity === "error");
@@ -800,7 +803,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
     reasons: recommendationEligible ? [] : [...limitations], exclusions, unresolved: unresolvedWithReasons, coverage },
     objective, steps, legal, budgetVerified: timeline.budgetVerified,
     assignments, scheduledGames, activeGames: assignments.length, benchGames: Math.max(0, scheduledGames - assignments.length), projectedValue, projectedStats: stats,
-    categoryResults, goalie: { credited: minimum.credited, confirmed, projected, required: minimum.required, risk, minimumSatisfied: minimum.required === null ? null : minimumAlreadyMet }, acquisitions: { ...timeline.acquisitions }, limitations: [...limitations] };
+    categoryResults, goalie: { credited: minimum.credited, confirmed, projected, expectedStarts, required: minimum.required, risk, minimumSatisfied: minimum.required === null ? null : minimumAlreadyMet }, acquisitions: { ...timeline.acquisitions }, limitations: [...limitations] };
   if (!includeBenchEvidence) return evaluation;
   const playByKey = new Map([...playsByDate.values()].flat().map(play => [`${play.player.id}:${play.game.id}`, play]));
   const rowValue = (row: PlanningAssignment) => {

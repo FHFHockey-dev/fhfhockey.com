@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { fetchCurrentSeasonMock } = vi.hoisted(() => ({
+const { fetchCurrentSeasonMock, readError } = vi.hoisted(() => ({
   fetchCurrentSeasonMock: vi.fn(),
+  readError: { current: null as { message: string } | null },
 }));
 
 vi.mock("../../../../../utils/fetchCurrentSeason", () => ({
@@ -30,11 +31,21 @@ vi.mock("../../../../../lib/supabase/server", () => ({
         range() {
           return this;
         },
+        limit() {
+          return this;
+        },
         returns() {
           return Promise.resolve({ data: [], error: null });
         },
-        then(resolve: (value: { data: unknown[]; error: null }) => unknown) {
-          return Promise.resolve(resolve({ data: [], error: null }));
+        then(
+          resolve: (value: {
+            data: unknown[];
+            error: { message: string } | null;
+          }) => unknown,
+        ) {
+          return Promise.resolve(
+            resolve({ data: [], error: readError.current }),
+          );
         },
       };
       return query;
@@ -198,5 +209,33 @@ describe("/api/v1/trends/player-trends rebuild authorization", () => {
       gamesProcessed: 0,
       metricsUpserted: 0,
     });
+  });
+});
+
+describe("/api/v1/trends/player-trends reads", () => {
+  afterEach(() => {
+    readError.current = null;
+    vi.restoreAllMocks();
+  });
+
+  it("redacts dependency details from internal-error responses", async () => {
+    readError.current = {
+      message: "relation private_trends denied Bearer secret",
+    };
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const res = createMockRes();
+
+    await handler(
+      { method: "GET", headers: {}, query: { playerId: "8478402" } } as any,
+      res,
+    );
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({
+      success: false,
+      message: "Failed to fetch trend metrics.",
+      error: "PLAYER_TRENDS_UNAVAILABLE",
+    });
+    expect(JSON.stringify(res.body)).not.toContain("secret");
   });
 });

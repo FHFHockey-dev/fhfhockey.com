@@ -353,6 +353,19 @@ declare module "lib/supabase/Upserts/nhlRawGamecenter.mjs" {
     scope: NormalizedGameScope,
     expectedCurrentManifest: NormalizationManifestIdentity | null,
   ): Promise<NormalizationReceipt>;
+  export interface CapturedGameNormalizationArgs {
+    gameId: number;
+    seasonId: number;
+    gameDate: string;
+    pbp: PlayByPlayPayload;
+    pbpPayloadHash: string;
+    shiftPayload: ShiftChartsPayload;
+    shiftPayloadHash: string;
+  }
+  export function persistCapturedGameNormalization(
+    supabase: SupabaseClient,
+    args: CapturedGameNormalizationArgs,
+  ): Promise<NormalizationReceipt>;
   export function ingestNhlApiRawGame(
     supabase: SupabaseClient,
     gameId: number,

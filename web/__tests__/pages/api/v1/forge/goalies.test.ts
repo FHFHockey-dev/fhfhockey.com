@@ -397,6 +397,35 @@ describe("/api/v1/forge/goalies", () => {
     );
   });
 
+  it.each([
+    { name: "one goalie", wins: [null, 0.419] },
+    { name: "both goalies", wins: [null, null] },
+  ])("keeps a null win probability unknown for $name without normalizing the matchup", async ({ wins }) => {
+    const goalie = (id: number, team: number, opponent: number, win: number | null) => ({
+      goalie_id: id, team_id: team, opponent_team_id: opponent, players: { fullName: `Goalie ${id}` },
+      teams: { name: `Team ${team}`, abbreviation: `T${team}` }, opponent: { name: `Team ${opponent}`, abbreviation: `T${opponent}` },
+      starter_probability: 0.6, proj_shots_against: 28, proj_saves: 25, proj_goals_allowed: 3,
+      proj_win_prob: win, proj_shutout_prob: 0.04, uncertainty: {} });
+    fromMock.mockImplementation((table: string) => {
+      if (table === "forge_goalie_projections") {
+        return createQueryBuilder(() => ({ data: [goalie(1001, 1, 2, wins[0]), goalie(1002, 2, 1, wins[1])], error: null }));
+      }
+      if (table === "forge_runs") {
+        return createQueryBuilder(() => ({ data: { run_id: "run-123", as_of_date: "2026-02-07", status: "succeeded",
+          created_at: "2026-02-07T10:05:00.000Z", metrics: { goalie_rows: 2,
+            input_provenance: { external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } } }, error: null }));
+      }
+      if (table === "games") return createQueryBuilder(() => ({ count: 1, error: null }));
+      if (table === "forge_projection_calibration_daily") return createQueryBuilder(() => ({ data: null, error: null }));
+      return createQueryBuilder(() => ({ data: [], error: null }));
+    });
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07", horizon: "1" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data.map((row: any) => row.proj_win_prob)).toEqual(wins);
+    expect(res.body.diagnostics.notes.join(" ")).not.toContain("Normalized likely-starter win probabilities");
+  });
+
   it("falls back to the latest prior date with goalie rows when requested date has no data", async () => {
     let projectionQueryCount = 0;
     fromMock.mockImplementation((table: string) => {

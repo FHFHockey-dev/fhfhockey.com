@@ -54,7 +54,7 @@ The task text names `web/tests/utils/adminOnlyMiddleware.test.ts`. That path doe
 
 **Repro of A-1:** `lib/NHL/corsProxy.test.ts`, "follows one now-to-dated redirect…", and `__tests__/pages/api/cors.test.ts`, "relays a now resource through one approved dated redirect". Both fail against the released helper (`evidence/proxy-red.log`).
 
-**Repair** (`candidate-a-proxy-redirect.patch`, helper only; the route is unchanged):
+**Repair** (`1-proxy-redirect.patch`, helper only; the route is unchanged):
 - node-fetch now runs with `redirect: "manual"`. At most **one** 301, 302, 303, 307 or 308 redirect is followed.
 - The resolved `Location` must pass the same `parseNhlProxyUrl` policy. A missing, invalid or unapproved Location, or a second redirect, throws `Unsupported NHL redirect`, and the route maps that to its fixed 502.
 - Each hop opens a new socket through the same pinned `lookupNhlAddress`, so DNS is checked again on the hop. All hops share the one 10 s deadline, and each hop has the 4 MiB decoded cap.
@@ -86,7 +86,7 @@ The task text names `web/tests/utils/adminOnlyMiddleware.test.ts`. That path doe
 
 **Repro of B-1:** the request has a loopback peer `127.0.0.1`, `Host: localhost:3000`, `X-Forwarded-For: 203.0.113.7` and `X-Forwarded-Host: abc123.tunnel.example`, with no Authorization header. The released guard ran the handler with the service-role client. The repaired guard returns 401 and never calls the handler. The test is "denies an unauthenticated tunneled request…", plus 12 other red cases in `evidence/admin-red.log`.
 
-**Repair** (`candidate-b-admin-relay.patch`):
+**Repair** (`2-admin-relay.patch`):
 - The Host must match `^(localhost|127.0.0.1|[::1])(:\d{1,5})?$` exactly.
 - New `hasOnlyLocalForwarding`. A request keeps the local exception only if all of these hold:
   - no `Forwarded` or `Via` header;
@@ -132,3 +132,7 @@ The task text names `web/tests/utils/adminOnlyMiddleware.test.ts`. That path doe
 - The RSO `diagnosticLocalOnly` predicate may carry the same relay residual. That code is RSO-owned and excluded from this task.
 - B-4: bind the role query to the verified user ID.
 - A-3: rate-limit the public proxy.
+
+## 6. Update 2026-10-18 (S-08)
+
+The patches were regenerated as `1-proxy-redirect.patch`, `2-admin-relay.patch` and `3-admin-role-binding.patch`. Patch 3 binds the role lookup to the verified user id (finding B-4). Applied in order to `ceceb407a`, the three patches reproduce the current bytes. The commit order, messages, test commands and results are in `COMMIT-PLAN.md`.

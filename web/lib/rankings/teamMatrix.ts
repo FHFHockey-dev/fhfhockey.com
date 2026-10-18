@@ -1148,6 +1148,8 @@ async function fetchUnderlyingStyleRows(request: TeamMatrixRequest) {
       .eq("strength", "fiveOnFive")
       .eq("score_state", "allScores")
       .order("game_date", { ascending: false })
+      .order("game_id", { ascending: true })
+      .order("team_id", { ascending: true })
       .range(from, from + TEAM_QUERY_PAGE_SIZE - 1);
     if (request.asOfDate != null) query = query.lte("game_date", request.asOfDate);
     const { data, error } = await query;
@@ -1189,6 +1191,7 @@ async function fetchTeamGameContextRows(request: TeamMatrixRequest) {
       )
       .eq("season_id", request.season)
       .order("date", { ascending: false })
+      .order("id", { ascending: true })
       .range(from, from + TEAM_QUERY_PAGE_SIZE - 1);
     if (request.asOfDate != null) query = query.lte("date", request.asOfDate);
     const { data, error } = await query;
@@ -1263,6 +1266,7 @@ async function fetchTeamUnitToiRows(request: TeamMatrixRequest) {
       .eq("season_id", request.season)
       .eq("snapshot_date", snapshotDate)
       .order("game_date", { ascending: false })
+      .order("id", { ascending: true })
       .range(from, from + TEAM_QUERY_PAGE_SIZE - 1);
     if (request.asOfDate != null) query = query.lte("game_date", request.asOfDate);
     const { data, error } = await query;

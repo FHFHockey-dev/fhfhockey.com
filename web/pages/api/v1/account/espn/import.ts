@@ -67,7 +67,7 @@ export default async function handler(
       ...result,
     });
   } catch (error) {
-    if (error instanceof EspnImportError) {
+    if (error instanceof EspnImportError && error.statusCode < 500) {
       if (error.retryAfterSeconds) {
         res.setHeader("Retry-After", String(error.retryAfterSeconds));
       }
@@ -76,8 +76,10 @@ export default async function handler(
         retryAfterSeconds: error.retryAfterSeconds ?? null,
       });
     }
+    console.error("ESPN import failed", error);
     return res.status(500).json({
-      error: error instanceof Error ? error.message : "ESPN import failed.",
+      error: "ESPN import failed.",
+      code: "ESPN_IMPORT_UNAVAILABLE",
     });
   }
 }

@@ -90,6 +90,72 @@ export type GeneratePredictionWindowResult = {
   results: GeneratePregamePredictionResult[];
 };
 
+export const PREDICTION_CUTOFF_SKIP_REASON = "prediction_cutoff_at_or_after_puck_drop";
+export const NO_PRODUCTION_MODEL_VERSION_SKIP_REASON = "no_production_model_version";
+
+export class NoProductionModelVersionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NoProductionModelVersionError";
+  }
+}
+
+export type PredictionWindowOutcome = {
+  status:
+    | "failed"
+    | "dry_run"
+    | "persisted"
+    | "no_production_model"
+    | "no_games"
+    | "nothing_persisted";
+  persistedPredictions: number;
+  skippedGames: number;
+  noProductionModelGames: number;
+  failedGames: number;
+};
+
+/**
+ * Separates expected skips (a game past its cutoff, or no production model to
+ * serve) from per-game errors, so callers can report what was really written.
+ */
+export function summarizePredictionWindowOutcome(
+  result: GeneratePredictionWindowResult,
+): PredictionWindowOutcome {
+  const countResults = (predicate: (row: GeneratePregamePredictionResult) => boolean) =>
+    result.results.filter(predicate).length;
+  const persistedPredictions = countResults((row) => row.predictionId != null);
+  const noProductionModelGames = countResults(
+    (row) => row.skippedReason === NO_PRODUCTION_MODEL_VERSION_SKIP_REASON,
+  );
+  const failedGames = countResults(
+    (row) =>
+      row.skippedReason != null &&
+      row.skippedReason !== PREDICTION_CUTOFF_SKIP_REASON &&
+      row.skippedReason !== NO_PRODUCTION_MODEL_VERSION_SKIP_REASON,
+  );
+
+  const status: PredictionWindowOutcome["status"] =
+    failedGames > 0
+      ? "failed"
+      : result.dryRun
+        ? "dry_run"
+        : persistedPredictions > 0
+          ? "persisted"
+          : noProductionModelGames > 0
+            ? "no_production_model"
+            : result.requestedGames === 0
+              ? "no_games"
+              : "nothing_persisted";
+
+  return {
+    status,
+    persistedPredictions,
+    skippedGames: result.skippedGames,
+    noProductionModelGames,
+    failedGames,
+  };
+}
+
 export type BackfillFeatureSnapshotResult = {
   gameId: number;
   gameDate: string;
@@ -296,7 +362,7 @@ export function servingModelVersionPersistenceAction(args: {
     return "use_existing_production";
   }
 
-  throw new Error(
+  throw new NoProductionModelVersionError(
     [
       "Refusing to persist serving game prediction for non-production model version",
       `${args.modelName}/${args.modelVersion}/${args.featureSetVersion}.`,
@@ -1146,7 +1212,7 @@ export async function generatePregamePredictionsForWindow(args: {
         predictionId: null,
         homeWinProbability: null,
         awayWinProbability: null,
-        skippedReason: "prediction_cutoff_at_or_after_puck_drop",
+        skippedReason: PREDICTION_CUTOFF_SKIP_REASON,
         dryRun: Boolean(args.dryRun),
       });
       continue;
@@ -1174,7 +1240,11 @@ export async function generatePregamePredictionsForWindow(args: {
         homeWinProbability: null,
         awayWinProbability: null,
         skippedReason:
-          error instanceof Error ? error.message : "prediction_generation_failed",
+          error instanceof NoProductionModelVersionError
+            ? NO_PRODUCTION_MODEL_VERSION_SKIP_REASON
+            : error instanceof Error
+              ? error.message
+              : "prediction_generation_failed",
         dryRun: Boolean(args.dryRun),
       });
     }

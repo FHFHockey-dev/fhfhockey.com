@@ -1,0 +1,390 @@
+diff --git a/web/__tests__/pages/underlying-stats/teamStats/index.test.tsx b/web/__tests__/pages/underlying-stats/teamStats/index.test.tsx
+index 54284e586..8209ac484 100644
+--- a/web/__tests__/pages/underlying-stats/teamStats/index.test.tsx
++++ b/web/__tests__/pages/underlying-stats/teamStats/index.test.tsx
+@@ -79,10 +79,12 @@ function expectLastTeamLandingFetch(path: string) {
+ describe("TeamUnderlyingStatsLandingRoute", () => {
+   let teamCoverage: { completedGames: number; summarizedGames: number } | null = null;
+   let returnNoRows = false;
++  let failLanding = false;
+ 
+   beforeEach(() => {
+     teamCoverage = null;
+     returnNoRows = false;
++    failLanding = false;
+     routerMock.isReady = true;
+     routerMock.pathname = "/underlying-stats/teamStats";
+     routerMock.query = {};
+@@ -116,6 +118,14 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
+           };
+         }
+ 
++        if (failLanding) {
++          return {
++            ok: false,
++            status: 500,
++            json: async () => ({ success: false, error: "Team landing unavailable." }),
++          };
++        }
++
+         const params = new URL(url, "http://localhost").searchParams;
+         const displayMode = params.get("displayMode") ?? "counts";
+         const family = displayMode === "rates" ? "rates" : "counts";
+@@ -192,9 +202,9 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
+     teamCoverage = { completedGames: 120, summarizedGames: 65 };
+     const { unmount } = render(<TeamUnderlyingStatsLandingRoute />);
+ 
+-    expect(
+-      await screen.findByText(/team data covers 65 of\s+120 completed games/)
+-    ).toBeTruthy();
++    const partialNotice = await screen.findByText(/team data covers 65 of\s+120 completed games/);
++    // Messages on the dark panel use readable token classes, not inline dark colors.
++    expect(partialNotice.style.color).toBe("");
+     unmount();
+ 
+     teamCoverage = { completedGames: 120, summarizedGames: 0 };
+@@ -222,11 +232,22 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
+       screen.getByRole("heading", { name: "Team Table Explorer" })
+     ).toBeTruthy();
+     expect(screen.getByText("FLA")).toBeTruthy();
+-    expect(screen.getByText("Showing 1 of 1 teams.")).toBeTruthy();
++    expect(screen.getByText("Showing 1 of 1 teams.").style.color).toBe("");
+     expect(screen.getByText("Points")).toBeTruthy();
+     expect(routerMock.replace).not.toHaveBeenCalled();
+   });
+ 
++  it("announces a failed team load as a readable alert", async () => {
++    routerMock.query = createCanonicalQuery();
++    failLanding = true;
++
++    render(<TeamUnderlyingStatsLandingRoute />);
++
++    const alert = await screen.findByRole("alert");
++    expect(alert.textContent).toBeTruthy();
++    expect(alert.style.color).toBe("");
++  });
++
+   it("switches to rates mode, rewrites the canonical query, and refetches from the rates API path", async () => {
+     routerMock.query = createCanonicalQuery();
+ 
+diff --git a/web/components/Comments/Comments.tsx b/web/components/Comments/Comments.tsx
+index e7c18422e..2511e6fb5 100644
+--- a/web/components/Comments/Comments.tsx
++++ b/web/components/Comments/Comments.tsx
+@@ -62,7 +62,7 @@ function Comments({ slug }: { slug: string }, ref: any) {
+         Comments
+       </h2>
+       <ul className={styles.list} aria-labelledby="comments-heading">
+-        {loading && <Spinner center />}
++        {loading && <Spinner center label="Loading comments" />}
+         {data?.comments.map((comment: CommentData) => (
+           <Comment key={comment.id} {...comment} />
+         ))}
+diff --git a/web/components/Spinner/Spinner.module.scss b/web/components/Spinner/Spinner.module.scss
+index d44538767..18ecf68fc 100644
+--- a/web/components/Spinner/Spinner.module.scss
++++ b/web/components/Spinner/Spinner.module.scss
+@@ -29,3 +29,22 @@
+   justify-content: center;
+   align-items: center;
+ }
++
++// Keep a still ring for people who ask the system to reduce motion.
++@media (prefers-reduced-motion: reduce) {
++  .spinnerContainer .loadingSpinner {
++    animation: none;
++  }
++}
++
++.visuallyHidden {
++  position: absolute;
++  width: 1px;
++  height: 1px;
++  margin: -1px;
++  padding: 0;
++  overflow: hidden;
++  clip: rect(0, 0, 0, 0);
++  white-space: nowrap;
++  border: 0;
++}
+diff --git a/web/components/Spinner/Spinner.tsx b/web/components/Spinner/Spinner.tsx
+index 81f0d5a1a..4849517f6 100644
+--- a/web/components/Spinner/Spinner.tsx
++++ b/web/components/Spinner/Spinner.tsx
+@@ -7,12 +7,15 @@ type SpinnerProps = {
+   className?: string;
+   center?: boolean;
+   size?: "small" | "medium";
++  /** Announced loading text, for callers that have no other loading status. */
++  label?: string;
+ };
+ 
+ function Spinner({
+   className,
+   center,
+   size = "medium",
++  label,
+   ...props
+ }: SpinnerProps) {
+   return (
+@@ -20,6 +23,7 @@ function Spinner({
+       className={classNames(styles.spinnerContainer, className, {
+         [styles.center]: center,
+       })}
++      role={label ? "status" : undefined}
+       {...props}
+     >
+       <div
+@@ -27,7 +31,9 @@ function Spinner({
+           [styles.small]: size === "small",
+           [styles.medium]: size === "medium",
+         })}
++        aria-hidden="true"
+       ></div>
++      {label ? <span className={styles.visuallyHidden}>{label}</span> : null}
+     </div>
+   );
+ }
+diff --git a/web/pages/lines/[abbreviation].module.scss b/web/pages/lines/[abbreviation].module.scss
+index 3cf7d77b4..b8e31515e 100644
+--- a/web/pages/lines/[abbreviation].module.scss
++++ b/web/pages/lines/[abbreviation].module.scss
+@@ -78,6 +78,16 @@
+       display: flex;
+       align-items: center;
+       gap: v.$space-sm;
++      padding: 0;
++      border: 0;
++      background: none;
++      color: inherit;
++      font: inherit;
++
++      &:focus-visible {
++        outline: 3px solid v.$focus-color;
++        outline-offset: 2px;
++      }
+ 
+       .small {
+         display: block;
+diff --git a/web/pages/lines/[abbreviation].tsx b/web/pages/lines/[abbreviation].tsx
+index bdff9b6a9..6c5e2c53f 100644
+--- a/web/pages/lines/[abbreviation].tsx
++++ b/web/pages/lines/[abbreviation].tsx
+@@ -396,7 +396,7 @@ type HeaderProps = {
+   onTeamLogoClick: () => void;
+ };
+ 
+-function Header({
++export function Header({
+   teamName,
+   teamAbbreviation,
+   lastUpdated,
+@@ -426,8 +426,13 @@ function Header({
+           </a>
+         </div>
+       </div>
+-      <div className={styles.right} onClick={onTeamLogoClick}>
+-        <div className={styles.large}>
++      <button
++        type="button"
++        className={styles.right}
++        onClick={onTeamLogoClick}
++        aria-label={`Download ${teamName} line combinations image`}
++      >
++        <span className={styles.large}>
+           <img
+             alt={teamName}
+             src={getTeamLogo(teamAbbreviation)}
+@@ -437,9 +442,9 @@ function Header({
+               objectFit: "contain"
+             }}
+           />
+-        </div>
++        </span>
+ 
+-        <div className={styles.small}>
++        <span className={styles.small}>
+           <img
+             alt={teamName}
+             src={getTeamLogo(teamAbbreviation)}
+@@ -449,8 +454,8 @@ function Header({
+               objectFit: "contain"
+             }}
+           />
+-        </div>
+-      </div>
++        </span>
++      </button>
+     </div>
+   );
+ }
+diff --git a/web/pages/underlying-stats/playerStats/playerStats.module.scss b/web/pages/underlying-stats/playerStats/playerStats.module.scss
+index 7df8c7875..48c0c3888 100644
+--- a/web/pages/underlying-stats/playerStats/playerStats.module.scss
++++ b/web/pages/underlying-stats/playerStats/playerStats.module.scss
+@@ -469,3 +469,19 @@ $page-max-width: 1600px;
+     flex-direction: column;
+   }
+ }
++
++// Team explorer messages sit on the dark section panel; these tokens keep them
++// at readable contrast there (the former #8a1c1c/#8a5a00/#555 measured ~2:1).
++.explorerAlert {
++  color: v.$danger-color;
++}
++
++.explorerNotice {
++  margin-bottom: 8px;
++  color: v.$warning-color;
++}
++
++.explorerSummary {
++  margin-bottom: 16px;
++  color: v.$text-secondary;
++}
+diff --git a/web/pages/underlying-stats/teamStats/index.tsx b/web/pages/underlying-stats/teamStats/index.tsx
+index a00f90e5f..c20549c16 100644
+--- a/web/pages/underlying-stats/teamStats/index.tsx
++++ b/web/pages/underlying-stats/teamStats/index.tsx
+@@ -615,7 +615,7 @@ export default function TeamUnderlyingStatsLandingRoute() {
+         />
+ 
+         {!validation.isValid ? (
+-          <section role="alert" style={{ color: "#8a1c1c" }}>
++          <section role="alert" className={styles.explorerAlert}>
+             Team filters are invalid: {validation.issues.join(", ")}
+           </section>
+         ) : isLoading ? (
+@@ -623,7 +623,7 @@ export default function TeamUnderlyingStatsLandingRoute() {
+             Loading team results...
+           </section>
+         ) : tableError ? (
+-          <section role="alert" style={{ color: "#8a1c1c" }}>
++          <section role="alert" className={styles.explorerAlert}>
+             {tableError}
+           </section>
+         ) : rows.length === 0 ? (
+@@ -635,12 +635,12 @@ export default function TeamUnderlyingStatsLandingRoute() {
+         ) : (
+           <section>
+             {coverage && coverage.summarizedGames < coverage.completedGames ? (
+-              <div role="status" style={{ marginBottom: "8px", color: "#8a5a00" }}>
++              <div role="status" className={styles.explorerNotice}>
+                 Partial season: team data covers {coverage.summarizedGames} of{" "}
+                 {coverage.completedGames} completed games, so totals may lag official standings.
+               </div>
+             ) : null}
+-            <div style={{ marginBottom: "16px", color: "#555" }}>
++            <div className={styles.explorerSummary}>
+               Showing {rows.length} of {landingData?.pagination.totalRows ?? rows.length} teams.
+             </div>
+             <PlayerStatsTable
+diff --git a/web/styles/globals.css b/web/styles/globals.css
+index 162a35142..49e2aaa28 100755
+--- a/web/styles/globals.css
++++ b/web/styles/globals.css
+@@ -25,7 +25,15 @@ a {
+   box-sizing: border-box;
+ }
+ 
+-textarea:focus,
+-input:focus {
++textarea:focus:not(:focus-visible),
++input:focus:not(:focus-visible) {
+   outline: none;
+ }
++
++/* Keyboard focus stays visible; component rules with their own focus
++   treatment have higher specificity and still apply. Matches $focus-color. */
++textarea:focus-visible,
++input:focus-visible {
++  outline: 3px solid rgb(255, 193, 8);
++  outline-offset: 2px;
++}
+diff --git a/web/components/Spinner/Spinner.test.tsx b/web/components/Spinner/Spinner.test.tsx
+new file mode 100644
+index 000000000..6786b253e
+--- /dev/null
++++ b/web/components/Spinner/Spinner.test.tsx
+@@ -0,0 +1,28 @@
++import fs from "fs";
++import path from "path";
++import { cleanup, render, screen } from "@testing-library/react";
++import { afterEach, describe, expect, it } from "vitest";
++import Spinner from "components/Spinner";
++
++afterEach(cleanup);
++
++describe("Spinner", () => {
++  it("announces its label as a status when it is the only loading indicator", () => {
++    render(<Spinner center label="Loading comments" />);
++
++    expect(screen.getByRole("status").textContent).toBe("Loading comments");
++  });
++
++  it("stays silent and decorative when the caller already reports loading", () => {
++    const { container } = render(<Spinner size="small" />);
++
++    expect(screen.queryByRole("status")).toBeNull();
++    expect(container.querySelector('[aria-hidden="true"]')).not.toBeNull();
++  });
++
++  it("stops rotating for people who prefer reduced motion", () => {
++    const css = fs.readFileSync(path.join(__dirname, "Spinner.module.scss"), "utf8");
++
++    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)\s*{[^}]*\.loadingSpinner\s*{\s*animation: none;/);
++  });
++});
+diff --git a/web/__tests__/pages/lines/abbreviation-header.test.tsx b/web/__tests__/pages/lines/abbreviation-header.test.tsx
+new file mode 100644
+index 000000000..50399270c
+--- /dev/null
++++ b/web/__tests__/pages/lines/abbreviation-header.test.tsx
+@@ -0,0 +1,25 @@
++import { cleanup, fireEvent, render, screen } from "@testing-library/react";
++import { afterEach, describe, expect, it, vi } from "vitest";
++import { Header } from "pages/lines/[abbreviation]";
++
++afterEach(cleanup);
++
++describe("team lines header", () => {
++  it("offers the logo image download as a named keyboard-reachable button", () => {
++    const onTeamLogoClick = vi.fn();
++    render(
++      <Header
++        teamName="Florida Panthers"
++        teamAbbreviation="FLA"
++        lastUpdated="2026-10-17T12:00:00.000Z"
++        sourceUrl="https://example.invalid/source"
++        onTeamLogoClick={onTeamLogoClick}
++      />,
++    );
++
++    const button = screen.getByRole("button", { name: "Download Florida Panthers line combinations image" });
++    expect(button.getAttribute("type")).toBe("button");
++    fireEvent.click(button);
++    expect(onTeamLogoClick).toHaveBeenCalledTimes(1);
++  });
++});
+diff --git a/web/__tests__/styles/globalFocus.test.ts b/web/__tests__/styles/globalFocus.test.ts
+new file mode 100644
+index 000000000..9117baf33
+--- /dev/null
++++ b/web/__tests__/styles/globalFocus.test.ts
+@@ -0,0 +1,16 @@
++import fs from "fs";
++import path from "path";
++import { describe, expect, it } from "vitest";
++
++const css = fs.readFileSync(path.join(__dirname, "../../styles/globals.css"), "utf8");
++
++describe("global input focus", () => {
++  it("only hides the outline for pointer focus", () => {
++    expect(css).not.toMatch(/textarea:focus,\s*input:focus\s*{\s*outline:\s*none/);
++    expect(css).toMatch(/input:focus:not\(:focus-visible\)\s*{\s*outline:\s*none/);
++  });
++
++  it("keeps keyboard focus visible with the design focus color", () => {
++    expect(css).toMatch(/input:focus-visible\s*{\s*outline:\s*3px solid rgb\(255, 193, 8\)/);
++  });
++});

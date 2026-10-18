@@ -432,13 +432,18 @@ export function startChartFromGameExpectations(response: GameExpectationsRespons
   const games = new Map<number, StartChartGame>();
   const players: unknown[] = [];
   const expiries: string[] = [];
+  // Scheduled games this board cannot place (unknown team or identity) stay visible as a coverage gap.
+  const unmappedGameIds = new Set<string>();
   let coveredRows = 0;
   for (const player of response.players) for (const game of player.games) {
     if (game.date !== date) continue;
     const gameId = Number(game.gameId);
     const home = teamsInfo[game.homeTeam], away = teamsInfo[game.awayTeam];
-    if (!Number.isSafeInteger(gameId) || gameId <= 0 || !home || !away) continue;
-    if (game.team !== game.homeTeam && game.team !== game.awayTeam) continue;
+    if (!Number.isSafeInteger(gameId) || gameId <= 0 || !home || !away
+      || (game.team !== game.homeTeam && game.team !== game.awayTeam)) {
+      unmappedGameIds.add(game.gameId);
+      continue;
+    }
     if (!games.has(gameId)) games.set(gameId, { id: gameId, date, startTime: game.scheduledAt,
       homeTeamId: home.id, awayTeamId: away.id, homeAbbrev: home.abbrev, awayAbbrev: away.abbrev,
       homeGoalies: [], awayGoalies: [] });
@@ -496,13 +501,16 @@ export function startChartFromGameExpectations(response: GameExpectationsRespons
     gameExpectations: { version: response.version, readAsOf: response.readAsOf,
       manifestId: response.manifestId, baselineChecksum: response.baselineChecksum, expiresAt: expiries[0] ?? null,
       basis: "expected" },
-    serving: { mode: games.size ? "partial" : "no_games",
-      reason: games.size ? "game_expectation_coverage" : "no_upcoming_games_on_selected_date",
-      message: games.size ? "Daily values use admitted game expectations. Missing heads or participation remain unavailable."
-        : `No upcoming scheduled games are available for ${date}.` },
+    serving: { mode: games.size || unmappedGameIds.size ? "partial" : "no_games",
+      reason: games.size ? "game_expectation_coverage" : unmappedGameIds.size ? "unmapped_slate_teams" : "no_upcoming_games_on_selected_date",
+      message: [games.size ? "Daily values use admitted game expectations. Missing heads or participation remain unavailable."
+        : unmappedGameIds.size ? "" : `No upcoming scheduled games are available for ${date}.`,
+      unmappedGameIds.size ? `${unmappedGameIds.size} scheduled game(s) are omitted because a team could not be identified.` : ""]
+        .filter(Boolean).join(" ") },
     sourceStatus: { overall: "degraded", projection: { state: coveredRows ? "partial" : "missing", affectsRanking: true,
       date, updatedAt: null, message: "Read time is separate from original issuance. Conditional values are not expected game totals." },
-      degradedReasons: coveredRows ? ["partial_game_expectation_coverage"] : ["missing_projection"] },
+      degradedReasons: [coveredRows ? "partial_game_expectation_coverage" : "missing_projection",
+        ...(unmappedGameIds.size ? ["unmapped_slate_team"] : [])] },
     coverage: { slateGames: games.size, slateTeams: games.size * 2, projectionRows: coveredRows, renderedRows: players.length },
   });
   return selectStartChartExpectationBasis(board,

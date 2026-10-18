@@ -3,6 +3,7 @@
 Status: implementation plan; no implementation or release authorized by this document alone.
 Date: October 15, 2026. Product owner: TJ Branson, FHFH.
 Companion: `prd-sko-element.md`; shared interpretation and forecast contract owned there.
+Implementation status (2026-10-18, sprint lane S-16): fixture-stage watchlists, market-reference comparability, trade comparison and device-local storage exist locally and are uncommitted (`web/lib/buyLowSellHigh/`, `web/components/buyLowSellHigh/`, `/buy-low-sell-high/preview`, which returns 404 in production builds). Legacy `web/pages/buyLowSellHigh.js` is unchanged. See `tasks/artifacts/sko-blsh-lane-2026-10-18/README.md`.
 
 ## 1. Introduction / Overview
 

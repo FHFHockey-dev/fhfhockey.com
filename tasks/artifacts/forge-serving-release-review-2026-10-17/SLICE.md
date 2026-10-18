@@ -9,7 +9,7 @@ Review only. No source, ref, index, remote, Vercel or database state was changed
 - **Machine-readable copy:** `slice.json`, with full blobs, sha256, production blobs and in-slice importers.
 
 > **Revision 2026-10-17 ~22:45Z (blocker fixes).** `slice.json` is now the authority for pins.
-> - **Re-pinned:** `calibrationEligibility.ts` (B1); `startChartContract.ts` and `start-chart.ts` (N1); `gameExpectationView.ts` (N2); `forge/forecasts.ts` (N3); `lib/in-season/workspaceSchema.ts` (W1, `catalogExpiresAt`). The hash rows below for these six are stale.
+> - **Re-pinned:** `calibrationEligibility.ts` (B1); `startChartContract.ts` and `start-chart.ts` (N1); `gameExpectationView.ts` (N2); `forge/forecasts.ts` (N3); `lib/in-season/workspaceSchema.ts` (W1, `catalogExpiresAt`). 2026-10-18: `start-chart.ts` again (legacy gate restored to production behaviour), plus other sessions' committed edits to `RosterScheduleOptimizer.tsx`, `workspaceSchema.ts` and `planningTypes.ts`. The hash rows below for these eight are stale.
 > - **New sections:** `scheduleWriters` (the two B2 files below, at unchanged bytes); `testSupport` (`scripts/preview-native-baseline.ts`, `seasonGameContributions.ts`: inert, no `pages/` importer, Monday-frozen and not edited); `candidateTests` (49); `excludedFromCandidate`; `branchOnlyRuntime` (`run-forge-projections.ts`, which stays at production bytes).
 > - **Superseded:** the B3 table at the end ("cannot run on a master candidate"). See `BLOCKERS.md` status.
 

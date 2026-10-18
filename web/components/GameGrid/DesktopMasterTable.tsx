@@ -19,6 +19,8 @@ import MetricInfoDisclosure from "./MetricInfoDisclosure";
 import { DAYS, EXTENDED_DAY_ABBREVIATION, EXTENDED_DAYS, WeekData } from "lib/NHL/types";
 import { useTeamsMap } from "hooks/useTeams";
 import { TeamNumeric, toRankMaps } from "./utils/metricRanks";
+import OpponentRoleToggle from "./OpponentRoleToggle";
+import { getOpponentViewDirections, OPPONENT_VIEW_LEGEND, OpponentRole } from "./utils/opponentCategoryEffects";
 import { FOUR_WEEK_COLOR_LEGEND, toFourWeekMetricBands } from "./utils/fourWeekMetricBands";
 import type { FourWeekCalendar } from "./utils/useFourWeekSchedule";
 import {
@@ -256,6 +258,7 @@ export default function DesktopMasterTable({
     direction: "ascending",
   });
   const [isFourWeekCollapsed, setIsFourWeekCollapsed] = useState(false);
+  const [opponentRole, setOpponentRole] = useState<OpponentRole>("skater");
   const [containerWidth, setContainerWidth] = useState(0);
   const [stickyHeader, setStickyHeader] = useState<StickyHeaderState>({
     active: false,
@@ -377,15 +380,7 @@ export default function DesktopMasterTable({
   );
 
   const opponentMetricRankMaps = useMemo(() => {
-    const directions: Record<keyof OpponentMetricAverages, "asc" | "desc"> = {
-      avgXgf: "asc",
-      avgXga: "desc",
-      avgSf: "asc",
-      avgSa: "desc",
-      avgGoalFor: "asc",
-      avgGoalAgainst: "desc",
-      avgWinPct: "asc",
-    };
+    const directions = getOpponentViewDirections(opponentRole);
 
     return opponentMetricColumns.reduce<
       Record<
@@ -403,7 +398,10 @@ export default function DesktopMasterTable({
           }
         });
 
-        acc[key] = toRankMaps(entries, directions[key]);
+        const direction = directions[key];
+        acc[key] = direction
+          ? toRankMaps(entries, direction)
+          : { best: new Map(), worst: new Map() };
         return acc;
       },
       {} as Record<
@@ -411,7 +409,7 @@ export default function DesktopMasterTable({
         { best: Map<number, number>; worst: Map<number, number> }
       >,
     );
-  }, [opponentMetricColumns, rows]);
+  }, [opponentMetricColumns, opponentRole, rows]);
 
   const fourWeekBands = useMemo(() => ({
     gamesPlayed: toFourWeekMetricBands(rows.map((row) => ({ teamId: row.teamId, value: row.fourWeekGamesPlayed })), "desc"),
@@ -1008,11 +1006,15 @@ export default function DesktopMasterTable({
       ]}>
         {opponentSourceLabel && <p>Opponent stats (Natural Stat Trick): {opponentSourceLabel}</p>}
         <p>Metrics per game; PTS% = points / (2 × GP). Missing or incomplete opponent averages show “-”.</p>
-        <p>xG = expected goals; GF/GA = goals for/against; SF/SA = shots for/against. Lower xGF, GF, SF and PTS% are favorable; higher xGA, GA and SA are favorable.</p>
+        <p>xG = expected goals; GF/GA = goals for/against; SF/SA = shots for/against.</p>
+        <p>{OPPONENT_VIEW_LEGEND[opponentRole]}</p>
         {fourWeekCalendar && <p>Four weeks: {fourWeekCalendar.start}–{fourWeekCalendar.end}, selected Monday–Sunday week plus three weeks. {fourWeekCalendar.error ?? (fourWeekCalendar.knownDays === fourWeekCalendar.expectedDays ? "Schedule complete." : "Schedule incomplete; affected totals are unavailable.")}</p>}
         <p>GP = games played; OFF = games on nights with eight or fewer NHL games. OPP% uses current-season NHL regular-season team points percentages.</p>
         <p>{FOUR_WEEK_COLOR_LEGEND}</p>
       </MetricInfoDisclosure>
+      {opponentMetricColumns.length > 0 && !opponentMetricsLoading && !opponentMetricsError && (
+        <OpponentRoleToggle role={opponentRole} onChange={setOpponentRole} />
+      )}
       <div ref={scrollRef} className={styles.masterTableScroll}>
         <table
           ref={tableRef}

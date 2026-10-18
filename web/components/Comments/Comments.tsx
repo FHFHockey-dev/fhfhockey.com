@@ -62,7 +62,7 @@ function Comments({ slug }: { slug: string }, ref: any) {
         Comments
       </h2>
       <ul className={styles.list} aria-labelledby="comments-heading">
-        {loading && <Spinner center />}
+        {loading && <Spinner center label="Loading comments" />}
         {data?.comments.map((comment: CommentData) => (
           <Comment key={comment.id} {...comment} />
         ))}

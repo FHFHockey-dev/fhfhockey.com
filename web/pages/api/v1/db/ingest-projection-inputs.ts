@@ -24,7 +24,11 @@ import {
   fetchAllNhleShiftChartsSnapshotForGame,
 } from "lib/projections/ingest/shifts";
 import { captureProjectionRawSourceSnapshots } from "lib/projections/ingest/rawSnapshotPersistence";
-import { persistCapturedGameNormalization } from "lib/supabase/Upserts/nhlRawGamecenter.mjs";
+import {
+  persistCapturedGameNormalization,
+  type PlayByPlayPayload,
+  type ShiftChartsPayload,
+} from "lib/supabase/Upserts/nhlRawGamecenter.mjs";
 import {
   buildProjectionInputRpcPayload,
   persistProjectionGameInputs,
@@ -665,9 +669,12 @@ export async function ingestProjectionInputsHandler(
           gameId,
           seasonId: Number(sharedPbp.season),
           gameDate: sharedPbp.gameDate,
-          pbp: sharedPbp,
+          // Both are the unmodified provider JSON (`nhleFetchJson` and the raw
+          // shift pages), which carry `rosterSpots` and shift `id`; the local
+          // projection types only declare the fields their own readers use.
+          pbp: sharedPbp as unknown as PlayByPlayPayload,
           pbpPayloadHash: rawSnapshots.pbp.payloadHash,
-          shiftPayload: shiftSnapshot.rawPayload,
+          shiftPayload: shiftSnapshot.rawPayload as unknown as ShiftChartsPayload,
           shiftPayloadHash: rawSnapshots.shifts.payloadHash,
         });
       }

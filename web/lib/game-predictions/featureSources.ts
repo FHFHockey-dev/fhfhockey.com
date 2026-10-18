@@ -23,8 +23,12 @@ export type GamePredictionFeatureSource = {
   goNoGo: "go" | "go_with_caveat" | "limited" | "no_go";
 };
 
+// Bump whenever a feature's meaning changes, so snapshots, metrics and model
+// versions keyed on this value never mix vectors built under different rules.
+// v6: homeMinusAwayCtpi is gated on a trusted recent-form payload (5740289cc),
+// and recent-form windows admit only single-game (gp === 1) rows (f85167732).
 export const GAME_PREDICTION_FEATURE_SET_VERSION =
-  "game_features_v5_accuracy_candidates";
+  "game_features_v6_trusted_ctpi_single_game_form";
 
 export const GAME_PREDICTION_FEATURE_SOURCES: GamePredictionFeatureSource[] = [
   {

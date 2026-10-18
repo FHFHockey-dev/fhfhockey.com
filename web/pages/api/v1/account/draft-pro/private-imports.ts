@@ -21,5 +21,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     return res.status(201).json({ data: result });
   }
-  catch (error) { const e = error as { statusCode?: number; code?: string; message?: string }; return res.status(e.statusCode ?? 400).json({ error: { code: e.code ?? "private_import_invalid", message: e.message ?? "Private import is invalid." } }); }
+  catch (cause) {
+    // Typed access/validation errors keep their status and safe message; anything else is an
+    // unexpected storage/RPC failure whose details stay in the server log.
+    const e = cause as { statusCode?: number; code?: string; message?: string };
+    if (e.statusCode) return res.status(e.statusCode).json({ error: { code: e.code ?? "private_import_invalid", message: e.message ?? "Private import is invalid." } });
+    if (cause instanceof z.ZodError) return res.status(400).json({ error: { code: "private_import_invalid", message: cause.issues[0]?.message ?? "Private import is invalid." } });
+    console.error("Draft Pro private import begin failed", cause);
+    return res.status(500).json({ error: { code: "PRIVATE_IMPORT_UNAVAILABLE", message: "Private imports are unavailable. Your local draft is unchanged." } });
+  }
 }

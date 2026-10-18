@@ -815,4 +815,72 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
       }
     });
   });
+
+  it.each([
+    [{ playerId: "8478402" }, "playerId"],
+    [{ dryRunUpsert: "true" }, "dryRunUpsert"],
+    [{ maxPlayers: "10" }, "maxPlayers"],
+    [{ season: "20252026" }, "season"],
+    [{ autoResume: "true" }, "maxPlayers"]
+  ])(
+    "refuses a table-clearing full refresh combined with %o",
+    async (extraQuery, conflictingFlag) => {
+      for (const fullRefreshMode of ["rpc_truncate", "delete"]) {
+        const req: any = {
+          method: "GET",
+          query: { fullRefresh: "true", fullRefreshMode, ...extraQuery },
+          url: "/api/v1/db/update-rolling-player-averages"
+        };
+        const res = createMockRes();
+
+        await handler(req, res);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body).toMatchObject({
+          success: false,
+          operationStatus: "blocked",
+          message: expect.stringContaining(conflictingFlag)
+        });
+      }
+      expect(mainMock).not.toHaveBeenCalled();
+    }
+  );
+
+  it("treats a bare fullRefresh as overwrite-only and passes an explicit unscoped truncate through", async () => {
+    const scopedReq: any = {
+      method: "GET",
+      query: { fullRefresh: "true", playerId: "8478402", dryRunUpsert: "true" },
+      url: "/api/v1/db/update-rolling-player-averages"
+    };
+    const scopedRes = createMockRes();
+    await handler(scopedReq, scopedRes);
+
+    expect(scopedRes.statusCode).toBe(200);
+    expect(mainMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        playerId: 8478402,
+        forceFullRefresh: true,
+        fullRefreshMode: undefined,
+        dryRunUpsert: true
+      })
+    );
+
+    const truncateReq: any = {
+      method: "GET",
+      query: { fullRefresh: "true", fullRefreshMode: "rpc_truncate" },
+      url: "/api/v1/db/update-rolling-player-averages"
+    };
+    const truncateRes = createMockRes();
+    await handler(truncateReq, truncateRes);
+
+    expect(truncateRes.statusCode).toBe(200);
+    expect(mainMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        playerId: undefined,
+        maxPlayers: undefined,
+        forceFullRefresh: true,
+        fullRefreshMode: "rpc_truncate"
+      })
+    );
+  });
 });

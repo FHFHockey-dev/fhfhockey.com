@@ -125,6 +125,7 @@ function createMockSupabase(args: {
   teams?: Array<{ id: number; abbreviation: string | null }>;
 }) {
   const teams = args.teams ?? [];
+  let summaryPageRequests = 0;
 
   return {
     from(table: string) {
@@ -132,6 +133,7 @@ function createMockSupabase(args: {
         const eqFilters = new Map<string, unknown>();
         const gteFilters = new Map<string, number | string>();
         const lteFilters = new Map<string, number | string>();
+        const orders: Array<{ column: keyof MockSummaryRow; ascending: boolean }> = [];
 
         return {
           select() {
@@ -149,10 +151,12 @@ function createMockSupabase(args: {
             eqFilters.set(column, value);
             return this;
           },
-          order() {
+          order(column: keyof MockSummaryRow, options?: { ascending?: boolean }) {
+            orders.push({ column, ascending: options?.ascending ?? true });
             return this;
           },
           async range(from: number, to: number) {
+            summaryPageRequests += 1;
             const filtered = args.summaryRows.filter((row) => {
               for (const [column, value] of eqFilters.entries()) {
                 if (row[column as keyof MockSummaryRow] !== value) {
@@ -176,9 +180,23 @@ function createMockSupabase(args: {
 
               return true;
             });
+            // Postgres leaves rows that tie on every ORDER BY key in no fixed
+            // order, so alternate tie order between page requests.
+            const tieOrdered =
+              summaryPageRequests % 2 === 0 ? [...filtered].reverse() : filtered;
+            const sorted = [...tieOrdered].sort((left, right) => {
+              for (const { column, ascending } of orders) {
+                const leftValue = left[column];
+                const rightValue = right[column];
+                if (leftValue === rightValue) continue;
+                const direction = leftValue < rightValue ? -1 : 1;
+                return ascending ? direction : -direction;
+              }
+              return 0;
+            });
 
             return {
-              data: filtered.slice(from, to + 1),
+              data: sorted.slice(from, to + 1),
               error: null,
             };
           },
@@ -412,6 +430,48 @@ describe("teamStatsQueries", () => {
       teamLabel: "FLA",
       gamesPlayed: 1,
     });
+  });
+
+  it("pages league-wide summary rows without dropping or repeating a team-game", async () => {
+    const state = createDefaultTeamLandingFilterState({ currentSeasonId: 20252026 });
+    state.primary.displayMode = "counts";
+    state.view.sort = { sortKey: "teamLabel", direction: "asc" };
+
+    // One extra row ahead of 500 two-team games puts game 500's pair on both
+    // sides of the 1,000-row page boundary.
+    const summaryRows = [
+      createSummaryRow({
+        game_id: 3000,
+        game_date: "2026-04-30",
+        team_id: 1,
+        opponent_team_id: 3,
+      }),
+    ];
+    for (let index = 0; index < 500; index += 1) {
+      const gameId = 2000 + index;
+      const gameDate = new Date(Date.UTC(2025, 9, 1) + index * 3600 * 1000)
+        .toISOString()
+        .slice(0, 13);
+      summaryRows.push(
+        createSummaryRow({ game_id: gameId, game_date: gameDate, team_id: 1, opponent_team_id: 2 }),
+        createSummaryRow({ game_id: gameId, game_date: gameDate, team_id: 2, opponent_team_id: 1 }),
+      );
+    }
+
+    const response = await queryTeamStatsLanding({
+      state,
+      supabase: createMockSupabase({
+        summaryRows,
+        teams: [
+          { id: 1, abbreviation: "FLA" },
+          { id: 2, abbreviation: "BOS" },
+        ],
+      }) as never,
+    });
+
+    expect(
+      Object.fromEntries(response.rows.map((row) => [row.teamLabel, row.gamesPlayed])),
+    ).toEqual({ BOS: 500, FLA: 501 });
   });
 
   it("ignores zero-sample placeholder rows when aggregating team results", async () => {

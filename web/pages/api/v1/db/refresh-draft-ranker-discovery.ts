@@ -18,11 +18,15 @@ function parseBoolean(value: string | null, fallback: boolean) {
   return ["1", "true", "yes", "on"].includes(value.trim().toLowerCase());
 }
 
+// Thrown for caller-supplied input so the handler answers 400, not the
+// redacted dependency-failure 500.
+class RefreshInputError extends Error {}
+
 function parseAsOf(value: string | null) {
   if (!value) return new Date().toISOString();
   const parsed = Date.parse(value);
   if (!Number.isFinite(parsed))
-    throw new Error("asOf must be a valid ISO timestamp.");
+    throw new RefreshInputError("asOf must be a valid ISO timestamp.");
   return new Date(parsed).toISOString();
 }
 
@@ -33,7 +37,7 @@ function parseOperationId(value: string | null) {
       value,
     )
   ) {
-    throw new Error("operationId must be a UUID.");
+    throw new RefreshInputError("operationId must be a UUID.");
   }
   return value;
 }
@@ -102,6 +106,11 @@ export async function refreshDraftRankerDiscoveryHandler(
       durationMs: Date.now() - startedAt,
     });
   } catch (error) {
+    if (error instanceof RefreshInputError) {
+      return res
+        .status(400)
+        .json({ success: false, error: error.message, failedRows: 1 });
+    }
     console.error("Draft Ranker discovery refresh failed", { error });
     return res.status(500).json({
       success: false,

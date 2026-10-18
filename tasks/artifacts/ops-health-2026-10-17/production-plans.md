@@ -86,6 +86,12 @@ P-D → P-G/P-H code fixes by their owners → P-I → P-E/P-K → P-F.
   - **Inventory:** `cron-schedule.md` updated, reordered before job 326. Cron tests 105/105.
   - **Recovery verification:** scheduled read-only for 2026-10-18 11:05 UTC; it is not verified yet.
   - **Independent readback 2026-10-17 21:32:11 UTC (ops-health session, read-only):** job 374 is `38 10 * * *`, active=true, with the CONCURRENTLY command. The unique index is valid, the matview is populated, and no job-374 run is in flight. Cron inventory and report tests: 116/116 pass. No second `alter_job` was issued.
+- **P-B recovery verification 2026-10-18 (scheduled run, read-only) — BLOCKED, not verified.**
+  - Time check: 2026-10-18 11:19 UTC, after the 10:55 UTC gate.
+  - Check 1 (job 374 run succeeded, ended before 10:40): **not evaluated**. The read-only query from `p-b-verify-recovery.sql` (wrapped in `begin read only; set local statement_timeout = '8s'`) was sent twice through the Supabase connector (`execute_sql`, project `fyhftlxokyjtpndbkfse`). Both calls ended with "Tool call timed out waiting for server response", and no result came back. The Supabase plugin connector also needs re-authorization.
+  - Checks 2–4 (audit row, baseline count vs candidates, window-z coverage) and the `cron.job` 374 readback: **not run**. I stopped after the connector failed twice rather than keep sending production queries.
+  - Likely cause: the MCP connector or session failed. The server-side statement timeout is 8 s, so a slow query should have returned an error, not hung. This says nothing about whether the recovery worked. No retry, repair or rollback was attempted, and no writes were made.
+  - Next: rerun `p-b-verify-recovery.sql` once the connector responds (or in the SQL editor). The 2026-10-18 date literals are still correct.
 
 ## P-C — The partial 2026-10-17 sustainability snapshot
 
@@ -211,37 +217,93 @@ P-D → P-G/P-H code fixes by their owners → P-I → P-E/P-K → P-F.
 - **Test:** Offset 250 after offset 0 must process.
 - **Production:** Release only. Then verify `count(distinct player_id)` in
   `sustainability_scores` for the next snapshot ≈ the window-z player count.
-- **Fix (local patch, 2026-10-17; not committed or released):**
+- **Fix (local; first pass checkpointed in `0de97e77d`, hardened 2026-10-18
+  in sprint lane S-07, uncommitted; not released):**
   - `detectSustainabilitySourceAdvance(client, { snapshotDate, playerIds,
     windowCodes })` in `web/lib/sustainability/incremental.ts` reads only the
     requested snapshot's `sustainability_scores` rows for the batch players
-    (chunked `.in`, `components->sourceCutoffs` only). It also reads the newest
-    `player_stats_unified.date` ≤ the snapshot.
-  - It skips (`source_already_processed`) only when every batch player has
-    all four window rows for the snapshot **and** the newest cutoff among
-    them has reached that source date. Otherwise it processes with
-    `snapshot_batch_incomplete` or `new_source_date`.
-  - Why "newest of the batch", not "every row": each row's
-    `sourceCutoffs.observed.player_stats_unified` is that player's own newest
-    game date, so most rows carry older dates. Hypothesis for U-02 (not
-    verified): the old 100-row sample on 10-16 held no player from the newest
-    game date.
-  - `rebuild-score.ts` now loads the batch (`loadPlayersForSnapshot`) before
-    the check. `force=true` still bypasses it, and `runAll` checks the union
-    of all batches. An empty batch processes and falls through to the
-    prerequisite check.
-  - Tests: `web/lib/sustainability/incremental.test.ts` (offset 250 after
-    offset 0 processes; a re-run of the same batch skips; another snapshot's
-    rows don't count; a missing window counts as incomplete) and
-    `web/__tests__/pages/api/v1/sustainability/rebuild-score.test.ts` (the
-    offset's batch ids reach the check; `force` bypasses it).
+    (chunked `.in`, `components->sourceCutoffs` only).
+  - Each row's `sourceCutoffs.observed.player_stats_unified` is that player's
+    own newest game date ≤ the snapshot, so cutoffs legitimately differ
+    across players. The check therefore works per player: a player is current
+    when all four window rows exist and no `player_stats_unified` row for
+    that player has `date` > the oldest of its four cutoffs and ≤ the
+    snapshot. A null cutoff means no source rows yet, so any source row makes
+    it stale.
+  - That check is one `player_stats_unified` request per 200 players:
+    `select player_id … lte(date, snapshot) or(and(date.gt.<cutoff>,
+    player_id.in.(…)),…) limit 1`, grouped by cutoff and served by the
+    unique `(player_id, date)` index. It runs only when no rows are missing.
+  - The skip (`source_already_processed`) needs every batch player current.
+    Otherwise the reason is `snapshot_batch_incomplete` (missing player or
+    window rows, including membership changes), `new_source_date` (any stale
+    player or window) or `empty_batch` (falls through to prerequisites).
+  - The 2026-10-17 pass compared the batch's newest cutoff with the global
+    newest source date, so one current player could mask stale ones. This
+    pass closes that gap and drops the global source query.
+  - Hypothesis for U-02 (not verified): the old 100-row sample on 10-16 held
+    no player from the newest game date.
+  - `rebuild-score.ts` loads the batch (`loadPlayersForSnapshot`) before the
+    check. `force=true` still bypasses it, and `runAll` checks the union of
+    all batches.
+  - Tests in `web/lib/sustainability/incremental.test.ts`:
+    - offset 250 after offset 0 processes;
+    - mixed cutoffs: one stale player forces processing, while a player who
+      simply hasn't played still counts as current;
+    - mixed window cutoffs for one player, and null cutoffs;
+    - a membership change counts as incomplete;
+    - another snapshot's rows and a missing window don't count;
+    - re-running the same snapshot skips.
+  - Route tests in `web/__tests__/pages/api/v1/sustainability/rebuild-score.test.ts`:
+    the offset's batch ids reach the check, and `force` bypasses it.
 - **Behaviour change (cost):** On a game-free day each offset now rebuilds the
   new snapshot, as baselines and window-z already do, instead of skipping.
   That costs about one game day's score work. A same-day re-run of a finished
   batch still skips.
-- **Residual edge:** If baseline membership shifts between runs *and* the
-  source advances, a batch whose newest rows are current can skip although
-  some members' rows are older. `force=true` or the next snapshot corrects it.
+- **Not detected (by design):** a late change to values on an existing source
+  date (for example NST counts filled in after the first build) leaves the
+  cutoffs unchanged. Use `force=true`, or wait for the next snapshot.
+- **750-player cap (proposal; schedule change is TJ's call):** offsets 0, 250
+  and 500 with `limit=250` score `player_baselines` positions 0–749 only
+  (last season 694; 2026-10-16 had 642). Options:
+  1. *Recommended:* add a fourth Vercel cron
+     `rebuild-score?season=current&limit=250&offset=750` at `18 11 * * *`.
+     It mirrors `rebuild-trend-bands` (which already has offset 750). An
+     empty batch costs only the player load and prerequisite check. It needs
+     a `web/vercel.json` edit plus a matching inventory row, and the change
+     should be released together with this fix.
+  2. Dynamic continuation inside the last call (process `offset..end` when
+     `offset + limit ≥ 500`). This needs no schedule change, but it can push
+     one invocation past the 240 s `maxDuration` once the season grows.
+  3. In either case, add `total_players` and `next_offset` (null when done)
+     to the receipt, so the report can flag uncovered players without
+     another query.
+- **Quintiles, distributions and drift (checked in code; proposal):**
+  - `rebuild-score.ts:146-160` builds the distribution snapshot and assigns
+    quintiles, and `:205` runs drift, only when `runAll`. The only other
+    writer is the queue finalizer RPC `finalize_sustainability_score_snapshot`
+    (`process-recompute-queue.ts:74-92`; migration
+    `20260725223034:301-413`).
+  - Neither runs on the schedule. pg_cron 370–372 (`runAll`) are inactive,
+    and `process-recompute-queue` is in neither `vercel.json` nor
+    `cron-schedule.md`. Offset rows therefore keep a null
+    `sustainability_quintile`, and no distribution snapshot or drift check is
+    written. Confirm with U-3 in G6.
+  - *Minimal fix:* when `!runAll && !dry` and this is the final batch
+    (`offset + limit ≥ ids.length`), call the same finalize RPC after
+    `upsertScores`. Guard it with a count of distinct snapshot players equal
+    to `ids.length`, so a failed middle offset can't rank a partial
+    population. Then run the existing 7-day drift read.
+  - This depends on the cap fix: with more than 750 players, no batch is
+    final. It changes production writes, so it needs approval before
+    implementation.
+- **Health-endpoint gap:** `lib/sustainability/health.ts` (used by
+  `/api/internal/sustainability/health`) reports only the row count and
+  newest `snapshot_date` per table, so a 250-of-650 snapshot looks healthy.
+  - Proposal: for the newest score snapshot, add distinct `player_id`
+    against the `player_baselines` skater count for that date, the number of
+    null-quintile rows, and whether a distribution snapshot exists.
+  - Warn when coverage is below about 95% or quintiles are null.
 - **Post-release readback** (read-only, after the next natural
   11:00/11:06/11:12 UTC runs; no route calls):
   1. `select count(distinct player_id) from sustainability_scores where

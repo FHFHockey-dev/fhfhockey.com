@@ -19,7 +19,7 @@
     "unchanged": [
       "web/pages/api/cors/index.ts"
     ],
-    "patch": "candidate-a-proxy-redirect.patch",
+    "patch": "1-proxy-redirect.patch",
     "files": [
       {
         "path": "web/pages/api/cors/index.ts",
@@ -89,7 +89,7 @@
       "web/utils/adminOnlyMiddleware.ts",
       "web/__tests__/utils/adminOnlyMiddleware.test.ts"
     ],
-    "patch": "candidate-b-admin-relay.patch",
+    "patch": "2-admin-relay.patch",
     "files": [
       {
         "path": "web/utils/adminOnlyMiddleware.ts",
@@ -124,17 +124,17 @@
     ],
     "note": "Task text named web/tests/utils/adminOnlyMiddleware.test.ts; that path does not exist. The pinned test (sha256 baf3783a3103...) is web/__tests__/utils/adminOnlyMiddleware.test.ts."
   },
-  "patch_sha256": {
-    "candidate-a-proxy-redirect.patch": "6aa571bc53698cbba2d894281aef73cd37ba3c2e507fd403c2f6d0b6b0880f15",
-    "candidate-b-admin-relay.patch": "5074e939e2b3b9e5b8f530c8107d450a178d8c428114cf82d3df4266163a87ce"
-  },
   "evidence_sha256": {
     "evidence/admin-red.log": "82fac428d4b7550be29e96fa176c66cc07fc9ff121ce972e27dc519ca4b2100d",
+    "evidence/eslint-s08.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "evidence/eslint.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "evidence/focused-green-s08.log": "c6056e41c59a1c6cbfdd3bb7f8ac07f3de6268655723431d07739c79985d1fc5",
     "evidence/focused-green.log": "c75b2b5194222be2e384a84264a02dad6f4debd58fc38cb960abcb6261a24717",
+    "evidence/mkpatch-and-verify.sh": "3595b0b10fc3625411925dd20a607886613390654fdb8b24a9dd13b735af4346",
     "evidence/proxy-red.log": "9a538a778c41461ca56e2bda5d43b9dce81b38299dfbdcac24c6319ba3b05e63",
     "evidence/realstack-check.cjs": "c67e8c3ce0b33b66559ca79b8c4986456932ae96ac942d859cc0b595fbfd97f8",
     "evidence/realstack-check.log": "890112c236ea8eb638281867e17bb174e9b6874c42bc52dd52050cb869aa95f9",
+    "evidence/scoped-tsc-s08.log": "4d9b111c6b85f9f8269313f9405baa4354520900fb526a20e89b75cf17fd8fcd",
     "evidence/scoped-tsc.cjs": "8a413f6aee027a4ebc44b883ecd3ec2bd88edb9dadc23a83487ff44499e78eec",
     "evidence/scoped-tsc.log": "345a32845138696727f514c4deb9a5105d213e7697c7677be6c4147294ffadfb"
   },
@@ -197,5 +197,47 @@
       "status": "not run",
       "result": "not needed for unchanged exported signatures; no network or production traffic sent"
     }
-  ]
+  ],
+  "s08_2026_10_18": {
+    "head": "0de97e77d38db5f6fbefc1dd38f846cc515e22cb (TJ checkpoint commit, pushed 2026-10-17 19:35 EDT)",
+    "patch_base": "ceceb407a29b45f2e5b0c090ecfcff0c27e15d4c",
+    "patches_in_order": {
+      "1-proxy-redirect.patch": "18776478021a5f457af3ad085b9f41072455a6bb3a2317f94db80ab4326fe7b6",
+      "2-admin-relay.patch": "110ff7e2227662a680942b3fa54eb0f3d1734f95207e35d75104bab3f50ca7e8",
+      "3-admin-role-binding.patch": "53406421976bdb4a79812f055fd5b4d1340bd9964118da54624a19028956a5ec"
+    },
+    "final_working_tree_sha256": {
+      "web/lib/NHL/corsProxy.ts": "ef9cce0ae4d3b27420bf13689bf32d01535bb60bbd23e3df0fc5fb8d43ff8dbf",
+      "web/lib/NHL/corsProxy.test.ts": "ef04446e0d4852713d6a354c1d8a452b9ea24ac0bf9cf7b2825e98c8e740c8d9",
+      "web/__tests__/pages/api/cors.test.ts": "062ad344e1155a97587acb3b23bf06ea7c31c603e5d8afd27307d0c6888ff384",
+      "web/utils/adminOnlyMiddleware.ts": "de749fa9e811aacbbd1c85a080140f380fd8c3d3794ad378caa9dd4025f444c5",
+      "web/__tests__/utils/adminOnlyMiddleware.test.ts": "9add4fd857bf56ae6e7b7a2a3b8d16fc84e174264c2c3420ce1a3b0f60065fcb",
+      "web/__tests__/pages/api/v1/db/cron-auth-boundaries.test.ts": "b3b376933da27abbd041eaa153e7086e6445c07913744a7edd4d15b157ab2b63",
+      "web/__tests__/pages/api/v1/db/operational-route-auth.test.ts": "92a8fbc7b8268796ac7f2cb6ddfbf91f2ae34518fb257f0b4ae40f23c588bdf6"
+    },
+    "replay_proof": "evidence/mkpatch-and-verify.sh: ceceb407a blobs + git apply 1,2,3 -> all 7 sha256 equal working tree (all_match=1)",
+    "checks": [
+      {
+        "check": "focused tests",
+        "result": "10 files, 280/280 passed",
+        "log": "evidence/focused-green-s08.log"
+      },
+      {
+        "check": "scoped ESLint 7 files",
+        "result": "exit 0",
+        "log": "evidence/eslint-s08.log"
+      },
+      {
+        "check": "scoped tsc",
+        "result": "0 diagnostics, 1095 source files",
+        "log": "evidence/scoped-tsc-s08.log"
+      }
+    ],
+    "plan": "COMMIT-PLAN.md (now a HEAD reconciliation note; commit series superseded)",
+    "committed_history_restored": [
+      "candidate-a-proxy-redirect.patch",
+      "candidate-b-admin-relay.patch"
+    ],
+    "head_reconciliation": "Replay of patches 1-3 on ceceb407a equals HEAD for 6/7 files; adminOnlyMiddleware.test.ts differs only by one uncommitted 401 case added 2026-10-18 on top of HEAD"
+  }
 }
