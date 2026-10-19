@@ -6,6 +6,10 @@ export type RelationshipYahooPosition = {
   primary_position: string | null;
 };
 
+export type RelationshipYahooPositionCandidate = RelationshipYahooPosition & {
+  player_key: string;
+};
+
 export type RelationshipRosterPosition = {
   game_id: number;
   player_id: number;
@@ -23,6 +27,7 @@ export type ResolvedRelationshipPlayerPosition = {
 
 const SHA256_HEX = /^[a-f0-9]{64}$/;
 const DISPLAY_POSITION = /^[A-Z]{1,2}(,[A-Z]{1,2})*$/;
+const YAHOO_PLAYER_KEY = /^(\d+)\.p\.(\d+)$/;
 
 function requirePositiveInteger(value: unknown, label: string): number {
   if (!Number.isSafeInteger(value) || Number(value) <= 0) {
@@ -123,6 +128,34 @@ export function buildRelationshipRosterPositionMap(args: {
     positions.set(playerId, row);
   }
   return positions;
+}
+
+/**
+ * Selects the Yahoo row for a shift player matched only by full name. Rows for
+ * one Yahoo player across seasons resolve to the newest game key; rows for
+ * different Yahoo players sharing the name are ambiguous, so the caller falls
+ * back to the NHL roster position instead of guessing.
+ */
+export function selectRelationshipYahooPosition<
+  T extends RelationshipYahooPositionCandidate,
+>(candidates: readonly T[]): T | undefined {
+  if (candidates.length <= 1) return candidates[0];
+  let selected: T | undefined;
+  let selectedGameKey = -1;
+  let yahooPlayerId: string | undefined;
+  for (const candidate of candidates) {
+    const key = YAHOO_PLAYER_KEY.exec(candidate.player_key);
+    if (!key || (yahooPlayerId !== undefined && key[2] !== yahooPlayerId)) {
+      return undefined;
+    }
+    yahooPlayerId = key[2];
+    const gameKey = Number(key[1]);
+    if (gameKey > selectedGameKey) {
+      selected = candidate;
+      selectedGameKey = gameKey;
+    }
+  }
+  return selected;
 }
 
 export function resolveRelationshipPlayerPosition(args: {

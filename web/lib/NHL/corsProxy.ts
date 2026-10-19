@@ -5,6 +5,8 @@ import fetch, { type RequestInit } from "node-fetch";
 
 const MAX_RESPONSE_BYTES = 4 * 1024 * 1024;
 const REQUEST_TIMEOUT_MS = 10_000;
+const MAX_REDIRECTS = 1;
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 const STATS_PATHS = new Set([
   "/stats/rest/en/season",
   "/stats/rest/en/shiftcharts",
@@ -84,19 +86,29 @@ export async function fetchNhlProxyText(target: URL) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
-    const upstream = await fetch(target, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)"
-      },
-      redirect: "error",
-      agent,
-      // node-fetch v2 has its own older AbortSignal declaration.
-      signal: controller.signal as NonNullable<RequestInit["signal"]>,
-      size: MAX_RESPONSE_BYTES
-    });
-    return { upstream, bodyText: await upstream.text() };
+    let current = target;
+    for (let redirects = 0; ; redirects += 1) {
+      const upstream = await fetch(current, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)"
+        },
+        redirect: "manual",
+        agent,
+        // node-fetch v2 has its own older AbortSignal declaration.
+        signal: controller.signal as NonNullable<RequestInit["signal"]>,
+        size: MAX_RESPONSE_BYTES
+      });
+      const bodyText = await upstream.text();
+      if (!REDIRECT_STATUSES.has(upstream.status)) return { upstream, bodyText };
+      // NHL "now" resources redirect to dated ones. A hop must pass the same policy and gets
+      // its own checked socket lookup; node-fetch has already resolved Location to absolute.
+      const location = upstream.headers.get("location");
+      const next = redirects < MAX_REDIRECTS && location ? parseNhlProxyUrl(location) : null;
+      if (!next) throw new Error("Unsupported NHL redirect");
+      current = next;
+    }
   } finally {
     clearTimeout(timeout);
     agent.destroy();

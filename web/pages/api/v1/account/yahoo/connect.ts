@@ -25,8 +25,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader("Set-Cookie", browserCookie);
     return res.status(200).json({ authorizationUrl });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Yahoo authorization could not be started.";
-    return res.status(500).json({ error: message });
+    console.error("Yahoo connect failed", error);
+    return res.status(500).json({
+      error: "Yahoo authorization could not be started.",
+      code: "YAHOO_CONNECT_UNAVAILABLE",
+    });
   }
 }

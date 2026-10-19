@@ -50,7 +50,15 @@ function firstRecord(value: unknown) {
 
 export function sanitizeYahooNextPath(next: string | string[] | undefined) {
   const candidate = Array.isArray(next) ? next[0] : next;
-  if (!candidate || !candidate.startsWith("/") || candidate.startsWith("//")) {
+  // Browsers read "/\host" as "//host", and strip tabs and newlines from URLs,
+  // so either can turn a local path into an off-site redirect.
+  if (
+    !candidate ||
+    !candidate.startsWith("/") ||
+    candidate.startsWith("//") ||
+    candidate.includes("\\") ||
+    /[\u0000-\u001f\u007f]/.test(candidate)
+  ) {
     return YAHOO_CONNECT_DEFAULT_NEXT;
   }
   return candidate.slice(0, 1024);

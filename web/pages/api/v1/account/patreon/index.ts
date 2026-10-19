@@ -21,11 +21,10 @@ export default async function handler(
       .status(200)
       .json({ ...state, configured: isPatreonConfigured() });
   } catch (error) {
+    console.error("Patreon state load failed", error);
     return res.status(500).json({
-      error:
-        error instanceof Error
-          ? error.message
-          : "Patreon account state could not be loaded.",
+      error: "Patreon account state could not be loaded.",
+      code: "PATREON_STATE_UNAVAILABLE",
     });
   }
 }

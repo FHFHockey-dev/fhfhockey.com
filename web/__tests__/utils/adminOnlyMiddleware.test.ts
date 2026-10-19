@@ -112,7 +112,20 @@ describe("adminOnlyMiddleware", () => {
     },
   );
 
-  it.each(["fhfhockey.com", "localhost.example.com", "", undefined])(
+  it.each([
+    "fhfhockey.com",
+    "localhost.example.com",
+    "localhost.",
+    "localhost:abc",
+    "localhost:3000:evil",
+    "localhost:3000, fhfhockey.com",
+    "127.0.0.1.example.com",
+    "::1",
+    "[::1",
+    "[::1]evil",
+    "",
+    undefined,
+  ])(
     "retains the Host restriction for a loopback peer with Host %s",
     (host) => {
       vi.stubEnv("NODE_ENV", "development");
@@ -124,6 +137,79 @@ describe("adminOnlyMiddleware", () => {
       ).toBe(false);
     },
   );
+
+  it("accepts the bracketed IPv6 loopback Host from a loopback peer", () => {
+    vi.stubEnv("NODE_ENV", "development");
+    expect(
+      invokedByLocalDev({
+        headers: { host: "[::1]:3000" },
+        socket: { remoteAddress: "::1" },
+      } as never),
+    ).toBe(true);
+  });
+
+  it.each(["127.0.0.1", "::1", "::ffff:127.0.0.1"])(
+    "accepts Next.js-filled local forwarding headers from loopback peer %s",
+    (remoteAddress) => {
+      vi.stubEnv("NODE_ENV", "development");
+      expect(
+        invokedByLocalDev({
+          headers: {
+            host: "localhost:3000",
+            "x-forwarded-for": remoteAddress,
+            "x-forwarded-host": "localhost:3000",
+            "x-forwarded-port": "3000",
+            "x-forwarded-proto": "http",
+          },
+          socket: { remoteAddress },
+        } as never),
+      ).toBe(true);
+    },
+  );
+
+  it.each([
+    { "x-forwarded-for": "203.0.113.7" },
+    { "x-forwarded-for": "127.0.0.1, 203.0.113.7" },
+    { "x-forwarded-for": "" },
+    { "x-real-ip": "203.0.113.7" },
+    { "x-forwarded-host": "abc123.tunnel.example" },
+    { "x-forwarded-host": "localhost:3000, abc123.tunnel.example" },
+    { forwarded: "for=127.0.0.1;host=localhost:3000" },
+    { via: "1.1 local-tunnel" },
+  ])(
+    "withdraws the exception when a loopback peer relays another origin: %j",
+    (relayHeaders) => {
+      vi.stubEnv("NODE_ENV", "development");
+      expect(
+        invokedByLocalDev({
+          headers: { host: "localhost:3000", ...relayHeaders },
+          socket: { remoteAddress: "127.0.0.1" },
+        } as never),
+      ).toBe(false);
+    },
+  );
+
+  it("denies an unauthenticated tunneled request that reaches a loopback socket", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    const json = vi.fn();
+    const status = vi.fn().mockReturnValue({ json });
+    const handler = vi.fn();
+    const request = {
+      headers: {
+        host: "localhost:3000",
+        "x-forwarded-for": "203.0.113.7",
+        "x-forwarded-host": "abc123.tunnel.example",
+      },
+      socket: { remoteAddress: "127.0.0.1" },
+    };
+
+    await adminOnly(handler)(request as never, { status } as never);
+
+    expect(status).toHaveBeenCalledWith(401);
+    expect(handler).not.toHaveBeenCalled();
+    expect(createClientWithToken).not.toHaveBeenCalled();
+    expect(request).not.toHaveProperty("supabase");
+  });
 
   it("denies an unauthenticated remote request with a forged localhost Host", async () => {
     vi.stubEnv("NODE_ENV", "development");
@@ -162,11 +248,16 @@ describe("adminOnlyMiddleware", () => {
     "still requires a verified admin role for a remote request in %s",
     async (environment) => {
       vi.stubEnv("NODE_ENV", environment);
-      const getUser = vi.fn().mockResolvedValue({ error: null });
+      const getUser = vi.fn().mockResolvedValue({
+        data: { user: { id: "synthetic-user-id" } },
+        error: null,
+      });
       const maybeSingle = vi.fn();
       vi.mocked(createClientWithToken).mockReturnValue({
         auth: { getUser },
-        from: vi.fn(() => ({ select: vi.fn(() => ({ maybeSingle })) })),
+        from: vi.fn(() => ({
+          select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle })) })),
+        })),
       } as never);
       const json = vi.fn();
       const status = vi.fn().mockReturnValue({ json });
@@ -193,6 +284,78 @@ describe("adminOnlyMiddleware", () => {
       }
       expect(getUser).toHaveBeenCalledTimes(3);
       expect(maybeSingle).toHaveBeenCalledTimes(3);
+    },
+  );
+
+  it("binds the role lookup to the verified user id", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const maybeSingle = vi
+      .fn()
+      .mockResolvedValue({ data: { role: "admin" } });
+    const eq = vi.fn(() => ({ maybeSingle }));
+    const select = vi.fn(() => ({ eq }));
+    const from = vi.fn(() => ({ select }));
+    vi.mocked(createClientWithToken).mockReturnValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "verified-user-id" } },
+          error: null,
+        }),
+      },
+      from,
+    } as never);
+    const handler = vi.fn();
+    const request = {
+      headers: { authorization: "Bearer synthetic-user-token" },
+      socket: { remoteAddress: "198.51.100.10" },
+    };
+
+    await adminOnly(handler)(request as never, {} as never);
+
+    expect(from).toHaveBeenCalledWith("users");
+    expect(select).toHaveBeenCalledWith("role");
+    expect(eq).toHaveBeenCalledOnce();
+    expect(eq).toHaveBeenCalledWith("user_id", "verified-user-id");
+    expect(handler).toHaveBeenCalledOnce();
+    expect(request).toHaveProperty("supabase", serviceRoleClient);
+  });
+
+  it.each([
+    { data: { user: null }, error: null },
+    { data: { user: { id: "" } }, error: null },
+    { data: { user: {} }, error: null },
+    { error: null },
+    {
+      data: { user: { id: "unverified-user-id" } },
+      error: { message: "invalid JWT" },
+    },
+  ])(
+    "denies a token whose getUser result has no verified id: %j",
+    async (getUserResult) => {
+      vi.stubEnv("NODE_ENV", "production");
+      const from = vi.fn();
+      vi.mocked(createClientWithToken).mockReturnValue({
+        auth: { getUser: vi.fn().mockResolvedValue(getUserResult) },
+        from,
+      } as never);
+      const json = vi.fn();
+      const status = vi.fn().mockReturnValue({ json });
+      const handler = vi.fn();
+      const request = {
+        headers: { authorization: "Bearer synthetic-user-token" },
+        socket: { remoteAddress: "198.51.100.10" },
+      };
+
+      await adminOnly(handler)(request as never, { status } as never);
+
+      expect(status).toHaveBeenCalledWith(401);
+      expect(json).toHaveBeenCalledWith({
+        message: "Unauthorized.",
+        success: false,
+      });
+      expect(from).not.toHaveBeenCalled();
+      expect(handler).not.toHaveBeenCalled();
+      expect(request).not.toHaveProperty("supabase");
     },
   );
 

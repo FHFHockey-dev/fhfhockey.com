@@ -68,4 +68,23 @@ describe("/api/v1/account/yahoo/connect", () => {
       authorizationUrl: "https://yahoo.test/auth",
     });
   });
+
+  it("returns a stable error without dependency details", async () => {
+    requireApiUserMock.mockResolvedValue({ id: "user-1" });
+    createYahooAuthorizationRequestMock.mockRejectedValue(
+      new Error("relation private.connected_account_tokens denied Bearer secret"),
+    );
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const res = createMockRes();
+
+    await handler({ method: "POST", body: {}, headers: {} } as any, res);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({
+      error: "Yahoo authorization could not be started.",
+      code: "YAHOO_CONNECT_UNAVAILABLE",
+    });
+    expect(JSON.stringify(res.body)).not.toContain("secret");
+    consoleError.mockRestore();
+  });
 });

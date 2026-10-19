@@ -30,17 +30,21 @@ export default function adminOnly(handler: Handler): Handler {
       }
       const access_token = bearerMatch[1];
       const authClient = createClientWithToken(access_token);
-      const { error: userError } = await authClient.auth.getUser();
-      if (userError) {
+      const { data: userData, error: userError } =
+        await authClient.auth.getUser();
+      const userId = userData?.user?.id;
+      if (userError || !userId) {
         return res.status(401).json({
           message: "Unauthorized.",
           success: false,
         });
       }
 
+      // Bind the role lookup to the verified user rather than relying on RLS alone.
       const { data } = await authClient
         .from("users")
         .select("role")
+        .eq("user_id", userId)
         .maybeSingle();
       if (data?.role !== "admin") {
         return res.status(403).json({
@@ -67,29 +71,50 @@ export function invokedByCron(authHeader: string) {
   return authHeader === `Bearer ${cronSecret}`;
 }
 
-function isLocalHostHeader(hostHeader: string | undefined) {
-  if (typeof hostHeader !== "string" || hostHeader.length === 0) {
+const LOOPBACK_ADDRESSES = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
+
+function isLocalHostHeader(hostHeader: string | string[] | undefined) {
+  return (
+    typeof hostHeader === "string" &&
+    /^(?:localhost|127\.0\.0\.1|\[::1\])(?::\d{1,5})?$/.test(
+      hostHeader.toLowerCase(),
+    )
+  );
+}
+
+// Next.js fills x-forwarded-* from the socket and Host when they are absent, so a
+// direct local request carries only loopback/local values. Anything else means a
+// relay (tunnel, reverse proxy) or the client claims another origin. These headers
+// can only withdraw the local exception, never grant it.
+function hasOnlyLocalForwarding(headers: NextApiRequest["headers"]) {
+  if (headers["forwarded"] !== undefined || headers["via"] !== undefined) {
     return false;
   }
-
-  const normalizedHost = hostHeader.toLowerCase().split(":")[0];
-  return (
-    normalizedHost === "localhost" ||
-    normalizedHost === "127.0.0.1" ||
-    normalizedHost === "::1"
-  );
+  const forwardedHost = headers["x-forwarded-host"];
+  if (forwardedHost !== undefined && !isLocalHostHeader(forwardedHost)) {
+    return false;
+  }
+  return ["x-forwarded-for", "x-real-ip"].every((name) => {
+    const value = headers[name];
+    return (
+      value === undefined ||
+      [value]
+        .flat()
+        .join(",")
+        .split(",")
+        .every((entry) => LOOPBACK_ADDRESSES.has(entry.trim()))
+    );
+  });
 }
 
 export function invokedByLocalDev(req: NextApiRequest) {
   // Host/forwarded headers cannot establish that a caller is local.
   const remoteAddress = req.socket?.remoteAddress;
-  const isLoopbackPeer =
-    remoteAddress === "127.0.0.1" ||
-    remoteAddress === "::1" ||
-    remoteAddress === "::ffff:127.0.0.1";
   return (
     process.env.NODE_ENV === "development" &&
-    isLoopbackPeer &&
-    isLocalHostHeader(req.headers.host)
+    typeof remoteAddress === "string" &&
+    LOOPBACK_ADDRESSES.has(remoteAddress) &&
+    isLocalHostHeader(req.headers.host) &&
+    hasOnlyLocalForwarding(req.headers)
   );
 }

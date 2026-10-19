@@ -7,11 +7,13 @@ vi.mock("utils/adminOnlyMiddleware", () => ({
 const {
   assertScorePrerequisitesMock,
   detectSourceAdvanceMock,
+  loadPlayersForSnapshotMock,
   resolveSeasonIdMock,
   issue
 } = vi.hoisted(() => ({
   assertScorePrerequisitesMock: vi.fn(),
   detectSourceAdvanceMock: vi.fn(),
+  loadPlayersForSnapshotMock: vi.fn(),
   resolveSeasonIdMock: vi.fn(),
   issue: {
     code: "missing_sustainability_window_z",
@@ -39,6 +41,10 @@ vi.mock("../../../../../lib/sustainability/dependencyChecks", async () => {
   };
 });
 
+vi.mock("../../../../../lib/sustainability/windows", () => ({
+  loadPlayersForSnapshot: loadPlayersForSnapshotMock
+}));
+
 vi.mock("../../../../../lib/sustainability/resolveSeasonId", () => ({
   resolveSeasonId: resolveSeasonIdMock
 }));
@@ -65,6 +71,11 @@ describe("/api/v1/sustainability/rebuild-score", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resolveSeasonIdMock.mockResolvedValue(20252026);
+    const ids = Array.from({ length: 600 }, (_, index) => index + 1);
+    loadPlayersForSnapshotMock.mockResolvedValue({
+      ids,
+      posMap: new Map(ids.map((id) => [id, "F"]))
+    });
     detectSourceAdvanceMock.mockResolvedValue({
       shouldProcess: true,
       reason: "new_source_date"
@@ -111,5 +122,55 @@ describe("/api/v1/sustainability/rebuild-score", () => {
       reason: "source_already_processed"
     });
     expect(assertScorePrerequisitesMock).not.toHaveBeenCalled();
+  });
+
+  it("checks the requested offset batch and processes it when that batch is incomplete", async () => {
+    detectSourceAdvanceMock.mockResolvedValue({
+      shouldProcess: true,
+      reason: "snapshot_batch_incomplete"
+    });
+    assertScorePrerequisitesMock.mockRejectedValue(
+      new SustainabilityDependencyError(issue)
+    );
+    const res = createMockRes();
+
+    await handler(
+      {
+        method: "GET",
+        query: {
+          season: "current",
+          snapshot_date: "2026-10-17",
+          limit: "250",
+          offset: "250"
+        }
+      } as any,
+      res
+    );
+
+    expect(detectSourceAdvanceMock).toHaveBeenCalledWith(expect.anything(), {
+      snapshotDate: "2026-10-17",
+      playerIds: Array.from({ length: 250 }, (_, index) => index + 251),
+      windowCodes: ["l3", "l5", "l10", "l20"]
+    });
+    expect(res.body.skipped).toBeUndefined();
+    expect(assertScorePrerequisitesMock).toHaveBeenCalledWith(
+      20252026,
+      "2026-10-17"
+    );
+  });
+
+  it("does not consult the skip check when force=true", async () => {
+    assertScorePrerequisitesMock.mockRejectedValue(
+      new SustainabilityDependencyError(issue)
+    );
+    const res = createMockRes();
+
+    await handler(
+      { method: "GET", query: { season: "current", force: "true" } } as any,
+      res
+    );
+
+    expect(detectSourceAdvanceMock).not.toHaveBeenCalled();
+    expect(assertScorePrerequisitesMock).toHaveBeenCalled();
   });
 });

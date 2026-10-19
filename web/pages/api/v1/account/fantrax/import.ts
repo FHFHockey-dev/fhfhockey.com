@@ -68,7 +68,7 @@ export default async function handler(
       ...result,
     });
   } catch (error) {
-    if (error instanceof FantraxImportError) {
+    if (error instanceof FantraxImportError && error.statusCode < 500) {
       if (error.retryAfterSeconds) {
         res.setHeader("Retry-After", String(error.retryAfterSeconds));
       }
@@ -77,8 +77,10 @@ export default async function handler(
         retryAfterSeconds: error.retryAfterSeconds ?? null,
       });
     }
+    console.error("Fantrax import failed", error);
     return res.status(500).json({
-      error: error instanceof Error ? error.message : "Fantrax import failed.",
+      error: "Fantrax import failed.",
+      code: "FANTRAX_IMPORT_UNAVAILABLE",
     });
   }
 }

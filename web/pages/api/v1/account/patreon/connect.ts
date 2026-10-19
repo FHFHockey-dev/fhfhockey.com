@@ -23,11 +23,10 @@ export default async function handler(
       authorizationUrl: buildPatreonAuthorizationUrl(req, user.id, next),
     });
   } catch (error) {
+    console.error("Patreon connect failed", error);
     return res.status(500).json({
-      error:
-        error instanceof Error
-          ? error.message
-          : "Patreon authorization could not be started.",
+      error: "Patreon authorization could not be started.",
+      code: "PATREON_CONNECT_UNAVAILABLE",
     });
   }
 }

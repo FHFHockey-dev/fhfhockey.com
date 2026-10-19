@@ -99,4 +99,25 @@ describe("/api/v1/runs/[runId]", () => {
       status: "ready"
     });
   });
+
+  it("redacts dependency details from internal-error responses", async () => {
+    fromMock.mockImplementation(() =>
+      createBuilder({
+        data: null,
+        error: { message: "relation private forge_runs denied Bearer secret" }
+      })
+    );
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const res = createMockRes();
+
+    await handler({ method: "GET", query: { runId: "run-123" } } as any, res);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body.error).toBe("FORGE_RUN_DETAIL_UNAVAILABLE");
+    expect(Object.keys(res.body).sort()).toEqual(["durationMs", "error"]);
+    expect(JSON.stringify(res.body)).not.toContain("secret");
+    consoleError.mockRestore();
+  });
 });

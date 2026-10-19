@@ -212,4 +212,28 @@ describe("/api/v1/contextual-rankings", () => {
     expect(res.body?.meta.unavailable).toBe(true);
     expect(res.body?.rankings).toEqual([]);
   });
+
+  it("redacts dependency details from internal-error responses", async () => {
+    buildSurfaceMock.mockRejectedValueOnce(
+      Object.assign(new Error("relation private_rankings denied Bearer secret"), {
+        details: "column secret_value does not exist",
+      }),
+    );
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const req: any = { method: "GET", query: { season: "20252026" } };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({
+      success: false,
+      message: "Failed to build contextual rankings.",
+      error: "CONTEXTUAL_RANKINGS_UNAVAILABLE",
+    });
+    expect(JSON.stringify(res.body)).not.toContain("secret");
+    consoleError.mockRestore();
+  });
 });

@@ -116,4 +116,25 @@ describe("Yahoo OAuth transaction security", () => {
       "/account?section=connected-accounts",
     );
   });
+
+  it("rejects next paths a browser would resolve off-site", () => {
+    for (const next of [
+      "//attacker.example",
+      "/\\attacker.example",
+      "/\\/attacker.example",
+      "/\t/attacker.example",
+      "/\n/attacker.example",
+      "/account\r\nSet-Cookie: x=1",
+    ]) {
+      expect(sanitizeYahooNextPath(next), JSON.stringify(next)).toBe(
+        "/account?section=connected-accounts",
+      );
+    }
+    expect(sanitizeYahooNextPath("/draft-dashboard?tab=live")).toBe(
+      "/draft-dashboard?tab=live",
+    );
+    expect(sanitizeYahooNextPath(["/account", "//attacker.example"])).toBe(
+      "/account",
+    );
+  });
 });

@@ -54,26 +54,6 @@ export async function rebuildScoreHandler(
     );
     const force =
       req.query.force === "1" || req.query.force === "true";
-    const sourceAdvance = force
-      ? null
-      : await detectSustainabilitySourceAdvance(supabase);
-    finishPhase("incremental_source");
-    if (sourceAdvance && !sourceAdvance.shouldProcess) {
-      return res.status(200).json(
-        withTiming({
-          success: true,
-          skipped: true,
-          reason: sourceAdvance.reason,
-          snapshot_date: snapshot,
-          source_advance: sourceAdvance,
-          phase_timings_ms: phaseTimingsMs,
-        }),
-      );
-    }
-    await assertScorePrerequisites(season, snapshot);
-    finishPhase("prerequisites");
-    const activeConfig = await loadActiveSustainabilityConfig(supabase);
-    finishPhase("active_config");
     const dry = req.query.dry === "1" || req.query.dry === "true";
     const limit = Number(req.query.limit || 250);
     const offset = Number(req.query.offset || 0);
@@ -92,19 +72,47 @@ export async function rebuildScoreHandler(
         )
       : [offset];
 
-    // cache league skill refs by pos group
-    const refs: Record<PosGroup, any> = {
-      F: await fetchSkillLeagueRef(season, "F"),
-      D: await fetchSkillLeagueRef(season, "D"),
-    } as any;
-    finishPhase("league_references");
-
     const windows = [
       { code: "l3", n: 3 },
       { code: "l5", n: 5 },
       { code: "l10", n: 10 },
       { code: "l20", n: 20 },
     ] as const;
+
+    // Skip only when this snapshot's requested batch is already current.
+    const sourceAdvance = force
+      ? null
+      : await detectSustainabilitySourceAdvance(supabase, {
+          snapshotDate: snapshot,
+          playerIds: batchOffsets.flatMap((batchOffset) =>
+            ids.slice(batchOffset, batchOffset + limit),
+          ),
+          windowCodes: windows.map((window) => window.code),
+        });
+    finishPhase("incremental_source");
+    if (sourceAdvance && !sourceAdvance.shouldProcess) {
+      return res.status(200).json(
+        withTiming({
+          success: true,
+          skipped: true,
+          reason: sourceAdvance.reason,
+          snapshot_date: snapshot,
+          source_advance: sourceAdvance,
+          phase_timings_ms: phaseTimingsMs,
+        }),
+      );
+    }
+    await assertScorePrerequisites(season, snapshot);
+    finishPhase("prerequisites");
+    const activeConfig = await loadActiveSustainabilityConfig(supabase);
+    finishPhase("active_config");
+
+    // cache league skill refs by pos group
+    const refs: Record<PosGroup, any> = {
+      F: await fetchSkillLeagueRef(season, "F"),
+      D: await fetchSkillLeagueRef(season, "D"),
+    } as any;
+    finishPhase("league_references");
 
     let rows: any[] = [];
     let totalPlayers = 0;

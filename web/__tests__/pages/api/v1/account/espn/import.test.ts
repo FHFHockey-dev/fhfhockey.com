@@ -150,4 +150,28 @@ describe("/api/v1/account/espn/import", () => {
     expect(res.statusCode).toBe(405);
     expect(requireApiUserMock).not.toHaveBeenCalled();
   });
+
+  it("returns a stable error without dependency details", async () => {
+    for (const failure of [
+      new Error("relation private.connected_account_tokens denied Bearer secret"),
+      new EspnImportErrorMock("Upstream relation private.connected_account_tokens denied Bearer secret", 503),
+    ]) {
+      runEspnManualImportMock.mockRejectedValueOnce(failure);
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+      const res = createMockRes();
+
+      await handler(
+        { method: "POST", body: { content: "{}", format: "json" }, headers: {} } as any,
+        res,
+      );
+
+      expect(res.statusCode).toBe(500);
+      expect(res.body).toEqual({
+        error: "ESPN import failed.",
+        code: "ESPN_IMPORT_UNAVAILABLE",
+      });
+      expect(JSON.stringify(res.body)).not.toContain("secret");
+      consoleError.mockRestore();
+    }
+  });
 });

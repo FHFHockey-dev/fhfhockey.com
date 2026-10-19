@@ -4,6 +4,7 @@ import {
   buildRelationshipRosterPositionMap,
   isCompleteRelationshipPlayerPosition,
   resolveRelationshipPlayerPosition,
+  selectRelationshipYahooPosition,
   type RelationshipRosterPosition,
 } from "./relationshipPlayerPosition";
 
@@ -107,6 +108,73 @@ describe("relationship player positions", () => {
         },
       }),
     ).toThrow("Conflicting relationship position");
+  });
+
+  it("uses the roster when same-name Yahoo players are ambiguous", () => {
+    // Yahoo rows for Vancouver's two "Elias Pettersson"s, ordered by player_key.
+    const yahooRows = [
+      { player_key: "427.p.7520", display_position: "C,LW", primary_position: "C" },
+      { player_key: "477.p.32762", display_position: "D", primary_position: "D" },
+      { player_key: "477.p.7520", display_position: "C", primary_position: "C" },
+    ];
+    const defensemanArgs = {
+      expectedPbpRawPayloadHash: HASH,
+      gameId: GAME_ID,
+      playerId: 8483678,
+      rosterPosition: roster("D", { player_id: 8483678 }),
+      teamId: 1,
+    };
+    // The first full-name match is the C, which aborted the 2026-10-12 run.
+    expect(() =>
+      resolveRelationshipPlayerPosition({
+        ...defensemanArgs,
+        yahooPosition: yahooRows[0],
+      }),
+    ).toThrow("Conflicting relationship position for player 8483678");
+
+    const selected = selectRelationshipYahooPosition(yahooRows);
+    expect(selected).toBeUndefined();
+    expect(
+      resolveRelationshipPlayerPosition({
+        ...defensemanArgs,
+        yahooPosition: selected,
+      }),
+    ).toEqual({
+      displayPosition: "D",
+      playerType: "D",
+      primaryPosition: "D",
+      source: "nhl_roster",
+    });
+  });
+
+  it("uses the newest Yahoo game key for one player across seasons", () => {
+    const current = {
+      player_key: "477.p.7520",
+      display_position: "C",
+      primary_position: "C",
+    };
+    expect(
+      selectRelationshipYahooPosition([
+        { player_key: "427.p.7520", display_position: "C,LW", primary_position: "C" },
+        current,
+      ]),
+    ).toBe(current);
+  });
+
+  it("keeps a single name match but rejects unparseable keys among several", () => {
+    const legacy = {
+      player_key: "legacy",
+      display_position: "C",
+      primary_position: "C",
+    };
+    expect(selectRelationshipYahooPosition([])).toBeUndefined();
+    expect(selectRelationshipYahooPosition([legacy])).toBe(legacy);
+    expect(
+      selectRelationshipYahooPosition([
+        legacy,
+        { player_key: "477.p.7520", display_position: "C", primary_position: "C" },
+      ]),
+    ).toBeUndefined();
   });
 
   it.each([

@@ -185,7 +185,7 @@ export default async function handler(
     console.error("team-sos API error", error);
     return res.status(500).json({
       message: "Failed to compute strength of schedule.",
-      error: error?.message ?? "Unknown error"
+      error: "TEAM_SOS_UNAVAILABLE"
     });
   }
 }

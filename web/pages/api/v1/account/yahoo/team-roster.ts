@@ -44,15 +44,16 @@ export default async function handler(
       ...result,
     });
   } catch (error) {
-    if (error instanceof YahooTeamRosterError) {
+    if (error instanceof YahooTeamRosterError && error.statusCode < 500) {
       return res.status(error.statusCode).json({ error: error.message });
     }
 
-    return res.status(500).json({
-      error:
-        error instanceof Error
-          ? error.message
-          : "Unable to load Yahoo team roster.",
-    });
+    console.error("Yahoo team roster load failed", error);
+    return res
+      .status(error instanceof YahooTeamRosterError ? error.statusCode : 500)
+      .json({
+        error: "Unable to load Yahoo team roster.",
+        code: "YAHOO_TEAM_ROSTER_UNAVAILABLE",
+      });
   }
 }

@@ -23,11 +23,10 @@ export default async function handler(
         "Patreon disconnected. Credentials were removed and access history was retained.",
     });
   } catch (error) {
+    console.error("Patreon disconnect failed", error);
     return res.status(500).json({
-      error:
-        error instanceof Error
-          ? error.message
-          : "Patreon could not be disconnected.",
+      error: "Patreon could not be disconnected.",
+      code: "PATREON_DISCONNECT_UNAVAILABLE",
     });
   }
 }

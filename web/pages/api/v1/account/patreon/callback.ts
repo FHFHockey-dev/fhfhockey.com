@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import {
   buildPatreonAccountRedirect,
   exchangePatreonAuthorizationCode,
+  PatreonApiError,
   verifyPatreonOAuthState,
 } from "lib/integrations/patreon/oauth";
 import { connectPatreonAccount } from "lib/integrations/patreon/sync";
@@ -55,10 +56,16 @@ export default async function handler(
       buildPatreonAccountRedirect(next, "connected", message),
     );
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Patreon connection could not be completed.";
+    // The message lands in the account page URL, so only Patreon's own 4xx
+    // text (state and authorization problems) is passed through.
+    const isPatreonClientError =
+      error instanceof PatreonApiError && error.statusCode < 500;
+    if (!isPatreonClientError) {
+      console.error("Patreon callback failed", error);
+    }
+    const message = isPatreonClientError
+      ? (error as PatreonApiError).message
+      : "Patreon connection could not be completed.";
     return res.redirect(buildPatreonAccountRedirect(next, "error", message));
   }
 }

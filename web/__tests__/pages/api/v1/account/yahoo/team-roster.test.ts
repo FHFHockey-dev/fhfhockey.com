@@ -137,4 +137,28 @@ describe("/api/v1/account/yahoo/team-roster", () => {
     expect(res.statusCode).toBe(405);
     expect(requireApiUserMock).not.toHaveBeenCalled();
   });
+
+  it("hides dependency details behind the provider and internal failures", async () => {
+    for (const [failure, status] of [
+      [new YahooTeamRosterErrorMock("Unable to load Yahoo team roster: relation private.connected_account_tokens denied Bearer secret", 502), 502],
+      [new Error("relation private.connected_account_tokens denied Bearer secret"), 500],
+    ] as const) {
+      loadYahooTeamRosterMock.mockRejectedValueOnce(failure);
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+      const res = createMockRes();
+
+      await handler(
+        { method: "POST", body: { externalTeamId: "team-1" }, headers: {} } as any,
+        res,
+      );
+
+      expect(res.statusCode).toBe(status);
+      expect(res.body).toEqual({
+        error: "Unable to load Yahoo team roster.",
+        code: "YAHOO_TEAM_ROSTER_UNAVAILABLE",
+      });
+      expect(JSON.stringify(res.body)).not.toContain("secret");
+      consoleError.mockRestore();
+    }
+  });
 });

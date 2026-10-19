@@ -467,9 +467,11 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
 
     return res.status(200).json(response);
   } catch (error: any) {
+    console.error("player-trends API error", error);
     return res.status(500).json({
       success: false,
-      message: error.message ?? "Failed to fetch trend metrics",
+      message: "Failed to fetch trend metrics.",
+      error: "PLAYER_TRENDS_UNAVAILABLE",
     });
   }
 }

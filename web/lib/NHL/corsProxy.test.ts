@@ -19,6 +19,7 @@ type Fixture = {
   stall?: "dns" | "headers" | "body";
 };
 let fixture: Fixture;
+let redirects: Fixture[];
 let addresses: LookupAddress[];
 let dnsError: NodeJS.ErrnoException | null;
 let connectedAddresses: string[];
@@ -29,6 +30,7 @@ let destroyAgent: MockInstance<Agent["destroy"]>;
 
 beforeEach(() => {
   fixture = { statusCode: 200, headers: { "content-type": "application/json" }, body: Buffer.from('{"ok":true}') };
+  redirects = [];
   addresses = [{ address: PUBLIC_ADDRESS, family: 4 }];
   dnsError = null;
   connectedAddresses = [];
@@ -46,6 +48,7 @@ beforeEach(() => {
   httpTransport = vi.spyOn(http, "request").mockImplementation(() => { throw new Error("Unexpected HTTP transport"); });
   transport = vi.spyOn(https, "request").mockImplementation(((options: RequestOptions) => {
     const req = Object.assign(new PassThrough(), { abort: vi.fn() });
+    const current = redirects.shift() ?? fixture;
     streams.push(req);
     queueMicrotask(() => {
       const agent = options.agent as Agent;
@@ -53,11 +56,11 @@ beforeEach(() => {
       resolveAddress(String(options.hostname), { family: agent.options.family }, (error, address) => {
         if (error) { req.emit("error", error); return; }
         connectedAddresses.push(address);
-        if (fixture.stall === "headers") return;
-        const res = Object.assign(new PassThrough(), { statusCode: fixture.statusCode, headers: fixture.headers });
+        if (current.stall === "headers") return;
+        const res = Object.assign(new PassThrough(), { statusCode: current.statusCode, headers: current.headers });
         streams.push(res);
         req.emit("response", res);
-        if (fixture.stall !== "body") res.end(fixture.body);
+        if (current.stall !== "body") res.end(current.body);
       });
     });
     return req as unknown as ClientRequest;
@@ -135,21 +138,92 @@ describe("NHL socket address boundary", () => {
   });
 });
 
+function redirectTo(location: string, statusCode = 307): Fixture {
+  return { statusCode, headers: { location }, body: Buffer.from("") };
+}
+
 describe("NHL HTTP client limits with synthetic streams", () => {
-  it.each([301, 302, 303, 307, 308])("rejects HTTP %s without making a second request", async (statusCode) => {
-    fixture.statusCode = statusCode;
-    fixture.headers.location = "http://169.254.169.254/synthetic";
-    await expect(fetchNhlProxyText(TARGET)).rejects.toMatchObject({ type: "no-redirect" });
+  it.each([301, 302, 303, 307, 308])("rejects HTTP %s to an unapproved destination without a second request", async (statusCode) => {
+    redirects = [redirectTo("http://169.254.169.254/synthetic", statusCode)];
+    await expect(fetchNhlProxyText(TARGET)).rejects.toThrow("Unsupported NHL redirect");
     expect(transport).toHaveBeenCalledTimes(1);
     expect(httpTransport).not.toHaveBeenCalled();
     expect(destroyAgent).toHaveBeenCalledTimes(1);
   });
 
-  it("also rejects redirects to an otherwise approved resource", async () => {
-    fixture.statusCode = 302;
-    fixture.headers.location = "https://api-web.nhle.com/v1/standings/now";
-    await expect(fetchNhlProxyText(TARGET)).rejects.toMatchObject({ type: "no-redirect" });
+  it.each([
+    "https://169.254.169.254/latest/meta-data",
+    "http://api-web.nhle.com/v1/standings/2026-10-17",
+    "https://api-web.nhle.com:8443/v1/standings/2026-10-17",
+    "https://api-web.nhle.com.attacker.invalid/v1/standings/2026-10-17",
+    "https://user@api-web.nhle.com/v1/standings/2026-10-17",
+    "/v1/arbitrary-path",
+    "/v1/standings/2026-10-17#fragment",
+    "https://[::1]/v1/standings/2026-10-17",
+    "http://[invalid"
+  ])("refuses a redirect to %s", async (location) => {
+    redirects = [redirectTo(location)];
+    await expect(fetchNhlProxyText(TARGET)).rejects.toThrow("Unsupported NHL redirect");
     expect(transport).toHaveBeenCalledTimes(1);
+    expect(httpTransport).not.toHaveBeenCalled();
+  });
+
+  it("refuses a redirect without a Location header", async () => {
+    redirects = [{ statusCode: 302, headers: {}, body: Buffer.from("") }];
+    await expect(fetchNhlProxyText(TARGET)).rejects.toThrow("Unsupported NHL redirect");
+    expect(transport).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    "/v1/standings/2026-10-17",
+    "https://api-web.nhle.com/v1/standings/2026-10-17"
+  ])("follows one now-to-dated redirect to %s through a fresh checked lookup", async (location) => {
+    const now = new URL("https://api-web.nhle.com/v1/standings/now");
+    redirects = [redirectTo(location)];
+    const result = await fetchNhlProxyText(now);
+    expect(result.bodyText).toBe('{"ok":true}');
+    expect(transport).toHaveBeenCalledTimes(2);
+    const hop = transport.mock.calls[1][0] as RequestOptions;
+    expect(hop).toMatchObject({ hostname: "api-web.nhle.com", path: "/v1/standings/2026-10-17", method: "GET" });
+    expect((hop.agent as Agent).options).toMatchObject({ family: 4, lookup: lookupNhlAddress });
+    expect(lookup).toHaveBeenCalledTimes(2);
+    expect(connectedAddresses).toEqual([PUBLIC_ADDRESS, PUBLIC_ADDRESS]);
+    expect(httpTransport).not.toHaveBeenCalled();
+    expect(destroyAgent).toHaveBeenCalledTimes(1);
+  });
+
+  it("refuses a second redirect even between approved resources", async () => {
+    redirects = [
+      redirectTo("/v1/standings/2026-10-17"),
+      redirectTo("/v1/standings/2026-10-16")
+    ];
+    await expect(fetchNhlProxyText(TARGET)).rejects.toThrow("Unsupported NHL redirect");
+    expect(transport).toHaveBeenCalledTimes(2);
+  });
+
+  it("re-checks DNS on the redirect hop and rejects a private answer", async () => {
+    vi.mocked(lookup).mockImplementationOnce(((
+      _hostname: string,
+      _options: unknown,
+      callback: (error: NodeJS.ErrnoException | null, result: LookupAddress[]) => void
+    ) => callback(null, [{ address: PUBLIC_ADDRESS, family: 4 }])) as typeof lookup);
+    addresses = [{ address: "169.254.169.254", family: 4 }];
+    redirects = [redirectTo("/v1/standings/2026-10-17")];
+    await expect(fetchNhlProxyText(TARGET)).rejects.toThrow("NHL address unavailable");
+    expect(connectedAddresses).toEqual([PUBLIC_ADDRESS]);
+    expect(destroyAgent).toHaveBeenCalledTimes(1);
+  });
+
+  it("applies one deadline across a stalled redirect hop", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    redirects = [redirectTo("/v1/standings/2026-10-17")];
+    fixture.stall = "body";
+    const result = expect(fetchNhlProxyText(TARGET)).rejects.toMatchObject({ name: "AbortError" });
+    await vi.advanceTimersByTimeAsync(10_000);
+    await result;
+    expect(transport).toHaveBeenCalledTimes(2);
+    expect(destroyAgent).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it.each([false, true])("enforces the decoded-body limit with compression=%s", async (compressed) => {
