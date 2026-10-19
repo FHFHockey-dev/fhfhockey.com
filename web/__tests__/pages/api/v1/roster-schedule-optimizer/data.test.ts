@@ -39,7 +39,7 @@ describe("/api/v1/roster-schedule-optimizer/data", () => {
     const source = await mocks.select.mock.results[0].value;
     expect(source).toMatchObject({ kind: "legacy", reason: "native_not_activated" });
     expect(mocks.load).toHaveBeenCalledExactlyOnceWith(mocks.db, { seasonId: 20262027, startDate: query.startDate, endDate: query.endDate },
-      { now: new Date(), source });
+      { now: new Date(), source, forgeDailyBridge: true });
     expect(res.headers["Cache-Control"]).toBe("public, s-maxage=300, stale-while-revalidate=300");
     expect(res.body.forecastSource).toEqual({ kind: "legacy", headRevision: null, expiresAt: null, reason: "native_not_activated" });
     expect(decodePlanningDataTransport(res.body.data)).toEqual(data);
@@ -49,7 +49,7 @@ describe("/api/v1/roster-schedule-optimizer/data", () => {
     mocks.select.mockResolvedValue(native);
     const res = await request();
     expect(mocks.select).toHaveBeenCalledTimes(1);
-    expect(mocks.load.mock.calls[0][2]).toEqual({ now: new Date(), source: native });
+    expect(mocks.load.mock.calls[0][2]).toEqual({ now: new Date(), source: native, forgeDailyBridge: true });
     expect(res.headers["Cache-Control"]).toBe("public, s-maxage=60, stale-while-revalidate=0");
     expect(res.body.forecastSource).toEqual({ kind: "native", headRevision: 3, expiresAt: native.expiresAt, reason: null });
     expect(decodePlanningDataTransport(res.body.data)).toEqual(data);
@@ -59,7 +59,7 @@ describe("/api/v1/roster-schedule-optimizer/data", () => {
     const source = { kind, reason: "native_catalog_expired", environment: { PLAYER_FORECAST_BASELINE_RELEASE_IDS: "" } };
     mocks.select.mockResolvedValue(source);
     const res = await request();
-    expect(mocks.load.mock.calls[0][2]).toEqual({ now: new Date(), source });
+    expect(mocks.load.mock.calls[0][2]).toEqual({ now: new Date(), source, forgeDailyBridge: true });
     expect(res.headers["Cache-Control"]).toBe("public, s-maxage=300, stale-while-revalidate=300");
     expect(res.body.forecastSource).toEqual({ kind, headRevision: null, expiresAt: null, reason: "native_catalog_expired" });
   });
