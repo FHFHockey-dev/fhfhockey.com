@@ -92,6 +92,15 @@ P-D → P-G/P-H code fixes by their owners → P-I → P-E/P-K → P-F.
   - Checks 2–4 (audit row, baseline count vs candidates, window-z coverage) and the `cron.job` 374 readback: **not run**. I stopped after the connector failed twice rather than keep sending production queries.
   - Likely cause: the MCP connector or session failed. The server-side statement timeout is 8 s, so a slow query should have returned an error, not hung. This says nothing about whether the recovery worked. No retry, repair or rollback was attempted, and no writes were made.
   - Next: rerun `p-b-verify-recovery.sql` once the connector responds (or in the SQL editor). The 2026-10-18 date literals are still correct.
+- **P-B recovery verification 2026-10-18 (scheduled rerun 2026-10-19 11:32 UTC, read-only) — VERIFIED: all four checks pass.**
+  - Time check: 2026-10-19 11:31:58 UTC, after the 2026-10-18 10:55 UTC gate.
+  - Method: `p-b-verify-recovery.sql` exactly as written, with its 2026-10-18 literals. Five bounded queries ran through the Supabase connector (`execute_sql`, project `fyhftlxokyjtpndbkfse`). Each was wrapped in `begin read only; set local statement_timeout = '8s'`. All returned on the first call. Nothing was written.
+  - Check 1 (job 374): **pass**. The 2026-10-18 run `succeeded`. It ran 10:38:00.07 → 10:38:24.76 UTC (24.7 s) and ended before 10:40:00 (`before_baselines = true`).
+  - Check 2 (audit row): **pass**. `rebuild-baselines` ran at 10:40:59.11 UTC with `status = success` and HTTP 200. The response was `{"success":true,"processed":967,"duration":"57.77","snapshot_date":"2026-10-18"}`. `rows_affected` is null, as expected until the P-A receipt patch is live.
+  - Check 3 (baseline count): **pass**. `player_baselines` has 967 rows for `snapshot_date = '2026-10-18'`, equal to the 967 candidates. That compares with 400 on 10-17 and 968 on 10-16.
+  - Check 4 (window-z coverage): **pass**. `processed_players` summed over the 10:40–11:00 window-z runs is 642, against 266 on the partial 10-17 run. 642 is also the full-snapshot count on 10-16, the last complete day (968 baselines gave 642 distinct `sustainability_scores` players; see `evidence.md`). That makes it consistent with a complete baseline set. Caveat: the forward/defence subset of the 967 baselines was not counted directly, because the task allowed no extra production queries.
+  - `cron.job` 374 readback: `38 10 * * *`, active=true, `REFRESH MATERIALIZED VIEW CONCURRENTLY internal_stats.player_totals_unified;`. This is unchanged from the 2026-10-17 change.
+  - Result: the collision is resolved for 2026-10-18. No retry, repair or rollback was needed or attempted.
 
 ## P-C — The partial 2026-10-17 sustainability snapshot
 

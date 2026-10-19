@@ -91,3 +91,14 @@ The approvals answer the four questions Chef asked, so each one covers what that
   - Rollback target: `dpl_6ccUfnYgqnueRsNEbSESqZmSbzPu`.
   - Today's 10:40Z sustainability run is the first natural run on the new code. Check its `cron_job_audit` and distinct-player count afterwards (one bounded SELECT).
 - 05:43Z: **octoberBranch synced** with local merge commit `c371402c6` (master `fa950fd29` into `317f8f57e`). The tree is unchanged, because the released bytes already equalled octoberBranch. Not pushed: it needs TJ, together with the uncommitted migration alignment and today's docs.
+- 05:43:22Z: **octoberBranch pushed** (TJ: "commit … then push octoberBranch with the Vercel check"), `317f8f57e` → `cfeca5024`, which adds sync merge `c371402c6` and commit `cfeca5024` (migration records plus today's docs).
+  - Re-checked before the push: all 4 projects have previews disabled and production branch `master`.
+  - 90 s after the push: no new Vercel deployment (latest is still the R2 set). GitHub shows 0 deployments and 0 statuses for `cfeca5024`.
+- 11:16Z: **P1 P-G fix verified in production.** Today's natural cron run on R2 code, read with 3 bounded read-only SELECTs:
+  - All 3 `rebuild-score` batches processed: offset 0 (1,000 rows, 66 s), offset 250 (1,000 rows, 57 s), offset 500 (568 rows, 31 s).
+  - `sustainability_scores` for 2026-10-19: 2,568 rows, **642 distinct players**, against 250 per day on 10-17 and 10-18. That equals the full 10-16 count.
+  - Baselines, priors and window-z all report success.
+- 11:29Z: **Runs moved earlier at TJ's request** ("Any shot they can run earlier?"). Each one-time `fireAt` was re-armed, which keeps each to a single run, with completion notifications to Chef:
+  - P-B: now 07:31 EDT (11:31Z). Read-only; its guard needs only a time after 10-18 10:55Z.
+  - FORGE v1 live: now 07:50 EDT (11:50Z). Runbook timing still holds: capture after 04:00Z, outputs at or after 12:00Z (reached naturally after capture, inputs and materialize), publish before 21:30Z. Expiry stays at about 22:59:59.999Z, because issuance plus 12 h is later than the first game.
+  - Pre-flight: frozen files equal HEAD `cfeca5024`; port 3105 free; heavy lock free; battery 92% and charging.
