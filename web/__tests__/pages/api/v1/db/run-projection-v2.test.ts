@@ -60,6 +60,7 @@ vi.mock("utils/adminOnlyMiddleware", () => ({
   default: (handler: unknown) => handler,
 }));
 
+import { runProjectionV2ForDate } from "lib/projections/run-forge-projections";
 import handler, {
   buildProjectionDerivedGate,
   buildProjectionInputIngestGate,
@@ -204,6 +205,80 @@ describe("/api/v1/db/run-projection-v2", () => {
       owner: "withCronJobAudit",
       status: "persisted",
     });
+  });
+
+  it("reports a resumable run stopped at its deadline as a 207 continuation, not a failure", async () => {
+    vi.mocked(runProjectionV2ForDate).mockResolvedValueOnce({
+      runId: "run-1",
+      gamesProcessed: 10,
+      playerRowsUpserted: 360,
+      teamRowsUpserted: 20,
+      goalieRowsUpserted: 20,
+      timedOut: true,
+      resume: { resumed: false, invocations: 1, completedGames: 10, totalGames: 14, pendingGames: 4 },
+    });
+    const res = createMockRes();
+
+    await handler({ method: "GET", query: { date: "2026-10-17", bypassPreflight: "true" } } as any, res);
+
+    expect(res.statusCode).toBe(207);
+    expect(res.body).not.toHaveProperty("error");
+    expect(res.body).toMatchObject({
+      success: false,
+      operationStatus: "partial",
+      runId: "run-1",
+      gamesProcessed: 10,
+      timedOut: true,
+      termination: { state: "resume_required", resumeRequired: true, nextStartDate: "2026-10-17" },
+      resume: {
+        required: true,
+        reason: "runtime_budget",
+        runId: "run-1",
+        completedGames: 10,
+        totalGames: 14,
+        pendingGames: 4,
+        request: { date: "2026-10-17", horizonGames: "1", bypassPreflight: "true" },
+      },
+      scanSummary: { status: "partial", blockingIssueCount: 0 },
+    });
+    expect(auditInsertMock.mock.calls[0]?.[0]?.status).toBe("continued");
+  });
+
+  it("reports a run held by another call as a continuation", async () => {
+    vi.mocked(runProjectionV2ForDate).mockRejectedValueOnce(Object.assign(
+      new Error("Projection run already active for 2026-10-17 (run run-1, last activity 1m ago)."),
+      { code: "ACTIVE_RUN_EXISTS", statusCode: 409, resumeInProgress: true },
+    ));
+    const res = createMockRes();
+
+    await handler({ method: "GET", query: { date: "2026-10-17", bypassPreflight: "true" } } as any, res);
+
+    expect(res.statusCode).toBe(207);
+    expect(res.body).not.toHaveProperty("error");
+    expect(res.body).toMatchObject({
+      operationStatus: "partial",
+      resume: { required: true, reason: "run_in_progress_elsewhere", runId: null },
+    });
+    expect(auditInsertMock.mock.calls[0]?.[0]?.status).toBe("continued");
+  });
+
+  it("keeps a non-resumable timeout as an unsuccessful 200", async () => {
+    vi.mocked(runProjectionV2ForDate).mockResolvedValueOnce({
+      runId: "run-2",
+      gamesProcessed: 1,
+      playerRowsUpserted: 36,
+      teamRowsUpserted: 2,
+      goalieRowsUpserted: 2,
+      timedOut: true,
+    });
+    const res = createMockRes();
+
+    await handler({ method: "GET", query: { date: "2026-10-17", bypassPreflight: "true" } } as any, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({ success: false, error: "Timed out", termination: { state: "resume_required" } });
+    expect(res.body).not.toHaveProperty("operationStatus");
+    expect(auditInsertMock.mock.calls[0]?.[0]?.status).toBe("failure");
   });
 
   it("uses season rosters instead of current players.team_id to evaluate goalie assignment drift", () => {

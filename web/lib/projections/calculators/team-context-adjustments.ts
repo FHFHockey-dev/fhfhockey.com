@@ -82,7 +82,7 @@ export function computeTeamStrengthContextAdjustment(args: {
     TEAM_XG_SHOTS_AGAINST_MAX_PCT
   );
   const teamGoalsForPctAdjustment = clamp(
-    (teamOffenseEdge * 0.3 - opponentDefenseEdge * 0.24) * sampleWeight,
+    (teamOffenseEdge * 0.3 + opponentDefenseEdge * 0.24) * sampleWeight,
     -TEAM_XG_WIN_CONTEXT_MAX_PCT,
     TEAM_XG_WIN_CONTEXT_MAX_PCT
   );

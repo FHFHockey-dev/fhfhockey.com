@@ -1798,6 +1798,40 @@ describe("team strength priors", () => {
     expect(adjustment.opponentGoalsForPctAdjustment).toBeGreaterThan(0);
   });
 
+  it("raises team goals when the opponent's defence allows more xG", () => {
+    const leaky = computeTeamStrengthContextAdjustment({
+      defendingTeamPrior: {
+        sourceDate: "2026-02-08",
+        xga: 150,
+        xgaPerGame: 2.95,
+        xgfPerGame: 2.95
+      },
+      opponentTeamPrior: {
+        sourceDate: "2026-02-08",
+        xga: 165,
+        xgaPerGame: 3.3,
+        xgfPerGame: 2.95
+      }
+    });
+    const stingy = computeTeamStrengthContextAdjustment({
+      defendingTeamPrior: {
+        sourceDate: "2026-02-08",
+        xga: 150,
+        xgaPerGame: 2.95,
+        xgfPerGame: 2.95
+      },
+      opponentTeamPrior: {
+        sourceDate: "2026-02-08",
+        xga: 135,
+        xgaPerGame: 2.7,
+        xgfPerGame: 2.95
+      }
+    });
+
+    expect(leaky.teamGoalsForPctAdjustment).toBeGreaterThan(0);
+    expect(stingy.teamGoalsForPctAdjustment).toBeLessThan(0);
+  });
+
   it("returns neutral adjustments when no team priors are available", () => {
     const adjustment = computeTeamStrengthContextAdjustment({
       defendingTeamPrior: null,

@@ -207,6 +207,9 @@ const RESUMABLE_INVOCATION_BUDGET_MS = 180_000;
 const RESUMABLE_STAGE_START_CUTOFF_MS = 90_000;
 // The rolling step bounds itself; start it only with this much claim time left.
 const MIN_ROLLING_CLAIM_MS = 30_000;
+// run-projection-v2 stops at its own deadline and resumes its run on the next
+// call; give it at least this long.
+const MIN_PROJECTION_RUNTIME_MS = 30_000;
 // Outlives the 240 s kill, so a dead invocation's stage frees up before the
 // next 5-minute call.
 const RESUMABLE_STAGE_LEASE_MS = 270_000;
@@ -353,8 +356,9 @@ function createMockRes() {
   return res;
 }
 
-// A budget stop from the rolling route (207, operationStatus "partial",
-// resume.required) is unfinished work, not a failure.
+// A budget stop from the rolling or projection route (207, operationStatus
+// "partial", resume.required) is unfinished work, not a failure. The stage
+// stays running, uses no failed attempt, and the next invocation resumes it.
 function isPartialResume(statusCode: number, body: unknown) {
   if (statusCode !== 207 || !body || typeof body !== "object") return false;
   const record = body as Record<string, any>;
@@ -436,6 +440,7 @@ async function runStage(args: {
   rollingEndDate: string;
   rollingResumeFrom?: number | null;
   rollingMaxRuntimeMs?: number;
+  projectionDeadlineMs?: number;
   includeDownstream: boolean;
   includeAccuracy: boolean;
   useDurableProjectionBacklog: boolean;
@@ -626,7 +631,18 @@ async function runStage(args: {
         query:
           args.startDate === args.endDate
             ? {
-                date: args.date
+                date: args.date,
+                // Measured after the goalie step, which runs first.
+                ...(args.projectionDeadlineMs != null
+                  ? {
+                      maxDurationMs: String(
+                        Math.max(
+                          MIN_PROJECTION_RUNTIME_MS,
+                          args.projectionDeadlineMs - Date.now()
+                        )
+                      )
+                    }
+                  : {})
               }
             : {
                 startDate: args.startDate,
@@ -874,6 +890,12 @@ async function runResumablePipeline(args: {
               MIN_ROLLING_CLAIM_MS,
               RESUMABLE_INVOCATION_BUDGET_MS - (Date.now() - args.startedAt)
             )
+          }
+        : {}),
+      ...(stage.id === "projection_execution"
+        ? {
+            projectionDeadlineMs:
+              args.startedAt + RESUMABLE_INVOCATION_BUDGET_MS
           }
         : {})
     });

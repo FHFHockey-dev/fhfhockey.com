@@ -240,7 +240,16 @@ import {
   fetchTeamStrengthPrior,
   type TeamStrengthAverages,
 } from "./queries/team-context-queries";
-import { createRun, finalizeRun } from "./queries/run-lifecycle-queries";
+import {
+  buildResumableRunScopeKey,
+  claimResumableRun,
+  clearRunGameRows,
+  createRun,
+  finalizeRun,
+  resumableRunLeaseExpiresAt,
+  writeClaimedRun,
+  type ForgeRunClaim,
+} from "./queries/run-lifecycle-queries";
 import {
   computeSkaterOnIceContextAdjustments,
   computeSkaterOpponentGoalieContextAdjustments,
@@ -440,13 +449,22 @@ export async function runProjectionV2ForDate(
     || !Number.isFinite(Date.parse(localReceipt.reservedAt)) || !Number.isFinite(Date.parse(localReceipt.leaseExpiresAt)))) {
     throw new Error("Local FORGE reservation receipt does not match the immutable intent.");
   }
-  const runId: string = localReceipt?.runId ?? reservation?.data ?? await createRun(asOfDate);
+  // A live uncaptured run keeps one run_id per date and scope. When the deadline
+  // stops it, it stays running and the next call projects only unfinished games.
+  // Captured runs need every read in one snapshot, so they stay single-call.
+  const resumeClaim = !reservation && !captureEnabled && !opts?.decisionAsOf
+    ? await claimResumableRun(asOfDate, {
+      scopeKey: buildResumableRunScopeKey(clampHorizonGames(opts?.horizonGames ?? 1), opts?.gameIds),
+      leaseExpiresAt: resumableRunLeaseExpiresAt(opts?.deadlineMs),
+    })
+    : null;
+  const runId: string = localReceipt?.runId ?? reservation?.data ?? resumeClaim?.runId ?? await createRun(asOfDate);
   if (localReceipt && (localReceipt.reservation !== "new" || localReceipt.state !== "active")) {
     // Never rerun or finalize an existing attempt after a lost response/restart.
     verifyExecution({ phase: "reserved", runId });
     throw new Error("Local FORGE attempt already exists; reconcile its immutable evidence without recomputing.");
   }
-  if (!captureEnabled) return runProjectionCalculations(asOfDate, { ...opts, decisionAsOf }, runId);
+  if (!captureEnabled) return runProjectionCalculations(asOfDate, { ...opts, decisionAsOf }, runId, resumeClaim ?? undefined);
   try {
     verifyExecution({ phase: "reserved", runId });
     let issuedContexts: ForgeIssuedContextV1[] | undefined;
@@ -589,8 +607,14 @@ export async function replayForgeSnapshot(snapshot: ForgeInputSnapshot, expected
   return { runId: snapshot.runId, outputHash, matched: true };
 }
 
-async function runProjectionCalculations(asOfDate: string, opts: RunProjectionOptions | undefined, runId: string): Promise<RunProjectionResult> {
+async function runProjectionCalculations(
+  asOfDate: string,
+  opts: RunProjectionOptions | undefined,
+  runId: string,
+  claim?: ForgeRunClaim,
+): Promise<RunProjectionResult> {
   const skaterRollout = resolveSkaterRolloutConfig();
+  const completedGameIds = new Set(claim?.completedGameIds ?? []);
 
   const metrics: Record<string, any> = {
     as_of_date: asOfDate,
@@ -731,13 +755,53 @@ async function runProjectionCalculations(asOfDate: string, opts: RunProjectionOp
     const deadlineMs = safeNumber(opts?.deadlineMs, Number.POSITIVE_INFINITY);
     let timedOut = false;
 
-    let playerRowsUpserted = 0;
-    let teamRowsUpserted = 0;
-    let goalieRowsUpserted = 0;
+    // A resumed run continues the totals its earlier invocations stored.
+    const prior = claim?.resumed ? (claim.priorMetrics as Record<string, any>) : null;
+    if (prior) {
+      metrics.started_at = prior.started_at ?? metrics.started_at;
+      metrics.games = safeNumber(prior.games, 0);
+      metrics.warnings = Array.isArray(prior.warnings) ? [...prior.warnings] : [];
+      Object.assign(metrics.data_quality, prior.data_quality ?? {});
+      learningCounters.players = safeNumber(prior.learning?.players_considered, 0);
+      learningCounters.goalRecent = safeNumber(prior.learning?.goal_rate_recent_players, 0);
+      learningCounters.assistRecent = safeNumber(prior.learning?.assist_rate_recent_players, 0);
+    }
+    let playerRowsUpserted = safeNumber(prior?.player_rows, 0);
+    let teamRowsUpserted = safeNumber(prior?.team_rows, 0);
+    let goalieRowsUpserted = safeNumber(prior?.goalie_rows, 0);
     const teamHorizonScalarsCache = new Map<string, number[]>();
     const teamSkaterRoleHistoryCache = new Map<string, Map<number, string[]>>();
 
-    gamesLoop: for (const game of (games ?? []) as GameRow[]) {
+    const slateGames = (games ?? []) as GameRow[];
+    const pendingGames = slateGames.filter((game) => !completedGameIds.has(game.id));
+    // An earlier invocation may have stopped partway through one of these games.
+    if (claim?.resumed) await clearRunGameRows(runId, pendingGames.map((game) => game.id));
+    // Totals as of the last finished game; a stopped run stores these, not the
+    // partial counts of the game it was in.
+    const takeCheckpoint = () => {
+      const snapshot = structuredClone(metrics);
+      runMetricsFinalizationStage({
+        metrics: snapshot as ProjectionMetricsFinalizationTarget,
+        playerRowsUpserted,
+        teamRowsUpserted,
+        goalieRowsUpserted,
+        learningCounters,
+        timedOut: false,
+      });
+      delete snapshot.finished_at;
+      delete snapshot.timed_out;
+      return { metrics: snapshot, playerRowsUpserted, teamRowsUpserted, goalieRowsUpserted };
+    };
+    let checkpoint = claim ? takeCheckpoint() : null;
+    const resumeSummary = () => ({
+      resumed: claim!.resumed,
+      invocations: claim!.invocations,
+      completedGames: slateGames.filter((game) => completedGameIds.has(game.id)).length,
+      totalGames: slateGames.length,
+      pendingGames: slateGames.filter((game) => !completedGameIds.has(game.id)).length,
+    });
+
+    gamesLoop: for (const game of pendingGames) {
       if (Date.now() > deadlineMs) {
         timedOut = true;
         break gamesLoop;
@@ -1025,6 +1089,34 @@ async function runProjectionCalculations(asOfDate: string, opts: RunProjectionOp
       }
 
       metrics.games += 1;
+      if (claim) {
+        completedGameIds.add(game.id);
+        checkpoint = takeCheckpoint();
+        await writeClaimedRun(claim, {
+          status: "running",
+          metrics: checkpoint.metrics,
+          completedGameIds: [...completedGameIds],
+          leaseExpiresAt: resumableRunLeaseExpiresAt(opts?.deadlineMs),
+        });
+      }
+    }
+
+    if (claim && checkpoint && timedOut) {
+      // Leave the run running and release the lease for the next invocation.
+      await writeClaimedRun(claim, {
+        status: "running",
+        metrics: checkpoint.metrics,
+        completedGameIds: [...completedGameIds],
+      });
+      return {
+        runId,
+        gamesProcessed: checkpoint.metrics.games,
+        playerRowsUpserted: checkpoint.playerRowsUpserted,
+        teamRowsUpserted: checkpoint.teamRowsUpserted,
+        goalieRowsUpserted: checkpoint.goalieRowsUpserted,
+        timedOut,
+        resume: resumeSummary(),
+      };
     }
 
     runMetricsFinalizationStage({
@@ -1036,7 +1128,15 @@ async function runProjectionCalculations(asOfDate: string, opts: RunProjectionOp
       timedOut,
     });
 
-    await finalizeRun(runId, timedOut ? "failed" : "succeeded", metrics);
+    if (claim) {
+      await writeClaimedRun(claim, {
+        status: "succeeded",
+        metrics,
+        completedGameIds: [...completedGameIds],
+      });
+    } else {
+      await finalizeRun(runId, timedOut ? "failed" : "succeeded", metrics);
+    }
     return {
       runId,
       gamesProcessed: metrics.games,
@@ -1044,11 +1144,23 @@ async function runProjectionCalculations(asOfDate: string, opts: RunProjectionOp
       teamRowsUpserted,
       goalieRowsUpserted,
       timedOut,
+      ...(claim ? { resume: resumeSummary() } : {}),
     };
   } catch (e) {
     metrics.finished_at = new Date().toISOString();
     metrics.error = getErrorMessage(e);
-    await finalizeRun(runId, "failed", metrics);
+    if (!claim) {
+      await finalizeRun(runId, "failed", metrics);
+    } else if ((e as { code?: unknown })?.code !== "RUN_LEASE_LOST") {
+      // Another invocation that took the run over owns its outcome.
+      await writeClaimedRun(claim, {
+        status: "failed",
+        metrics,
+        completedGameIds: [...completedGameIds],
+      }).catch((writeError) => {
+        if ((writeError as { code?: unknown })?.code !== "RUN_LEASE_LOST") throw writeError;
+      });
+    }
     throw e;
   }
 }
