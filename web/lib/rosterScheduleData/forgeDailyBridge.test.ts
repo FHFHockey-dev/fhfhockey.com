@@ -64,6 +64,24 @@ describe("FORGE daily bridge", () => {
     expect(trimmed.limitations.at(-1)).toMatch(/trimmed to the first \d+ of 6 player-games/);
   });
 
+  it("keeps a skater FORGE gives no power-play line, at zero power-play production", () => {
+    const base = inputs();
+    base.skaters = base.skaters.map(row => row.player_id === 101 && row.run_id === "r2"
+      ? { ...row, proj_goals_pp: null, proj_assists_pp: null, proj_shots_pp: null, proj_toi_pp_seconds: null } as unknown as typeof row : row);
+    const { forecasts, limitations } = buildForgeDailyBridgeForecasts(base, players, games, now, 20262027, policy);
+    const s1 = forecasts.filter(row => row.playerId === "s1");
+    expect(s1.map(row => row.gameId)).toEqual(["1", "2"]);
+    expect(s1[0].stats).toMatchObject({ GOALS: 0.25, ASSISTS: 0.3, PP_GOALS: 0, PP_ASSISTS: 0, PP_POINTS: 0, SHOTS_ON_GOAL: 2.5, TIME_ON_ICE_PER_GAME: 15 });
+    expect(limitations).toContain("1 skaters with no FORGE power-play line or time count 0 power-play production.");
+    // Real projected power-play time without a power-play line stays unknown, as does a blank even-strength line.
+    base.skaters = base.skaters.map(row => row.player_id === 101 && row.run_id === "r2" ? { ...row, proj_toi_pp_seconds: 120 } as unknown as typeof row : row);
+    const timed = buildForgeDailyBridgeForecasts(base, players, games, now, 20262027, policy);
+    expect(timed.forecasts.some(row => row.playerId === "s1")).toBe(false);
+    expect(timed.limitations).toContain("1 skaters have projected power-play time but no FORGE power-play line, so they get no forecast.");
+    base.skaters = base.skaters.map(row => row.player_id === 101 && row.run_id === "r2" ? { ...row, proj_goals_es: null } as unknown as typeof row : row);
+    expect(buildForgeDailyBridgeForecasts(base, players, games, now, 20262027, policy).forecasts.some(row => row.playerId === "s1")).toBe(false);
+  });
+
   it("fills the stats FORGE does not project from blended season rates", () => {
     const totals = (playerId: number, season: string, gp: number, pim: number, fow: number, fol: number, goals: number, gwg: number) =>
       ({ player_id: playerId, season, games_played: gp, penalty_minutes: pim, plus_minus: 0, sh_goals: 0, sh_assists: 0, sh_points: 0, total_fow: fow, total_fol: fol, goals, gw_goals: gwg });
