@@ -39,6 +39,14 @@
  * - autoResumeMaxRuntimeMs (number, optional): Max auto-resume loop runtime before stopping between batches. Defaults to 220000.
  * - disableAutoResumeRuntimeBudget (boolean, optional): If true, removes the auto-resume loop runtime cap for manual backfills.
  *
+ * Runtime Budget & Daily Resume:
+ * - maxRuntimeMs (number, optional): Stop claiming new players this many ms after the request starts. In-flight players finish.
+ *   Defaults to 180000 for the daily_incremental profile (the scheduled path), so the run answers inside the 240 s function cap.
+ *   A run that stops at the budget returns 207 with `resume.request`, the exact parameters that continue it.
+ * - disableRuntimeBudget (boolean, optional): If true, removes that default for manual runs without a function time limit.
+ * - continueDailyWindow (boolean, optional): Implicit daily window only. Continues after today's newest `resumeCursor`
+ *   recorded in cron_job_audit for the same window, or returns 200 without work when today's window is already complete.
+ *
  * Example URLs:
  * - Process a single player: /api/v1/db/update-rolling-player-averages?playerId=8478402
  * - Process a specific season: /api/v1/db/update-rolling-player-averages?season=20232024
@@ -79,6 +87,12 @@ import {
   type RollingExecutionProfile
 } from "lib/rollingPlayerOperationalPolicy";
 import { getRollingForgeStageDependencyContract } from "lib/rollingForgePipeline";
+import {
+  formatRollingDailyStrengthKey,
+  readRollingDailyResumeState,
+  type RollingDailyResumeCursor
+} from "lib/rollingPlayerDailyResume";
+import supabaseServer from "lib/supabase/server";
 import type {
   RollingPlayerRunSummary,
   StrengthState
@@ -87,9 +101,10 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import adminOnly from "utils/adminOnlyMiddleware";
 
 type ResponseBody = {
+  resumeCursor?: RollingDailyResumeCursor;
   message: string;
   success?: boolean;
-  operationStatus?: "success" | "warning" | "blocked";
+  operationStatus?: "success" | "warning" | "blocked" | "partial";
   warning?: string | null;
   executionProfile?: RollingExecutionProfile;
   executionScope?: {
@@ -115,6 +130,14 @@ type ResponseBody = {
     resumeStrategy: string;
   };
   appliedPlayerLimit?: number;
+  playerClaimBudgetMs?: number | null;
+  resume?: {
+    required: true;
+    nextResumeFrom: number | null;
+    remainingPlayerCount: number;
+    request: Record<string, string | number>;
+    guidance: string;
+  };
   dependencyContract?: ReturnType<typeof getRollingForgeStageDependencyContract>;
   runSummary?: RollingPlayerRunSummary;
   autoResume?: {
@@ -157,6 +180,9 @@ const DAILY_INCREMENTAL_BROAD_WINDOW_LIMIT_DAYS =
 const DEFAULT_AUTO_RESUME_MAX_PLAYERS = 25;
 const DEFAULT_AUTO_RESUME_MAX_BATCHES = 20;
 const DEFAULT_AUTO_RESUME_MAX_RUNTIME_MS = 220_000;
+// Leaves about 60 s of the 240 s function cap for in-flight players, the
+// response and the cron audit insert.
+const DEFAULT_DAILY_PLAYER_CLAIM_BUDGET_MS = 180_000;
 const VALID_STRENGTH_STATES = new Set<StrengthState>([
   "all",
   "5v5",
@@ -347,7 +373,7 @@ function buildProgressGuidance(args: {
         ? "When chunking manually with maxPlayers, resume with an explicit resumeFrom value chosen from the last successfully processed player in the response/logs."
         : args.executionProfile === "overnight"
           ? "Overnight runs are intentionally buffered today; check cron/audit logs for completion until an async progress table exists."
-          : "No automatic resume cursor is emitted by this endpoint today."
+          : "A run that reaches its runtime budget returns 207 with resume.request. The implicit daily window can also continue with continueDailyWindow=true."
   };
 }
 
@@ -393,14 +419,21 @@ function mergeRollingRunSummaries(
     lastProcessedPlayerId: current.lastProcessedPlayerId ?? null,
     nextResumeFrom: current.nextResumeFrom ?? null,
     totalPlayersAfterResumeFilter: current.totalPlayersAfterResumeFilter ?? 0,
-    remainingPlayerCount: current.remainingPlayerCount ?? 0
+    remainingPlayerCount: current.remainingPlayerCount ?? 0,
+    stoppedReason: current.stoppedReason
   };
+}
+
+function getAuditJobName(req: NextApiRequest): string {
+  // Matches withCronJobAudit's default job name, so this route reads its own rows.
+  return (req.url ?? "").split("?")[0]?.trim() || "unknown";
 }
 
 export async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseBody>
 ) {
+  const requestStartedAt = Date.now();
   const dependencyContract = getRollingForgeStageDependencyContract(
     "rolling_player_recompute"
   );
@@ -471,6 +504,11 @@ export async function handler(
       ? null
       : parseQueryPositiveInt(getRequestParam(req, "autoResumeMaxRuntimeMs")) ??
         DEFAULT_AUTO_RESUME_MAX_RUNTIME_MS;
+    const maxRuntimeMs = parseQueryPositiveInt(getRequestParam(req, "maxRuntimeMs"));
+    const disableRuntimeBudget =
+      parseQueryBoolean(getRequestParam(req, "disableRuntimeBudget")) ?? false;
+    const continueDailyWindow =
+      parseQueryBoolean(getRequestParam(req, "continueDailyWindow")) ?? false;
     const confirmBroadRun = parseQueryBoolean(getRequestParam(req, "confirmBroadRun"));
     const bypassFreshnessBlockers = parseQueryBoolean(
       getRequestParam(req, "bypassFreshnessBlockers")
@@ -597,6 +635,65 @@ export async function handler(
       });
     }
 
+    if (continueDailyWindow && implicitDailyWindow == null) {
+      return res.status(400).json({
+        message:
+          "continueDailyWindow applies only to the implicit daily window. Remove explicit scope params, or pass resumeFrom with explicit dates instead.",
+        success: false,
+        operationStatus: "blocked"
+      });
+    }
+    const dailyStrengthKey = formatRollingDailyStrengthKey(strengths);
+    const buildResumeCursor = (
+      summary: RollingPlayerRunSummary | undefined,
+      partial: boolean
+    ): RollingDailyResumeCursor | undefined =>
+      implicitDailyWindow
+        ? {
+            v: 1,
+            windowStartDate: implicitDailyWindow.startDate,
+            windowEndDate: implicitDailyWindow.endDate,
+            strengths: dailyStrengthKey,
+            status: partial ? "partial" : "complete",
+            nextResumeFrom: partial ? (summary?.nextResumeFrom ?? null) : null
+          }
+        : undefined;
+    let effectiveResumeFrom = resumeFrom;
+    if (continueDailyWindow && implicitDailyWindow) {
+      const dailyResumeState = await readRollingDailyResumeState({
+        client: supabaseServer,
+        jobName: getAuditJobName(req),
+        windowStartDate: implicitDailyWindow.startDate,
+        windowEndDate: implicitDailyWindow.endDate,
+        strengths: dailyStrengthKey
+      });
+      if (dailyResumeState.state === "complete") {
+        return res.status(200).json({
+          resumeCursor: buildResumeCursor(undefined, false),
+          message:
+            "Today's implicit daily rolling window is already complete; nothing to continue.",
+          success: true,
+          operationStatus: "success",
+          executionProfile,
+          executionScope,
+          dependencyContract
+        });
+      }
+      if (dailyResumeState.state === "resume") {
+        effectiveResumeFrom = dailyResumeState.resumeFrom;
+      }
+    }
+    const playerClaimBudgetMs = disableRuntimeBudget
+      ? null
+      : (maxRuntimeMs ??
+        (executionProfile === "daily_incremental"
+          ? DEFAULT_DAILY_PLAYER_CLAIM_BUDGET_MS
+          : null));
+    const stopClaimingPlayersAtMs =
+      playerClaimBudgetMs != null
+        ? requestStartedAt + playerClaimBudgetMs
+        : undefined;
+
     const resolvedPlayerConcurrency =
       playerConcurrency ??
       (autoResume ? 1 : undefined) ??
@@ -623,7 +720,9 @@ export async function handler(
         startDate,
         endDate,
         strengths,
-        resumeFrom,
+        resumeFrom: effectiveResumeFrom,
+        continueDailyWindow,
+        playerClaimBudgetMs,
         maxPlayers: effectiveMaxPlayers,
         fullRefresh,
         fullRefreshMode,
@@ -697,7 +796,7 @@ export async function handler(
     let autoResumeSummary: ResponseBody["autoResume"] | undefined;
     try {
       if (autoResume) {
-        let currentResumeFrom = resumeFrom;
+        let currentResumeFrom = effectiveResumeFrom;
         let aggregateSummary: RollingPlayerRunSummary | null = null;
         let stoppedReason: NonNullable<ResponseBody["autoResume"]>["stoppedReason"] =
           "complete";
@@ -728,7 +827,8 @@ export async function handler(
             upsertConcurrency: resolvedUpsertConcurrency,
             skipDiagnostics: resolvedSkipDiagnostics,
             dryRunUpsert,
-            debugUpsertPayload
+            debugUpsertPayload,
+            stopClaimingPlayersAtMs
           });
 
           aggregateSummary = mergeRollingRunSummaries(
@@ -745,6 +845,10 @@ export async function handler(
             remainingPlayerCount: batchSummary.remainingPlayerCount ?? 0
           });
 
+          if (batchSummary.stoppedReason === "runtime_budget") {
+            stoppedReason = "runtime_budget";
+            break;
+          }
           if (batchSummary.nextResumeFrom == null) {
             stoppedReason = "complete";
             break;
@@ -767,7 +871,7 @@ export async function handler(
           maxRuntimeMs: autoResumeMaxRuntimeMs,
           runtimeBudgetDisabled: disableAutoResumeRuntimeBudget,
           stoppedReason,
-          initialResumeFrom: resumeFrom ?? null,
+          initialResumeFrom: effectiveResumeFrom ?? null,
           nextResumeFrom: runSummary?.nextResumeFrom ?? null,
           maxPlayersPerBatch: effectiveMaxPlayers ?? null,
           batches
@@ -779,7 +883,7 @@ export async function handler(
           startDate,
           endDate,
           strengths,
-          resumePlayerId: resumeFrom,
+          resumePlayerId: effectiveResumeFrom,
           maxPlayers: effectiveMaxPlayers,
           forceFullRefresh: fullRefresh,
           fullRefreshMode,
@@ -789,7 +893,8 @@ export async function handler(
           upsertConcurrency: resolvedUpsertConcurrency,
           skipDiagnostics: resolvedSkipDiagnostics,
           dryRunUpsert,
-          debugUpsertPayload
+          debugUpsertPayload,
+          stopClaimingPlayersAtMs
         });
       }
       const executeDurationMs = Date.now() - executeStartedAt;
@@ -813,16 +918,49 @@ export async function handler(
       console.timeEnd(timerLabel);
     }
 
+    const stoppedAtRuntimeBudget =
+      runSummary?.stoppedReason === "runtime_budget" ||
+      autoResumeSummary?.stoppedReason === "runtime_budget";
+    const nextResumeFrom = runSummary?.nextResumeFrom ?? null;
+    const resume: ResponseBody["resume"] = stoppedAtRuntimeBudget
+      ? {
+          required: true,
+          nextResumeFrom,
+          remainingPlayerCount: runSummary?.remainingPlayerCount ?? 0,
+          request: {
+            ...(startDate ? { startDate } : {}),
+            ...(endDate ? { endDate } : {}),
+            ...(season !== undefined ? { season } : {}),
+            ...(playerId !== undefined ? { playerId } : {}),
+            ...(strengths ? { strengths: strengths.join(",") } : {}),
+            ...(effectiveMaxPlayers !== undefined
+              ? { maxPlayers: effectiveMaxPlayers }
+              : {}),
+            ...(autoResume ? { autoResume: "true" } : {}),
+            ...(executionProfile ? { executionProfile } : {}),
+            ...(nextResumeFrom != null ? { resumeFrom: nextResumeFrom } : {})
+          },
+          guidance: implicitDailyWindow
+            ? "Continue on the same UTC day with continueDailyWindow=true, or send resume.request. resume.request uses explicit dates, so upstream freshness blockers return 422 there unless bypassFreshnessBlockers=true."
+            : "Send resume.request to continue after nextResumeFrom."
+        }
+      : undefined;
+    const resumeCursor = buildResumeCursor(
+      runSummary,
+      stoppedAtRuntimeBudget || nextResumeFrom != null
+    );
+    const freshnessBlocked =
+      (runSummary?.freshnessBlockers ?? 0) > 0 &&
+      !bypassFreshnessBlockers &&
+      !allowImplicitDailyFreshnessWarning;
+
     logEndpointPhase({
       phase: "response",
       status: "complete",
       details: {
-        statusCode:
-          (runSummary?.freshnessBlockers ?? 0) > 0 &&
-          !bypassFreshnessBlockers &&
-          !allowImplicitDailyFreshnessWarning
-            ? 422
-            : 200,
+        statusCode: freshnessBlocked ? 422 : stoppedAtRuntimeBudget ? 207 : 200,
+        stoppedAtRuntimeBudget,
+        nextResumeFrom,
         freshnessBlockers: runSummary?.freshnessBlockers ?? 0,
         bypassFreshnessBlockers: bypassFreshnessBlockers ?? false
       }
@@ -854,6 +992,8 @@ export async function handler(
             maxPlayers: effectiveMaxPlayers
           }),
           appliedPlayerLimit: effectiveMaxPlayers,
+          playerClaimBudgetMs,
+          resume,
           dependencyContract,
           runSummary,
           autoResume: autoResumeSummary,
@@ -880,14 +1020,28 @@ export async function handler(
         })
       );
     }
-    res.status(200).json({
-      message: freshnessWarningOnly
-        ? allowImplicitDailyFreshnessWarning
-          ? "Rolling player averages processed with freshness warnings on the implicit daily window."
-          : "Rolling player averages processed with freshness blockers bypassed."
-        : "Rolling player averages processed successfully.",
-      success: true,
-      operationStatus: freshnessWarningOnly ? "warning" : "success",
+    if (stoppedAtRuntimeBudget) {
+      console.warn(
+        "[update-rolling-player-averages] stopped at the runtime budget; resume required",
+        JSON.stringify({ playerClaimBudgetMs, resume })
+      );
+    }
+    // The resume cursor goes first so the cron audit's response preview keeps it.
+    res.status(stoppedAtRuntimeBudget ? 207 : 200).json({
+      ...(resumeCursor ? { resumeCursor } : {}),
+      message: stoppedAtRuntimeBudget
+        ? "Rolling player averages stopped at the runtime budget before every player was processed; resume required."
+        : freshnessWarningOnly
+          ? allowImplicitDailyFreshnessWarning
+            ? "Rolling player averages processed with freshness warnings on the implicit daily window."
+            : "Rolling player averages processed with freshness blockers bypassed."
+          : "Rolling player averages processed successfully.",
+      success: !stoppedAtRuntimeBudget,
+      operationStatus: stoppedAtRuntimeBudget
+        ? "partial"
+        : freshnessWarningOnly
+          ? "warning"
+          : "success",
       warning: freshnessWarningOnly
         ? allowImplicitDailyFreshnessWarning
           ? "Implicit daily maintenance tolerated upstream freshness blockers. Treat this recompute as degraded until stale sources are refreshed."
@@ -902,6 +1056,8 @@ export async function handler(
         maxPlayers: effectiveMaxPlayers
       }),
       appliedPlayerLimit: effectiveMaxPlayers,
+      playerClaimBudgetMs,
+      resume,
       dependencyContract,
       runSummary,
       autoResume: autoResumeSummary,

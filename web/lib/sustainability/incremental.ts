@@ -24,6 +24,7 @@ export function classifySustainabilitySourceAdvance(args: {
   batchPlayers: number;
   missingBatchRows: number;
   hasStaleRows: boolean;
+  hasRepairableRows?: boolean;
 }) {
   if (args.batchPlayers === 0) {
     return { shouldProcess: true, reason: "empty_batch" as const };
@@ -31,9 +32,32 @@ export function classifySustainabilitySourceAdvance(args: {
   if (args.missingBatchRows > 0) {
     return { shouldProcess: true, reason: "snapshot_batch_incomplete" as const };
   }
-  return args.hasStaleRows
-    ? { shouldProcess: true, reason: "new_source_date" as const }
+  if (args.hasStaleRows) {
+    return { shouldProcess: true, reason: "new_source_date" as const };
+  }
+  return args.hasRepairableRows
+    ? { shouldProcess: true, reason: "luck_inputs_available" as const }
     : { shouldProcess: false, reason: "source_already_processed" as const };
+}
+
+// Score rows built while sustainability_window_z was absent zero those luck
+// terms and record a `missing_window_z_<stat>` warning; returns the
+// `player:window:stat` keys of those missing inputs.
+export function missingWindowZKeys(
+  rows: Array<{ player_id: number; window_code: string; warnings: unknown }>
+) {
+  const keys = new Set<string>();
+  for (const row of rows) {
+    if (!Array.isArray(row.warnings)) continue;
+    for (const warning of row.warnings) {
+      if (typeof warning === "string" && warning.startsWith("missing_window_z_")) {
+        keys.add(
+          `${row.player_id}:${row.window_code}:${warning.slice("missing_window_z_".length)}`
+        );
+      }
+    }
+  }
+  return keys;
 }
 
 // Each score row records its player's own newest game date at build time. A
@@ -105,7 +129,9 @@ export async function detectSustainabilitySourceAdvance(
     (chunk, range) =>
       client
         .from("sustainability_scores")
-        .select("player_id, window_code, sourceCutoffs:components->sourceCutoffs")
+        .select(
+          "player_id, window_code, sourceCutoffs:components->sourceCutoffs, warnings:components->warnings"
+        )
         .eq("snapshot_date", args.snapshotDate)
         .in("player_id", chunk)
         .order("player_id", { ascending: true })
@@ -146,17 +172,46 @@ export async function detectSustainabilitySourceAdvance(
       hasStaleRows = (data ?? []).length > 0;
     }
   }
+  // Degraded rows become incomplete only once a missing window_z input exists,
+  // so a rebuild that still lacks it keeps skipping.
+  let hasRepairableRows = false;
+  const missingKeys = missingWindowZKeys(scoreRows);
+  if (missingKeys.size > 0 && missingBatchRows === 0 && !hasStaleRows) {
+    const degradedPlayers = [
+      ...new Set([...missingKeys].map((key) => Number(key.split(":")[0])))
+    ];
+    const missingStats = [...new Set([...missingKeys].map((key) => key.split(":")[2]))];
+    const windowZRows = await fetchAllSupabaseFilterChunks(
+      degradedPlayers,
+      (chunk, range) =>
+        client
+          .from("sustainability_window_z")
+          .select("player_id, window_code, stat_code")
+          .eq("snapshot_date", args.snapshotDate)
+          .in("player_id", chunk)
+          .in("stat_code", missingStats)
+          .order("player_id", { ascending: true })
+          .order("window_code", { ascending: true })
+          .order("stat_code", { ascending: true })
+          .range(range.from, range.to)
+    );
+    hasRepairableRows = windowZRows.some((row) =>
+      missingKeys.has(`${row.player_id}:${row.window_code}:${row.stat_code}`)
+    );
+  }
   const batchPlayers = new Set(args.playerIds).size;
   return {
     snapshot_date: args.snapshotDate,
     batch_players: batchPlayers,
     missing_batch_rows: missingBatchRows,
     stale_source_rows: hasStaleRows,
+    repairable_luck_rows: hasRepairableRows,
     latest_processed_source_date: latestProcessedSourceDate,
     ...classifySustainabilitySourceAdvance({
       batchPlayers,
       missingBatchRows,
-      hasStaleRows
+      hasStaleRows,
+      hasRepairableRows
     })
   };
 }

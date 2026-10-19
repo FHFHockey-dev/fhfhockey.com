@@ -20,6 +20,7 @@ import { extractAuditTimingRecord } from "lib/cron/cronReportTiming";
 import { readReportMetrics, repositoryExecutionLimitMs, isNearRepositoryLimit, reportedRuntimeBudgetMs } from "lib/cron/reportMetrics";
 import { buildSqlCronTimingObservation } from "lib/cron/sqlTiming";
 import { readCronScheduleMarkdown } from "lib/cron/cronInventory";
+import { loadNhlSeasonWindow, type NhlSeasonWindow } from "lib/cron/nhlOffSeason";
 import adminOnly from "utils/adminOnlyMiddleware";
 import {
   assessYahooLifecycleHealth,
@@ -49,6 +50,62 @@ const RECURRING_SLOT_GRACE_MS = 5 * 60 * 1000;
 const MAX_UNSCHEDULED_ALERTS = 8;
 const ROUTE_AUDIT_MISSING_WARNING =
   "Cron submission was recorded, but no route audit payload was recorded; route execution is unverified.";
+// A function killed at Vercel's limit never reaches its audit wrapper, so the
+// only trace of it is an absent audit row.
+const KILLED_AT_LIMIT_WARNING =
+  "No audit row was written for this slot; the function may have been killed at the 240 s limit before its audit wrapper could record it.";
+const EXPECTED_WORK_WARNING =
+  "In-season game-data run reported 0 rows affected; it may be silently writing nothing.";
+
+// Routes wrapped in withNhlOffSeasonSkip: they pause between seasons, so during
+// the season a 0-row run is unexpected.
+const GAME_DATA_ROUTES = new Set([
+  "/api/Teams/nst-team-stats",
+  "/api/v1/db/build-projection-derived-v2",
+  "/api/v1/db/calculate-wigo-stats",
+  "/api/v1/db/ingest-projection-inputs",
+  "/api/v1/db/powerPlayTimeFrame",
+  "/api/v1/db/run-fetch-wgo-data",
+  "/api/v1/db/run-projection-accuracy",
+  "/api/v1/db/run-projection-v2",
+  "/api/v1/db/run-rolling-forge-pipeline",
+  "/api/v1/db/sustainability/rebuild-baselines",
+  "/api/v1/db/update-PbP",
+  "/api/v1/db/update-game-goal-projections",
+  "/api/v1/db/update-goalie-projections-v2",
+  "/api/v1/db/update-line-combinations",
+  "/api/v1/db/update-lineup-deployment-tallies",
+  "/api/v1/db/update-nhl-edge-stats",
+  "/api/v1/db/update-nst-current-season",
+  "/api/v1/db/update-nst-gamelog",
+  "/api/v1/db/update-nst-goalies",
+  "/api/v1/db/update-nst-team-daily",
+  "/api/v1/db/update-player-trend-metrics",
+  "/api/v1/db/update-player-underlying-stats",
+  "/api/v1/db/update-power-play-combinations",
+  "/api/v1/db/update-rolling-player-averages",
+  "/api/v1/db/update-season-stats",
+  "/api/v1/db/update-shifts",
+  "/api/v1/db/update-sko-stats",
+  "/api/v1/db/update-standings-details",
+  "/api/v1/db/update-team-ctpi-daily",
+  "/api/v1/db/update-team-power-ratings",
+  "/api/v1/db/update-team-sos",
+  "/api/v1/db/update-team-yearly-summary",
+  "/api/v1/db/update-wgo-averages",
+  "/api/v1/db/update-wgo-goalie-totals",
+  "/api/v1/db/update-wgo-goalies",
+  "/api/v1/db/update-wgo-skaters",
+  "/api/v1/db/update-wgo-totals",
+  "/api/v1/game-predictions/forecast",
+  "/api/v1/game-predictions/ingest-espn-odds",
+  "/api/v1/game-predictions/score",
+  "/api/v1/ml/update-predictions-sko",
+  "/api/v1/sustainability/rebuild-priors",
+  "/api/v1/sustainability/rebuild-score",
+  "/api/v1/sustainability/rebuild-trend-bands",
+  "/api/v1/sustainability/rebuild-window-z",
+]);
 
 const SCHEDULE_ALIAS_MAP: Record<string, string[]> = {
   "update-all-wgo-skaters": [
@@ -208,6 +265,7 @@ type AuditRow = {
   details: unknown;
   detailsMessage: string | null;
   parsed: ParsedAuditDetails;
+  expectedWorkWarning: string | null;
 };
 
 type RunRow = {
@@ -318,6 +376,7 @@ type ReportCounts = {
   warnSlow: number;
   warnPartialFailure: number;
   warnMissingAudit: number;
+  warnExpectedWork: number;
 };
 
 type WarningSummary = {
@@ -328,6 +387,8 @@ type WarningSummary = {
   slowJobs: SlowJobWarning[];
   partialFailureJobs: Array<{ displayName: string; failedRows: number }>;
   missingObservationJobs: Array<{ displayName: string; warnings: string[] }>;
+  expectedWorkJobs: string[];
+  seasonState: NhlSeasonWindow["state"];
   yahooLifecycle: YahooLifecycleWarning[];
 };
 
@@ -376,6 +437,22 @@ function skippedOperationWarning(row: AuditRow): string | null {
   return null;
 }
 
+function expectedWorkWarning(
+  row: Omit<AuditRow, "expectedWorkWarning">,
+  seasonWindow: NhlSeasonWindow
+): string | null {
+  if (seasonWindow.state !== "in_season" || row.status !== "success" ||
+      !GAME_DATA_ROUTES.has(row.parsed.routePath ?? "")) return null;
+  const response = row.parsed.response;
+  if (response && typeof response === "object" && !Array.isArray(response) &&
+      (response as Record<string, unknown>).reason === "nhl_off_season") return null;
+  // rows_affected is null when the wrapper could not infer a count; fall back
+  // to the receipt's own top-level write count.
+  const rows = row.rowsAffected ??
+    getDirectNumericField(response, ["rowsUpserted", "rows_upserted", "rowsAffected", "rows_affected"]);
+  return rows === 0 ? EXPECTED_WORK_WARNING : null;
+}
+
 function incompleteYahooReceiptWarning(row: AuditRow): string | null {
   const response = row.parsed.response;
   if (row.status !== "success" || row.parsed.routePath !== "/api/v1/db/update-yahoo-players" ||
@@ -400,7 +477,7 @@ function incompleteYahooReceiptWarning(row: AuditRow): string | null {
 }
 
 function classifyAuditStatus(row: AuditRow): ReportStatus {
-  if (skippedOperationWarning(row) || incompleteYahooReceiptWarning(row)) return "unknown";
+  if (skippedOperationWarning(row) || incompleteYahooReceiptWarning(row) || row.expectedWorkWarning) return "unknown";
   return row.status === "failure" &&
     row.parsed.statusCode === 410 &&
     isQuarantinedLegacyRoute(row.parsed.routePath)
@@ -1253,6 +1330,7 @@ function buildRunDigestFromAudit(
       : [];
   if (skippedOperationWarning(row)) missingObservationWarnings.push(skippedOperationWarning(row)!);
   if (incompleteYahooReceiptWarning(row)) missingObservationWarnings.push(incompleteYahooReceiptWarning(row)!);
+  if (row.expectedWorkWarning) missingObservationWarnings.push(row.expectedWorkWarning);
 
   return {
     key: row.id,
@@ -1422,6 +1500,7 @@ function collectMissingObservationWarnings(job: {
 
   if (job.lastStatus === "missing") {
     warnings.push("No cron or audit observation matched this scheduled slot.");
+    if (job.method !== "SQL") warnings.push(KILLED_AT_LIMIT_WARNING);
   }
 
   if (
@@ -1432,7 +1511,7 @@ function collectMissingObservationWarnings(job: {
     !awaitingPostGraceRun &&
     !awaitingCurrentReportSelfAudit
   ) {
-    warnings.push(ROUTE_AUDIT_MISSING_WARNING);
+    warnings.push(ROUTE_AUDIT_MISSING_WARNING, KILLED_AT_LIMIT_WARNING);
   }
 
   if (job.lastStatus !== "missing" && job.lastDurationMs == null && !awaitingCurrentReportSelfAudit && !awaitingPostGraceRun) {
@@ -1480,6 +1559,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   const sourceOptions = { deadlineAt: sourceDeadlineAt, requestTimeoutMs: REPORT_REQUEST_TIMEOUT_MS };
   const sinceDate = new Date(now.getTime() - REPORT_WINDOW_MS);
   const since = sinceDate.toISOString();
+  // Read alongside the telemetry sources; a slow lookup degrades to "unknown",
+  // which suppresses expected-work warnings rather than guessing.
+  let seasonTimer: ReturnType<typeof setTimeout> | undefined;
+  const seasonWindowPromise = Promise.race([
+    loadNhlSeasonWindow(undefined, now),
+    new Promise<NhlSeasonWindow>((resolve) => {
+      seasonTimer = setTimeout(() => resolve({ state: "unknown", today: "", reason: "timeout" }), REPORT_REQUEST_TIMEOUT_MS);
+    }),
+  ]).finally(() => clearTimeout(seasonTimer));
   const until = now.toISOString();
   const emailRecipient = process.env.CRON_REPORT_EMAIL_RECIPIENT!;
   const previewMode = getQueryString(req, "preview") === "json";
@@ -1537,17 +1625,21 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     });
   }
 
-  const auditRows: AuditRow[] = audits.map((row: any) => ({
-    id: `audit:${reportRowIdentity(row)}`,
-    jobName: String(row.job_name ?? ""),
-    time: String(row.run_time ?? ""),
-    rowsAffected: (row.rows_affected ?? null) as number | null,
-    rawStatus: row.status,
-    status: normalizeStatus(row.status),
-    details: row.details,
-    detailsMessage: extractDetailsMessage(row.details),
-    parsed: parseAuditDetails(row.details),
-  }));
+  const seasonWindow = await seasonWindowPromise;
+  const auditRows: AuditRow[] = audits.map((row: any) => {
+    const auditRow = {
+      id: `audit:${reportRowIdentity(row)}`,
+      jobName: String(row.job_name ?? ""),
+      time: String(row.run_time ?? ""),
+      rowsAffected: (row.rows_affected ?? null) as number | null,
+      rawStatus: row.status,
+      status: normalizeStatus(row.status),
+      details: row.details,
+      detailsMessage: extractDetailsMessage(row.details),
+      parsed: parseAuditDetails(row.details),
+    };
+    return { ...auditRow, expectedWorkWarning: expectedWorkWarning(auditRow, seasonWindow) };
+  });
   const lastKnownSuccessMap = buildLastKnownSuccessMap(auditRows);
   const auditGapGraceStartedAt =
     auditRows
@@ -1754,6 +1846,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         notes.push(noOutputWarning);
         missingObservationWarnings.push(noOutputWarning);
       }
+      if (lastAudit?.expectedWorkWarning) {
+        notes.push(lastAudit.expectedWorkWarning);
+        missingObservationWarnings.push(lastAudit.expectedWorkWarning);
+      }
       const incompleteYahooWarning = lastAudit ? incompleteYahooReceiptWarning(lastAudit) : null;
       if (incompleteYahooWarning) {
         notes.push(incompleteYahooWarning);
@@ -1761,6 +1857,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       }
       if (lastStatus === "missing") {
         notes.push("No cron or audit entry matched this scheduled slot.");
+        if (job.method !== "SQL") notes.push(KILLED_AT_LIMIT_WARNING);
       }
       if (lastStatus === "disabled") {
         notes.push(
@@ -1774,7 +1871,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         auditDataAvailable &&
         missingObservationWarnings.includes(ROUTE_AUDIT_MISSING_WARNING)
       ) {
-        notes.push(ROUTE_AUDIT_MISSING_WARNING);
+        notes.push(ROUTE_AUDIT_MISSING_WARNING, KILLED_AT_LIMIT_WARNING);
       }
       if (!lastAudit && !lastRun && !hasFullCoverageForMissing) {
         notes.push(
@@ -1988,6 +2085,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     )
     .map((job) => job.displayName);
 
+  const WARN_EXPECTED_WORK = jobSummaries
+    .filter((job) => job.missingObservationWarnings.includes(EXPECTED_WORK_WARNING))
+    .map((job) => job.displayName);
+
   const missingObservationJobs = jobSummaries
     .filter((job) => job.missingObservationWarnings.length > 0)
     .map((job) => ({
@@ -2035,6 +2136,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     slowJobs: WARN_SLOW,
     partialFailureJobs: WARN_PARTIAL_FAILURE,
     missingObservationJobs,
+    expectedWorkJobs: WARN_EXPECTED_WORK,
+    seasonState: seasonWindow.state,
     yahooLifecycle,
   };
 
@@ -2084,6 +2187,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     warnSlow: WARN_SLOW.length,
     warnPartialFailure: WARN_PARTIAL_FAILURE.length,
     warnMissingAudit: WARN_MISSING_AUDIT.length,
+    warnExpectedWork: WARN_EXPECTED_WORK.length,
   };
 
   const shouldRenderCronReport =

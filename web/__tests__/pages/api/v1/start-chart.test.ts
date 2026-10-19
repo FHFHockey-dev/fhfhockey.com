@@ -288,7 +288,6 @@ describe("/api/v1/start-chart", () => {
       computeDefenseEaseGrades,
       getPregameTeamFormThroughDate,
       normalizeProjectedToiMinutes,
-      sumProjectionParts,
     } = await import("../../../../pages/api/v1/start-chart");
     const rating = (teamAbbr: string, xga60: number | null) =>
       ({ teamAbbr, components: { xga60 } }) as any;
@@ -309,13 +308,6 @@ describe("/api/v1/start-chart", () => {
     expect(computeDefenseEaseGrades([rating("ONLY", 3.2)]).get("ONLY")).toBe(
       50,
     );
-    expect(sumProjectionParts(0.4, 0.2, 0)).toBeCloseTo(0.6, 6);
-    expect(sumProjectionParts(0.4, 0.2, null)).toBeCloseTo(0.6, 6);
-    expect(sumProjectionParts(0.4, 0.2)).toBeCloseTo(0.6, 6);
-    // A withheld ES or PP head makes the total unknown, never a partial sum.
-    expect(sumProjectionParts(0.4, null, 0)).toBeNull();
-    expect(sumProjectionParts(null, 0.2, null)).toBeNull();
-    expect(sumProjectionParts(null, null, null)).toBeNull();
     expect(normalizeProjectedToiMinutes(900, 180, null)).toBe(18);
     expect(normalizeProjectedToiMinutes(null, null, null)).toBeNull();
     expect(normalizeProjectedToiMinutes(3901, null, null)).toBeNull();
@@ -1107,7 +1099,7 @@ describe("/api/v1/start-chart", () => {
 
   it("never scores a scoring line with a withheld ES or PP head as complete", async () => {
     vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "false");
-    const masked = { ...defaultProjection, player_id: 8478403, proj_goals_pp: null, proj_assists_pp: null };
+    const masked = { ...defaultProjection, player_id: 8478403, proj_goals_es: 0.2, proj_goals_pp: null, proj_assists_pp: null };
     const prior = fromMock.getMockImplementation()!;
     fromMock.mockImplementation((table: string) => table === "forge_runs" ? createQueryBuilder(() => ({
       data: [{ run_id: "masked-run", as_of_date: "2026-02-07", git_sha: null,

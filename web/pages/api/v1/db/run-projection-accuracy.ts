@@ -13,6 +13,10 @@ import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import supabase from "lib/supabase/server";
 import { requireLatestSucceededRunId } from "lib/projections/apiHelpers";
 import { evaluateForgeCalibrationEligibility } from "lib/projections/calibrationEligibility";
+import {
+  buildSkaterModeledHeadTotals,
+  hasKnownModeledHeadTotals,
+} from "lib/projections/modeledHeadTotals";
 import { runProjectionPreflightChecks } from "./run-projection-v2";
 import {
   computeAccuracyScore,
@@ -90,6 +94,13 @@ export async function replaceProjectionResultsAtomic(
   }
   return receipt;
 }
+
+// Matched rows left out of accuracy because a prediction is unknown (A-08):
+// a withheld ES/PP head on a skater, or a null goalie win probability.
+type UnknownPredictionSkips = {
+  skaterRows: number;
+  goalieWinProbabilityRows: number;
+};
 
 type SkaterActualMatchDiagnostics = {
   projectionRows: number;
@@ -1632,6 +1643,7 @@ async function runAccuracyForDate(
   goalieRows: number;
   totalRows: number;
   skaterActualMatchDiagnostics: SkaterActualMatchDiagnostics;
+  unknownPredictionSkips: UnknownPredictionSkips;
   goalieMatchDiagnostics: {
     goalieProjectionCount: number;
     goalieActualCount: number;
@@ -1720,6 +1732,10 @@ async function runAccuracyForDate(
     skaterActuals,
   });
 
+  const unknownPredictionSkips: UnknownPredictionSkips = {
+    skaterRows: 0,
+    goalieWinProbabilityRows: 0,
+  };
   const skaterResults: AccuracyResultRow[] = [];
   const skaterHoldoutSamples: HoldoutComparisonSample[] = [];
   const skaterStatAggregates = new Map<string, StatAggregate>();
@@ -1739,18 +1755,15 @@ async function runAccuracyForDate(
     const actual = skaterActuals.get(`${gameId}:${playerId}`);
     if (!actual) continue;
 
-    const predictedGoals =
-      (row.proj_goals_es ?? 0) +
-      (row.proj_goals_pp ?? 0) +
-      (row.proj_goals_pk ?? 0);
-    const predictedAssists =
-      (row.proj_assists_es ?? 0) +
-      (row.proj_assists_pp ?? 0) +
-      (row.proj_assists_pk ?? 0);
-    const predictedShots =
-      (row.proj_shots_es ?? 0) +
-      (row.proj_shots_pp ?? 0) +
-      (row.proj_shots_pk ?? 0);
+    const headTotals = buildSkaterModeledHeadTotals(row);
+    if (!hasKnownModeledHeadTotals(headTotals)) {
+      unknownPredictionSkips.skaterRows += 1;
+      continue;
+    }
+    const predictedGoals = headTotals.goals;
+    const predictedAssists = headTotals.assists;
+    const predictedShots = headTotals.shots;
+    const predictedPpPoints = headTotals.ppPoints;
     const predictedHits = row.proj_hits ?? 0;
     const predictedBlocks = row.proj_blocks ?? 0;
 
@@ -1775,7 +1788,7 @@ async function runAccuracyForDate(
     updateStatAggregate(
       skaterStatAggregates,
       "pp_points",
-      (row.proj_goals_pp ?? 0) + (row.proj_assists_pp ?? 0),
+      predictedPpPoints,
       actual.pp_points ?? 0,
     );
     updateStatAggregate(
@@ -1814,7 +1827,7 @@ async function runAccuracyForDate(
       { key: "sog", predicted: predictedShots, actual: actual.shots ?? 0 },
       {
         key: "ppp",
-        predicted: (row.proj_goals_pp ?? 0) + (row.proj_assists_pp ?? 0),
+        predicted: predictedPpPoints,
         actual: actual.pp_points ?? 0,
       },
     ];
@@ -1889,7 +1902,7 @@ async function runAccuracyForDate(
     const predicted = computeSkaterFantasyPoints({
       goals: predictedGoals,
       assists: predictedAssists,
-      ppPoints: (row.proj_goals_pp ?? 0) + (row.proj_assists_pp ?? 0),
+      ppPoints: predictedPpPoints,
       shots: predictedShots,
       hits: predictedHits,
       blockedShots: predictedBlocks,
@@ -1944,8 +1957,7 @@ async function runAccuracyForDate(
     const predictedScoringFp =
       DEFAULT_SKATER_FANTASY_POINTS.GOALS * predictedGoals +
       DEFAULT_SKATER_FANTASY_POINTS.ASSISTS * predictedAssists +
-      DEFAULT_SKATER_FANTASY_POINTS.PP_POINTS *
-        ((row.proj_goals_pp ?? 0) + (row.proj_assists_pp ?? 0));
+      DEFAULT_SKATER_FANTASY_POINTS.PP_POINTS * predictedPpPoints;
     const actualScoringFp =
       DEFAULT_SKATER_FANTASY_POINTS.GOALS * Number(actual.goals ?? 0) +
       DEFAULT_SKATER_FANTASY_POINTS.ASSISTS * Number(actual.assists ?? 0) +
@@ -2048,8 +2060,14 @@ async function runAccuracyForDate(
       actual ? 1 : 0,
     );
     if (!actual) continue;
+    // The writer stores null when the win probability is unknown; the goalie's
+    // fantasy-point prediction depends on it, so the whole row is left out.
+    if (row.proj_win_prob == null) {
+      unknownPredictionSkips.goalieWinProbabilityRows += 1;
+      continue;
+    }
 
-    const projectedWins = row.proj_win_prob ?? 0;
+    const projectedWins = row.proj_win_prob;
     const projectedShutouts = row.proj_shutout_prob ?? 0;
     updateCalibrationAccumulator(
       winProbabilityCalibration,
@@ -2407,6 +2425,7 @@ async function runAccuracyForDate(
     goalieRows: goalieResults.length,
     totalRows: allResults.length,
     skaterActualMatchDiagnostics,
+    unknownPredictionSkips,
     goalieMatchDiagnostics: {
       goalieProjectionCount: goalieProjectionRows.length,
       goalieActualCount,
@@ -2675,6 +2694,10 @@ export default withCronJobAudit(
               result.skaterActualMatchDiagnostics.missingActualRows,
             goalieRows: result.goalieRows,
             totalRows: result.totalRows,
+            skaterUnknownPredictionSkips:
+              result.unknownPredictionSkips.skaterRows,
+            goalieUnknownWinProbabilitySkips:
+              result.unknownPredictionSkips.goalieWinProbabilityRows,
           },
           blockingIssueCount: 0,
           notes:
@@ -2687,6 +2710,7 @@ export default withCronJobAudit(
         goalieRows: result.goalieRows,
         totalRows: result.totalRows,
         skaterActualMatchDiagnostics: result.skaterActualMatchDiagnostics,
+        unknownPredictionSkips: result.unknownPredictionSkips,
         goalieMatchDiagnostics: result.goalieMatchDiagnostics,
         goalieHoldoutComparison: result.goalieHoldoutComparison,
         goalieStatDiagnostics: result.goalieStatDiagnostics,

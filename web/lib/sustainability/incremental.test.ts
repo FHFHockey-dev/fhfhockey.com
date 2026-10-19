@@ -15,8 +15,15 @@ type ScoreRow = {
   snapshot_date: string;
   window_code: string;
   sourceCutoffs: unknown;
+  warnings?: unknown;
 };
 type StatRow = { player_id: number; date: string };
+type WindowZRow = {
+  player_id: number;
+  snapshot_date: string;
+  window_code: string;
+  stat_code: string;
+};
 
 function scoreRowsFor(
   playerIds: number[],
@@ -57,10 +64,15 @@ function matchesStaleFilter(filter: string, row: StatRow) {
   return false;
 }
 
-function fakeClient(scoreRows: ScoreRow[], stats: StatRow[]) {
+function fakeClient(scoreRows: ScoreRow[], stats: StatRow[], windowZ: WindowZRow[] = []) {
   return {
     from(table: string) {
-      let rows: any[] = table === "sustainability_scores" ? scoreRows : stats;
+      let rows: any[] =
+        table === "sustainability_scores"
+          ? scoreRows
+          : table === "sustainability_window_z"
+            ? windowZ
+            : stats;
       let limit = Infinity;
       const builder: any = {
         select: () => builder,
@@ -264,5 +276,47 @@ describe("sustainability incremental source detection", () => {
       shouldProcess: false,
       batch_players: 2
     });
+  });
+
+  it("reprocesses rows built without window_z only once those inputs exist", async () => {
+    // Rows written while sustainability_window_z was absent: luck z defaulted to
+    // 0, warnings record it, and the source cutoff is current.
+    const degraded = scoreRowsFor([1], SNAPSHOT, () => "2026-10-16").map((row) => ({
+      ...row,
+      warnings: [
+        "missing_window_z_shp",
+        "missing_window_z_oishp",
+        "missing_window_z_ipp",
+        "missing_window_z_ppshp"
+      ]
+    }));
+    const stats = statRows({ 1: "2026-10-16" });
+    const windowZ = (windowCode: string, stat_code: string, snapshot_date = SNAPSHOT) => ({
+      player_id: 1,
+      snapshot_date,
+      window_code: windowCode,
+      stat_code
+    });
+
+    await expect(
+      detect(fakeClient(degraded, stats, [windowZ("l10", "shp")]), [1])
+    ).resolves.toMatchObject({
+      shouldProcess: true,
+      reason: "luck_inputs_available",
+      repairable_luck_rows: true
+    });
+    // Still absent, or present only for another snapshot: keep skipping.
+    for (const rows of [[], [windowZ("l10", "shp", "2026-10-16")]]) {
+      await expect(detect(fakeClient(degraded, stats, rows), [1])).resolves.toMatchObject({
+        shouldProcess: false,
+        reason: "source_already_processed",
+        repairable_luck_rows: false
+      });
+    }
+    // A rebuild that gained shp but still lacks ppshp does not loop on ppshp.
+    const partial = degraded.map((row) => ({ ...row, warnings: ["missing_window_z_ppshp"] }));
+    await expect(
+      detect(fakeClient(partial, stats, [windowZ("l10", "shp")]), [1])
+    ).resolves.toMatchObject({ shouldProcess: false, reason: "source_already_processed" });
   });
 });

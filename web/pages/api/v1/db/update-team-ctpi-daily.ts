@@ -251,6 +251,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     if (startDate > endDate) {
       return res.status(200).json({
         message: "No dates to process (start is after today/season end).",
+        success: true,
+        skipped: true,
+        outcome: "skipped",
+        reason: "no_dates",
         startDate,
         endDate,
         rowsUpserted: 0,
@@ -293,6 +297,26 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           luck: c.luck,
           payload: c,
         });
+      });
+    }
+
+    if (insertRows.length === 0) {
+      // Off-season runs are skipped upstream, so an empty pass here means the
+      // NST team source has nothing for this season: not a refresh.
+      const warning = `No CTPI rows for season ${seasonId} (${startDate} to ${endDate}): ${allRows.length} NST team-game rows found.`;
+      return res.status(200).json({
+        message: `Skipped: ${warning}`,
+        success: true,
+        skipped: true,
+        outcome: "skipped",
+        reason: "no_source_rows",
+        warnings: [warning],
+        seasonId,
+        datesComputed: dates.length,
+        rowsUpserted: 0,
+        sourceRows: allRows.length,
+        startDate,
+        endDate,
       });
     }
 

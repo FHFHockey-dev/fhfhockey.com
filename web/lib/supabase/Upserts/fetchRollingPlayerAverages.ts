@@ -374,6 +374,12 @@ export interface FetchOptions {
   dryRunUpsert?: boolean;
   debugUpsertPayload?: boolean;
   dryRunBatchObserver?: (batch: RollingPlayerDryRunBatch) => void;
+  /**
+   * Epoch ms after which workers stop claiming new players. In-flight players
+   * finish, so the processed set is always an id-ordered prefix and
+   * `nextResumeFrom` resumes exactly after it.
+   */
+  stopClaimingPlayersAtMs?: number;
 }
 
 type RollingUpsertRow = Record<string, unknown>;
@@ -961,6 +967,7 @@ export type RollingPlayerRunSummary = {
   nextResumeFrom?: number | null;
   totalPlayersAfterResumeFilter?: number;
   remainingPlayerCount?: number;
+  stoppedReason?: "complete" | "max_players" | "runtime_budget";
 };
 
 const cachedPowerPlayCombos = new Map<string, PowerPlayCombinationRow>();
@@ -2589,7 +2596,8 @@ function buildRunSummary(args: RollingPlayerRunSummary): RollingPlayerRunSummary
     lastProcessedPlayerId: args.lastProcessedPlayerId ?? null,
     nextResumeFrom: args.nextResumeFrom ?? null,
     totalPlayersAfterResumeFilter: args.totalPlayersAfterResumeFilter ?? 0,
-    remainingPlayerCount: args.remainingPlayerCount ?? 0
+    remainingPlayerCount: args.remainingPlayerCount ?? 0,
+    stoppedReason: args.stoppedReason
   };
 }
 
@@ -3885,6 +3893,14 @@ async function processPlayer(
           teamGamesPlayed
         });
 
+        // The aligned-count builder is stateful, so it advances on every game.
+        const alignedCountSupport =
+          alignedCounts && game.wgo ? alignedCounts.push(game.wgo) : null;
+        // Earlier history only feeds the accumulators above. Building output
+        // rows for it would be discarded, and that work grows with career
+        // length for every strength.
+        if (!isWithinRequestedWriteWindow(game.gameDate, options)) continue;
+
         const historicalGpPctSnapshot = getHistoricalGpPctSnapshot(
           historicalGpPctState,
           game.season
@@ -3939,12 +3955,10 @@ async function processPlayer(
           ...getOptionalPpContextOutputs(game),
           gp_semantic_type: getGpOutputCompatibilityMode(config.state).semanticType,
           ...metricOutputs,
-          ...(alignedCounts ? { aligned_count_support: game.wgo ? alignedCounts.push(game.wgo) : null } : {}),
+          ...(alignedCounts ? { aligned_count_support: alignedCountSupport } : {}),
         };
-        if (isWithinRequestedWriteWindow(game.gameDate, options)) {
-          outputs.push(output);
-          strengthOutputs.push(output);
-        }
+        outputs.push(output);
+        strengthOutputs.push(output);
         }
       } catch (error) {
         logPipelinePhase({
@@ -4344,14 +4358,6 @@ export async function main(
     options.maxPlayers && options.maxPlayers > 0
       ? filteredPlayerIds.slice(0, options.maxPlayers)
       : filteredPlayerIds;
-  const lastBoundedPlayerId =
-    boundedPlayerIds.length > 0
-      ? boundedPlayerIds[boundedPlayerIds.length - 1]
-      : null;
-  const remainingPlayerCount = Math.max(
-    filteredPlayerIds.length - boundedPlayerIds.length,
-    0
-  );
 
   if (!boundedPlayerIds.length) {
     console.info(
@@ -4369,7 +4375,8 @@ export async function main(
       lastProcessedPlayerId: null,
       nextResumeFrom: null,
       totalPlayersAfterResumeFilter: filteredPlayerIds.length,
-      remainingPlayerCount: 0
+      remainingPlayerCount: 0,
+      stoppedReason: "complete"
     });
   }
 
@@ -4425,10 +4432,18 @@ export async function main(
     minIntervalMs: 1000
   });
   let nextPlayerIndex = 0;
+  let stoppedForRuntimeBudget = false;
   const runPlayerWorker = async () => {
     while (true) {
       const currentIndex = nextPlayerIndex;
       if (currentIndex >= boundedPlayerIds.length) return;
+      if (
+        options.stopClaimingPlayersAtMs !== undefined &&
+        Date.now() >= options.stopClaimingPlayersAtMs
+      ) {
+        stoppedForRuntimeBudget = true;
+        return;
+      }
       nextPlayerIndex += 1;
       const playerId = boundedPlayerIds[currentIndex];
 
@@ -4591,6 +4606,29 @@ export async function main(
     `rowsUpserted:${rowsUpserted} playersWithRows:${playersWithRows} coverageWarn:${coverageWarnings} suspicious:${suspiciousOutputWarnings} freshness:${freshnessBlockers}`
   );
 
+  // Players are claimed in id order and every claimed player finished (a
+  // failure throws above), so the claimed players form a contiguous prefix.
+  const claimedPlayerCount = nextPlayerIndex;
+  const lastClaimedPlayerId =
+    claimedPlayerCount > 0 ? boundedPlayerIds[claimedPlayerCount - 1] : null;
+  const remainingPlayerCount = filteredPlayerIds.length - claimedPlayerCount;
+  const stoppedReason: NonNullable<RollingPlayerRunSummary["stoppedReason"]> =
+    remainingPlayerCount === 0
+      ? "complete"
+      : stoppedForRuntimeBudget
+        ? "runtime_budget"
+        : "max_players";
+  if (stoppedForRuntimeBudget) {
+    console.warn(
+      "[fetchRollingPlayerAverages] Runtime budget reached; stopped claiming players",
+      JSON.stringify({
+        claimedPlayerCount,
+        remainingPlayerCount,
+        lastClaimedPlayerId
+      })
+    );
+  }
+
   logPipelinePhase({
     phase: "summary",
     status: "start",
@@ -4609,10 +4647,14 @@ export async function main(
     unknownGameIds,
     freshnessBlockers,
     sourceTracking,
-    lastProcessedPlayerId: processedPlayers > 0 ? lastBoundedPlayerId : null,
-    nextResumeFrom: remainingPlayerCount > 0 ? lastBoundedPlayerId : null,
+    lastProcessedPlayerId: lastClaimedPlayerId,
+    nextResumeFrom:
+      remainingPlayerCount > 0
+        ? (lastClaimedPlayerId ?? resumePlayerId ?? null)
+        : null,
     totalPlayersAfterResumeFilter: filteredPlayerIds.length,
-    remainingPlayerCount
+    remainingPlayerCount,
+    stoppedReason
   });
   console.info(
     "[fetchRollingPlayerAverages] Completed run",

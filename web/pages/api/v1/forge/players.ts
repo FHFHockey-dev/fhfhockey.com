@@ -8,6 +8,7 @@ import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrati
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
 import { buildCanonicalReaderCompatibility } from "lib/projections/compatibilityInventory";
+import { buildSkaterModeledHeadTotals } from "lib/projections/modeledHeadTotals";
 import * as forgeSkaterContext from "lib/projections/forgeSkaterContext";
 import {
   buildProjectionApiErrorResponse,
@@ -368,19 +369,7 @@ export default async function handler(
       const degradedProjectionContext = extractDegradedProjectionContext(
         row.uncertainty,
       );
-      const g =
-        (row.proj_goals_es ?? 0) +
-        (row.proj_goals_pp ?? 0) +
-        (row.proj_goals_pk ?? 0);
-      const a =
-        (row.proj_assists_es ?? 0) +
-        (row.proj_assists_pp ?? 0) +
-        (row.proj_assists_pk ?? 0);
-      const sog =
-        (row.proj_shots_es ?? 0) +
-        (row.proj_shots_pp ?? 0) +
-        (row.proj_shots_pk ?? 0);
-      const ppp = (row.proj_goals_pp ?? 0) + (row.proj_assists_pp ?? 0);
+      const totals = buildSkaterModeledHeadTotals(row);
 
       return {
         player_id: row.player_id,
@@ -388,11 +377,11 @@ export default async function handler(
         team_name: row.teams?.name,
         teamIdentity,
         position: row.players?.position,
-        g,
-        a,
-        pts: g + a,
-        ppp,
-        sog,
+        g: totals.goals,
+        a: totals.assists,
+        pts: totals.points,
+        ppp: totals.ppPoints,
+        sog: totals.shots,
         hit: row.proj_hits ?? 0,
         blk: row.proj_blocks ?? 0,
         fw: 0,

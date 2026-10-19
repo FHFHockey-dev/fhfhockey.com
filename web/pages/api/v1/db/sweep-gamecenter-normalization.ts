@@ -2,10 +2,14 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import supabase from "lib/supabase/server";
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import { persistCapturedGameNormalization } from "lib/supabase/Upserts/nhlRawGamecenter.mjs";
 import { parsePositiveInteger } from "lib/underlying-stats/adminRouteHelpers";
 import { buildPlayerStatsSummaryPartitionSourceUrl } from "lib/underlying-stats/playerStatsLandingServer";
-import { refreshPlayerUnderlyingSummarySnapshotsForGameIds } from "lib/underlying-stats/playerStatsSummaryRefresh";
+import {
+  refreshPlayerUnderlyingSummarySnapshotsForGameIds,
+  warmPlayerStatsLandingSeasonAggregateCache,
+} from "lib/underlying-stats/playerStatsSummaryRefresh";
 import { refreshTeamUnderlyingSummaryRowsForGameIds } from "lib/underlying-stats/teamStatsSummaryRefresh";
 import adminOnly from "utils/adminOnlyMiddleware";
 
@@ -16,6 +20,12 @@ import adminOnly from "utils/adminOnlyMiddleware";
  * Stats summaries for those games and for any game re-normalized elsewhere
  * after its summaries were built. The selection predicate is the cursor:
  * finished games drop out of it.
+ *
+ * The newest player-summary partition marker is the derived-completion marker,
+ * so the team refresh runs first and the player refresh (which writes the
+ * marker) runs last: a failed team refresh leaves the game selected for the
+ * next sweep. Landing-cache warming is in-memory only and runs after the
+ * marker; its failure is reported but does not hold the game.
  */
 
 const ROUTE = "/api/v1/db/sweep-gamecenter-normalization";
@@ -28,7 +38,14 @@ const MAX_DURATION_MS = 270_000;
 // Time kept back for the batched summary refresh after the last normalization.
 const SUMMARY_RESERVE_MS = 60_000;
 const ID_CHUNK_SIZE = 50;
-const XG_FEATURE_ROW_SCAN_LIMIT = 5_000;
+// Hosted PostgREST caps every response at max_rows=1000.
+const STATUS_PAGE_SIZE = 1_000;
+const ET_DATE_FORMAT = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/New_York",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
 
 type StatusRow = {
   game_id: number;
@@ -36,6 +53,7 @@ type StatusRow = {
   game_date: string;
   status: string;
   completed_at: string | null;
+  updated_at?: string | null;
 };
 
 type Candidate = {
@@ -63,8 +81,10 @@ function chunk<T>(values: readonly T[], size: number): T[][] {
   return chunks;
 }
 
-function isoDateDaysAgo(now: number, days: number): string {
-  return new Date(now - days * 86_400_000).toISOString().slice(0, 10);
+function shiftIsoDate(isoDate: string, days: number): string {
+  return new Date(Date.parse(`${isoDate}T00:00:00Z`) + days * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
 }
 
 function gameTypeOf(gameId: number): number {
@@ -87,68 +107,98 @@ async function selectIncompleteNormalizations(args: {
 }): Promise<StatusRow[]> {
   const { data, error } = await (supabase as any)
     .from("nhl_api_game_normalization_status")
-    .select("game_id,season_id,game_date,status,completed_at")
+    .select("game_id,season_id,game_date,status,completed_at,updated_at")
     .neq("status", "complete")
     .gte("game_date", args.startDate)
     .lt("game_date", args.endDate)
-    .order("game_date", { ascending: true })
+    // updated_at is when the game went stale; a failed attempt never moves it.
+    // Newest invalidations first, so games stuck stale through earlier sweeps
+    // (repeat failures) cannot hold every slot ahead of new corrections.
+    .order("updated_at", { ascending: false })
     .order("game_id", { ascending: true })
     .limit(args.limit);
   if (error) throw error;
   return (data ?? []) as StatusRow[];
 }
 
+async function selectFreshSummaryGameIds(rows: StatusRow[]): Promise<Set<number>> {
+  // Player summary payloads carry generatedAt, so every refresh writes a new
+  // marker row. A game is fresh when some marker is no older than its
+  // normalization; markers older than the chunk's earliest completion cannot
+  // make any game in it fresh, so they are not read.
+  const fresh = new Set<number>();
+  for (const chunkRows of chunk(rows, ID_CHUNK_SIZE)) {
+    const gameIds = chunkRows.map((row) => Number(row.game_id));
+    const completedAt = new Map(
+      chunkRows.map((row) => [Number(row.game_id), row.completed_at]),
+    );
+    const completions = chunkRows
+      .map((row) => row.completed_at)
+      .filter((value): value is string => value != null)
+      .sort((a, b) => Date.parse(a) - Date.parse(b));
+    const markers = await fetchAllSupabasePages<{
+      game_id: number;
+      fetched_at: string;
+    }>(({ from, to }) => {
+      let query = (supabase as any)
+        .from("nhl_api_game_payloads_raw")
+        .select("game_id,fetched_at")
+        .eq("endpoint", "landing")
+        .in("game_id", gameIds)
+        .in("source_url", gameIds.map(summaryMarkerSourceUrl));
+      if (completions.length === chunkRows.length) {
+        query = query.gte("fetched_at", completions[0]);
+      }
+      return query
+        .order("game_id", { ascending: true })
+        .order("fetched_at", { ascending: true })
+        .range(from, to);
+    }, { pageSize: STATUS_PAGE_SIZE });
+    for (const marker of markers) {
+      const gameId = Number(marker.game_id);
+      const normalizedAt = completedAt.get(gameId);
+      if (
+        normalizedAt == null ||
+        Date.parse(marker.fetched_at) >= Date.parse(normalizedAt)
+      ) {
+        fresh.add(gameId);
+      }
+    }
+  }
+  return fresh;
+}
+
 async function selectDerivedStaleGames(args: {
   startDate: string;
   endDate: string;
   limit: number;
+  excludeGameIds: ReadonlySet<number>;
 }): Promise<StatusRow[]> {
-  const { data, error } = await (supabase as any)
-    .from("nhl_api_game_normalization_status")
-    .select("game_id,season_id,game_date,status,completed_at")
-    .eq("status", "complete")
-    .gte("game_date", args.startDate)
-    .lt("game_date", args.endDate)
-    .order("game_date", { ascending: true })
-    .order("game_id", { ascending: true })
-    .limit(1_000);
-  if (error) throw error;
-  const completeRows = (data ?? []) as StatusRow[];
-
-  // Player summary payloads carry generatedAt, so every refresh writes a new
-  // marker row; the newest marker is when the summaries were last built.
-  const latestSummaryAt = new Map<number, string>();
-  for (const rows of chunk(completeRows, ID_CHUNK_SIZE)) {
-    const gameIds = rows.map((row) => Number(row.game_id));
-    const { data: markers, error: markerError } = await (supabase as any)
-      .from("nhl_api_game_payloads_raw")
-      .select("game_id,fetched_at")
-      .eq("endpoint", "landing")
-      .in("game_id", gameIds)
-      .in("source_url", gameIds.map(summaryMarkerSourceUrl));
-    if (markerError) throw markerError;
-    for (const marker of (markers ?? []) as Array<{
-      game_id: number;
-      fetched_at: string;
-    }>) {
-      const gameId = Number(marker.game_id);
-      const previous = latestSummaryAt.get(gameId);
-      if (!previous || Date.parse(marker.fetched_at) > Date.parse(previous)) {
-        latestSummaryAt.set(gameId, marker.fetched_at);
-      }
+  const stale: StatusRow[] = [];
+  if (args.limit <= 0) return stale;
+  // Page the whole window in a stable order and test staleness page by page,
+  // so newer stale games are reached however many fresh games precede them.
+  for (let from = 0; ; from += STATUS_PAGE_SIZE) {
+    const { data, error } = await (supabase as any)
+      .from("nhl_api_game_normalization_status")
+      .select("game_id,season_id,game_date,status,completed_at")
+      .eq("status", "complete")
+      .gte("game_date", args.startDate)
+      .lt("game_date", args.endDate)
+      .order("game_date", { ascending: true })
+      .order("game_id", { ascending: true })
+      .range(from, from + STATUS_PAGE_SIZE - 1);
+    if (error) throw error;
+    const page = (data ?? []) as StatusRow[];
+    const rows = page.filter((row) => !args.excludeGameIds.has(Number(row.game_id)));
+    const fresh = await selectFreshSummaryGameIds(rows);
+    for (const row of rows) {
+      if (fresh.has(Number(row.game_id))) continue;
+      stale.push(row);
+      if (stale.length >= args.limit) return stale;
     }
+    if (page.length < STATUS_PAGE_SIZE) return stale;
   }
-
-  return completeRows
-    .filter((row) => {
-      const summaryAt = latestSummaryAt.get(Number(row.game_id));
-      if (!summaryAt) return true;
-      return (
-        row.completed_at != null &&
-        Date.parse(summaryAt) < Date.parse(row.completed_at)
-      );
-    })
-    .slice(0, args.limit);
 }
 
 async function readHeadPayload(gameId: number, endpoint: string) {
@@ -176,16 +226,19 @@ async function readHeadPayload(gameId: number, endpoint: string) {
 }
 
 async function findGamesWithXgFeatures(gameIds: number[]): Promise<number[]> {
-  if (gameIds.length === 0) return [];
-  const { data, error } = await (supabase as any)
-    .from("nhl_xg_shot_features")
-    .select("game_id")
-    .in("game_id", gameIds)
-    .limit(XG_FEATURE_ROW_SCAN_LIMIT);
-  if (error) throw error;
-  return [...new Set(((data ?? []) as Array<{ game_id: number }>).map(
-    (row) => Number(row.game_id),
-  ))].sort((a, b) => a - b);
+  // One bounded probe per game: a row-scan over many games is truncated by
+  // max_rows long before every game is represented.
+  const affected: number[] = [];
+  for (const gameId of [...new Set(gameIds)].sort((a, b) => a - b)) {
+    const { data, error } = await (supabase as any)
+      .from("nhl_xg_shot_features")
+      .select("game_id")
+      .eq("game_id", gameId)
+      .limit(1);
+    if (error) throw error;
+    if ((data ?? []).length > 0) affected.push(gameId);
+  }
+  return affected;
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -206,9 +259,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   );
   const normalizeDeadline =
     startedAt + Math.max(maxDurationMs - SUMMARY_RESERVE_MS, 0);
-  // Only finished days: today's games may still be in progress.
-  const endDate = isoDateDaysAgo(startedAt, 0);
-  const startDate = isoDateDaysAgo(startedAt, lookbackDays);
+  // Only finished days: today's (ET) games may still be in progress.
+  const endDate = ET_DATE_FORMAT.format(new Date(startedAt));
+  const startDate = shiftIsoDate(endDate, -lookbackDays);
 
   let stage = "select_candidates";
   const normalizedGameIds: number[] = [];
@@ -217,36 +270,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   try {
     const incomplete = await selectIncompleteNormalizations({ startDate, endDate, limit });
-    const derivedStale =
-      incomplete.length < limit
-        ? await selectDerivedStaleGames({
-            startDate,
-            endDate,
-            limit: limit - incomplete.length,
-          })
-        : [];
-    const candidates: Candidate[] = [
-      ...incomplete.map((row) => ({
-        gameId: Number(row.game_id),
-        seasonId: Number(row.season_id),
-        gameDate: row.game_date,
-        reason: "normalization_incomplete" as const,
-      })),
-      ...derivedStale.map((row) => ({
-        gameId: Number(row.game_id),
-        seasonId: Number(row.season_id),
-        gameDate: row.game_date,
-        reason: "derived_older_than_normalization" as const,
-      })),
-    ];
+    const incompleteCandidates: Candidate[] = incomplete.map((row) => ({
+      gameId: Number(row.game_id),
+      seasonId: Number(row.season_id),
+      gameDate: row.game_date,
+      reason: "normalization_incomplete" as const,
+    }));
 
     const refreshCandidates: Candidate[] = [];
     let deadlineReached = false;
-    for (const candidate of candidates) {
-      if (candidate.reason === "derived_older_than_normalization") {
-        refreshCandidates.push(candidate);
-        continue;
-      }
+    for (const candidate of incompleteCandidates) {
       if (Date.now() > normalizeDeadline) {
         deadlineReached = true;
         break;
@@ -282,6 +315,24 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       }
     }
 
+    // Refresh slots left by failed or skipped normalizations go to games whose
+    // derived summaries are older than their normalization.
+    stage = "select_derived_stale";
+    const derivedStale = await selectDerivedStaleGames({
+      startDate,
+      endDate,
+      limit: limit - refreshCandidates.length,
+      excludeGameIds: new Set(normalizedGameIds),
+    });
+    const derivedCandidates: Candidate[] = derivedStale.map((row) => ({
+      gameId: Number(row.game_id),
+      seasonId: Number(row.season_id),
+      gameDate: row.game_date,
+      reason: "derived_older_than_normalization" as const,
+    }));
+    const candidates = [...incompleteCandidates, ...derivedCandidates];
+    refreshCandidates.push(...derivedCandidates);
+
     const refreshGroups = new Map<string, Candidate[]>();
     for (const candidate of refreshCandidates) {
       const key = `${candidate.seasonId}:${gameTypeOf(candidate.gameId)}`;
@@ -290,39 +341,68 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     let playerSummaryRowsUpserted = 0;
     let teamSummaryRowsUpserted = 0;
+    const refreshedGameIds: number[] = [];
     for (const group of refreshGroups.values()) {
       const gameIds = group.map((candidate) => candidate.gameId);
       const seasonId = group[0].seasonId;
       const requestedGameType = gameTypeOf(gameIds[0]);
-      // Player refresh also writes the shared goalie partitions.
-      stage = "refresh_player_summaries";
-      const playerRefresh = await refreshPlayerUnderlyingSummarySnapshotsForGameIds({
-        gameIds,
-        seasonId,
-        requestedGameType,
-        shouldWarmLandingCache: true,
-        shouldMigrateLegacySummaries: false,
-        supabase,
-      });
-      playerSummaryRowsUpserted += playerRefresh.rowsUpserted;
-      stage = "refresh_team_summaries";
-      const teamRefresh = await refreshTeamUnderlyingSummaryRowsForGameIds({
-        gameIds,
-        seasonId,
-        requestedGameType,
-        shouldWarmLandingCache: true,
-        supabase,
-      });
-      teamSummaryRowsUpserted += teamRefresh.rowsUpserted;
+      let groupStage = "refresh_team_summaries";
+      try {
+        // Team first: the player refresh writes the completion marker.
+        const teamRefresh = await refreshTeamUnderlyingSummaryRowsForGameIds({
+          gameIds,
+          seasonId,
+          requestedGameType,
+          shouldWarmLandingCache: true,
+          supabase,
+        });
+        teamSummaryRowsUpserted += teamRefresh.rowsUpserted;
+        // Player refresh also writes the shared goalie partitions.
+        groupStage = "refresh_player_summaries";
+        const playerRefresh = await refreshPlayerUnderlyingSummarySnapshotsForGameIds({
+          gameIds,
+          seasonId,
+          requestedGameType,
+          shouldWarmLandingCache: false,
+          shouldMigrateLegacySummaries: false,
+          supabase,
+        });
+        playerSummaryRowsUpserted += playerRefresh.rowsUpserted;
+      } catch (error) {
+        console.error(`[sweep-gamecenter-normalization] ${groupStage} failed`, {
+          error: errorMessage(error),
+          gameIds,
+        });
+        for (const gameId of gameIds) {
+          failures.push({ gameId, stage: groupStage, message: errorMessage(error) });
+        }
+        continue;
+      }
+      refreshedGameIds.push(...gameIds);
+      try {
+        await warmPlayerStatsLandingSeasonAggregateCache({
+          seasonId,
+          gameType: requestedGameType,
+          supabase,
+        });
+      } catch (error) {
+        for (const gameId of gameIds) {
+          failures.push({
+            gameId,
+            stage: "warm_landing_cache",
+            message: errorMessage(error),
+          });
+        }
+      }
     }
 
-    const refreshedGameIds = refreshCandidates.map((candidate) => candidate.gameId);
     stage = "check_xg_features";
     // xG features/predictions upsert by event id and cannot drop events a
     // correction removed; report affected games instead of half-refreshing.
     const xgRefreshNeededGameIds = await findGamesWithXgFeatures(refreshedGameIds);
 
-    const status = refreshedGameIds.length === 0 && failures.length > 0 ? 502 : 200;
+    const status =
+      failures.length === 0 ? 200 : refreshedGameIds.length > 0 ? 207 : 502;
     return res.status(status).json({
       success: status === 200,
       route: ROUTE,
@@ -346,14 +426,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     console.error(`[sweep-gamecenter-normalization] failed during ${stage}`, {
       error: message,
       normalizedGameIds,
+      failures,
     });
     return res.status(500).json({
       success: false,
       route: ROUTE,
       stage,
-      error: `Gamecenter normalization sweep failed during ${stage}: ${message}`,
+      // Backend detail stays in the server log above.
+      error: `Gamecenter normalization sweep failed during ${stage}`,
       normalizedGameIds,
-      failures,
+      failures: failures.map(({ gameId, stage: failedStage }) => ({
+        gameId,
+        stage: failedStage,
+      })),
     });
   }
 }

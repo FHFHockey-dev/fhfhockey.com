@@ -341,6 +341,63 @@ describe("/api/v1/forge/players", () => {
     ).toBe(true);
   });
 
+  it("serves unknown totals, not partial sums, when a modeled head is withheld", async () => {
+    const prior = fromMock.getMockImplementation()!;
+    fromMock.mockImplementation((table: string) => {
+      if (table === "forge_player_projections") {
+        return createQueryBuilder(() => ({
+          data: [
+            {
+              player_id: 8478403,
+              team_id: 8,
+              players: { fullName: "Masked Skater", position: "C" },
+              teams: { id: 8, abbreviation: "MTL", name: "Montréal Canadiens" },
+              proj_goals_es: 0.2,
+              proj_goals_pp: null,
+              proj_goals_pk: null,
+              proj_assists_es: 0.3,
+              proj_assists_pp: 0.1,
+              proj_assists_pk: null,
+              proj_shots_es: 2,
+              proj_shots_pp: 0.5,
+              proj_shots_pk: null,
+              proj_hits: 0.6,
+              proj_blocks: 0.4,
+              uncertainty: {},
+            },
+          ],
+          count: 1,
+          error: null,
+        }));
+      }
+      if (table === "rosters") {
+        return createQueryBuilder(() => ({
+          data: [{ playerId: 8478403 }],
+          error: null,
+        }));
+      }
+      return prior(table);
+    });
+    const res = createMockRes();
+
+    await handler(
+      { method: "GET", query: { date: "2026-02-07", horizon: "1" } } as any,
+      res,
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data).toHaveLength(1);
+    // A withheld PP goals head makes goals, points and PPP unknown; the
+    // assists and shots heads are both known, so those totals still serve.
+    expect(res.body.data[0]).toMatchObject({
+      g: null,
+      pts: null,
+      ppp: null,
+    });
+    expect(res.body.data[0].a).toBeCloseTo(0.4, 6);
+    expect(res.body.data[0].sog).toBeCloseTo(2.5, 6);
+  });
+
   it.each([
     {
       seasonId: 20232024,
