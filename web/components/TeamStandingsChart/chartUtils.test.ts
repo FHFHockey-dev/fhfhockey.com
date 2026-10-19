@@ -33,6 +33,44 @@ describe("Team standings chart season range", () => {
     expect(Math.max(...buildGameAxisTicks(31))).toBe(31);
   });
 
+  it("caps an 82-game season at game 82 when its count is known", () => {
+    const series = [
+      Array.from({ length: 90 }, (_, gamesPlayed) => ({ gamesPlayed })),
+    ];
+
+    expect(getAvailableSeasonGameRange(series, "All", "All", 82)).toBe(82);
+    expect(buildGameAxisTicks(89, 82).at(-1)).toBe(82);
+  });
+
+  it("keeps games 83 and 84 of an 84-game season", () => {
+    const series = [
+      Array.from({ length: 85 }, (_, gamesPlayed) => ({ gamesPlayed })),
+    ];
+
+    expect(getAvailableSeasonGameRange(series, "All", "All", 84)).toBe(84);
+    expect(buildGameAxisTicks(84, 84).at(-1)).toBe(84);
+  });
+
+  it("caps a shortened season at its own length", () => {
+    const series = [
+      Array.from({ length: 60 }, (_, gamesPlayed) => ({ gamesPlayed })),
+    ];
+
+    expect(getAvailableSeasonGameRange(series, "All", "All", 48)).toBe(48);
+    expect(buildGameAxisTicks(59, 48).at(-1)).toBe(48);
+  });
+
+  it("falls back to the observed range when the season length is unknown", () => {
+    const series = [
+      Array.from({ length: 85 }, (_, gamesPlayed) => ({ gamesPlayed })),
+    ];
+
+    expect(getAvailableSeasonGameRange(series)).toBe(84);
+    expect(getAvailableSeasonGameRange(series, "All", "All", null)).toBe(84);
+    expect(buildGameAxisTicks(84).at(-1)).toBe(84);
+    expect(buildGameAxisTicks(84, Number.NaN).at(-1)).toBe(84);
+  });
+
   it("derives the range from the active conference and division", () => {
     const series = [
       [

@@ -1,6 +1,7 @@
 // pages/api/v1/db/update-game-goal-projections/index.ts
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import type { NextApiRequest, NextApiResponse } from "next";
 import {
   fetchAllGamesInRangeIterative,
@@ -133,4 +134,4 @@ const handler = async (
   }
 };
 
-export default withCronJobAudit(adminOnly(handler as any));
+export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)));

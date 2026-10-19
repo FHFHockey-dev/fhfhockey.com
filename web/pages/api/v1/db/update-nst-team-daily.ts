@@ -1,4 +1,5 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import adminOnly from "utils/adminOnlyMiddleware";
 import {
   NST_TEAM_DAILY_BURST_INTERVAL_MS,
@@ -816,4 +817,4 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default withCronJobAudit(adminOnly(handler as any));
+export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)));

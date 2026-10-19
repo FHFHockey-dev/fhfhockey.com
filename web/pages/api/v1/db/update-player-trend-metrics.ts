@@ -1,4 +1,5 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import {
   PLAYER_TREND_REPAIR_WINDOW_DAYS,
   resolvePlayerTrendWriteFromDate,
@@ -48,6 +49,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default withCronJobAudit(adminOnly(handler as any), {
+export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
   jobName: "update-player-trend-metrics",
 });

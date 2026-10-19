@@ -26,6 +26,7 @@ const {
   } as const,
 }));
 
+vi.mock("lib/cron/nhlOffSeason", () => ({ withNhlOffSeasonSkip: (handler: unknown) => handler }));
 vi.mock("lib/cron/withCronJobAudit", () => ({
   withCronJobAudit: (routeHandler: unknown) => routeHandler,
 }));

@@ -5,9 +5,15 @@ vi.hoisted(() => {
   process.env.SUPABASE_SERVICE_ROLE_KEY = "service-role-test-key";
 });
 
-const { fetchCurrentSeasonMock, createClientMock, supabaseState } = vi.hoisted(
+const {
+  fetchCurrentSeasonMock,
+  getSeasonByIdMock,
+  createClientMock,
+  supabaseState,
+} = vi.hoisted(
   () => ({
     fetchCurrentSeasonMock: vi.fn(),
+    getSeasonByIdMock: vi.fn(),
     createClientMock: vi.fn(),
     supabaseState: {
       current: {
@@ -27,6 +33,10 @@ vi.mock("dotenv", () => ({
 
 vi.mock("../../../../../utils/fetchCurrentSeason", () => ({
   fetchCurrentSeason: fetchCurrentSeasonMock,
+}));
+
+vi.mock("../../../../../lib/NHL/server", () => ({
+  getSeasonById: getSeasonByIdMock,
 }));
 
 vi.mock("@supabase/supabase-js", () => ({
@@ -169,6 +179,11 @@ describe("/api/v1/trends/skater-power", () => {
     fetchCurrentSeasonMock.mockResolvedValue({
       id: 20252026,
       startDate: "2025-10-07",
+    });
+    getSeasonByIdMock.mockResolvedValue({
+      id: 20252026,
+      startDate: "2025-10-07",
+      numberOfGames: 82,
     });
   });
 
@@ -469,6 +484,94 @@ describe("/api/v1/trends/skater-power", () => {
     expect(res.body.categories.shotsPer60.series["8471214"]).toHaveLength(12);
     expect(res.body.categories.shotsPer60.series["8471214"][0].gp).toBe(39);
     expect(res.body.categories.shotsPer60.series["8471214"][11].gp).toBe(50);
+  });
+
+  describe("season-length series bound", () => {
+    function buildSeasonRows(games: number, date: string) {
+      return Array.from({ length: games }, (_, index) => ({
+        player_id: 8471214,
+        game_date: new Date(Date.UTC(2026, 0, index + 1))
+          .toISOString()
+          .slice(0, 10),
+        raw_value: index + 1,
+        rolling_avg_3: index + 1,
+        rolling_avg_5: index + 1,
+        rolling_avg_10: index + 1,
+        season_id: 20252026,
+        position_code: "C",
+      })).filter((row) => row.game_date <= date);
+    }
+
+    async function requestSeries(date: string, seriesGames: string) {
+      const res = createMockRes();
+      await handler(
+        {
+          method: "GET",
+          query: {
+            date,
+            position: "forward",
+            window: "1",
+            limit: "10",
+            seriesGames,
+          },
+        } as any,
+        res,
+      );
+      return res;
+    }
+
+    it("keeps an 82-game season capped at 82 games", async () => {
+      supabaseState.current = buildSupabaseMock(
+        buildSeasonRows(90, "2026-03-31"),
+      );
+
+      const res = await requestSeries("2026-03-31", "100");
+
+      expect(getSeasonByIdMock).toHaveBeenCalledWith(20252026);
+      expect(res.statusCode).toBe(200);
+      expect(res.body.seriesGames).toBe(82);
+      expect(res.body.categories.shotsPer60.series["8471214"]).toHaveLength(
+        82,
+      );
+    });
+
+    it("returns all 84 games of an 84-game season", async () => {
+      getSeasonByIdMock.mockResolvedValue({
+        id: 20252026,
+        startDate: "2025-10-07",
+        numberOfGames: 84,
+      });
+      supabaseState.current = buildSupabaseMock(
+        buildSeasonRows(84, "2026-04-01"),
+      );
+
+      const res = await requestSeries("2026-04-01", "84");
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.seriesGames).toBe(84);
+      const series = res.body.categories.shotsPer60.series["8471214"];
+      expect(series).toHaveLength(84);
+      expect(series[83].gp).toBe(84);
+    });
+
+    it("keeps every observed game when the season length is unavailable", async () => {
+      getSeasonByIdMock.mockRejectedValue(new Error("seasons unavailable"));
+      const consoleWarn = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => {});
+      supabaseState.current = buildSupabaseMock(
+        buildSeasonRows(84, "2026-04-02"),
+      );
+
+      const res = await requestSeries("2026-04-02", "84");
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.seriesGames).toBe(84);
+      expect(res.body.categories.shotsPer60.series["8471214"]).toHaveLength(
+        84,
+      );
+      consoleWarn.mockRestore();
+    });
   });
 
   it("keeps the largest dashboard caller below its response budget", async () => {

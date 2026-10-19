@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
 import supabase from "lib/supabase/server";
@@ -801,7 +802,7 @@ export async function ingestProjectionInputsHandler(
 }
 
 export default withCronJobAudit(
-  adminOnly(ingestProjectionInputsHandler as any),
+  adminOnly(withNhlOffSeasonSkip(ingestProjectionInputsHandler as any)),
   {
     jobName: "ingest-projection-inputs",
   },

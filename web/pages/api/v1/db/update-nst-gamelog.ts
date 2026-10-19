@@ -129,6 +129,7 @@ import {
 } from "lib/cron/nstBurstPlans";
 import { buildCronJobTiming } from "lib/cron/timingContract";
 import adminOnly from "utils/adminOnlyMiddleware";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import {
   addDays,
   parseISO,
@@ -2990,4 +2991,4 @@ async function handler(
   }
 }
 
-export default adminOnly(handler as any);
+export default adminOnly(withNhlOffSeasonSkip(handler as any));

@@ -5,6 +5,7 @@ import {
 } from "lib/api/scanSummary";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { FORGE_COMPATIBILITY_INVENTORY } from "lib/projections/compatibilityInventory";
 import supabase from "lib/supabase/server";
@@ -831,7 +832,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
   });
 }
 
-export default withCronJobAudit(adminOnly(handler as any), {
+export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
   jobName: "run-rolling-forge-pipeline",
   includeFinalAuditReceipt: true
 });

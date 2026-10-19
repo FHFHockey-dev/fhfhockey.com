@@ -66,6 +66,7 @@ import {
   type EndpointScanSummary,
 } from "lib/api/scanSummary";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
 import {
   normalizeDependencyError,
@@ -1523,7 +1524,7 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(adminOnly(handler as any), {
+export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
   jobName: "run-projection-v2",
   includeFinalAuditReceipt: true,
 });

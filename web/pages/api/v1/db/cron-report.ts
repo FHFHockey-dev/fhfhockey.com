@@ -359,6 +359,8 @@ function skippedOperationWarning(row: AuditRow): string | null {
   const response = row.parsed.response;
   if (row.status === "success" && response && typeof response === "object" && !Array.isArray(response)) {
     const receipt = response as Record<string, unknown>;
+    // Game-data jobs pause between NHL seasons by design (lib/cron/nhlOffSeason).
+    if (receipt.reason === "nhl_off_season") return null;
     const result = receipt.result && typeof receipt.result === "object" ? receipt.result as Record<string, unknown> : receipt;
     if ((row.parsed.routePath === "/api/v1/db/cron/update-stats-cron" &&
           Array.isArray(receipt.attemptedGameIds) && receipt.attemptedGameIds.length === 0 &&

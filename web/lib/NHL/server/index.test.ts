@@ -501,8 +501,12 @@ describe("getCurrentSeason", () => {
     expect(query.limit).toHaveBeenCalledWith(2);
     expect(season).toMatchObject({
       seasonId: 20252026,
-      lastSeasonId: 20242025,
       seasonEndDate: "2026-06-25T00:00:00.000Z",
+      lastSeasonId: 20242025,
+      lastRegularSeasonStartDate: "2024-10-04T00:00:00.000Z",
+      lastRegularSeasonEndDate: "2025-04-17T00:00:00.000Z",
+      lastSeasonEndDate: "2025-06-17T00:00:00.000Z",
+      lastNumberOfGames: 1312,
     });
     expect(mocks.restGet).not.toHaveBeenCalled();
   });

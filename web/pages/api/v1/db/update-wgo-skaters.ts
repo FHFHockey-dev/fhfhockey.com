@@ -84,6 +84,7 @@
 
 import { NextApiRequest, NextApiResponse } from "next";
 import adminOnly from "utils/adminOnlyMiddleware";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import supabase from "lib/supabase/server";
 import type { Database } from "lib/supabase/database-generated.types";
 import Fetch from "lib/cors-fetch";
@@ -2225,4 +2226,4 @@ async function handler(
   }
 }
 
-export default adminOnly(handler as any);
+export default adminOnly(withNhlOffSeasonSkip(handler as any));

@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import adminOnly from "utils/adminOnlyMiddleware";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import supabase from "lib/supabase/server";
 import { getCurrentSeason } from "lib/NHL/server";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
@@ -851,4 +852,4 @@ async function handler(
   }
 }
 
-export default adminOnly(handler as any);
+export default adminOnly(withNhlOffSeasonSkip(handler as any));

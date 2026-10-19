@@ -6,6 +6,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import RateStatPercentiles from "./RateStatPercentiles";
 
 const mockFetchPercentileCohortForPlayer = vi.hoisted(() => vi.fn());
+const mockUseCurrentSeason = vi.hoisted(() => vi.fn());
+
+vi.mock("hooks/useCurrentSeason", () => ({
+  default: mockUseCurrentSeason
+}));
 
 vi.mock("utils/fetchWigoPercentiles", () => ({
   fetchPercentileCohortForPlayer: mockFetchPercentileCohortForPlayer
@@ -37,6 +42,50 @@ describe("RateStatPercentiles", () => {
   afterEach(cleanup);
   beforeEach(() => {
     mockFetchPercentileCohortForPlayer.mockReset();
+    mockUseCurrentSeason.mockReset();
+    mockUseCurrentSeason.mockReturnValue({
+      seasonId: 20262027,
+      numberOfGames: 84,
+      lastSeasonId: 20252026,
+      lastNumberOfGames: 82
+    });
+  });
+
+  describe("minimum-GP slider range without games played", () => {
+    async function renderZeroGpCohort(seasonId: number) {
+      mockFetchPercentileCohortForPlayer.mockResolvedValue({
+        stats: [{ player_id: 1, gp: 0, toi: 0, goals_per_60: null }],
+        requestedSeasonId: seasonId,
+        appliedSeasonId: seasonId,
+        canonicalPlayerGp: 0,
+        fallbackReason: null
+      });
+      const { container } = renderWithClient(
+        <RateStatPercentiles
+          playerId={1}
+          seasonId={seasonId}
+          minGp={0}
+          onMinGpChange={vi.fn()}
+        />
+      );
+      await waitFor(() =>
+        expect(screen.getByText("Rate Stat Percentiles")).toBeTruthy()
+      );
+      return container.querySelector("#gpSlider")?.getAttribute("max");
+    }
+
+    it("uses the 84-game length of the 2026-27 season", async () => {
+      expect(await renderZeroGpCohort(20262027)).toBe("84");
+    });
+
+    it("keeps 82 for an 82-game season", async () => {
+      expect(await renderZeroGpCohort(20252026)).toBe("82");
+    });
+
+    it("does not assume 82 games when the season length is unknown", async () => {
+      mockUseCurrentSeason.mockReturnValue(undefined);
+      expect(await renderZeroGpCohort(20252026)).toBe("1");
+    });
   });
 
   it("keeps a low-gp scoring forward in the percentile cohort and warns about the threshold", async () => {

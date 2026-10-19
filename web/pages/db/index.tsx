@@ -20,6 +20,7 @@ import Container from "components/Layout/Container";
 import supabase, { doPOST } from "lib/supabase";
 import { useSnackbar } from "notistack";
 import useCurrentSeason from "hooks/useCurrentSeason";
+import CronRouteRunner from "components/Admin/CronRouteRunner";
 
 const NST_MANUAL_BACKFILL_DELAY_MS = 21_000;
 const NST_TEAM_STATS_BACKFILL_STORAGE_KEY = "nst-team-stats-backfill";
@@ -1455,6 +1456,12 @@ export default function Page() {
                 </Link>
               </CardActions>
             </Card>
+          </Grid>
+        )}
+
+        {isAdmin && (
+          <Grid xs={12}>
+            <CronRouteRunner />
           </Grid>
         )}
       </Grid>

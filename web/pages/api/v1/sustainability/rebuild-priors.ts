@@ -1,6 +1,7 @@
 // rebuild-priors.ts
 import { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
 import adminOnly from "utils/adminOnlyMiddleware";
@@ -143,6 +144,6 @@ export async function rebuildPriorsHandler(
   }
 }
 
-export default withCronJobAudit(adminOnly(rebuildPriorsHandler as any), {
+export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(rebuildPriorsHandler as any)), {
   jobName: "rebuild-sustainability-priors"
 });

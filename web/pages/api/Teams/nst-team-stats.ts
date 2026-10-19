@@ -2,6 +2,7 @@ import { NextApiResponse } from "next";
 import { addDays, format, isAfter, parseISO } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import {
   NST_TEAM_STATS_SAFE_INTERVAL_MS,
   resolveNstTeamStatsRequestPlan,
@@ -553,7 +554,7 @@ function hasBudgetForRequests(startedAt: number, requestCount: number) {
   return remainingBudget >= requestCount * MIN_REQUEST_BUDGET_MS;
 }
 
-const handler = adminOnly(async (req: any, res: NextApiResponse) => {
+const handler = adminOnly(withNhlOffSeasonSkip(async (req: any, res: NextApiResponse) => {
   const scriptStartTime = Date.now();
   const { supabase } = req;
   lastNstRequestCompletedAt = 0;
@@ -1121,6 +1122,6 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
       success: false,
     });
   }
-});
+}));
 
 export default withCronJobAudit(handler);

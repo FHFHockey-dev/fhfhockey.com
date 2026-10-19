@@ -69,6 +69,7 @@ import {
   parseQueryString
 } from "lib/api/queryParams";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import {
   inferRollingExecutionProfile,
   isRollingExecutionProfile,
@@ -941,4 +942,4 @@ export async function handler(
   }
 }
 
-export default withCronJobAudit(adminOnly(handler as any));
+export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)));

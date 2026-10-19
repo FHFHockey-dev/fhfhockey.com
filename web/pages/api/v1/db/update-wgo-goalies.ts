@@ -139,6 +139,7 @@ import {
 } from "lib/NHL/types";
 import { updateAllGoaliesStats } from "lib/supabase/utils/updateAllGoalies";
 import adminOnly from "utils/adminOnlyMiddleware";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import {
   classifyWgoGoalieFetchFailure,
   classifyWgoGoaliePruneFailure,
@@ -1650,4 +1651,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   return res.status(intendedStatusCode).json(responseBody);
 }
 
-export default adminOnly(handler);
+export default adminOnly(withNhlOffSeasonSkip(handler));

@@ -1,4 +1,5 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import { GOALIE_START_TABLE_OWNERSHIP } from "lib/projections/compatibilityInventory";
 import type { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase/server";
@@ -386,4 +387,4 @@ const handler = async (
   }
 };
 
-export default withCronJobAudit(adminOnly(handler as any));
+export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)));

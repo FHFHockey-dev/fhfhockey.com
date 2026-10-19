@@ -1236,6 +1236,14 @@ ${JSON.stringify(jobs)}
     expect(cronAuditEmailMock.mock.calls[0][0].audits[0].lastKnownSuccessDisplay).toBeNull();
     expect(cronAuditEmailMock.mock.calls[0][0].audits[0].reason).toContain("produced no output");
   });
+  it("treats an NHL off-season skip as an expected pause, not missing output",async()=>{
+    readFileMock.mockResolvedValue(`SELECT cron.schedule('update-shift-charts','0 12 * * *',$$select net.http_get(url:='https://fhfhockey.com/api/v1/db/shift-charts');$$);`);
+    cronJobReportSelectMock.mockResolvedValue({data:[],error:null});
+    cronJobAuditSelectMock.mockResolvedValue({data:[{job_name:"update-shift-charts",run_time:"2026-03-20T12:01:00.000Z",status:"success",rows_affected:null,details:{method:"GET",url:"/api/v1/db/shift-charts",response:{success:true,skipped:true,outcome:"skipped",reason:"nhl_off_season",message:"Skipped: NHL off-season."}}}],error:null});
+    const res=createMockRes();await handler({method:"GET"} as any,res);
+    expect(res.body.counts.jobsOkLast).toBe(1);
+    expect(String(cronAuditEmailMock.mock.calls[0][0].audits[0].reason ?? "")).not.toContain("produced no output");
+  });
 
 
   it("a single yesterday recurring receipt cannot prove latest slot is healthy",async()=>{

@@ -8,6 +8,7 @@ import {
   type NormalizedDependencyError,
 } from "lib/cron/normalizeDependencyError";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import supabase from "lib/supabase/server";
 import { requireLatestSucceededRunId } from "lib/projections/apiHelpers";
@@ -2435,7 +2436,7 @@ async function runAccuracyForDate(
 }
 
 export default withCronJobAudit(
-  adminOnly(async function handler(req: NextApiRequest, res: NextApiResponse) {
+  adminOnly(withNhlOffSeasonSkip(async function handler(req: NextApiRequest, res: NextApiResponse) {
     const startedAt = Date.now();
     const requestedDateFromQuery = parseDateParam(req.query.date);
     if (req.method !== "POST" && req.method !== "GET") {
@@ -2746,6 +2747,6 @@ export default withCronJobAudit(
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       });
     }
-  } as any),
+  } as any)),
   { jobName: "run-projection-accuracy" },
 );

@@ -18,6 +18,7 @@ const { state, getCurrentSeasonMock, fetchMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("utils/adminOnlyMiddleware", () => ({ default: (handler: unknown) => handler }));
+vi.mock("lib/cron/nhlOffSeason", () => ({ withNhlOffSeasonSkip: (handler: unknown) => handler }));
 vi.mock("lib/cron/withCronJobAudit", () => ({ withCronJobAudit: (handler: unknown) => handler }));
 vi.mock("lib/NHL/server", () => ({ getCurrentSeason: getCurrentSeasonMock }));
 

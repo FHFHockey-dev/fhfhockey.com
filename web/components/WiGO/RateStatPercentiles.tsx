@@ -21,6 +21,7 @@ import {
 } from "utils/calculatePercentiles";
 import { formatOrdinal } from "utils/formattingUtils";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
+import useCurrentSeason from "hooks/useCurrentSeason";
 
 ChartJS.register(
   CategoryScale,
@@ -235,6 +236,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
   const [selectedStrength, setSelectedStrength] =
     useState<PercentileStrength>("as");
   const queryClient = useQueryClient();
+  const currentSeason = useCurrentSeason();
   const {
     data: percentileCohort,
     isLoading,
@@ -256,14 +258,30 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
     [percentileCohort?.stats]
   );
 
+  // Regular-season length of the season shown, when the current-season record
+  // knows it (current or previous season); otherwise null.
+  const displayedSeasonId = percentileCohort?.appliedSeasonId ?? seasonId;
+  const seasonGameCount = useMemo(() => {
+    if (!currentSeason || typeof displayedSeasonId !== "number") return null;
+    const count =
+      displayedSeasonId === currentSeason.seasonId
+        ? currentSeason.numberOfGames
+        : displayedSeasonId === currentSeason.lastSeasonId
+          ? currentSeason.lastNumberOfGames
+          : null;
+    return typeof count === "number" && Number.isSafeInteger(count) && count > 0
+      ? count
+      : null;
+  }, [currentSeason, displayedSeasonId]);
+
   const maxPossibleGp = useMemo(() => {
     const maxGpOverall = allPlayersStats.reduce(
       (max, player) => Math.max(max, player.gp ?? 0),
       0
     );
 
-    return maxGpOverall > 0 ? maxGpOverall : 82;
-  }, [allPlayersStats]);
+    return maxGpOverall > 0 ? maxGpOverall : (seasonGameCount ?? 0);
+  }, [allPlayersStats, seasonGameCount]);
 
   const selectedPlayerGp = useMemo(() => {
     if (!playerId) {
