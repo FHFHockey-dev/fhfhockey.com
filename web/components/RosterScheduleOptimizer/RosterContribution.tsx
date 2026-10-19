@@ -2,8 +2,9 @@ import type { ContributionDay, PlayerContribution } from "lib/rosterScheduleOpti
 import styles from "./RosterScheduleOptimizer.module.scss";
 
 const count = (total: number | null, known: number) => total === null ? known ? `${known}+ known` : "unknown" : String(total);
-const compactValue = (value: string) => value === "unknown" ? "?" : value === "unavailable" ? "—"
-  : value.endsWith("+ known") ? value.replace(" known", "") : value;
+// The page shows one banner when schedules are unconfirmed, so cells show the known count without "+" or "?".
+const compactValue = (value: string) => value === "unknown" || value === "unavailable" ? "—"
+  : value.endsWith("+ known") ? value.replace("+ known", "") : value;
 const reasons: Partial<Record<NonNullable<ContributionDay["reason"]>, string>> = {
   locked_bench: "Bench lock preserved", locked_capacity: "Eligible slots locked", weekly_lock: "Weekly lock",
   lower_lineup_value: "Checked placement reduces full-lineup score", equal_lineup_value: "Checked lineup scores equal",

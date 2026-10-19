@@ -1,0 +1,193 @@
+import { describe, expect, it } from "vitest";
+import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
+import { candidateHorizonPoints } from "lib/rosterScheduleOptimizer/planning";
+import type { PlanningGame, PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
+import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_VERSION, opponentTilts } from "./forgeDailyBridge";
+
+const now = new Date("2026-10-19T18:00:00Z");
+const policy = forecastCalendarPolicy(14);
+const member = (id: string, nhlId: number, team: string, nhlTeamId: number, playerClass: "skater" | "goalie" = "skater"): PlanningPlayer => ({
+  id, nhlId, nhlTeamId, rosterRevision: `roster-${id}`, name: id, teamAbbreviation: team, eligiblePositions: [playerClass === "goalie" ? "G" : "C"],
+  eligibilityVerified: true, playerClass, availability: "free_agent", ownership: null, canDrop: true, holdValue: null, reserveEligibility: [] });
+const game = (id: string, team: string, startsAt: string, status: PlanningGame["status"] = "scheduled"): PlanningGame => ({
+  id, scheduleRevision: `schedule-${id}-${team}`, date: startsAt.slice(0, 10), startsAt, teamAbbreviation: team, opponent: "X", home: true, status });
+const players = [member("s1", 101, "TOR", 10), member("s2", 102, "TOR", 10), member("s3", 103, "MTL", 8),
+  member("g1", 201, "TOR", 10, "goalie"), member("g2", 202, "TOR", 10, "goalie")];
+const games = [game("0", "TOR", "2026-10-18T23:00:00Z", "final"), game("1", "TOR", "2026-10-19T23:00:00Z"),
+  game("2", "TOR", "2026-10-21T23:00:00Z"), game("3", "MTL", "2026-10-20T23:00:00Z")];
+const skater = (run: string, asOf: string, gameId: number, playerId: number, teamId: number) => ({ run_id: run, as_of_date: asOf, horizon_games: 1,
+  game_id: gameId, player_id: playerId, team_id: teamId, proj_goals_es: 0.25, proj_goals_pp: 0.1, proj_goals_pk: null, proj_assists_es: 0.3,
+  proj_assists_pp: 0.15, proj_assists_pk: null, proj_shots_es: 2.5, proj_shots_pp: 0.6, proj_shots_pk: null, proj_toi_es_seconds: 900,
+  proj_toi_pp_seconds: 180, proj_toi_pk_seconds: null, proj_hits: 1.2, proj_blocks: 0.5, proj_pim: null, proj_plus_minus: null });
+const inputs = () => ({
+  runs: [{ run_id: "r1", as_of_date: "2026-10-18", created_at: "2026-10-18T12:00:00Z", git_sha: "abc" },
+    { run_id: "r2", as_of_date: "2026-10-19", created_at: "2026-10-19T12:00:00Z", git_sha: "def" }],
+  // s1 is in both runs; s2 only in the older one; s3's row is for a different team.
+  skaters: [skater("r1", "2026-10-18", 0, 101, 10), skater("r2", "2026-10-19", 1, 101, 10), skater("r1", "2026-10-18", 0, 102, 10),
+    skater("r2", "2026-10-19", 9, 103, 9)],
+  goalies: [{ run_id: "r2", as_of_date: "2026-10-19", horizon_games: 1, game_id: 1, goalie_id: 201, team_id: 10, starter_probability: 0.8,
+    proj_saves: 25, proj_goals_allowed: 2.5, proj_shots_against: 27.5, proj_win_prob: 0.55, proj_shutout_prob: 0.05 }],
+  goalieShares: [{ player_id: 201, game_id: 1, game_date: "2026-10-19", l10_start_pct: 0.7, season_start_pct: 0.6, updated_at: "2026-10-19T10:00:00Z" },
+    { player_id: 202, game_id: 1, game_date: "2026-10-19", l10_start_pct: 0.3, season_start_pct: 0.4, updated_at: "2026-10-19T10:00:00Z" }],
+});
+
+describe("FORGE daily bridge", () => {
+  it("reuses each skater's latest line for his team's upcoming games only", () => {
+    const { forecasts } = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy);
+    const s1 = forecasts.filter(row => row.playerId === "s1");
+    expect(s1.map(row => row.gameId)).toEqual(["1", "2"]);
+    expect(s1[0]).toMatchObject({ revisionId: `${FORGE_DAILY_BRIDGE_VERSION}:r2`, sourceKind: "detailed", conditioning: "unconditional",
+      issuedAt: "2026-10-19T12:00:00.000Z", expiresAt: "2026-10-19T23:00:00.000Z",
+      stats: { GOALS: 0.35, ASSISTS: 0.45, POINTS: 0.8, PP_POINTS: 0.25, SHOTS_ON_GOAL: 3.1, HITS: 1.2, BLOCKED_SHOTS: 0.5,
+        TIME_ON_ICE_PER_GAME: 18, PENALTY_MINUTES: 0, PLUS_MINUS: 0, FACEOFFS_WON: 0 } });
+    expect(s1[0].issuedContext).toMatchObject({ playerId: "s1", gameId: "1", nhlPlayerId: 101, teamId: 10, scheduleRevision: "schedule-1-TOR", rosterRevision: "roster-s1" });
+    // Scratched from the latest run, or moved teams: no forecast.
+    expect(forecasts.some(row => row.playerId === "s2" || row.playerId === "s3")).toBe(false);
+  });
+
+  it("keeps FORGE's starter probability for a projected game and splits the rest by start share", () => {
+    const { forecasts } = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy);
+    const goalie = (id: string, gameId: string) => forecasts.find(row => row.playerId === id && row.gameId === gameId)!;
+    expect(goalie("g1", "1").startProbability).toBe(0.8);
+    expect(goalie("g2", "1").startProbability).toBeCloseTo(0.2);
+    // g2 has no FORGE line of his own, so the team's latest per-start line applies.
+    expect(goalie("g2", "1").stats.SAVES_GOALIE).toBeCloseTo(5);
+    expect(goalie("g1", "1").conditionalStats).toMatchObject({ SAVES_GOALIE: 25, WINS_GOALIE: 0.55, LOSSES_GOALIE: 0.45 });
+    expect([goalie("g1", "2").startProbability, goalie("g2", "2").startProbability]).toEqual([0.7, 0.3]);
+  });
+
+  it("is empty with a plain reason when no run exists, and trims to the byte budget", () => {
+    expect(buildForgeDailyBridgeForecasts({ runs: [], skaters: [], goalies: [], goalieShares: [] }, players, games, now, 20262027, policy))
+      .toEqual({ forecasts: [], limitations: [expect.stringContaining("no successful FORGE run")] });
+    const trimmed = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy, 3000);
+    expect(trimmed.forecasts.length).toBeGreaterThan(0);
+    expect(trimmed.limitations.at(-1)).toMatch(/trimmed to the first \d+ of 6 player-games/);
+  });
+
+  it("fills the stats FORGE does not project from blended season rates", () => {
+    const totals = (playerId: number, season: string, gp: number, pim: number, fow: number, fol: number, goals: number, gwg: number) =>
+      ({ player_id: playerId, season, games_played: gp, penalty_minutes: pim, plus_minus: 0, sh_goals: 0, sh_assists: 0, sh_points: 0, total_fow: fow, total_fol: fol, goals, gw_goals: gwg });
+    const seasonTotals = [totals(101, "20262027", 10, 10, 50, 40, 4, 2), totals(101, "20252026", 80, 40, 600, 500, 20, 4), totals(102, "20262027", 10, 30, 0, 0, 1, 0)];
+    const { forecasts, limitations } = buildForgeDailyBridgeForecasts({ ...inputs(), seasonTotals }, players, games, now, 20262027, policy);
+    const stats = forecasts.find(row => row.playerId === "s1")!.stats;
+    // Faceoffs are not pulled toward the league: (50 + 0.5 × 600) / (10 + 0.5 × 80).
+    expect(stats.FACEOFFS_WON).toBe(7);
+    expect(stats.FACEOFFS_LOST).toBe(5.8);
+    // Game-winning goals: projected goals × (2 + 0.5 × 4 + 0.16 × 10) / (4 + 0.5 × 20 + 10).
+    expect(stats.GAME_WINNING_GOALS).toBeCloseTo(0.35 * 5.6 / 24, 4);
+    expect(stats.PENALTY_MINUTES).toBeGreaterThan(30 / 50);
+    expect(limitations).toContain("Penalty minutes, plus-minus, shorthanded points, game-winning goals and faceoffs are season per-game rates (this season plus half of last, pulled toward league rates), not FORGE projections.");
+  });
+
+  it("applies accepted IFTTT goalie news over start shares", () => {
+    const assertion = (gameId: number, playerId: number, value: string) => ({ gameId, teamId: 10, playerId, dimension: "goalie" as const, value,
+      evidenceId: `e-${gameId}`, sourceKey: "gamedaygoalies", sourceUrl: null, publishedAt: "2026-10-19T15:00:00Z", receivedAt: "2026-10-19T15:00:01Z", confirmed: value === "confirmed" });
+    const goalieNews = { assertions: [assertion(1, 202, "confirmed"), assertion(2, 202, "likely")], conflicts: [] };
+    const { forecasts, limitations } = buildForgeDailyBridgeForecasts({ ...inputs(), goalieNews }, players, games, now, 20262027, policy);
+    const goalie = (id: string, gameId: string) => forecasts.find(row => row.playerId === id && row.gameId === gameId)!;
+    expect(goalie("g2", "1")).toMatchObject({ startProbability: 1, confirmedStart: true });
+    expect(goalie("g1", "1")).toMatchObject({ startProbability: 0, confirmedStart: false });
+    expect(goalie("g2", "2").startProbability).toBe(0.8);
+    expect(goalie("g1", "2").startProbability).toBeCloseTo(0.2);
+    expect(limitations.some(line => line.startsWith("Goalie news (IFTTT, accepted automatically): 1 confirmed, 1 likely or projected"))).toBe(true);
+    const disputed = buildForgeDailyBridgeForecasts({ ...inputs(), goalieNews: { ...goalieNews,
+      conflicts: [{ gameId: 1, teamId: 10, playerId: null, dimension: "goalie", evidenceIds: ["a", "b"] }] } }, players, games, now, 20262027, policy);
+    expect(disputed.forecasts.find(row => row.playerId === "g1" && row.gameId === "1")!.startProbability).toBe(0.8);
+  });
+
+  it("moves future games to their opponent with FORGE's team-strength adjustment", () => {
+    const base = inputs();
+    // FORGE projected s1's 10-19 game against MTL; game 2 (10-21) is against a leakier defence.
+    base.skaters = base.skaters.map(row => row.player_id === 101 && row.run_id === "r2" ? { ...row, opponent_team_id: 8 } : row);
+    const opponentGames = games.map(game => game.id === "2" ? { ...game, opponent: "SJS" } : game.id === "1" ? { ...game, opponent: "MTL" } : game);
+    const prior = (team_abbrev: string, xga_per_game: number, rows = 1) => Array.from({ length: rows }, (_, index) =>
+      ({ team_abbrev, date: "2026-10-19", games_played: 50, xga: index ? 999 : 50 * xga_per_game, xga_per_game, xgf_per_game: 3 }));
+    // TOR has an extra non-matching row, as the live table does; the season-to-date row is still chosen.
+    const teamPriors = [...prior("TOR", 2.9, 2), ...prior("MTL", 2.6), ...prior("SJS", 3.5)];
+    const { forecasts, limitations } = buildForgeDailyBridgeForecasts({ ...base, teamPriors }, players, opponentGames, now, 20262027, policy);
+    const s1 = (gameId: string) => forecasts.find(row => row.playerId === "s1" && row.gameId === gameId)!.stats;
+    expect(s1("1").GOALS).toBe(0.35);
+    expect(s1("2").GOALS!).toBeGreaterThan(0.35);
+    expect(s1("2").HITS).toBe(s1("1").HITS);
+    expect(limitations.some(line => line.startsWith("Future games move each FORGE line to that game's opponent"))).toBe(true);
+    expect(buildForgeDailyBridgeForecasts(base, players, opponentGames, now, 20262027, policy).forecasts
+      .find(row => row.playerId === "s1" && row.gameId === "2")!.stats.GOALS).toBe(0.35);
+  });
+
+  it("blends last season into thin early-season team priors, strengthening the opponent effect", () => {
+    const base = inputs();
+    base.skaters = base.skaters.map(row => row.player_id === 101 && row.run_id === "r2" ? { ...row, opponent_team_id: 8 } : row);
+    const opponentGames = games.map(game => game.id === "2" ? { ...game, opponent: "SJS" } : game.id === "1" ? { ...game, opponent: "MTL" } : game);
+    // Nine games in: tiny xGA totals, so FORGE's sample weight keeps the adjustment small.
+    const early = (team_abbrev: string, xga_per_game: number) => ({ team_abbrev, date: "2026-10-19", games_played: 9, xga: 9 * xga_per_game, xga_per_game, xgf_per_game: 3 });
+    const teamPriors = [early("TOR", 2.9), early("MTL", 2.6), early("SJS", 3.5)];
+    const lastSeasonTeams = [["TOR", 2.9], ["MTL", 2.6], ["SJS", 3.6]].map(([team_abbreviation, perGame]) =>
+      ({ team_abbreviation, season: 20252026, situation: "all", gp: 70, xga: 70 * Number(perGame), xgf: 70 * 3 }));
+    const goals = (extra: object) => buildForgeDailyBridgeForecasts({ ...base, teamPriors, ...extra }, players, opponentGames, now, 20262027, policy)
+      .forecasts.find(row => row.playerId === "s1" && row.gameId === "2")!.stats.GOALS!;
+    expect(goals({ lastSeasonTeams }) - 0.35).toBeGreaterThan(goals({}) - 0.35);
+    expect(goals({ lastSeasonTeams })).toBeGreaterThan(0.35);
+  });
+
+  it("re-aims home ice and rest with FORGE's rest model, and thins the starter's chance on a back-to-back", () => {
+    const base = inputs();
+    // FORGE projected 10-19 at home on two days' rest; 10-21 is away, the second night of a back-to-back.
+    const teamGames = [{ id: 0, date: "2026-10-17", homeTeamId: 10, awayTeamId: 8 }, { id: 1, date: "2026-10-19", homeTeamId: 10, awayTeamId: 8 },
+      { id: 7, date: "2026-10-20", homeTeamId: 10, awayTeamId: 8 }, { id: 2, date: "2026-10-21", homeTeamId: 8, awayTeamId: 10 }];
+    const build = (extra: object) => buildForgeDailyBridgeForecasts({ ...base, ...extra }, players, games, now, 20262027, policy).forecasts;
+    const rested = build({}), tired = build({ teamGames });
+    const stat = (rows: typeof rested, id: string, gameId: string) => rows.find(row => row.playerId === id && row.gameId === gameId)!;
+    expect(stat(tired, "s1", "1").stats.GOALS).toBe(0.35);
+    expect(stat(tired, "s1", "2").stats.GOALS!).toBeLessThan(stat(rested, "s1", "2").stats.GOALS!);
+    expect(stat(tired, "s1", "2").stats.POINTS).toBeCloseTo(stat(tired, "s1", "2").stats.GOALS! + stat(tired, "s1", "2").stats.ASSISTS!, 3);
+    // Usual starter (70% share) keeps 55% of it on the second night; the backup picks up the rest.
+    expect(stat(tired, "g1", "2").startProbability).toBeCloseTo(0.385, 3);
+    expect(stat(tired, "g2", "2").startProbability).toBeCloseTo(0.615, 3);
+  });
+
+  it("reads each opponent's tilt toward forwards or defencemen against the league share, shrunk", () => {
+    const allowed = (opponent: string, dPoints: number) => [
+      { season_id: 20262027, opponent, position_group: "F", games: 60, points: (3 - dPoints) * 60, shots: 20 * 60 },
+      { season_id: 20262027, opponent, position_group: "D", games: 60, points: dPoints * 60, shots: 8 * 60 }];
+    // League D share is 30% of points; SJS gives defencemen 35%, MTL 25%.
+    const tilts = opponentTilts([...allowed("SJS", 1.05), ...allowed("MTL", 0.75), ...allowed("TOR", 0.9)], 20262027);
+    expect(tilts.get("SJS|D")!.points).toBeGreaterThan(1);
+    expect(tilts.get("SJS|F")!.points).toBeLessThan(1);
+    expect(tilts.get("MTL|D")!.points).toBeLessThan(1);
+    // 60 games against 30 of shrinkage keeps two thirds of the raw tilt, inside the ±15% clamp.
+    expect(tilts.get("SJS|D")!.points).toBeCloseTo(1 + (0.35 / 0.3 - 1) * 60 / 90, 3);
+    // An extreme tilt is clamped to ±15%.
+    expect(opponentTilts([...allowed("SJS", 2.4), ...allowed("MTL", 0.3), ...allowed("TOR", 0.3)], 20262027).get("SJS|D")!.points).toBe(1.15);
+    expect(tilts.get("TOR|D")!.points).toBeCloseTo(1, 3);
+    expect(opponentTilts([], 20262027).size).toBe(0);
+  });
+
+  it("re-aims a skater line by the opponent's positional tilt", () => {
+    const base = inputs();
+    base.skaters = base.skaters.map(row => row.player_id === 101 && row.run_id === "r2" ? { ...row, opponent_team_id: 8 } : row);
+    const opponentGames = games.map(game => game.id === "2" ? { ...game, opponent: "SJS" } : game.id === "1" ? { ...game, opponent: "MTL" } : game);
+    const allowed = (opponent: string, dPoints: number) => [
+      { season_id: 20262027, opponent, position_group: "F", games: 60, points: (3 - dPoints) * 60, shots: 20 * 60 },
+      { season_id: 20262027, opponent, position_group: "D", games: 60, points: dPoints * 60, shots: 8 * 60 }];
+    const positionAllowed = [...allowed("SJS", 1.2), ...allowed("MTL", 0.6), ...allowed("TOR", 0.9)];
+    const goals = (extra: object) => buildForgeDailyBridgeForecasts({ ...base, ...extra }, players, opponentGames, now, 20262027, policy)
+      .forecasts.find(row => row.playerId === "s1" && row.gameId === "2")!.stats.GOALS!;
+    // s1 is a centre: MTL feeds forwards, SJS feeds defencemen, so his line drops for the SJS game.
+    expect(goals({ positionAllowed })).toBeLessThan(goals({}));
+  });
+
+  it("produces forecasts the planner accepts for league points", () => {
+    const { forecasts } = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy);
+    const snapshot: PlanningSnapshot = { id: "snap", context: { provider: "manual", seasonId: 20262027, leagueId: "l", teamId: "t",
+      startDate: "2026-10-19", endDate: "2026-10-25", timeZone: "UTC", asOf: now.toISOString() },
+      players, games, forecasts, roster: [], lockedAssignments: [], realized: {}, opponent: null,
+      rules: { lineupMode: "daily", rosterSlots: { C: 1, G: 1, BN: 1 }, acquisitionTiming: "next_day", acquisitionCost: 1, periods: [],
+        scoring: { mode: "points", weights: { GOALS: 3, ASSISTS: 2, PP_POINTS: 1, SHOTS_ON_GOAL: 0.5, FACEOFFS_WON: 0.1, SAVES_GOALIE: 0.2, WINS_GOALIE: 4 }, categories: [] },
+        goalieMinimum: { required: null, credited: null, counts: "unknown", penalty: "none" }, unsupported: [] },
+      evidence: { schedule: { source: "fixture", asOf: now.toISOString(), seasonId: 20262027, completeness: "complete", limitations: [] } } };
+    const points = candidateHorizonPoints(snapshot);
+    expect(points.get("s1")).toBeCloseTo(2 * (0.35 * 3 + 0.45 * 2 + 0.25 + 3.1 * 0.5));
+    expect(points.get("g1")).toBeCloseTo(0.8 * (25 * 0.2 + 0.55 * 4) + 0.7 * (25 * 0.2 + 0.55 * 4));
+    expect(points.get("s2")).toBeNull();
+  });
+});

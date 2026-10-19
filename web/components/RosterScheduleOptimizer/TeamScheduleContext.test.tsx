@@ -55,7 +55,7 @@ describe("RSO explanatory team schedule context", () => {
     if (mode === "partial") { data.complete = false; data.error = "Canonical calendar coverage unavailable"; }
     if (mode === "conflicting rows") data.games.push({ ...data.games[0], id: 100 });
     show(data);
-    expect(screen.getByRole("status").textContent).toMatch(/unavailable|conflicting/);
+    expect(screen.queryByText("Top five team schedules")).toBeNull();
     expect(screen.queryByText(/Score \d/)).toBeNull();
     expect(screen.queryByLabelText(/team schedule$/)).toBeNull();
   });

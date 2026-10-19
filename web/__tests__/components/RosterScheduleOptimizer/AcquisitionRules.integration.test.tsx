@@ -87,7 +87,8 @@ it.each(["manual", "yahoo"] as const)("collects only missing %s acquisition rule
   const state = fixture(provider), originalIntent = structuredClone(state.workspace.intent), originalRules = structuredClone(state.workspace.rules);
   const first = render(<RosterScheduleOptimizer />);
   await waitFor(() => expect(candidate()).toBeTruthy());
-  await waitFor(() => expect(within(candidate()).getByText("Acquisition effective timing is unverified.")).toBeTruthy());
+  // Missing add timing is explained once, in plain words, in the panel's "Why some players aren't ranked" list.
+  await waitFor(() => expect(within(screen.getByRole("list", { name: "Why some players aren't ranked" })).getByText("Your league's add rules (timing or moves left) aren't set yet.")).toBeTruthy());
   const initialEvaluations = LocalPlanningWorker.packets.filter(row => row.candidate).length;
   const initialRequests = state.fetch.mock.calls.length;
   if (provider === "manual") fireEvent.click(screen.getByRole("button", { name: /^League settings/ }));
@@ -119,7 +120,7 @@ it.each(["manual", "yahoo"] as const)("collects only missing %s acquisition rule
   };
   fillPeriod(0, "2026-10-04", "2026-10-05", "2");
   fillPeriod(1, "2026-10-06", "2026-10-07", "4");
-  await waitFor(() => expect(within(candidate()).getByLabelText("Net plan comparison").textContent).toBe("Net points unavailable Net AGP +1"));
+  await waitFor(() => expect(within(candidate()).getByLabelText("Net plan comparison").textContent).toBe("—Net Pts+1Net AGP"));
   const persisted = saved(state.workspace.context);
   expect(persisted.managerRuleOverrides).toMatchObject({ acquisitionTiming: "next_day", ...(provider === "manual" ? { acquisitionCost: 2 } : {}), periods: [
     { start: "2026-10-04T04:00:00.000Z", end: "2026-10-06T04:00:00.000Z", remaining: 2, source: "manager" },
@@ -134,7 +135,7 @@ it.each(["manual", "yahoo"] as const)("collects only missing %s acquisition rule
   expect(state.fetch).toHaveBeenCalledTimes(initialRequests);
   first.unmount();
   render(<RosterScheduleOptimizer />);
-  await waitFor(() => expect(candidate() && within(candidate()).getByLabelText("Net plan comparison").textContent).toBe("Net points unavailable Net AGP +1"));
+  await waitFor(() => expect(candidate() && within(candidate()).getByLabelText("Net plan comparison").textContent).toBe("—Net Pts+1Net AGP"));
   expect(saved(state.workspace.context).managerRuleOverrides).toEqual(persisted.managerRuleOverrides);
   expect(saved(state.workspace.context).intent).toEqual(originalIntent);
   expect(LocalPlanningWorker.packets.every(row => row.packet.intent.steps.length === 0)).toBe(true);

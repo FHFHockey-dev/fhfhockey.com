@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const now = new Date();
     // One server-side source per request; RSO has no legacy forecasts, so every fallback serves none.
     const source = await selectForecastServingSource(serviceRoleClient, query.seasonId, now);
-    const data = await loadPlanningData(serviceRoleClient, query, { now, source });
+    const data = await loadPlanningData(serviceRoleClient, query, { now, source, forgeDailyBridge: true });
     // A shared copy of native forecasts never outlives the selected catalog.
     const nativeMaxAge = source.kind === "native" ? Math.max(0, Math.min(300, Math.floor((Date.parse(source.expiresAt) - Date.now()) / 1000))) : null;
     res.setHeader("Cache-Control", nativeMaxAge === null ? "public, s-maxage=300, stale-while-revalidate=300" : `public, s-maxage=${nativeMaxAge}, stale-while-revalidate=0`);

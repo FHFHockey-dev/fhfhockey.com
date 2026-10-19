@@ -1,5 +1,6 @@
 import { loadPlanningInputs, pages, withinDeadline, PlanningReadDeadlineError, type PlanningDataQuery } from "./planningInputs";
 import { admitConsumerGameRevisions } from "lib/projections/consumerRevisionAdmission";
+import { loadForgeDailyBridgeForecasts } from "./forgeDailyBridge";
 export { normalizePlanningGames } from "./planningInputs";
 export { publicPlanningForecasts } from "lib/projections/consumerRevisionAdmission";
 export type { PlanningDataQuery } from "./planningInputs";
@@ -40,7 +41,9 @@ function evidence(source: string, asOf: string | null, seasonId: number | null, 
 
 export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningDataQuery, options: { now?: Date; forecastsEnabled?: boolean; deadlineMs?: number; skipOwnership?: boolean; skipRecentForm?: boolean;
   /** A source the caller already selected for this request; otherwise it is selected here. */
-  source?: ForecastServingSource } = {}): Promise<PlanningData> {
+  source?: ForecastServingSource;
+  /** RSO only: serve interim FORGE daily projections while native forecasts are not activated. */
+  forgeDailyBridge?: boolean } = {}): Promise<PlanningData> {
   const now = options.now ?? new Date();
   const deadline = Math.min(options.deadlineMs ?? Infinity, Date.now() + 20000);
   const source = options.source ?? await withinDeadline(Math.min(deadline, Date.now() + 8000), signal => selectForecastServingSource(db, query.seasonId, now, process.env, signal))
@@ -149,9 +152,27 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
     forecastProblems.push("Shared game-forecast serving is not enabled; schedule planning remains available.");
     for (const id of scheduledGameIds) recordGameExclusion(id, "serving_disabled");
   }
-  const { forecasts, acceptedNewsRevision, limitations: admissionProblems } = await admitConsumerGameRevisions(
+  const { forecasts: admitted, acceptedNewsRevision, limitations: admissionProblems } = await admitConsumerGameRevisions(
     db, revisions, players, games, now, query.seasonId, exclusionCounts, exclusionRows, deadline, calendarPolicy);
   forecastProblems.push(...admissionProblems);
+  let forecasts = admitted, bridged = false;
+  // Interim RSO source (TJ, 2026-10-19): before native activation only; native and its fallbacks never fall back to it.
+  if (options.forgeDailyBridge && source.kind === "legacy" && !admitted.length && !baseline.sources.length
+    && process.env.RSO_FORGE_DAILY_BRIDGE !== "off") {
+    try {
+      const bridge = await loadForgeDailyBridgeForecasts(db, players, games, now, query.seasonId, deadline, calendarPolicy);
+      forecastProblems.push(...bridge.limitations);
+      if (bridge.forecasts.length) {
+        forecasts = bridge.forecasts; bridged = true;
+        const covered = new Set(forecasts.map(row => row.gameId));
+        delete exclusionCounts.serving_disabled;
+        for (let index = exclusionRows.length - 1; index >= 0; index--) if (exclusionRows[index].reasons.includes("serving_disabled")) exclusionRows.splice(index, 1);
+        for (const id of scheduledGameIds) if (!covered.has(id)) recordGameExclusion(id, "no_issued_revision");
+        const disabled = forecastProblems.indexOf("Shared game-forecast serving is not enabled; schedule planning remains available.");
+        if (disabled >= 0) forecastProblems.splice(disabled, 1);
+      }
+    } catch { forecastProblems.push("Interim FORGE projections could not be read; schedule planning remains available."); }
+  }
   if (rolloutValid && (options.forecastsEnabled ?? starterBoardFlags().serving)) {
     const issued = new Set(revisions.map(revision => String(revision.game_id)));
     for (const id of selectedGameIds) if (!issued.has(id) && !discoveryUnavailable.has(id)) recordGameExclusion(id, "no_issued_revision");
@@ -176,7 +197,7 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
     : goalieParticipation.checksum ? "Released modeled skater and goalie participation" : "Released modeled skater participation",
     participation.sources.map(source => source.issuedAt).sort()[0] ?? null, query.seasonId, participation.limitations);
   forecastProblems.push("Only issued unconditional game forecasts are used. Conditional-only, missing, or out-of-horizon statistics are unknown, not zero.");
-  sources.forecasts = evidence("selected FORGE game revisions", forecasts.map((row) => row.issuedAt).sort()[0] ?? null, query.seasonId, [...new Set(forecastProblems)]);
+  sources.forecasts = evidence(bridged ? "Interim FORGE daily projections" : "selected FORGE game revisions", forecasts.map((row) => row.issuedAt).sort()[0] ?? null, query.seasonId, [...new Set(forecastProblems)]);
 
   // Ownership is platform-wide context, never league availability. This season-scoped view may be absent/stale.
   if (options.skipOwnership) {

@@ -41,6 +41,8 @@ export default function TeamScheduleContext({ dates, seasonId, timeZone, enabled
   const read = useCanonicalSchedule(dates, seasonId, timeZone, enabled && !calendar);
   const data = calendar ?? read;
   const context = teamScheduleContext(data, dates);
+  // Nothing to act on without a verified schedule; the strip simply stays hidden.
+  if (context.reason) return null;
   return <details className={styles.context} open={expanded}>
     <summary>Top five team schedules <span>{context.reason ? "· unavailable" : `· ${labelDate(dates[0])}–${labelDate(dates.at(-1)!)}`}</span><span> · Team context</span></summary>
     {context.reason ? <p role="status">{context.reason}</p> : <>

@@ -2,49 +2,59 @@
 @use "styles/panel" as panel;
 
 .card {
-  @include panel.panel-shell($radius: v.$radius-card, $padding: v.$space-sm, $variant: flat, $overflow: visible);
-  margin-block: v.$space-sm;
+  @include panel.panel-shell($radius: v.$radius-card, $padding: 0, $variant: flat, $overflow: hidden);
+  display: flex;
+  margin-block: v.$space-xs;
   min-width: 0;
   font-size: v.$font-size-xs;
   font-variant-numeric: tabular-nums;
 }
-.top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(80px, max-content); gap: v.$space-sm; }
-.heading { display: flex; align-items: start; gap: v.$space-xs; }
-.rank { display: grid; place-items: center; flex: 0 0 24px; min-height: 40px; border-radius: v.$radius-control; background: v.$draft-surface-raised; color: v.$primary-color; font-size: v.$font-size-lg; font-weight: 700; }
-.rank[data-gain="true"] { background: rgba(v.$success-color, .18); color: v.$success-color; }
-.moves { flex: 1; min-width: 0; }
-.moves > div { display: flex; align-items: center; flex-wrap: wrap; gap: v.$space-xs; }
-.moves button { flex: 1; min-width: 0; padding: 0 v.$space-xs !important; min-height: 32px !important; background: transparent !important; border: 0 !important; text-align: left; font-weight: 600 !important; }
-.moves small { color: v.$text-secondary; }
-.add, .drop { padding: 2px v.$space-xs; border-radius: v.$radius-xs; font-size: 10px; font-weight: 700; }
-.add { color: v.$success-color; background: rgba(v.$success-color, .1); }
-.drop { color: v.$color-coral-500; background: rgba(v.$color-coral-500, .1); }
-.metrics { display: flex; flex-direction: row; justify-content: center; gap: v.$space-sm; border: v.$border-subtle; border-radius: v.$radius-control; padding: v.$space-xs; }
-.metrics > span { display: flex; flex-direction: column; align-items: center; gap: 2px; color: v.$text-secondary; }
-.metrics strong { color: v.$text-primary; font-size: v.$font-size-lg; font-weight: 600; }
-.metrics strong[data-positive="true"] { color: v.$success-color; }
-.metrics strong:not([data-positive="true"]) { font-size: v.$font-size-sm; }
-.metrics > span { min-width: 0; text-align: center; }
-.metrics > span + span { padding-left: v.$space-sm; border-left: v.$border-subtle; }
-.metrics strong { white-space: nowrap; }
-.metrics strong:not([data-positive="true"]) { font-size: 12px; }
-.metrics > span { flex: 1; }
-.card .top { grid-template-columns: minmax(0, 1fr) minmax(144px, 36%); }
-.moves button { min-height: 28px !important; }
-.moves small { font-size: 10px; line-height: 13px; }
-.schedule { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; margin-top: v.$space-xs; }
-.schedule > span { text-align: center; min-width: 0; background: v.$draft-surface; border-radius: v.$radius-xs; }
-.schedule small { display: block; color: v.$text-secondary; font-size: 10px; }
-.schedule b { color: v.$primary-color; line-height: 18px; }
-.scheduleLabel { display: block; color: v.$text-secondary; font-size: 10px; }
-.footer { display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: v.$space-xs; margin-top: v.$space-xs; }
-.details { flex: 1; min-width: 0; }
-.details summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; color: v.$text-secondary; }
-.details[open] { flex-basis: 100%; }
-.details p { margin-block: v.$space-xs; line-height: 1.4; }
-.details ul { padding-left: v.$space-md; }
-.action.action { min-height: 32px; background: v.$primary-color; color: v.$color-neutral-950; font-weight: 600; }
-.warning.warning { margin-block: v.$space-xs; color: v.$warning-color; line-height: 1.35; }
-@media (max-width: 1100px) {
-  .moves button, .details summary, .action.action { min-height: 44px !important; }
+// Solid rank rail: the tile fills the full card height, so its rounded ends follow the card radius.
+.rank {
+  display: grid;
+  place-items: center;
+  flex: 0 0 32px;
+  background: v.$primary-color;
+  color: v.$color-neutral-950;
+  font-size: v.$font-size-lg;
+  font-weight: 700;
 }
+.card[data-gain="true"] .rank { background: v.$success-color; }
+.body { flex: 1; min-width: 0; padding: v.$space-xs v.$space-sm; }
+.top { display: flex; align-items: start; gap: v.$space-sm; }
+.moves { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.move { display: flex; align-items: center; flex-wrap: wrap; gap: v.$space-xs; min-width: 0; }
+.move small { color: v.$text-secondary; font-size: 10px; }
+.name.name { padding: 0 !important; min-height: 24px !important; background: transparent !important; border: 0 !important; text-align: left; font-weight: 600 !important; color: v.$text-primary; }
+.add, .drop { padding: 1px v.$space-xs; border-radius: v.$radius-xs; font-size: 10px; font-weight: 700; letter-spacing: .04em; }
+.add { color: v.$color-neutral-950; background: v.$success-color; }
+.drop { color: v.$color-neutral-950; background: v.$danger-color; }
+.badge, .form { padding: 0 4px; border: v.$border-subtle; border-radius: v.$radius-xs; color: v.$text-secondary; font-size: 9px; text-transform: uppercase; }
+.form[data-form="hot"] { color: v.$success-color; }
+.form[data-form="cold"] { color: v.$danger-color; }
+.metrics { display: flex; gap: v.$space-sm; flex: 0 0 auto; }
+.metrics > span { display: flex; flex-direction: column; align-items: flex-end; min-width: 52px; }
+.metrics strong { font-size: v.$font-size-lg; font-weight: 700; line-height: 1.1; white-space: nowrap; color: v.$text-primary; }
+.metrics strong[data-sign="positive"] { color: v.$success-color; }
+.metrics strong[data-sign="negative"] { color: v.$danger-color; }
+.metrics strong:not([data-sign]) { color: v.$text-secondary; }
+.metrics small { color: v.$text-secondary; font-size: 9px; text-transform: uppercase; letter-spacing: .04em; }
+.schedule { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; margin-top: v.$space-xs; }
+.schedule > span { display: grid; justify-items: center; min-width: 0; padding-block: 1px; background: v.$draft-surface; border-radius: v.$radius-xs; }
+.schedule small { color: v.$text-secondary; font-size: 9px; }
+.schedule b { display: flex; align-items: center; gap: 2px; color: v.$primary-color; font-size: 9px; line-height: 14px; }
+.schedule b.off { color: v.$text-secondary; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: v.$primary-color; }
+.reason { margin: v.$space-xs 0 0; color: v.$text-secondary; line-height: 1.35; }
+.warning.warning { margin: 2px 0 0; color: v.$warning-color; line-height: 1.35; }
+.footer { display: flex; flex-wrap: wrap; align-items: center; gap: v.$space-sm; margin-top: v.$space-xs; }
+.footer:empty { display: none; }
+.action.action { min-height: 32px; padding-inline: v.$space-sm; background: v.$primary-color; color: v.$color-neutral-950; font-weight: 700; }
+.textButton.textButton { min-height: 28px; padding: 0 !important; background: transparent !important; border: 0 !important; color: v.$text-secondary; font-size: 11px; text-decoration: underline; }
+@media (max-width: 1100px) {
+  .name.name, .action.action, .textButton.textButton { min-height: 44px !important; }
+}
+
+// Injured free agents (provider IR/O/DTD): red border, red tint and the injured icon.
+.card[data-injured="true"] { border-color: v.$color-coral-500; background: color-mix(in srgb, #{v.$color-coral-500} 10%, #{v.$draft-surface}); }
+.injury { flex: none; align-self: center; }

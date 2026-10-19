@@ -19,7 +19,7 @@ it("starts with individual cards and respects the selected result count when fil
     intent: { ...workspace.intent, alternativeCount: 5 as const }, fits: [], manual: true, select: vi.fn(), add: vi.fn(), markAvailable: vi.fn() };
   const view = render(<CandidateBrowser {...props} />);
   expect(screen.getAllByRole("article")).toHaveLength(5);
-  fireEvent.click(screen.getByRole("button", { name: "Show more players" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Show more recommendations/ }));
   expect(screen.getAllByRole("article")).toHaveLength(10);
   fireEvent.click(screen.getByText("Find & filter"));
   fireEvent.change(screen.getByRole("searchbox", { name: "Find candidate" }), { target: { value: "Candidate 11" } });
@@ -42,11 +42,11 @@ it("lists goalie options that add expected starts first only while the goalie mi
   const ids = () => screen.getAllByRole("article").map(article => article.getAttribute("data-rso-candidate-id"));
   const view = render(<CandidateBrowser {...props} />);
   expect(ids()).toEqual(["skater", "goalie"]);
-  expect(screen.queryByText(/Helps the goalie minimum/)).toBeNull();
+  expect(screen.queryByText(/Helps your goalie minimum/)).toBeNull();
   fixture.goalieBoost = true;
   view.rerender(<CandidateBrowser {...props} />);
   expect(ids()).toEqual(["goalie", "skater"]);
-  expect(screen.getByText("Helps the goalie minimum · +0.8 expected starts")).toBeTruthy();
+  expect(screen.getByText("Helps your goalie minimum: +0.8 starts")).toBeTruthy();
 });
 
 it.each([6, 3])("shares one display budget across %i supported and unavailable points candidates", count => {
@@ -63,36 +63,34 @@ it.each([6, 3])("shares one display budget across %i supported and unavailable p
   const view = render(<CandidateBrowser {...props} />);
   const ids = () => screen.getAllByRole("article").map(article => article.getAttribute("data-rso-candidate-id"));
   expect(ids()).toEqual(players.slice(0, 5).map(player => player.id));
-  fireEvent.click(screen.getByRole("button", { name: "Show more players" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Show more recommendations/ }));
   expect(ids()).toEqual(players.slice(0, 10).map(player => player.id));
-  expect(screen.getByRole("heading", { name: "Net AGP · points unavailable" })).toBeTruthy();
   for (const article of screen.getAllByRole("article").slice(count)) {
-    expect(within(article).getByText("unavailable")).toBeTruthy();
-    expect(within(article).getByText(/Missing comparison evidence/)).toBeTruthy();
+    expect(within(article).getByText("—", { selector: "strong" }).getAttribute("title")).toBe("Not enough projection data yet");
   }
   if (count === 6) {
     expect(screen.getByLabelText("Result 10")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Show more players" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Show more recommendations/ }));
     expect(ids()).toEqual(players.map(player => player.id));
   }
-  expect(screen.queryByRole("button", { name: "Show more players" })).toBeNull();
+  expect(screen.queryByRole("button", { name: /^Show more recommendations/ })).toBeNull();
   view.rerender(<CandidateBrowser {...props} intent={{ ...props.intent, alternativeCount: 10 }} />);
   expect(ids()).toEqual(players.slice(0, 10).map(player => player.id));
   view.rerender(<CandidateBrowser {...props} />);
   expect(ids()).toEqual(players.slice(0, 5).map(player => player.id));
 
-  fireEvent.click(screen.getByRole("button", { name: "Show more players" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Show more recommendations/ }));
   fireEvent.click(screen.getByText("Find & filter"));
   fireEvent.change(screen.getByRole("combobox", { name: "Team" }), { target: { value: "BOS" } });
   expect(ids()).toEqual(players.slice(count, count + 5).map(player => player.id));
   fireEvent.change(screen.getByRole("combobox", { name: "Team" }), { target: { value: "" } });
   expect(ids()).toEqual(players.slice(0, 5).map(player => player.id));
-  fireEvent.click(screen.getByRole("button", { name: "Show more players" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Show more recommendations/ }));
   fireEvent.change(screen.getByRole("combobox", { name: "Position" }), { target: { value: "RW" } });
   expect(ids()).toEqual(players.slice(count, count + 5).map(player => player.id));
   fireEvent.change(screen.getByRole("combobox", { name: "Position" }), { target: { value: "" } });
   expect(ids()).toEqual(players.slice(0, 5).map(player => player.id));
-  fireEvent.click(screen.getByRole("button", { name: "Show more players" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Show more recommendations/ }));
   fireEvent.change(screen.getByRole("searchbox", { name: "Find candidate" }), { target: { value: "Unavailable 2" } });
   expect(ids()).toEqual([String(count + 2)]);
   fireEvent.change(screen.getByRole("searchbox", { name: "Find candidate" }), { target: { value: "" } });
@@ -125,20 +123,15 @@ it("shows652knownand197unknownof849 and puts known inputs first without hiding u
   const calendar = { complete: true, error: null, teams: [], games: [game(1, "2026-10-14", 1), game(2, "2026-10-15", 1), game(3, "2026-10-16", 2)] } as import("./canonicalSchedule").CanonicalSchedule;
   const before = JSON.stringify({ snapshot: props.snapshot, intent: props.intent });
   render(<CandidateBrowser {...props} calendar={calendar} />);
-  expect(screen.getByLabelText("Candidate input coverage").textContent).toBe("849 matching candidates · 652 with known eligibility and availability · 197 with inputs to verify.");
+  expect(screen.getByText("197 players are missing league positions or availability, so they can't be ranked.")).toBeTruthy();
   expect(screen.getAllByRole("article").map(row => row.getAttribute("data-rso-candidate-id"))).toEqual(known.slice(0, 5).map(row => row.id));
-  expect(screen.getByText("197 matching candidate(s) lack usable verified league eligibility.")).toBeTruthy();
-  expect(screen.getByText("197 matching candidate(s) have unknown league availability.")).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "By Team" }));
   expect(screen.getAllByText(/^(AAA|ZZZ) · \d+ players$/).map(row => row.textContent)).toEqual(["ZZZ · 652 players", "AAA · 197 players"]);
   fireEvent.click(screen.getByRole("button", { name: "All players" }));
   fireEvent.click(screen.getByText("Find & filter"));
-  expect(screen.getByText("652 both known · 0 eligibility only · 0 availability only · 197 neither known.")).toBeTruthy();
   fireEvent.change(screen.getByRole("searchbox", { name: "Find candidate" }), { target: { value: "Alpha Unverified" } });
-  expect(screen.getByLabelText("Candidate input coverage").textContent).toBe("197 matching candidates · 0 with known eligibility and availability · 197 with inputs to verify.");
-  expect(screen.getByText("197 matching candidates from 849 in the discovery pool.")).toBeTruthy();
   expect(screen.getAllByRole("article").map(row => row.getAttribute("data-rso-candidate-id"))).toEqual(unknown.slice(0, 5).map(row => row.id));
-  fireEvent.click(screen.getByRole("button", { name: "Show more players" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Show more recommendations/ }));
   expect(screen.getAllByRole("article")).toHaveLength(10);
   expect(JSON.stringify({ snapshot: props.snapshot, intent: props.intent })).toBe(before);
 });
@@ -155,12 +148,7 @@ it("separates known, partly known and unusable input facts without granting waiv
   props.snapshot.players = props.players;
   const before = JSON.stringify({ snapshot: props.snapshot, intent: props.intent });
   render(<CandidateBrowser {...props} />);
-  expect(screen.getByLabelText("Candidate input coverage").textContent).toBe("6 matching candidates · 3 with known eligibility and availability · 3 with inputs to verify.");
-  fireEvent.click(screen.getByText("Find & filter"));
-  expect(screen.getByText("3 both known · 1 eligibility only · 1 availability only · 1 neither known.")).toBeTruthy();
-  expect(screen.getByText(/Legal plans also require verified schedule, timing, move budget, locks and roster capacity; waivers require clearance/)).toBeTruthy();
-  expect(screen.getByText("2 matching candidate(s) lack usable verified league eligibility.")).toBeTruthy();
-  expect(screen.getByText("2 matching candidate(s) have unknown league availability.")).toBeTruthy();
+  expect(screen.getByText("3 players are missing league positions or availability, so they can't be ranked.")).toBeTruthy();
   expect(screen.queryAllByLabelText(/^Result /)).toHaveLength(0);
   expect(JSON.stringify({ snapshot: props.snapshot, intent: props.intent })).toBe(before);
 });
@@ -172,19 +160,15 @@ it("leaves unavailable comparisons unranked and names alphabetical browsing for 
   const ids = () => screen.getAllByRole("article").map(article => article.getAttribute("data-rso-candidate-id"));
   expect(ids()).toEqual(["alpha", "missing", "zulu"]);
   expect(screen.queryAllByLabelText(/^Result /)).toHaveLength(0);
-  expect(screen.getByRole("heading", { name: "Unranked players" })).toBeTruthy();
-  expect(screen.getByRole("heading", { name: "Player discovery" })).toBeTruthy();
-  expect(screen.getByRole("status").textContent).toContain("its order is not a projection or roster-fit score");
-  const explanation = screen.getByText(/Alphabetical browsing; verified upcoming NHL schedule counts are unavailable/);
-  expect((explanation.closest("details") as HTMLDetailsElement).open).toBe(true);
-  const missing = within(screen.getByRole("list", { name: "Missing comparison inputs" }));
-  expect(missing.getByText(/Planning schedule coverage is incomplete/)).toBeTruthy();
-  expect(missing.getByText(/Retained roster inputs are unverified/)).toBeTruthy();
-  expect(missing.getByText(/Supply valid league scoring weights for net points/)).toBeTruthy();
-  expect(missing.getByText("Acquisition inputs need review: effective timing, cost per add, remaining moves and reset periods.")).toBeTruthy();
-  expect(missing.getByText("3 matching candidate(s) lack usable verified league eligibility.")).toBeTruthy();
-  expect(missing.getByText("3 matching candidate(s) have unknown league availability.")).toBeTruthy();
-  fireEvent.change(screen.getByRole("combobox", { name: "Sort" }), { target: { value: "schedule" } });
+  expect(screen.getByRole("status").textContent).toBe("Rankings appear once projections and schedules load.");
+  const why = screen.getByText("Why some players aren't ranked").closest("details") as HTMLDetailsElement;
+  expect(why.open).toBe(false);
+  const missing = within(screen.getByRole("list", { name: "Why some players aren't ranked" }));
+  expect(missing.getByText("This week's NHL schedule isn't fully loaded yet.")).toBeTruthy();
+  expect(missing.getByText(/League scoring settings are missing/)).toBeTruthy();
+  expect(missing.getByText("Your league's add rules (timing or moves left) aren't set yet.")).toBeTruthy();
+  expect(missing.getByText("3 players are missing league positions or availability, so they can't be ranked.")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "By more starts" }));
   expect(ids()).toEqual(["alpha", "missing", "zulu"]);
   expect(screen.queryAllByLabelText(/^Result /)).toHaveLength(0);
   expect(JSON.stringify({ snapshot: props.snapshot, intent: props.intent })).toBe(before);
@@ -194,8 +178,7 @@ it.each(["points", "schedule"])("labels evaluated fit results and preserves %s o
   fixture.candidates = props.players.slice(0, 2).map((player, index) => ({ playerId: player.id, complete: true,
     plans: [{ objective: "outcome", steps: [], netAGP: index ? 3 : 1, netPoints: mode === "points" ? index ? 8 : 2 : null, dropped: [], displacedPlayerIds: [] }] }));
   render(<CandidateBrowser {...props} />);
-  expect(screen.getByRole("heading", { name: "Evaluated fit results" })).toBeTruthy();
-  expect(screen.queryByText(/No evaluated fit ranking is available/)).toBeNull();
+  expect(screen.queryByText("Rankings appear once projections and schedules load.")).toBeNull();
   expect(screen.getAllByRole("article").map(article => article.getAttribute("data-rso-candidate-id"))).toEqual(["zulu", "alpha", "missing"]);
   expect(screen.queryAllByLabelText(/^Result /)).toHaveLength(2);
 });
@@ -210,9 +193,10 @@ it("connects actual candidate states while distinguishing display-only players f
   const before = JSON.stringify({ snapshot: props.snapshot, intent: props.intent });
   render(<CandidateBrowser {...props} />);
   const cards = new Map(screen.getAllByRole("article").map(article => [article.getAttribute("data-rso-candidate-id"), within(article)]));
-  expect(cards.get("alpha")!.getByText(/does not meet the current acquisition input checks/)).toBeTruthy();
-  expect(cards.get("zulu")!.getByText(/outside the bounded candidate evaluation set/)).toBeTruthy();
-  expect(cards.get("missing")!.getByText("This player is outside the current planning snapshot.")).toBeTruthy();
+  expect(cards.get("alpha")!.queryByRole("button", { name: "Compare this player" })).toBeNull();
+  expect(cards.get("zulu")!.getByRole("button", { name: "Compare this player" })).toBeTruthy();
+  expect(cards.get("missing")!.queryByRole("button", { name: "Compare this player" })).toBeNull();
+  expect(screen.getByText(/1 player wasn't compared automatically/)).toBeTruthy();
   expect(screen.queryAllByLabelText(/^Result /)).toHaveLength(0);
   expect(JSON.stringify({ snapshot: props.snapshot, intent: props.intent })).toBe(before);
 });
@@ -223,7 +207,7 @@ it("shares command-bar search with candidate filtering and resets the display bu
   const originalIntent = JSON.stringify(props.intent);
   const changeSearch = vi.fn();
   const view = render(<CandidateBrowser {...props} searchQuery="" changeSearch={changeSearch} />);
-  fireEvent.click(screen.getByRole("button", { name: "Show more players" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Show more recommendations/ }));
   expect(screen.getAllByRole("article")).toHaveLength(10);
   view.rerender(<CandidateBrowser {...props} searchQuery="Candidate 11" changeSearch={changeSearch} />);
   expect(screen.getAllByRole("article")).toHaveLength(1);
@@ -241,28 +225,26 @@ it("orders unranked discovery by verified upcoming team games without inventing 
   const calendar = { complete: true, error: null, teams: [], games: [game(1, "2026-10-12", 1), game(2, "2026-10-14", 2), game(3, "2026-10-16", 2)] } as import("./canonicalSchedule").CanonicalSchedule;
   const view = render(<CandidateBrowser {...props} calendar={calendar} />);
   expect(screen.getAllByRole("article").map(article => article.getAttribute("data-rso-candidate-id"))).toEqual(["zulu", "alpha", "missing"]);
-  expect(screen.getByText(/Upcoming NHL games first; this is team schedule context/)).toBeTruthy();
-  expect(screen.getByText("Upcoming NHL games: 2")).toBeTruthy();
-  expect(screen.getByText("Upcoming NHL games: 0")).toBeTruthy();
+  expect(screen.getByText("2 upcoming games")).toBeTruthy();
+  expect(screen.getByText("0 upcoming games")).toBeTruthy();
   expect(screen.queryAllByLabelText(/^Result /)).toHaveLength(0);
   for (const article of screen.getAllByRole("article")) {
-    expect(within(article).getAllByText("unavailable")).toHaveLength(2);
-    expect(within(article).getByText("unknown")).toBeTruthy();
-    expect(within(article).queryByRole("button", { name: "Select compared plan" })).toBeNull();
+    expect(within(article).queryByLabelText("Net plan comparison")).toBeNull();
+    expect(within(article).queryByRole("button", { name: /^Preview swap/ })).toBeNull();
   }
   fixture.candidates = [{ playerId: "alpha", complete: true, plans: [{ objective: "outcome", steps: [], netAGP: 1, netPoints: -3, dropped: [], displacedPlayerIds: [] }] }];
   view.rerender(<CandidateBrowser {...props} calendar={calendar} />);
   expect(screen.getAllByRole("article").map(article => article.getAttribute("data-rso-candidate-id"))).toEqual(["alpha", "zulu", "missing"]);
   expect(screen.getAllByLabelText(/^Result /)).toHaveLength(1);
   expect(screen.getByText("-3")).toBeTruthy();
-  fireEvent.change(screen.getByRole("combobox", { name: "Sort" }), { target: { value: "schedule" } });
+  fireEvent.click(screen.getByRole("button", { name: "By more starts" }));
   expect(screen.getAllByRole("article").map(article => article.getAttribute("data-rso-candidate-id"))).toEqual(["alpha", "zulu", "missing"]);
   fixture.candidates = undefined;
   view.rerender(<CandidateBrowser {...props} calendar={{ ...calendar, complete: false }} />);
   expect(screen.getAllByRole("article").map(article => article.getAttribute("data-rso-candidate-id"))).toEqual(["alpha", "missing", "zulu"]);
-  expect(screen.queryByText("Upcoming NHL games: 2")).toBeNull();
+  expect(screen.queryByText("2 upcoming games")).toBeNull();
   view.rerender(<CandidateBrowser {...props} calendar={{ ...calendar, games: calendar.games.map(game => ({ ...game, startTimeUTC: undefined })) }} />);
-  expect(screen.queryByText("Upcoming NHL games: 2")).toBeNull();
+  expect(screen.queryByText("2 upcoming games")).toBeNull();
   expect(screen.getAllByRole("article").map(article => article.getAttribute("data-rso-candidate-id"))).toEqual(["alpha", "missing", "zulu"]);
 });
 
@@ -283,7 +265,7 @@ it.each([
   const calendar = { complete: true, error: null, teams: [], games: [{ id: 1, gameDate: "2026-10-13", startTimeUTC,
     homeTeam: { id: 2 }, awayTeam: { id: 9 }, gameState, season: props.snapshot.context.seasonId, gameType: 2 }] } as import("./canonicalSchedule").CanonicalSchedule;
   render(<CandidateBrowser {...props} calendar={calendar} />);
-  expect(screen.getByText(`Upcoming NHL games: ${expected}`)).toBeTruthy();
+  expect(screen.getByText(`${expected} upcoming game${expected === 1 ? "" : "s"}`)).toBeTruthy();
   expect(screen.queryAllByLabelText(/^Result /)).toHaveLength(0);
   expect(JSON.stringify({ snapshot: props.snapshot, intent: props.intent })).toBe(before);
 });
@@ -296,10 +278,10 @@ it("reclassifies elapsed starts on a later render without replacing saved planni
   const calendar = { complete: true, error: null, teams: [], games: [{ id: 1, gameDate: "2026-10-13", startTimeUTC: "2026-10-13T22:30:00Z",
     homeTeam: { id: 2 }, awayTeam: { id: 9 }, gameState: "FUT", season: props.snapshot.context.seasonId, gameType: 2 }] } as import("./canonicalSchedule").CanonicalSchedule;
   const view = render(<CandidateBrowser {...props} calendar={calendar} />);
-  expect(screen.getByText("Upcoming NHL games: 1")).toBeTruthy();
+  expect(screen.getByText("1 upcoming game")).toBeTruthy();
   vi.setSystemTime(new Date("2026-10-13T22:30:00Z"));
   view.rerender(<CandidateBrowser {...props} calendar={calendar} />);
-  expect(screen.getByText("Upcoming NHL games: 0")).toBeTruthy();
+  expect(screen.getByText("0 upcoming games")).toBeTruthy();
   expect(JSON.stringify({ snapshot: props.snapshot, intent: props.intent })).toBe(before);
 });
 
@@ -309,7 +291,6 @@ it("withholds upcoming totals when canonical game state is missing rather than i
   const calendar = { complete: true, error: null, teams: [], games: [{ id: 1, gameDate: "2026-10-14", startTimeUTC: "2026-10-14T23:00:00Z",
     homeTeam: { id: 2 }, awayTeam: { id: 9 }, season: props.snapshot.context.seasonId, gameType: 2 }] } as import("./canonicalSchedule").CanonicalSchedule;
   render(<CandidateBrowser {...props} calendar={calendar} />);
-  expect(screen.queryByText(/Upcoming NHL games:/)).toBeNull();
-  expect(screen.getByText(/Alphabetical browsing; verified upcoming NHL schedule counts are unavailable/)).toBeTruthy();
+  expect(screen.queryByText(/upcoming game/)).toBeNull();
   expect(screen.queryAllByLabelText(/^Result /)).toHaveLength(0);
 });

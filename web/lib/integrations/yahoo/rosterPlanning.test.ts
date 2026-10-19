@@ -23,7 +23,7 @@ vi.mock("lib/integrations/yahoo/rosterPlanning", async (original) => ({
   loadYahooPlanningSnapshot: mocks.snapshot,
 }));
 
-import { yahooPlanningAcquisitions, yahooPlanningCategories, yahooPlanningEditable, yahooPlanningPlayers, yahooPlanningStats, yahooPlanningTeams } from "./rosterPlanning";
+import { yahooInjury, yahooPlanningAcquisitions, yahooPlanningCategories, yahooPlanningEditable, yahooPlanningPlayers, yahooPlanningStats, yahooPlanningTeams } from "./rosterPlanning";
 import type { YahooProviderJsonResult } from "./providerClient";
 import { YahooLiveDraftError } from "./liveDraft";
 import providerHandler from "../../../pages/api/v1/roster-schedule-optimizer/provider";
@@ -236,10 +236,11 @@ describe("Yahoo snapshot evidence", () => {
       const availabilityOnly = ["availability-only", "class-mismatch"].includes(mode) ? 1 : 0;
       const stop = stopsAfterFirstPage ? "time budget" : repeated ? "end of list with repeated identities"
         : mode === "failed-next-page" ? "request failure" : mode === "stale-next-page" ? "unverified freshness" : "league scope mismatch";
-      expect(result.capabilities.limitations).toContain(`Yahoo availability read: ${starts.length} pages attempted, ${mode === "failed-next-page" ? 1 : starts.length} returned, ${repeated ? 2 : 1} accepted; ${repeated ? 26 : 25} accepted rows, 25 unique, ${repeated ? 1 : 0} repeats. ${elapsed} ms elapsed; 8000 ms budget checked between page batches. Stopped: ${stop}.`);
-      expect(result.capabilities.limitations).toContain(`Yahoo availability matches: ${matches} unique catalog matches, ${25 - matches} unmatched; 0 rostered/excluded, ${matches} candidate matches.`);
-      expect(result.capabilities.limitations).toContain(`Yahoo provider catalog before search: 3 candidates; ${both} both known, ${eligibilityOnly} eligibility only, ${availabilityOnly} availability only, ${3 - both - eligibilityOnly - availabilityOnly} neither known. Eligibility means usable verified positions; availability means free agent or waivers. Discovery partial; unseen players remain unknown.`);
+      expect(result.capabilities.diagnostics).toContain(`Yahoo availability read: ${starts.length} pages attempted, ${mode === "failed-next-page" ? 1 : starts.length} returned, ${repeated ? 2 : 1} accepted; ${repeated ? 26 : 25} accepted rows, 25 unique, ${repeated ? 1 : 0} repeats. ${elapsed} ms elapsed; 8000 ms budget checked between page batches. Stopped: ${stop}.`);
+      expect(result.capabilities.diagnostics).toContain(`Yahoo availability matches: ${matches} unique catalog matches, ${25 - matches} unmatched; 0 rostered/excluded, ${matches} candidate matches.`);
+      expect(result.capabilities.diagnostics).toContain(`Yahoo provider catalog before search: 3 candidates; ${both} both known, ${eligibilityOnly} eligibility only, ${availabilityOnly} availability only, ${3 - both - eligibilityOnly - availabilityOnly} neither known. Eligibility means usable verified positions; availability means free agent or waivers. Discovery partial; unseen players remain unknown.`);
       expect(JSON.stringify(result.snapshot)).not.toContain("Yahoo availability read:");
+      expect(result.capabilities.limitations.some(item => /^Yahoo (availability read|availability matches|provider catalog)/.test(item))).toBe(false);
       expect(mocks.planningResource).toHaveBeenCalledTimes(3 + starts.length);
       expect(mocks.boardResource).toHaveBeenCalledTimes(2);
       expect(mocks.draftResource).toHaveBeenCalledTimes(1);
@@ -397,7 +398,7 @@ describe("Yahoo snapshot evidence", () => {
     const normalized = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a",
       startDate: "2026-10-01", endDate: "2026-10-03", timeZone: "UTC", now });
     expect(normalized.snapshot.context.timeZone).toBe("America/New_York");
-    expect(mocks.planningData).toHaveBeenLastCalledWith(db, expect.objectContaining({ timeZone: "America/New_York" }), { now });
+    expect(mocks.planningData).toHaveBeenLastCalledWith(db, expect.objectContaining({ timeZone: "America/New_York" }), { now, forgeDailyBridge: true });
     mocks.draftResource.mockResolvedValue({ payload: { league_key: "453.l.1", time_zone: "UTC", draft_status: "postdraft" }, transport });
 
     for (const mode of ["repeated", "oversized", "stale", "wrong-scope", "failed", "rate-limited", "optional-limited", "deadline", "bounded", "ownership-only"]) {
@@ -542,4 +543,13 @@ it("retries one timeout for required planning reads but never retries rate limit
   const limited = vi.fn().mockRejectedValue(new YahooLiveDraftError("limited", 429, "yahoo_rate_limited"));
   await expect(readRequiredPlanningResource(limited)).rejects.toThrow("limited");
   expect(limited).toHaveBeenCalledTimes(1);
+});
+
+describe("Yahoo injury status", () => {
+  it("keeps Yahoo's injury designations and ignores other statuses", () => {
+    expect(yahooInjury({ status: "DTD", status_full: "Day-to-Day", injury_note: "Lower Body" })).toEqual({ status: "DTD", label: "Day-to-Day", note: "Lower Body" });
+    expect(yahooInjury({ status: "ir-lt" })).toEqual({ status: "IR-LT", label: "IR-LT", note: null });
+    expect(yahooInjury({ status: "NA", status_full: "Not Active" })).toBeNull();
+    expect(yahooInjury({})).toBeNull();
+  });
 });

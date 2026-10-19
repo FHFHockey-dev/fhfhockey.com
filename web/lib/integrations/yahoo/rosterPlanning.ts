@@ -3,7 +3,7 @@ import { loadPlanningData, parsePlanningDataQuery } from "lib/rosterScheduleData
 import { expandActiveSlots } from "lib/rosterScheduleOptimizer/slots";
 import { normalizeEligibility } from "lib/rosterScheduleOptimizer/eligibility";
 import { nextLocalMidnight, zonedMidnight } from "lib/rosterScheduleOptimizer/planningDates";
-import type { AcquisitionEvidence, LeagueRules, PlanningData, PlanningSnapshot, ProviderCapabilities, RosterEntry, ScoringCategory, StatLine } from "lib/rosterScheduleOptimizer/planningTypes";
+import type { AcquisitionEvidence, LeagueRules, PlanningData, PlanningPlayer, PlanningSnapshot, ProviderCapabilities, RosterEntry, ScoringCategory, StatLine } from "lib/rosterScheduleOptimizer/planningTypes";
 import { assertYahooLeagueGameContext, resolveYahooGameContext } from "./gameContext";
 import { parseYahooBoardSettings, YAHOO_STAT_KEY_BY_ID, YahooLiveDraftError } from "./liveDraft";
 import { fetchYahooBoardResource, fetchYahooDraftResource, fetchYahooPlanningResource, type YahooProviderJsonResult } from "./providerClient";
@@ -35,6 +35,15 @@ function eligibility(node: unknown): string[] {
   return Object.values(node).flatMap(eligibility);
 }
 
+/** Yahoo's own injury designation for a player row; other statuses (e.g. NA, SUSP) are not injuries. */
+const YAHOO_INJURY_STATUSES = new Set(["IR", "IR-LT", "IR-NR", "O", "DTD", "INJ"]);
+export function yahooInjury(row: Record<string, unknown>): PlanningPlayer["injury"] {
+  const status = typeof row.status === "string" ? row.status.trim().toUpperCase() : "";
+  if (!YAHOO_INJURY_STATUSES.has(status)) return null;
+  const label = typeof row.status_full === "string" && row.status_full.trim() ? row.status_full.trim() : status;
+  const note = typeof row.injury_note === "string" && row.injury_note.trim() ? row.injury_note.trim() : null;
+  return { status, label, note };
+}
 export function yahooPlanningCategories(keys: string[]): ScoringCategory[] {
   return keys.map((key) => key === "SAVE_PERCENTAGE"
     ? { key, direction: "higher", numerator: "SAVES_GOALIE", denominator: "SHOTS_AGAINST_GOALIE" }
@@ -171,7 +180,7 @@ export async function loadYahooPlanningSnapshot(args: {
   try { new Intl.DateTimeFormat("en", { timeZone }).format(now); } catch { throw new YahooLiveDraftError("Choose a valid league time zone.", 400, "invalid_time_zone"); }
   const today = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
   const [data, rosterResponse, scoreboardResult, leagueRosterResult, leagueResult, teamResult] = await Promise.all([
-    loadPlanningData(db, { ...query, timeZone }, { now }),
+    loadPlanningData(db, { ...query, timeZone }, { now, forgeDailyBridge: true }),
     readRequiredPlanningResource(() => fetchYahooBoardResource({ ...provider, resource: { type: "roster", teamKey: team.external_team_key, date: today } })),
     fetchYahooPlanningResource({ ...provider, resource: { type: "scoreboard" } }).then(value => value, optionalFailure),
     fetchYahooBoardResource({ ...provider, resource: { type: "league_rosters" } }).then(value => value, optionalFailure),
@@ -243,6 +252,7 @@ export async function loadYahooPlanningSnapshot(args: {
     player.eligibilityVerified = fresh && explicitPositions.length > 0;
     player.providerId = String(row.player_key);
     player.canDrop = fresh && no(row.is_undroppable) ? true : yes(row.is_undroppable) ? false : null;
+    player.injury = yahooInjury(row);
     // Use explicit league eligibility, never infer it from injury status text.
     player.reserveEligibility = fresh ? reportedEligibility.filter((value): value is "IR" | "IR+" | "NA" => ["IR", "IR+", "NA"].includes(value)) : [];
     roster.push({ playerId: player.id, position: ["IR", "IR+", "NA"].includes(selected) ? selected as RosterEntry["position"] : selected === "BN" ? "bench" : "active" });
@@ -341,6 +351,7 @@ export async function loadYahooPlanningSnapshot(args: {
     if (unavailableIds.has(player.id)) { rosteredMatches++; continue; }
     const ownership = yahooFields(row.ownership);
     player.availability = ownership.ownership_type === "freeagents" ? "free_agent" : ownership.ownership_type === "waivers" ? "waivers" : "unknown";
+    player.injury = yahooInjury(row);
     const waiver = numeric(ownership.waiver_date);
     // Unrepresentable timestamps stay unknown instead of aborting the roster read.
     player.waiverClearsAt = waiver === null ? null : new Date(waiver * 1000).toJSON();
@@ -397,6 +408,6 @@ export async function loadYahooPlanningSnapshot(args: {
       availability: { source: `Yahoo league ownership (${pagesChecked} pages)`, asOf: now.toISOString(), seasonId: query.seasonId, completeness: availabilityComplete ? "complete" : "partial", limitations: availabilityComplete ? [] : ["Only individually verified availability may be actionable."] },
     },
   };
-  return { snapshot, capabilities: { roster: fresh && ownRows.length === roster.length && roster.length > 0, availability: availabilityComplete, rules: false, matchup: opponent !== null, acquisitions: periods.length > 0, limitations: [...limitations, ...discoverySummary] },
+  return { snapshot, capabilities: { roster: fresh && ownRows.length === roster.length && roster.length > 0, availability: availabilityComplete, rules: false, matchup: opponent !== null, acquisitions: periods.length > 0, limitations, diagnostics: discoverySummary },
     ...(refreshError ? { code: refreshError.code, retryAfterSeconds } : {}) };
 }

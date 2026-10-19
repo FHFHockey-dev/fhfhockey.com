@@ -453,3 +453,94 @@ details.alternative .candidateRow button { width: auto; }
 
 // At the shared header's desktop boundary, keep workspace tabs below its68px frame.
 @media (min-width: 1100px) and (max-width: 1100px) { .mobileTabs { top: 68px; } }
+
+// Visual pass (2026-10-19): one plain status line per real issue, three summary cards, no inline evidence prose.
+.topbar .subtitle { margin: 2px 0 0; color: v.$text-secondary; font-size: v.$font-size-sm; }
+.updatedAt { color: v.$text-secondary; font-size: v.$font-size-xs; white-space: nowrap; }
+.panelHead .panelSub { flex: 1; min-width: 0; color: v.$text-secondary; font-size: v.$font-size-xs; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.panelHead .viewSwitch { padding: 0; border-bottom: 0; }
+.optimizeButton { background: linear-gradient(to right, v.$primary-color, v.$secondary-color); border-color: v.$primary-color; color: v.$color-neutral-950; font-weight: 700; white-space: nowrap; }
+.goalieChip { padding: 2px 8px; border: 1px solid v.$success-color; border-radius: 999px; background: transparent; color: v.$success-color; font: 600 v.$font-size-xs v.$font-family-numbers; white-space: nowrap; }
+.timingPrompt { display: flex; flex-wrap: wrap; align-items: center; gap: v.$space-xs; margin: 0; padding: v.$space-xs v.$space-sm; border-bottom: 1px solid v.$draft-border; color: v.$text-primary; font-size: v.$font-size-xs; }
+.weekSummary .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.25fr); gap: v.$space-xs; }
+.weekSummary .metrics article, .weekSummary .metrics article:nth-child(n + 4) { grid-column: auto; padding: v.$space-xs v.$space-sm; }
+.weekSummary .metrics article strong { font-size: v.$font-size-xl; }
+.weekSummary .metrics article:nth-child(1) { --position-color: #{v.$warning-color}; }
+.weekSummary .metrics article:nth-child(2) { --position-color: #{v.$color-coral-500}; }
+.weekSummary .metrics article:nth-child(3) { --position-color: #{v.$success-color}; }
+.comparison { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; padding: v.$space-xs v.$space-sm; border: 1px solid v.$draft-border; border-radius: v.$radius-card; background: v.$draft-surface; font-size: v.$font-size-xs; }
+.comparison > span { color: v.$text-secondary; text-transform: uppercase; letter-spacing: .04em; }
+.comparison p { display: flex; justify-content: space-between; gap: v.$space-sm; margin: 0; padding: 2px 6px; border: 1px solid transparent; border-radius: v.$radius-control; color: v.$text-secondary; }
+.comparison p[data-selected="true"] { border-color: v.$primary-color; color: v.$text-primary; }
+.comparison b { color: v.$color-white; font-family: v.$font-family-numbers; font-weight: 600; white-space: nowrap; }
+.dropChip, .reserveChip { margin-left: 6px; padding: 0 5px; border-radius: v.$radius-control; font: normal 700 10px v.$font-family-primary; letter-spacing: .04em; vertical-align: middle; }
+.dropChip { background: v.$color-coral-500; color: v.$color-white; }
+.reserveChip { border: 1px solid v.$text-secondary; color: v.$text-secondary; }
+.moreTools { flex: 1; min-width: 0; }
+.moreTools > summary { cursor: pointer; color: v.$text-secondary; font-size: v.$font-size-xs; }
+.moreTools[open] { display: flex; flex-direction: column; gap: v.$space-xs; }
+@media (max-width: 900px) { .weekSummary .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+// Give the week grid room for seven days: a narrower roster column, the grid in the middle.
+@media (min-width: 1101px) { .panels { grid-template-columns: minmax(250px, 21%) minmax(0, 1fr) minmax(300px, 25%); } }
+
+// One command bar (2026-10-19): title, provider, week, search, status, actions and a settings menu in a single row,
+// so the panels below get the height. Notices sit on one line and open as an overlay on hover or keyboard focus.
+.navBar { position: relative; z-index: 20; flex-shrink: 0; display: flex; align-items: center; gap: v.$space-sm; min-height: 44px; padding: 4px v.$space-sm 4px 14px; border: 1px solid v.$draft-border; border-radius: v.$radius-card; background: v.$draft-surface; }
+.navBar::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; border-radius: v.$radius-card 0 0 v.$radius-card; background: v.$primary-color; pointer-events: none; }
+.navTitle { margin: 0; flex-shrink: 0; color: v.$color-white; font: 900 15px/1 v.$font-family-accent; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+.navBar .providerControl { flex-shrink: 0; gap: 6px; min-height: 32px; padding: 2px 8px 2px 3px; border: 1px solid v.$draft-border; border-radius: v.$radius-control; background: v.$draft-input; text-align: left; }
+.navBar .providerMark { width: 26px; height: 26px; font-size: 12px; }
+.navBar .providerControl strong { font-size: 12px; line-height: 1.15; }
+.navBar .providerControl small { margin-top: 0; font-size: 10px; line-height: 1.15; white-space: nowrap; }
+.navWeek { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.navWeek button { min-height: 30px; padding: 2px 8px; white-space: nowrap; font-size: 12px; }
+.navBar .commandSearch { flex: 0 1 210px; min-width: 120px; padding: 0; border: 0; background: none; }
+.navBar .commandSearch input { height: 30px; font-size: 12px; }
+.navStatus { position: relative; flex: 1 1 auto; min-width: 90px; height: 30px; }
+.navStatus > .statusRail { position: absolute; inset: 0 0 auto 0; z-index: 25; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; max-height: 30px; overflow: hidden; padding: 2px; border: 1px solid transparent; border-radius: v.$radius-control; }
+.navStatus:hover > .statusRail, .navStatus:focus-within > .statusRail { max-height: 60vh; overflow: auto; padding: v.$space-xs; border-color: v.$draft-border; background: v.$draft-surface-raised; box-shadow: v.$shadow-panel; }
+.navStatus .notice, .navStatus .dataHealth { max-width: 100%; }
+.navStatus .notice { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-height: none; }
+.navStatus:hover .notice, .navStatus:focus-within .notice { white-space: normal; }
+.navBar .commandActions { flex-shrink: 0; flex-wrap: nowrap; max-width: none; padding: 0; border: 0; background: none; }
+.navBar .commandActions button, .navBar > button { min-height: 30px; padding: 2px 9px; font-size: 12px; white-space: nowrap; }
+.navMenu { position: relative; flex-shrink: 0; }
+.navMenu > summary { display: grid; place-items: center; width: 32px; height: 32px; list-style: none; cursor: pointer; border: 1px solid v.$draft-border; border-radius: v.$radius-control; color: v.$text-primary; font-size: 16px; }
+.navMenu > summary::-webkit-details-marker { display: none; }
+.navMenu[open] > summary, .navMenu > summary:focus-visible { border-color: v.$primary-color; color: v.$primary-color; }
+.navMenuPanel { position: absolute; top: calc(100% + 6px); right: 0; z-index: 30; display: flex; flex-direction: column; gap: 4px; min-width: 250px; padding: v.$space-sm; border: 1px solid v.$draft-border; border-radius: v.$radius-card; background: v.$draft-surface-raised; box-shadow: v.$shadow-panel; }
+.navMenuPanel .commandControl { width: 100%; padding: 6px 8px; border: 1px solid v.$draft-border; border-radius: v.$radius-control; background: v.$draft-input; text-align: left; }
+.navMenuPanel .commandControl small { margin-top: 2px; }
+.navMenuPanel .updatedAt { padding: 0 2px 2px; }
+@media (max-width: 1100px) {
+  .navBar { flex-wrap: wrap; }
+  .navTitle { flex-basis: 100%; }
+  .navStatus { flex-basis: 100%; order: 10; }
+}
+// Compact plan summary: each card is one ~32px line (label, value, detail) so the week grid keeps the height.
+@media (min-width: 1101px) {
+  .weekSummary { padding: 4px; }
+  .weekSummary .metrics article, .weekSummary .metrics article:nth-child(n + 4) { display: flex; align-items: baseline; gap: 6px; min-width: 0; padding: 4px 8px 4px 12px; }
+  .weekSummary .metrics article .metricLabel { flex-shrink: 0; }
+  .weekSummary .metrics article strong { font-size: 16px; line-height: 1.2; }
+  .weekSummary .metrics article small { grid-column: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .comparison { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 2px 8px; padding: 3px 8px; }
+}
+// Week summary pinned at the foot of Current Roster, moved out of Optimized Week so the grid gets the height.
+.rosterSummary { flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; padding: 6px; border-top: 1px solid v.$draft-border; background: v.$draft-surface-raised; }
+.rosterSummary .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.rosterSummary .metrics article { display: flex; flex-direction: column; gap: 0; min-width: 0; padding: 4px 6px 4px 10px; }
+.rosterSummary .metrics article strong { font-size: 16px; line-height: 1.2; }
+.rosterSummary .metrics article small { font-size: 10px; line-height: 1.25; white-space: normal; }
+.rosterSummary .metricLabel span { font-size: 10px; }
+.rosterSummary .metrics article:nth-child(1) { --position-color: #{v.$warning-color}; }
+.rosterSummary .metrics article:nth-child(2) { --position-color: #{v.$color-coral-500}; }
+.rosterSummary .metrics article:nth-child(3) { --position-color: #{v.$success-color}; }
+.rosterSummary .comparison { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 2px 8px; padding: 3px 6px; }
+.rosterSummary .goalieChip { align-self: flex-start; }
+// Injured roster players (provider IR/O/DTD): red border, red tint and the injured icon.
+.rosterRow[data-injured] { border: 1px solid v.$color-coral-500; border-radius: v.$radius-control; background: color-mix(in srgb, #{v.$color-coral-500} 12%, transparent); }
+.injuryIcon { margin-left: 5px; vertical-align: -1px; }
+// Plan details as its own view.
+.planView { display: flex; flex-direction: column; gap: v.$space-sm; padding: 2px; font-size: 12px; }
+.planView[hidden] { display: none; }

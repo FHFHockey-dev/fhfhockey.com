@@ -1,0 +1,20 @@
+@use "styles/vars" as v;
+
+// Bench days: one compact row per lineup player, most non-counting days first.
+.benchDays { display: flex; flex-direction: column; gap: 2px; padding: 4px 6px; border: 1px solid v.$draft-border; border-radius: v.$radius-card; background: v.$draft-surface; font-size: 11px; }
+.benchDays > header { display: flex; align-items: center; justify-content: space-between; color: v.$text-secondary; text-transform: uppercase; letter-spacing: .04em; font-size: 10px; }
+.benchDays ol { display: flex; flex-direction: column; gap: 1px; margin: 0; padding: 0; list-style: none; }
+.benchDays li { display: grid; grid-template-columns: minmax(0, 1fr) auto 34px auto; align-items: center; gap: 6px; min-height: 20px; }
+.benchDays details > summary { cursor: pointer; color: v.$text-secondary; font-size: 10px; }
+.name { overflow: hidden; padding: 0; border: 0; background: none; color: v.$text-primary; font: inherit; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+button.name { cursor: pointer; }
+button.name:hover, button.name:focus-visible { color: v.$primary-color; }
+.strip { display: flex; gap: 2px; }
+.strip i { display: block; width: 9px; height: 9px; border-radius: 2px; background: rgba(v.$color-neutral-400, .35); }
+.strip i[data-kind="active"] { background: v.$success-color; }
+.strip i[data-kind="sat"] { background: v.$warning-color; }
+.strip i[data-kind="off"] { background: rgba(v.$color-neutral-400, .35); }
+.strip i[data-kind="unknown"] { background: transparent; outline: 1px dashed v.$text-secondary; outline-offset: -1px; }
+.count { color: v.$color-white; font: 700 13px v.$font-family-numbers; text-align: right; }
+.count small { color: v.$text-secondary; font-size: 10px; font-weight: 400; }
+.split { color: v.$text-secondary; font-size: 10px; white-space: nowrap; }

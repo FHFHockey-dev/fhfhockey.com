@@ -27,16 +27,26 @@ import CategoryGains from "components/RosterScheduleOptimizer/CategoryGains";
 const player = { id: "fhfh:1", nhlId: 1, name: "Alpha Center", teamAbbreviation: "CAR", eligiblePositions: ["C"], playerClass: "skater" as const, availability: "unknown" as const, ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] };
 const data: PlanningData = { players: [player], games: [], forecasts: [], evidence: {} };
 const fetchMock = vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"), json: async () => ({ success: true, data }) }));
-function planningTimeText(pattern = /Reader checked/) {
-  fireEvent.focus(screen.getByRole("button", { name: "About planning data time" }));
-  return screen.getByText(pattern);
+function planningTimeText(pattern: RegExp = /^(Updated|Saved) /) {
+  const node = document.getElementById("rso-updated-at")!;
+  expect(node.textContent).toMatch(pattern);
+  return node;
+}
+function netPlan() {
+  return Array.from(screen.getByLabelText("Net plan comparison").children)
+    .map(cell => `${cell.querySelector("small")!.textContent} ${cell.querySelector("strong")!.textContent}`).join(" ");
+}
+function showByPlayer() {
+  if (!screen.queryByText("Date controls")) fireEvent.click(screen.getByRole("button", { name: /Show (lineup by player|category lineup comparison)/ }));
 }
 function visibleScheduleSlider() {
+  showByPlayer();
   const summary = screen.getByText("Date controls");
   if (!summary.closest("details")!.open) fireEvent.click(summary);
   return screen.getByRole("slider", { name: "Selected planning day" });
 }
 function visibleDaySummary() {
+  showByPlayer();
   const summary = screen.getByText(/^Day capacity ·/);
   if (!summary.closest("details")!.open) fireEvent.click(summary);
   return screen.getByRole("region", { name: "Selected-day lineup summary" });
@@ -324,8 +334,7 @@ describe("active provider refresh scheduling", () => {
     expect(state.saved().rules).toEqual(original.rules);
     expect(state.saved().lockedAssignments).toEqual(original.lockedAssignments);
     expect(screen.queryByRole("button", { name: "Reload schedule data" })).toBeNull();
-    fireEvent.focus(screen.getByRole("button", { name: "About reloading shared forecasts" }));
-    expect(screen.getByText(/Provider roster, schedule, rules, locks and availability retain their existing evidence/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "About reloading shared forecasts" })).toBeNull();
     const currentManifest = evaluated.at(-1)?.forecastManifest;
     fireEvent.click(screen.getByRole("button", { name: "Reload shared forecasts" }));
     await advance();
@@ -698,17 +707,17 @@ describe("RosterScheduleOptimizer workspace", () => {
     vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"), json: async () => ({ success: true, data: schedule }) })));
     render(<RosterScheduleOptimizer />);
     const summary = screen.getByLabelText("Plan summary");
-    await waitFor(() => expect(within(summary).getByText(completeness === "partial" ? "42+ known" : "42")).toBeTruthy());
-    expect(within(summary).getByText(completeness === "partial" ? "6+ known" : "6")).toBeTruthy();
     const metric = (label: string) => within(summary).getByText(label).closest("article")!;
-    if (completeness === "partial") {
-      expect(metric("Team DUST").querySelector("strong")!.textContent).toBe("—");
-      expect(metric("Utilization").querySelector("strong")!.textContent).toBe("—");
-      const qualifier = screen.getByText("Partial schedule · known subtotals; full-range totals and percentages unavailable.");
-      expect(summary.contains(qualifier)).toBe(false);
-      expect(summary.nextElementSibling).toBe(qualifier);
-      expect(qualifier.style.margin).toBe("0px");
-    } else expect(metric("Team DUST").querySelector("strong")!.textContent).toBe("12.5%");
+    await waitFor(() => expect(metric("Active games").querySelector("strong")!.textContent).toMatch(/^42( \/ \d+)?$/));
+    expect(metric("Bench games").querySelector("strong")!.textContent).toBe("6");
+    expect(metric("Bench games").querySelector("small")!.textContent).toBe("13% of scheduled games sit (DUST)");
+    expect(summary.textContent).not.toContain("+ known");
+    for (const removed of ["Planned adds", "Goalie minimum", "Team DUST", "Utilization", "Projected outcome"]) expect(within(summary).queryByText(removed)).toBeNull();
+    expect(summary.querySelector("button")).toBeNull();
+    expect(screen.queryByText(/Partial schedule · known subtotals/)).toBeNull();
+    const estimate = screen.queryByText("Some team schedules for these dates aren't confirmed yet, so a few game counts are estimates.");
+    if (completeness === "partial") expect(estimate).toBeTruthy();
+    else expect(estimate).toBeNull();
   });
   it("shows upstream stale and disabled evidence in manual readiness independently of reader time", async () => {
     vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"),
@@ -811,9 +820,9 @@ describe("RosterScheduleOptimizer workspace", () => {
     window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
     vi.stubGlobal("fetch", fetchMock);
     render(<RosterScheduleOptimizer />);
-    const metric = screen.getByText("Planned adds").closest("article")!;
-    await waitFor(() => expect(within(metric).getByText("1")).toBeTruthy());
-    expect(within(metric).getByText(detail)).toBeTruthy();
+    const metric = await screen.findByLabelText("Planned adds");
+    expect(metric.textContent).toBe(`Planned adds: 1 · ${detail}`);
+    expect(metric.closest("#rso-plan-details")).toBeTruthy();
     expect(metric.textContent).not.toContain("Unlimited");
     expect(screen.queryByText("Selected moves are a plan. Confirm roster changes with your provider.")).toBeNull();
   });
@@ -827,13 +836,13 @@ describe("RosterScheduleOptimizer workspace", () => {
     });
     render(<CandidateBrowser players={[player]} rosterIds={new Set()} snapshot={{ id: "zero", evidence: {}, rules: defaultWorkspace().rules, games: [], players: [] } as unknown as PlanningSnapshot}
       intent={defaultWorkspace().intent} fits={[]} manual select={vi.fn()} add={vi.fn()} markAvailable={vi.fn()} />);
-    expect(screen.getByText(/Calculating candidate metrics/)).toBeTruthy();
+    expect(screen.getByText("Comparing free agents…")).toBeTruthy();
     act(() => worker.onmessage?.({ data: { metrics: { candidates: [{ playerId: player.id, complete: false,
       plans: [{ objective: "outcome", steps: [], netAGP: 0, netPoints: 16, dropped: [], displacedPlayerIds: [] }] }] } } }));
     fireEvent.click(screen.getByRole("button", { name: "All players" }));
-    expect(screen.getByLabelText("Net plan comparison").textContent).toBe("Net points +16 Net AGP 0");
+    expect(netPlan()).toBe("Net Pts +16 Net AGP 0");
     expect(screen.queryByText(/Horizon points|Potential active points gain/)).toBeNull();
-    expect(screen.queryByText(/Calculating candidate metrics/)).toBeNull();
+    expect(screen.queryByText("Comparing free agents…")).toBeNull();
   });
 
   it("reads and selects the exact compared timed swap, keeping AGP/points tradeoffs paired", () => {
@@ -856,14 +865,14 @@ describe("RosterScheduleOptimizer workspace", () => {
       intent={defaultWorkspace().intent} fits={[]} manual select={vi.fn()} add={vi.fn()} markAvailable={vi.fn()} selectPlan={selectPlan} canSelectPlan />);
     act(() => worker.onmessage?.({ data: { metrics: { candidates: [{ playerId: candidate.id, plans: [agp, points], complete: false }] } } }));
     fireEvent.click(screen.getByRole("button", { name: "All players" }));
-    expect(screen.getByLabelText("Net plan comparison").textContent).toBe("Net points +5 Net AGP 0");
-    expect(screen.getAllByText(/Lost active contribution from Dropped Player: 1 AGP, 10 points/).length).toBeGreaterThan(0);
-    fireEvent.click(screen.getByRole("button", { name: "Select compared plan" }));
+    expect(netPlan()).toBe("Net Pts +5 Net AGP 0");
+    expect(screen.getByRole("button", { name: "Preview swap: add Alpha Center, drop Dropped Player" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /^Preview swap/ }));
     expect(selectPlan).toHaveBeenLastCalledWith([step]);
-    fireEvent.change(screen.getByRole("combobox", { name: "Sort" }), { target: { value: "schedule" } });
-    expect(screen.getByLabelText("Net plan comparison").textContent).toBe("Net points -3 Net AGP +2");
+    fireEvent.click(screen.getByRole("button", { name: "By more starts" }));
+    expect(netPlan()).toBe("Net Pts -3 Net AGP +2");
     expect(screen.getByLabelText("Net plan comparison").textContent).not.toContain("+5");
-    fireEvent.click(screen.getByRole("button", { name: "Select compared plan" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Preview swap/ }));
     expect(selectPlan).toHaveBeenLastCalledWith(agp.steps);
   });
 
@@ -882,7 +891,7 @@ describe("RosterScheduleOptimizer workspace", () => {
       objective: "agp", steps: [], netAGP: mode === "no gain" ? 0 : 1, netPoints: mode === "no gain" ? 0 : null,
       dropped: [{ playerId: "drop", lostAGP: 1, lostPoints: null }], displacedPlayerIds: [] }] }] } } }));
     fireEvent.click(screen.getByRole("button", { name: "All players" }));
-    expect(screen.getByRole("button", { name: "Select compared plan" })).toHaveProperty("disabled", true);
+    expect(screen.getByRole("button", { name: /^Preview swap/ })).toHaveProperty("disabled", true);
   });
 
   it("uses schedule ordering and category-plan guidance instead of points claims in category leagues", () => {
@@ -892,12 +901,12 @@ describe("RosterScheduleOptimizer workspace", () => {
       rules: { ...defaultWorkspace().rules, scoring: { mode: "categories", weights: {}, categories: [] } } } as unknown as PlanningSnapshot}
       intent={defaultWorkspace().intent} fits={[]} manual select={vi.fn()} add={vi.fn()} markAvailable={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "All players" }));
-    expect(screen.getByText("Unranked players")).toBeTruthy();
-    fireEvent.focus(screen.getByRole("button", { name: "About best-fit comparisons" }));
-    expect(screen.getByRole("tooltip").textContent).toContain("Review category gains on the selected plan");
+    expect(screen.queryByText("Unranked players")).toBeNull();
+    expect(screen.queryByRole("button", { name: "About best-fit comparisons" })).toBeNull();
     expect(screen.queryByText(/Horizon points|Potential active points gain|points unavailable/)).toBeNull();
     expect(screen.queryByRole("combobox", { name: "Sort" })).toBeNull();
-    expect(screen.getByLabelText("Net plan comparison").textContent).toBe("Net AGP unavailable");
+    expect(screen.queryByRole("group", { name: "Sort recommendations" })).toBeNull();
+    expect(screen.queryByLabelText("Net plan comparison")).toBeNull();
   });
   it("groups candidates by team without changing eligibility, filters and deduplicates All players", () => {
     const alpha = { ...player, eligibilityVerified: true };
@@ -943,7 +952,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     fireEvent.click(await screen.findByRole("button", { name: "All players" }));
     const excludedRow = (await screen.findByRole("button", { name: /Other Wing.*LW/ })).closest<HTMLElement>("[data-rso-candidate-id]")!;
     expect(within(excludedRow).getByText("Excluded from suggestions")).toBeTruthy();
-    expect(within(excludedRow).getByText("unknown")).toBeTruthy();
+    expect(within(excludedRow).queryByText("unknown")).toBeNull();
     expect(within(excludedRow).getByRole("button", { name: "Mark available" })).toBeTruthy();
     const candidateButton = await screen.findByRole("button", { name: /David Pastrnak.*RW/ });
     fireEvent.click(within(candidateButton.closest("[data-rso-candidate-id]")!).getByRole("button", { name: "Mark available" }));
@@ -1002,7 +1011,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<RosterScheduleOptimizer />);
     const rosterPanel = await screen.findByRole("region", { name: "Roster and setup" });
-    fireEvent.click(await within(rosterPanel).findByRole("button", { name: /Alpha Center/ }));
+    fireEvent.click(await within(rosterPanel).findByRole("button", { name: /^Alpha Center/ }));
     const detail = screen.getByRole("region", { name: "Player details for Alpha Center" });
     const choice = within(detail).getByRole("checkbox", { name: "Exclude from suggestions" }) as HTMLInputElement;
     expect(choice.checked).toBe(true);
@@ -1107,7 +1116,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "Review rules" }));
     await waitFor(() => expect(document.activeElement?.textContent).toBe("League rules and scoring"));
     expect(document.activeElement?.closest("details")?.open).toBe(true);
-    expect(screen.getByText(/Daily mode and roster slots are proposed defaults/)).toBeTruthy();
+    expect(screen.getByText("Check these against your league settings.")).toBeTruthy();
   });
   it("requires input review and renews it after rule changes without certifying unknown scoring", async () => {
     // Mid-week clock: "tomorrow" must stay inside the current Mon–Sun week (it does not on Sundays).
@@ -1331,11 +1340,18 @@ describe("RosterScheduleOptimizer workspace", () => {
   it("labels unverified lineups as schedule capacity", async () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<RosterScheduleOptimizer />);
-    const button = await screen.findByRole("button", { name: "Show schedule-capacity assignment" });
-    expect(button.textContent).toBe("Week grid");
+    const byPosition = await screen.findByRole("button", { name: "By position" });
+    fireEvent.click(byPosition);
+    expect(byPosition.getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("table", { name: "Lineup by position" })).toBeTruthy();
+    const button = screen.getByRole("button", { name: "Show lineup by player" });
+    expect(button.textContent).toBe("By player");
     fireEvent.click(button);
-    expect(screen.getByText("Capacity only · unverified")).toBeTruthy();
-    expect(screen.getByText(/This assignment shows legal schedule capacity/).textContent).toContain("Player-quality start/sit decisions are unresolved");
+    expect(button.getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByText("Date controls")).toBeTruthy();
+    expect(screen.queryByText("Capacity only · unverified")).toBeNull();
+    expect(screen.queryByText(/This assignment shows legal schedule capacity/)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Show schedule-capacity assignment" })).toBeNull();
     expect(screen.queryByRole("button", { name: /suggested lineup/i })).toBeNull();
   });
   it.each([true, false])("distinguishes category comparison availability (%s) from a recommended winner", async (comparisonEligible) => {
@@ -1356,21 +1372,21 @@ describe("RosterScheduleOptimizer workspace", () => {
     vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"),
       json: async () => ({ success: true, data: { ...data, games } }) })));
     render(<RosterScheduleOptimizer />);
-    const button = await screen.findByRole("button", { name: comparisonEligible ? "Show category lineup comparison" : "Show schedule-capacity assignment" });
+    const button = await screen.findByRole("button", { name: comparisonEligible ? "Show category lineup comparison" : "Show lineup by player" });
     await screen.findByText("Category outcomes");
     fireEvent.click(button);
-    expect(screen.getByText(/Category alternatives ·/)).toBeTruthy();
+    expect(screen.getByText("Category lineup · tradeoffs need your call")).toBeTruthy();
+    expect(screen.queryByText(/Category alternatives ·/)).toBeNull();
     expect(screen.queryByText(/Best found ·/)).toBeNull();
     expect(screen.getAllByText(/No-move category lineup/).length).toBeGreaterThan(0);
     expect(screen.queryByText(/Optimized no(?: |-)?move/)).toBeNull();
-    expect(screen.getByText(/Descriptive projected wins minus losses · No overall ranking/)).toBeTruthy();
     if (comparisonEligible) {
-      expect(screen.getByText(/Supported category values describe this lineup/)).toBeTruthy();
+      expect(screen.queryByText(/Supported category values describe this lineup/)).toBeNull();
       expect(screen.getByText(/Overall category sensitivity is withheld; category tradeoffs need your choice/)).toBeTruthy();
       expect(screen.queryByText(/Incomplete forecast, matchup or coverage evidence/)).toBeNull();
       fireEvent.click(screen.getByText("Planning readiness"));
       expect(screen.getByText(/Supported category comparisons available; tradeoffs need your choice/)).toBeTruthy();
-    } else expect(screen.getByText(/Incomplete forecast, matchup or coverage evidence leaves category comparisons unresolved/)).toBeTruthy();
+    } else expect(screen.queryByText(/Incomplete forecast, matchup or coverage evidence leaves category comparisons unresolved/)).toBeNull();
     expect(screen.queryByRole("button", { name: "Show lineup analysis" })).toBeNull();
   });
   it("withholds category gains when the no-move lineup cannot satisfy a selected-player lock", () => {
@@ -1505,6 +1521,7 @@ describe("RosterScheduleOptimizer workspace", () => {
       fireEvent.click(screen.getByRole("button", { name: /^Alpha Center/ }));
     } else if (source === "compact") {
       fireEvent.click(within(screen.getByRole("group", { name: "Workspace actions" })).getByRole("button", { name: "Matchup" }));
+      showByPlayer();
       fireEvent.click(screen.getByRole("button", { name: /^Schedule details for Alpha Center/ }));
     } else {
       fireEvent.click(screen.getByRole("button", { name: "All players" }));
@@ -2031,13 +2048,13 @@ describe("RosterScheduleOptimizer workspace", () => {
         date: workspace.context.startDate, ready: true });
       expect(groups.flatMap(group => group.rows).filter(row => row.assigned).map(row => [row.playerId, row.slot]).sort()).toEqual(assignments);
       expect(screen.getAllByRole("button", { name: /Schedule details for .*Fantasy assigned/ })).toHaveLength(assignments.length);
-      expect(screen.getByRole("button", { name: "Show schedule-capacity assignment" })).toBeTruthy();
+      expect(screen.getByRole("button", { name: "Show lineup by player" }).getAttribute("aria-pressed")).toBe("true");
       expect(saved().intent.steps).toEqual(workspace.intent.steps);
     };
     window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
     const view = render(<RosterScheduleOptimizer />);
     await waitFor(() => expect(providerReads).toBe(1));
-    fireEvent.click(screen.getByRole("button", { name: "Show schedule-capacity assignment" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show lineup by player" }));
     assertReadback([[alpha.id, "C#1"]]);
     expect(within(screen.getByLabelText("Alpha Center range contribution")).getByLabelText("AGP: 1")).toBeTruthy();
     expect(within(screen.getByLabelText("Bravo Center range contribution")).getByLabelText("DUST/bench: 1")).toBeTruthy();
@@ -2055,7 +2072,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     view.unmount();
     render(<RosterScheduleOptimizer />);
     await waitFor(() => expect(providerReads).toBe(3));
-    fireEvent.click(screen.getByRole("button", { name: "Show schedule-capacity assignment" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show lineup by player" }));
     assertReadback([[alpha.id, "C#1"], [bravo.id, "LW#1"]]);
     expect(saved().intent.goalieCoverage).toBe("accept_risk");
     expect(fetch.mock.calls.every(([url]) => url.startsWith("/api/v1/roster-schedule-optimizer/"))).toBe(true);
@@ -2574,19 +2591,19 @@ describe("RosterScheduleOptimizer workspace", () => {
     vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: true, json: async () => url.includes("/data?") ? { success: true, data: currentData } : url.endsWith("/access") ? { data: { eligible: false, capabilities: [] } } : { data: { workspace: saved, snapshot, version: 1, updatedAt: saved.context.asOf } } })));
     render(<RosterScheduleOptimizer />);
     fireEvent.click(await screen.findByRole("button", { name: "View account save" }));
-    expect(planningTimeText(/Saved evidence/).textContent).toContain("Sep 1");
+    expect(planningTimeText(/^Saved /).textContent).toContain("Sep 1");
     expect((screen.getByLabelText("Planning setup") as HTMLFieldSetElement).disabled).toBe(true);
     expect(screen.getByText("Confirm planning inputs", { selector: "button" }).hasAttribute("disabled")).toBe(true);
     await waitFor(() => expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!)).toMatchObject({
       intent: saved.intent, lockedAssignments: saved.lockedAssignments,
     }));
     const summary = (await screen.findByText("Shared schedule: complete")).closest("summary")!;
-    const savedTime = planningTimeText(/Saved evidence/).textContent;
+    const savedTime = planningTimeText(/^Saved /).textContent;
     expect(summary.closest("details")!.textContent).not.toContain("schedule warning");
     vi.setSystemTime(new Date("2026-10-10T15:00:00Z"));
     fireEvent.click(screen.getByRole("button", { name: /^Candidates$/ }));
     expect(summary.closest("details")!.textContent).toContain("Provisional 2-hour schedule warning.");
-    expect(planningTimeText(/Saved evidence/).textContent).toBe(savedTime);
+    expect(planningTimeText(/^Saved /).textContent).toBe(savedTime);
     expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).context.asOf).toBe(saved.context.asOf);
     fireEvent.click(screen.getByRole("button", { name: "Continue manually" }));
     expect((screen.getByLabelText("Planning setup") as HTMLFieldSetElement).disabled).toBe(false);
@@ -3271,28 +3288,37 @@ describe("stored Yahoo eligibility while provider verification is pending", () =
     const fetch = vi.fn((url: string) => Promise.resolve(reply(url.includes("/data?") ? { success: true, data: publicData }
       : url.endsWith("/access") ? { data: { eligible: true, capabilities: ["rso_sync"] } }
         : url.endsWith("/provider") ? { success: true, snapshot: partial, capabilities: { roster: true, availability: false,
-          rules: false, acquisitions: false, limitations: ["Availability discovery reached its time budget; remaining players are unknown.", ...discoverySummary] } } : { data: null })));
+          rules: false, acquisitions: false, limitations: ["Availability discovery reached its time budget; remaining players are unknown.", "Verify goalie minimum progress; these are not inferred from season transaction totals."], diagnostics: discoverySummary } } : { data: null })));
     vi.stubGlobal("fetch", fetch);
     let evaluated: PlanningSnapshot | null = null;
     planningState.evaluate = (snapshot, intent) => { evaluated = snapshot; return planRoster(snapshot, intent); };
     render(<RosterScheduleOptimizer />);
     await waitFor(() => expect(evaluated?.id).toBe(partial.id));
     expect(evaluated!.players.find(row => row.id === known.id)).toMatchObject({ eligibilityVerified: true, eligiblePositions: ["C", "LW"], availability: "free_agent" });
-    expect(screen.getByText("1 matching candidate(s) lack usable verified league eligibility.")).toBeTruthy();
-    expect(screen.getByText("1 matching candidate(s) have unknown league availability.")).toBeTruthy();
+    expect(screen.getByText("1 player is missing league positions or availability, so it can't be ranked.")).toBeTruthy();
     expect(screen.queryByText("2 matching candidate(s) have unknown league availability.")).toBeNull();
-    expect(screen.getByRole("button", { name: "Partial Page Player, CAR, C/LW" })).toBeTruthy();
-    expect(screen.getByText("free agent")).toBeTruthy();
+    const knownCard = screen.getByRole("button", { name: "Partial Page Player, CAR, C/LW" }).closest("article")!;
+    expect(within(knownCard).getByText("FA")).toBeTruthy();
     const health = screen.getByText("Data health").closest("details")!;
     expect(health.open).toBe(false);
     const requestsBeforeOpening = fetch.mock.calls.length;
     fireEvent.click(within(health).getByText("Data health").closest("summary")!);
     expect(health.open).toBe(true);
-    for (const line of discoverySummary) expect(within(health).getByText(line)).toBeTruthy();
-    // Yahoo reports no league time zone; the manager's confirmation clears the item without another provider read.
+    // Diagnostics sit in a collapsed section and do not count as review items.
+    const diagnostics = within(health).getByText("Provider diagnostics").closest("details")!;
+    expect(diagnostics.open).toBe(false);
+    for (const line of discoverySummary) expect(within(diagnostics).getByText(line)).toBeTruthy();
+    expect(within(health).getByText("3 items to review · Planning uses partial provider inputs")).toBeTruthy();
+    expect(within(health).getByText(/Enter goalie starts so far this week in Planning setup \(Goalie credited\)/)).toBeTruthy();
+    expect(within(health).queryByText(/Verify goalie minimum progress/)).toBeNull();
+    fireEvent.change(screen.getByLabelText("Goalie credited"), { target: { value: "1" } });
+    expect(within(health).queryByText(/Enter goalie starts so far this week/)).toBeNull();
+    // Yahoo reports no league time zone; the inline confirmation clears the item without another provider read.
     expect(within(health).getByText(/Yahoo does not report a league time zone/)).toBeTruthy();
-    fireEvent.click(screen.getByLabelText("Matches my league's day boundary"));
+    fireEvent.click(within(health).getByRole("button", { name: "Confirm UTC" }));
     expect(within(health).queryByText(/Yahoo does not report a league time zone/)).toBeNull();
+    expect((screen.getByLabelText("Matches my league's day boundary") as HTMLInputElement).checked).toBe(true);
+    expect(within(health).getByText("1 item to review · Planning uses partial provider inputs")).toBeTruthy();
     expect(fetch.mock.calls).toHaveLength(requestsBeforeOpening);
     expect(fetch.mock.calls.filter(([url]) => url.endsWith("/provider"))).toHaveLength(1);
     expect(fetch.mock.calls.some(([, init]: any[]) => init?.method === "PUT")).toBe(false);
@@ -3331,7 +3357,7 @@ describe("stored Yahoo eligibility while provider verification is pending", () =
     if (count > 240) {
       expect(requested).not.toContain(candidates[count - 1].id);
       expect(evaluated!.players.find(row => row.id === candidates[count - 1].id)?.eligibilityVerified).toBe(false);
-      expect(screen.getByText(/2 remain unchecked/)).toBeTruthy();
+      expect(screen.queryByText(/2 remain unchecked/)).toBeNull();
     }
     expect(evaluated!.players.find(row => row.id === candidate.id)).toMatchObject({ eligiblePositions: ["C", "LW"], availability: "unknown", canDrop: null });
     expect(evaluated!.rules.acquisitionTiming).toBe("unknown");
@@ -3358,13 +3384,13 @@ describe("stored Yahoo eligibility while provider verification is pending", () =
     planningState.evaluate = (snapshot, intent) => { evaluated = snapshot; return planRoster(snapshot, intent); };
     render(<RosterScheduleOptimizer />);
     await waitFor(() => expect(releaseProvider).toBeTypeOf("function"));
-    expect(screen.getByText(/Reading stored Yahoo positions/)).toBeTruthy();
+    expect(screen.queryByText(/Reading stored Yahoo positions/)).toBeNull();
     await act(async () => releaseCache(response({ success: true, receipt: { seasonId: 20262027, source: "yahoo_players", scope: "Yahoo default positions", status: "ready", expiresAt: "2026-10-14T08:40:00.000Z", players: [{ playerId: "8157", nhlId: 8473512, providerId: "477.p.4002", positions: ["C", "LW", "RW"], playerClass: "skater", asOf: "2026-10-13T08:40:16.374Z" }], limitations: ["Current league roster, rules and locks are still unverified."] } })));
     await waitFor(() => expect(evaluated!.players[0].eligibilityVerified).toBe(true));
     expect(evaluated!.players[0].eligiblePositions).toEqual(["C", "LW", "RW"]);
     expect(evaluated!.evidence.roster?.completeness).toBe("partial");
     expect(evaluated!.players[0].availability).toBe("unknown"); expect(evaluated!.rules.acquisitionTiming).toBe("unknown");
-    expect(screen.getByText(/Yahoo default positions: 1\/1/)).toBeTruthy();
+    expect(screen.queryByText(/Yahoo default positions: 1\/1/)).toBeNull();
     expect(fetch.mock.calls.filter(([url]) => url.endsWith("/provider"))).toHaveLength(1);
     expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).manualPlayers[0].eligibilityVerified).toBe(false);
     const live = { ...evaluated!, id: "yahoo:live", players: [{ ...cachedPlayer, eligiblePositions: ["C"], eligibilityVerified: true, availability: "rostered" as const }], roster: workspace.roster };

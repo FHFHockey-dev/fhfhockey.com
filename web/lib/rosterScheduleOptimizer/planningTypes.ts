@@ -42,6 +42,8 @@ export type PlanningPlayer = {
   reserveEligibility: Array<"IR" | "IR+" | "NA">;
   waiverClearsAt?: string | null;
   form?: { label: string; games: number; points: number; includedInForecast: boolean | null };
+  /** Provider injury designation (e.g. Yahoo IR, IR-LT, O, DTD); absent when healthy or unknown. */
+  injury?: { status: string; label: string; note: string | null } | null;
 };
 export type RosterEntry = {
   playerId: string;
@@ -297,6 +299,8 @@ export type RevisionProposal = {
 export type ProviderCapabilities = {
   roster: boolean; availability: boolean; rules: boolean; matchup: boolean; acquisitions: boolean;
   limitations: string[];
+  /** Always-on provider diagnostics; informational, not review items. Optional for older saved backups. */
+  diagnostics?: string[];
 };
 export type PlanningData = {
   baselineSources?: ContributionSource[];
