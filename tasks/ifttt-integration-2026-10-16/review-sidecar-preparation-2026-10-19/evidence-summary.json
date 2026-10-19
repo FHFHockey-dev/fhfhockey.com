@@ -1,0 +1,21 @@
+{
+  "status": "owner-tested; independent review pending",
+  "finalDistinctCases": 33,
+  "pure": 16,
+  "privatePostgres": 17,
+  "passed": 33,
+  "failed": 0,
+  "skipped": 0,
+  "scopedTypeScriptExit": 0,
+  "eslintExit": 0,
+  "node": "v22.11.0",
+  "postgres": "17.11",
+  "sourceManifest": "tasks/ifttt-integration-2026-10-16/review-sidecar-preparation-2026-10-19/source-pins.json",
+  "sourceManifestSha256": "1c7ec613a52dbfc88e59f05e5163b978501d0a7d0f1feafd894e36402dcb67b9",
+  "ownedPaths": 7,
+  "readOnlyPaths": 42,
+  "providerCalls": 0,
+  "hostedCalls": 0,
+  "operationalChanges": 0,
+  "blocked": "Supported Decisions Library ZIP transfer failed twice; no bytes installed. Independent reviewer handoff authorization pending."
+}

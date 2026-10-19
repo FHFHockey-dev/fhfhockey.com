@@ -1,0 +1,31 @@
+       0
+17:58:36
+200 8.904224s
+success : true
+startDate : "2026-10-05"
+endDate : "2026-10-07"
+chunkDays : 0
+maxDays : 3
+resumeFromDate : null
+nextStartDate : "2026-10-08"
+processedDates : ["2026-10-05", "2026-10-06", "2026-10-07"]
+deferredDates : ["2026-10-08", "2026-10-09", "2026-10-10", "2026-10-11", "2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16", "2026-10-17", "2026-10-18"]
+durationMs : "00:07"
+timedOut : false
+maxDurationMs : "bypassed"
+rowsAffected : 678
+rowsVerified : 678
+rowsPruned : 0
+gamesVerified : 16
+gamesIdempotent : 0
+player : {"gamesProcessed": 16, "rowsUpserted": 611, "rowsVerified": 611}
+team : {"gamesProcessed": 16, "rowsUpserted": 32, "rowsVerified": 32}
+goalie : {"gamesProcessed": 16, "rowsUpserted": 35, "rowsVerified": 35, "gamesNotObserved": 0}
+observability : {"goalieRowsProcessed": 35, "dataQualityWarnings": []}
+errors : []
+failedRows : 0
+failedStages : 0
+failures : []
+dependencyContract : {"version": "rolling-forge-operator-order-v2", "summary": "Canonical rolling-to-FORGE dependency order for operator surfaces and preflight messaging.", "healthyRunRule": "A healthy run requires each blocking stage to com…
+
+[exited with code 0]

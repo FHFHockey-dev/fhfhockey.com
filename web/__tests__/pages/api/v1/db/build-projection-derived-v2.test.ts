@@ -294,6 +294,54 @@ describe("/api/v1/db/build-projection-derived-v2", () => {
     dateNowSpy.mockRestore();
   });
 
+  it("skips a game without projection inputs and still processes the rest of its date", async () => {
+    gamesFetchMock.mockResolvedValue([game, { ...game, id: game.id + 1 }]);
+    manifestReadMock.mockRejectedValueOnce(
+      new Error(`Projection input manifest is unavailable for game ${game.id}`),
+    );
+    const req: any = {
+      method: "GET",
+      query: { startDate: "2026-03-18", endDate: "2026-03-18", maxDays: "1" },
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.processedDates).toEqual(["2026-03-18"]);
+    expect(res.body.failures).toEqual([]);
+    expect(res.body.skippedGames).toEqual([
+      {
+        date: "2026-03-18",
+        gameId: game.id,
+        reason: "projection_inputs_unavailable",
+      },
+    ]);
+    expect(res.body.player.gamesProcessed).toBe(1);
+    expect(persistMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("still stops the date when the input manifest read itself fails", async () => {
+    manifestReadMock.mockRejectedValueOnce(
+      new Error(`Could not read the projection input manifest for game ${game.id}`),
+    );
+    const req: any = {
+      method: "GET",
+      query: { startDate: "2026-03-18", endDate: "2026-03-18", maxDays: "1" },
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(207);
+    expect(res.body.processedDates).toEqual([]);
+    expect(res.body.skippedGames).toEqual([]);
+    expect(res.body.failures[0]).toMatchObject({
+      date: "2026-03-18",
+      stage: "input_manifest",
+    });
+  });
+
   it("preserves a failed player date and never computes dependent stages", async () => {
     playerPrepareMock.mockRejectedValueOnce(
       new Error("shift strength is incomplete"),

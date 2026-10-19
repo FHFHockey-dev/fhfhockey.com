@@ -75,6 +75,7 @@ type Result = {
     alreadyHadPbpOnly: number;
     alreadyHadShiftTotalsOnly: number;
     gamecenterFeedUnavailable: number;
+    sourceDataRejected: number;
   };
   debug?: {
     sampled: Array<{
@@ -106,6 +107,8 @@ type Result = {
       | "advance_cursor"
       | "finish_cursor";
     message: string;
+    // True when the game was skipped so later games could still run.
+    isolated?: boolean;
   }>;
   dependencyContract?: ReturnType<
     typeof getRollingForgeStageDependencyContract
@@ -154,6 +157,18 @@ export function previousUtcDate(now = new Date()): string {
   const previous = new Date(now.getTime());
   previous.setUTCDate(previous.getUTCDate() - 1);
   return isoDateOnly(previous.toISOString());
+}
+
+// NHL can publish an empty or still-settling shift feed shortly after a game.
+// The durable scheduled cursor holds on such a game until it is this many UTC
+// days old, then records it as an isolated failure and moves on, so one poison
+// game cannot hold every later slate.
+export const DURABLE_SOURCE_REJECTION_GRACE_DAYS = 2;
+
+export function durableSourceRejectionCutoffDate(now = new Date()): string {
+  const cutoff = new Date(now.getTime());
+  cutoff.setUTCDate(cutoff.getUTCDate() - DURABLE_SOURCE_REJECTION_GRACE_DAYS);
+  return isoDateOnly(cutoff.toISOString());
 }
 
 function parseChunkDays(value: string | null): number {
@@ -268,6 +283,7 @@ export async function ingestProjectionInputsHandler(
           alreadyHadPbpOnly: 0,
           alreadyHadShiftTotalsOnly: 0,
           gamecenterFeedUnavailable: 0,
+          sourceDataRejected: 0,
         },
         maxGames: null,
         nextGameId: null,
@@ -323,6 +339,7 @@ export async function ingestProjectionInputsHandler(
           alreadyHadPbpOnly: 0,
           alreadyHadShiftTotalsOnly: 0,
           gamecenterFeedUnavailable: 0,
+          sourceDataRejected: 0,
         },
         maxGames: null,
         nextGameId: null,
@@ -359,6 +376,9 @@ export async function ingestProjectionInputsHandler(
   const deadlineMs = bypassMaxDuration
     ? Number.POSITIVE_INFINITY
     : startedAt + budgetMs;
+  const sourceRejectionCutoffDate = durableSourceRejectionCutoffDate(
+    new Date(startedAt),
+  );
 
   const useDurableScheduledCursor =
     requestedStartDate == null &&
@@ -463,6 +483,7 @@ export async function ingestProjectionInputsHandler(
           alreadyHadPbpOnly: 0,
           alreadyHadShiftTotalsOnly: 0,
           gamecenterFeedUnavailable: 0,
+          sourceDataRejected: 0,
         },
         maxGames,
         nextGameId: resumeFromGameId,
@@ -530,6 +551,7 @@ export async function ingestProjectionInputsHandler(
       alreadyHadPbpOnly: 0,
       alreadyHadShiftTotalsOnly: 0,
       gamecenterFeedUnavailable: 0,
+      sourceDataRejected: 0,
     },
     maxGames,
     nextGameId,
@@ -573,6 +595,9 @@ export async function ingestProjectionInputsHandler(
       | "verify_shifts"
       | "normalize_gamecenter"
       | "advance_cursor" = "precheck_pbp";
+    // Set only while validating the NHL shift payload itself: those failures
+    // belong to this game's source data, not to the run or the database.
+    let shiftSourceRejected = false;
     try {
       const gameId = g.id;
       stage = "precheck_pbp";
@@ -588,14 +613,16 @@ export async function ingestProjectionInputsHandler(
       const sourceShiftRows = shiftSnapshot.rows;
       const expectedPlayerIds = sourceShiftRows.map((row) => row.playerId);
       stage = "precheck_shifts";
-      const shiftsExist = force
-        ? false
-        : await hasCompleteShiftTotals(gameId, expectedPlayerIds);
+      shiftSourceRejected = true;
       const shiftUpserts = buildShiftStrengthUpserts(
         gameId,
         sharedPbp,
         sourceShiftRows,
       );
+      shiftSourceRejected = false;
+      const shiftsExist = force
+        ? false
+        : await hasCompleteShiftTotals(gameId, expectedPlayerIds);
 
       // A structurally complete stored snapshot is not proof that it still
       // matches the authoritative NHL source. Reconcile the exact PBP scope on
@@ -709,14 +736,30 @@ export async function ingestProjectionInputsHandler(
         });
       }
     } catch (e) {
-      if (
+      const feedUnavailable =
         !useDurableScheduledCursor &&
         (stage === "fetch_pbp" || stage === "fetch_shifts") &&
-        isUnavailableGamecenterFeedError(e)
-      ) {
+        isUnavailableGamecenterFeedError(e);
+      const isolateSourceRejection =
+        shiftSourceRejected &&
+        (!useDurableScheduledCursor || g.date <= sourceRejectionCutoffDate);
+      if (feedUnavailable || isolateSourceRejection) {
         result.skipped += 1;
-        result.skipReasons.gamecenterFeedUnavailable += 1;
-        result.lastCompletedGameId = g.id;
+        if (feedUnavailable) {
+          result.skipReasons.gamecenterFeedUnavailable += 1;
+          result.lastCompletedGameId = g.id;
+        } else {
+          // Visible as a failed game, but it does not stop later games.
+          result.skipReasons.sourceDataRejected += 1;
+          result.success = false;
+          result.errors.push({
+            gameId: g.id,
+            date: g.date,
+            stage,
+            message: (e as any)?.message ?? String(e),
+            isolated: true,
+          });
+        }
         const nextCursor = nextCursorByGameId.get(g.id);
         if (pipelineLease && nextCursor) {
           try {
@@ -772,12 +815,16 @@ export async function ingestProjectionInputsHandler(
   }
 
   if (pipelineLease) {
+    // Isolated games stay in `errors` and keep `success` false, but they do not
+    // hold the durable slate open: retrying them is an explicit-range run.
+    const leaseComplete =
+      !result.timedOut && result.errors.every((error) => error.isolated);
     try {
       pipelineLease = await finishProjectionPipelineLease({
         supabase,
         lease: pipelineLease,
-        outcome: result.success ? "complete" : "failed",
-        ...(result.success
+        outcome: leaseComplete ? "complete" : "failed",
+        ...(leaseComplete
           ? {}
           : {
               failureCode: result.timedOut

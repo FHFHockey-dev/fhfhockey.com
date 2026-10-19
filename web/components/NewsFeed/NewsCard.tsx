@@ -2,6 +2,8 @@ import { useId, type CSSProperties } from "react";
 import Image from "next/legacy/image";
 
 import ExternalNewsLink from "components/common/ExternalNewsLink";
+import NewsLineupGrid from "./NewsLineupGrid";
+import { readNewsLineupPresentation } from "lib/newsLineupPresentation";
 import styles from "./NewsCard.module.scss";
 
 import {
@@ -14,11 +16,7 @@ import {
   sanitizePublicNewsText,
   type NewsFeedItem,
 } from "lib/newsFeed";
-import {
-  isLineupNewsCategory,
-  readLineupCardFromMetadata,
-  type NewsLineupCardData,
-} from "lib/newsLineupCard";
+import { isLineupNewsCategory } from "lib/newsLineupCard";
 
 type NewsCardProps = {
   item: Pick<
@@ -94,16 +92,6 @@ function sanitizeRailText(value: unknown): string {
     .trim();
 }
 
-function readAutomationSummary(
-  metadata: Record<string, unknown> | null | undefined,
-): string {
-  const automation = metadata?.automation;
-  if (!automation || typeof automation !== "object") return "";
-  return sanitizeRailText(
-    (automation as Record<string, unknown>).summary,
-  );
-}
-
 function isGenericRailHeadline(args: {
   value: string;
   team: string;
@@ -164,125 +152,6 @@ function newsTextAddsDetail(headline: string, candidate: string): boolean {
   );
 }
 
-function LineupSlot({
-  name,
-  label,
-  variant,
-  isStarter = false,
-  onClick,
-}: {
-  name: string | null;
-  label: string;
-  variant: "forward" | "defense" | "goalie";
-  isStarter?: boolean;
-  onClick?: () => void;
-}) {
-  const className = [
-    styles.lineupSlot,
-    styles[`lineupSlot${variant[0].toUpperCase()}${variant.slice(1)}`],
-    isStarter ? styles.lineupSlotStarter : "",
-    onClick ? styles.lineupSlotEditable : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-  const content = (
-    <>
-      <span className={styles.lineupSlotLabel}>
-        {isStarter ? "START" : label}
-      </span>
-      <span className={styles.lineupSlotName}>{name || "TBD"}</span>
-    </>
-  );
-
-  if (onClick) {
-    return (
-      <button
-        type="button"
-        className={className}
-        onClick={onClick}
-        aria-label={`Set ${label} goalie`}
-      >
-        {content}
-      </button>
-    );
-  }
-
-  return <div className={className}>{content}</div>;
-}
-
-function LineupGrid({
-  lineup,
-  onGoalieSlotClick,
-}: {
-  lineup: NewsLineupCardData;
-  onGoalieSlotClick?: (slotIndex: number) => void;
-}) {
-  return (
-    <div className={styles.lineupGrid} aria-label="Projected lineup">
-      {Array.from({ length: 4 }).flatMap((_, rowIndex) => {
-        const forwardLine = lineup.forwards[rowIndex] ?? [];
-        const rightSide =
-          rowIndex < 3
-            ? (lineup.defensePairs[rowIndex] ?? []).map((name, index) => (
-                <LineupSlot
-                  key={`d-${rowIndex}-${index}`}
-                  name={name}
-                  label={`D${rowIndex + 1}`}
-                  variant="defense"
-                />
-              ))
-            : lineup.goalies
-                .slice(0, 2)
-                .map((name, index) => (
-                  <LineupSlot
-                    key={`g-${index}`}
-                    name={name}
-                    label={index === 0 ? "G1" : "G2"}
-                    variant="goalie"
-                    onClick={
-                      onGoalieSlotClick
-                        ? () => onGoalieSlotClick(index)
-                        : undefined
-                    }
-                    isStarter={Boolean(
-                      lineup.startingGoalie &&
-                      name.toLowerCase() ===
-                        lineup.startingGoalie.toLowerCase(),
-                    )}
-                  />
-                ));
-
-        return [
-          ...Array.from({ length: 3 }).map((__, index) => (
-            <LineupSlot
-              key={`f-${rowIndex}-${index}`}
-              name={forwardLine[index] ?? null}
-              label={`F${rowIndex + 1}`}
-              variant="forward"
-            />
-          )),
-          ...Array.from({ length: 2 }).map(
-            (__, index) =>
-              rightSide[index] ?? (
-                <LineupSlot
-                  key={`empty-${rowIndex}-${index}`}
-                  name={null}
-                  label={rowIndex < 3 ? `D${rowIndex + 1}` : `G${index + 1}`}
-                  variant={rowIndex < 3 ? "defense" : "goalie"}
-                  onClick={
-                    rowIndex === 3 && onGoalieSlotClick
-                      ? () => onGoalieSlotClick(index)
-                      : undefined
-                  }
-                />
-              ),
-          ),
-        ];
-      })}
-    </div>
-  );
-}
-
 function formatSourceAttribution(
   sourceLabel: string | null | undefined,
   sourceAccount: string | null | undefined,
@@ -319,18 +188,17 @@ export default function NewsCard({
     sanitizePublicNewsText(sourceDisplayNameOverride),
   );
   const lineup = isLineupNewsCategory(item.category, item.subcategory)
-    ? readLineupCardFromMetadata(item.metadata)
+    ? readNewsLineupPresentation({ metadata: item.metadata, subcategory: item.subcategory })
     : null;
   const presentation = getPublicNewsClaimPresentation(item);
   const categoryLabel = lineup ? formatNewsFeedLabel(item.category) : "Source report";
   const subcategoryLabel = lineup && item.subcategory ? formatNewsFeedLabel(item.subcategory) : null;
   const details = getPublicNewsItemDetails(lineup ? item : { ...item, metadata: null, headline: "Source passage unavailable" });
   const originalHeadline = lineup ? sanitizePublicNewsText(item.headline) : presentation.headline;
-  const teamLabel = item.team_abbreviation ?? "NHL";
+  const teamLabel = team.abbreviation ?? item.team_abbreviation ?? "NHL";
   const railHeadline = details || originalHeadline || "News update";
   const railDetail = lineup ?
     [
-      readAutomationSummary(item.metadata),
       sanitizeRailText(item.blurb),
       originalHeadline,
     ].find(
@@ -356,6 +224,8 @@ export default function NewsCard({
       }`.trim()}
       style={
         {
+          "--lineup-team-primary": team.lineupPrimary,
+          "--lineup-team-secondary": team.lineupSecondary,
           "--news-accent": team.primary,
           "--news-team-primary": team.primary,
           "--news-team-secondary": team.secondary,
@@ -403,8 +273,9 @@ export default function NewsCard({
         </h2>
 
         {lineup ? (
-          <LineupGrid
+          <NewsLineupGrid
             lineup={lineup}
+            mini={rail}
             onGoalieSlotClick={onLineupGoalieSlotClick}
           />
         ) : null}
@@ -422,7 +293,7 @@ export default function NewsCard({
           </div>
         ) : null}
 
-        {!lineup ? <p className={styles.blurb}>{details}</p> : null}
+        {!lineup || !lineup.rows.length ? <p className={styles.blurb}>{details}</p> : null}
         {!lineup && presentation.unresolvedReason ? <p>{presentation.unresolvedReason}</p> : null}
 
         {hasDisclosure ? (
@@ -456,11 +327,7 @@ export default function NewsCard({
         <div className={styles.teamLogo}>
           <Image
             src={team.logoUrl}
-            alt={
-              item.team_abbreviation
-                ? `${item.team_abbreviation} logo`
-                : "NHL logo"
-            }
+            alt={`${teamLabel} logo`}
             width={64}
             height={64}
             objectFit="contain"

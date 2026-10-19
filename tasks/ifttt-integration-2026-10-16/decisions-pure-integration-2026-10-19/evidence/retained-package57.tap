@@ -1,0 +1,295 @@
+TAP version 13
+# Subtest: invalid root undefined is fail-closed
+ok 1 - invalid root undefined is fail-closed
+  ---
+  duration_ms: 1.479958
+  ...
+# Subtest: invalid root null is fail-closed
+ok 2 - invalid root null is fail-closed
+  ---
+  duration_ms: 0.110542
+  ...
+# Subtest: invalid root {} is fail-closed
+ok 3 - invalid root {} is fail-closed
+  ---
+  duration_ms: 0.053167
+  ...
+# Subtest: invalid root {"source":null} is fail-closed
+ok 4 - invalid root {"source":null} is fail-closed
+  ---
+  duration_ms: 0.077292
+  ...
+# Subtest: invalid root {"source":[]} is fail-closed
+ok 5 - invalid root {"source":[]} is fail-closed
+  ---
+  duration_ms: 0.177708
+  ...
+# Subtest: disabled adapter does not inspect untrusted input or call transport
+ok 6 - disabled adapter does not inspect untrusted input or call transport
+  ---
+  duration_ms: 0.092542
+  ...
+# Subtest: Unicode UTF-16 quote binding rejects code-point offsets without losing good neighbors
+ok 7 - Unicode UTF-16 quote binding rejects code-point offsets without losing good neighbors
+  ---
+  duration_ms: 1.095542
+  ...
+# Subtest: request hashes and question bindings change with actual candidate/source evidence
+ok 8 - request hashes and question bindings change with actual candidate/source evidence
+  ---
+  duration_ms: 1.500792
+  ...
+# Subtest: 99-claim limit retains overflow as unknown and triage remains independent
+ok 9 - 99-claim limit retains overflow as unknown and triage remains independent
+  ---
+  duration_ms: 1.279583
+  ...
+# Subtest: all rejected candidates still produce triage and review reasons
+ok 10 - all rejected candidates still produce triage and review reasons
+  ---
+  duration_ms: 0.395166
+  ...
+# Subtest: malformed response: null body
+ok 11 - malformed response: null body
+  ---
+  duration_ms: 0.25075
+  ...
+# Subtest: malformed response: answers is object
+ok 12 - malformed response: answers is object
+  ---
+  duration_ms: 0.282792
+  ...
+# Subtest: malformed response: null answer
+ok 13 - malformed response: null answer
+  ---
+  duration_ms: 0.179417
+  ...
+# Subtest: malformed response: foreign name
+ok 14 - malformed response: foreign name
+  ---
+  duration_ms: 0.155041
+  ...
+# Subtest: malformed response: missing name
+ok 15 - malformed response: missing name
+  ---
+  duration_ms: 0.212958
+  ...
+# Subtest: malformed response: wrong answer type
+ok 16 - malformed response: wrong answer type
+  ---
+  duration_ms: 0.160625
+  ...
+# Subtest: malformed response: missing distribution
+ok 17 - malformed response: missing distribution
+  ---
+  duration_ms: 0.1385
+  ...
+# Subtest: malformed response: duplicate distribution label
+ok 18 - malformed response: duplicate distribution label
+  ---
+  duration_ms: 0.128042
+  ...
+# Subtest: malformed response: foreign choice
+ok 19 - malformed response: foreign choice
+  ---
+  duration_ms: 0.162708
+  ...
+# Subtest: malformed response: string confidence
+ok 20 - malformed response: string confidence
+  ---
+  duration_ms: 0.12225
+  ...
+# Subtest: malformed response: over-one confidence
+ok 21 - malformed response: over-one confidence
+  ---
+  duration_ms: 0.118209
+  ...
+# Subtest: malformed response: negative probability
+ok 22 - malformed response: negative probability
+  ---
+  duration_ms: 0.133959
+  ...
+# Subtest: malformed response: sum above one
+ok 23 - malformed response: sum above one
+  ---
+  duration_ms: 0.130834
+  ...
+# Subtest: predicate rejects -1 (number)
+ok 24 - predicate rejects -1 (number)
+  ---
+  duration_ms: 0.1495
+  ...
+# Subtest: predicate rejects 1.01 (number)
+ok 25 - predicate rejects 1.01 (number)
+  ---
+  duration_ms: 0.435708
+  ...
+# Subtest: predicate rejects Infinity (number)
+ok 26 - predicate rejects Infinity (number)
+  ---
+  duration_ms: 0.168417
+  ...
+# Subtest: predicate rejects NaN (number)
+ok 27 - predicate rejects NaN (number)
+  ---
+  duration_ms: 0.131584
+  ...
+# Subtest: predicate rejects 0.8 (string)
+ok 28 - predicate rejects 0.8 (string)
+  ---
+  duration_ms: 0.124625
+  ...
+# Subtest: predicate rejects null (object)
+ok 29 - predicate rejects null (object)
+  ---
+  duration_ms: 0.120667
+  ...
+# Subtest: shuffled answers are bound by exact question names; refusals stay local
+ok 30 - shuffled answers are bound by exact question names; refusals stay local
+  ---
+  duration_ms: 0.224334
+  ...
+# Subtest: input, transport request, calibration and returned result mutations do not contaminate stored snapshots
+ok 31 - input, transport request, calibration and returned result mutations do not contaminate stored snapshots
+  ---
+  duration_ms: 0.304292
+  ...
+# Subtest: timeout keeps reservation and block even if ignored abort later resolves
+ok 32 - timeout keeps reservation and block even if ignored abort later resolves
+  ---
+  duration_ms: 10.883875
+  ...
+# Subtest: unknown usage preserves reservation even for otherwise valid scores
+ok 33 - unknown usage preserves reservation even for otherwise valid scores
+  ---
+  duration_ms: 0.245
+  ...
+# Subtest: calibrated zero-claim low score remains a shadow result without automatic action
+ok 34 - calibrated zero-claim low score remains a shadow result without automatic action
+  ---
+  duration_ms: 0.118459
+  ...
+# Subtest: default off never invokes transport
+ok 35 - default off never invokes transport
+  ---
+  duration_ms: 1.527833
+  ...
+# Subtest: enabled without explicit positive budgets remains blocked
+ok 36 - enabled without explicit positive budgets remains blocked
+  ---
+  duration_ms: 0.584667
+  ...
+# Subtest: request uses per-claim questions plus independent whole-post triage
+ok 37 - request uses per-claim questions plus independent whole-post triage
+  ---
+  duration_ms: 0.308459
+  ...
+# Subtest: bad claim bindings are withheld while post and valid-claim scoring continue
+ok 38 - bad claim bindings are withheld while post and valid-claim scoring continue
+  ---
+  duration_ms: 0.901625
+  ...
+# Subtest: invalid source timestamp prevents any request
+ok 39 - invalid source timestamp prevents any request
+  ---
+  duration_ms: 0.203916
+  ...
+# Subtest: claim question bindings remain correct after an earlier claim is rejected
+ok 40 - claim question bindings remain correct after an earlier claim is rejected
+  ---
+  duration_ms: 0.161292
+  ...
+# Subtest: invalid claims array preserves source-only triage
+ok 41 - invalid claims array preserves source-only triage
+  ---
+  duration_ms: 0.225667
+  ...
+# Subtest: built requests cannot mutate future question definitions
+ok 42 - built requests cannot mutate future question definitions
+  ---
+  duration_ms: 0.234417
+  ...
+# Subtest: source/claim objects are unmodified; unrecognized fields never sent
+ok 43 - source/claim objects are unmodified; unrecognized fields never sent
+  ---
+  duration_ms: 0.595208
+  ...
+# Subtest: zero-claim post is still evaluated and queued for development review
+ok 44 - zero-claim post is still evaluated and queued for development review
+  ---
+  duration_ms: 0.349084
+  ...
+# Subtest: only explicit frozen calibration can flag material zero-claim posts
+ok 45 - only explicit frozen calibration can flag material zero-claim posts
+  ---
+  duration_ms: 0.168584
+  ...
+# Subtest: per-question refusal does not overwrite other claim results
+ok 46 - per-question refusal does not overwrite other claim results
+  ---
+  duration_ms: 0.312541
+  ...
+# Subtest: different wording labels in one tweet remain independent per claim
+ok 47 - different wording labels in one tweet remain independent per claim
+  ---
+  duration_ms: 0.311
+  ...
+# Subtest: missing, duplicate and invalid probability values are unknown
+ok 48 - missing, duplicate and invalid probability values are unknown
+  ---
+  duration_ms: 0.607375
+  ...
+# Subtest: foreign question names or wrong model cannot be bound to a claim
+ok 49 - foreign question names or wrong model cannot be bound to a claim
+  ---
+  duration_ms: 0.238792
+  ...
+# Subtest: same evidence and version are deduplicated, including concurrent calls
+ok 50 - same evidence and version are deduplicated, including concurrent calls
+  ---
+  duration_ms: 0.693125
+  ...
+# Subtest: request limit reserves before concurrent distinct calls
+ok 51 - request limit reserves before concurrent distinct calls
+  ---
+  duration_ms: 0.298042
+  ...
+# Subtest: request byte, token and cost limits are independently enforced
+ok 52 - request byte, token and cost limits are independently enforced
+  ---
+  duration_ms: 0.264917
+  ...
+# Subtest: unknown usage or over-reservation usage blocks subsequent requests
+ok 53 - unknown usage or over-reservation usage blocks subsequent requests
+  ---
+  duration_ms: 0.450042
+  ...
+# Subtest: transport failure never leaks error secrets or retries automatically
+ok 54 - transport failure never leaks error secrets or retries automatically
+  ---
+  duration_ms: 0.175542
+  ...
+# Subtest: timeout aborts injected transport and retains reservation
+ok 55 - timeout aborts injected transport and retains reservation
+  ---
+  duration_ms: 5.785666
+  ...
+# Subtest: period changes fail closed instead of silently resetting quotas
+ok 56 - period changes fail closed instead of silently resetting quotas
+  ---
+  duration_ms: 0.244541
+  ...
+# Subtest: partial calibration configuration is rejected
+ok 57 - partial calibration configuration is rejected
+  ---
+  duration_ms: 0.240167
+  ...
+1..57
+# tests 57
+# suites 0
+# pass 57
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 86.381

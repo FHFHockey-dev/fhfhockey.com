@@ -312,6 +312,38 @@ function MobileGameItem({
       aria-label={matchupLabel}
       style={getGameColorStyle(homeTeam.abbrev, awayTeam.abbrev)}
     >
+      {mode === "light" ? (
+        <span className={styles.homepageGameArtwork} aria-hidden="true">
+          <span
+            className={styles.homepageGameLogo}
+            data-side="away"
+            data-team={awayTeam.abbrev}
+          >
+            <OptimizedImage
+              src={getTeamLogoSvg(awayTeam.abbrev)}
+              alt=""
+              width={32}
+              height={32}
+              priority={false}
+              fallbackSrc={fallbackNHLLogo}
+            />
+          </span>
+          <span
+            className={styles.homepageGameLogo}
+            data-side="home"
+            data-team={homeTeam.abbrev}
+          >
+            <OptimizedImage
+              src={getTeamLogoSvg(homeTeam.abbrev)}
+              alt=""
+              width={32}
+              height={32}
+              priority={false}
+              fallbackSrc={fallbackNHLLogo}
+            />
+          </span>
+        </span>
+      ) : null}
       <span className={styles.mobileGameState}>
         <i aria-hidden="true" />
         <span>{stateLabel}</span>
@@ -348,14 +380,16 @@ function MobileGameItem({
         className={`${styles.mobileTeam} ${styles.mobileAwayTeam}`}
         title={`AWAY ${awayTeam.abbrev} record: ${awayTeam?.record ?? "n/a"}`}
       >
-        <OptimizedImage
-          src={getTeamLogoSvg(awayTeam.abbrev)}
-          alt={`${awayTeam.abbrev} logo`}
-          width={32}
-          height={32}
-          priority={false}
-          fallbackSrc={fallbackNHLLogo}
-        />
+        {mode !== "light" ? (
+          <OptimizedImage
+            src={getTeamLogoSvg(awayTeam.abbrev)}
+            alt={`${awayTeam.abbrev} logo`}
+            width={32}
+            height={32}
+            priority={false}
+            fallbackSrc={fallbackNHLLogo}
+          />
+        ) : null}
         <strong>{awayTeam.abbrev}</strong>
         {awayTeam.score != null ? <b>{awayTeam.score}</b> : null}
       </span>
@@ -368,14 +402,16 @@ function MobileGameItem({
       >
         {homeTeam.score != null ? <b>{homeTeam.score}</b> : null}
         <strong>{homeTeam.abbrev}</strong>
-        <OptimizedImage
-          src={getTeamLogoSvg(homeTeam.abbrev)}
-          alt={`${homeTeam.abbrev} logo`}
-          width={32}
-          height={32}
-          priority={false}
-          fallbackSrc={fallbackNHLLogo}
-        />
+        {mode !== "light" ? (
+          <OptimizedImage
+            src={getTeamLogoSvg(homeTeam.abbrev)}
+            alt={`${homeTeam.abbrev} logo`}
+            width={32}
+            height={32}
+            priority={false}
+            fallbackSrc={fallbackNHLLogo}
+          />
+        ) : null}
       </span>
       {probabilitiesAvailable ? (
         <span

@@ -9,10 +9,7 @@
   min-width: 0;
   margin: 0;
   color: v.$text-primary;
-
-  @media (max-width: v.$breakpoint-tablet) {
-    display: none;
-  }
+  container: league-separation / inline-size;
 }
 
 .statusPanel {
@@ -113,7 +110,7 @@
 
 .chartAndToggles {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 198px;
+  grid-template-columns: minmax(0, 1fr) 232px;
   gap: v.$space-md;
   align-items: start;
 }
@@ -495,448 +492,247 @@
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.34);
 }
 
-@media (max-width: 1200px) {
-  .chartAndToggles {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .teamToggles {
-    grid-template-rows: auto auto;
-  }
-}
-
-@media (max-width: 900px) {
-  .summaryHeader {
-    grid-template-columns: 1fr;
-  }
-
-  .summaryCopy {
-    grid-template-columns: 1fr;
-  }
-
-  .summaryStats {
-    grid-template-columns: 1fr;
-  }
-
-  .filters {
-    width: 100%;
-
-    .filterField {
-      min-width: 0;
-      width: 100%;
-    }
-
-    select {
-      min-width: 0;
-      width: 100%;
-    }
-  }
-
-  .toggleList {
-    grid-template-columns: 1fr;
-  }
-}
-
-.compact {
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-xs;
-  height: 100%;
-
-  .summaryHeader {
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: v.$space-sm;
-    min-height: 42px;
-    padding: v.$space-xs v.$space-sm;
-    border-bottom: 1px solid v.$border-soft;
-  }
-
-  .summaryCopy {
-    grid-template-columns: 1fr;
-  }
-
-  .summaryEyebrow,
-  .summaryBody {
-    display: none;
-  }
-
-  .summaryTitle {
-    font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
-    font-size: 0.9rem;
-    font-weight: v.$font-weight-bold;
-    letter-spacing: 0.12em;
-  }
-
-  .summaryStats {
-    display: none;
-  }
-
-  .summaryStat {
-    min-width: 76px;
-    padding: v.$space-xs v.$space-sm v.$space-xs calc(v.$space-sm + 5px);
-    border-radius: v.$radius-control;
-    box-shadow: none;
-
-    &:last-child {
-      display: none;
-    }
-  }
-
-  .summaryStatLabel {
-    font-size: 0.58rem;
-  }
-
-  .summaryStatValue {
-    font-size: 0.72rem;
-  }
-
-  .chartAndToggles {
-    flex: 1;
-    align-items: stretch;
-    grid-template-columns: minmax(0, 1fr) 168px;
-    gap: v.$space-xs;
-    padding: 0 v.$space-xs v.$space-xs;
-  }
-
-  .leftColumn {
-    display: flex;
-    flex-direction: column;
-  }
+// Controls stay together beside the plot; the component's own width determines
+// when the rail moves below it, including within the homepage's narrow column.
+.chartControls {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid v.$border-soft;
+  border-radius: v.$radius-card;
+  background: rgba(v.$color-white, 0.015);
 
   .filters {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 2px;
-    padding: 2px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
   .filterField {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     min-width: 0;
-    grid-template-columns: 1fr;
+    min-height: 0;
+    overflow: visible;
 
     label {
-      display: none;
+      padding: 6px 8px 0;
+      border: 0;
+      color: v.$text-secondary;
+      font-family: v.$font-family-primary, sans-serif;
+      font-size: 0.65rem;
     }
 
     select {
-      border-left: 0;
-      min-height: 30px;
-      padding-left: v.$space-xs;
-      font-size: 0.72rem;
+      min-height: 40px;
+      padding: 0 28px 0 8px;
+      border: 0;
+      border-radius: v.$radius-control;
+      font-size: 0.8rem;
+      background-position: right 6px center;
+    }
+  }
+
+  .toggleButtons button {
+    min-height: 40px;
+    padding: 4px;
+    font-family: v.$font-family-primary, sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0;
+
+    &:focus-visible {
+      outline: 2px solid v.$color-white;
+      outline-offset: 2px;
     }
   }
 
   .rollingToggles {
-    grid-column: 1 / -1;
+    gap: 4px;
+
+    label {
+      min-height: 40px;
+      width: 100%;
+      font-family: v.$font-family-primary, sans-serif;
+      font-size: 0.68rem;
+    }
   }
 
-  .chartContainer {
-    min-height: 260px;
+  .teamToggleDetails,
+  .teamToggles,
+  .toggleList,
+  .divisionGroup,
+  .divisionTeams {
     height: auto;
   }
 
-  .teamToggleDetails {
-    @include panel.panel-shell($padding: 0, $variant: soft);
-    min-width: 0;
-    height: 100%;
-
-    > summary {
-      display: none;
-      align-items: center;
-      justify-content: space-between;
-      min-height: 28px;
-      padding: 0 v.$space-md;
-      color: v.$primary-color;
-      cursor: pointer;
-      font-family: v.$font-family-accent, sans-serif;
-      font-size: 0.6rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-
-      &:focus-visible {
-        outline: 2px solid v.$primary-color;
-        outline-offset: -2px;
-      }
-    }
-  }
-
   .teamToggles {
-    height: 100%;
-    max-height: none;
-    overflow: hidden;
-    padding: v.$space-xs;
+    display: block;
+    padding: 0;
     border: 0;
-    border-radius: 0;
+    background: transparent;
     box-shadow: none;
   }
 
-  .toggleButtons {
-    gap: 3px;
-
-    button {
-      min-height: 24px;
-      padding: 0 3px;
-      font-size: 0.65rem;
-    }
-  }
-
-  .toggleList,
-  .toggleColumn {
-    gap: 4px;
-  }
-
-  .toggleColumn strong,
-  .divisionGroup > strong {
-    margin: 0;
-    font-size: 0.62rem;
+  .toggleList {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
   }
 
   .divisionGroup {
-    gap: 2px;
+    gap: 4px;
+
+    > strong {
+      font-family: v.$font-family-primary, sans-serif;
+      font-size: 0.68rem;
+      letter-spacing: 0.04em;
+    }
   }
 
   .divisionTeams {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 2px;
+    gap: 4px;
   }
 
   .teamToggle {
     position: relative;
     display: flex;
     justify-content: center;
-    min-height: 22px;
-    padding: 1px;
+    min-height: 40px;
+    padding: 3px;
+    border-color: rgba(v.$color-white, 0.12);
 
-    input[type="checkbox"] {
+    input {
       position: absolute;
       width: 1px;
       height: 1px;
       opacity: 0;
     }
+
+    &:has(input:focus-visible) {
+      outline: 2px solid v.$color-white;
+      outline-offset: 2px;
+    }
+
+    &:not(:has(input:checked)) .toggleLogo {
+      opacity: 0.5;
+      filter: saturate(0.3);
+    }
   }
 
   .toggleLogo {
-    width: 18px;
-    height: 18px;
+    width: 26px;
+    height: 26px;
   }
-
 }
 
-@media (max-width: v.$breakpoint-tablet) {
-  .compact {
-    display: grid;
-    gap: 0;
-    height: auto;
+.teamStandingsChart.compact {
+  display: flex;
+  flex-direction: column;
+}
 
-    .summaryHeader {
-      grid-template-columns: 1fr;
-      place-items: center;
-      min-height: 46px;
-      padding: 5px v.$space-sm;
-      border-bottom-color: rgba(v.$primary-color, 0.18);
-      background: color.adjust(v.$surface-0, $lightness: -1%);
-    }
+.compact {
+  gap: v.$space-xs;
+  height: 100%;
 
-    .summaryCopy,
-    .summaryIntro {
-      width: 100%;
-      place-items: center;
-    }
+  .summaryHeader {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 42px;
+    padding: v.$space-xs v.$space-sm;
+  }
 
-    .summaryTitle {
-      color: v.$primary-color;
-      font-size: clamp(1rem, 5.2vw, 1.55rem);
-      font-weight: v.$font-weight-medium;
-      letter-spacing: 0.075em;
-      line-height: 1;
-      text-align: center;
-    }
+  .summaryCopy {
+    grid-template-columns: minmax(0, 1fr);
+  }
 
-    .chartAndToggles {
-      grid-template-columns: 1fr;
-      gap: 0;
-      padding: 0 4px 4px;
-    }
+  .summaryEyebrow,
+  .summaryBody,
+  .summaryStats {
+    display: none;
+  }
 
-    .leftColumn {
-      display: contents;
-    }
+  .summaryTitle {
+    font-size: 0.95rem;
+    letter-spacing: 0.1em;
+  }
 
+  .chartAndToggles {
+    flex: 1;
+    align-items: stretch;
+    gap: 6px;
+    padding: 0 6px 6px;
+  }
+
+  .chartContainer {
+    min-height: 480px;
+    height: 100%;
+  }
+}
+
+@container league-separation (max-width: 600px) {
+  .chartAndToggles,
+  .compact .chartAndToggles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .chartContainer,
+  .compact .chartContainer {
+    min-height: 280px;
+    height: clamp(280px, 65cqw, 440px);
+  }
+
+  .chartControls {
     .filters {
-      order: 0;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 4px;
-      padding: 6px;
-      border: 1px solid rgba(v.$color-white, 0.11);
-      border-bottom: 0;
-      border-radius: v.$radius-card v.$radius-card 0 0;
-      background: rgba(v.$color-white, 0.012);
-      box-shadow: none;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .filterField {
-      min-height: 40px;
-      border-color: rgba(v.$color-white, 0.12);
-      border-radius: v.$radius-control;
-      background: v.$surface-0;
+    .filterField:last-of-type,
+    .rollingToggles {
+      grid-column: 1 / -1;
     }
 
-    .filterField select {
-      min-height: 38px;
-      padding: 0 24px 0 8px;
-      background-position: right 0.4rem center;
-      background-size: 0.9rem;
-      color: v.$color-brand-white;
-      font-size: 0.7rem;
-    }
-
-    .teamToggleDetails {
-      order: 1;
-      height: auto;
-      border: 1px solid rgba(v.$color-white, 0.11);
-      border-top: 0;
-      border-radius: 0 0 v.$radius-card v.$radius-card;
-      background: rgba(v.$color-white, 0.012);
-      box-shadow: none;
-
-      > summary {
-        display: none;
-      }
-    }
-
-    .teamToggles {
-      grid-template-rows: 1fr auto;
-      gap: 4px;
-      height: auto;
-      padding: 0 6px 6px;
-      border-top: 0;
-      background: transparent;
+    .teamToggleDetails > summary {
+      display: list-item;
+      min-height: 44px;
+      padding: 12px 0;
+      color: v.$primary-color;
+      cursor: pointer;
     }
 
     .toggleList {
-      order: 0;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 4px;
-      height: auto;
-    }
-
-    .divisionGroup {
-      gap: 3px;
-      height: auto;
-      min-width: 0;
-    }
-
-    .divisionGroup > strong {
-      overflow: hidden;
-      margin: 0;
-      color: v.$color-neutral-400;
-      font-size: 0.56rem;
-      font-weight: v.$font-weight-semibold;
-      letter-spacing: 0.055em;
-      line-height: 1.1;
-      text-align: center;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .divisionTeams {
-      grid-template-columns: 1fr;
-      gap: 2px;
-      height: auto;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+  }
 
-    .teamToggle {
-      position: relative;
-      display: flex;
-      justify-content: center;
-      min-height: 28px;
-      padding: 2px;
-      border-color: rgba(v.$color-white, 0.07);
-      border-radius: 5px;
-      background: rgba(v.$surface-0, 0.72);
+  .summaryHeader,
+  .summaryCopy {
+    grid-template-columns: minmax(0, 1fr);
+  }
 
-      &:has(input[type="checkbox"]:checked) {
-        border-color: rgba(v.$primary-color, 0.42);
-        background: rgba(v.$primary-color, 0.085);
-        box-shadow: inset 0 0 0 1px rgba(v.$primary-color, 0.08);
-      }
-
-      &:not(:has(input[type="checkbox"]:checked)) .toggleLogo {
-        opacity: 0.62;
-        filter: saturate(0.55);
-      }
-    }
-
-    .toggleLogo {
-      width: 20px;
-      height: 20px;
-      max-width: calc(100% - 4px);
-      object-fit: contain;
-      opacity: 1;
-    }
-
-    .toggleButtons {
-      order: 1;
-      gap: 4px;
-      margin-top: 2px;
-
-      button {
-        min-height: 32px;
-        padding: 0 v.$space-xs;
-        border-width: 1px;
-        background: transparent;
-        font-size: 0.6rem;
-      }
-    }
-
-    .chartContainer {
-      order: 2;
-      min-height: 220px;
-      height: clamp(220px, 68vw, 260px);
-      margin-top: 6px;
-      border-color: rgba(v.$primary-color, 0.16);
-    }
+  .summaryStats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 360px) {
-  .compact {
-    .chartAndToggles {
-      padding-inline: 2px;
-    }
-
-    .filters {
-      gap: 3px;
-      padding: 4px;
-    }
-
-    .filterField select {
-      padding-right: 20px;
-      padding-left: 6px;
-      font-size: 0.65rem;
-    }
-
-    .teamToggles {
-      padding: 0 4px 4px;
-    }
-
+@container league-separation (max-width: 400px) {
+  .chartControls {
+    .filters,
     .toggleList {
-      gap: 2px;
-    }
-
-    .divisionGroup > strong {
-      font-size: 0.5rem;
-      letter-spacing: 0.035em;
+      grid-template-columns: minmax(0, 1fr);
     }
 
     .teamToggle {
-      min-height: 27px;
-    }
-
-    .toggleLogo {
-      width: 19px;
-      height: 19px;
+      min-height: 44px;
     }
   }
 }

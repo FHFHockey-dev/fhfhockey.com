@@ -355,4 +355,65 @@ describe("NewsCard", () => {
       screen.getByRole("heading", { name: "Source report" }),
     ).toBeTruthy();
   });
+
+  it.each(["NYR", "TOR", "ZZZ"])("uses %s's palette for the shared full and mini snapshot grids", (abbreviation) => {
+    const item = makeItem({ team_abbreviation: abbreviation, category: "LINE COMBINATION", subcategory: "PRACTICE LINES",
+      metadata: { lineupCard: { forwards: [["Captured Player", "Second Player", "Third Player"]], defensePairs: [], goalies: [] } } });
+    const { container } = render(<><NewsCard item={item} /><NewsCard item={item} compact rail /></>);
+    const articles = container.querySelectorAll("article");
+    for (const article of articles) {
+      expect(article.style.getPropertyValue("--lineup-team-primary")).toBe(teamsInfo[abbreviation]?.primaryColor ?? "#56606c");
+      expect(article.style.getPropertyValue("--lineup-team-secondary")).toBe(teamsInfo[abbreviation]?.jersey ?? "#88939e");
+      expect(within(article).getByRole("region", { name: "Practice snapshot players" })).toBeTruthy();
+      expect(within(article).getByText("Captured Player")).toBeTruthy();
+      expect(within(article).queryByText("TBD")).toBeNull();
+      expect(within(article).queryByText("Goalies")).toBeNull();
+    }
+    expect(within(articles[0]).getAllByText("F1")).toHaveLength(3);
+    expect(within(articles[1]).queryByText("F1")).toBeNull();
+    expect(within(articles[1]).queryByText("Forwards")).toBeNull();
+    expect(within(articles[1]).getByRole("group", { name: "F1: Captured Player" }).textContent).toBe("Captured Player");
+    expect(within(articles[1]).getByText("Captured Player").getAttribute("title")).toBe("Captured Player");
+  });
+
+  it("normalizes the supplied canonical team abbreviation without changing player identities", () => {
+    const { container } = render(<NewsCard item={makeItem({ team_abbreviation: " nyr ", category: "LINE COMBINATION",
+      metadata: { lineupCard: { forwards: [["Historical Player"]] } } })} compact rail />);
+    expect(container.querySelector("article")?.style.getPropertyValue("--lineup-team-primary")).toBe(teamsInfo.NYR.primaryColor);
+    expect(screen.getByText("Historical Player")).toBeTruthy();
+    expect(screen.getByText(/Partial snapshot/)).toBeTruthy();
+  });
+
+  it("shows all five supplied PP players and preserves source/time metadata", () => {
+    render(<NewsCard compact rail item={makeItem({ category: "LINE COMBINATION", subcategory: "POWER PLAY",
+      observed_at: "2026-07-14T18:19:20.000Z", metadata: { interpretation: { context: "game", unresolved: [], units: [
+        { situation: "pp", number: 1, complete: true, players: ["A", "B", "C", "D", "E"].map((name) => ({ name })) },
+      ] } } })} />);
+    expect(screen.getByRole("group", { name: "PP1" })).toBeTruthy();
+    expect(screen.queryByText("PP1")).toBeNull();
+    expect(screen.getByRole("group", { name: "PP1: E" }).textContent).toBe("E");
+    expect(screen.queryByText("Forwards")).toBeNull();
+    expect(screen.getByText("Observed Jul 14, 2:19 PM")).toBeTruthy();
+    expect(screen.getByRole("link", { name: /original post/ })).toBeTruthy();
+  });
+
+  it("shows a missing PP snapshot honestly and leaves ordinary reports without a grid", () => {
+    const { rerender } = render(<NewsCard compact rail item={makeItem({ category: "LINE COMBINATION", subcategory: "POWER PLAY",
+      metadata: { lineupCard: { forwards: [["Do not relabel me"]] } } })} />);
+    expect(screen.getByText("Structured special-teams units unavailable for this report.")).toBeTruthy();
+    expect(screen.queryByText("Do not relabel me")).toBeNull();
+    rerender(<NewsCard compact rail item={makeItem()} />);
+    expect(screen.queryByRole("region", { name: /snapshot players/ })).toBeNull();
+    expect(screen.getByRole("heading")).toBeTruthy();
+  });
+
+  it("preserves review-only editing of missing goalie slots without creating public goalie placeholders", () => {
+    const onLineupGoalieSlotClick = vi.fn();
+    render(<NewsCard item={makeItem({ category: "LINE COMBINATION", metadata: {
+      lineupCard: { forwards: [["Supplied Forward"]], goalies: [] },
+    } })} onLineupGoalieSlotClick={onLineupGoalieSlotClick} />);
+    fireEvent.click(screen.getByRole("button", { name: "Set G2 goalie" }));
+    expect(onLineupGoalieSlotClick).toHaveBeenCalledWith(1);
+    expect(screen.queryByText("TBD")).toBeNull();
+  });
 });

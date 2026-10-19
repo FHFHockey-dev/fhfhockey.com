@@ -1,0 +1,507 @@
+[
+ {
+  "path": "web/__tests__/pages/api/Teams/nst-team-stats.route.test.ts",
+  "sha1": "09dfbb38ffca36606f4f74cdc727e8a2a933bb8b",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/__tests__/pages/api/v1/db/cron-report.test.ts",
+  "sha1": "6099684bb326a283726721787220ab54dfad406c",
+  "source": "unit-only rebuild (prod + unit patches)"
+ },
+ {
+  "path": "web/__tests__/pages/api/v1/db/ingest-projection-inputs.test.ts",
+  "sha1": "bac2fadc40e23f602db624e8d15359f4b9bbf289",
+  "source": "worktree"
+ },
+ {
+  "path": "web/__tests__/pages/api/v1/db/projection-materialization-auth.test.ts",
+  "sha1": "7a477516561df9ba27d715586b17384cdd2d0ae9",
+  "source": "hand-port"
+ },
+ {
+  "path": "web/__tests__/pages/api/v1/db/run-projection-accuracy.test.ts",
+  "sha1": "bc8e9f511840fd738655ef2251657092bcab66b6",
+  "source": "hand-port"
+ },
+ {
+  "path": "web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts",
+  "sha1": "381d6f17aa1e7196b8a860685b4c5581d4d6f7fa",
+  "source": "worktree"
+ },
+ {
+  "path": "web/__tests__/pages/api/v1/db/sweep-gamecenter-normalization.test.ts",
+  "sha1": "6f2c938c6ae0faf8c3256c29d7157b12cef3625e",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/__tests__/pages/api/v1/db/update-nst-gamelog.test.ts",
+  "sha1": "ba232d2d364a84bc53efc21a5000efd6232cf00b",
+  "source": "hand-port"
+ },
+ {
+  "path": "web/__tests__/pages/api/v1/db/update-nst-team-daily.test.ts",
+  "sha1": "38031e08fe97c1c4e2d23cbaf1c8c21d3bb12d41",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/__tests__/pages/api/v1/db/update-rolling-player-averages.test.ts",
+  "sha1": "45440b5e8ae7ff885f6ebb2ed158c0b7cf58818f",
+  "source": "unit-only rebuild (prod + unit patches)"
+ },
+ {
+  "path": "web/__tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts",
+  "sha1": "ca182bb837ab2ac581ec5c2832be5e8e505c2a58",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/__tests__/pages/api/v1/db/update-wgo-goalies.test.ts",
+  "sha1": "ba4732f9cc4c6148c80ed341b83f1cfc125488e7",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/__tests__/pages/api/v1/forge/goalies.test.ts",
+  "sha1": "3c66d654ed78992a9ab9975d9e4ef03229d4fdf0",
+  "source": "hand-port"
+ },
+ {
+  "path": "web/__tests__/pages/api/v1/forge/players.test.ts",
+  "sha1": "8a5e8f031a5c04fe3d60659d151a643a7866fae7",
+  "source": "hand-port"
+ },
+ {
+  "path": "web/__tests__/pages/api/v1/ml/update-predictions-sko.test.ts",
+  "sha1": "86c95eac8f9a46a80b47206cc62aab6dc8422111",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/__tests__/pages/api/v1/season.test.ts",
+  "sha1": "f7fb05a3ef4c71fc94173ea65a873ceba9164dfe",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/__tests__/pages/api/v1/start-chart.test.ts",
+  "sha1": "b515ea58c14e2728fe11a070e7352078f92d3a8a",
+  "source": "hand-port (F2 A-08 Start Chart, optional)"
+ },
+ {
+  "path": "web/__tests__/pages/api/v1/trends/skater-power.test.ts",
+  "sha1": "20b0420aca19f732ff866f9849e576f13bb51da3",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/components/Admin/CronRouteRunner.test.ts",
+  "sha1": "4fffbb41c652052afcf4f41e8804b7701cf16dca",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/components/Admin/CronRouteRunner.tsx",
+  "sha1": "618504e702fc4e784313b3365d60520f543239f0",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/components/PlayerStats/PlayerContextualStats.tsx",
+  "sha1": "177e706177e0751d3c90e6f254626a1e9f806e71",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/components/TeamStandingsChart/TeamStandingsChart.tsx",
+  "sha1": "2e18a56a0d11a7b6b868d32db991cc1fe2b699b4",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/components/TeamStandingsChart/chartUtils.test.ts",
+  "sha1": "d743d6c35c3ac2ab7d2fec27d85258a8e55ed8e3",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/components/TeamStandingsChart/chartUtils.ts",
+  "sha1": "6c0bb3da2c4fed27788502937074f0d14627be0c",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/components/WiGO/RateStatPercentiles.test.tsx",
+  "sha1": "3aff9c3b1090dc1a7f6758eaa18b2af36cca061d",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/components/WiGO/RateStatPercentiles.tsx",
+  "sha1": "10fe03f6a776c2007a9ec0131db21877d9dd8e4d",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/lib/NHL/server/index.test.ts",
+  "sha1": "29c82d92c6d2b4034ae05da9d03f2f883222d9e7",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/lib/cron/nhlOffSeason.test.ts",
+  "sha1": "c7ddd9fbb4a4ab4f081c578c78037056e60058dc",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/lib/cron/nhlOffSeason.ts",
+  "sha1": "ca235fd37bc5fafa75e518c42e65f4d3fed9c53b",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/lib/cron/withCronJobAudit.test.ts",
+  "sha1": "e3599e77eaead63796bf45d8bb033a677f2554ab",
+  "source": "hand-port"
+ },
+ {
+  "path": "web/lib/cron/withCronJobAudit.ts",
+  "sha1": "4a7de85bf88e94dd97f05f985e44d786e06f0c2f",
+  "source": "unit-only rebuild (prod + unit patches)"
+ },
+ {
+  "path": "web/lib/draft-pro/api-tests/private-imports.test.ts",
+  "sha1": "492f5dbd365975942526d34bb6212c11d6805392",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/lib/draft-pro/privateImportTransport.test.ts",
+  "sha1": "87af22660e5e45ec0db3830dac8c48c4a75f77d0",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/lib/draft-pro/privateImportTransport.ts",
+  "sha1": "fe06dfa55d6fd93354a146bb4768d1ce5769ae76",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/lib/draft-pro/requestError.ts",
+  "sha1": "ab30399057a9225974a3376d20c7565aefc2d7a7",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/lib/draft-pro/server.ts",
+  "sha1": "d5c19b5790238adcecd0c2d49f00a6b88d7b2abf",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/lib/projections/modeledHeadTotals.test.ts",
+  "sha1": "3055a080aa9b3b6f3b511404cf83d264fcfd713c",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/lib/projections/modeledHeadTotals.ts",
+  "sha1": "7e050e5f0496cc5cda511cea622a5a82a389b817",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/lib/rollingForgePipelineRunState.ts",
+  "sha1": "e1765914fa3cbb23a7d1a9381eb3fff358dbae81",
+  "source": "worktree"
+ },
+ {
+  "path": "web/lib/rollingPlayerDailyResume.ts",
+  "sha1": "d780913971724826d6350d2d2168a57444f8dac9",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts",
+  "sha1": "b6374dd7c6dce89bedc2315bf8db42964d42406a",
+  "source": "hand-port"
+ },
+ {
+  "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+  "sha1": "f953f55d2e43597144cd4a64204d330b5473c881",
+  "source": "hand-port"
+ },
+ {
+  "path": "web/lib/sustainability/incremental.test.ts",
+  "sha1": "c8463d6443d26e105e8025f073e635146d098096",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/lib/sustainability/incremental.ts",
+  "sha1": "a08258971b6cc23e763ef25198013ee1de8ce0aa",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/Teams/nst-team-stats.ts",
+  "sha1": "bf1235cd36e023a28c97583cca4eb911f0b08feb",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/account/draft-pro/private-imports.ts",
+  "sha1": "84142feeb49608081966ff1b0fed0f0bdc60b694",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/account/draft-pro/private-imports/[uploadId]/chunks/[ordinal].ts",
+  "sha1": "44ba2265977b53688c204d37b822bdf23407793e",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/account/draft-pro/private-imports/[uploadId]/stage.ts",
+  "sha1": "91fa221e758c72431eceb02d09bc66ced3d8f719",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/build-projection-derived-v2.ts",
+  "sha1": "0da194a354dd68763aa7db3b86ba6bd29b63c597",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/calculate-wigo-stats.ts",
+  "sha1": "3a92c89f4464842d9d6688eb8206a7014b9394f9",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/cron-report.ts",
+  "sha1": "b3e0da2fd5c7be08d566117f6a3b476cb4e5bba5",
+  "source": "unit-only rebuild (prod + unit patches)"
+ },
+ {
+  "path": "web/pages/api/v1/db/ingest-projection-inputs.ts",
+  "sha1": "63168509379af28e3849b12dc94596adda877a4d",
+  "source": "worktree"
+ },
+ {
+  "path": "web/pages/api/v1/db/powerPlayTimeFrame.ts",
+  "sha1": "99cae572c635d085bb84a31ba05b365696bac6b0",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/run-fetch-wgo-data.ts",
+  "sha1": "2bebbb07b9899213dc05cd1b6517375154d850f6",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/run-projection-accuracy.ts",
+  "sha1": "569d29401eb7ed9b00239cec791b6cb1c7f2d8c8",
+  "source": "unit-only rebuild (prod + unit patches)"
+ },
+ {
+  "path": "web/pages/api/v1/db/run-projection-v2.ts",
+  "sha1": "7aee98e1dc9f6c2accabb1fa194b4012d63b697f",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/run-rolling-forge-pipeline.ts",
+  "sha1": "d741c4e73bb34906b1497a89381d2cbc18fda744",
+  "source": "worktree"
+ },
+ {
+  "path": "web/pages/api/v1/db/sustainability/rebuild-baselines.ts",
+  "sha1": "9b3a28e992f9d8597f6f04f1af86bc38439eb647",
+  "source": "unit-only rebuild (prod + unit patches)"
+ },
+ {
+  "path": "web/pages/api/v1/db/sweep-gamecenter-normalization.ts",
+  "sha1": "8bc416ddb26997761f4394e6766736a66ed5e6e6",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-PbP.ts",
+  "sha1": "fda429f35df6713ba4f28b50db96982bb3922681",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-game-goal-projections/index.ts",
+  "sha1": "42293a9be8d676af2cf176bfa0654710fb82547b",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-goalie-projections-v2.ts",
+  "sha1": "2e340d7af01b11747bbdf1999d5fa6037a1cb3ba",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-line-combinations/index.ts",
+  "sha1": "13c06de11ac756b03fad8e75c0fa1306d60d00e4",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-lineup-deployment-tallies.ts",
+  "sha1": "2ce50209db911c1758a2980de0d65af77fd44636",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-nhl-edge-stats.ts",
+  "sha1": "bb4a0d6656ee4ab4d7cb69e70767f0255477602a",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-nst-current-season.ts",
+  "sha1": "0e62d7e2def4a0ed304a7526e01e4a45e7c86e75",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-nst-gamelog.ts",
+  "sha1": "4e3078b9b9cc7bd0a4ffa64a43afccbeb0651f41",
+  "source": "hand-port"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-nst-goalies.ts",
+  "sha1": "79941d58eabefbeb1129e537eef0543a41e94c96",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-nst-team-daily.ts",
+  "sha1": "e81128809d992d84dfcf87251c12d2b0c6d43144",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-player-trend-metrics.ts",
+  "sha1": "a7e29a6b119f7fe465ccddfeb5b1eb63b445d850",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-player-underlying-stats.ts",
+  "sha1": "c14332900d572e6a718f09199c58333bb6dd19d9",
+  "source": "unit-only rebuild (prod + unit patches)"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-power-play-combinations/index.ts",
+  "sha1": "402c270f7a0382e633281420bc090a00b5a4f539",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-rolling-player-averages.ts",
+  "sha1": "69ad80aceb041319c62af296c3b1a5b33040c033",
+  "source": "unit-only rebuild (prod + unit patches)"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-season-stats.ts",
+  "sha1": "674a16ef0887ef1756b5fc3a977ecf31ecb9bf7f",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-shifts.ts",
+  "sha1": "72db4c31737c1065fff35c206e2095be5544e3dc",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-sko-stats.ts",
+  "sha1": "a0cd5b722995fdabf419c82f03b87264781d3942",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-standings-details/index.ts",
+  "sha1": "21cba0840f1abeaf86c3ecd35c2e2faa2ae2ebea",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-team-ctpi-daily.ts",
+  "sha1": "367e79ff9d19b3f46102e6ed1a41d78ff9305153",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-team-power-ratings.ts",
+  "sha1": "08705b7be521902fb4a3bb58e3d814a45fef13ad",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-team-sos.ts",
+  "sha1": "d5715135979f8e1691aa793fa4689b34d6e06976",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-team-yearly-summary.ts",
+  "sha1": "2c900b8552f9771453071ce4e2102e22500d0c56",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-wgo-averages.ts",
+  "sha1": "f1876266ac3882b6d409e2bf4c6185cc85527cc6",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-wgo-goalie-totals.ts",
+  "sha1": "71d34939ac406bd3a06cf63d153cb5e382539313",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-wgo-goalies.ts",
+  "sha1": "d84e5997da9a0713066fb170f2c6f4cc0de23dae",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-wgo-skaters.ts",
+  "sha1": "1502615b7e1aba23f2915bbcb5bfffe4a3a9a1c0",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/db/update-wgo-totals.ts",
+  "sha1": "b8dd15a0e6239f851615d83edf566f142a3a4c5c",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/forge/goalies.ts",
+  "sha1": "3fafc008f72574bf5ceb81f5e2396f50f358004d",
+  "source": "unit-only rebuild (prod + unit patches)"
+ },
+ {
+  "path": "web/pages/api/v1/forge/players.ts",
+  "sha1": "96578e15751c1b27ad568ad78e972b07070003e7",
+  "source": "hand-port"
+ },
+ {
+  "path": "web/pages/api/v1/game-predictions/forecast.ts",
+  "sha1": "29fcbd8b266e3042e9f467bf9f99bad594003345",
+  "source": "hand-port"
+ },
+ {
+  "path": "web/pages/api/v1/game-predictions/ingest-espn-odds.ts",
+  "sha1": "ac26f9124f0c77fc61f1b24b9cbe0772e103b5a3",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/game-predictions/score.ts",
+  "sha1": "e67c48357881df63e873ac0a60134f6ea8520835",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/ml/update-predictions-sko.ts",
+  "sha1": "e24056ebc8c677aa379ddcb9071e726d27112214",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/season.ts",
+  "sha1": "381178a0e57732b47dbc20e43589bd079cbc56cb",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/start-chart.ts",
+  "sha1": "7247c332310fcd5807b4680b593f8083fb7c98f8",
+  "source": "hand-port (F2 A-08 Start Chart, optional)"
+ },
+ {
+  "path": "web/pages/api/v1/sustainability/rebuild-priors.ts",
+  "sha1": "12ac31c7d23065e24712acd42cac599056256fdc",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/sustainability/rebuild-score.ts",
+  "sha1": "091608566d9cb090572a091f67b335091880b7b6",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/sustainability/rebuild-trend-bands.ts",
+  "sha1": "a8950da7817afcd53722c66dc74c2c08f01f6203",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/sustainability/rebuild-window-z.ts",
+  "sha1": "913b27e39cf5abda7054cd6095921fa2c285dbec",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/api/v1/trends/skater-power.ts",
+  "sha1": "7ee2a72a4354a6b5a16a6d7040cc6b55a4e3db4f",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/pages/db/index.tsx",
+  "sha1": "06b23b1bc7e0f0941747a722479212e4ae49189e",
+  "source": "HEAD"
+ },
+ {
+  "path": "web/vercel.json",
+  "sha1": "e30da9ac8c0347a7a846366600e1f54698a6aab1",
+  "source": "prod + line-32 edit"
+ }
+]

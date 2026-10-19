@@ -1,0 +1,11 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ lib/sources/tweetDecisionReview.test.ts (54 tests) 71ms
+
+ Test Files  1 passed (1)
+      Tests  54 passed (54)
+   Start at  13:16:15
+   Duration  396ms (transform 124ms, setup 16ms, collect 199ms, tests 71ms, environment 0ms, prepare 29ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/decisions-pure-integration-2026-10-19/evidence/frozen-candidate-results.json

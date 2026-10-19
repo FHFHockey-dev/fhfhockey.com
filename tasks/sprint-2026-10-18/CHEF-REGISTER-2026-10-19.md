@@ -39,6 +39,31 @@ The approvals answer the four questions Chef asked, so each one covers what that
 - **FORGE:** the v2 approvals (injury policy hash, null gate, universe thresholds, rolling first-issuance sign-off). The patches are still applied only after 2026-10-20 17:00Z, once the patch 03 re-review passes.
 - **Audit:** read-only production checks for the ~70 audit rows (Q-08). Bounded read-only SQL with statement timeouts, one at a time, never during the scheduled runs. No application or cron requests.
 
+## TJ goal for today
+
+> "Our ultimate goal today, by 7pm ET is to have working daily projections. Polish and perfection can come later, and should be earmarked for completion. A working RSO and Start Chart is priority."
+
+This was relayed by `local_08a0bf1c` at about 17:23Z. The critical path below is its proposal and still needs TJ's approval; nothing runs before that.
+1. Option A: rebuild relationships for 0006–0053 from stored snapshots. No migration and no NHL calls.
+2. Today's run, through localhost:3000 with Chef as the only caller: the rolling recompute for recent dates, then ingest and the derived build, then `run-projection-v2` for 2026-10-19. Success means a succeeded `forge_runs` row for today, visible on Start Chart and the dashboard.
+3. R5 release this afternoon: A-01, the 207 audit fix, A-05, A-12 and the rest, plus the cron change. Excluding `start-chart.tsx`.
+4. RSO native forecasts come tomorrow after the freeze: the v1 re-run, R6 S-1 and the head env.
+
+## Earmarked for later (polish, not today's critical path)
+
+- S-2 and S-3 of R6, and the B2 writers.
+- D-6: the native catalog expiry at first puck drop.
+- A-09: policy beyond the flag.
+- Patch 06 (v2 gates A-13 to A-18): the decisions it leaves open, an exact `--approval-ref`, and re-running means assemble.
+- The HTML-fallback migration (order 86), if it slips. Its apply preflight must compare the hosted RPC body with `20261011115124`.
+- RSO ranking observations.
+- A-21: ESPN odds return 403, so a source decision is needed.
+- `featureBuilder` 82-game items.
+- A-07 sweep: the summary refresh still has to finish for today's normalised games.
+- FORGE v1 means-only hold (option a): apply the 7-patch set after 2026-10-20 17:00Z, then schedule a dated re-run.
+- Layers 2 and 3 of game-type isolation (queues partitioned per type, and type-filtered gates).
+- History hygiene: C2 npm cache. The local backup branch `chef/backup-octoberBranch-20261019` should be removed once that's confirmed.
+
 ## Results log
 
 - 05:15Z: resume verification above. Report files hashed for change detection: LEDGER `241206f2…`, production-plans `290a78ee…`.
@@ -161,3 +186,271 @@ The approvals answer the four questions Chef asked, so each one covers what that
   - Release file list: 4 web files plus the diagnosis note. None is among TJ's uncommitted files; `shift-charts.ts` was clean before the edit.
   - ❓ TJ: release go for R3.
   - After R3 is live: the approved catch-up (`update-shift-charts?maxGames=50`, sequential, outside scheduled times; bound proposed at ≤3 runs).
+- 13:09:12Z: **R3 released** (TJ: "Yes: build R3 as a curated candidate on master (those 4 files), run the gate, push to master with the Vercel check…").
+  - Candidate `7294e3847` is the 4 shift-charts files on `fa950fd29`.
+  - Gate: focused tests 10 files / 87 pass; ESLint clean; tsc exit 0.
+    - Full unit: every failure is a baseline identity or an environment artifact. The `vercel-ignore` (×6) and `TeamStandingsChart` failures pass alone, 11/11.
+  - Vercel: exactly `dpl_FEZB6qPBm7XgZoVV5GZw94GhXVsj` READY at 13:13:43Z, plus 3 CANCELED.
+  - Smoke test: `/` 200, `/rankings` 200.
+  - Rollback target: `dpl_BwCwi3a…` (R2).
+  - Local sync merge `7f8a31067` (tree unchanged). octoberBranch is 2 ahead of origin; the push waits for TJ.
+  - (Correction: the register timestamps "~13:40Z" and "~14:20Z" above were estimates and ran fast; the actual times were about 12:45–13:00Z.)
+- ⚠️ **INCIDENT, Chef error, 13:08Z.** Chef ran the R3 full Vitest in the export with `GIT_DIR=/Users/tim/Code/fhfhockey.com/.git`, so 4 receipt tests could call `git rev-parse`.
+  - `web/scripts/vercel-ignore.test.ts` passes `process.env` into its temp-dir `git init/add/commit`, so it ran against the real repo instead. That made **16 "Fixture" commits** on octoberBranch, from `b5f8ab011` (parent `79492e495`) to `24690c2f8`. The first of them replaced the index with fixture files only. The working-tree files were untouched.
+  - TJ then committed "10k" (`1057b4a16`) and "20k" (`eeb4af4a4`), re-adding the tree, and pushed to origin.
+  - **Net check, Chef:** `git diff 79492e495 HEAD` shows only the 45 expected work files and 22 added files, with no lost file except `web/next-env.d.ts`. That file now drops out of tracking because `.gitignore:16` ignores it; it is still on disk.
+  - No Vercel deployment came from the octoberBranch push.
+  - History keeps the 16 junk commits plus 2 large re-add commits. Rewriting would need a force-push, which is TJ's call.
+  - Memory saved: never set `GIT_DIR` for test runs.
+- ~13:20Z: **Catch-up run 1 failed closed** on 2026020001, the regular-season opener, with an empty roster scope.
+  - Read: 53 of 87 regular-season games have roster rows only under an older PBP hash, so this is a re-capture/normalization hash-mismatch bug.
+  - Catch-up runs 2 and 3 are held.
+  - Diagnosis sent to `shift-charts-scope` (`local_a597f542`). Details in PROD-READS.
+- ~13:25Z: **Git pause.** TJ approved, relayed by `local_08a0bf1c`: "Rebuild octoberBranch without the 16 Fixture commits and the 10k/20k restore commits: keep a backup branch, re-commit the same final tree (re-adding web/next-env.d.ts) as one commit after 79492e495, redo the R3 sync merge, and force-push with lease after the Vercel check."
+  - `local_08a0bf1c` runs the rebuild; the backup is `chef/backup-octoberBranch-20261019` at `7f8a31067`.
+  - Chef and `shift-charts-scope` run no git writes until the rebuild is reported done.
+- ~13:45Z: **Rebuild verified by Chef.**
+  - octoberBranch is `79492e495` → `cc3be5c09` (restore) → `423b57511` (R3 sync merge), equal to origin. 0 Fixture commits remain, and `7294e3847` is an ancestor.
+  - The tree equals the old `7f8a31067` except that `web/next-env.d.ts` is tracked again.
+  - Backup `chef/backup-octoberBranch-20261019` is local only.
+  - The git pause is lifted for `shift-charts-scope`.
+- ~13:55Z: **Root cause of the roster-hash failure** (`shift-charts-scope`, `R3-ROSTER-HASH.md`).
+  - Production `ingest-projection-inputs` re-captures PBP, which advances the head and status hash and marks normalisation `stale`, but it never re-normalises. The roster spots therefore stay on the old hash.
+  - The fix is already on octoberBranch (TJ's `0de97e77d`, `normalize_gamecenter` stage) and was never released.
+  - Q-1 read: all 53 games are sweep-fixable.
+  - **Proposed R4:** `PROPOSED-gamecenter-renormalization-vs-R3.patch`, 6 files, +877/−31, applied to master `7294e3847`. It leaves out the `withNhlOffSeasonSkip` wrapper, whose module isn't in production. It passes `--check` on R3 and 64 tests.
+  - Sweep route: Chef checked it is `withCronJobAudit(adminOnly)` and bounded (limit and lookback capped).
+  - ❓ TJ: R4 release go. Then TJ runs ≤3 sweep calls and ≤3 shift-charts catch-up calls, because they need the cron secret.
+- 13:32:56Z: **R4 pushed** (TJ: "Yes: build R4 on master from the 6-file patch, run the gate, push to master with the Vercel check…"). `ad93e2887` is the 6 files on `7294e3847`.
+  - Gate:
+    - focused 40 files / 339 pass; ESLint clean; tsc exit 0
+    - full unit: only the 4 known `git rev-parse` export artifacts are outside the baseline, and they pass 4/4 in a throwaway repo inside the export
+    - no `GIT_DIR` set, and no commits leaked into the real repo
+  - Vercel: 1 web build `dpl_6iWwUALMRsg4Am9jQYUMYi4EqbLT` plus 3 CANCELED, as expected.
+- **A-07 caveat** (relayed by `local_08a0bf1c`): the R4 sweep has 3 known bugs: (1) the summary marker masks a failed team refresh; (2) the 1,000-row oldest-first scan for derived-stale games; (3) the xG list is capped at 1,000 rows.
+  - Chef: normalisation, which writes the roster spots, persists per game before any summary refresh, so the roster repair is unaffected.
+  - Mitigations for TJ's runs: limit 30 per call; save any response that stopped at `refresh_team_summaries`; treat the xG list as incomplete.
+  - Fixing A-07 is a follow-up (R5).
+- 13:37:27Z: **R4 live.** `dpl_6iWwUALMRsg4Am9jQYUMYi4EqbLT` is READY and aliased. Smoke test: `/` 200, `/rankings` 200. Rollback target: `dpl_FEZB6qP…` (R3).
+  - Local sync merge of `ad93e2887` (tree unchanged). Not pushed: it waits for TJ.
+  - Next: TJ runs ≤3 sweep calls, then ≤3 shift-charts catch-up calls. Chef reads the audit and status after each one.
+- 15:01Z: **Sweep call 1** via TJ's local dev server, TJ's approval relayed by `local_08a0bf1c`, quoted exactly: "Yes: the Chef runs the ≤3 sweep calls and ≤3 shift-charts catch-up calls through my local dev server (localhost:3000) with the A-07 mitigations, checking the audit after each and stopping on any failure."
+  - Preconditions: no sweep audit rows before 15:00Z, all 5 files clean, dev server up.
+  - **A second, concurrent call with the identical URL started at 15:00:56.489Z, 12 s before Chef's call at 15:01:08Z. It was not Chef's.**
+    - It normalised 26 games: 2026020001, 0002, 0004–0008, 0010, 0012, 0013, 0016, 0017, 0034, 0035, 0037, 0038, 0040–0043, 0045, 0050, 0052, 0055, 0067, 0068.
+    - It then failed with 500 at 15:04:54 in `refresh_player_summaries`: "upstream request timeout".
+  - Chef's call (200, 250 s) normalised the other 6 (2026020044, 0047, 0049, 0066, 0069, 0072) and refreshed their summaries (169 player and 840 team rows).
+  - The 24 CAS mismatches on each side are the concurrency guard rejecting the second writer. No double-write occurred.
+  - Net: **32 games normalised**. The other call's 26 games have **no summary refresh** (A-07: save it; no marker was written, so the derived-stale path should reselect them later).
+  - **Stopped**, per the "stop on any failure" rule. Calls 2 and 3 and the catch-up are not run.
+- ~15:15Z: **The concurrent sweep caller was TJ**: a production call to `https://fhfhockey.com/...` at 15:00:56Z, which hit Vercel's 240 s cap during the player-summary refresh. From now on Chef is the only caller, via localhost. Chef has used 1 of its 3 sweep calls.
+  - Call 2 is held: `sweep-gamecenter-normalization.ts` is dirty in the tree with a07's unreviewed fix (+198/−113), so localhost would run it. Waiting for `local_08a0bf1c`/a07 to restore the released version.
+- 15:08:56Z: **Sweep call 2** (TJ, relayed and quoted exactly: "The 15:00:56 call was mine. Chef: run sweep calls 2–3 and the shift-charts catch-up through localhost:3000 on the A-07 fixed code once its tsc passes, one caller only, checking the audit after each and stopping on any failure.").
+  - Pre-checks: sweep sha256 `da754474fae8c62d`, the other 4 paths and `lib/underlying-stats/` clean, a single caller.
+  - Result: **502, 398 s.**
+    - **23 games normalised** (2026020085–0092 and 0106–0120).
+    - Refreshes failed: 24 player summaries with "upstream request timeout", and 6 team summaries with "Could not query the database for the schema cache. Retrying.", which points to DB load.
+    - Team rows upserted: 3,360. Player rows: 0.
+    - `derivedOnlyGameIds`: 7.
+  - Saved at `release-r2-2026-10-19/ops/sweep-2-chef-20261019T1509Z.json`.
+  - **Read:** normalisation since 09-19 is now all `complete` (regular season 136, preseason 23, **0 stale**). The roster-hash repair is done.
+  - Player summaries are still unrefreshed for the games touched today. With the A-07 fix the marker is written last, so a later sweep reselects them.
+  - **Stopped** under the stop-on-failure rule. Call 3 and the shift-charts catch-up were not run.
+- 15:17:59Z: **Shift-charts catch-up call 1** (TJ: "Yes: run the shift-charts catch-up now through localhost, ≤3 calls of maxGames=50, one caller, checking the audit after each and stopping on any failure.").
+  - Code: `shift-charts.ts` and `relationshipMaterialization.ts` equal the release; `update-shifts.ts` is TJ's committed `79492e495` (off-season wrapper).
+  - Result: **500, 13 s.** Game 2026020001 materialised (38 rows written and verified). Then 2026020002 failed: "Shift source fingerprint does not match projection inputs".
+  - **Stopped.** Calls 2 and 3 were not run.
+  - Most likely cause: the sweep re-normalised from the current shift head, so the projection-input fingerprints in `projection_game_materialization_status` are now stale. This needs diagnosis.
+  - Sent to `shift-charts-scope`. Saved at `release-r2-2026-10-19/ops/catchup-1-chef-20261019T1518Z.json`.
+- ~15:30Z: **Fingerprint diagnosis** (`shift-charts-scope`, `R4-SHIFT-FINGERPRINT.md`).
+  - `update-shift-charts` re-fetches live NHL shift charts and compares them with `shift_source_hash` from the ingest capture. NHL corrected 2026020002 upstream after ingest. The sweep didn't cause this.
+  - Chef read Q-2: 87 regular-season games have complete inputs, 3 have current relationships, and there is **0 head drift** (PBP and shift). That confirms upstream drift.
+  - The `games` table shows 140 regular-season games played, so about 53 have no projection inputs yet.
+  - **Proposed recovery (needs TJ):** re-run `ingest-projection-inputs` via localhost for 09-29 to 10-18. About 4 calls with `maxGames=25`, sequential, resuming from `resumeFromGameId`; about 90–180 NHL api-web/stats requests. Then ≤2 shift-charts calls with `maxGames=50`.
+  - Stop on any ingest error, or on a repeat mismatch for a game ingested in the same session.
+  - Optional code follow-up: shift-charts skips stale-input games instead of throwing.
+- 15:21:22Z: **Ingest call 1** (TJ: "Yes: run ingest-projection-inputs via localhost for 2026-09-29 to 2026-10-18 (maxGames=25, ≤5 sequential calls, resume from resumeFromGameId), then ≤2 shift-charts calls of maxGames=50; one caller, check the audit after each, stop on any failure.").
+  - Result: HTTP 200 with **`success:false`**, 17 s. 136 games in range. 5 processed, of which 3 were upserted (978 plays, 114 shift rows) and 2 were idempotent.
+  - Error: 2026020006 (09-30), stage `precheck_shifts`, "No NHL shift rows returned for game 2026020006". `nextGameId` is 2026020006.
+  - **Stopped**, per the rule. Ingest calls 2–5 and the shift-charts calls were not run.
+  - Saved at `release-r2-2026-10-19/ops/ingest-1-chef-20261019T1521Z.json`.
+- 15:37:32Z: **Ingest retry** (TJ: "Wait about 15 minutes, then retry ingest call 1 once (resume from 2026020006). If it fails again, stop and report.").
+  - Same failure: 2026020006 `precheck_shifts`, "No NHL shift rows returned", 0 games processed, 1.7 s.
+  - **Stopped and reported.** Ingest calls left: 3. Shift-charts calls: 2, not run.
+  - Context: on 10-01 the stored head held 743 shift rows for 0006, and `shift_charts` has 38 player rows. NHL's shiftcharts feed now returns none for this game.
+- ~15:45Z: TJ pointed out that 2026020006 has PBP. Chef sent 2 read-only GETs to the NHL shiftcharts feed (`api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=…`): **0006 total=0**, against 0005 total=780. The PBP feed is fine; NHL's shift-charts feed for 0006 is empty right now. The stored 10-01 head still holds 743 rows.
+- 15:45:24Z: **Ingest call 3** (TJ: "Skip, continue recovery then."), resuming from 2026020007. It failed the same way: "No NHL shift rows returned for game 2026020007". **Stopped.** 2 ingest calls left; shift-charts not run.
+- Chef sampled the NHL shiftcharts feed with 12 read-only GETs, 1 s apart. `total` per game:
+
+| Game | total |
+|---|---|
+| 0003 | 770 |
+| 0007 | 0 |
+| 0008 | 0 |
+| 0009 | 0 |
+| 0010 | 0 |
+| 0020 | 0 |
+| 0040 | 0 |
+| 0060 | 649 |
+| 0080 | 695 |
+| 0100 | 716 |
+| 0120 | 749 |
+| 0135 | 638 |
+
+  - NHL's shift feed is empty for a block of early-season games, roughly 0006 to 0040–0059 (around 09-30 to 10-0x). Later games are fine.
+  - The ingest route stops at the first empty game, so a full-range re-run can't get through.
+- 15:46–15:47Z: **Ingest calls 4 and 5** (TJ: "Yes: use the 2 remaining ingest calls (maxGames=25, ≤5 total kept) for startDate=2026-10-05 to endDate=2026-10-18, then the ≤2 shift-charts calls; same stop-on-failure rule…").
+  - Call 4: failed at its first game, 2026020040 ("No NHL shift rows"). Chef's error: the sample had already shown 0040 empty.
+  - Boundary probe: 19 integer GETs at 1 s spacing. The first 19 attempts were wasted because the shell formatted the ids as floats (invalid ids, no data). Result: NHL shift data is empty for **0006–0053** and present from **0054**.
+  - Call 5: resumed at 0054 inside the approved window. Processed 0054–0056 (2 upserted, 1 idempotent), then failed on **2026020057** (10-08), stage `precheck_shifts`: "Shift clock/duration mismatch for game 2026020057, player 8479979". This is an NHL data-quality check.
+  - **All 5 ingest calls are used. Stopped. Shift-charts calls not run.**
+  - Ingest refreshed 8 games in total today: 0001–0005 and 0054–0056.
+  - Systemic issue: ingest stops at the first per-game failure, so NHL feed gaps and corrections block every game behind them. This is the per-game isolation (layer 1) TJ asked about.
+- ~16:00Z: **R5 planning constraints**, from `local_08a0bf1c`; Chef has not re-verified them yet:
+  1. **Exclude `web/pages/start-chart.tsx`** until a server-side source selection exists. It always sends `forecast_source=game_expectations` (`:442`), the API takes the native path, and with no native head production would show no projections. C-3 in `forge-native-serving-plan-2026-10-19/PLAN.md`. The A-08 change to `start-chart.ts` itself is OK.
+  2. **A-01, the resumable pipeline (uncommitted), and A-05** both return 207 by design, and `withCronJobAudit` records 207 as a failure. A small `withCronJobAudit` fix must ship with them.
+     - A-01's proposed schedule `vercel.json:32` → `5-55/5 10 * * *` needs TJ's approval.
+     - Interaction: pg_cron's `run-projection-v2` (~10:12Z) writes `forge_runs` inside that window.
+  3. **FORGE v2 apply set:** 01–04, then target-scope 01b, 03b and 02, then patch 06 (`forge-v2-prerollout-gates-2026-10-19/`, sha256 `6e24aaaa…766e`). 05 is not used. 06 changes the live commands: `outputs-v2 --approval-ref` must be exact, and means assemble must be re-run.
+- ~16:15Z: **Ingest isolation reviewed by Chef** (`isolate-per-game-failure`, `local_7becd39f`, uncommitted, +67 lines in `ingest-projection-inputs.ts` plus tests).
+  - When NHL shift validation fails, the game is recorded as `errors[].isolated=true` and `skipReasons.sourceDataRejected`, and the run continues.
+  - Explicit-range runs always isolate. The durable cursor isolates only once the game is ≥2 UTC days old.
+  - The lease completes when every error is isolated. `success` stays false.
+  - Chef re-ran `ingest-projection-inputs.test.ts`: 33/33 pass.
+  - Not built: the optional fallback to the stored snapshot.
+  - **Gap:** `update-shift-charts` still re-fetches live shifts and throws on an empty feed or a fingerprint mismatch. Its oldest-first queue would now block at 2026020006, whose live feed is empty. The shift-charts isolation that `shift-charts-scope` proposed in `R4-SHIFT-FINGERPRINT.md` is needed too before the catch-up can progress.
+- ~16:20Z: **Shift-charts isolation dispatched** to `shift-charts-scope` (`local_a597f542`). TJ, quoted exactly: "Yes: have the shift-charts session add skip-and-continue isolation to update-shift-charts for empty feeds and stale-input fingerprint mismatches, with tests, uncommitted."
+  - Scope: `shift-charts.ts` and its tests. Skips must not starve the queue.
+- ~16:45Z: **Shift-charts isolation and fallback assessment** (`shift-charts-scope`).
+  - Skip isolation is in `shift-charts.ts` and tests, uncommitted. Full tsc exit 0, as the session reports. Chef re-ran 4 focused files: 34/34 pass.
+  - `HTML-SHIFT-FALLBACK.md` makes the key point: every game with complete inputs had non-empty JSON at ingest, and its stored shift and PBP snapshots are pinned by `shift_raw_payload_id`/`pbp_raw_payload_id`.
+  - **Option A, recommended:** `shift-charts` builds relationships from those stored snapshots instead of live NHL fetches.
+    - The fingerprint matches by construction, and no NHL requests are made.
+    - It works for 0006–0053 today.
+    - About 60–90 lines in `shift-charts.ts`, plus a small helper moved into `lib/projections/ingest/shifts.ts`.
+  - **Option B:** the HTML fallback, for games whose JSON is empty at ingest. It spans `nhlRawGamecenter.mjs`, `.d.ts` and `shifts.ts`, plus strict player resolution. Plan it separately.
+  - ❓ TJ: build A.
+- ~16:55Z: **TJ decision** (relayed by `local_08a0bf1c`, quoted exactly): "Good call, the HTML fallback is the way to go."
+  - Dispatched option B to `shift-charts-scope`, per its design note: reuse the `nhlRawGamecenter.mjs` parser in `shifts.ts` and shift-charts, with strict player resolution.
+  - Provenance uses the **existing `"htmlreports"`** value rather than "html-report", because the raw payload must be byte-identical to the Gamecenter writer's or the heads flip-flop.
+  - Skip stays in place when both feeds are empty. Offline fixture tests only.
+  - Option A is not being built now.
+- ~17:10Z: **HTML fallback blocked** (`HTML-FALLBACK-BLOCKER.md`).
+  - The ingest capture RPC `capture_projection_raw_source_snapshots_v1` (migration `20261011115124`) and `rawSnapshotPersistence.ts:186-194` accept only `source='json-api'`, with `gameId` and an integer `typeCode` on every row. The HTML payload has neither and is marked `htmlreports`, so the fallback needs a **new migration**, a guard change and a change to the shared payload shape.
+  - It also wouldn't clear the 0006–0053 backlog: those games were ingested from JSON, so HTML rows would mismatch their stored fingerprint.
+  - Recommendation: Option A, relationships from stored snapshots, first for the backlog; the migration-backed HTML fallback later.
+  - ❓ TJ. No code changed.
+- ~17:15Z: **TJ chose Option 1** (quoted exactly): "Build the full HTML fallback now: draft the migration locally, change rawSnapshotPersistence.ts and the shared payload shape, offline tests only; I'll approve the migration push separately."
+  - Dispatched to `shift-charts-scope`: a new migration (order 86, pending, not applied), `rawSnapshotPersistence.ts`, the shared shape in `nhlRawGamecenter.mjs`, `.d.ts`, `shifts.ts`, `shift-charts.ts` and tests.
+  - Per the session's note, this alone does not clear the 0006–0053 backlog: those games would still need a re-ingest after release, or Option A.
+- ~17:25Z: **TJ's HTML fallback acceptance** (relayed, quoted exactly): "I would like to integrate the HTML fallback now, the migration should not break the current PbP/ShiftChart ingestion, instead it should accommodate the HTML results in addition and when needed."
+  - Forwarded to `shift-charts-scope`:
+    - The migration is additive: same RPC name, signature, defaults and grants, JSON checks unchanged, with a JSON-unchanged test.
+    - Deploy migration first, then code, and the new code must work against the old RPC.
+    - HTML only when JSON is empty and the game is final.
+  - **Migration-order decision:** authority orders must be contiguous, so the HTML-capture migration takes **order 86**. IFTTT SQL6–8 (`ROLLOUT-APPROVAL.md` B2) move to **87–89** when added. The 05:35Z note above saying "86–88" is superseded.
+- ~18:00Z: **HTML fallback built** (`shift-charts-scope`, uncommitted, after TJ approved directly in that session).
+  - Migration `20261019180000_accept_html_report_projection_shift_snapshots.sql` (order 86, pending, not applied).
+  - Changes: `rawSnapshotPersistence.ts`, `shifts.ts`, `nhlRawGamecenter.mjs` (shared strict payload), `.d.ts`, `shift-charts.ts` and tests.
+  - The session reports 253 focused tests, ESLint, a full tsc and 31 PG-harness cases passing. Chef has not re-run them.
+  - Chef diff of the RPC body against local `20261011115124`: the only change is the source check, now `in ('json-api','htmlreports')`.
+  - ⚠️ **Apply risk:** PROD-READS Q-08 listed `20261011115124` (and `20261011160000`) among the local versions not applied in production. The new full-body `create or replace` would then also apply `20261011115124`'s RPC changes.
+  - The apply preflight must compare the hosted `pg_get_functiondef` with the `20261011115124` body. If they differ, stop and bring the difference to TJ.
+- ~18:00Z: **R6 S-1** (TJ, relayed and quoted exactly: "build R6 slice S-1 (one server-side forecast source for Start Chart, RSO and the dashboard) locally, using D-1 serve-and-flag and D-2 empty fallback from PLAN.md. No commits, deploys or production calls."). Session `r6-s1-serving-source` (`local_65d983ec`).
+  - It owns `forecastServingSource.ts`, `pages/api/v1/start-chart.ts`, `pages/start-chart.tsx`, `roster-schedule-optimizer/data.ts`, `lib/rosterScheduleData/{planning,planningDataTransport}.ts` and `forge/forecasts.ts`, plus their tests. Chef's sessions stay off those files.
+- ~18:10Z: **Migration 86 preflight** (read-only, in PROD-READS).
+  - The hosted capture RPC is the `20260720105524` body. `20261011115124` is NOT applied.
+  - 86 would also bring in `20261011115124`'s duplicate-row relaxation.
+  - ❓ TJ: apply `20261011115124` then 86 (ledger-aligned, both relaxations), or rebase 86 on the hosted body (source check only).
+- 17:25Z: **TJ approved all three** ("Approve all three" button in `local_08a0bf1c`; the relay cut it off at 300 characters). Quoted as received: "Approved: (1) Chef builds and runs option A to rebuild roster links for 0006-0053 from stored snapshots; (2) Chef runs today's FORGE chain via localhost:3000 as the only caller (rolling, ingest/derived, run-projection-v2 for 2026-10-19), stopping on failure; (3) build and release R5 this afternoon w…". The full button text, per the relay, ends "…with the cron change, after the usual gate and Vercel checks."
+  - (1) Option A dispatched to `shift-charts-scope`, with the HTML fallback gated off by default because hosted lacks migration 86.
+  - (2) Rolling recompute started via localhost (implicit daily window, `disableRuntimeBudget=true`, `fastMode=true`). The rolling files are clean and committed (`b47c512fb`).
+  - (3) R5 byte manifest dispatched to an in-process Sous (opus, medium), writing `tasks/artifacts/release-r5-2026-10-19/`.
+- 17:27–17:29Z: **Migrations applied** (TJ, quoted exactly: "Apply 20261011115124 then migration 86 to hosted with the §11 method (preflight, apply, post-check, ledger alignment), one at a time; stop on any mismatch.").
+  - **`20261011115124`** → ledger `20261019172738`.
+    - Preflight: the hosted body was `20260720105524` (md5 `990b756c`).
+    - Post-check: md5 `f3b89dd8` matches the file. Grants and config unchanged; timeouts did not leak.
+  - **Migration 86** → ledger `20261019172842`.
+    - Preflight: the base now equals hosted.
+    - Post-check: md5 `4750518d` matches the file. Grants and config unchanged.
+  - Local alignment:
+    - The 86 file is renamed `20261019172842_accept_html_report_projection_shift_snapshots.sql`.
+    - `20261011115124` keeps its authored filename so the chain order is unchanged; its authority row records the ledger version.
+    - Both rows are set to `applied`.
+    - Test counts are applied 56 / unknown 28 / pending 2 (21/21 pass), and the summary line is updated.
+  - The capture RPC on hosted now accepts `htmlreports`, so the HTML fallback flag can be enabled.
+- 17:33Z: **Option A verified ready.** `OPTION-A-STORED-SNAPSHOTS.md`: `update-shift-charts` reads the pinned stored snapshots and checks id, endpoint and hash. HTML fallback env flag off by default. Chef re-ran 12 related files: 176/176 pass.
+- 17:33–17:35Z: **Ingest call 6** (localhost, 10-05 to 10-18, `maxGames=50`, HTML flag off). Result: **500 after 140 s**, "Could not query the database for the schema cache. Retrying.", with no per-game summary. **Stopped.**
+  - DB check right after: 3 active queries waiting on IO, nothing long-running.
+  - Likely cause: a transient PostgREST schema-cache reload after the 17:27–17:28 DDL, under the rolling recompute's load.
+  - The rolling recompute (started 17:25:42Z) is still running.
+- ~17:40Z: **R5 manifest done** (`tasks/artifacts/release-r5-2026-10-19/`, 97 paths).
+  - Clean: U4 (A-01), U6 (ingest isolation), most of U2 and U3.
+  - **Several HEAD blobs carry unreleased hunks and would break prod:**
+    - `forge/players.ts` and `goalies.ts`: the `FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT` gate
+    - `forecast.ts`
+    - `update-rolling-player-averages.ts` and `fetchRollingPlayerAverages.ts`: new `rollingPlayerCountSupport.ts`
+    - `update-nst-gamelog.ts`: new `lib/nst/requestBudget.ts`
+    - `cron-report.ts`, `withCronJobAudit.ts`, `update-player-underlying-stats.ts`, `rebuild-baselines.ts` and `run-projection-accuracy.ts`
+  - These need hand-ported or unit-only rebuilds; see F1/F2 in MANIFEST.md. `start-chart.ts` is excluded; A-08 needs a manual port.
+  - `vercel.json` line 32 is not edited yet. Target blob `e30da9ac`.
+  - No migration needed.
+- 17:36–17:39Z: **Ingest call 6, retry** (TJ: "Yes: retry ingest call 6 once now (same params); if it fails again, stop and report.").
+  - Result: 200, 162 s. 35 games processed (23 upserted, 12 idempotent), and 15 **isolated** (14 empty NHL shift feeds in 0040–0053, 1 clock/duration mismatch). 0 non-isolated errors.
+  - `nextGameId` is 2026020090; 47 games remain in the window.
+- ~17:40Z: **Ingest call 7** started (resuming at 2026020090). An R5 candidate-assembly Sous (opus, medium) was dispatched to build the unit-only and hand-ported tree in a scratch export.
+- 17:39–17:50Z: **Ingest call 7**: 200, 642 s. 44 processed (26 upserted, 18 idempotent), 3 isolated (clock/duration mismatches). `nextGameId` null, so the **10-05 to 10-18 window is complete**.
+- 17:50Z: **Shift-charts catch-up call 2** started via localhost (`update-shifts?action=all&maxGames=50`, option A stored-snapshot code). The rolling recompute is still running.
+- 17:25–17:51Z: **Rolling recompute** (localhost, implicit daily window, `fastMode`): 200, `success:true`, `operationStatus:"warning"`, 25 min 11 s.
+  - Window 10-05 to 10-19 `complete`: 670 players, 15,655 rows upserted, 0 coverage warnings.
+  - 2,432 freshness blockers were bypassed under the implicit-daily rule, so the route calls the result "degraded until stale sources are refreshed".
+  - Saved at `ops/rolling-1-chef.json`.
+- 17:50–17:58Z: **Shift-charts catch-up**, option A, via localhost (`update-shifts?action=all&maxGames=50`). Calls 2–4 all returned 200 with `success:true`, 0 skipped and 0 failed:
+  - call 2: 50 games (0002–0055), 1,904 rows
+  - call 3: 50 games (0056–0108), 1,908 rows
+  - call 4: 27 games (0109–0136), 1,028 rows; queue drained
+  - All `shiftSource: json-api`, from stored snapshots. That includes 0006–0053, whose live NHL feed is empty.
+  - `unmatchedNames` and `positionFallbackNames` list mojibake names (for example "SlafkovskÃ½"); this is informational, not a failure.
+- 17:58Z: **Derived build** started (`build-projection-derived-v2?startDate=2026-10-05&endDate=2026-10-18&bypassMaxDuration=true`).
+- 17:58–17:59Z: **Derived build.**
+  - Call 1 (10-05 to 10-18, default `maxDays` 3): 200, processed 10-05 to 10-07. 16 games, 678 rows (611 player, 32 team, 35 goalie), 0 failures.
+  - Call 2 (10-08 to 10-18, `maxDays=11`): **207 `success:false`**. 10-08 `input_manifest`: "Projection input manifest is unavailable for game 2026020057". 0057 was isolated by ingest (NHL clock/duration mismatch), so it has no inputs, and the per-date loop stops on it. **Stopped.**
+  - Chef attempted a minimal edit to `build-projection-derived-v2.ts`: skip a game with no input manifest, recorded as `skippedGames` `projection_inputs_unavailable`; all other failures still stop. **The auto-mode classifier denied it** (shared resource, TJ's file). Not worked around; nothing was written.
+  - ❓ TJ: approve that edit, or another route. The other no-manifest games are likely the isolated 0040–0053 and the clock-mismatch games.
+- ~18:15Z: **R5 candidate assembled** (Sous; `release-r5-2026-10-19/CANDIDATE.md` and `candidate-files.json`; export at Chef scratchpad `r5/candidate`). Chef has not reviewed the hand-ports yet.
+  - 101 files: 73 HEAD blobs, 5 worktree copies, 9 unit-only rebuilds, 11 hand-ports, 2 optional Start Chart A-08 files, and `vercel.json` (`e30da9ac`).
+  - Results reported: tsc pass; focused 540/540 across 27 files; adjacent 114/114; ESLint pass.
+  - Full suite: 26 failures. 20 are baseline on a clean `ad93e2887` export, 1 is a load flake, and 4 are fixed by a test regex.
+  - **Open:** `combinedCronInventory.test.ts` flags that the new `5-55/5 10 * * *` collides with `update-line-combinations-job` (`*/25`) at 10:25 and 10:50. Options: accept the overlap and update the test, or use a schedule that skips :25 and :50, for example `5,10,15,20,30,35,40,45,55 10 * * *`. ❓ TJ.
+- ~18:02Z: **Derived-route skip fix** (TJ, quoted exactly: "Approved: edit build-projection-derived-v2.ts to skip games whose projection input manifest is unavailable (record as skippedGames, reason projection_inputs_unavailable; all other failures still stop), add a test, then continue the derived build and run-projection-v2 for 2026-10-19.").
+  - Edited `build-projection-derived-v2.ts` (uncommitted) and added 2 tests: skip-and-continue, and a real read error still stops. 10/10 pass; ESLint clean.
+- 18:03:57Z: **Derived call 3** (10-08 to 10-18): 200, `success:true`, 37 s.
+  - All 11 dates processed: 77 games, 3,211 rows (2,897 player, 152 team, 162 goalie).
+  - 4 games skipped as `projection_inputs_unavailable`: 0057, 0094, 0101, 0123 (the ingest-isolated clock mismatches).
+  - 0 failures. The derived window 10-05 to 10-18 is complete.
+- ~18:05Z: **`run-projection-v2?date=2026-10-19`** started via localhost, with preflight on.
+- 18:04:45–18:06:03Z: ✅ **`run-projection-v2?date=2026-10-19` SUCCEEDED** via localhost.
+  - Preflight: **all gates PASS**.
+  - `runId 8a3bb848-eadc-4c57-b2c0-af2983b18dc4`: 4 games, 141 player, 8 team and 8 goalie rows; 77 s.
+  - `forge_runs` row: `succeeded`, as_of 2026-10-19, `full_slate`, 141 projection rows. This is the **first succeeded run since 09-29**.
+  - Production smoke test (2 read-only GETs):
+    - `/api/v1/start-chart?date=2026-10-19` → run `8a3bb848`, `same_day`, no fallback, 158 players, 4 games, projection/goalies/teamRatings `ready`, CTPI `missing`, ownership `partial`.
+    - `/api/v1/forge/players?date=2026-10-19` → the same run, `same_day`, no fallback.
+  - **TJ's goal (daily projections working, Start Chart) is met for today.** RSO native forecasts remain earmarked for tomorrow.
+  - **Tomorrow's risk:** production code (R4) lacks today's local fixes: ingest isolation, the derived skip, shift-charts option A and skip isolation. Tomorrow's scheduled chain could stall again on NHL feed gaps. R5 should add `build-projection-derived-v2.ts`, `shift-charts.ts`, `lib/projections/ingest/shifts.ts`, `rawSnapshotPersistence.ts` and `nhlRawGamecenter.mjs` (with the HTML flag off), plus their tests.
+- ~18:15Z: **R5 scope set by TJ** (quoted exactly): "Use 5,10,15,20,30,35,40,45,55 10 * * * for the rolling pipeline in R5, and add today's chain fixes (derived skip, shift-charts option A/skip, shifts.ts, rawSnapshotPersistence.ts, nhlRawGamecenter.mjs with the HTML flag off) to R5."
+  - Chef verified the Sous export: 101/101 files match `candidate-files.json`.
+  - Overlaid 14 chain-fix files at their working-tree bytes. Each differs from master only by today's fixes, plus the U2 wrapper in derived and ingest.
+  - Set `vercel.json:32` to `"5,10,15,20,30,35,40,45,55 10 * * *"`.
+  - Chef spot review: no unreleased symbol appears in the candidate (gate constant, `rollingPlayerCountSupport`, `requestBudget`, `summarizePredictionWindowOutcome`, `forecastServingSource`). The `players.ts` port is A-02 only.
+  - Gate running under the lock, with a throwaway git repo inside the export and no `GIT_DIR`.
+- 18:16:34Z: **R5 pushed** (TJ, quoted exactly: "Approved: R5 uses the pipeline cron 5,10,15,20,30,35,40,45,55 10 * * * (UTC), skipping :25 and :50. Chef: include today's fixes, run the gate, then release R5 with the Vercel checks."). Commit `bb21d5942ad56fb364dc346e13de65b696152c09`, a fast-forward from `ad93e2887`.
+  - Contents: 112 files, +6,747/−727. The 101 Sous-assembled files plus the 14 chain fixes (with overlaps), and `vercel.json:32` at the new schedule.
+  - Excluded: `pages/start-chart.tsx`, the S-1 files and migrations.
+  - Gate:
+    - tsc: 0 errors
+    - focused: 14 files, 228/228, including `combinedCronInventory`
+    - full suite: 20 failures, 17 in baseline files on a clean `ad93e2887` export, and 3 git-env artifacts that pass 87/87 in a proper throwaway repo
+    - no Fixture commits in the real repo
+  - Vercel pre-check: 4/4 previews disabled, production branch `master`.
+  - The expected-builds check and smoke test are pending.

@@ -1,0 +1,75 @@
+{
+  "packet": {
+    "version": "ifttt-review-sidecar-v1",
+    "mode": "review_only",
+    "canPublish": false,
+    "canChangeStatus": false,
+    "receiptSnapshot": {
+      "id": "fed0f5b3-1183-4e86-b519-7f1aaacc0e20",
+      "eventId": "6fb41f09-634e-4ec0-aef0-de9d0d06fc09",
+      "inputRow": {
+        "text": "Unclassified retained post.",
+        "source": "ifttt",
+        "tweet_id": "6100",
+        "username": "Reporter",
+        "source_key": "reporter",
+        "raw_payload": {
+          "text": "Unclassified retained post."
+        },
+        "source_group": "fixture",
+        "link_to_tweet": "https://x.com/Reporter/status/6100",
+        "source_account": "Reporter",
+        "created_at_label": null,
+        "tweet_created_at": "2026-10-19T12:21:25.709-04:00",
+        "tweet_embed_code": null
+      },
+      "eventTable": "line_source_ifttt_events",
+      "receivedAt": "2026-10-19T12:22:25.715276-04:00"
+    },
+    "source": {
+      "retainedSourceId": "line_source_ifttt_events:6fb41f09-634e-4ec0-aef0-de9d0d06fc09",
+      "sourceTextVersionId": "tweet-source-claim-v1:text:81bc308987a4ded62f424a1422ee0257938749dd91f66161e492a41b8c0d8a91",
+      "originalPostId": "6100",
+      "text": "Unclassified retained post.",
+      "author": "reporter",
+      "url": "https://x.com/Reporter/status/6100",
+      "publishedAt": "2026-10-19T12:21:25.709-04:00",
+      "ingestedAt": "2026-10-19T12:22:25.715276-04:00",
+      "sourceTextIsUntrustedData": true,
+      "provenance": {
+        "attribution": {
+          "relay": {
+            "accountKey": "x:handle:reporter",
+            "accountId": null,
+            "handle": "reporter"
+          },
+          "original": {
+            "accountKey": "x:handle:reporter",
+            "accountId": null,
+            "handle": "reporter"
+          },
+          "quoted": null,
+          "originalTweetId": "6100",
+          "originalUrl": "https://x.com/Reporter/status/6100",
+          "status": "resolved",
+          "originalPublishedAt": "2026-10-19T12:21:25.709-04:00",
+          "relationship": "direct",
+          "quoteEndorsement": "not_asserted"
+        },
+        "primaryTextSource": null
+      }
+    },
+    "wholePost": {
+      "proposedChecks": [
+        "relevance"
+      ],
+      "holds": []
+    },
+    "candidateCount": 0,
+    "candidatesOmitted": null,
+    "candidates": [],
+    "holds": [],
+    "providerDispatchEnabled": false
+  },
+  "status": "synthetic preparation fixture; no provider request or quality measurement"
+}

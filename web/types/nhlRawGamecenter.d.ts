@@ -104,6 +104,7 @@ declare module "lib/supabase/Upserts/nhlRawGamecenter.mjs" {
 
   export interface ShiftChartRow {
     id: number;
+    gameId?: number | null;
     playerId: number;
     teamId: number;
     teamAbbrev?: string | null;
@@ -128,13 +129,15 @@ declare module "lib/supabase/Upserts/nhlRawGamecenter.mjs" {
     data: ShiftChartRow[];
   }
 
+  export type HtmlShiftReportPayload = ShiftChartsJson & {
+    source: "htmlreports";
+    upstream: { json: ShiftChartsJson };
+    htmlReports: { visitorUrl: string; homeUrl: string };
+  };
+
   export type ShiftChartsPayload =
     | (ShiftChartsJson & { source: "json-api" })
-    | (ShiftChartsJson & {
-        source: "htmlreports";
-        upstream: { json: ShiftChartsJson };
-        htmlReports: { visitorUrl: string; homeUrl: string };
-      })
+    | HtmlShiftReportPayload
     | (ShiftChartsJson & {
         source: "json-api-empty";
         htmlReports: {
@@ -306,6 +309,27 @@ declare module "lib/supabase/Upserts/nhlRawGamecenter.mjs" {
     gameId: number,
     fetchOptions?: FetchRetryOptions,
   ): Promise<ShiftChartsJson>;
+  export function buildHtmlShiftReportPayload(args: {
+    gameId: number;
+    seasonId: number;
+    game: PlayByPlayPayload;
+    jsonPayload: ShiftChartsJson;
+    visitorHtml: string | null;
+    homeHtml: string | null;
+    strict?: boolean;
+  }): HtmlShiftReportPayload | null;
+  export function fetchHtmlShiftReportPayload(
+    gameId: number,
+    seasonId: number,
+    game: PlayByPlayPayload,
+    jsonPayload: ShiftChartsJson,
+    options?: { strict?: boolean; fetchOptions?: FetchRetryOptions },
+  ): Promise<{
+    payload: HtmlShiftReportPayload | null;
+    htmlReportUrls: { visitor: string; home: string };
+    visitorError: string | null;
+    homeError: string | null;
+  }>;
   export function fetchNhlApiRawGamePayloads(
     gameId: number,
     fetchOptions?: FetchRetryOptions,

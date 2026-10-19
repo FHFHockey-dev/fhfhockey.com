@@ -1,0 +1,33 @@
+{
+  "status": "ready for independent review; pure proposal assessment only",
+  "ownedNewPaths": 15,
+  "acceptedPinsUnchanged": 49,
+  "focusedTests": {
+    "passed": 54,
+    "failed": 0,
+    "skipped": 0,
+    "evidence": "evidence/frozen-candidate-results.json"
+  },
+  "retainedPackageTests": {
+    "passed": 57,
+    "failed": 0,
+    "skipped": 0,
+    "node": "v22.11.0",
+    "networkDenied": true,
+    "evidence": "evidence/retained-package57.tap"
+  },
+  "scopedTypeScriptExit": 0,
+  "eslintExit": 0,
+  "sourceManifestSha256": "10e782a856bc75361da4a9da3f884d04fc5c48d0a2cf527a9cf73b96dead0569",
+  "referenceAdapterSha256": "055bc80ccf9874de8a976da6106bc34af15e424d6b905d39fccf57ecfd2b92a1",
+  "providerCalls": 0,
+  "hostedCalls": 0,
+  "writesFromModules": 0,
+  "activeChecks": false,
+  "unresolvedContracts": [
+    "Authoritative automated producer of statement prose/equivalence to native proposition",
+    "Multi-player proposition decomposition",
+    "Future durable worker/result/quota protocol and provider compatibility/activation"
+  ],
+  "nextReview": "Default-off mapping; explicit statement trust boundary; source/identity/span/version holds; exact result bindings and conservative unknown handling"
+}

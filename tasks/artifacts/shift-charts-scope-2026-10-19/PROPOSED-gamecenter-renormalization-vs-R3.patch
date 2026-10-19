@@ -1,0 +1,1042 @@
+diff --git a/a/web/__tests__/pages/api/v1/db/ingest-projection-inputs.test.ts b/b/web/__tests__/pages/api/v1/db/ingest-projection-inputs.test.ts
+index d36c334..ea7c026 100644
+--- a/a/web/__tests__/pages/api/v1/db/ingest-projection-inputs.test.ts
++++ b/b/web/__tests__/pages/api/v1/db/ingest-projection-inputs.test.ts
+@@ -16,6 +16,7 @@ const {
+   fetchShiftRowsMock,
+   hasCompleteStoredPbpGameMock,
+   isCompleteFinalPbpPayloadMock,
++  persistCapturedGameNormalizationMock,
+   persistProjectionGameInputsMock,
+   readProjectionInputManifestMock,
+   readOldestProjectionPipelineBacklogMock,
+@@ -33,6 +34,7 @@ const {
+   fetchShiftRowsMock: vi.fn(),
+   hasCompleteStoredPbpGameMock: vi.fn(),
+   isCompleteFinalPbpPayloadMock: vi.fn(),
++  persistCapturedGameNormalizationMock: vi.fn(),
+   persistProjectionGameInputsMock: vi.fn(),
+   readProjectionInputManifestMock: vi.fn(),
+   readOldestProjectionPipelineBacklogMock: vi.fn(),
+@@ -42,6 +44,7 @@ const {
+     pbpEventIds: new Map<number, number[]>(),
+     shiftComplete: new Set<number>(),
+     storedShiftRows: new Map<number, any[]>(),
++    normalizationStatus: new Map<number, string>(),
+   },
+ }));
+ 
+@@ -78,6 +81,10 @@ vi.mock("lib/projections/ingest/rawSnapshotPersistence", () => ({
+   captureProjectionRawSourceSnapshots: captureProjectionRawSourceSnapshotsMock,
+ }));
+ 
++vi.mock("lib/supabase/Upserts/nhlRawGamecenter.mjs", () => ({
++  persistCapturedGameNormalization: persistCapturedGameNormalizationMock,
++}));
++
+ vi.mock("lib/projections/ingest/projectionInputPersistence", () => ({
+   buildProjectionInputRpcPayload: buildProjectionInputRpcPayloadMock,
+   persistProjectionGameInputs: persistProjectionGameInputsMock,
+@@ -295,6 +302,22 @@ vi.mock("lib/supabase/server", () => ({
+         return query;
+       }
+ 
++      if (table === "nhl_api_game_normalization_status") {
++        let gameId = -1;
++        const query: any = {
++          select: vi.fn(() => query),
++          eq: vi.fn((_column: string, value: number) => {
++            gameId = value;
++            return query;
++          }),
++          maybeSingle: vi.fn(async () => ({
++            data: { status: state.normalizationStatus.get(gameId) ?? "complete" },
++            error: null,
++          })),
++        };
++        return query;
++      }
++
+       return { insert: auditInsertMock };
+     }),
+   },
+@@ -338,6 +361,8 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
+     state.pbpEventIds.clear();
+     state.shiftComplete.clear();
+     state.storedShiftRows.clear();
++    state.normalizationStatus.clear();
++    persistCapturedGameNormalizationMock.mockResolvedValue({ idempotent: false });
+     readOldestProjectionPipelineBacklogMock.mockResolvedValue(null);
+     buildProjectionPipelineOperationKeyMock.mockImplementation(
+       ({ startDate, endDate, force }: any) =>
+@@ -772,6 +797,76 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
+     expect(persistProjectionGameInputsMock).toHaveBeenCalledTimes(1);
+   });
+ 
++  it("completes a stale Gamecenter normalization from the captured payloads", async () => {
++    state.normalizationStatus.set(101, "stale");
++    const req: any = {
++      method: "POST",
++      query: { startDate: "2026-03-20", endDate: "2026-03-20", maxGames: "2" },
++      body: {},
++    };
++    const res = createMockRes();
++
++    await handler(req, res);
++
++    expect(res.body).toMatchObject({ success: true, gamesProcessed: 2 });
++    expect(persistCapturedGameNormalizationMock).toHaveBeenCalledTimes(1);
++    const rows = sourceShiftRows(101);
++    expect(persistCapturedGameNormalizationMock).toHaveBeenCalledWith(
++      expect.anything(),
++      {
++        gameId: 101,
++        seasonId: 20252026,
++        gameDate: "2026-03-20",
++        pbp: pbpPayload(101),
++        pbpPayloadHash: "c".repeat(64),
++        shiftPayload: { total: rows.length, data: rows, source: "json-api" },
++        shiftPayloadHash: "d".repeat(64),
++      },
++    );
++  });
++
++  it("does not re-normalize a game whose Gamecenter normalization is complete", async () => {
++    const req: any = {
++      method: "POST",
++      query: { startDate: "2026-03-20", endDate: "2026-03-20", maxGames: "1" },
++      body: {},
++    };
++    const res = createMockRes();
++
++    await handler(req, res);
++
++    expect(res.body).toMatchObject({ success: true, gamesProcessed: 1 });
++    expect(persistCapturedGameNormalizationMock).not.toHaveBeenCalled();
++  });
++
++  it("holds the game cursor when Gamecenter normalization fails", async () => {
++    state.normalizationStatus.set(101, "stale");
++    persistCapturedGameNormalizationMock.mockRejectedValueOnce(
++      new Error("NHL_NORMALIZATION_SCOPE_BUSY"),
++    );
++    const req: any = {
++      method: "POST",
++      query: { startDate: "2026-03-20", endDate: "2026-03-20", maxGames: "1" },
++      body: {},
++    };
++    const res = createMockRes();
++
++    await handler(req, res);
++
++    expect(res.body).toMatchObject({
++      success: false,
++      gamesProcessed: 0,
++      nextGameId: 101,
++      errors: [
++        expect.objectContaining({
++          gameId: 101,
++          stage: "normalize_gamecenter",
++          message: "NHL_NORMALIZATION_SCOPE_BUSY",
++        }),
++      ],
++    });
++  });
++
+   it("fails closed before normalized persistence when raw snapshot capture fails", async () => {
+     captureProjectionRawSourceSnapshotsMock.mockRejectedValueOnce(
+       new Error("PROJECTION_RAW_SNAPSHOT_NOT_CURRENT"),
+diff --git a/b/web/__tests__/pages/api/v1/db/sweep-gamecenter-normalization.test.ts b/b/web/__tests__/pages/api/v1/db/sweep-gamecenter-normalization.test.ts
+new file mode 100644
+index 0000000..86bb6f0
+--- /dev/null
++++ b/b/web/__tests__/pages/api/v1/db/sweep-gamecenter-normalization.test.ts
+@@ -0,0 +1,328 @@
++import { beforeEach, describe, expect, it, vi } from "vitest";
++
++type Filters = {
++  table: string;
++  eq: Record<string, unknown>;
++  neq: Record<string, unknown>;
++  in: Record<string, unknown[]>;
++};
++
++const {
++  resolveQueryMock,
++  persistCapturedGameNormalizationMock,
++  refreshPlayerMock,
++  refreshTeamMock,
++} = vi.hoisted(() => ({
++  resolveQueryMock: vi.fn(),
++  persistCapturedGameNormalizationMock: vi.fn(),
++  refreshPlayerMock: vi.fn(),
++  refreshTeamMock: vi.fn(),
++}));
++
++vi.mock("lib/cron/withCronJobAudit", () => ({
++  withCronJobAudit: (handler: any) => handler,
++}));
++
++vi.mock("utils/adminOnlyMiddleware", () => ({
++  default: (handler: any) => handler,
++}));
++
++vi.mock("lib/supabase/server", () => {
++  function from(table: string) {
++    const filters: Filters = { table, eq: {}, neq: {}, in: {} };
++    const builder: any = {
++      select: () => builder,
++      order: () => builder,
++      limit: () => builder,
++      gte: () => builder,
++      lt: () => builder,
++      eq: (column: string, value: unknown) => {
++        filters.eq[column] = value;
++        return builder;
++      },
++      neq: (column: string, value: unknown) => {
++        filters.neq[column] = value;
++        return builder;
++      },
++      in: (column: string, values: unknown[]) => {
++        filters.in[column] = values;
++        return builder;
++      },
++      maybeSingle: async () => {
++        const data = resolveQueryMock(filters);
++        return { data: Array.isArray(data) ? (data[0] ?? null) : data, error: null };
++      },
++      then: (resolve: any, reject: any) =>
++        Promise.resolve({ data: resolveQueryMock(filters), error: null }).then(
++          resolve,
++          reject,
++        ),
++    };
++    return builder;
++  }
++  return { default: { from } };
++});
++
++vi.mock("lib/supabase/Upserts/nhlRawGamecenter.mjs", () => ({
++  persistCapturedGameNormalization: persistCapturedGameNormalizationMock,
++}));
++
++vi.mock("lib/underlying-stats/adminRouteHelpers", () => ({
++  parsePositiveInteger: (value: string | string[] | undefined) => {
++    const normalized = typeof value === "string" ? value : value?.[0];
++    const parsed = Number(normalized);
++    return Number.isFinite(parsed) && parsed > 0 ? Math.trunc(parsed) : null;
++  },
++}));
++
++vi.mock("lib/underlying-stats/playerStatsLandingServer", () => ({
++  buildPlayerStatsSummaryPartitionSourceUrl: (args: {
++    gameId: number;
++    mode: string;
++    strength: string;
++  }) => `derived://underlying-player-summary-v2/${args.mode}/${args.strength}/${args.gameId}`,
++}));
++
++vi.mock("lib/underlying-stats/playerStatsSummaryRefresh", () => ({
++  refreshPlayerUnderlyingSummarySnapshotsForGameIds: refreshPlayerMock,
++}));
++
++vi.mock("lib/underlying-stats/teamStatsSummaryRefresh", () => ({
++  refreshTeamUnderlyingSummaryRowsForGameIds: refreshTeamMock,
++}));
++
++import handler from "../../../../../pages/api/v1/db/sweep-gamecenter-normalization";
++
++const STALE_GAME = 2026020004;
++const DERIVED_GAME = 2026020010;
++const PBP_HASH = "a".repeat(64);
++const SHIFT_HASH = "b".repeat(64);
++
++function statusRow(gameId: number, status: string, completedAt: string | null) {
++  return {
++    game_id: gameId,
++    season_id: 20262027,
++    game_date: "2026-10-01",
++    status,
++    completed_at: completedAt,
++  };
++}
++
++type Db = {
++  incomplete: ReturnType<typeof statusRow>[];
++  complete: ReturnType<typeof statusRow>[];
++  markers: Array<{ game_id: number; fetched_at: string }>;
++  heads: Record<string, { raw_payload_id: number; payload_hash: string } | null>;
++  raws: Record<number, { id: number; payload: unknown; payload_hash: string }>;
++  xgFeatures: Array<{ game_id: number }>;
++};
++
++function installDb(db: Db) {
++  resolveQueryMock.mockImplementation((filters: Filters) => {
++    switch (filters.table) {
++      case "nhl_api_game_normalization_status":
++        return filters.neq.status === "complete" ? db.incomplete : db.complete;
++      case "nhl_api_game_payload_snapshot_heads":
++        return db.heads[`${filters.eq.game_id}:${filters.eq.endpoint}`] ?? null;
++      case "nhl_api_game_payloads_raw":
++        if (filters.eq.id != null) return db.raws[Number(filters.eq.id)] ?? null;
++        return db.markers.filter((marker) =>
++          (filters.in.game_id ?? []).includes(marker.game_id),
++        );
++      case "nhl_xg_shot_features":
++        return db.xgFeatures.filter((row) =>
++          (filters.in.game_id ?? []).includes(row.game_id),
++        );
++      default:
++        throw new Error(`Unexpected table ${filters.table}`);
++    }
++  });
++}
++
++function staleGameDb(overrides: Partial<Db> = {}): Db {
++  return {
++    incomplete: [statusRow(STALE_GAME, "stale", null)],
++    complete: [],
++    markers: [],
++    heads: {
++      [`${STALE_GAME}:play-by-play`]: { raw_payload_id: 11, payload_hash: PBP_HASH },
++      [`${STALE_GAME}:shiftcharts`]: { raw_payload_id: 12, payload_hash: SHIFT_HASH },
++    },
++    raws: {
++      11: { id: 11, payload: { id: STALE_GAME, plays: [] }, payload_hash: PBP_HASH },
++      12: { id: 12, payload: { data: [] }, payload_hash: SHIFT_HASH },
++    },
++    xgFeatures: [],
++    ...overrides,
++  };
++}
++
++function createMockApiContext(query: Record<string, string> = {}) {
++  const response = {
++    statusCode: 200,
++    body: null as any,
++    setHeader: vi.fn(),
++    status: vi.fn((code: number) => {
++      response.statusCode = code;
++      return response;
++    }),
++    json: vi.fn((payload: unknown) => {
++      response.body = payload;
++      return response;
++    }),
++  };
++  return { req: { method: "GET", query, headers: {} }, res: response };
++}
++
++describe("/api/v1/db/sweep-gamecenter-normalization", () => {
++  beforeEach(() => {
++    vi.clearAllMocks();
++    vi.useRealTimers();
++    persistCapturedGameNormalizationMock.mockResolvedValue({ idempotent: false });
++    refreshPlayerMock.mockResolvedValue({ rowsUpserted: 28 });
++    refreshTeamMock.mockResolvedValue({ rowsUpserted: 140 });
++  });
++
++  it("normalizes a stale game from its snapshot-head payloads without fetching the NHL", async () => {
++    const fetchSpy = vi.spyOn(globalThis, "fetch");
++    installDb(staleGameDb());
++    const { req, res } = createMockApiContext();
++
++    await handler(req as any, res as any);
++
++    expect(res.statusCode).toBe(200);
++    expect(persistCapturedGameNormalizationMock).toHaveBeenCalledTimes(1);
++    expect(persistCapturedGameNormalizationMock.mock.calls[0][1]).toEqual({
++      gameId: STALE_GAME,
++      seasonId: 20262027,
++      gameDate: "2026-10-01",
++      pbp: { id: STALE_GAME, plays: [] },
++      pbpPayloadHash: PBP_HASH,
++      shiftPayload: { data: [] },
++      shiftPayloadHash: SHIFT_HASH,
++    });
++    expect(refreshPlayerMock).toHaveBeenCalledWith(
++      expect.objectContaining({ gameIds: [STALE_GAME], seasonId: 20262027, requestedGameType: 2 }),
++    );
++    expect(refreshTeamMock).toHaveBeenCalledWith(
++      expect.objectContaining({ gameIds: [STALE_GAME] }),
++    );
++    expect(res.body).toMatchObject({
++      success: true,
++      normalizedGameIds: [STALE_GAME],
++      refreshedGameIds: [STALE_GAME],
++      nhlRequests: 0,
++    });
++    expect(fetchSpy).not.toHaveBeenCalled();
++    fetchSpy.mockRestore();
++  });
++
++  it("refreshes summaries built before normalization completed without re-normalizing", async () => {
++    installDb(
++      staleGameDb({
++        incomplete: [],
++        complete: [
++          statusRow(DERIVED_GAME, "complete", "2026-10-02T21:00:00.000Z"),
++          statusRow(2026020011, "complete", "2026-10-02T10:00:00.000Z"),
++        ],
++        markers: [
++          { game_id: DERIVED_GAME, fetched_at: "2026-10-02T10:25:00.000Z" },
++          { game_id: 2026020011, fetched_at: "2026-10-02T09:00:00.000Z" },
++          { game_id: 2026020011, fetched_at: "2026-10-02T10:25:00.000Z" },
++        ],
++      }),
++    );
++    const { req, res } = createMockApiContext();
++
++    await handler(req as any, res as any);
++
++    expect(res.statusCode).toBe(200);
++    expect(persistCapturedGameNormalizationMock).not.toHaveBeenCalled();
++    expect(refreshPlayerMock).toHaveBeenCalledWith(
++      expect.objectContaining({ gameIds: [DERIVED_GAME] }),
++    );
++    expect(res.body).toMatchObject({
++      normalizedGameIds: [],
++      derivedOnlyGameIds: [DERIVED_GAME],
++      refreshedGameIds: [DERIVED_GAME],
++    });
++  });
++
++  it("skips a game whose snapshot head is missing", async () => {
++    installDb(
++      staleGameDb({
++        heads: {
++          [`${STALE_GAME}:play-by-play`]: { raw_payload_id: 11, payload_hash: PBP_HASH },
++        },
++      }),
++    );
++    const { req, res } = createMockApiContext();
++
++    await handler(req as any, res as any);
++
++    expect(persistCapturedGameNormalizationMock).not.toHaveBeenCalled();
++    expect(refreshPlayerMock).not.toHaveBeenCalled();
++    expect(res.statusCode).toBe(200);
++    expect(res.body.skipped).toEqual([
++      { gameId: STALE_GAME, reason: "missing_shift_head" },
++    ]);
++  });
++
++  it("records a normalization failure and returns 502 when nothing was refreshed", async () => {
++    persistCapturedGameNormalizationMock.mockRejectedValueOnce(
++      new Error("NHL_NORMALIZATION_WRITER_BUSY"),
++    );
++    installDb(staleGameDb());
++    const { req, res } = createMockApiContext();
++
++    await handler(req as any, res as any);
++
++    expect(res.statusCode).toBe(502);
++    expect(res.body.failures).toEqual([
++      {
++        gameId: STALE_GAME,
++        stage: "normalize_gamecenter",
++        message: "NHL_NORMALIZATION_WRITER_BUSY",
++      },
++    ]);
++    expect(refreshPlayerMock).not.toHaveBeenCalled();
++  });
++
++  it("stops normalizing once the deadline leaves only the summary reserve", async () => {
++    installDb(
++      staleGameDb({
++        incomplete: [
++          statusRow(STALE_GAME, "stale", null),
++          statusRow(2026020005, "stale", null),
++        ],
++      }),
++    );
++    const nowSpy = vi.spyOn(Date, "now");
++    let calls = 0;
++    // startedAt, then the first deadline check passes and the second exceeds it.
++    nowSpy.mockImplementation(() => {
++      calls += 1;
++      return calls <= 2 ? 1_000_000 : 1_000_000 + 200_000;
++    });
++    const { req, res } = createMockApiContext({ maxDurationMs: "240000" });
++
++    await handler(req as any, res as any);
++    nowSpy.mockRestore();
++
++    expect(persistCapturedGameNormalizationMock).toHaveBeenCalledTimes(1);
++    expect(res.body).toMatchObject({
++      deadlineReached: true,
++      normalizedGameIds: [STALE_GAME],
++    });
++  });
++
++  it("caps the limit and reports games that still need an xG refresh", async () => {
++    installDb(staleGameDb({ xgFeatures: [{ game_id: STALE_GAME }, { game_id: STALE_GAME }] }));
++    const { req, res } = createMockApiContext({ limit: "500" });
++
++    await handler(req as any, res as any);
++
++    expect(res.body.limit).toBe(50);
++    expect(res.body.xgRefreshNeededGameIds).toEqual([STALE_GAME]);
++  });
++});
+diff --git a/a/web/lib/supabase/Upserts/nhlRawGamecenter.mjs b/b/web/lib/supabase/Upserts/nhlRawGamecenter.mjs
+index b04a63f..741d711 100644
+--- a/a/web/lib/supabase/Upserts/nhlRawGamecenter.mjs
++++ b/b/web/lib/supabase/Upserts/nhlRawGamecenter.mjs
+@@ -991,6 +991,37 @@ async function captureRawSnapshotWithBusyRetry(supabase, row, budget) {
+   }
+ }
+ 
++/**
++ * Normalize payloads whose raw snapshots are already the current heads. Every
++ * raw writer that can advance a head must call this, or the trigger-staled
++ * normalization is never completed for that game.
++ */
++export async function persistCapturedGameNormalization(supabase, args) {
++  const normalizedScope = buildNormalizedGameScope({
++    gameId: args.gameId,
++    seasonId: args.seasonId,
++    gameDate: args.gameDate,
++    pbpPayloadHash: args.pbpPayloadHash,
++    shiftPayloadHash: args.shiftPayloadHash,
++    rosterRows: normalizeRosterSpots(args.pbp, args.pbpPayloadHash),
++    eventRows: normalizePbpEvents(args.pbp, args.pbpPayloadHash),
++    shiftRows: normalizeShiftRows(
++      args.pbp,
++      args.shiftPayload,
++      args.shiftPayloadHash,
++    ),
++  });
++  const expectedCurrentManifest = await readNormalizedGameManifest(
++    supabase,
++    args.gameId,
++  );
++  return persistNormalizedGameScope(
++    supabase,
++    normalizedScope,
++    expectedCurrentManifest,
++  );
++}
++
+ export async function ingestNhlApiRawGame(supabase, gameId, options = {}) {
+   const retries = options.retries ?? DEFAULT_GAME_INGEST_RETRIES;
+   const delayMs = options.retryDelayMs ?? DEFAULT_RETRY_DELAY_MS;
+@@ -1048,38 +1079,17 @@ export async function ingestNhlApiRawGame(supabase, gameId, options = {}) {
+     fetched_at: fetched.fetchedAt,
+   }, budget);
+ 
+-  const rosterRows = normalizeRosterSpots(
+-    fetched.payloads.playByPlay,
+-    fetched.hashes.playByPlay,
+-  );
+-  const eventRows = normalizePbpEvents(
+-    fetched.payloads.playByPlay,
+-    fetched.hashes.playByPlay,
+-  );
+-  const shiftRows = normalizeShiftRows(
+-    fetched.payloads.playByPlay,
+-    fetched.payloads.shiftcharts,
+-    fetched.hashes.shiftcharts,
+-  );
+-
+-  const normalizedScope = buildNormalizedGameScope({
+-    gameId,
+-    seasonId: fetched.seasonId,
+-    gameDate: fetched.gameDate,
+-    pbpPayloadHash: fetched.hashes.playByPlay,
+-    shiftPayloadHash: fetched.hashes.shiftcharts,
+-    rosterRows,
+-    eventRows,
+-    shiftRows,
+-  });
+-  const expectedCurrentManifest = await readNormalizedGameManifest(
+-    supabase,
+-    gameId,
+-  );
+-  const normalizationReceipt = await persistNormalizedGameScope(
++  const normalizationReceipt = await persistCapturedGameNormalization(
+     supabase,
+-    normalizedScope,
+-    expectedCurrentManifest,
++    {
++      gameId,
++      seasonId: fetched.seasonId,
++      gameDate: fetched.gameDate,
++      pbp: fetched.payloads.playByPlay,
++      pbpPayloadHash: fetched.hashes.playByPlay,
++      shiftPayload: fetched.payloads.shiftcharts,
++      shiftPayloadHash: fetched.hashes.shiftcharts,
++    },
+   );
+ 
+   return {
+diff --git a/a/web/pages/api/v1/db/ingest-projection-inputs.ts b/b/web/pages/api/v1/db/ingest-projection-inputs.ts
+index e88c324..94c7ef7 100644
+--- a/a/web/pages/api/v1/db/ingest-projection-inputs.ts
++++ b/b/web/pages/api/v1/db/ingest-projection-inputs.ts
+@@ -24,6 +24,11 @@ import {
+   fetchAllNhleShiftChartsSnapshotForGame,
+ } from "lib/projections/ingest/shifts";
+ import { captureProjectionRawSourceSnapshots } from "lib/projections/ingest/rawSnapshotPersistence";
++import {
++  persistCapturedGameNormalization,
++  type PlayByPlayPayload,
++  type ShiftChartsPayload,
++} from "lib/supabase/Upserts/nhlRawGamecenter.mjs";
+ import {
+   buildProjectionInputRpcPayload,
+   persistProjectionGameInputs,
+@@ -96,6 +101,7 @@ type Result = {
+       | "persist_inputs"
+       | "verify_pbp"
+       | "verify_shifts"
++      | "normalize_gamecenter"
+       | "advance_cursor"
+       | "finish_cursor";
+     message: string;
+@@ -190,6 +196,19 @@ async function hasCompleteShiftTotals(
+   );
+ }
+ 
++async function hasCompleteGamecenterNormalization(
++  gameId: number,
++): Promise<boolean> {
++  assertSupabase();
++  const { data, error } = await supabase
++    .from("nhl_api_game_normalization_status")
++    .select("status")
++    .eq("game_id", gameId)
++    .maybeSingle();
++  if (error) throw error;
++  return data?.status === "complete";
++}
++
+ async function listGamesInRange(startDate: string, endDate: string) {
+   assertSupabase();
+   return fetchAllSupabasePages<{ id: number; date: string }>(({ from, to }) =>
+@@ -551,6 +570,7 @@ export async function ingestProjectionInputsHandler(
+       | "persist_inputs"
+       | "verify_pbp"
+       | "verify_shifts"
++      | "normalize_gamecenter"
+       | "advance_cursor" = "precheck_pbp";
+     try {
+       const gameId = g.id;
+@@ -640,6 +660,25 @@ export async function ingestProjectionInputsHandler(
+         );
+       }
+ 
++      // A changed upstream payload advances the shared snapshot head, which
++      // marks the Gamecenter normalization stale. Complete it from the same
++      // captured payloads; no later job revisits the game otherwise.
++      stage = "normalize_gamecenter";
++      if (!(await hasCompleteGamecenterNormalization(gameId))) {
++        await persistCapturedGameNormalization(supabase, {
++          gameId,
++          seasonId: Number(sharedPbp.season),
++          gameDate: sharedPbp.gameDate,
++          // Both are the unmodified provider JSON (`nhleFetchJson` and the raw
++          // shift pages), which carry `rosterSpots` and shift `id`; the local
++          // projection types only declare the fields their own readers use.
++          pbp: sharedPbp as unknown as PlayByPlayPayload,
++          pbpPayloadHash: rawSnapshots.pbp.payloadHash,
++          shiftPayload: shiftSnapshot.rawPayload as unknown as ShiftChartsPayload,
++          shiftPayloadHash: rawSnapshots.shifts.payloadHash,
++        });
++      }
++
+       result.gamesProcessed += 1;
+       result.lastCompletedGameId = gameId;
+ 
+diff --git a/b/web/pages/api/v1/db/sweep-gamecenter-normalization.ts b/b/web/pages/api/v1/db/sweep-gamecenter-normalization.ts
+new file mode 100644
+index 0000000..8dac47a
+--- /dev/null
++++ b/b/web/pages/api/v1/db/sweep-gamecenter-normalization.ts
+@@ -0,0 +1,361 @@
++import type { NextApiRequest, NextApiResponse } from "next";
++
++import { withCronJobAudit } from "lib/cron/withCronJobAudit";
++import supabase from "lib/supabase/server";
++import { persistCapturedGameNormalization } from "lib/supabase/Upserts/nhlRawGamecenter.mjs";
++import { parsePositiveInteger } from "lib/underlying-stats/adminRouteHelpers";
++import { buildPlayerStatsSummaryPartitionSourceUrl } from "lib/underlying-stats/playerStatsLandingServer";
++import { refreshPlayerUnderlyingSummarySnapshotsForGameIds } from "lib/underlying-stats/playerStatsSummaryRefresh";
++import { refreshTeamUnderlyingSummaryRowsForGameIds } from "lib/underlying-stats/teamStatsSummaryRefresh";
++import adminOnly from "utils/adminOnlyMiddleware";
++
++/**
++ * DB-only safety net for NHL post-game corrections. A newer raw snapshot head
++ * marks a game's Gamecenter normalization stale; this route completes it from
++ * the stored head payloads (no NHL requests), then refreshes the Underlying
++ * Stats summaries for those games and for any game re-normalized elsewhere
++ * after its summaries were built. The selection predicate is the cursor:
++ * finished games drop out of it.
++ */
++
++const ROUTE = "/api/v1/db/sweep-gamecenter-normalization";
++const DEFAULT_LIMIT = 15;
++const MAX_LIMIT = 50;
++const DEFAULT_LOOKBACK_DAYS = 30;
++const MAX_LOOKBACK_DAYS = 400;
++const DEFAULT_MAX_DURATION_MS = 240_000;
++const MAX_DURATION_MS = 270_000;
++// Time kept back for the batched summary refresh after the last normalization.
++const SUMMARY_RESERVE_MS = 60_000;
++const ID_CHUNK_SIZE = 50;
++const XG_FEATURE_ROW_SCAN_LIMIT = 5_000;
++
++type StatusRow = {
++  game_id: number;
++  season_id: number;
++  game_date: string;
++  status: string;
++  completed_at: string | null;
++};
++
++type Candidate = {
++  gameId: number;
++  seasonId: number;
++  gameDate: string;
++  reason: "normalization_incomplete" | "derived_older_than_normalization";
++};
++
++type SweepFailure = { gameId: number; stage: string; message: string };
++
++function errorMessage(error: unknown): string {
++  if (error instanceof Error) return error.message;
++  if (error && typeof error === "object" && "message" in error) {
++    return String((error as { message: unknown }).message);
++  }
++  return String(error);
++}
++
++function chunk<T>(values: readonly T[], size: number): T[][] {
++  const chunks: T[][] = [];
++  for (let index = 0; index < values.length; index += size) {
++    chunks.push(values.slice(index, index + size));
++  }
++  return chunks;
++}
++
++function isoDateDaysAgo(now: number, days: number): string {
++  return new Date(now - days * 86_400_000).toISOString().slice(0, 10);
++}
++
++function gameTypeOf(gameId: number): number {
++  return Math.floor(gameId / 10_000) % 100;
++}
++
++function summaryMarkerSourceUrl(gameId: number): string {
++  return buildPlayerStatsSummaryPartitionSourceUrl({
++    gameId,
++    mode: "individual",
++    strength: "allStrengths",
++    scoreState: "allScores",
++  });
++}
++
++async function selectIncompleteNormalizations(args: {
++  startDate: string;
++  endDate: string;
++  limit: number;
++}): Promise<StatusRow[]> {
++  const { data, error } = await (supabase as any)
++    .from("nhl_api_game_normalization_status")
++    .select("game_id,season_id,game_date,status,completed_at")
++    .neq("status", "complete")
++    .gte("game_date", args.startDate)
++    .lt("game_date", args.endDate)
++    .order("game_date", { ascending: true })
++    .order("game_id", { ascending: true })
++    .limit(args.limit);
++  if (error) throw error;
++  return (data ?? []) as StatusRow[];
++}
++
++async function selectDerivedStaleGames(args: {
++  startDate: string;
++  endDate: string;
++  limit: number;
++}): Promise<StatusRow[]> {
++  const { data, error } = await (supabase as any)
++    .from("nhl_api_game_normalization_status")
++    .select("game_id,season_id,game_date,status,completed_at")
++    .eq("status", "complete")
++    .gte("game_date", args.startDate)
++    .lt("game_date", args.endDate)
++    .order("game_date", { ascending: true })
++    .order("game_id", { ascending: true })
++    .limit(1_000);
++  if (error) throw error;
++  const completeRows = (data ?? []) as StatusRow[];
++
++  // Player summary payloads carry generatedAt, so every refresh writes a new
++  // marker row; the newest marker is when the summaries were last built.
++  const latestSummaryAt = new Map<number, string>();
++  for (const rows of chunk(completeRows, ID_CHUNK_SIZE)) {
++    const gameIds = rows.map((row) => Number(row.game_id));
++    const { data: markers, error: markerError } = await (supabase as any)
++      .from("nhl_api_game_payloads_raw")
++      .select("game_id,fetched_at")
++      .eq("endpoint", "landing")
++      .in("game_id", gameIds)
++      .in("source_url", gameIds.map(summaryMarkerSourceUrl));
++    if (markerError) throw markerError;
++    for (const marker of (markers ?? []) as Array<{
++      game_id: number;
++      fetched_at: string;
++    }>) {
++      const gameId = Number(marker.game_id);
++      const previous = latestSummaryAt.get(gameId);
++      if (!previous || Date.parse(marker.fetched_at) > Date.parse(previous)) {
++        latestSummaryAt.set(gameId, marker.fetched_at);
++      }
++    }
++  }
++
++  return completeRows
++    .filter((row) => {
++      const summaryAt = latestSummaryAt.get(Number(row.game_id));
++      if (!summaryAt) return true;
++      return (
++        row.completed_at != null &&
++        Date.parse(summaryAt) < Date.parse(row.completed_at)
++      );
++    })
++    .slice(0, args.limit);
++}
++
++async function readHeadPayload(gameId: number, endpoint: string) {
++  const { data: head, error: headError } = await (supabase as any)
++    .from("nhl_api_game_payload_snapshot_heads")
++    .select("raw_payload_id,payload_hash")
++    .eq("game_id", gameId)
++    .eq("endpoint", endpoint)
++    .maybeSingle();
++  if (headError) throw headError;
++  if (!head) return null;
++
++  const { data: raw, error: rawError } = await (supabase as any)
++    .from("nhl_api_game_payloads_raw")
++    .select("id,payload,payload_hash")
++    .eq("id", head.raw_payload_id)
++    .maybeSingle();
++  if (rawError) throw rawError;
++  if (!raw || raw.payload_hash !== head.payload_hash) {
++    throw new Error(
++      `Snapshot head for ${endpoint} does not match its raw payload row`,
++    );
++  }
++  return { payload: raw.payload, payloadHash: raw.payload_hash as string };
++}
++
++async function findGamesWithXgFeatures(gameIds: number[]): Promise<number[]> {
++  if (gameIds.length === 0) return [];
++  const { data, error } = await (supabase as any)
++    .from("nhl_xg_shot_features")
++    .select("game_id")
++    .in("game_id", gameIds)
++    .limit(XG_FEATURE_ROW_SCAN_LIMIT);
++  if (error) throw error;
++  return [...new Set(((data ?? []) as Array<{ game_id: number }>).map(
++    (row) => Number(row.game_id),
++  ))].sort((a, b) => a - b);
++}
++
++async function handler(req: NextApiRequest, res: NextApiResponse) {
++  if (req.method !== "GET" && req.method !== "POST") {
++    res.setHeader("Allow", ["GET", "POST"]);
++    return res.status(405).json({ success: false, error: "Method not allowed" });
++  }
++
++  const startedAt = Date.now();
++  const limit = Math.min(parsePositiveInteger(req.query.limit) ?? DEFAULT_LIMIT, MAX_LIMIT);
++  const lookbackDays = Math.min(
++    parsePositiveInteger(req.query.lookbackDays) ?? DEFAULT_LOOKBACK_DAYS,
++    MAX_LOOKBACK_DAYS,
++  );
++  const maxDurationMs = Math.min(
++    parsePositiveInteger(req.query.maxDurationMs) ?? DEFAULT_MAX_DURATION_MS,
++    MAX_DURATION_MS,
++  );
++  const normalizeDeadline =
++    startedAt + Math.max(maxDurationMs - SUMMARY_RESERVE_MS, 0);
++  // Only finished days: today's games may still be in progress.
++  const endDate = isoDateDaysAgo(startedAt, 0);
++  const startDate = isoDateDaysAgo(startedAt, lookbackDays);
++
++  let stage = "select_candidates";
++  const normalizedGameIds: number[] = [];
++  const skipped: Array<{ gameId: number; reason: string }> = [];
++  const failures: SweepFailure[] = [];
++
++  try {
++    const incomplete = await selectIncompleteNormalizations({ startDate, endDate, limit });
++    const derivedStale =
++      incomplete.length < limit
++        ? await selectDerivedStaleGames({
++            startDate,
++            endDate,
++            limit: limit - incomplete.length,
++          })
++        : [];
++    const candidates: Candidate[] = [
++      ...incomplete.map((row) => ({
++        gameId: Number(row.game_id),
++        seasonId: Number(row.season_id),
++        gameDate: row.game_date,
++        reason: "normalization_incomplete" as const,
++      })),
++      ...derivedStale.map((row) => ({
++        gameId: Number(row.game_id),
++        seasonId: Number(row.season_id),
++        gameDate: row.game_date,
++        reason: "derived_older_than_normalization" as const,
++      })),
++    ];
++
++    const refreshCandidates: Candidate[] = [];
++    let deadlineReached = false;
++    for (const candidate of candidates) {
++      if (candidate.reason === "derived_older_than_normalization") {
++        refreshCandidates.push(candidate);
++        continue;
++      }
++      if (Date.now() > normalizeDeadline) {
++        deadlineReached = true;
++        break;
++      }
++      stage = "normalize_gamecenter";
++      try {
++        const pbp = await readHeadPayload(candidate.gameId, "play-by-play");
++        const shifts = await readHeadPayload(candidate.gameId, "shiftcharts");
++        if (!pbp || !shifts) {
++          skipped.push({
++            gameId: candidate.gameId,
++            reason: !pbp ? "missing_pbp_head" : "missing_shift_head",
++          });
++          continue;
++        }
++        await persistCapturedGameNormalization(supabase, {
++          gameId: candidate.gameId,
++          seasonId: candidate.seasonId,
++          gameDate: candidate.gameDate,
++          pbp: pbp.payload,
++          pbpPayloadHash: pbp.payloadHash,
++          shiftPayload: shifts.payload,
++          shiftPayloadHash: shifts.payloadHash,
++        });
++        normalizedGameIds.push(candidate.gameId);
++        refreshCandidates.push(candidate);
++      } catch (error) {
++        failures.push({
++          gameId: candidate.gameId,
++          stage: "normalize_gamecenter",
++          message: errorMessage(error),
++        });
++      }
++    }
++
++    const refreshGroups = new Map<string, Candidate[]>();
++    for (const candidate of refreshCandidates) {
++      const key = `${candidate.seasonId}:${gameTypeOf(candidate.gameId)}`;
++      refreshGroups.set(key, [...(refreshGroups.get(key) ?? []), candidate]);
++    }
++
++    let playerSummaryRowsUpserted = 0;
++    let teamSummaryRowsUpserted = 0;
++    for (const group of refreshGroups.values()) {
++      const gameIds = group.map((candidate) => candidate.gameId);
++      const seasonId = group[0].seasonId;
++      const requestedGameType = gameTypeOf(gameIds[0]);
++      // Player refresh also writes the shared goalie partitions.
++      stage = "refresh_player_summaries";
++      const playerRefresh = await refreshPlayerUnderlyingSummarySnapshotsForGameIds({
++        gameIds,
++        seasonId,
++        requestedGameType,
++        shouldWarmLandingCache: true,
++        shouldMigrateLegacySummaries: false,
++        supabase,
++      });
++      playerSummaryRowsUpserted += playerRefresh.rowsUpserted;
++      stage = "refresh_team_summaries";
++      const teamRefresh = await refreshTeamUnderlyingSummaryRowsForGameIds({
++        gameIds,
++        seasonId,
++        requestedGameType,
++        shouldWarmLandingCache: true,
++        supabase,
++      });
++      teamSummaryRowsUpserted += teamRefresh.rowsUpserted;
++    }
++
++    const refreshedGameIds = refreshCandidates.map((candidate) => candidate.gameId);
++    stage = "check_xg_features";
++    // xG features/predictions upsert by event id and cannot drop events a
++    // correction removed; report affected games instead of half-refreshing.
++    const xgRefreshNeededGameIds = await findGamesWithXgFeatures(refreshedGameIds);
++
++    const status = refreshedGameIds.length === 0 && failures.length > 0 ? 502 : 200;
++    return res.status(status).json({
++      success: status === 200,
++      route: ROUTE,
++      window: { startDate, endDate },
++      limit,
++      candidateCount: candidates.length,
++      normalizedGameIds,
++      refreshedGameIds,
++      derivedOnlyGameIds: derivedStale.map((row) => Number(row.game_id)),
++      skipped,
++      failures,
++      deadlineReached,
++      playerSummaryRowsUpserted,
++      teamSummaryRowsUpserted,
++      xgRefreshNeededGameIds,
++      nhlRequests: 0,
++      durationMs: Date.now() - startedAt,
++    });
++  } catch (error) {
++    const message = errorMessage(error);
++    console.error(`[sweep-gamecenter-normalization] failed during ${stage}`, {
++      error: message,
++      normalizedGameIds,
++    });
++    return res.status(500).json({
++      success: false,
++      route: ROUTE,
++      stage,
++      error: `Gamecenter normalization sweep failed during ${stage}: ${message}`,
++      normalizedGameIds,
++      failures,
++    });
++  }
++}
++
++export default withCronJobAudit(adminOnly(handler), { jobName: ROUTE });
+diff --git a/a/web/types/nhlRawGamecenter.d.ts b/b/web/types/nhlRawGamecenter.d.ts
+index 6867807..7ee7a84 100644
+--- a/a/web/types/nhlRawGamecenter.d.ts
++++ b/b/web/types/nhlRawGamecenter.d.ts
+@@ -353,6 +353,19 @@ declare module "lib/supabase/Upserts/nhlRawGamecenter.mjs" {
+     scope: NormalizedGameScope,
+     expectedCurrentManifest: NormalizationManifestIdentity | null,
+   ): Promise<NormalizationReceipt>;
++  export interface CapturedGameNormalizationArgs {
++    gameId: number;
++    seasonId: number;
++    gameDate: string;
++    pbp: PlayByPlayPayload;
++    pbpPayloadHash: string;
++    shiftPayload: ShiftChartsPayload;
++    shiftPayloadHash: string;
++  }
++  export function persistCapturedGameNormalization(
++    supabase: SupabaseClient,
++    args: CapturedGameNormalizationArgs,
++  ): Promise<NormalizationReceipt>;
+   export function ingestNhlApiRawGame(
+     supabase: SupabaseClient,
+     gameId: number,

@@ -1,0 +1,81 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ❯ lib/sources/tweetDecisionReview.test.ts (52 tests | 1 failed) 77ms
+   ✓ pure Decisions mapping > is disabled before inspecting input and has no transport or write interface 1ms
+   ✓ pure Decisions mapping > maps one explicit bound statement without generating prose, rekeying, mutation or caller-field forwarding 19ms
+   ✓ pure Decisions mapping > maps zero-claim whole-post relevance only with provenance and an explicit extraction version 2ms
+   ✓ pure Decisions mapping > holds missing original publishedAt 1ms
+   ✓ pure Decisions mapping > holds missing original author 1ms
+   ✓ pure Decisions mapping > holds missing original url 1ms
+   ✓ pure Decisions mapping > holds missing original originalPostId 1ms
+   ✓ pure Decisions mapping > keeps explicit source holds and rejects timezone-less or source-after-ingestion clocks 2ms
+   ✓ pure Decisions mapping > never substitutes a relay or a fabricated original account identity 3ms
+   ✓ pure Decisions mapping > rejects changed source bytes, text-version and packet versions 2ms
+   × pure Decisions mapping > holds ambiguous/missing identities %j without choosing one 3ms
+     → Cannot read properties of undefined (reading '0')
+   ✓ pure Decisions mapping > holds ambiguous/missing identities 8478499 without choosing one 1ms
+   ✓ pure Decisions mapping > holds ambiguous/missing identities 8478499 without choosing one 1ms
+   ✓ pure Decisions mapping > keeps existing candidate holds, unsupported lineup facts and mismatched fact players unresolved 2ms
+   ✓ pure Decisions mapping > requires a statement, rejects duplicate bindings and records unmatched statements 1ms
+   ✓ pure Decisions mapping > rejects wrong statement sourceId binding 1ms
+   ✓ pure Decisions mapping > rejects wrong statement sourceTextVersionId binding 1ms
+   ✓ pure Decisions mapping > rejects wrong statement extractionVersion binding 1ms
+   ✓ pure Decisions mapping > rejects wrong statement version binding 1ms
+   ✓ pure Decisions mapping > rejects wrong statement playerId binding 1ms
+   ✓ pure Decisions mapping > rejects wrong statement proposition binding 1ms
+   ✓ pure Decisions mapping > rejects wrong statement evidence binding 1ms
+   ✓ pure Decisions mapping > keeps duplicate native IDs and mixed extraction versions unknown 1ms
+   ✓ pure Decisions mapping > checks exact UTF-16 offsets including surrogate boundaries 6ms
+   ✓ pure Decisions mapping > retains overflow/byte-limit holds without truncating source or silently scoring a prefix 2ms
+   ✓ pure Decisions mapping > does not confuse the first valid question index with an earlier held native candidate 1ms
+   ✓ reference result binding, never factual acceptance > binds ordinary results to the exact statement while keeping uncalibrated review-only authority 2ms
+   ✓ reference result binding, never factual acceptance > retains zero-claim post assessment and all locally held candidates 1ms
+   ✓ reference result binding, never factual acceptance > rejects wrong application planHash 1ms
+   ✓ reference result binding, never factual acceptance > rejects wrong application packetHash 1ms
+   ✓ reference result binding, never factual acceptance > rejects wrong application bindingVersion 1ms
+   ✓ reference result binding, never factual acceptance > rejects wrong reference sourceId 1ms
+   ✓ reference result binding, never factual acceptance > rejects wrong reference sourceHash 1ms
+   ✓ reference result binding, never factual acceptance > rejects wrong reference claimsHash 1ms
+   ✓ reference result binding, never factual acceptance > rejects wrong reference evidenceHash 2ms
+   ✓ reference result binding, never factual acceptance > rejects wrong reference requestHash 1ms
+   ✓ reference result binding, never factual acceptance > rejects wrong reference idempotencyKey 1ms
+   ✓ reference result binding, never factual acceptance > rejects wrong reference extractionVersion 1ms
+   ✓ reference result binding, never factual acceptance > rejects wrong reference promptVersion 1ms
+   ✓ reference result binding, never factual acceptance > rejects wrong reference modelRequested 1ms
+   ✓ reference result binding, never factual acceptance > rejects wrong reference modelReturned 1ms
+   ✓ reference result binding, never factual acceptance > rejects wrong reference asOf 1ms
+   ✓ reference result binding, never factual acceptance > rejects wrong claim audit claimId 1ms
+   ✓ reference result binding, never factual acceptance > rejects wrong claim audit sourceId 1ms
+   ✓ reference result binding, never factual acceptance > rejects wrong claim audit playerId 1ms
+   ✓ reference result binding, never factual acceptance > rejects wrong claim audit sourceSpan 1ms
+   ✓ reference result binding, never factual acceptance > rejects wrong claim audit questionNames 1ms
+   ✓ reference result binding, never factual acceptance > rejects malformed, missing, future-version or incorrectly clocked audit envelopes 1ms
+   ✓ reference result binding, never factual acceptance > keeps refusals, duplicate/missing answers and malformed probabilities unknown without erasing neighbors 1ms
+   ✓ reference result binding, never factual acceptance > rejects foreign question results and preserves budget uncertainty 1ms
+   ✓ reference result binding, never factual acceptance > default zero budgets cannot be mistaken for an executed assessment 1ms
+   ✓ reference result binding, never factual acceptance > no caller/model field can trigger a write or promote a status 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/sources/tweetDecisionReview.test.ts > pure Decisions mapping > holds ambiguous/missing identities %j without choosing one
+TypeError: Cannot read properties of undefined (reading '0')
+ ❯ statement lib/sources/tweetDecisionReview.test.ts:28:113
+     26|   const c = packet.candidates[index]!;
+     27|   return { version: DECISION_STATEMENT_VERSION, observationId: c.obser…
+     28|     sourceTextVersionId: packet.source.sourceTextVersionId, extraction…
+       |                                                                                                                 ^
+     29|     statement: "The source projects player 8478499 as the starter for …
+     30|     proposition: structuredClone({ fact: c.fact, scope: c.scope, modal…
+ ❯ map lib/sources/tweetDecisionReview.test.ts:32:48
+ ❯ lib/sources/tweetDecisionReview.test.ts:98:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 51 passed (52)
+   Start at  13:12:27
+   Duration  458ms (transform 139ms, setup 17ms, collect 247ms, tests 77ms, environment 0ms, prepare 33ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/decisions-pure-integration-2026-10-19/evidence/mapper-initial-results.json

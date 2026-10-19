@@ -1,5 +1,6 @@
 import { getTeamLogoSvg, fallbackNHLLogo } from "lib/images";
 import { teamsInfo } from "lib/teamsInfo";
+import { getTeamMetaByAbbr } from "lib/dashboard/teamMetadata";
 import type { TweetPlayerEvent } from "lib/sources/tweetPlayerEvents";
 
 export type NewsFeedItemPlayer = {
@@ -497,8 +498,12 @@ export function buildNewsFeedHeadline(args: {
 }
 
 export function getNewsItemTeamColors(teamAbbreviation: string | null | undefined) {
-  const team = teamAbbreviation ? teamsInfo[teamAbbreviation as keyof typeof teamsInfo] : null;
+  const identity = getTeamMetaByAbbr(teamAbbreviation?.trim() ?? "");
+  const team = identity ? teamsInfo[identity.abbr] : null;
   return {
+    abbreviation: identity?.abbr ?? null,
+    lineupPrimary: team?.primaryColor ?? "#56606c",
+    lineupSecondary: team?.jersey ?? "#88939e",
     primary: team?.primaryColor ?? "#14a2d2",
     secondary: team?.secondaryColor ?? "#24282e",
     accent: team?.accent ?? "#14a2d2",

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadPlanningData, parsePlanningDataQuery } from "../rosterScheduleData/planning";
 import { buildGameExpectations, type GameExpectationScope } from "./gameExpectations";
+import type { ForecastServingSource } from "./forecastServingSource";
 
 /** Calendar windows cover at most 21 days; next-N discovery is bounded to 60 days. */
 export function parseGameExpectationScope(query: Record<string, unknown>, now = new Date()): GameExpectationScope {
@@ -25,7 +26,8 @@ export function parseGameExpectationScope(query: Record<string, unknown>, now = 
 }
 
 /** Shared server entry point for FORGE/consumer adapters. No generation, writes or private artifact reads. */
-export async function loadGameExpectations(db: SupabaseClient<any>, scope: GameExpectationScope, now = new Date()) {
-  const data = await loadPlanningData(db, scope, { now, skipOwnership: true, skipRecentForm: true });
+export async function loadGameExpectations(db: SupabaseClient<any>, scope: GameExpectationScope, now = new Date(),
+  options: { source?: ForecastServingSource } = {}) {
+  const data = await loadPlanningData(db, scope, { now, skipOwnership: true, skipRecentForm: true, source: options.source });
   return buildGameExpectations(data, scope, now);
 }

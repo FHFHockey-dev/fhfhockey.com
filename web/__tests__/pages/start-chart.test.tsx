@@ -581,7 +581,7 @@ describe("StartChartPage", () => {
         gameExpectation: { playerId: "8", scheduleRevision: "schedule-original", targets: { PP_POINTS: target(0.3, null) } } })] });
     const original = JSON.stringify(swrState.data);
     render(<StartChartPage />);
-    expect(swrState.request).toHaveBeenCalledWith("/api/v1/start-chart?date=2026-02-07&forecast_source=game_expectations");
+    expect(swrState.request).toHaveBeenCalledWith("/api/v1/start-chart?date=2026-02-07");
     expect(screen.getByText("Daily game expectations")).toBeTruthy();
     expect(screen.getByText(/Read 2026-02-07T17:00:00Z/)).toBeTruthy();
     expect(screen.queryByText(/Published 2026-02-07T17:00:00Z/)).toBeNull();
@@ -1449,7 +1449,7 @@ describe("StartChartPage", () => {
     view.rerender(<StartChartPage />);
     act(() => vi.advanceTimersByTime(1000));
     expect((screen.getByLabelText("Date") as HTMLInputElement).value).toBe("2026-02-08");
-    expect(swrState.request).toHaveBeenCalledWith("/api/v1/start-chart?date=2026-02-08&forecast_source=game_expectations");
+    expect(swrState.request).toHaveBeenCalledWith("/api/v1/start-chart?date=2026-02-08");
     expect(screen.queryByText("Synthetic expiring player 2026-02-07", { exact: true })).toBeNull();
     expect(screen.getByText("Synthetic expiring player 2026-02-08", { exact: true })).toBeTruthy();
     expect(screen.queryByRole("status", { name: "Forecast validity" })).toBeNull();
@@ -1552,7 +1552,7 @@ describe("StartChartPage", () => {
       routerState.router.query = {};
       render(<StartChartPage />);
       expect((screen.getByLabelText("Date") as HTMLInputElement).value).toBe(expected);
-      expect(swrState.request).toHaveBeenCalledWith(`/api/v1/start-chart?date=${expected}&forecast_source=game_expectations`);
+      expect(swrState.request).toHaveBeenCalledWith(`/api/v1/start-chart?date=${expected}`);
     });
 
   it.each(["expected", "per_appearance"] as const)("withholds an already-expired %s response on first render and after changing comparison basis", basis => {

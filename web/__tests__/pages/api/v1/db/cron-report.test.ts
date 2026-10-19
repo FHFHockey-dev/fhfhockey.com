@@ -1162,6 +1162,67 @@ ${JSON.stringify(jobs)}
     expect(briefing.reason).toContain("produced no output");
   });
 
+  describe("planned continuations", () => {
+    const rollingSchedule = (time: string) =>
+      `SELECT cron.schedule('update-rolling-player-averages','${time}',$$select net.http_get(url:='https://fhfhockey.com/api/v1/db/update-rolling-player-averages');$$);`;
+    const audit = (runTime: string, status: string, response: Record<string, unknown>) => ({
+      job_name: "update-rolling-player-averages", run_time: runTime, status,
+      details: { method: "GET", url: "/api/v1/db/update-rolling-player-averages", statusCode: status === "continued" ? 207 : 200, response },
+    });
+    const continued = { success: false, operationStatus: "partial", resume: { required: true, request: { resumeFrom: 8477000 } } };
+
+    beforeEach(() => {
+      cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+    });
+
+    it("shows a same-day continuation as in progress, not a failure", async () => {
+      readFileMock.mockResolvedValue(rollingSchedule("0 11 * * *"));
+      cronJobAuditSelectMock.mockResolvedValue({ data: [
+        audit("2026-03-20T11:00:05.000Z", "continued", continued),
+        audit("2026-03-20T11:04:10.000Z", "continued", continued),
+      ], error: null });
+      const res = createMockRes();
+      await handler({ method: "GET" } as any, res);
+      expect(res.body.counts).toMatchObject({ jobsContinuedLast: 1, jobsFailingLast: 0, jobsUnknownLast: 0,
+        auditFailures: 0, auditUnknown: 0, auditContinued: 2, unscheduledRuns: 0 });
+      const briefing = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits[0];
+      expect(briefing.status).toBe("success");
+      expect(briefing.reason).toContain("In progress / continued");
+      expect(briefing.reason).toContain("2 continued call(s) today");
+      expect(briefing.missingObservationWarnings.join(" ")).not.toContain("Continuation incomplete");
+    });
+
+    it("reports the completing call after continuations as the job's success", async () => {
+      readFileMock.mockResolvedValue(rollingSchedule("0 11 * * *"));
+      cronJobAuditSelectMock.mockResolvedValue({ data: [
+        audit("2026-03-20T11:00:05.000Z", "continued", continued),
+        audit("2026-03-20T11:04:10.000Z", "continued", continued),
+        audit("2026-03-20T11:08:30.000Z", "success", { success: true, rowsUpserted: 900 }),
+      ], error: null });
+      const res = createMockRes();
+      await handler({ method: "GET" } as any, res);
+      expect(res.body.counts).toMatchObject({ jobsOkLast: 1, jobsContinuedLast: 0, auditFailures: 0, unscheduledRuns: 0 });
+      const briefing = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits[0];
+      expect(briefing.status).toBe("success");
+      expect(briefing.reason).toContain("Completed after 2 continued call(s).");
+    });
+
+    it("flags a day that ended with only continuations and no completing run", async () => {
+      readFileMock.mockResolvedValue(rollingSchedule("0 13 * * *"));
+      cronJobAuditSelectMock.mockResolvedValue({ data: [
+        audit("2026-03-19T13:00:05.000Z", "continued", continued),
+        audit("2026-03-19T13:04:10.000Z", "continued", continued),
+      ], error: null });
+      const res = createMockRes();
+      await handler({ method: "GET" } as any, res);
+      expect(res.body.counts).toMatchObject({ jobsContinuedLast: 0, jobsUnknownLast: 1, jobsFailingLast: 0, auditFailures: 0 });
+      const briefing = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits[0];
+      expect(briefing.status).toBe("unknown");
+      expect(briefing.missingObservationWarnings).toContain(
+        "Continuation incomplete: 2026-03-19 UTC ended after 2 continued call(s) without a completing run.");
+    });
+  });
+
   it("excludes arrivals beyond the fixed window end", async () => {
     cronJobAuditSelectMock.mockResolvedValue({ data: [{ job_name: "future", run_time: "2026-03-20T12:11:00.000Z", status: "failure" }], error: null });
     const res = createMockRes();

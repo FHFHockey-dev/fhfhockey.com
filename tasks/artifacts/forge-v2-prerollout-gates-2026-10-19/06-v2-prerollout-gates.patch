@@ -1,0 +1,690 @@
+diff --git a/web/lib/player-forecasts/nativeDailyPipelineV2.test.ts b/web/lib/player-forecasts/nativeDailyPipelineV2.test.ts
+index 752b903..2ea7b11 100644
+--- a/web/lib/player-forecasts/nativeDailyPipelineV2.test.ts
++++ b/web/lib/player-forecasts/nativeDailyPipelineV2.test.ts
+@@ -1,8 +1,12 @@
+ // @vitest-environment node
+ import { createHash } from "node:crypto";
+ import { describe, expect, it } from "vitest";
+-import { assertParticipationCoverage, assertStandingApprovalMethods, buildRollingDailyParticipationInputs, NATIVE_DAILY_APPROVED_METHODS, FROZEN_PARTICIPATION_LAST_CUTOFF, NATIVE_DAILY_V2_FLAGS, nativeDailyKnownConflicts,
+-  nativeDailyNullParticipation, nativeDailyParticipationMethod, nativeDailyScheduleRevision, nativeDailyUniverse, nativeDailyV2Flags } from "./nativeDailyPipelineV2";
++import { assertFreshMeansBinding, assertFreshMeansPolicyTemplates, assertParticipationCoverage, assertParticipationMaterializationBound, assertStandingApprovalMethods,
++  buildRollingDailyParticipationInputs, NATIVE_DAILY_APPROVED_METHODS, FROZEN_PARTICIPATION_LAST_CUTOFF, NATIVE_DAILY_V2_FLAGS, nativeDailyCaptureMethod, nativeDailyKnownConflicts,
++  nativeDailyNullParticipation, nativeDailyParticipationMethod, nativeDailyPolicyTerms, nativeDailyRollingCapturePlan, nativeDailyScheduleRevision, nativeDailyUniverse,
++  nativeDailyV2Flags } from "./nativeDailyPipelineV2";
++import { NATIVE_MATERIALIZATION_MAX_PARTICIPATION_INPUTS } from "./nativeInputMaterialization";
++import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
+ import { PROPOSED_YAHOO_KNOWN_CONFLICT_POLICY_HASH } from "./yahooUniverse";
+ 
+ const off = nativeDailyV2Flags(undefined);
+@@ -30,11 +34,43 @@ describe("v2 daily composition flags and gates", () => {
+   it("always gates owned completeness and reports or enforces the universe thresholds by flag", () => {
+     expect(nativeDailyUniverse(universe(), off).rows).toEqual([{ playerId: 7, nhlPlayerId: 77, teamId: 1, playerClass: "skater", rosterRevision: "r7", yahooPlayerKey: "477.p.7" }]);
+     expect(() => nativeDailyUniverse(universe({ ownedComplete: false }), off)).toThrow("universe_owned_incomplete");
+-    const crowded = universe({ unmapped: Array.from({ length: 6 }, (_, index) => ({ yahooPlayerKey: `477.p.${index}` })) });
++    const crowded = universe({ change: { added: [], removed: [] }, unmapped: Array.from({ length: 6 }, (_, index) => ({ yahooPlayerKey: `477.p.${index}` })) });
+     expect(nativeDailyUniverse(crowded, off).gate).toMatchObject({ unresolved: 6, thresholdsApplied: false, thresholdsExceeded: true });
+     expect(() => nativeDailyUniverse(crowded, { ...off, universeThresholds: true })).toThrow("universe_threshold_exceeded");
+   });
+ 
++  it("requires a previous universe before enforcing the growth threshold (A-13)", () => {
++    expect(nativeDailyUniverse(universe(), off).gate).toMatchObject({ added: 0, thresholdsApplied: false });
++    expect(() => nativeDailyUniverse(universe(), { ...off, universeThresholds: true })).toThrow("universe_previous_required");
++    const grown = universe({ change: { added: Array.from({ length: 11 }, (_, index) => index + 100), removed: [] } });
++    expect(() => nativeDailyUniverse(grown, { ...off, universeThresholds: true })).toThrow("universe_threshold_exceeded");
++    expect(nativeDailyUniverse(universe({ change: { added: [8], removed: [] } }), { ...off, universeThresholds: true }).gate.added).toBe(1);
++  });
++
++  it("stops a rolling universe over the materializer's participation bound offline (A-14)", () => {
++    expect(NATIVE_MATERIALIZATION_MAX_PARTICIPATION_INPUTS).toBe(1500);
++    // 62 skaters x 20 games, plus 7 goalies x 20 games x (appearance + start).
++    const rolling = Array.from({ length: 62 * 20 + 7 * 2 * 20 }, () => ({}));
++    expect(() => assertParticipationMaterializationBound(rolling)).toThrow("participation_inputs_exceed_materialization_bound:1520");
++    expect(() => assertParticipationMaterializationBound(rolling.slice(0, 1500))).not.toThrow();
++  });
++
++  it("binds fresh means to the run date, a complete plan and the whole universe (A-17)", () => {
++    const rows = [{ playerId: 7, nhlPlayerId: 77, teamId: 1, playerClass: "skater" as const, rosterRevision: "r7" },
++      { playerId: 8, nhlPlayerId: 88, teamId: 2, playerClass: "goalie" as const, rosterRevision: "r8" }];
++    const coverage = rows.map(({ playerId, nhlPlayerId, teamId }) => ({ playerId, nhlPlayerId, teamId }));
++    const means = { cutoffAt: "2026-10-21T10:40:00Z", plan: { status: "complete" }, coverage };
++    expect(assertFreshMeansBinding(means, rows, "2026-10-21")).toEqual({ uncovered: [], approvedUncovered: 0 });
++    expect(() => assertFreshMeansBinding({ ...means, cutoffAt: "2026-10-12T15:00:00Z" }, rows, "2026-10-21")).toThrow("means_cutoff_not_on_run_date");
++    expect(() => assertFreshMeansBinding({ ...means, cutoffAt: "2026-10-21T03:00:00Z" }, rows, "2026-10-21")).toThrow("means_cutoff_not_on_run_date");
++    expect(() => assertFreshMeansBinding({ ...means, plan: { status: "requests_pending" } }, rows, "2026-10-21")).toThrow("means_plan_incomplete");
++    expect(() => assertFreshMeansBinding({ cutoffAt: means.cutoffAt, coverage }, rows, "2026-10-21")).toThrow("means_plan_incomplete");
++    expect(() => assertFreshMeansBinding({ ...means, coverage: [coverage[0]] }, rows, "2026-10-21")).toThrow("means_coverage_differs_from_universe:1");
++    expect(assertFreshMeansBinding({ ...means, coverage: [coverage[0]] }, rows, "2026-10-21", 1).uncovered).toEqual([8]);
++    expect(() => assertFreshMeansBinding({ ...means, coverage: [...coverage, { playerId: 9, nhlPlayerId: 99, teamId: 1 }] }, rows, "2026-10-21")).toThrow("means_universe_conflict");
++    expect(() => assertFreshMeansBinding({ ...means, coverage: [{ ...coverage[0], teamId: 3 }, coverage[1]] }, rows, "2026-10-21")).toThrow("means_universe_conflict");
++  });
++
+   it("passes fresh known conflicts only under the approved policy hash", () => {
+     expect(nativeDailyKnownConflicts(universe(), "2026-10-21T11:00:00Z", off)).toBeUndefined();
+     expect(() => nativeDailyKnownConflicts(universe(), "2026-10-21T11:00:00Z", { ...off, injuryPolicy: true })).toThrow("injury_policy_not_approved");
+@@ -71,6 +107,58 @@ describe("v2 daily composition flags and gates", () => {
+     expect(() => assertStandingApprovalMethods({ seasonId: 20272028, rows: [] } as any, off)).toThrow("method_not_in_standing_approval:season");
+   });
+ 
++  it("pins the standing-approval ref and each policy's terms, and refuses ambiguous templates (A-18)", () => {
++    const approved = NATIVE_DAILY_APPROVED_METHODS, uses = ["assignment", "totals", "comparison", "conditionalTieBreak"];
++    expect(approved.standingApprovalRef).toBe("tj-standing-approval-2026-10-17:forge-daily");
++    expect(Object.keys(approved.policyTerms)).toEqual(Object.keys(approved.policies));
++    const terms = (policyVersion: string, extra: Record<string, unknown> = {}) => ({ version: "baseline-evaluation-policy-v1", seasonId: 20262027, policyVersion,
++      allowedPublicUses: uses, candidateInputHash: "a".repeat(64), status: "owner_approved", prospectiveEvidenceRef: "ref", ownerApprovalRef: "old", approvedAt: "2026-10-16T12:00:00Z", ...extra });
++    for (const policyVersion of Object.keys(approved.policies)) {
++      expect(playerForecastSourcePayloadHash(nativeDailyPolicyTerms(terms(policyVersion)))).toBe(approved.policyTerms[policyVersion]);
++    }
++    const policy = (policyVersion: string, extra: Record<string, unknown> = {}) => ({ entity_kind: "baseline_evaluation_policy", payload: terms(policyVersion, extra) });
++    const review = (policyVersion: string) => ({ entity_kind: "baseline_validation_review", payload: { policyVersion } });
++    const pv = "native-goalie-appearance-win-rates-v1", other = "current-appearance-skater-rates-v1";
++    expect(assertFreshMeansPolicyTemplates([policy(pv), review(pv), policy(other), review(other), policy("unrelated-v1"), policy("unrelated-v1")] as any)).toEqual({ templates: 4 });
++    expect(() => assertFreshMeansPolicyTemplates([policy(pv), review(pv), policy(pv, { allowedPublicUses: ["totals"] })] as any)).toThrow("fresh_means_policy_template_ambiguous");
++    expect(() => assertFreshMeansPolicyTemplates([policy(pv), review(pv), review(pv)] as any)).toThrow("fresh_means_policy_template_ambiguous");
++    expect(() => assertFreshMeansPolicyTemplates([policy(pv, { allowedPublicUses: ["assignment", "totals", "comparison"] })] as any))
++      .toThrow(`fresh_means_policy_terms_not_approved:${pv}`);
++    const plan = (rows: any[]) => ({ seasonId: 20262027, rows }) as any;
++    expect(() => assertStandingApprovalMethods(plan([policy(pv, { ownerApprovalRef: approved.standingApprovalRef })]), off)).not.toThrow();
++    expect(() => assertStandingApprovalMethods(plan([policy(pv, { ownerApprovalRef: "replay:any-string" })]), off)).toThrow(`method_not_in_standing_approval:${pv}`);
++    expect(() => assertStandingApprovalMethods(plan([policy(pv, { ownerApprovalRef: approved.standingApprovalRef, allowedPublicUses: ["totals"] })]), off))
++      .toThrow(`method_not_in_standing_approval:${pv}`);
++  });
++
++  it("plans the rolling capture from the universe's clubs: window schedules, their final boxscores, future weeks, rosters (A-15)", () => {
++    const receipt = (url: string, body: unknown) => { const rawBody = JSON.stringify(body);
++      return { url, capturedAt: "2026-10-27T10:30:00Z", rawBody, bodySha256: createHash("sha256").update(rawBody).digest("hex") }; };
++    const shift = (date: string, days: number) => new Date(Date.parse(`${date}T12:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
++    const game = (id: number, date: string, home: [number, string], away: [number, string], gameState = "OFF") => ({ id, gameType: 2, season: 20262027,
++      startTimeUTC: `${date}T23:00:00Z`, gameState, homeTeam: { id: home[0], abbrev: home[1] }, awayTeam: { id: away[0], abbrev: away[1] } });
++    const week = (start: string, games: Record<string, any[]>) => receipt(`https://api-web.nhle.com/v1/schedule/${start}`,
++      { gameWeek: Array.from({ length: 7 }, (_, index) => ({ date: shift(start, index), games: games[shift(start, index)] ?? [] })) });
++    const players = [{ playerId: 7, nhlPlayerId: 77, teamId: 1, playerClass: "skater" as const, rosterRevision: "r7" },
++      { playerId: 8, nhlPlayerId: 88, teamId: 2, playerClass: "goalie" as const, rosterRevision: "r8" }];
++    const args = { universe: players, seasonId: 20262027, date: "2026-10-27", weeks: 2 };
++    expect(nativeDailyCaptureMethod("2026-10-26")).toBe("frozen_window");
++    expect(nativeDailyCaptureMethod("2026-10-27")).toBe("rolling_14d");
++    expect(() => nativeDailyRollingCapturePlan({ ...args, date: "2026-10-21" })).toThrow("capture_method_not_rolling");
++    expect(nativeDailyRollingCapturePlan(args)).toEqual({ windowSchedules: ["https://api-web.nhle.com/v1/schedule/2026-10-13", "https://api-web.nhle.com/v1/schedule/2026-10-20"],
++      boxscores: null, futureSchedules: ["https://api-web.nhle.com/v1/schedule/2026-10-27", "https://api-web.nhle.com/v1/schedule/2026-11-03"], rosters: null });
++    const window = [week("2026-10-13", { "2026-10-14": [game(2026020101, "2026-10-14", [1, "AAA"], [3, "CCC"]), game(2026020102, "2026-10-14", [3, "CCC"], [4, "DDD"])] }),
++      week("2026-10-20", { "2026-10-22": [game(2026020201, "2026-10-22", [2, "BBB"], [1, "AAA"])], "2026-10-26": [game(2026020301, "2026-10-26", [2, "BBB"], [3, "CCC"], "LIVE")] })];
++    // Only final games of the universe's clubs; an unrelated club's game and a game not yet final are not fetched.
++    expect(nativeDailyRollingCapturePlan({ ...args, scheduleReceipts: window })).toMatchObject({ rosters: null,
++      boxscores: ["https://api-web.nhle.com/v1/gamecenter/2026020101/boxscore", "https://api-web.nhle.com/v1/gamecenter/2026020201/boxscore"] });
++    const future = [week("2026-10-27", {}), week("2026-11-03", {})];
++    expect(nativeDailyRollingCapturePlan({ ...args, scheduleReceipts: [...window, ...future] }).rosters)
++      .toEqual(["https://api-web.nhle.com/v1/roster/AAA/20262027", "https://api-web.nhle.com/v1/roster/BBB/20262027"]);
++    expect(() => nativeDailyRollingCapturePlan({ ...args, universe: [...players, { ...players[0], playerId: 9, nhlPlayerId: 99, teamId: 9 }],
++      scheduleReceipts: [...window, ...future] })).toThrow("club_abbreviation_unknown");
++  });
++
+   it("leaves rolling participation uncovered, with a reason, when the roster or history is missing", () => {
+     const schedule = { url: "https://api-web.nhle.com/v1/schedule/2026-10-27", capturedAt: "2026-10-27T10:50:00Z", rawBody: "{}",
+       bodySha256: createHash("sha256").update("{}").digest("hex") };
+diff --git a/web/lib/player-forecasts/nativeDailyPipelineV2.ts b/web/lib/player-forecasts/nativeDailyPipelineV2.ts
+index 418b50c..64d6f03 100644
+--- a/web/lib/player-forecasts/nativeDailyPipelineV2.ts
++++ b/web/lib/player-forecasts/nativeDailyPipelineV2.ts
+@@ -6,9 +6,9 @@ import { timestampMicros } from "../projections/evidenceTime";
+ import { buildDailyMaterializationRequest, type HttpReceipt, type dailyScheduleBindings } from "./nativeDailyPipeline";
+ import { bindNativeCadenceMaterialization } from "./nativeBaselineCadence";
+ import { mergeNativeMaterializationParents, type NativeDailyMeans, type NativeMeansUniverseRow } from "./nativeDailyMeansCapture";
+-import type { NativeMaterializationParent, NativeMaterializationRequest } from "./nativeInputMaterialization";
++import { NATIVE_MATERIALIZATION_MAX_PARTICIPATION_INPUTS, type NativeMaterializationParent, type NativeMaterializationRequest } from "./nativeInputMaterialization";
+ import { targetRosterObservationFromReceipt } from "./targetRosterObservation";
+-import type { buildRollingParticipationHistories } from "./rollingParticipationFrame";
++import { rollingHistoryBoxscoreUrls, rollingHistoryScheduleUrls, type buildRollingParticipationHistories } from "./rollingParticipationFrame";
+ import { buildRollingWindowGoalieParticipationReceipt, buildRollingWindowGoalieStartReceipt, buildRollingWindowSkaterParticipationReceipt,
+   type RollingWindowGoalieParticipationInput, type RollingWindowGoalieStartInput, type RollingWindowSkaterParticipationInput } from "./rollingWindowParticipation";
+ import { proposeYahooKnownConflicts, type buildYahooUniverse } from "./yahooUniverse";
+@@ -29,9 +29,10 @@ export type NativeDailyV2Flags = { -readonly [K in keyof typeof NATIVE_DAILY_V2_
+ /** The frozen-window participation methods accept cutoffs only through this instant. */
+ export const FROZEN_PARTICIPATION_LAST_CUTOFF = "2026-10-27T04:00:00.000Z";
+ /** Methods under the standing approval (TJ 2026-10-17, ref tj-standing-approval-2026-10-17:forge-daily): the policy
+- * versions and definition hashes approved on 2026-10-16 for season 20262027, and the participation datasets. Any other
+- * version or hash goes to TJ. The rolling datasets count only once their first issuance is approved (flag). */
+-export const NATIVE_DAILY_APPROVED_METHODS = Object.freeze({ seasonId: 20262027,
++ * versions and definition hashes approved on 2026-10-16 for season 20262027, each policy's terms hash
++ * (`nativeDailyPolicyTerms`), and the participation datasets. Any other ref, version, hash or terms go to TJ. The rolling
++ * datasets count only once their first issuance is approved (flag). */
++export const NATIVE_DAILY_APPROVED_METHODS = Object.freeze({ seasonId: 20262027, standingApprovalRef: "tj-standing-approval-2026-10-17:forge-daily",
+   policies: Object.freeze({
+     "current-appearance-skater-rates-v1": "96bce3cfd0e2265feede26648139e24f5209df6f1ae98263139cc58bd7cd28ba",
+     "native-prior-appearance-skater-rates-v1": "879b96c79124584f7f53ea97084b26a837648a6dd118dd82568d6224b5e66f23",
+@@ -39,6 +40,14 @@ export const NATIVE_DAILY_APPROVED_METHODS = Object.freeze({ seasonId: 20262027,
+     "native-goalie-appearance-volume-rates-v1": "112fe51ef56842cf62edc4be5fceb8cb2148d5c1948d0140b58a85097b698f7c",
+     "native-goalie-appearance-shutout-rates-v1": "fc6c68494cb85d2f2a1604c580743f6d425665e47887cb80e45eebcc5ce80148",
+     "native-goalie-appearance-summary-win-rates-v1": "e715b40bb1da52461539c67c4211208a12663d72487db914fcc67a040f9575ca" } as Record<string, string>),
++  /** Terms approved 2026-10-16 for every policy above: uses assignment, totals, comparison and conditional tie-break. */
++  policyTerms: Object.freeze({
++    "current-appearance-skater-rates-v1": "782e1d09149249f93980f5b55c1887f14fd056e14abb21be654595bd7577a011",
++    "native-prior-appearance-skater-rates-v1": "c84c66089b88666ef6e1e1b732947c0297cb255a08de206b1ca3dea1966a75ee",
++    "native-goalie-appearance-win-rates-v1": "a027a4b31325d327f9a2b5efae53b8dad6973028607aae5e9dad6d8ae2276d88",
++    "native-goalie-appearance-volume-rates-v1": "4308969c02eef8581ca12f1200dd274cd4e154ad8cf1b92bf2e5ee45c797df63",
++    "native-goalie-appearance-shutout-rates-v1": "86564535d893c780b28ab49a9216853eb371c177a7ad41d22dfc21e079d13f9f",
++    "native-goalie-appearance-summary-win-rates-v1": "e29560fdbfbdf44aabab0331edaa08e0926dddda51f0fb2df01ccafb8e7f0218" } as Record<string, string>),
+   participationDatasets: Object.freeze(["skater-roster-observation-participation-bundle-v1", "goalie-roster-observation-participation-bundle-v1",
+     "goalie-roster-observation-start-bundle-v1"]),
+   rollingParticipationDatasets: Object.freeze(["skater-rolling-14d-participation-bundle-v1", "goalie-rolling-14d-participation-bundle-v1",
+@@ -46,6 +55,7 @@ export const NATIVE_DAILY_APPROVED_METHODS = Object.freeze({ seasonId: 20262027,
+ export const NATIVE_DAILY_UNIVERSE_THRESHOLDS = Object.freeze({ unresolvedCandidates: 5, addedMembers: 10 });
+ const fail = (reason: string): never => { throw new Error(reason); };
+ const micros = (value: string) => timestampMicros(value) ?? fail("invalid_clock");
++const nyDate = (instant: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(instant));
+ type Universe = ReturnType<typeof buildYahooUniverse>;
+ type RollingInput = RollingWindowSkaterParticipationInput | RollingWindowGoalieParticipationInput | RollingWindowGoalieStartInput;
+ type ParticipationInput = NonNullable<NativeMaterializationRequest["participationInputs"]>[number] | RollingInput;
+@@ -71,6 +81,8 @@ export function nativeDailyParticipationMethod(cutoffAt: string, flags: NativeDa
+ export function nativeDailyUniverse(universe: Universe, flags: NativeDailyV2Flags) {
+   if (universe?.version !== "forge-daily-yahoo-universe-v1" || !Array.isArray(universe.players) || !universe.players.length) fail("universe_required");
+   if (!universe.ownedComplete) fail("universe_owned_incomplete");
++  // Without a previous universe there is no change to count, so the growth threshold cannot be enforced.
++  if (flags.universeThresholds && !universe.change) fail("universe_previous_required");
+   const unresolved = universe.unmapped.length + universe.ambiguous.length + universe.membershipUnresolved.length + universe.excluded.length;
+   const added = universe.change?.added?.length ?? 0;
+   const exceeds = unresolved > NATIVE_DAILY_UNIVERSE_THRESHOLDS.unresolvedCandidates || added > NATIVE_DAILY_UNIVERSE_THRESHOLDS.addedMembers;
+@@ -81,6 +93,29 @@ export function nativeDailyUniverse(universe: Universe, flags: NativeDailyV2Flag
+     thresholds: NATIVE_DAILY_UNIVERSE_THRESHOLDS, thresholdsApplied: flags.universeThresholds, thresholdsExceeded: exceeds } };
+ }
+ 
++/** Fresh means bound to this run: cut off on the run date, assembled from a complete capture plan, and covering every
++ * universe member (an explicitly approved ceiling may leave that many uncovered). Members without a mean stay reported. */
++export function assertFreshMeansBinding(means: { cutoffAt: string; plan?: { status?: string } | null; coverage?: Array<{ playerId: number; nhlPlayerId: number; teamId: number }> },
++  universe: NativeMeansUniverseRow[], date: string, approvedUncovered = 0) {
++  if (nyDate(means.cutoffAt) !== date) fail("means_cutoff_not_on_run_date");
++  if (means.plan?.status !== "complete") fail("means_plan_incomplete");
++  const members = new Map(universe.map(player => [player.playerId, player])), covered = new Set<number>();
++  for (const row of means.coverage ?? []) {
++    const player = members.get(row.playerId);
++    if (!player || player.nhlPlayerId !== row.nhlPlayerId || player.teamId !== row.teamId || covered.has(row.playerId)) fail("means_universe_conflict");
++    covered.add(row.playerId);
++  }
++  const uncovered = universe.filter(player => !covered.has(player.playerId)).map(player => player.playerId);
++  if (uncovered.length > approvedUncovered) fail(`means_coverage_differs_from_universe:${uncovered.length}`);
++  return { uncovered, approvedUncovered };
++}
++
++/** The materializer's participation-input bound, checked offline before a request is bound: the rolling method gives every
++ * universe member inputs, so a large universe would otherwise fail only at the hosted materialization. */
++export function assertParticipationMaterializationBound(inputs: unknown[]) {
++  if (inputs.length > NATIVE_MATERIALIZATION_MAX_PARTICIPATION_INPUTS) fail(`participation_inputs_exceed_materialization_bound:${inputs.length}`);
++}
++
+ /** Fresh known conflicts only under the approved policy hash; otherwise none are passed and the v1 carry rule applies. */
+ export function nativeDailyKnownConflicts(universe: Universe, cutoffAt: string, flags: NativeDailyV2Flags, approvedPolicyHash?: string) {
+   if (!flags.injuryPolicy) return undefined;
+@@ -89,15 +124,36 @@ export function nativeDailyKnownConflicts(universe: Universe, cutoffAt: string,
+   return proposal.proposedKnownConflicts;
+ }
+ 
++/** A policy's terms: what a fresh policy row carries over from its template, without the per-candidate fields. */
++export const nativeDailyPolicyTerms = (policy: any) => ({ version: policy?.version, seasonId: policy?.seasonId, policyVersion: policy?.policyVersion,
++  allowedPublicUses: Array.isArray(policy?.allowedPublicUses) ? [...policy.allowedPublicUses].sort() : null });
++
++/** The reviewed plan supplies each approved policy's terms: one policy and one review template per policy version, with
++ * the pinned terms. A duplicate would otherwise resolve to whichever row comes first. */
++export function assertFreshMeansPolicyTemplates(rows: PlannedSourceObservation[]) {
++  const approved = NATIVE_DAILY_APPROVED_METHODS, seen = new Set<string>();
++  for (const row of rows) {
++    const policyVersion = (row.payload as any)?.policyVersion;
++    if (!["baseline_evaluation_policy", "baseline_validation_review"].includes(row.entity_kind) || !approved.policies[policyVersion]) continue;
++    if (seen.has(`${row.entity_kind}:${policyVersion}`)) fail("fresh_means_policy_template_ambiguous");
++    seen.add(`${row.entity_kind}:${policyVersion}`);
++    if (row.entity_kind === "baseline_evaluation_policy" && hash(nativeDailyPolicyTerms(row.payload)) !== approved.policyTerms[policyVersion]) {
++      fail(`fresh_means_policy_terms_not_approved:${policyVersion}`);
++    }
++  }
++  return { templates: seen.size };
++}
++
+ /** Method gate before anything is minted under the standing approval: every native input's definition hash, every
+- * policy and bundle version, and every participation dataset must be pinned above. */
++ * policy and bundle version, every policy's terms and approval ref, and every participation dataset must be pinned above. */
+ export function assertStandingApprovalMethods(plan: { seasonId: number; rows: PlannedSourceObservation[] }, flags: NativeDailyV2Flags) {
+   const approved = NATIVE_DAILY_APPROVED_METHODS, datasets = [...approved.participationDatasets, ...(flags.rollingFirstIssuance ? approved.rollingParticipationDatasets : [])];
+   if (plan.seasonId !== approved.seasonId) fail("method_not_in_standing_approval:season");
+   for (const row of plan.rows) {
+     const payload = row.payload as any;
+     if (row.entity_kind === "player" && approved.policies[payload.policyVersion] !== payload.definitionHash) fail(`method_not_in_standing_approval:${payload.policyVersion}`);
+-    if (row.entity_kind === "baseline_evaluation_policy" && !approved.policies[payload.policyVersion]) fail(`method_not_in_standing_approval:${payload.policyVersion}`);
++    if (row.entity_kind === "baseline_evaluation_policy" && (!approved.policies[payload.policyVersion] || payload.ownerApprovalRef !== approved.standingApprovalRef
++      || hash(nativeDailyPolicyTerms(payload)) !== approved.policyTerms[payload.policyVersion])) fail(`method_not_in_standing_approval:${payload.policyVersion}`);
+     if (row.entity_kind === "seasonal_rate_bundle" && !approved.policies[payload.manifest.policyVersion]) fail(`method_not_in_standing_approval:${payload.manifest.policyVersion}`);
+     if (row.entity_kind === "participation_bundle" && !datasets.includes(row.dataset_key)) fail(`method_not_in_standing_approval:${row.dataset_key}`);
+   }
+@@ -195,6 +251,34 @@ export function buildDailyMaterializationRequestV2(args: { acquisition: NativeMa
+     games: args.games }), requestBytes: Buffer.byteLength(JSON.stringify(request)) };
+ }
+ 
++const scheduleUrl = (date: string) => `https://api-web.nhle.com/v1/schedule/${date}`;
++/** The participation method a capture on this New York date serves (its cutoff falls on that date). */
++export const nativeDailyCaptureMethod = (date: string) =>
++  micros(`${date}T16:00:00Z`) <= micros(FROZEN_PARTICIPATION_LAST_CUTOFF) ? "frozen_window" as const : "rolling_14d" as const;
++
++/** Rolling capture plan from the universe's clubs, in fetch order: the window's weekly schedules (D-14, D-7), the final
++ * window boxscores they list for those clubs, weekly schedules from the run date, then each club's official roster
++ * (abbreviations from the captured schedules). Boxscores and rosters are planned once the schedules they need are given. */
++export function nativeDailyRollingCapturePlan(args: { universe: NativeMeansUniverseRow[]; seasonId: number; date: string; weeks: number;
++  scheduleReceipts?: HttpReceipt[] }) {
++  if (!Number.isSafeInteger(args.weeks) || args.weeks < 1 || args.weeks > 10) fail("invalid_weeks");
++  if (nativeDailyCaptureMethod(args.date) !== "rolling_14d") fail("capture_method_not_rolling");
++  const windowSchedules = rollingHistoryScheduleUrls(`${args.date}T16:00:00Z`);
++  const futureSchedules = Array.from({ length: args.weeks }, (_, index) =>
++    scheduleUrl(new Date(Date.parse(`${args.date}T12:00:00Z`) + index * 7 * 86400000).toISOString().slice(0, 10)));
++  const clubIds = [...new Set(args.universe.map(player => player.teamId))].sort((a, b) => a - b), receipts = args.scheduleReceipts ?? [];
++  const window = receipts.filter(receipt => windowSchedules.includes(receipt.url));
++  if (window.length !== windowSchedules.length) return { windowSchedules, boxscores: null, futureSchedules, rosters: null };
++  const boxscores = rollingHistoryBoxscoreUrls({ cutoffAt: window.map(receipt => receipt.capturedAt).sort((a, b) => Number(micros(a) - micros(b))).at(-1)!,
++    seasonId: args.seasonId, clubIds, scheduleReceipts: window });
++  if (futureSchedules.some(url => !receipts.some(receipt => receipt.url === url))) return { windowSchedules, boxscores, futureSchedules, rosters: null };
++  const clubs = new Map<number, string>();
++  for (const receipt of receipts) for (const day of JSON.parse(receipt.rawBody).gameWeek ?? []) for (const game of day.games ?? [])
++    for (const team of [game.homeTeam, game.awayTeam]) if (team?.id && team.abbrev) clubs.set(team.id, team.abbrev);
++  if (clubIds.some(id => !clubs.has(id))) fail("club_abbreviation_unknown");
++  return { windowSchedules, boxscores, futureSchedules, rosters: clubIds.map(id => `https://api-web.nhle.com/v1/roster/${clubs.get(id)}/${args.seasonId}`) };
++}
++
+ /** Bundle-level schedule revision for fresh baseline sources: the fresh schedule originals this issuance saw. */
+ export const nativeDailyScheduleRevision = (receipts: HttpReceipt[]) =>
+   `daily-schedule:${hash(receipts.filter(receipt => /\/v1\/schedule\//.test(receipt.url)).map(receipt => receipt.bodySha256).sort())}`;
+diff --git a/web/lib/player-forecasts/nativeInputMaterialization.ts b/web/lib/player-forecasts/nativeInputMaterialization.ts
+index 3f7835a..052014e 100644
+--- a/web/lib/player-forecasts/nativeInputMaterialization.ts
++++ b/web/lib/player-forecasts/nativeInputMaterialization.ts
+@@ -39,6 +39,8 @@ export type NativeMaterializationRequest = {
+ const VERSION = "native-input-materialization-v1";
+ // Retained six-policy/1,260-input inventory measured >41MB before parent packing.
+ const MAX_BYTES = 64 * 1024 * 1024;
++/** Participation inputs one request may carry; the v2 driver checks it offline before binding a request. */
++export const NATIVE_MATERIALIZATION_MAX_PARTICIPATION_INPUTS = 1500;
+ function packed<T>(values: T[]): T[][] {
+   const groups: T[][] = []; let group: T[] = [], bytes = 2;
+   for (const value of values) {
+@@ -95,7 +97,7 @@ export function prepareNativeInputMaterialization(request: NativeMaterialization
+     dataset_key: dataset, entity_kind: kind, entity_key: entity, source_url: sourceUrl, source_revision_key: hash(payload),
+     observed_at: at, available_at: at, payload_hash: hash(payload), payload, metadata: { materializationProtocol: VERSION } });
+   const parents = request.parents ?? [], required = request.requiredParents ?? [], participation = request.participationInputs ?? [];
+-  if (parents.length > 1024 || required.length !== parents.length || participation.length > 1500
++  if (parents.length > 1024 || required.length !== parents.length || participation.length > NATIVE_MATERIALIZATION_MAX_PARTICIPATION_INPUTS
+     || new Set(required.map(parent => parent.hash)).size !== required.length) throw new Error("Parent acquisition scope is incomplete or duplicated.");
+   const parentMap = new Map(parents.map(parent => [parent.hash, parent]));
+   if (parentMap.size !== parents.length) throw new Error("Ambiguous materialization parent identity.");
+diff --git a/web/scripts/forge-daily-v2.test.ts b/web/scripts/forge-daily-v2.test.ts
+new file mode 100644
+index 0000000..44aded3
+--- /dev/null
++++ b/web/scripts/forge-daily-v2.test.ts
+@@ -0,0 +1,144 @@
++// @vitest-environment node
++import { createHash } from "node:crypto";
++import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
++import { tmpdir } from "node:os";
++import { join } from "node:path";
++import { afterEach, describe, expect, it, vi } from "vitest";
++import { assertCaptureMatchesPlanV2, runForgeDailyV2 } from "./forge-daily-v2";
++import { NATIVE_DAILY_APPROVED_METHODS } from "../lib/player-forecasts/nativeDailyPipelineV2";
++
++const dirs: string[] = [];
++afterEach(() => { vi.useRealTimers(); for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
++const files = () => {
++  const dir = mkdtempSync(join(tmpdir(), "forge-daily-v2-")); dirs.push(dir);
++  return { dir, write: (name: string, value: unknown) => { const path = join(dir, name), body = JSON.stringify(value); writeFileSync(path, body);
++    return [path, createHash("sha256").update(body).digest("hex")]; } };
++};
++const WEB = "https://api-web.nhle.com/v1";
++const receipt = (url: string, body: unknown = {}, capturedAt = "2026-10-21T10:50:00Z") => { const rawBody = JSON.stringify(body);
++  return { url, capturedAt, rawBody, bodySha256: createHash("sha256").update(rawBody).digest("hex") }; };
++const shift = (date: string, days: number) => new Date(Date.parse(`${date}T12:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
++const game = (id: number, date: string, home: [number, string], away: [number, string]) => ({ id, gameType: 2, season: 20262027,
++  startTimeUTC: `${date}T23:00:00Z`, gameState: "OFF", homeTeam: { id: home[0], abbrev: home[1] }, awayTeam: { id: away[0], abbrev: away[1] } });
++const weekBody = (start: string, games: Record<string, any[]> = {}) =>
++  ({ gameWeek: Array.from({ length: 7 }, (_, index) => ({ date: shift(start, index), games: games[shift(start, index)] ?? [] })) });
++const players = [{ playerId: 7, nhlPlayerId: 77, teamId: 1, playerClass: "skater" as const, rosterRevision: "r7" },
++  { playerId: 8, nhlPlayerId: 88, teamId: 2, playerClass: "goalie" as const, rosterRevision: "r8" }];
++const universe = (date: string, overrides: Record<string, unknown> = {}) => ({ version: "forge-daily-yahoo-universe-v1", date, seasonId: 20262027,
++  status: "complete", ownedComplete: true, counts: { owned: 2 }, unmapped: [], ambiguous: [], membershipUnresolved: [], excluded: [], change: null,
++  injury: { evidence: [] }, players: players.map(({ playerClass, ...player }) => ({ ...player, class: playerClass, universe: "owned", yahooPlayerKey: `477.p.${player.playerId}` })),
++  ...overrides });
++// The retained frozen-window request: templates for clubs 1 and 2, history window from 2026-09-29.
++const retained = { acquisition: { seasonId: 20262027 },
++  parents: [{ original: { url: `${WEB}/schedule/2026-09-29`, rawBody: JSON.stringify({ gameWeek: [{ games: [game(2026020001, "2026-09-30", [1, "AAA"], [2, "BBB"])] }] }) } }],
++  participationInputs: players.map(player => ({ scope: { playerId: player.playerId, teamId: player.teamId }, history: { windowStartAt: "2026-09-29T04:00:00.000Z" } })) };
++const frozenUrls = [`${WEB}/roster/AAA/20262027`, `${WEB}/roster/BBB/20262027`, `${WEB}/schedule/2026-09-29`, `${WEB}/schedule/2026-10-06`,
++  `${WEB}/schedule/2026-10-21`, `${WEB}/schedule/2026-10-28`];
++// Rolling for 2026-10-27: window weeks Oct 13 and Oct 20 with two final games of the universe clubs.
++const rollingBodies: Record<string, unknown> = {
++  [`${WEB}/schedule/2026-10-13`]: weekBody("2026-10-13", { "2026-10-14": [game(2026020101, "2026-10-14", [1, "AAA"], [3, "CCC"])] }),
++  [`${WEB}/schedule/2026-10-20`]: weekBody("2026-10-20", { "2026-10-22": [game(2026020201, "2026-10-22", [2, "BBB"], [1, "AAA"])] }),
++  [`${WEB}/gamecenter/2026020101/boxscore`]: { id: 2026020101 }, [`${WEB}/gamecenter/2026020201/boxscore`]: { id: 2026020201 },
++  [`${WEB}/schedule/2026-10-27`]: weekBody("2026-10-27"), [`${WEB}/schedule/2026-11-03`]: weekBody("2026-11-03"),
++  [`${WEB}/roster/AAA/20262027`]: { forwards: [] }, [`${WEB}/roster/BBB/20262027`]: { goalies: [] } };
++const rollingOrder = Object.keys(rollingBodies);
++
++describe("v2 capture plan equality (A-16)", () => {
++  const frozen = (urls: string[], extra: Record<string, unknown> = {}) => ({ method: "frozen_window" as const, retained, universe: players, seasonId: 20262027,
++    date: "2026-10-21", capture: { receipts: urls.map(url => receipt(url)), ...extra } });
++
++  it("accepts exactly v1's frozen plan and refuses a dropped roster or week", () => {
++    expect(() => assertCaptureMatchesPlanV2(frozen(frozenUrls))).not.toThrow();
++    expect(() => assertCaptureMatchesPlanV2(frozen(frozenUrls.slice(1)))).toThrow("capture_differs_from_plan");
++    expect(() => assertCaptureMatchesPlanV2(frozen(frozenUrls.filter(url => !url.endsWith("2026-10-21"))))).toThrow("capture_differs_from_plan");
++    // With the recorded week count, a dropped last week fails as well.
++    expect(() => assertCaptureMatchesPlanV2(frozen(frozenUrls, { weeks: 2, method: "frozen_window" }))).not.toThrow();
++    expect(() => assertCaptureMatchesPlanV2(frozen(frozenUrls.slice(0, -1), { weeks: 2 }))).toThrow("capture_differs_from_plan");
++    expect(() => assertCaptureMatchesPlanV2(frozen(frozenUrls, { method: "rolling_14d" }))).toThrow("capture_differs_from_plan");
++  });
++
++  it("accepts exactly the rolling plan and refuses a dropped boxscore or roster", () => {
++    const rolling = (urls: string[]) => ({ method: "rolling_14d" as const, retained: undefined, universe: players, seasonId: 20262027, date: "2026-10-27",
++      capture: { weeks: 2, receipts: urls.map(url => receipt(url, rollingBodies[url], "2026-10-27T10:50:00Z")) } });
++    expect(() => assertCaptureMatchesPlanV2(rolling(rollingOrder))).not.toThrow();
++    expect(() => assertCaptureMatchesPlanV2(rolling(rollingOrder.filter(url => !url.includes("2026020201"))))).toThrow("capture_differs_from_plan");
++    expect(() => assertCaptureMatchesPlanV2(rolling(rollingOrder.filter(url => !url.includes("roster/BBB"))))).toThrow("capture_differs_from_plan");
++    expect(() => assertCaptureMatchesPlanV2(rolling(rollingOrder.filter(url => !url.endsWith("2026-11-03"))))).toThrow("capture_differs_from_plan");
++  });
++});
++
++describe("capture-v2 (A-15)", () => {
++  it("plans offline by default: the rolling window schedules first, nothing fetched", async () => {
++    const { dir, write } = files(), [path, sha] = write("universe.json", universe("2026-10-27")), network = vi.fn() as unknown as typeof fetch;
++    const result = await runForgeDailyV2("capture-v2", ["--universe", path, "--universe-sha256", sha, "--date", "2026-10-27", "--weeks", "2", "--out", join(dir, "out")],
++      undefined, { network });
++    expect(result).toMatchObject({ status: "plan_only", method: "rolling_14d", requests: 2, networkRequests: 0 });
++    expect(JSON.parse(readFileSync(join(dir, "out", "plan.json"), "utf8")).urls).toEqual(rollingOrder.slice(0, 2));
++    expect(network).not.toHaveBeenCalled();
++    await expect(runForgeDailyV2("capture-v2", ["--universe", path, "--universe-sha256", sha, "--date", "2026-10-21", "--out", join(dir, "frozen")]))
++      .rejects.toThrow("capture_not_on_run_date");
++  });
++
++  it("captures window schedules, their boxscores, future weeks, then rosters, and the result matches the plan", async () => {
++    // Receipts carry the capture clock, so the run happens on the run date.
++    vi.useFakeTimers({ now: Date.parse("2026-10-27T10:30:00Z"), toFake: ["Date"] });
++    const { dir, write } = files(), [path, sha] = write("universe.json", universe("2026-10-27")), fetched: string[] = [];
++    const network = vi.fn(async (url: string | URL | Request) => { fetched.push(String(url));
++      return new Response(JSON.stringify(rollingBodies[String(url)] ?? {}), { status: 200 }); }) as unknown as typeof fetch;
++    const result = await runForgeDailyV2("capture-v2", ["--universe", path, "--universe-sha256", sha, "--date", "2026-10-27", "--weeks", "2",
++      "--out", join(dir, "out"), "--execute", "true"], undefined, { network, wait: async () => undefined });
++    expect(result).toMatchObject({ status: "captured", method: "rolling_14d", requests: 8, receipts: 8 });
++    expect(fetched).toEqual(rollingOrder);
++    const capture = JSON.parse(readFileSync(join(dir, "out", "receipts.json"), "utf8"));
++    expect(capture).toMatchObject({ version: "forge-daily-capture-v2", method: "rolling_14d", date: "2026-10-27", weeks: 2, failures: [] });
++    expect(() => assertCaptureMatchesPlanV2({ method: "rolling_14d", capture, retained: undefined, universe: players, seasonId: 20262027, date: "2026-10-27" })).not.toThrow();
++  });
++});
++
++describe("inputs-v2 gates", () => {
++  const run = (overrides: { universe?: unknown; means?: Record<string, unknown>; capture?: unknown; flags?: unknown; extra?: string[] } = {}) => {
++    const { dir, write } = files();
++    const means = { seasonId: 20262027, cutoffAt: "2026-10-21T10:40:00Z", plan: { status: "complete" }, nativeSelection: [], additionalNativeObservations: [], parents: [],
++      coverage: players.map(({ playerId, nhlPlayerId, teamId }) => ({ playerId, nhlPlayerId, teamId })), ...overrides.means };
++    const args = (["universe", "means", "capture", "retained"] as const).flatMap(name => {
++      const value = { universe: overrides.universe ?? universe("2026-10-21"), means, capture: overrides.capture ?? { receipts: frozenUrls.map(url => receipt(url)) }, retained }[name];
++      const [path, sha] = write(`${name}.json`, value); return [`--${name}`, path, `--${name}-sha256`, sha];
++    });
++    if (overrides.flags) { const [path, sha] = write("flags.json", overrides.flags); args.push("--flags", path, "--flags-sha256", sha); }
++    return runForgeDailyV2("inputs-v2", [...args, "--date", "2026-10-21", "--out", join(dir, "out"), ...(overrides.extra ?? [])]);
++  };
++
++  it("refuses universe thresholds without a previous universe (A-13)", async () => {
++    await expect(run({ flags: { universeThresholds: true } })).rejects.toThrow("universe_previous_required");
++  });
++
++  it("refuses stale, incomplete or partial fresh means (A-17)", async () => {
++    await expect(run({ means: { cutoffAt: "2026-10-12T15:00:00Z" } })).rejects.toThrow("means_cutoff_not_on_run_date");
++    await expect(run({ means: { plan: { status: "requests_pending" } } })).rejects.toThrow("means_plan_incomplete");
++    await expect(run({ means: { coverage: [{ playerId: 7, nhlPlayerId: 77, teamId: 1 }] } })).rejects.toThrow("means_coverage_differs_from_universe:1");
++    await expect(run({ means: { coverage: [] }, extra: ["--means-uncovered-ceiling", "2"] })).rejects.toThrow("means_ceiling_requires_approval_ref");
++  });
++
++  it("refuses a capture that differs from the plan before building participation (A-16)", async () => {
++    await expect(run({ capture: { receipts: frozenUrls.slice(1).map(url => receipt(url)) } })).rejects.toThrow("capture_differs_from_plan");
++  });
++});
++
++describe("outputs-v2 gates (A-18)", () => {
++  const run = (approvalRef: string, templates: unknown) => {
++    const { dir, write } = files();
++    const args = Object.entries({ command: { freshMeans: { scheduleRevision: "daily-schedule:x" } }, proof: { rows: [] }, templates })
++      .flatMap(([name, value]) => { const [path, sha] = write(`${name}.json`, value); return [`--${name}`, path, `--${name}-sha256`, sha]; });
++    return runForgeDailyV2("outputs-v2", [...args, "--approval-ref", approvalRef, "--max-null-participation", "100", "--out", join(dir, "out")]);
++  };
++  const policy = { entity_kind: "baseline_evaluation_policy", payload: { version: "baseline-evaluation-policy-v1", seasonId: 20262027,
++    policyVersion: "native-goalie-appearance-win-rates-v1", allowedPublicUses: ["assignment", "totals", "comparison", "conditionalTieBreak"] } };
++
++  it("accepts only the pinned standing-approval ref", async () => {
++    await expect(run("replay:any-string", { rows: [policy] })).rejects.toThrow("standing_approval_ref_not_pinned");
++  });
++
++  it("refuses duplicate policy templates instead of taking the first", async () => {
++    await expect(run(NATIVE_DAILY_APPROVED_METHODS.standingApprovalRef, { rows: [policy, policy] })).rejects.toThrow("fresh_means_policy_template_ambiguous");
++  });
++});
+diff --git a/web/scripts/forge-daily-v2.ts b/web/scripts/forge-daily-v2.ts
+index ce1dd23..fe2568c 100644
+--- a/web/scripts/forge-daily-v2.ts
++++ b/web/scripts/forge-daily-v2.ts
+@@ -1,21 +1,26 @@
+ /** v2 daily FORGE stages (tasks/prd-forge-daily-pipeline.md, v2 decisions), dispatched from forge-daily.ts:
++ *   capture-v2 - bounded serial NHL GETs planned for the run date's participation method (plan-only unless --execute):
++ *                v1's plan for the frozen window; for rolling, the window schedules, their final boxscores, future weeks
++ *                and the universe clubs' rosters
+  *   inputs-v2  - offline: universe + fresh means + day capture (+ retained frozen-window templates) -> bound request
+  *   outputs-v2 - offline: closed proof -> pending plan with fresh-means bundles, standing-approval policy rows and
+  *                pending reviews, plus participation bundles
+  * The universe and means stages run through `forge-daily universe` and `forge-daily means`. Nothing here fetches or
+  * writes to a database. Behaviour still awaiting TJ is behind flags (lib/player-forecasts/nativeDailyPipelineV2.ts). */
+ import { createHash, randomUUID } from "node:crypto";
+-import { mkdirSync } from "node:fs";
++import { appendFileSync, closeSync, fsyncSync, mkdirSync, openSync } from "node:fs";
+ import { resolve } from "node:path";
+ import { boundedFile, privateWrite } from "./native-baseline-cadence";
+-import { historyWeekDates, morningDueAt } from "./forge-daily";
++import { captureOriginals, dailyCapturePlan, historyWeekDates, morningDueAt } from "./forge-daily";
++import { collectNativeMeansOriginals } from "./native-means-capture";
+ import { buildDailyParticipationInputs, dailyExpiresAt, dailyGames, dailyScheduleBindings, excludeMeansOnlyNatives, reobserveHistoryWindow,
+   type HttpReceipt } from "../lib/player-forecasts/nativeDailyPipeline";
+-import { assertParticipationCoverage, assertStandingApprovalMethods, buildDailyMaterializationRequestV2, buildRollingDailyParticipationInputs, frozenWindowParticipationParents, nativeDailyKnownConflicts,
++import { assertFreshMeansBinding, assertFreshMeansPolicyTemplates, assertParticipationCoverage, assertParticipationMaterializationBound,
++  assertStandingApprovalMethods, buildDailyMaterializationRequestV2, NATIVE_DAILY_APPROVED_METHODS, nativeDailyCaptureMethod, nativeDailyRollingCapturePlan, buildRollingDailyParticipationInputs, frozenWindowParticipationParents, nativeDailyKnownConflicts,
+   nativeDailyNullParticipation, nativeDailyOriginalParent, nativeDailyParticipationMethod, nativeDailyScheduleRevision, nativeDailyUniverse,
+   nativeDailyV2Flags } from "../lib/player-forecasts/nativeDailyPipelineV2";
+ import { buildRollingParticipationHistories, rollingHistoryScheduleUrls } from "../lib/player-forecasts/rollingParticipationFrame";
+-import { mergeNativeMaterializationParents } from "../lib/player-forecasts/nativeDailyMeansCapture";
++import { mergeNativeMaterializationParents, type NativeMeansUniverseRow } from "../lib/player-forecasts/nativeDailyMeansCapture";
+ import { prepareNativeCadenceOutputs, type NativeOutputPreparationCommand } from "../lib/player-forecasts/nativeCadenceOutputPreparation";
+ import { timestampMicros } from "../lib/projections/evidenceTime";
+ 
+@@ -36,11 +41,61 @@ const output = (path: string) => { const out = resolve(path); mkdirSync(out, { m
+ const input = (args: Map<string, string>, name: string) => boundedFile(args.get(`--${name}`) ?? fail(`missing_${name}`),
+   args.get(`--${name}-sha256`) ?? fail(`missing_${name}_sha256`), MAX_INPUT);
+ const optional = (args: Map<string, string>, name: string) => args.has(`--${name}`) ? input(args, name) : undefined;
++const scheduleUrl = (day: string) => `https://api-web.nhle.com/v1/schedule/${day}`;
+ 
+-export async function runForgeDailyV2(stage: string, argv: string[], now = () => new Date()) {
++/** v1's capture_differs_from_plan for v2: the capture holds exactly the planned URLs of the run's participation method. Its
++ * recorded week count (capture-v2) is used when present, so a dropped last week also fails. */
++export function assertCaptureMatchesPlanV2(args: { method: "frozen_window" | "rolling_14d"; capture: { method?: string; weeks?: number; receipts: HttpReceipt[] };
++  retained: any; universe: NativeMeansUniverseRow[]; seasonId: number; date: string }) {
++  const receipts = args.capture.receipts, schedules = receipts.filter(receipt => /\/v1\/schedule\//.test(receipt.url));
++  const history = args.method === "frozen_window" ? historyWeekDates(args.retained).map(scheduleUrl) : rollingHistoryScheduleUrls(`${args.date}T16:00:00Z`);
++  const weeks = args.capture.weeks ?? schedules.filter(receipt => !history.includes(receipt.url)).length;
++  let planned: string[];
++  if (args.method === "frozen_window") planned = dailyCapturePlan(args.retained, args.date, weeks);
++  else {
++    const plan = nativeDailyRollingCapturePlan({ universe: args.universe, seasonId: args.seasonId, date: args.date, weeks, scheduleReceipts: schedules });
++    planned = [...plan.windowSchedules, ...(plan.boxscores ?? []), ...plan.futureSchedules, ...(plan.rosters ?? [])];
++  }
++  if ((args.capture.method !== undefined && args.capture.method !== args.method)
++    || JSON.stringify(receipts.map(receipt => receipt.url).sort()) !== JSON.stringify(planned.slice().sort())) fail("capture_differs_from_plan");
++}
++
++export async function runForgeDailyV2(stage: string, argv: string[], now = () => new Date(),
++  io: { network?: typeof fetch; wait?: (ms: number) => Promise<void> } = {}) {
++  if (stage === "capture-v2") {
++    const args = parse(argv, ["--universe", "--universe-sha256", "--retained", "--retained-sha256", "--date", "--weeks", "--out", "--execute"]);
++    const date = args.get("--date") ?? fail("missing_date"), weeks = Number(args.get("--weeks") ?? 8), method = nativeDailyCaptureMethod(date);
++    const universe = input(args, "universe"), { rows: players } = nativeDailyUniverse(universe, nativeDailyV2Flags(undefined)), seasonId = universe.seasonId;
++    if (universe.date !== date) fail("capture_not_on_run_date");
++    const retained = method === "frozen_window" ? input(args, "retained") : undefined;
++    const rolling = (scheduleReceipts?: HttpReceipt[]) => nativeDailyRollingCapturePlan({ universe: players, seasonId, date, weeks, scheduleReceipts });
++    const first = retained ? dailyCapturePlan(retained, date, weeks) : rolling().windowSchedules, execute = args.get("--execute") === "true";
++    const out = output(args.get("--out") ?? fail("missing_out"));
++    privateWrite(resolve(out, "plan.json"), { method, date, weeks, urls: first, plannedAfterSchedules: retained ? [] : ["boxscores", "future_schedules", "rosters"],
++      execute, recordedAt: now().toISOString() });
++    if (!execute) return { stage, status: "plan_only", method, requests: first.length, networkRequests: 0, out };
++    const event = (action: string, fields: Record<string, unknown>) => { const fd = openSync(resolve(out, "ledger.jsonl"), "a", 0o600);
++      try { appendFileSync(fd, JSON.stringify({ at: new Date().toISOString(), action, ...fields }) + "\n"); fsyncSync(fd); } finally { closeSync(fd); } };
++    const receipts: HttpReceipt[] = [];
++    let failures: Array<{ url: string; reason: string }> = [], attempted = 0;
++    // Rolling phases in order; each later phase is planned from the schedules already captured. Boxscores use the means collector's allowlist and budget.
++    const phases: Array<() => Promise<void>> = [async () => { const result = await captureOriginals(first, event, io.network, io.wait);
++      receipts.push(...result.receipts); failures = result.failures; attempted += result.attempted; }];
++    if (!retained) phases.push(async () => { const result = await collectNativeMeansOriginals(rolling(receipts).boxscores!, event, { network: io.network, wait: io.wait });
++      receipts.push(...result.receipts); failures = result.failures; attempted += result.spent.requests; },
++    async () => { const result = await captureOriginals(rolling(receipts).futureSchedules, event, io.network, io.wait);
++      receipts.push(...result.receipts); failures = result.failures; attempted += result.attempted; },
++    async () => { const result = await captureOriginals(rolling(receipts.filter(receipt => /\/v1\/schedule\//.test(receipt.url))).rosters!, event, io.network, io.wait);
++      receipts.push(...result.receipts); failures = result.failures; attempted += result.attempted; });
++    for (const phase of phases) { await phase(); if (failures.length) break; }
++    privateWrite(resolve(out, "receipts.json"), { version: "forge-daily-capture-v2", method, date, weeks, receipts, failures, attempted });
++    return { stage, status: failures.length ? "stopped" : "captured", method, requests: attempted, receipts: receipts.length,
++      bytes: receipts.reduce((sum, receipt) => sum + Buffer.byteLength(receipt.rawBody), 0), out };
++  }
+   if (stage === "inputs-v2") {
+     const args = parse(argv, ["--universe", "--universe-sha256", "--means", "--means-sha256", "--capture", "--capture-sha256", "--retained",
+-      "--retained-sha256", "--date", "--out", "--flags", "--flags-sha256", "--approved-injury-policy-hash"]);
++      "--retained-sha256", "--date", "--out", "--flags", "--flags-sha256", "--approved-injury-policy-hash", "--means-uncovered-ceiling",
++      "--means-ceiling-approval-ref"]);
+     const universe = input(args, "universe"), means = input(args, "means"), capture = input(args, "capture"), retained = input(args, "retained");
+     const flags = nativeDailyV2Flags(optional(args, "flags")), date = args.get("--date") ?? fail("missing_date");
+     if (capture.failures?.length) fail("capture_incomplete");
+@@ -50,11 +105,16 @@ export async function runForgeDailyV2(stage: string, argv: string[], now = () =>
+     // The cutoff is the latest fresh capture, never earlier than the fresh means it binds.
+     const cutoffAt = [...receipts.map(receipt => receipt.capturedAt), means.cutoffAt].sort((a, b) => Number(micros(a) - micros(b))).at(-1)!;
+     const { rows: players, gate } = nativeDailyUniverse(universe, flags), byId = new Map(players.map(player => [player.playerId, player]));
++    const ceiling = Number(args.get("--means-uncovered-ceiling") ?? 0), ceilingRef = args.get("--means-ceiling-approval-ref") ?? null;
++    if (!Number.isSafeInteger(ceiling) || ceiling < 0) fail("invalid_means_uncovered_ceiling");
++    if (ceiling && !ceilingRef?.trim()) fail("means_ceiling_requires_approval_ref");
++    const meansBinding = { ...assertFreshMeansBinding(means, players, date, ceiling), approvalRef: ceilingRef };
+     for (const { payload } of means.additionalNativeObservations) {
+       const player = byId.get(payload.playerId);
+       if (!player || player.nhlPlayerId !== payload.nhlPlayerId || player.teamId !== payload.teamId || player.rosterRevision !== payload.rosterRevision) fail("means_universe_conflict");
+     }
+     const method = nativeDailyParticipationMethod(cutoffAt, flags), knownConflicts = nativeDailyKnownConflicts(universe, cutoffAt, flags, args.get("--approved-injury-policy-hash"));
++    assertCaptureMatchesPlanV2({ method, capture, retained, universe: players, seasonId, date });
+     const schedules = receipts.filter(receipt => /\/v1\/schedule\//.test(receipt.url)), rosters = receipts.filter(receipt => /\/v1\/roster\//.test(receipt.url));
+     const runId = randomUUID(), sourceKey = "native-daily-selected-inputs", yahoo = { gameKey: "477", season: String(seasonId).slice(0, 4) };
+     let participation: { inputs: any[]; coverage: any[] }, participationParents: any[], acquisition = retained.acquisition, games: Array<{ gameId: number; startsAt: string }>;
+@@ -90,6 +150,7 @@ export async function runForgeDailyV2(stage: string, argv: string[], now = () =>
+       participationParents = mergeNativeMaterializationParents(frame.parents, [...rosters, ...futureSchedules].map(nativeDailyOriginalParent)).parents;
+       extra = { exclusions: bindings.exclusions, rollingFrame: frame.coverage };
+     }
++    assertParticipationMaterializationBound(participation.inputs);
+     // Only players with a participation target are served (TJ, 2026-10-19, option (a)), by the same rule as v1. It runs after the
+     // coverage gates above, so a lost template still stops the run instead of quietly dropping that player's means.
+     const scoped = excludeMeansOnlyNatives({ acquisition: { roster: players }, nativeSelection: means.nativeSelection,
+@@ -104,7 +165,8 @@ export async function runForgeDailyV2(stage: string, argv: string[], now = () =>
+     privateWrite(resolve(out, "materialization-request.json"), bound.request);
+     privateWrite(resolve(out, "preparation-command.json"), command);
+     privateWrite(resolve(out, "coverage.json"), { cutoffAt, method, flags, universe: gate, games, ...extra, means: { cutoffAt: means.cutoffAt,
+-      selected: means.nativeSelection.length, coverage: means.coverage, meansOnlyExcluded: scoped.excluded }, participation: participation.coverage,
++      selected: means.nativeSelection.length, coverage: means.coverage, meansOnlyExcluded: scoped.excluded, plan: means.plan, binding: meansBinding },
++      participation: participation.coverage,
+       requestBytes: bound.requestBytes });
+     return { stage, status: "inputs_bound", method, cutoffAt, flags, universe: gate, nativeSelected: served.nativeSelection.length,
+       meansOnlyExcluded: scoped.excluded.length,
+@@ -117,8 +179,10 @@ export async function runForgeDailyV2(stage: string, argv: string[], now = () =>
+     const maxNull = Number(args.get("--max-null-participation") ?? fail("missing_max_null_participation"));
+     if (!Number.isSafeInteger(maxNull) || maxNull < 0) fail("invalid_max_null_participation");
+     const flags = nativeDailyV2Flags(optional(args, "flags")), approvalRef = args.get("--approval-ref") ?? fail("missing_approval_ref");
++    if (approvalRef !== NATIVE_DAILY_APPROVED_METHODS.standingApprovalRef) fail("standing_approval_ref_not_pinned");
+     const { freshMeans, ...command } = input(args, "command"), proof = input(args, "proof"), templates = input(args, "templates"), issued = now();
+     if (!freshMeans?.scheduleRevision) fail("fresh_means_command_required");
++    assertFreshMeansPolicyTemplates(templates.rows);
+     // The reviewed plan contributes only policy terms; its bundles and participation are not re-issued.
+     const reviewedPlan = { ...templates, rows: templates.rows.filter((row: any) => ["baseline_evaluation_policy", "baseline_validation_review"].includes(row.entity_kind)) };
+     const participationInputs = proof.rows.filter((row: any) => row.dataset_key === "native-participation-input-v1").flatMap((row: any) => row.payload.inputs);
+diff --git a/web/scripts/forge-daily.ts b/web/scripts/forge-daily.ts
+index c424a3e..c11ae69 100644
+--- a/web/scripts/forge-daily.ts
++++ b/web/scripts/forge-daily.ts
+@@ -3,7 +3,7 @@
+  *   inputs   - offline: retained request + captures -> bound materialization request and preparation command
+  *   outputs  - offline: closed materialization proof -> pending daily publication plan
+  *   review   - offline: independent reviewer decision -> reviewed plan and cadence command
+- * v2 stages: universe (forge-daily-universe.ts), means (native-means-capture.ts), inputs-v2 and outputs-v2 (forge-daily-v2.ts).
++ * v2 stages: universe (forge-daily-universe.ts), means (native-means-capture.ts), capture-v2, inputs-v2 and outputs-v2 (forge-daily-v2.ts).
+  * Materialize and publish use scripts/native-baseline-cadence.ts. Nothing here writes to a database. */
+ import { createHash, randomUUID } from "node:crypto";
+ import { appendFileSync, closeSync, fsyncSync, mkdirSync, openSync } from "node:fs";
+@@ -180,7 +180,7 @@ export async function runForgeDaily(argv: string[], now = () => new Date()) {
+   }
+   if (stage === "universe") return (await import("./forge-daily-universe")).runForgeDailyUniverse(rest, now);
+   if (stage === "means") return (await import("./native-means-capture")).runNativeMeansCapture(rest, now);
+-  if (stage === "inputs-v2" || stage === "outputs-v2") return (await import("./forge-daily-v2")).runForgeDailyV2(stage, rest, now);
++  if (stage === "capture-v2" || stage === "inputs-v2" || stage === "outputs-v2") return (await import("./forge-daily-v2")).runForgeDailyV2(stage, rest, now);
+   return fail("stage_required");
+ }
+ if (require.main === module) runForgeDaily(process.argv.slice(2)).then(result => console.log(JSON.stringify(result)))
+diff --git a/web/scripts/native-means-capture.test.ts b/web/scripts/native-means-capture.test.ts
+index 78ccbdd..e165a20 100644
+--- a/web/scripts/native-means-capture.test.ts
++++ b/web/scripts/native-means-capture.test.ts
+@@ -75,4 +75,24 @@ describe("native means CLI", () => {
+     await expect(runNativeMeansCapture([...args.slice(0, -1), join(dir, "raised"), "--max-requests", "200"], undefined, network))
+       .rejects.toThrow("raised_bound_requires_approval_ref");
+   });
++
++  it("reads the forge-daily universe document and records the plan status with the assembled means (A-15, A-17)", async () => {
++    const dir = mkdtempSync(join(tmpdir(), "native-means-")); dirs.push(dir);
++    const write = (name: string, value: unknown) => { const path = join(dir, name), body = JSON.stringify(value); writeFileSync(path, body);
++      return [path, createHash("sha256").update(body).digest("hex")]; };
++    const document = { version: "forge-daily-yahoo-universe-v1", date: "2026-10-12", seasonId: 20262027, status: "complete", ownedComplete: true, counts: { owned: 1 },
++      unmapped: [], ambiguous: [], membershipUnresolved: [], excluded: [], change: null, injury: { evidence: [] },
++      players: [{ playerId: 1, nhlPlayerId: 101, teamId: 1, class: "skater", universe: "owned", rosterRevision: "r1", yahooPlayerKey: "477.p.1" }] };
++    const [universe, universeSha] = write("universe.json", document), [cache, cacheSha] = write("cache.json", { receipts: [] }), out = join(dir, "plan");
++    const result = await runNativeMeansCapture(["plan", "--universe", universe, "--universe-sha256", universeSha, "--cache", cache, "--cache-sha256", cacheSha,
++      "--season", "20262027", "--as-of", "2026-10-12T11:00:00.000Z", "--anchor", "2026-09-29", "--out", out], () => new Date("2026-10-12T11:00:00.000Z"));
++    expect(result).toMatchObject({ status: "plan_only", planStatus: "requests_pending", requests: 2 });
++    const planBody = readFileSync(join(out, "plan.json"), "utf8"), planSha = createHash("sha256").update(planBody).digest("hex");
++    await runNativeMeansCapture(["assemble", "--universe", universe, "--universe-sha256", universeSha, "--cache", cache, "--cache-sha256", cacheSha,
++      "--plan", join(out, "plan.json"), "--plan-sha256", planSha, "--cutoff", "2026-10-12T11:00:00.000Z", "--out", join(dir, "means")], () => new Date("2026-10-12T11:00:00.000Z"));
++    expect(JSON.parse(readFileSync(join(dir, "means", "means.json"), "utf8")).plan).toMatchObject({ status: "requests_pending", pendingRequests: 2 });
++    const [owned, ownedSha] = write("incomplete.json", { ...document, ownedComplete: false });
++    await expect(runNativeMeansCapture(["plan", "--universe", owned, "--universe-sha256", ownedSha, "--cache", cache, "--cache-sha256", cacheSha,
++      "--season", "20262027", "--as-of", "2026-10-12T11:00:00.000Z", "--anchor", "2026-09-29", "--out", join(dir, "owned")])).rejects.toThrow("universe_owned_incomplete");
++  });
+ });
+diff --git a/web/scripts/native-means-capture.ts b/web/scripts/native-means-capture.ts
+index 46ab8e4..06ccf91 100644
+--- a/web/scripts/native-means-capture.ts
++++ b/web/scripts/native-means-capture.ts
+@@ -15,6 +15,7 @@ import { assembleNativeDailyMeans, nativeMeansUrlKind, planNativeMeansCapture, t
+ import { buildNativeGoalieSummaryWinRates, dryRunGoalieContributionBundle, NATIVE_GOALIE_SHUTOUT_POLICY_VERSION,
+   NATIVE_GOALIE_SUMMARY_WIN_POLICY_VERSION, NATIVE_GOALIE_VOLUME_POLICY_VERSION, NATIVE_GOALIE_WIN_POLICY_VERSION } from "../lib/player-forecasts/goalieBaselineRates";
+ import type { HttpReceipt } from "../lib/player-forecasts/nativeDailyPipeline";
++import { nativeDailyUniverse, nativeDailyV2Flags } from "../lib/player-forecasts/nativeDailyPipelineV2";
+ import { playerForecastSourcePayloadHash as hash } from "../lib/player-forecasts/sourceSnapshot";
+ 
+ /** Defaults equal the 2026-10-17 approved operational bound (about 120 responses / 2 MB). */
+@@ -124,7 +125,9 @@ const output = (path: string) => { const out = resolve(path); mkdirSync(out, { m
+ const input = (args: Map<string, string>, name: string) => boundedFile(args.get(`--${name}`) ?? fail(`missing_${name}`),
+   args.get(`--${name}-sha256`) ?? fail(`missing_${name}_sha256`), MAX_INPUT);
+ const optional = (args: Map<string, string>, name: string) => args.has(`--${name}`) ? input(args, name) : undefined;
+-const universeOf = (value: any): NativeMeansUniverseRow[] => Array.isArray(value) ? value : value?.universe ?? fail("universe_shape");
++/** Universe rows, or the `forge-daily universe` document itself through the same gate inputs-v2 applies (thresholds off). */
++const universeOf = (value: any): NativeMeansUniverseRow[] => Array.isArray(value) ? value
++  : value?.version === "forge-daily-yahoo-universe-v1" ? nativeDailyUniverse(value, nativeDailyV2Flags(undefined)).rows : value?.universe ?? fail("universe_shape");
+ const receiptsOf = (value: any): HttpReceipt[] => Array.isArray(value?.receipts) ? value.receipts : fail("cache_shape");
+ const PLAN_ARGS = ["--universe", "--universe-sha256", "--cache", "--cache-sha256", "--season", "--as-of", "--anchor",
+   "--prior-games", "--prior-games-sha256", "--out"];
+@@ -180,7 +183,8 @@ export async function runNativeMeansCapture(argv: string[], now = () => new Date
+       priorGames: plan.assembly.priorGames, notes: plan.assembly.notes, receipts: receiptsOf(input(args, "cache")) }, now());
+     const bindings = optional(args, "bindings");
+     const out = output(args.get("--out") ?? fail("missing_out"));
+-    privateWrite(resolve(out, "means.json"), means);
++    // inputs-v2 binds only means assembled from a complete plan, so the plan's status travels with them.
++    privateWrite(resolve(out, "means.json"), { ...means, plan: { status: plan.status, inputHash: plan.inputHash, asOf: plan.asOf, pendingRequests: plan.requests.length } });
+     if (bindings) privateWrite(resolve(out, "previews.json"), await previewNativeDailyMeans(means, bindings, now()));
+     return { stage, status: "means_assembled", planStatus: plan.status, ...means.stats, previews: !!bindings, networkRequests: 0, databaseWrites: 0, out };
+   }

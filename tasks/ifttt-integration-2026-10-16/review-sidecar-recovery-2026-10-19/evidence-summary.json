@@ -1,0 +1,34 @@
+{
+  "status": "owner correction tested; independent re-review pending",
+  "before": {
+    "expectedFail": 1,
+    "skipped": 33,
+    "packetJsonBytes": 91671,
+    "evidence": "evidence/before-results.json"
+  },
+  "after": {
+    "passed": 41,
+    "failed": 0,
+    "skipped": 0,
+    "pure": 16,
+    "privatePostgres": 25,
+    "evidence": "evidence/final-results.json"
+  },
+  "originalReviewerProbeByteIdentical": true,
+  "scopedTypeScriptExit": 0,
+  "lintExit": 0,
+  "initialTypeScript": "Two implicit-any parameters in new test callbacks; annotations corrected, original log preserved",
+  "sourceManifestSha256": "5bc78d556e031b348eb913e5fea5505d2a02889dbdd979353db5ccef8aef052d",
+  "ownedPaths": 7,
+  "readOnlyPaths": 42,
+  "sql9Sha256": "3223747dc31edf6e5bb14b4b4247cc1349e650c07096031a7005cc8376e712d2",
+  "priorOwnerArtifactsUnchanged": 82,
+  "oldLiveSourcesChanged": [
+    "web/lib/sources/tweetReviewSidecarStorage.ts"
+  ],
+  "activeChecks": false,
+  "privateClustersRemaining": 0,
+  "providerCalls": 0,
+  "hostedCalls": 0,
+  "operationalChanges": 0
+}

@@ -1,0 +1,6 @@
+* { box-sizing: border-box; }
+body { margin: 0; background: #101318; color: #f5f7fa; font-family: Arial, sans-serif; }
+main { max-width: 1920px; margin: auto; padding: 24px; }
+h1, h2, h3, p { margin-top: 0; }
+.fixture-note { color: #b9c3d0; font-size: 12px; margin-bottom: 16px; }
+@media (max-width: 600px) { main { padding: 10px; } }

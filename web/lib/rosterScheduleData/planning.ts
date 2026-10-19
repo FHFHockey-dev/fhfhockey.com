@@ -5,7 +5,7 @@ export { publicPlanningForecasts } from "lib/projections/consumerRevisionAdmissi
 export type { PlanningDataQuery } from "./planningInputs";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { playerForecastSourcePayloadHash } from "lib/player-forecasts/sourceSnapshot";
-import { resolveNativeCatalogEnvironment, unavailableNativeCatalogEnvironment } from "lib/player-forecasts/nativeCatalogHead";
+import { selectForecastServingSource, unavailableForecastServingSource, type ForecastServingSource } from "lib/player-forecasts/forecastServingSource";
 import { loadNativeContributionBundle } from "lib/player-forecasts/nativeContributionAdmission";
 import { loadModeledGoalieParticipation, loadFrozenWindowGoalieParticipation, loadFrozenWindowGoalieStarts, loadRosterObservationGoalieParticipation, loadRosterObservationGoalieStarts } from "lib/player-forecasts/modeledGoalieParticipationStore";
 import { loadModeledSkaterParticipation, loadFrozenWindowSkaterParticipation, loadRosterObservationSkaterParticipation } from "lib/player-forecasts/modeledSkaterParticipationStore";
@@ -38,13 +38,16 @@ function evidence(source: string, asOf: string | null, seasonId: number | null, 
   return { source, asOf, seasonId, completeness: limitations.length ? "partial" : "complete", limitations };
 }
 
-export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningDataQuery, options: { now?: Date; forecastsEnabled?: boolean; deadlineMs?: number; skipOwnership?: boolean; skipRecentForm?: boolean } = {}): Promise<PlanningData> {
+export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningDataQuery, options: { now?: Date; forecastsEnabled?: boolean; deadlineMs?: number; skipOwnership?: boolean; skipRecentForm?: boolean;
+  /** A source the caller already selected for this request; otherwise it is selected here. */
+  source?: ForecastServingSource } = {}): Promise<PlanningData> {
   const now = options.now ?? new Date();
   const deadline = Math.min(options.deadlineMs ?? Infinity, Date.now() + 20000);
-  const nativeCatalog = await withinDeadline(Math.min(deadline, Date.now() + 8000), signal => resolveNativeCatalogEnvironment(db, query.seasonId, now, process.env, signal))
-    .catch(() => unavailableNativeCatalogEnvironment(process.env));
+  const source = options.source ?? await withinDeadline(Math.min(deadline, Date.now() + 8000), signal => selectForecastServingSource(db, query.seasonId, now, process.env, signal))
+    .catch(() => unavailableForecastServingSource(process.env));
+  const nativeLimitation = source.kind === "legacy_flagged" || source.kind === "empty" ? source.reason : null;
   const inputDeadline = Math.min(deadline, Date.now() + 8000);
-  const selectedEnvironment = nativeCatalog.environment;
+  const selectedEnvironment = source.environment;
   const calendarPolicy = forecastCalendarPolicy(Number(process.env.STARTER_BOARD_CALENDAR_HORIZON_DAYS ?? 14));
   const [{ players, games, scheduleRows, scheduleProblems, evidence: sources }, weeks, baseline, skaterParticipation, goalieParticipation,
     frozenSkaterParticipation, frozenGoalieParticipation, frozenGoalieStarts,
@@ -165,7 +168,7 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
   const forecastManifest: ForecastManifest = { ...manifestContent, version: "planning-forecasts-v1", id: playerForecastSourcePayloadHash(manifestContent), asOf: now.toISOString(),
     requiredOpportunities: players.reduce((sum, player) => sum + games.filter(game => game.teamAbbreviation === player.teamAbbreviation && game.status === "scheduled").length, 0),
     forecastedOpportunities: forecasts.length, exclusionCounts, exclusions: exclusionRows };
-  if (nativeCatalog.limitation) { baseline.limitations.push(nativeCatalog.limitation); participation.limitations.push(nativeCatalog.limitation); }
+  if (nativeLimitation) { baseline.limitations.push(nativeLimitation); participation.limitations.push(nativeLimitation); }
   sources.baselines = evidence("Approved contribution rate bundles", baseline.manifests.map(manifest => manifest.issuedAt).sort()[0] ?? null, query.seasonId, baseline.limitations);
   sources.participation = evidence(observationEnabled ? "Released modeled participation with official roster-observation continuation proxies"
     : frozenSkaterParticipation.checksum || frozenGoalieParticipation.checksum || frozenGoalieStarts.checksum

@@ -817,10 +817,10 @@
       "path": "supabase/migrations/20261011115124_preserve_projection_raw_shift_occurrences.sql",
       "sha256": "5a04e00d6141697a9408165f8451385543fcbba16f258df225cc9c9aa946ebad",
       "sourceStatus": "source-authorized",
-      "deploymentState": "unknown",
+      "deploymentState": "applied",
       "migrationClass": "feature",
       "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
-      "stateEvidence": "No exact hosted applied-state receipt was inspected during repository reconciliation. Source presence does not establish deployment state."
+      "stateEvidence": "Production ledger supabase_migrations.schema_migrations version 20261019172738 name preserve_projection_raw_shift_occurrences (applied 2026-10-19 by explicit user approval; the file keeps its authored 20261011115124 name so the chain order is unchanged). Read-only preflight: hosted capture_projection_raw_source_snapshots_v1 prosrc md5 990b756c... equalled the 20260720105524 body; post-apply md5 f3b89dd8... equals this file's body; EXECUTE service_role only, SECURITY INVOKER and search_path/lock/statement settings unchanged; session lock_timeout back to 0. Local body equals applied body apart from BEGIN/COMMIT and SET LOCAL. Effect: drops the raw duplicate-row check (a relaxation)."
     },
     {
       "order": 82,
@@ -861,6 +861,16 @@
       "migrationClass": "security",
       "rolloutGate": "Drafted 2026-10-18 from the Super Goal audit (G1 problem 3). Restores the private token vault (schema, private.connected_account_tokens, the eleventh composite owner FK, the upsert/get/cleanup routines and trigger) that the baseline public *_secure wrappers call, so a fresh replay can store provider tokens. Guarded and replace-style; it never reads or writes token rows. Applied 2026-10-19 by explicit user approval as one targeted migration after a hosted parity check.",
       "stateEvidence": "Production ledger supabase_migrations.schema_migrations version 20261019053348 name restore_private_token_vault (read back 2026-10-19). Read-only preflight: the hosted private routines matched this file byte for byte (prosrc md5 cad87b6e.../984b2c3a.../4ba768f3..., identical arguments, defaults, SECURITY DEFINER, search_path, EXECUTE grants, trigger, 7 indexes, both FKs, schema usage), so the apply re-stated identical definitions; read-only post-apply check showed the same values and session lock_timeout back to 0. Local body equals applied body apart from BEGIN/COMMIT. Disposable PostgreSQL 17.11 harness with a stub Vault passed 20 cases before apply (tasks/artifacts/security-audit-fixes-2026-10-18/token-vault-pg-result-v1.json, which names the pre-rename file 20261018190022_...)."
+    },
+    {
+      "order": 86,
+      "path": "supabase/migrations/20261019172842_accept_html_report_projection_shift_snapshots.sql",
+      "sha256": "60039c29fd5c98e27d60414d9bbb5eb550c787744f67448deba371c2cba8ccbb",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Drafted 2026-10-19 for the projection HTML shift-report fallback (TJ approved building it). Additive: capture_projection_raw_source_snapshots_v1 keeps its name, signature, defaults and grants; the shift envelope source may now be 'json-api' or 'htmlreports', and every row-identity, lock, collision and head check is unchanged, so JSON captures behave identically. Apply before the fallback code; hosted apply needs TJ's separate explicit approval and no migration command was run.",
+      "stateEvidence": "Production ledger version 20261019172842 name accept_html_report_projection_shift_snapshots (applied 2026-10-19 by explicit user approval, immediately after 20261011115124). Read-only preflight: hosted body equalled the 20261011115124 base; post-apply prosrc md5 4750518d... equals this file's body; grants, SECURITY INVOKER and function settings unchanged; session lock_timeout back to 0. Only change: the accepted shift-payload source set widens to json-api and htmlreports. Local body equals applied body apart from BEGIN/COMMIT and SET LOCAL. Local source only; no hosted ledger or apply receipt. Disposable PostgreSQL harness evidence is recorded in tasks/artifacts/shift-charts-scope-2026-10-19/HTML-FALLBACK-BUILD.md."
     }
   ],
   "sourceExtensionApproval": {

@@ -26,6 +26,7 @@ const {
   eqMock,
   gtMock,
   loadGameExpectationsMock,
+  selectSourceMock,
 } = vi.hoisted(() => ({
   fromMock: vi.fn(),
   rpcMock: vi.fn(),
@@ -34,9 +35,14 @@ const {
   eqMock: vi.fn(),
   gtMock: vi.fn(),
   loadGameExpectationsMock: vi.fn(),
+  selectSourceMock: vi.fn(),
 }));
 
 vi.mock("lib/player-forecasts/gameExpectationReader", () => ({ loadGameExpectations: loadGameExpectationsMock }));
+vi.mock("lib/player-forecasts/forecastServingSource", async (importOriginal) => ({
+  ...await importOriginal<typeof import("lib/player-forecasts/forecastServingSource")>(),
+  selectForecastServingSource: selectSourceMock,
+}));
 
 vi.mock("lib/supabase/server", () => ({
   default: {
@@ -183,6 +189,14 @@ function dailyExpectationFixture() {
     })));
   return { response: buildGameExpectations(data, scope, now), data, scope, now };
 }
+
+const actualServingSource = () => vi.importActual<typeof import("lib/player-forecasts/forecastServingSource")>("lib/player-forecasts/forecastServingSource");
+// A selected native head whose catalog outlives every clock these fixtures use.
+function nativeSource(overrides: Partial<{ headRevision: number; expiresAt: string }> = {}) {
+  return { kind: "native" as const, headId: "00000000-0000-4000-8000-000000000001", headRevision: 1,
+    issuedAt: "2026-02-07T12:00:00.000Z", expiresAt: "2026-02-09T00:00:00.000Z", environment: {}, ...overrides };
+}
+const useNativeSource = (overrides?: Parameters<typeof nativeSource>[0]) => selectSourceMock.mockResolvedValue(nativeSource(overrides));
 
 function goalieExpectationFixture(comparisonAllowed = false) {
   const fixture = dailyExpectationFixture(), player = fixture.response.players[0], game = player.games[0];
@@ -462,11 +476,13 @@ describe("/api/v1/start-chart", () => {
 
   afterEach(() => vi.useRealTimers());
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-02-07T17:00:00Z"));
     vi.unstubAllEnvs();
     vi.clearAllMocks();
+    // The real selector: with no head env it selects legacy without a lookup.
+    selectSourceMock.mockImplementation((await actualServingSource()).selectForecastServingSource);
     rpcMock.mockResolvedValue({
       data: null,
       error: { code: "PGRST202", message: "function is not installed" },
@@ -650,6 +666,7 @@ describe("/api/v1/start-chart", () => {
   });
 
   it("adapts the shared daily expectation reader without legacy reads, invented participation or run lineage", async () => {
+    useNativeSource();
     const fixture = dailyExpectationFixture(), original = JSON.stringify(fixture.response);
     loadGameExpectationsMock.mockResolvedValue(fixture.response);
     vi.resetModules();
@@ -657,7 +674,7 @@ describe("/api/v1/start-chart", () => {
     const res = createMockRes();
     await handler({ method: "GET", query: { date: fixture.scope.startDate, forecast_source: "game_expectations" } } as any, res);
     expect(res.statusCode).toBe(200);
-    expect(loadGameExpectationsMock).toHaveBeenCalledExactlyOnceWith(expect.anything(), fixture.scope, fixture.now);
+    expect(loadGameExpectationsMock).toHaveBeenCalledExactlyOnceWith(expect.anything(), fixture.scope, fixture.now, { source: nativeSource() });
     expect(fromMock).not.toHaveBeenCalled(); expect(rpcMock).not.toHaveBeenCalled();
     expect(res.body.gameRevisions).toEqual([]); expect(res.body.projectionRunId).toBeNull();
     expect(res.body.gameExpectations).toMatchObject({ readAsOf: fixture.now.toISOString(), basis: "per_appearance" });
@@ -675,6 +692,7 @@ describe("/api/v1/start-chart", () => {
 
   it.each([["2026-02-08T04:59:59.999Z", "2026-02-07"], ["2026-02-08T05:00:00.000Z", "2026-02-08"]])(
     "defaults the native slate to the Eastern date at %s", async (now, expected) => {
+      useNativeSource();
       vi.setSystemTime(new Date(now));
       const fixture = dailyExpectationFixture();
       loadGameExpectationsMock.mockResolvedValue({ ...fixture.response, players: [] });
@@ -688,6 +706,7 @@ describe("/api/v1/start-chart", () => {
     });
 
   it("distinguishes a no-game date from scheduled games whose team cannot be identified", async () => {
+    useNativeSource();
     const fixture = dailyExpectationFixture();
     const read = async (response: unknown) => {
       loadGameExpectationsMock.mockResolvedValue(response);
@@ -712,6 +731,7 @@ describe("/api/v1/start-chart", () => {
   });
 
   it("parity receipt: one pinned fixture gives the same per-game target values in FORGE, RSO, the Start Chart API and its UI parse", async () => {
+    useNativeSource();
     // Evidence class: retained-fixture replay with mocked transport; not current public forecasts.
     const fixture = dailyExpectationFixture();
     loadGameExpectationsMock.mockResolvedValue(fixture.response);
@@ -762,6 +782,7 @@ describe("/api/v1/start-chart", () => {
   });
 
   it("returns a typed uncached 503 rather than an oversized board", async () => {
+    useNativeSource();
     const fixture = dailyExpectationFixture();
     vi.resetModules();
     const route = await import("../../../../pages/api/v1/start-chart");
@@ -775,6 +796,7 @@ describe("/api/v1/start-chart", () => {
   });
 
   it("keeps missing heads unavailable while custom league scoring uses supported conditional categories", async () => {
+    useNativeSource();
     const fixture = dailyExpectationFixture();
     fixture.response.players[0].games[0].targets.PP_POINTS.conditional = null;
     loadGameExpectationsMock.mockResolvedValue(fixture.response);
@@ -794,6 +816,7 @@ describe("/api/v1/start-chart", () => {
   });
 
   it("consumer: exact-game conditional SOG stays unranked and never enters another dated API cache", async () => {
+    useNativeSource();
     // Synthetic approved DTO inputs only; this does not release or authenticate a real SOG packet.
     const fixture = dailyExpectationFixture(), game = fixture.data.games[0];
     fixture.data.players = fixture.data.players.slice(0, 1);
@@ -837,6 +860,7 @@ describe("/api/v1/start-chart", () => {
   });
 
   it("honors comparison permission and never mixes expected and conditional values within a board", async () => {
+    useNativeSource();
     const fixture = dailyExpectationFixture();
     const targets = fixture.response.players[0].games[0].targets;
     targets.GOALS.expected = 0; targets.GOALS.allowedUses.comparison = true; targets.GOALS.allowedUses.totals = true;
@@ -856,6 +880,7 @@ describe("/api/v1/start-chart", () => {
   });
 
   it("caps daily expectation caching at the original source expiry", async () => {
+    useNativeSource();
     const fixture = dailyExpectationFixture();
     for (const player of fixture.response.players) for (const target of Object.values(player.games[0].targets)) {
       if (target.conditional != null) target.expiresAt = "2026-02-07T17:00:02Z";
@@ -874,6 +899,7 @@ describe("/api/v1/start-chart", () => {
   });
 
   it("preserves scheduled games while omitting players with no permitted values or participation", async () => {
+    useNativeSource();
     const fixture = dailyExpectationFixture();
     for (const player of fixture.response.players) for (const target of Object.values(player.games[0].targets)) {
       target.expected = null; target.conditional = null;
@@ -888,6 +914,7 @@ describe("/api/v1/start-chart", () => {
   });
 
   it.each([false, true])("requires matching start-participation comparison permission=%s rather than another category's permission", async approved => {
+    useNativeSource();
     const fixture = goalieExpectationFixture(approved);
     loadGameExpectationsMock.mockResolvedValue(fixture.response);
     vi.resetModules();
@@ -903,6 +930,7 @@ describe("/api/v1/start-chart", () => {
   });
 
   it("caps probability-only rows at their original participation expiry even when no head permits comparison", async () => {
+    useNativeSource();
     const fixture = goalieExpectationFixture(); delete fixture.response.players[0].games[0].targets.WINS_GOALIE;
     loadGameExpectationsMock.mockResolvedValue(fixture.response);
     vi.resetModules();
@@ -1145,6 +1173,127 @@ describe("/api/v1/start-chart", () => {
     expect(labelled.body.projectionRunId).toBe("external-run");
     expect(labelled.row.context.flags).not.toContain("unverified_projection_provenance");
     expect(labelled.body.sourceStatus.projection.state).toBe("ready");
+  });
+
+  it("C-3: forecast_source cannot force native while the server selects legacy", async () => {
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const forced = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07", forecast_source: "game_expectations" } } as any, forced);
+    const reads = fromMock.mock.calls.length;
+    const plain = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07" } } as any, plain);
+    expect(forced.statusCode).toBe(200);
+    expect(loadGameExpectationsMock).not.toHaveBeenCalled();
+    expect(forced.body.forecastSource).toEqual({ kind: "legacy", headRevision: null, expiresAt: null, reason: "native_not_activated" });
+    expect(forced.body.projectionRunId).toBe("run-123");
+    expect(forced.body.players.length).toBeGreaterThan(0);
+    expect(forced.body.players.every((row: any) => !row.context.flags.includes("native_unavailable_legacy_fallback"))).toBe(true);
+    // One shared legacy entry: the parameter neither changes the board nor splits the cache.
+    expect(plain.body).toEqual(forced.body);
+    expect(fromMock.mock.calls.length).toBe(reads);
+    expect(fromMock.mock.calls.map(([table]) => table)).not.toContain("native_forecast_catalog_heads");
+  });
+
+  it("legacy_flagged serves the legacy board with every row flagged and unlabelled runs still provenance-flagged", async () => {
+    selectSourceMock.mockResolvedValue({ kind: "legacy_flagged", reason: "native_catalog_head_unavailable_or_invalid", environment: {} });
+    const prior = fromMock.getMockImplementation()!;
+    fromMock.mockImplementation((table: string) => table === "forge_runs" ? createQueryBuilder(() => ({
+      data: [{ run_id: "external-run", as_of_date: "2026-02-07", git_sha: null, metrics: null,
+        forge_player_projections: [defaultProjection] }], error: null,
+    })) : prior(table));
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07", forecast_source: "game_expectations" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(loadGameExpectationsMock).not.toHaveBeenCalled();
+    expect(res.body.forecastSource).toEqual({ kind: "legacy_flagged", headRevision: null, expiresAt: null,
+      reason: "native_catalog_head_unavailable_or_invalid" });
+    expect(res.body.projectionRunId).toBe("external-run");
+    expect(res.body.players.length).toBeGreaterThan(1);
+    expect(res.body.players.every((row: any) => row.context.flags.includes("native_unavailable_legacy_fallback"))).toBe(true);
+    const skater = res.body.players.find((row: any) => row.player_id === defaultProjection.player_id);
+    expect(skater.context.flags).toContain("unverified_projection_provenance");
+  });
+
+  it("empty keeps the slate's games but serves no players, with the native reason", async () => {
+    const fixture = dailyExpectationFixture();
+    selectSourceMock.mockResolvedValue({ kind: "empty", reason: "native_catalog_expired", environment: {} });
+    loadGameExpectationsMock.mockResolvedValue(fixture.response);
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: fixture.scope.startDate } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(loadGameExpectationsMock).toHaveBeenCalledExactlyOnceWith(expect.anything(), fixture.scope, fixture.now,
+      { source: { kind: "empty", reason: "native_catalog_expired", environment: {} } });
+    expect(fromMock).not.toHaveBeenCalled();
+    expect(res.body.forecastSource).toEqual({ kind: "empty", headRevision: null, expiresAt: null, reason: "native_catalog_expired" });
+    expect(res.body.players).toEqual([]);
+    expect(res.body.games.map((game: any) => game.id)).toEqual([1001]);
+    expect(res.body.serving).toMatchObject({ mode: "partial", reason: "native_catalog_expired" });
+    expect(normalizeStartChartResponse(JSON.parse(JSON.stringify(res.body))).players).toEqual([]);
+  });
+
+  it("A-8: keys the response cache by source kind and head revision and never outlives the catalog expiry", async () => {
+    const fixture = dailyExpectationFixture();
+    loadGameExpectationsMock.mockResolvedValue(fixture.response);
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const read = async () => { const res = createMockRes(); await handler({ method: "GET", query: { date: fixture.scope.startDate } } as any, res); return res; };
+    useNativeSource({ headRevision: 1 });
+    expect((await read()).body.players.length).toBeGreaterThan(0);
+    await read();
+    expect(loadGameExpectationsMock).toHaveBeenCalledTimes(1);
+    useNativeSource({ headRevision: 2 });
+    const advanced = await read();
+    expect(loadGameExpectationsMock).toHaveBeenCalledTimes(2);
+    expect(advanced.body.forecastSource.headRevision).toBe(2);
+    selectSourceMock.mockResolvedValue({ kind: "empty", reason: "native_catalog_head_unavailable_or_invalid", environment: {} });
+    expect((await read()).body.players).toEqual([]);
+    expect(loadGameExpectationsMock).toHaveBeenCalledTimes(3);
+    useNativeSource({ headRevision: 2 });
+    expect((await read()).body.players.length).toBeGreaterThan(0);
+    expect(loadGameExpectationsMock).toHaveBeenCalledTimes(3);
+    // A catalog expiring before the 15 s TTL bounds both the instance entry and the CDN copy.
+    useNativeSource({ headRevision: 3, expiresAt: "2026-02-07T17:00:03.000Z" });
+    const expiring = await read();
+    expect(expiring.headers["Cache-Control"]).toBe("s-maxage=3, stale-while-revalidate=0");
+    vi.setSystemTime(new Date("2026-02-07T17:00:03.000Z"));
+    await read();
+    expect(loadGameExpectationsMock).toHaveBeenCalledTimes(5);
+  });
+
+  it("A-4: the page and every dashboard caller make the same request and parse the same board for one slate", async () => {
+    const callers = ["pages/start-chart.tsx", "pages/FORGE.tsx", "components/forge-dashboard/SlateStripCard.tsx",
+      "components/forge-dashboard/TeamPowerCard.tsx", "pages/forge/team/[teamId].tsx", "lib/dashboard/dataFetchers.ts",
+      "lib/dashboard/commandCenterData.ts"];
+    for (const file of callers) {
+      const source = readFileSync(new URL(`../../../../${file}`, import.meta.url), "utf8");
+      expect(source, file).toContain("/api/v1/start-chart");
+      expect(source, file).not.toContain("forecast_source");
+    }
+    const fixture = dailyExpectationFixture();
+    useNativeSource();
+    loadGameExpectationsMock.mockResolvedValue(fixture.response);
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    // The page's URL and the dashboard's buildQuery URL carry the same single parameter.
+    const page = createMockRes(), dashboard = createMockRes(), cachedPage = createMockRes();
+    await handler({ method: "GET", query: { date: fixture.scope.startDate } } as any, page);
+    await handler({ method: "GET", query: { date: fixture.scope.startDate } } as any, dashboard);
+    await handler({ method: "GET", query: { date: fixture.scope.startDate, forecast_source: "game_expectations" } } as any, cachedPage);
+    expect(loadGameExpectationsMock).toHaveBeenCalledTimes(1);
+    expect(dashboard.body).toEqual(page.body); expect(cachedPage.body).toEqual(page.body);
+    expect(page.body.forecastSource).toMatchObject({ kind: "native", headRevision: 1 });
+    // Every consumer parses the wire body with normalizeStartChartResponse.
+    const view = (body: unknown) => {
+      const board = normalizeStartChartResponse(JSON.parse(JSON.stringify(body)));
+      return { games: board.games.map(game => game.id), players: board.players.map(row => [row.game_id, row.player_id, row.proj_fantasy_points]) };
+    };
+    expect(view(page.body).players.length).toBeGreaterThan(0);
+    expect(view(dashboard.body)).toEqual(view(page.body));
   });
 
   async function serveAdmissionFixture(fixture: ReturnType<typeof consumerGameRevisionFixture>) {

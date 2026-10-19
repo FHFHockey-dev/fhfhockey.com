@@ -1,0 +1,247 @@
+[
+  {
+    "path": "tasks/ifttt-integration-2026-10-16/review-sidecar-recovery-2026-10-19/storage.test.ts",
+    "sha256": "0d6970436d7228d7a35b5771479998349f750771f36cef3ea0abc43c38ed7ee9",
+    "bytes": 24944
+  },
+  {
+    "path": "tasks/ifttt-integration-2026-10-16/review-sidecar-recovery-2026-10-19/supabase/migrations/20261019160708_ifttt_review_sidecar_preparation.sql",
+    "sha256": "3223747dc31edf6e5bb14b4b4247cc1349e650c07096031a7005cc8376e712d2",
+    "bytes": 14395
+  },
+  {
+    "path": "tasks/ifttt-integration-2026-10-16/review-sidecar-recovery-2026-10-19/tsconfig.json",
+    "sha256": "a1dfb95b761808bd82afc573c40d32631dd9942ce781aaff3e62ba76608988f1",
+    "bytes": 1070
+  },
+  {
+    "path": "tasks/ifttt-integration-2026-10-16/review-sidecar-recovery-2026-10-19/vitest.config.mjs",
+    "sha256": "9ef8059a48c529f0196897045b0fa3baa58c62caebe013a2042828c43c453a70",
+    "bytes": 312
+  },
+  {
+    "path": "web/lib/sources/tweetReviewSidecar.test.ts",
+    "sha256": "3025f1b553e386eb83d2e50df742a529412148ee5526ece5c0a43906803f04a1",
+    "bytes": 7408
+  },
+  {
+    "path": "web/lib/sources/tweetReviewSidecar.ts",
+    "sha256": "e568b7673dc1b8dfa16e2988d61adce09e74a21bc1d188043ba2bfa6166981b8",
+    "bytes": 7891
+  },
+  {
+    "path": "web/lib/sources/tweetReviewSidecarStorage.ts",
+    "sha256": "e15f31d82eb7399c15c899bdb9ef30f2396b3be5e26823168c733f5222b8e9f6",
+    "bytes": 3007
+  },
+  {
+    "path": "supabase/migrations/20260919005608_tweet_pipeline_reports_and_review.sql",
+    "sha256": "114e48167426f464f20116c51b017f07fb721797118a5ff28412ed7d4f6abd27",
+    "bytes": 4154
+  },
+  {
+    "path": "tasks/ifttt-integration-2026-10-16/consumer-binding-increment/tsconfig.json",
+    "sha256": "075ed9a7c44235bd2b43cde92e34bab3733aa1409eb678b6a2858f4cc634510d",
+    "bytes": 229
+  },
+  {
+    "path": "tasks/ifttt-integration-2026-10-16/durable-occurrence-increment/tsconfig.v2.json",
+    "sha256": "d94f20591cdd34d18c10f0c7492888bd4d843dcc25f1804d7c7d34b890c4cead",
+    "bytes": 730
+  },
+  {
+    "path": "tasks/ifttt-integration-2026-10-16/parent-recovery-increment/tsconfig.json",
+    "sha256": "385b5948b92fd6649f624204b9afa0b6108aa53a3951023919ea48a6c9a7b537",
+    "bytes": 389
+  },
+  {
+    "path": "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v2/supabase/migrations/20261016085537_ifttt_bounded_receipt_intake.sql",
+    "sha256": "ab5d686589f78815326b1b0c942975206cfc1cc4e6288fdfa64646e4289f8c5e",
+    "bytes": 16692
+  },
+  {
+    "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/dependency-snapshot/supabase/migrations/20260716112908_production_schema_baseline.sql",
+    "sha256": "27067d2221516be147d5cf71492b1fee3f0fd377d0ccd14e49557931ad1b791d",
+    "bytes": 1787923
+  },
+  {
+    "path": "tasks/ifttt-integration-2026-10-16/receiver-variant-retention-v2/supabase/migrations/20261016082142_ifttt_raw_receipt_variants.sql",
+    "sha256": "789772078e3b8405539358e07413cf2fd4cf6d80a82513911bf989f8c02b0483",
+    "bytes": 11367
+  },
+  {
+    "path": "tasks/ifttt-integration-2026-10-16/review/deny-network.ts",
+    "sha256": "b5877133232b17c55cf8c5e9b7419411f51f9ec01ebe8d427d1d62760794d6d8",
+    "bytes": 383
+  },
+  {
+    "path": "tasks/ifttt-integration-2026-10-16/review/vitest.review.config.mjs",
+    "sha256": "e33f689623d970de3b65b2ddacf899e3887efc284babacaccb90c82079bea564",
+    "bytes": 441
+  },
+  {
+    "path": "tasks/ifttt-integration-2026-10-16/rpc-deadline-reconciliation-v1/supabase/migrations/20261016092509_ifttt_rpc_deadline_reconciliation.sql",
+    "sha256": "7c6c5e093fdaa1b0ccef15228eccda1b60096d4a74662fb0ad84e0302be01e4a",
+    "bytes": 6075
+  },
+  {
+    "path": "web/.nvmrc",
+    "sha256": "6f7ebb0460b61089c4413e5740b5e2fa196a19281886e50ab1f99b15e0aeeb21",
+    "bytes": 8
+  },
+  {
+    "path": "web/__tests__/vitest.setup.js",
+    "sha256": "e8855d945f40380bdad0a98f4e724c8abb8d4debba5dbaa3db9ee93da853cb63",
+    "bytes": 458
+  },
+  {
+    "path": "web/lib/NHL/types.ts",
+    "sha256": "805b62b040a2e46b18e863815eeccaa175a01b9c4e770f679f2e483fb09c1fce",
+    "bytes": 39109
+  },
+  {
+    "path": "web/lib/dashboard/teamMetadata.ts",
+    "sha256": "7cfb169e7ef476e21eac9ce49ac7a590e31f6e888bbb66c911c1285d67ad903b",
+    "bytes": 1328
+  },
+  {
+    "path": "web/lib/images.ts",
+    "sha256": "3cc58b704a604e2fe043dd80bb832418b15f54212b6013bdf347a1aeb8aa0dcd",
+    "bytes": 2056
+  },
+  {
+    "path": "web/lib/newsFeed.ts",
+    "sha256": "fc5466e95cba33a833831aff27fbdc3c8a3cc4827968f39631d66783cc1275d1",
+    "bytes": 25120
+  },
+  {
+    "path": "web/lib/projections/evidenceTime.ts",
+    "sha256": "c818c021a2857607055d60454ecf03ac39fb27298719726662652d8321e42a00",
+    "bytes": 1098
+  },
+  {
+    "path": "web/lib/sources/fixtures/iftttSemanticResearch/semantic-family-cases.json",
+    "sha256": "65d6ad77527b4ea17a7ce0aaf51e6c64213acda1b05b1afec3d9503c0939a223",
+    "bytes": 55961
+  },
+  {
+    "path": "web/lib/sources/fixtures/tweetClaimQualificationFixture.ts",
+    "sha256": "82555df4e3643e551f266a1d42b9d83b30e87eadab62669db3fc84c649e2405a",
+    "bytes": 2209
+  },
+  {
+    "path": "web/lib/sources/iftttRpcDeadline.ts",
+    "sha256": "cd7543d277bfc0463f0679d7d34e18368dbe9411821d365dfe5f0cf0ee77bc1b",
+    "bytes": 1387
+  },
+  {
+    "path": "web/lib/sources/linesCccIngestion.ts",
+    "sha256": "3b9a29f70d9a95f6657f62b9154459e801d8cb3eb0d96f6a143ca2956f7080c0",
+    "bytes": 74145
+  },
+  {
+    "path": "web/lib/sources/lineupSourceIngestion.ts",
+    "sha256": "a5b4f72ab280921453830e4ee7fabda9175ab0ef46d56d02848554b82d60cea3",
+    "bytes": 62129
+  },
+  {
+    "path": "web/lib/sources/playerIdentity.ts",
+    "sha256": "af843bd6df9ec932ff67bdfd08dba337224d133ac87b1fe94113e0f5ec75bcb4",
+    "bytes": 6899
+  },
+  {
+    "path": "web/lib/sources/projectedLineups.ts",
+    "sha256": "a8c56efe284409dcf0f4badf07a08ba8268f16ebf215ab1b247b9d7ee45104b6",
+    "bytes": 7598
+  },
+  {
+    "path": "web/lib/sources/tweetClaimApplicability.ts",
+    "sha256": "ce35b6a326cb3bad5ce4a560b7b4664d97de2e43421200b04be2f4b98ea43a94",
+    "bytes": 2538
+  },
+  {
+    "path": "web/lib/sources/tweetClaimEvidence.ts",
+    "sha256": "131e85075d980ce68ad364868a65c67e8f62cde4b04668fcf007464ca013ddb9",
+    "bytes": 6605
+  },
+  {
+    "path": "web/lib/sources/tweetClaimExtraction.ts",
+    "sha256": "e5cfd481dcf357ddbc36ef4b09f8ac45c2dad0a368acdbddb7f3800bb72660fe",
+    "bytes": 12499
+  },
+  {
+    "path": "web/lib/sources/tweetClaimReducerAdapter.ts",
+    "sha256": "78a0e2cce23be93a07f781477657dad6bfa1cd74dfb6a73ffe68a082724b2332",
+    "bytes": 22958
+  },
+  {
+    "path": "web/lib/sources/tweetInterpretation.ts",
+    "sha256": "a72e39f1c9bea27297ad67b475d1f8d62cf082e70ede613835eff339bded0c55",
+    "bytes": 24957
+  },
+  {
+    "path": "web/lib/sources/tweetLineupParsing.ts",
+    "sha256": "7c33fdbc77256d9736a847bdfcf630164713324db679636e3ec5baf6b350195f",
+    "bytes": 4037
+  },
+  {
+    "path": "web/lib/sources/tweetPlayerEvents.ts",
+    "sha256": "14c421d37506f33df08cac5914e30c38a578b2588ae46f3c6e461b70efadc88c",
+    "bytes": 22924
+  },
+  {
+    "path": "web/lib/sources/tweetSemanticEvents.ts",
+    "sha256": "fd043fee124efd23285770e982182c0d6d7b64bb59d61126d1b7dc4e71395df2",
+    "bytes": 18408
+  },
+  {
+    "path": "web/lib/sources/tweetSourceClaimRegistry.ts",
+    "sha256": "03f58f5793b5083dd48935ab525f869205e338798b45d768c9008c0b55004468",
+    "bytes": 36905
+  },
+  {
+    "path": "web/lib/sources/tweetSourceDirectory.ts",
+    "sha256": "499b5ffe8727342346ec6e16336140c1e38f4c89bbaebf1c799426bdd0041684",
+    "bytes": 6759
+  },
+  {
+    "path": "web/lib/supabase/pagination.ts",
+    "sha256": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660",
+    "bytes": 5438
+  },
+  {
+    "path": "web/lib/teamsInfo.ts",
+    "sha256": "645f33ed7272e728b6ac1436754a13126ee25eb2eb6bc598fcefed3acc8e1584",
+    "bytes": 17281
+  },
+  {
+    "path": "web/next-bootstrap.d.ts",
+    "sha256": "fbbabe3d21600eac77a1bf714dfdbb22e49736840d31597ce29160c331375ada",
+    "bytes": 196
+  },
+  {
+    "path": "web/package-lock.json",
+    "sha256": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378",
+    "bytes": 809830
+  },
+  {
+    "path": "web/package.json",
+    "sha256": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+    "bytes": 14058
+  },
+  {
+    "path": "web/tsconfig.json",
+    "sha256": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b",
+    "bytes": 1063
+  },
+  {
+    "path": "web/vitest.config.mts",
+    "sha256": "567626533274d2161441206f5f616ecdc7f2212c0d2a2450816954d6aeb0af3b",
+    "bytes": 608
+  },
+  {
+    "path": "web/yahoo-fantasy.d.ts",
+    "sha256": "ee9bdf929e3330d852b296c0d38d2dd4aab3553989b4db62b5632ede97b5a4ca",
+    "bytes": 54
+  }
+]

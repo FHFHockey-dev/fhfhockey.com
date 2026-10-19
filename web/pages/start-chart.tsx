@@ -439,7 +439,8 @@ export default function StartChartPage() {
   ]);
 
   const { data: publishedData, error, isLoading, mutate } = useSWR<StartChartResponse>(
-    date ? `/api/v1/start-chart?date=${encodeURIComponent(date)}&forecast_source=game_expectations` : null,
+    // The server selects the forecast source, the same request the dashboard cards make.
+    date ? `/api/v1/start-chart?date=${encodeURIComponent(date)}` : null,
     fetcher,
     { refreshInterval: 30_000, dedupingInterval: 5_000, revalidateOnFocus: true },
   );

@@ -1,0 +1,1124 @@
+[
+ {
+  "unit": "U2",
+  "path": "web/__tests__/pages/api/Teams/nst-team-stats.route.test.ts",
+  "prodBlob": "e1e6ab538cf66cc736c5a11575ae048e555f8edd",
+  "candidateBlob": "09dfbb38ffca36606f4f74cdc727e8a2a933bb8b",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "09dfbb38ffca36606f4f74cdc727e8a2a933bb8b",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2+U3+U5",
+  "path": "web/__tests__/pages/api/v1/db/cron-report.test.ts",
+  "prodBlob": "658ee2e5a4f43ca657f1ac84683825fa5116203c",
+  "candidateBlob": "11fefac0aae487c9b470f2f1a855ff577f52ffec",
+  "source": "worktree",
+  "deleted": false,
+  "unitOnly": false,
+  "unitOnlyBlob": "6099684bb326a283726721787220ab54dfad406c",
+  "extraCommits": [
+   "0de97e77d3",
+   "26468a9fc9"
+  ]
+ },
+ {
+  "unit": "U6",
+  "path": "web/__tests__/pages/api/v1/db/ingest-projection-inputs.test.ts",
+  "prodBlob": "ea7c026f1f8d89c085a04f14530551d1b4967d31",
+  "candidateBlob": "bac2fadc40e23f602db624e8d15359f4b9bbf289",
+  "source": "worktree",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "bac2fadc40e23f602db624e8d15359f4b9bbf289",
+  "extraCommits": []
+ },
+ {
+  "unit": "U3",
+  "path": "web/__tests__/pages/api/v1/db/run-projection-accuracy.test.ts",
+  "prodBlob": "cc561c916fd691eac18f2be93f72de9b90626e28",
+  "candidateBlob": "3d2dd23cb2d88a44942b15a7c59679be0894f4db",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "3d2dd23cb2d88a44942b15a7c59679be0894f4db",
+  "extraCommits": []
+ },
+ {
+  "unit": "U4",
+  "path": "web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts",
+  "prodBlob": "3909ca200372ce4c64591a56e9c47a092402bc8c",
+  "candidateBlob": "381d6f17aa1e7196b8a860685b4c5581d4d6f7fa",
+  "source": "worktree",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "381d6f17aa1e7196b8a860685b4c5581d4d6f7fa",
+  "extraCommits": []
+ },
+ {
+  "unit": "U3",
+  "path": "web/__tests__/pages/api/v1/db/sweep-gamecenter-normalization.test.ts",
+  "prodBlob": "86bb6f0060ce4a77476d35c49d4a36a6232b25d3",
+  "candidateBlob": "6f2c938c6ae0faf8c3256c29d7157b12cef3625e",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "6f2c938c6ae0faf8c3256c29d7157b12cef3625e",
+  "extraCommits": []
+ },
+ {
+  "unit": "U3",
+  "path": "web/__tests__/pages/api/v1/db/update-nst-team-daily.test.ts",
+  "prodBlob": null,
+  "candidateBlob": "38031e08fe97c1c4e2d23cbaf1c8c21d3bb12d41",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "38031e08fe97c1c4e2d23cbaf1c8c21d3bb12d41",
+  "extraCommits": []
+ },
+ {
+  "unit": "U3",
+  "path": "web/__tests__/pages/api/v1/db/update-rolling-player-averages.test.ts",
+  "prodBlob": "106282a91d2ccb5b663d71ca87b2ccbb91a45974",
+  "candidateBlob": "ed599ca9ef8c8ae1661dde35f03b2b198c1c710b",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": false,
+  "unitOnlyBlob": "45440b5e8ae7ff885f6ebb2ed158c0b7cf58818f",
+  "extraCommits": [
+   "317f8f57ee"
+  ]
+ },
+ {
+  "unit": "U3",
+  "path": "web/__tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts",
+  "prodBlob": null,
+  "candidateBlob": "ca182bb837ab2ac581ec5c2832be5e8e505c2a58",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "ca182bb837ab2ac581ec5c2832be5e8e505c2a58",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/__tests__/pages/api/v1/db/update-wgo-goalies.test.ts",
+  "prodBlob": "9815bb87d08ae93e11574824e904504f7233bb85",
+  "candidateBlob": "ba4732f9cc4c6148c80ed341b83f1cfc125488e7",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "ba4732f9cc4c6148c80ed341b83f1cfc125488e7",
+  "extraCommits": []
+ },
+ {
+  "unit": "U1",
+  "path": "web/__tests__/pages/api/v1/forge/goalies.test.ts",
+  "prodBlob": "bd2900bc341e123fb1daf51d02b4319adaabc246",
+  "candidateBlob": "31effdbd9f664e427d54b23933e59b59a76662da",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": false,
+  "unitOnlyBlob": "0123a01d48c2292a9cf19fd5e46fa8c338b9c30f",
+  "extraCommits": [
+   "317f8f57ee",
+   "7f094c8e68"
+  ]
+ },
+ {
+  "unit": "U1+U3",
+  "path": "web/__tests__/pages/api/v1/forge/players.test.ts",
+  "prodBlob": "57e6b945be5a41b8827fa35623b87a2d24e96ca8",
+  "candidateBlob": "e5cf97bb109f343d845b01952d42b2046ba788fb",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": false,
+  "unitOnlyBlob": "27e214444d3d8f05075d987a2ad8621c07d5c427",
+  "extraCommits": [
+   "7f094c8e68"
+  ]
+ },
+ {
+  "unit": "U2",
+  "path": "web/__tests__/pages/api/v1/ml/update-predictions-sko.test.ts",
+  "prodBlob": "689cc931925a7f4ae5e5a9148903511ad54d524e",
+  "candidateBlob": "86c95eac8f9a46a80b47206cc62aab6dc8422111",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "86c95eac8f9a46a80b47206cc62aab6dc8422111",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/__tests__/pages/api/v1/season.test.ts",
+  "prodBlob": "638867af177d9add875410f82340f6185845d8d8",
+  "candidateBlob": "f7fb05a3ef4c71fc94173ea65a873ceba9164dfe",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "f7fb05a3ef4c71fc94173ea65a873ceba9164dfe",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/__tests__/pages/api/v1/trends/skater-power.test.ts",
+  "prodBlob": "3f39cb9e041e32d9d59944b67a41d2acc6092e44",
+  "candidateBlob": "20b0420aca19f732ff866f9849e576f13bb51da3",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "20b0420aca19f732ff866f9849e576f13bb51da3",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/components/Admin/CronRouteRunner.test.ts",
+  "prodBlob": null,
+  "candidateBlob": "4fffbb41c652052afcf4f41e8804b7701cf16dca",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "4fffbb41c652052afcf4f41e8804b7701cf16dca",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/components/Admin/CronRouteRunner.tsx",
+  "prodBlob": null,
+  "candidateBlob": "618504e702fc4e784313b3365d60520f543239f0",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "618504e702fc4e784313b3365d60520f543239f0",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/components/PlayerStats/PlayerContextualStats.tsx",
+  "prodBlob": "627c776605ccb700bffeea3a6b1b512658750a62",
+  "candidateBlob": "177e706177e0751d3c90e6f254626a1e9f806e71",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "177e706177e0751d3c90e6f254626a1e9f806e71",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/components/TeamStandingsChart/TeamStandingsChart.tsx",
+  "prodBlob": "d4ea82b9652ae57fbbf36f2418197b98cd337a5f",
+  "candidateBlob": "2e18a56a0d11a7b6b868d32db991cc1fe2b699b4",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "2e18a56a0d11a7b6b868d32db991cc1fe2b699b4",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/components/TeamStandingsChart/chartUtils.test.ts",
+  "prodBlob": "774c62da07cfc5ccf8eea0e13f1c4c64a8ef72b5",
+  "candidateBlob": "d743d6c35c3ac2ab7d2fec27d85258a8e55ed8e3",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "d743d6c35c3ac2ab7d2fec27d85258a8e55ed8e3",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/components/TeamStandingsChart/chartUtils.ts",
+  "prodBlob": "f4d08283c0b6c737147ec5bd5cf5006106913b11",
+  "candidateBlob": "6c0bb3da2c4fed27788502937074f0d14627be0c",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "6c0bb3da2c4fed27788502937074f0d14627be0c",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/components/WiGO/RateStatPercentiles.test.tsx",
+  "prodBlob": "810f6d5687e8407efe0cb4a555bd3a7ffba2ec3e",
+  "candidateBlob": "3aff9c3b1090dc1a7f6758eaa18b2af36cca061d",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "3aff9c3b1090dc1a7f6758eaa18b2af36cca061d",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/components/WiGO/RateStatPercentiles.tsx",
+  "prodBlob": "33eb9350862cc9ab1da3a5c6b2ad1b17d9bf8503",
+  "candidateBlob": "10fe03f6a776c2007a9ec0131db21877d9dd8e4d",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "10fe03f6a776c2007a9ec0131db21877d9dd8e4d",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/lib/NHL/server/index.test.ts",
+  "prodBlob": "5ef7870077d7cec46895c457bd990c06296d4047",
+  "candidateBlob": "29c82d92c6d2b4034ae05da9d03f2f883222d9e7",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "29c82d92c6d2b4034ae05da9d03f2f883222d9e7",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/lib/cron/nhlOffSeason.test.ts",
+  "prodBlob": null,
+  "candidateBlob": "c7ddd9fbb4a4ab4f081c578c78037056e60058dc",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "c7ddd9fbb4a4ab4f081c578c78037056e60058dc",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/lib/cron/nhlOffSeason.ts",
+  "prodBlob": null,
+  "candidateBlob": "ca235fd37bc5fafa75e518c42e65f4d3fed9c53b",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "ca235fd37bc5fafa75e518c42e65f4d3fed9c53b",
+  "extraCommits": []
+ },
+ {
+  "unit": "U5",
+  "path": "web/lib/cron/withCronJobAudit.test.ts",
+  "prodBlob": "72c124476d6687ce696677140592d0dbfc2cc52d",
+  "candidateBlob": "81af8b7a07f33f287048ea777979fa16c7d404cb",
+  "source": "worktree",
+  "deleted": false,
+  "unitOnly": false,
+  "unitOnlyBlob": "c10a4d7893c0d0681e9b5432977a51a15be8cec8",
+  "extraCommits": [
+   "569245efd3"
+  ]
+ },
+ {
+  "unit": "U5",
+  "path": "web/lib/cron/withCronJobAudit.ts",
+  "prodBlob": "0a0e7387d284b812cbd1e5880e195ade2f0941f6",
+  "candidateBlob": "60642cf2d260ea404a2c3d4b8002170dda4f5245",
+  "source": "worktree",
+  "deleted": false,
+  "unitOnly": false,
+  "unitOnlyBlob": "4a7de85bf88e94dd97f05f985e44d786e06f0c2f",
+  "extraCommits": [
+   "569245efd3"
+  ]
+ },
+ {
+  "unit": "U1",
+  "path": "web/lib/draft-pro/api-tests/private-imports.test.ts",
+  "prodBlob": "67eb16db2c147ac93d14e79507353756d325e691",
+  "candidateBlob": "492f5dbd365975942526d34bb6212c11d6805392",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": false,
+  "unitOnlyBlob": null,
+  "extraCommits": [
+   "317f8f57ee"
+  ]
+ },
+ {
+  "unit": "U1",
+  "path": "web/lib/draft-pro/privateImportTransport.test.ts",
+  "prodBlob": "6fc70be6c2d91ec4652d84692906955ad8b0e4af",
+  "candidateBlob": "87af22660e5e45ec0db3830dac8c48c4a75f77d0",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": false,
+  "unitOnlyBlob": null,
+  "extraCommits": [
+   "317f8f57ee"
+  ]
+ },
+ {
+  "unit": "U1",
+  "path": "web/lib/draft-pro/privateImportTransport.ts",
+  "prodBlob": "da6fb311b756a41d6f0b34a88a3726d3ef81e4f6",
+  "candidateBlob": "fe06dfa55d6fd93354a146bb4768d1ce5769ae76",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": false,
+  "unitOnlyBlob": null,
+  "extraCommits": [
+   "317f8f57ee"
+  ]
+ },
+ {
+  "unit": "U1",
+  "path": "web/lib/draft-pro/requestError.ts",
+  "prodBlob": null,
+  "candidateBlob": "ab30399057a9225974a3376d20c7565aefc2d7a7",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "ab30399057a9225974a3376d20c7565aefc2d7a7",
+  "extraCommits": []
+ },
+ {
+  "unit": "U1",
+  "path": "web/lib/draft-pro/server.ts",
+  "prodBlob": "6ca89cf6308cef3ef0edaddb7f0688ecfb5b2ea6",
+  "candidateBlob": "d5c19b5790238adcecd0c2d49f00a6b88d7b2abf",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "d5c19b5790238adcecd0c2d49f00a6b88d7b2abf",
+  "extraCommits": []
+ },
+ {
+  "unit": "U3",
+  "path": "web/lib/projections/modeledHeadTotals.test.ts",
+  "prodBlob": null,
+  "candidateBlob": "3055a080aa9b3b6f3b511404cf83d264fcfd713c",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "3055a080aa9b3b6f3b511404cf83d264fcfd713c",
+  "extraCommits": []
+ },
+ {
+  "unit": "U3",
+  "path": "web/lib/projections/modeledHeadTotals.ts",
+  "prodBlob": null,
+  "candidateBlob": "7e050e5f0496cc5cda511cea622a5a82a389b817",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "7e050e5f0496cc5cda511cea622a5a82a389b817",
+  "extraCommits": []
+ },
+ {
+  "unit": "U4",
+  "path": "web/lib/rollingForgePipelineRunState.ts",
+  "prodBlob": null,
+  "candidateBlob": "e1765914fa3cbb23a7d1a9381eb3fff358dbae81",
+  "source": "worktree",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "e1765914fa3cbb23a7d1a9381eb3fff358dbae81",
+  "extraCommits": []
+ },
+ {
+  "unit": "U3",
+  "path": "web/lib/rollingPlayerDailyResume.ts",
+  "prodBlob": null,
+  "candidateBlob": "d780913971724826d6350d2d2168a57444f8dac9",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "d780913971724826d6350d2d2168a57444f8dac9",
+  "extraCommits": []
+ },
+ {
+  "unit": "U3",
+  "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts",
+  "prodBlob": "23aca37c1f65300506473bd8b1190f4c9108882c",
+  "candidateBlob": "dc251a1748f29bacd08a304d0e5f6e2010bd04da",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": false,
+  "unitOnlyBlob": null,
+  "extraCommits": [
+   "317f8f57ee",
+   "6e14053ff5"
+  ]
+ },
+ {
+  "unit": "U3",
+  "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+  "prodBlob": "7330a8df736b4398eb72de672dc18c1e8ef85520",
+  "candidateBlob": "431190dfd46c1ec0fd95f958e40d8c92275f24e6",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": false,
+  "unitOnlyBlob": null,
+  "extraCommits": [
+   "317f8f57ee",
+   "6e14053ff5"
+  ]
+ },
+ {
+  "unit": "U3",
+  "path": "web/lib/sustainability/incremental.test.ts",
+  "prodBlob": "9ed7fb48095200a14fb7b9f16dfac3fb4f44aef6",
+  "candidateBlob": "c8463d6443d26e105e8025f073e635146d098096",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "c8463d6443d26e105e8025f073e635146d098096",
+  "extraCommits": []
+ },
+ {
+  "unit": "U3",
+  "path": "web/lib/sustainability/incremental.ts",
+  "prodBlob": "776b2f318d8bc0173ac8bd72facdf309433d3f73",
+  "candidateBlob": "a08258971b6cc23e763ef25198013ee1de8ce0aa",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "a08258971b6cc23e763ef25198013ee1de8ce0aa",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/Teams/nst-team-stats.ts",
+  "prodBlob": "02665c4b0cd436971941ed6a7855ee52ac4e6ddf",
+  "candidateBlob": "bf1235cd36e023a28c97583cca4eb911f0b08feb",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "bf1235cd36e023a28c97583cca4eb911f0b08feb",
+  "extraCommits": []
+ },
+ {
+  "unit": "U1",
+  "path": "web/pages/api/v1/account/draft-pro/private-imports.ts",
+  "prodBlob": "057695f04d7722fdf28124f2dde437b73f5621eb",
+  "candidateBlob": "84142feeb49608081966ff1b0fed0f0bdc60b694",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": false,
+  "unitOnlyBlob": null,
+  "extraCommits": [
+   "317f8f57ee"
+  ]
+ },
+ {
+  "unit": "U1",
+  "path": "web/pages/api/v1/account/draft-pro/private-imports/[uploadId]/chunks/[ordinal].ts",
+  "prodBlob": "6b943757982997de70b768b157527fc1a7770478",
+  "candidateBlob": "44ba2265977b53688c204d37b822bdf23407793e",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": false,
+  "unitOnlyBlob": null,
+  "extraCommits": [
+   "317f8f57ee"
+  ]
+ },
+ {
+  "unit": "U1",
+  "path": "web/pages/api/v1/account/draft-pro/private-imports/[uploadId]/stage.ts",
+  "prodBlob": "82f2e91530ada241c13e51063e881582b56661a2",
+  "candidateBlob": "91fa221e758c72431eceb02d09bc66ced3d8f719",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": false,
+  "unitOnlyBlob": null,
+  "extraCommits": [
+   "317f8f57ee"
+  ]
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/build-projection-derived-v2.ts",
+  "prodBlob": "4b0cf108b7ba0df7a2103f70edd03436a80a50a5",
+  "candidateBlob": "0da194a354dd68763aa7db3b86ba6bd29b63c597",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "0da194a354dd68763aa7db3b86ba6bd29b63c597",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/calculate-wigo-stats.ts",
+  "prodBlob": "b3320452ab3f3d487b63166b70236771322a227a",
+  "candidateBlob": "3a92c89f4464842d9d6688eb8206a7014b9394f9",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "3a92c89f4464842d9d6688eb8206a7014b9394f9",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2+U3+U5",
+  "path": "web/pages/api/v1/db/cron-report.ts",
+  "prodBlob": "d56a3b16bc6eaaa48b1023cd01d689a6365563dd",
+  "candidateBlob": "a8f6ea7e0f3357133fad8b3b65a4e5203f270515",
+  "source": "worktree",
+  "deleted": false,
+  "unitOnly": false,
+  "unitOnlyBlob": "b3e0da2fd5c7be08d566117f6a3b476cb4e5bba5",
+  "extraCommits": [
+   "7f094c8e68",
+   "26468a9fc9"
+  ]
+ },
+ {
+  "unit": "U2+U6",
+  "path": "web/pages/api/v1/db/ingest-projection-inputs.ts",
+  "prodBlob": "94c7ef74e01731192cb6b8c24674482d16965b74",
+  "candidateBlob": "63168509379af28e3849b12dc94596adda877a4d",
+  "source": "worktree",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "63168509379af28e3849b12dc94596adda877a4d",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/powerPlayTimeFrame.ts",
+  "prodBlob": "9710ba5a4510e4ec63ca4e66c1434437f5b56163",
+  "candidateBlob": "99cae572c635d085bb84a31ba05b365696bac6b0",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "99cae572c635d085bb84a31ba05b365696bac6b0",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/run-fetch-wgo-data.ts",
+  "prodBlob": "acd26928cb8644fc88e437034411578e8ecd7bfe",
+  "candidateBlob": "2bebbb07b9899213dc05cd1b6517375154d850f6",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "2bebbb07b9899213dc05cd1b6517375154d850f6",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2+U3",
+  "path": "web/pages/api/v1/db/run-projection-accuracy.ts",
+  "prodBlob": "0edbaa6ac10bdb102b24fd35b2304b4191e96b7b",
+  "candidateBlob": "56bbfcb2163a239e94d630ec48cd98ea2e1f13d6",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": false,
+  "unitOnlyBlob": "569d29401eb7ed9b00239cec791b6cb1c7f2d8c8",
+  "extraCommits": [
+   "7f094c8e68"
+  ]
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/run-projection-v2.ts",
+  "prodBlob": "a806fb86f3649103b1eded2cdd67931480f166c5",
+  "candidateBlob": "7aee98e1dc9f6c2accabb1fa194b4012d63b697f",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "7aee98e1dc9f6c2accabb1fa194b4012d63b697f",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2+U4",
+  "path": "web/pages/api/v1/db/run-rolling-forge-pipeline.ts",
+  "prodBlob": "6445f4cb239c419feb7be9b075d7b07f2b4e3ff0",
+  "candidateBlob": "d741c4e73bb34906b1497a89381d2cbc18fda744",
+  "source": "worktree",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "d741c4e73bb34906b1497a89381d2cbc18fda744",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/sustainability/rebuild-baselines.ts",
+  "prodBlob": "156251a676a257a9be7069eb2ca7e42344713d39",
+  "candidateBlob": "55326453fc9514a5fb0dd4985622830253b2f5f0",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": false,
+  "unitOnlyBlob": "9b3a28e992f9d8597f6f04f1af86bc38439eb647",
+  "extraCommits": [
+   "0de97e77d3"
+  ]
+ },
+ {
+  "unit": "U3",
+  "path": "web/pages/api/v1/db/sweep-gamecenter-normalization.ts",
+  "prodBlob": "8dac47aefb1689270d1928751888f5ae4c540e09",
+  "candidateBlob": "8bc416ddb26997761f4394e6766736a66ed5e6e6",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "8bc416ddb26997761f4394e6766736a66ed5e6e6",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-PbP.ts",
+  "prodBlob": "5077db6e97a401be0462e4e8aea373b921c4a1fa",
+  "candidateBlob": "fda429f35df6713ba4f28b50db96982bb3922681",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "fda429f35df6713ba4f28b50db96982bb3922681",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-game-goal-projections/index.ts",
+  "prodBlob": "0d4886d361d4de39662c94022437d9d21d3a65fa",
+  "candidateBlob": "42293a9be8d676af2cf176bfa0654710fb82547b",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "42293a9be8d676af2cf176bfa0654710fb82547b",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-goalie-projections-v2.ts",
+  "prodBlob": "e109080baa4428196773a8ca22f89cddff2ff4e4",
+  "candidateBlob": "2e340d7af01b11747bbdf1999d5fa6037a1cb3ba",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "2e340d7af01b11747bbdf1999d5fa6037a1cb3ba",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-line-combinations/index.ts",
+  "prodBlob": "3434ed8889ff82221aacebbfe481727917a2d723",
+  "candidateBlob": "13c06de11ac756b03fad8e75c0fa1306d60d00e4",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "13c06de11ac756b03fad8e75c0fa1306d60d00e4",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-lineup-deployment-tallies.ts",
+  "prodBlob": "be44479773693f8b04408b125537db3674a85427",
+  "candidateBlob": "2ce50209db911c1758a2980de0d65af77fd44636",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "2ce50209db911c1758a2980de0d65af77fd44636",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-nhl-edge-stats.ts",
+  "prodBlob": "d8d879f486fedfc74b58cfb5ad3bfd929060ff6c",
+  "candidateBlob": "bb4a0d6656ee4ab4d7cb69e70767f0255477602a",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "bb4a0d6656ee4ab4d7cb69e70767f0255477602a",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-nst-current-season.ts",
+  "prodBlob": "a5de0ff00218feefbed2971489317c9e4937d5bf",
+  "candidateBlob": "0e62d7e2def4a0ed304a7526e01e4a45e7c86e75",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "0e62d7e2def4a0ed304a7526e01e4a45e7c86e75",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-nst-gamelog.ts",
+  "prodBlob": "9fcb7ad57237c23084ab14a12324be018b79bd0e",
+  "candidateBlob": "c16031ac474a8091b4d830cb65c34c6382f21ff0",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": false,
+  "unitOnlyBlob": null,
+  "extraCommits": [
+   "7f094c8e68",
+   "1ddef915d6",
+   "406a47ae4d"
+  ]
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-nst-goalies.ts",
+  "prodBlob": "18be79e8382a00deafc06d34cf69ee5eb86210d6",
+  "candidateBlob": "79941d58eabefbeb1129e537eef0543a41e94c96",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "79941d58eabefbeb1129e537eef0543a41e94c96",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2+U3",
+  "path": "web/pages/api/v1/db/update-nst-team-daily.ts",
+  "prodBlob": "9d2a746ca348f195f3eda39abf3c98c2ca086305",
+  "candidateBlob": "e81128809d992d84dfcf87251c12d2b0c6d43144",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "e81128809d992d84dfcf87251c12d2b0c6d43144",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-player-trend-metrics.ts",
+  "prodBlob": "336bac2b4d645071baa2247f2bf3a6c375908bd6",
+  "candidateBlob": "a7e29a6b119f7fe465ccddfeb5b1eb63b445d850",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "a7e29a6b119f7fe465ccddfeb5b1eb63b445d850",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-player-underlying-stats.ts",
+  "prodBlob": "8abbef8128d8efe90e15fa87daeb1750c6b1fb8d",
+  "candidateBlob": "6d9f7b4a6c747bf808ef354736d90c303484db2d",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": false,
+  "unitOnlyBlob": "c14332900d572e6a718f09199c58333bb6dd19d9",
+  "extraCommits": [
+   "0de97e77d3"
+  ]
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-power-play-combinations/index.ts",
+  "prodBlob": "ed9756aac18af881d88e25f18b77747204c013c1",
+  "candidateBlob": "402c270f7a0382e633281420bc090a00b5a4f539",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "402c270f7a0382e633281420bc090a00b5a4f539",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2+U3",
+  "path": "web/pages/api/v1/db/update-rolling-player-averages.ts",
+  "prodBlob": "7f139224d7576769a5de734300fb98fd71f0db42",
+  "candidateBlob": "1c2fb5b26cb269dd9241ebd1e8a896c2da09f500",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": false,
+  "unitOnlyBlob": "69ad80aceb041319c62af296c3b1a5b33040c033",
+  "extraCommits": [
+   "317f8f57ee"
+  ]
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-season-stats.ts",
+  "prodBlob": "5a7a4b56e17ace7198a04815baf6da5bed418c39",
+  "candidateBlob": "674a16ef0887ef1756b5fc3a977ecf31ecb9bf7f",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "674a16ef0887ef1756b5fc3a977ecf31ecb9bf7f",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-shifts.ts",
+  "prodBlob": "53670b0806b31a3ab5d33d5534f6dad19b6c1668",
+  "candidateBlob": "72db4c31737c1065fff35c206e2095be5544e3dc",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "72db4c31737c1065fff35c206e2095be5544e3dc",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-sko-stats.ts",
+  "prodBlob": "8ad6b33609ff517a1c35c3382dfabd73022a7c73",
+  "candidateBlob": "a0cd5b722995fdabf419c82f03b87264781d3942",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "a0cd5b722995fdabf419c82f03b87264781d3942",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-standings-details/index.ts",
+  "prodBlob": "1092500e22ff158ca3f7698ec1fd98eea3a1c410",
+  "candidateBlob": "21cba0840f1abeaf86c3ecd35c2e2faa2ae2ebea",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "21cba0840f1abeaf86c3ecd35c2e2faa2ae2ebea",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2+U3",
+  "path": "web/pages/api/v1/db/update-team-ctpi-daily.ts",
+  "prodBlob": "1830e72dd39a18d8a0b636efd490312f1dfb40d0",
+  "candidateBlob": "367e79ff9d19b3f46102e6ed1a41d78ff9305153",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "367e79ff9d19b3f46102e6ed1a41d78ff9305153",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-team-power-ratings.ts",
+  "prodBlob": "d56d1c57b47c51ffa7217830329e5b748fcd385f",
+  "candidateBlob": "08705b7be521902fb4a3bb58e3d814a45fef13ad",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "08705b7be521902fb4a3bb58e3d814a45fef13ad",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-team-sos.ts",
+  "prodBlob": "d9e346f8e45893f8fb3fafc5d01cb6bd9d95d229",
+  "candidateBlob": "d5715135979f8e1691aa793fa4689b34d6e06976",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "d5715135979f8e1691aa793fa4689b34d6e06976",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-team-yearly-summary.ts",
+  "prodBlob": "15075e2e1427fa5e2d9042f1fd2477726f113867",
+  "candidateBlob": "2c900b8552f9771453071ce4e2102e22500d0c56",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "2c900b8552f9771453071ce4e2102e22500d0c56",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-wgo-averages.ts",
+  "prodBlob": "e0547f1b25a688c06a39b844ba499f75da64b4f3",
+  "candidateBlob": "f1876266ac3882b6d409e2bf4c6185cc85527cc6",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "f1876266ac3882b6d409e2bf4c6185cc85527cc6",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-wgo-goalie-totals.ts",
+  "prodBlob": "1aa4b6ed14dd31bb69859dd65fecbcde5bc0f96a",
+  "candidateBlob": "71d34939ac406bd3a06cf63d153cb5e382539313",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "71d34939ac406bd3a06cf63d153cb5e382539313",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-wgo-goalies.ts",
+  "prodBlob": "93c37cb490aee31725eb82fbeb0e7db0b42b8a43",
+  "candidateBlob": "d84e5997da9a0713066fb170f2c6f4cc0de23dae",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "d84e5997da9a0713066fb170f2c6f4cc0de23dae",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-wgo-skaters.ts",
+  "prodBlob": "bfae8deb8d3497534795942244de8faf0707cb88",
+  "candidateBlob": "1502615b7e1aba23f2915bbcb5bfffe4a3a9a1c0",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "1502615b7e1aba23f2915bbcb5bfffe4a3a9a1c0",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/db/update-wgo-totals.ts",
+  "prodBlob": "6a7e6377c80bd5bb94b868baaa964a2a3032683a",
+  "candidateBlob": "b8dd15a0e6239f851615d83edf566f142a3a4c5c",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "b8dd15a0e6239f851615d83edf566f142a3a4c5c",
+  "extraCommits": []
+ },
+ {
+  "unit": "U1",
+  "path": "web/pages/api/v1/forge/goalies.ts",
+  "prodBlob": "8c8465477f85690909a8fea9982b049be41f5ff7",
+  "candidateBlob": "afc9364c10c07860951c1de4231ce3097e9b5948",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": false,
+  "unitOnlyBlob": "3fafc008f72574bf5ceb81f5e2396f50f358004d",
+  "extraCommits": [
+   "317f8f57ee",
+   "7f094c8e68"
+  ]
+ },
+ {
+  "unit": "U1+U3",
+  "path": "web/pages/api/v1/forge/players.ts",
+  "prodBlob": "c6065c764ca453dabcaf0fe78bd90c2eab31c11c",
+  "candidateBlob": "8171df07bf795db3a346baca98913e4661615438",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": false,
+  "unitOnlyBlob": null,
+  "extraCommits": [
+   "7f094c8e68"
+  ]
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/game-predictions/forecast.ts",
+  "prodBlob": "c9dc2c98d3239cb81a010a330cf197c33c701e0c",
+  "candidateBlob": "1ec11600163d0c909b145adf77d80df7beb44724",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": false,
+  "unitOnlyBlob": null,
+  "extraCommits": [
+   "317f8f57ee"
+  ]
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/game-predictions/ingest-espn-odds.ts",
+  "prodBlob": "f9de43f291bfffed01887792f378f241db1efc9e",
+  "candidateBlob": "ac26f9124f0c77fc61f1b24b9cbe0772e103b5a3",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "ac26f9124f0c77fc61f1b24b9cbe0772e103b5a3",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/game-predictions/score.ts",
+  "prodBlob": "285ff877f235f63d50e9519056df0fb57b730219",
+  "candidateBlob": "e67c48357881df63e873ac0a60134f6ea8520835",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "e67c48357881df63e873ac0a60134f6ea8520835",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/ml/update-predictions-sko.ts",
+  "prodBlob": "e6a82be85964f61420c8ca6395c96e8ab9205518",
+  "candidateBlob": "e24056ebc8c677aa379ddcb9071e726d27112214",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "e24056ebc8c677aa379ddcb9071e726d27112214",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/season.ts",
+  "prodBlob": "c163e6a7d8f6783e790a062f5f1a6d0e1ce6f2d4",
+  "candidateBlob": "381178a0e57732b47dbc20e43589bd079cbc56cb",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "381178a0e57732b47dbc20e43589bd079cbc56cb",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/sustainability/rebuild-priors.ts",
+  "prodBlob": "82035d1209a24e151c30445d1a1b303d7fe9baa5",
+  "candidateBlob": "12ac31c7d23065e24712acd42cac599056256fdc",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "12ac31c7d23065e24712acd42cac599056256fdc",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/sustainability/rebuild-score.ts",
+  "prodBlob": "5b87cb85a19734ea5702ecdfc8da6be45fb7ee11",
+  "candidateBlob": "091608566d9cb090572a091f67b335091880b7b6",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "091608566d9cb090572a091f67b335091880b7b6",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/sustainability/rebuild-trend-bands.ts",
+  "prodBlob": "a0aaa8fedf511953f28ec6b32e512a204dbbac1c",
+  "candidateBlob": "a8950da7817afcd53722c66dc74c2c08f01f6203",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "a8950da7817afcd53722c66dc74c2c08f01f6203",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/sustainability/rebuild-window-z.ts",
+  "prodBlob": "18e8172fe8344dd8b7ef393ef9d18db69e88d846",
+  "candidateBlob": "913b27e39cf5abda7054cd6095921fa2c285dbec",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "913b27e39cf5abda7054cd6095921fa2c285dbec",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/api/v1/trends/skater-power.ts",
+  "prodBlob": "9e0ac082b8047879f24116ecc1ad8ec244cd048e",
+  "candidateBlob": "7ee2a72a4354a6b5a16a6d7040cc6b55a4e3db4f",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "7ee2a72a4354a6b5a16a6d7040cc6b55a4e3db4f",
+  "extraCommits": []
+ },
+ {
+  "unit": "U2",
+  "path": "web/pages/db/index.tsx",
+  "prodBlob": "89c88774214b837f61afed319b82ffffa38e7b56",
+  "candidateBlob": "06b23b1bc7e0f0941747a722479212e4ae49189e",
+  "source": "HEAD",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "06b23b1bc7e0f0941747a722479212e4ae49189e",
+  "extraCommits": []
+ },
+ {
+  "unit": "U4",
+  "path": "web/vercel.json",
+  "prodBlob": "e271079e8393c3983f5dc1887757bf76cdc2116e",
+  "candidateBlob": "e30da9ac8c0347a7a846366600e1f54698a6aab1",
+  "source": "worktree",
+  "deleted": false,
+  "unitOnly": true,
+  "unitOnlyBlob": "e30da9ac8c0347a7a846366600e1f54698a6aab1",
+  "extraCommits": [],
+  "pendingEdit": "line 32: \"5 10 * * *\" -> \"5-55/5 10 * * *\" (not yet in worktree; candidateBlob is the post-edit hash)"
+ }
+]

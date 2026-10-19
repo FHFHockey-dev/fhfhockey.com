@@ -51,15 +51,16 @@ import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import { buildShiftChartRelationshipUpsert } from "lib/projections/shiftChartRelationshipPayload";
 import {
   buildShiftRelationshipStrengthSegments,
-  fetchAllNhleShiftChartsForGame,
+  readStoredProjectionPbp,
+  readStoredProjectionShiftSnapshot,
   type NhleShiftRow,
+  type NhleShiftSource,
 } from "lib/projections/ingest/shifts";
 import {
   buildProjectionPbpSourceHash,
   buildProjectionShiftSourceHash,
 } from "lib/projections/ingest/projectionInputPersistence";
 import {
-  fetchPbpGame,
   isCompleteFinalPbpPayload,
   type PbpResponse,
 } from "lib/projections/ingest/pbp";
@@ -128,6 +129,7 @@ interface PlayerPosition {
 interface ShiftChartData {
   data: NhleShiftRow[];
   sourceShiftHash: string;
+  shiftSource: NhleShiftSource;
 }
 
 interface ConsolidatedPlayerData {
@@ -606,15 +608,20 @@ async function fetchTeamSchedule(
 }
 
 /**
- * Fetches shift chart data for a given game ID.
+ * Loads the shift rows the game's projection inputs were built from: the raw
+ * shiftcharts snapshot pinned by its materialization status, derived with the
+ * same function ingest uses, so the shift source fingerprint matches by
+ * construction. No NHL request is made.
  * @param gameId - Game ID.
  * @returns Shift chart data.
  */
-async function fetchShiftChartData(gameId: number): Promise<ShiftChartData> {
-  const allRows = await fetchAllNhleShiftChartsForGame(gameId);
-  if (allRows.length === 0) {
-    throw new Error(`No shift chart data found for game ID: ${gameId}`);
-  }
+async function fetchShiftChartData(
+  gameId: number,
+): Promise<ShiftChartData | { unavailable: string | null }> {
+  const snapshot = await readStoredProjectionShiftSnapshot(gameId);
+  const allRows = snapshot.rows;
+  // An empty feed (JSON and HTML) is an NHL availability gap, not a data fault.
+  if (allRows.length === 0) return { unavailable: snapshot.htmlFallbackError };
   const intervalRows = allRows.filter((row) => row.typeCode === 517);
   if (intervalRows.length === 0) {
     throw new Error(`No shift intervals found for game ID: ${gameId}`);
@@ -622,6 +629,7 @@ async function fetchShiftChartData(gameId: number): Promise<ShiftChartData> {
   return {
     data: intervalRows,
     sourceShiftHash: buildProjectionShiftSourceHash(allRows),
+    shiftSource: snapshot.source,
   };
 }
 
@@ -1033,6 +1041,28 @@ async function upsertShiftChartData(
 /**
  * Main function to fetch and store shift charts.
  */
+type SkippedShiftChartGame = {
+  gameId: number;
+  reason:
+    | "shift_feed_unavailable"
+    | "projection_inputs_stale"
+    | "projection_raw_snapshot_stale"
+    | "preseason_without_roster_spots";
+  detail?: string;
+};
+
+type ProcessedShiftChartGame = { gameId: number; shiftSource: NhleShiftSource };
+
+// Bounds how far past `maxGames` one run reads the queue to step over skipped
+// games; each skip costs a few database reads.
+const MAX_SKIPPED_GAMES_PER_RUN = 64;
+const STALE_INPUT_FINGERPRINT =
+  /^(PBP|Shift) source fingerprint does not match projection inputs for game \d+$|^SHIFT_RELATIONSHIP_INPUT_CAS_MISMATCH$/;
+// The RPC's raw-snapshot-current guard: a newer PBP or shiftcharts head was
+// captured after the inputs. The transaction wrote nothing; the game waits
+// for re-ingestion.
+const STALE_RAW_SNAPSHOT = /^SHIFT_RELATIONSHIP_RAW_SNAPSHOT_STALE$/;
+
 async function fetchAndStoreShiftCharts(
   targetGameId?: number,
   maxGames = 16,
@@ -1045,92 +1075,86 @@ async function fetchAndStoreShiftCharts(
   totalRowsVerified: number;
   totalRowsPruned: number;
   idempotentGames: number;
-  skippedGames: { gameId: number; reason: string }[];
+  gamesProcessed: number;
+  processedGames: ProcessedShiftChartGame[];
+  skippedGames: SkippedShiftChartGame[];
+  skipBudgetReached: boolean;
+  failedGame: { gameId: number; message: string } | null;
   error?: any;
 }> {
   let totalRowsUpserted = 0;
   let totalRowsVerified = 0;
   let totalRowsPruned = 0;
   let idempotentGames = 0;
-  const skippedGames: { gameId: number; reason: string }[] = [];
+  let gamesProcessed = 0;
+  const processedGames: ProcessedShiftChartGame[] = [];
+  let skipBudgetReached = false;
+  const skippedGames: SkippedShiftChartGame[] = [];
+  let failedGame: { gameId: number; message: string } | null = null;
   let error: any = null;
   try {
-    const gameIdSet = new Set<number>();
-    const gameInfoMap = new Map<number, GameInfo>();
-    const gamePbpMap = new Map<number, PbpResponse>();
-
     // Fetch all player positions once for the selected scope.
     const playerPositions = await fetchAllPlayerPositions();
     const unmatchedNames: string[] = [];
     const positionFallbackNames: string[] = [];
 
+    // Skipped games stay pending and sort first, so the queue is read past
+    // `maxGames` by a bounded skip budget; only processed games count against
+    // `maxGames`.
+    let expectedSeasonId: number | null = null;
+    let candidateGameIds: number[];
     if (targetGameId != null) {
-      const pbp = await fetchPbpGame(targetGameId);
-      if (pbp.id !== targetGameId || !isCompleteFinalPbpPayload(pbp)) {
-        throw new Error(
-          `PBP is not final and complete for target game ${targetGameId}`,
-        );
-      }
-      const targetSeasonId = Number(pbp.season);
-      if (!Number.isSafeInteger(targetSeasonId) || targetSeasonId <= 0) {
-        throw new Error(
-          `Invalid season identity for target game ${targetGameId}`,
-        );
-      }
-      gameIdSet.add(targetGameId);
-      gamePbpMap.set(targetGameId, pbp);
-      gameInfoMap.set(targetGameId, {
-        gameType: pbp.gameType,
-        gameDate: pbp.gameDate,
-        homeTeam: { id: pbp.homeTeam.id, abbrev: pbp.homeTeam.abbrev },
-        awayTeam: { id: pbp.awayTeam.id, abbrev: pbp.awayTeam.abbrev },
-        game_id: targetGameId,
-        season_id: targetSeasonId,
-      });
+      candidateGameIds = [targetGameId];
     } else {
-      const seasonId = (await getCurrentSeason()).seasonId;
-      const pendingGameIds = await listPendingRelationshipGameIds(
-        seasonId,
-        maxGames,
+      expectedSeasonId = (await getCurrentSeason()).seasonId;
+      candidateGameIds = await listPendingRelationshipGameIds(
+        expectedSeasonId,
+        maxGames + MAX_SKIPPED_GAMES_PER_RUN,
       );
-      for (const gameId of pendingGameIds) {
-        const pbp = await fetchPbpGame(gameId);
+    }
+
+    for (const gameId of candidateGameIds) {
+      if (gamesProcessed >= maxGames) break;
+      if (skippedGames.length >= MAX_SKIPPED_GAMES_PER_RUN) {
+        skipBudgetReached = true;
+        break;
+      }
+      try {
+        const pbp = await readStoredProjectionPbp(gameId);
         if (pbp.id !== gameId || !isCompleteFinalPbpPayload(pbp)) {
-          throw new Error(`PBP is not final and complete for game ${gameId}`);
+          throw new Error(
+            targetGameId != null
+              ? `PBP is not final and complete for target game ${gameId}`
+              : `PBP is not final and complete for game ${gameId}`,
+          );
         }
         const gameSeasonId = Number(pbp.season);
-        if (gameSeasonId !== seasonId) {
+        if (expectedSeasonId == null) {
+          if (!Number.isSafeInteger(gameSeasonId) || gameSeasonId <= 0) {
+            throw new Error(`Invalid season identity for target game ${gameId}`);
+          }
+        } else if (gameSeasonId !== expectedSeasonId) {
           throw new Error(`Season identity mismatch for game ${gameId}`);
         }
-        gameIdSet.add(gameId);
-        gamePbpMap.set(gameId, pbp);
-        gameInfoMap.set(gameId, {
+        const gameInfo: GameInfo = {
           gameType: pbp.gameType,
           gameDate: pbp.gameDate,
           homeTeam: { id: pbp.homeTeam.id, abbrev: pbp.homeTeam.abbrev },
           awayTeam: { id: pbp.awayTeam.id, abbrev: pbp.awayTeam.abbrev },
           game_id: gameId,
           season_id: gameSeasonId,
-        });
-      }
-    }
+        };
 
-    // Proceed with processing the collected game IDs
-    for (const gameId of gameIdSet) {
-      try {
         const shiftChartData = await fetchShiftChartData(gameId);
-
-        if (!shiftChartData || !shiftChartData.data) {
-          throw new Error(`No shift chart data found for game ID: ${gameId}`);
-        }
-
-        const gameInfo = gameInfoMap.get(gameId);
-        if (!gameInfo) {
-          throw new Error(`No game info found for game ID: ${gameId}`);
-        }
-        const pbp = gamePbpMap.get(gameId);
-        if (!pbp) {
-          throw new Error(`No PBP source found for game ID: ${gameId}`);
+        if ("unavailable" in shiftChartData) {
+          skippedGames.push({
+            gameId,
+            reason: "shift_feed_unavailable",
+            ...(shiftChartData.unavailable
+              ? { detail: shiftChartData.unavailable }
+              : {}),
+          });
+          continue;
         }
 
         // Some preseason PBP payloads carry no roster spots. Without them no
@@ -1145,32 +1169,43 @@ async function fetchAndStoreShiftCharts(
           continue;
         }
 
-        const {
-          unmatchedNames: unmatched,
-          positionFallbackNames: positionFallbacks,
-          upsertCount,
-          verifiedCount,
-          prunedCount,
-          idempotent,
-        } = await upsertShiftChartData(
-          shiftChartData,
-          gameInfo,
-          playerPositions,
-          currentRoster.positions,
-          currentRoster.expectedPbpRawPayloadHash,
-          pbp,
-        );
-        unmatchedNames.push(...unmatched);
-        positionFallbackNames.push(...positionFallbacks);
-        totalRowsUpserted += upsertCount;
-        totalRowsVerified += verifiedCount;
-        totalRowsPruned += prunedCount;
-        if (idempotent) idempotentGames += 1;
+        let materialized: Awaited<ReturnType<typeof upsertShiftChartData>>;
+        try {
+          materialized = await upsertShiftChartData(
+            shiftChartData,
+            gameInfo,
+            playerPositions,
+            currentRoster.positions,
+            currentRoster.expectedPbpRawPayloadHash,
+            pbp,
+          );
+        } catch (err: any) {
+          // The projection inputs changed underneath this run. Nothing was
+          // written; the game waits for its inputs to settle or be re-ingested.
+          if (STALE_INPUT_FINGERPRINT.test(err?.message ?? "")) {
+            skippedGames.push({ gameId, reason: "projection_inputs_stale" });
+            continue;
+          }
+          if (STALE_RAW_SNAPSHOT.test(err?.message ?? "")) {
+            skippedGames.push({ gameId, reason: "projection_raw_snapshot_stale" });
+            continue;
+          }
+          throw err;
+        }
+        unmatchedNames.push(...materialized.unmatchedNames);
+        positionFallbackNames.push(...materialized.positionFallbackNames);
+        totalRowsUpserted += materialized.upsertCount;
+        totalRowsVerified += materialized.verifiedCount;
+        totalRowsPruned += materialized.prunedCount;
+        if (materialized.idempotent) idempotentGames += 1;
+        gamesProcessed += 1;
+        processedGames.push({ gameId, shiftSource: shiftChartData.shiftSource });
 
         // Optional: Delay between requests to avoid rate limiting
         await new Promise((resolve) => setTimeout(resolve, 100));
-      } catch (err) {
+      } catch (err: any) {
         console.error(`Error processing game ID ${gameId}:`, err);
+        failedGame = { gameId, message: err?.message ?? String(err) };
         throw err;
       }
     }
@@ -1181,14 +1216,20 @@ async function fetchAndStoreShiftCharts(
       success: !error,
       message: error
         ? error.message || "An error occurred."
-        : "Successfully processed all shift charts.",
+        : skippedGames.length > 0
+          ? `Processed ${gamesProcessed} shift-chart games; skipped ${skippedGames.length}.`
+          : "Successfully processed all shift charts.",
       unmatchedNames: Array.from(new Set(unmatchedNames)),
       positionFallbackNames: Array.from(new Set(positionFallbackNames)),
       totalRowsUpserted,
       totalRowsVerified,
       totalRowsPruned,
       idempotentGames,
+      gamesProcessed,
+      processedGames,
       skippedGames,
+      skipBudgetReached,
+      failedGame,
       error,
     };
   } catch (err: any) {
@@ -1202,7 +1243,11 @@ async function fetchAndStoreShiftCharts(
       totalRowsVerified,
       totalRowsPruned,
       idempotentGames,
+      gamesProcessed,
+      processedGames,
       skippedGames,
+      skipBudgetReached,
+      failedGame,
       error: err,
     };
   }
@@ -1261,7 +1306,11 @@ async function handleShiftChartsRequest(
       rowsVerified: result.totalRowsVerified,
       rowsPruned: result.totalRowsPruned,
       idempotentGames: result.idempotentGames,
+      gamesProcessed: result.gamesProcessed,
+      processedGames: result.processedGames,
       skippedGames: result.skippedGames,
+      skipBudgetReached: result.skipBudgetReached,
+      failedGame: result.failedGame,
     };
     if (result.success) {
       responseBody = {
@@ -1273,7 +1322,11 @@ async function handleShiftChartsRequest(
         rowsVerified: result.totalRowsVerified,
         rowsPruned: result.totalRowsPruned,
         idempotentGames: result.idempotentGames,
+        gamesProcessed: result.gamesProcessed,
+        processedGames: result.processedGames,
         skippedGames: result.skippedGames,
+        skipBudgetReached: result.skipBudgetReached,
+        failedGame: result.failedGame,
         targetGameId: targetGameId ?? null,
       };
       res.status(200).json(responseBody);
@@ -1289,7 +1342,11 @@ async function handleShiftChartsRequest(
         rowsVerified: result.totalRowsVerified,
         rowsPruned: result.totalRowsPruned,
         idempotentGames: result.idempotentGames,
+        gamesProcessed: result.gamesProcessed,
+        processedGames: result.processedGames,
         skippedGames: result.skippedGames,
+        skipBudgetReached: result.skipBudgetReached,
+        failedGame: result.failedGame,
         targetGameId: targetGameId ?? null,
       };
       res.status(500).json(responseBody);

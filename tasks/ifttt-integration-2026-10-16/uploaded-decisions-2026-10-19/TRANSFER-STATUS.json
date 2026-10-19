@@ -1,0 +1,18 @@
+{
+  "attachmentFileId": "file_00000000797081f586ab236c93304a72",
+  "fileName": "FHFH-Decisions-integration-preparation-2026-10-16.zip",
+  "reportedBytes": 36250,
+  "action": "supported materialization of the exact newly supplied Decisions attachment into a new task-only directory",
+  "attempts": 1,
+  "outcome": "failed",
+  "error": "library file transfer failed: download failed",
+  "denied": false,
+  "pending": false,
+  "uncertainOutcome": false,
+  "readableArchiveInstalled": false,
+  "attachmentHashVerified": false,
+  "archivePathsInspected": false,
+  "extracted": false,
+  "installedOrExecuted": false,
+  "integrationStatus": "The correctly named attachment remains unavailable as readable local bytes. Recovery-fix implementation proceeds independently; no provider/package integration attempted."
+}

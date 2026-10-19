@@ -1,0 +1,30 @@
+{
+  "held": {
+    "owner": null,
+    "status": "failed",
+    "job_key": "ifttt-review-v1:synthetic-sidecar:878f9d65-f067-467f-b4de-0a8d74e17ac6",
+    "payload": {
+      "reason": "packet_byte_limit",
+      "policyId": "synthetic-sidecar",
+      "protocol": "ifttt-review-sidecar-hold-v1",
+      "receiptId": "878f9d65-f067-467f-b4de-0a8d74e17ac6",
+      "canPublish": false,
+      "receiptRef": {
+        "eventId": "5486400d-f9ab-4f74-8e36-1a6c5556064e",
+        "eventTable": "line_source_ifttt_events"
+      },
+      "packetBytes": 91779,
+      "inputVersion": "ifttt-review-sidecar-v1",
+      "packetSha256": "56ca16a8cfc30ded4ef44639fcb9f2a72a752f34adae676e01aa00ada33bbd3e",
+      "canChangeStatus": false,
+      "providerDispatchEnabled": false
+    },
+    "attempts": 0,
+    "updated_at": "2026-10-19T12:48:10.458405-04:00",
+    "failure_stage": "review_preparation_packet_bytes",
+    "next_attempt_at": "2026-10-19T12:48:10.458405-04:00",
+    "lease_expires_at": null
+  },
+  "originalRetainedBytes": 30000,
+  "sourceStateUnchanged": true
+}

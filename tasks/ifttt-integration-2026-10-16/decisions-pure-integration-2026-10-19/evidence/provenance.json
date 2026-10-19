@@ -1,0 +1,9 @@
+{
+  "zip": "/Users/tim/Downloads/FHFH-Decisions-integration-preparation-2026-10-16.zip",
+  "zipSha256": "50aa1026463e4e72253690ebdc2817156f0f6e06b90f582f91a59ce2d3452c30",
+  "adapterSha256": "055bc80ccf9874de8a976da6106bc34af15e424d6b905d39fccf57ecfd2b92a1",
+  "runtimeCopy": "web/lib/sources/decisionsReference/adapter.mjs",
+  "copiedTestsByteIdentical": true,
+  "baselineHead": "b47c512fbf5a612de5ffe5be68f7a7e485183f55",
+  "volumeFilesVendored": false
+}

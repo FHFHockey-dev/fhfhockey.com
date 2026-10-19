@@ -914,3 +914,50 @@ The contradicted reads are:
 - `nhl_api_game_roster_spots`: **0 rows under any hash**
 
 **Verdict: confirmed.** The game has an empty roster scope: its preseason play-by-play stored no `rosterSpots`. This is not a hash mismatch, so it does not point to an ingest bug that would also hit regular-season games.
+
+## R3 catch-up run 1 and roster-hash read (2026-10-19, ~13:20Z, Chef)
+
+- **Catch-up run 1** (TJ ran `update-shifts?action=all&maxGames=50`; curl got 500). Audit row at 13:19:39Z: failure, 500, 8.8 s, "Invalid relationship roster scope for game 2026020001". rowsAffected 0, `skippedGames: []`.
+  - R3's queue rule worked: the regular-season opener is now first.
+  - The regular-season game also has no roster scope, so it fails closed as designed.
+  - Runs 2 and 3 were not started.
+- **Read** (one SELECT, 8 s timeout), per game type, over `projection_game_materialization_status` against `nhl_api_game_roster_spots`:
+
+| Type | Status rows | No roster rows (any hash) | No roster rows under current `pbp_raw_payload_hash` |
+|---|---|---|---|
+| 01 preseason | 42 | 26 | 27 |
+| 02 regular | 87 | **0** | **53** |
+
+**Verdict:** for 53 of the 87 regular-season games, the roster rows exist only under an older play-by-play hash. The stored PBP payload hash advanced (a re-capture) without the roster spots being re-written for it. This is an ingest or normalization defect, and it blocks the relationship queue for the regular season. Preseason has the same plus genuinely empty rosters.
+
+### Q-1: direction of the roster-hash mismatch (Chef, one SELECT, 8 s timeout)
+
+**Read:** the 53 regular-season games with no roster rows under their current status hash, grouped by status = head, normalisation status, normalisation hash = status hash, and roster hash = normalisation hash.
+
+**Result:** one group covers all **53** games (2026020001–2026020120): `status_matches_head = true`, normalisation `stale`, `norm_matches_status = false`, `roster_matches_norm = true`.
+
+**Verdict:** every game is the expected stale-normalisation case from `shift-charts-scope-2026-10-19/R3-ROSTER-HASH.md`. The DB-only `sweep-gamecenter-normalization` can repair all of them, and none needs a re-capture.
+
+## Migration 86 preflight: hosted `capture_projection_raw_source_snapshots_v1` (Chef, ~18:10Z, one read-only SELECT)
+
+TJ, quoted exactly: "Yes: run the read-only preflight comparing the hosted capture_projection_raw_source_snapshots_v1 body with the 20261011115124 version, and report before applying anything."
+
+**Hosted function:**
+- prosrc md5 `990b756c5c6499f7101741bf316311e1`, 7,423 characters. This equals the **`20260720105524`** body.
+- Same 9-argument signature as the local files.
+- EXECUTE: service_role only.
+- Not SECURITY DEFINER; config `search_path=""`, `lock_timeout=5s`, `statement_timeout=60s`.
+
+**Ledger:** `20260720105524` is present. **`20261011115124` and `20261011160000` are absent.**
+
+**Local bodies:**
+
+| Migration | prosrc md5 | Length |
+|---|---|---|
+| `20260720105524` | `990b756c…` | 7,423 |
+| `20261011115124` | `f3b89dd8…` | 7,031 |
+| `20261019180000` (order 86) | `4750518d…` | 7,080 |
+
+**What `20261011115124` changes:** it drops the duplicate-row check (`v_shift_distinct_count <> v_shift_count`), so raw shift snapshots may contain exact duplicate occurrences. That is a relaxation: everything accepted today is still accepted.
+
+**Implication:** migration 86 is a full-body `create or replace` built on `20261011115124`. Applying it alone would also apply that duplicate-row relaxation and leave the ledger skipping `20261011115124`. Nothing has been applied.
