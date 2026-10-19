@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { ContributionDay, PlayerContribution } from "lib/rosterScheduleOptimizer/contributionLedger";
 import type { PlanningPlayer, RosterEntry } from "lib/rosterScheduleOptimizer/planningTypes";
 import InfoTooltip from "./InfoTooltip";
@@ -22,6 +23,7 @@ const day = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString("
 
 /** Days left this week when each lineup player doesn't count: no game (off) plus games he sits (DUST). Most first. */
 export default function BenchDays({ roster, players, contributions, today, onSelect, visible = 5 }: Props) {
+  const [showAll, setShowAll] = useState(false);
   const rows = roster.filter(entry => entry.position === "active" || entry.position === "bench").flatMap(entry => {
     const player = players.find(row => row.id === entry.playerId), contribution = contributions.get(entry.playerId);
     if (!player || !contribution) return [];
@@ -42,9 +44,14 @@ export default function BenchDays({ roster, players, contributions, today, onSel
     <strong className={styles.count} title={`${row.off + row.sat} of ${row.days.length} days not counting`}>{row.off + row.sat}<small>/{row.days.length}</small></strong>
     <small className={styles.split}>{row.off} off · {row.sat} sat</small>
   </li>;
+  // The whole section folds from its header; a long list expands and shrinks from a button at its end.
   return <section className={styles.benchDays} aria-label="Bench days">
-    <header><strong>Bench days</strong><InfoTooltip label="About bench days">Days left this week when a player doesn&apos;t count for you: no game that night (off) plus games he sits on your bench (DUST). Most first, so the top name contributes least this week. Green: in the lineup · amber: game on the bench · grey: no game.</InfoTooltip></header>
-    <ol>{rows.slice(0, visible).map(item)}</ol>
-    {rows.length > visible && <details><summary>All players ({rows.length})</summary><ol start={visible + 1}>{rows.slice(visible).map(item)}</ol></details>}
+    <details open>
+      <summary><strong>Bench days</strong><span className={styles.lead}>{rows[0].player.name} counts least</span></summary>
+      <p className={styles.help}>Days left this week when a player doesn&apos;t count: no game (off) plus games on your bench (sat). <InfoTooltip label="About bench days">Most first, so the top name contributes least this week. Green: in the lineup · amber: game on the bench · grey: no game.</InfoTooltip></p>
+      <ol>{(showAll ? rows : rows.slice(0, visible)).map(item)}</ol>
+      {rows.length > visible && <button type="button" className={styles.more} aria-expanded={showAll} onClick={() => setShowAll(value => !value)}>
+        {showAll ? "Show fewer" : `Show all (${rows.length})`}</button>}
+    </details>
   </section>;
 }

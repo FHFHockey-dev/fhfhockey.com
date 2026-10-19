@@ -496,6 +496,8 @@ function refineOutcomeLineup(
   return best;
 }
 
+/** Provider injury designations that mean the player won't play (day-to-day still might). */
+const OUT_INJURY_STATUSES = new Set(["IR", "IR-LT", "IR-NR", "O"]);
 function prepareEvaluation(snapshot: PlanningSnapshot, playerIds?: ReadonlySet<string>) {
   snapshot = resolvePlanningContributions(sanitizeForecastInputs(snapshot), playerIds ? { playerIds } : undefined);
   const players = new Map(snapshot.players.map(player => [player.id, player]));
@@ -536,6 +538,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
   let scheduledGames = 0, forecastedOpportunities = 0;
   const weekly = new Map<string, Map<string, string>>();
   const lineupPeriodForDate = (date: string) => lineupPeriodAtDate(date, snapshot.rules.lineupPeriods, snapshot.context.timeZone);
+  const injuredOut = new Set<string>();
   for (const date of dates) {
     const dayGames = games.filter(game => game.date === date);
     const plays: Play[] = [];
@@ -543,6 +546,8 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
       const player = players.get(id);
       if (!player || player.teamAbbreviation !== game.teamAbbreviation || ["IR", "IR+", "NA"].includes(member.position) || time(member.since) > time(gameTime(game, snapshot.context.timeZone))) continue;
       if (!game.startsAt && time(member.since) >= time(zonedMidnight(game.date, snapshot.context.timeZone))) continue;
+      // Out per the provider (IR/O): not a lineup option, so his missing projection can't block the totals.
+      if (player.injury && OUT_INJURY_STATUSES.has(player.injury.status.toUpperCase())) { injuredOut.add(player.name); continue; }
       const forecast = forecasts.get(`${id}:${game.id}`) ?? null;
       if (forecast?.conditioning === "unconditional") forecastedOpportunities++;
       plays.push({ player, game, forecast });
@@ -551,6 +556,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
     playsByDate.set(date, plays);
     scheduledGames += plays.length;
   }
+  if (injuredOut.size) limitations.add(`Not lined up while injured (provider IR/out): ${[...injuredOut].sort().join(", ")}.`);
   // Record game-time ownership before choosing a weekly lineup. The mutable
   // timeline cannot answer an earlier lock-time query after a later transaction.
   for (const date of dates) {
@@ -1017,7 +1023,12 @@ function* extensions(snapshot: PlanningSnapshot, intent: PlanIntent, prior: Plan
     if (step.type === "drop") owned.delete(step.playerId);
   }
   const dates = [...new Set(snapshot.games.filter(game => game.status === "scheduled" && game.date >= snapshot.context.startDate && game.date <= snapshot.context.endDate && eligibleGame(game, snapshot)).map(game => game.date))].sort();
-  const drops = snapshot.players.filter(player => owned.has(player.id) && player.canDrop === true && !intent.protectedPlayerIds.includes(player.id))
+  // Dropping a player held in IR/IR+/NA frees no active or bench spot, so it can't make room for an add. A player out
+  // injured projects nothing this week, which says nothing about his value on return, so he is never an automatic drop.
+  const reserved = new Set([...snapshot.roster.filter(entry => ["IR", "IR+", "NA"].includes(entry.position)).map(entry => entry.playerId),
+    ...prior.filter(step => step.type === "reserve").map(step => step.playerId)]);
+  const drops = snapshot.players.filter(player => owned.has(player.id) && !reserved.has(player.id) && player.canDrop === true
+    && !(player.injury && OUT_INJURY_STATUSES.has(player.injury.status.toUpperCase())) && !intent.protectedPlayerIds.includes(player.id))
     .sort((a, b) => (dropOrder?.get(a.id) ?? Infinity) - (dropOrder?.get(b.id) ?? Infinity)
       || (a.holdValue ?? 0) - (b.holdValue ?? 0) || a.id.localeCompare(b.id));
   const proposals: Array<{ player: PlanningPlayer; date: string; step: PlanStep }> = [];
@@ -1038,13 +1049,16 @@ function* extensions(snapshot: PlanningSnapshot, intent: PlanIntent, prior: Plan
       conditional: player.availability === "waivers" || time(at) > time(snapshot.context.asOf), dependsOn: prior.length ? [prior[prior.length - 1].id] : [] };
     proposals.push({ player, date, step });
   }
+  const reserveUsed = (position: string) => snapshot.roster.filter(entry => entry.position === position && owned.has(entry.playerId)).length
+    + prior.filter(step => step.type === "reserve" && step.reservePosition === position).length;
   // Give every candidate/date a chance before expanding the long tail of drop choices.
   for (const { player, date, step } of proposals) {
     yield [step];
     for (const entry of [...snapshot.roster].sort((a, b) => a.playerId.localeCompare(b.playerId))) {
       const reservePlayer = snapshot.players.find(item => item.id === entry.playerId);
       if (!reservePlayer || !owned.has(entry.playerId) || ["IR", "IR+", "NA"].includes(entry.position)) continue;
-      for (const position of [...reservePlayer.reserveEligibility].sort()) if (snapshot.rules.rosterSlots[position]) {
+      // Only a reserve slot with room: a full IR+ would make every such proposal illegal and spend the budget.
+      for (const position of [...reservePlayer.reserveEligibility].sort()) if ((snapshot.rules.rosterSlots[position] ?? 0) > reserveUsed(position)) {
         const prerequisite: PlanStep = { id: `reserve:${entry.playerId}:${prior.length}:${date}`, type: "reserve", playerId: entry.playerId, reservePosition: position, at: step.at, effectiveAt: step.at, conditional: false, dependsOn: step.dependsOn };
         yield [prerequisite, { ...step, dependsOn: [prerequisite.id] }];
       }

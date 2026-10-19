@@ -131,6 +131,18 @@ export function opponentTilts(rows: Row[], seasonId: number): Map<string, Tilt> 
   }
   return tilts;
 }
+/** A team's chance to win (ties split for overtime) from both teams' xG, as Poisson goals; home ice tilts the rates
+ * by 4% (about 54% home wins between equal teams). Neutral 0.5 when either team's strength is unknown. */
+export function teamWinProbability(own: TeamStrengthPrior | undefined, other: TeamStrengthPrior | undefined, isHome: boolean): number {
+  if (!own?.xgfPerGame || !own.xgaPerGame || !other?.xgfPerGame || !other.xgaPerGame) return 0.5;
+  const venue = isHome ? 1.04 : 0.96;
+  const scored = (own.xgfPerGame + other.xgaPerGame) / 2 * venue, allowed = (other.xgfPerGame + own.xgaPerGame) / 2 / venue;
+  const poisson = (rate: number) => { const out: number[] = [Math.exp(-rate)]; for (let k = 1; k <= 12; k++) out.push(out[k - 1] * rate / k); return out; };
+  const a = poisson(scored), b = poisson(allowed);
+  let win = 0, tie = 0;
+  for (let i = 0; i <= 12; i++) for (let j = 0; j <= 12; j++) { if (i > j) win += a[i] * b[j]; else if (i === j) tie += a[i] * b[j]; }
+  return Math.min(0.95, Math.max(0.05, win + tie / 2));
+}
 /** Multipliers that move a skater line between game contexts, from FORGE's own rest/home model. */
 function restScale(from: GameContext | null, to: GameContext | null) {
   if (!from || !to) return null;
@@ -258,6 +270,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   const rates = inputs.seasonTotals ? seasonRates(inputs.seasonTotals, seasonId) : null;
   const priors = teamStrengthPriors(inputs.teamPriors ?? [], inputs.lastSeasonTeams ?? []);
   const tilts = opponentTilts(inputs.positionAllowed ?? [], seasonId);
+  let estimatedWins = 0;
   const tiltBetween = (player: PlanningPlayer, from: string | undefined, to: string | undefined): Tilt | undefined => {
     const group = player.eligiblePositions.some(position => position.toUpperCase() === "D") ? "D" : "F";
     const a = from ? tilts.get(`${from.toUpperCase()}|${group}`) : undefined, b = to ? tilts.get(`${to.toUpperCase()}|${group}`) : undefined;
@@ -374,7 +387,11 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       const to = from ? context(goalies[0].teamAbbreviation, game.opponent) : null;
       const fromGame = String(source.game_id) === game.id ? null : gameContext(source.game_id, teamId), toGame = fromGame ? gameContext(game.id, teamId) : null;
       const venue = fromGame && toGame ? { from: goalieShotContext(fromGame), to: goalieShotContext(toGame) } : undefined;
-      const line = from && to ? retargetGoalieLine(goalieLine(source), from, to, venue) : goalieLine(source);
+      const forgeLine = from && to ? retargetGoalieLine(goalieLine(source), from, to, venue) : goalieLine(source);
+      // FORGE rarely fills a goalie's win chance; estimate the team's from both teams' xG so wins can be scored.
+      const winChance = forgeLine.WINS_GOALIE === null ? teamWinProbability(priors.get(goalies[0].teamAbbreviation!.toUpperCase()), priors.get(game.opponent.toUpperCase()), game.home) : null;
+      if (winChance !== null) estimatedWins++;
+      const line = winChance === null ? forgeLine : { ...forgeLine, WINS_GOALIE: round(winChance), LOSSES_GOALIE: round(1 - winChance) };
       emit(goalie, game, runs.get(source.run_id)!, Object.fromEntries(Object.entries(line).map(([key, value]) => [key, value === null ? null : round(value * p)])),
         round(p), line, confirmedId === String(goalie.nhlId));
     }
@@ -391,6 +408,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       : "Season rates could not be read, so penalty minutes, plus-minus, shorthanded points, game-winning goals and faceoffs count as 0.",
     priors.size ? `Future games move each FORGE line to that game's opponent with FORGE's team-strength adjustment (team xG for and against, ${priors.size} teams${inputs.lastSeasonTeams?.length ? `, last season blended in as ${LAST_SEASON_PRIOR_GAMES} games` : ""})${scheduleById.size ? ", plus FORGE's home-ice and rest model (back-to-backs included); a goalie's start chance drops on the second night of a back-to-back" : ""}${tilts.size ? ", and each opponent's tilt toward forwards or defencemen (points and shots allowed by position vs league, shrunk)" : ""}.`
       : "Team strength could not be read, so future games reuse each FORGE line without an opponent adjustment.",
+    ...(estimatedWins ? ["Goalie wins use the team's win chance from both teams' xG (Poisson goals, home ice, ties split) where FORGE gives none."] : []),
     "Goalie starts use each goalie's last-10 start share (season share when missing), or FORGE's own starter probability for an already projected game. Per-start lines come from his latest FORGE line, or his team's when he has none.",
     inputs.goalieNews ? `Goalie news (IFTTT, accepted automatically): ${news.confirmed} confirmed, ${news.speculative} likely or projected (start chance at least ${FORGE_DAILY_BRIDGE_GOALIE_NEWS_FLOORS.likely * 100}% / ${FORGE_DAILY_BRIDGE_GOALIE_NEWS_FLOORS.projected * 100}%), ${news.ruledOut} ruled out${news.disputed ? `, ${news.disputed} disputed and ignored` : ""}.`
       : "Goalie news could not be read; start chances use start shares only.",

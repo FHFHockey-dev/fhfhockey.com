@@ -34,11 +34,16 @@ describe("Bench days", () => {
     expect(onSelect).toHaveBeenCalledWith("a");
   });
 
-  it("keeps the top rows visible and the rest behind All players", () => {
+  it("shows the top rows and toggles the rest from a button at the end", () => {
     const players = Array.from({ length: 7 }, (_, index) => player(`p${index}`, `Player ${index}`));
     const roster: RosterEntry[] = players.map(row => ({ playerId: row.id, position: "bench" }));
     const contributions = new Map(players.map(row => [row.id, contribution(row.id, ["no_game", "active"])]));
     render(<BenchDays roster={roster} players={players} contributions={contributions} today="2026-10-18" />);
-    expect(screen.getByText("All players (7)")).toBeTruthy();
+    const list = () => within(screen.getByRole("region", { name: "Bench days" })).getAllByRole("listitem");
+    expect(list()).toHaveLength(5);
+    fireEvent.click(screen.getByRole("button", { name: "Show all (7)" }));
+    expect(list()).toHaveLength(7);
+    fireEvent.click(screen.getByRole("button", { name: "Show fewer" }));
+    expect(list()).toHaveLength(5);
   });
 });

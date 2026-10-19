@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import { candidateHorizonPoints } from "lib/rosterScheduleOptimizer/planning";
 import type { PlanningGame, PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
-import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_VERSION, opponentTilts } from "./forgeDailyBridge";
+import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_VERSION, opponentTilts, teamWinProbability, type ForgeDailyBridgeInputs } from "./forgeDailyBridge";
 
 const now = new Date("2026-10-19T18:00:00Z");
 const policy = forecastCalendarPolicy(14);
@@ -174,6 +174,23 @@ describe("FORGE daily bridge", () => {
       .forecasts.find(row => row.playerId === "s1" && row.gameId === "2")!.stats.GOALS!;
     // s1 is a centre: MTL feeds forwards, SJS feeds defencemen, so his line drops for the SJS game.
     expect(goals({ positionAllowed })).toBeLessThan(goals({}));
+  });
+
+  it("estimates a goalie's win chance from team strength when FORGE leaves it blank", () => {
+    const even = { source: "nhl_team_data" as const, sourceDate: null, xga: 90, xgaPerGame: 3, xgfPerGame: 3 };
+    expect(teamWinProbability(even, even, true)).toBeGreaterThan(0.52);
+    expect(teamWinProbability(even, even, true)).toBeLessThan(0.56);
+    expect(teamWinProbability(even, even, false)).toBeCloseTo(1 - teamWinProbability(even, even, true), 2);
+    // A stronger team on the road still beats an even matchup on the road.
+    expect(teamWinProbability({ ...even, xgfPerGame: 3.6, xgaPerGame: 2.6 }, even, false)).toBeGreaterThan(teamWinProbability(even, even, false) + 0.05);
+    expect(teamWinProbability(undefined, even, true)).toBe(0.5);
+    const base: ForgeDailyBridgeInputs = inputs();
+    base.goalies = base.goalies.map(row => ({ ...row, proj_win_prob: null }));
+    const { forecasts, limitations } = buildForgeDailyBridgeForecasts(base, players, games, now, 20262027, policy);
+    const g1 = forecasts.find(row => row.playerId === "g1" && row.gameId === "2")!;
+    expect(g1.conditionalStats!.WINS_GOALIE).toBe(0.5); // no team-strength rows in this fixture
+    expect(g1.stats.WINS_GOALIE).toBeCloseTo(0.5 * g1.startProbability!, 3);
+    expect(limitations.some(line => line.startsWith("Goalie wins use the team's win chance"))).toBe(true);
   });
 
   it("produces forecasts the planner accepts for league points", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { candidateMetrics, candidateActivePoints, candidateHorizonPoints, evaluatePlan, planRoster, scheduleFits } from "./planning";
+import { candidateAcquisitionSteps, candidateMetrics, candidateActivePoints, candidateHorizonPoints, evaluatePlan, planRoster, scheduleFits } from "./planning";
 import { comparePlanSensitivity } from "../player-forecasts/planComparison";
 import { snapshotSchema } from "../in-season/workspaceSchema";
 import { resolvePlanningContributions } from "../player-forecasts/planningContributions";
@@ -1685,6 +1685,35 @@ describe("lineup goal", () => {
     const result = planRoster(data, { ...intent, objective: "outcome" }, { maxSteps: 0 });
     expect(result.selected.objective).toBe("agp");
     expect(result.search.limitations).toContain("Best projected points needs projections for your whole lineup; planning for most starts until then.");
+  });
+});
+
+describe("injured players", () => {
+  it("doesn't line up a player the provider lists as out, and says who was held out", () => {
+    const data = snapshot();
+    data.players = data.players.map(row => row.id === "b" ? { ...row, injury: { status: "IR", label: "Injured Reserve", note: "Upper Body" } } : row);
+    const result = planRoster(data, intent, { maxSteps: 0 });
+    expect(result.selected.assignments.some(row => row.playerId === "b")).toBe(false);
+    expect(result.selected.limitations.some(line => line.includes("Not lined up while injured") && line.includes("b"))).toBe(true);
+    // Day-to-day is still a lineup option.
+    data.players = data.players.map(row => row.id === "b" ? { ...row, injury: { status: "DTD", label: "Day-to-Day", note: null } } : row);
+    expect(planRoster(data, intent, { maxSteps: 0 }).selected.assignments.some(row => row.playerId === "b")).toBe(true);
+  });
+
+  it("never proposes dropping an injured or IR-slotted player, or a move into a full IR+ slot", () => {
+    const data = snapshot();
+    data.players = [...data.players.map(row => row.id === "b"
+      ? { ...row, injury: { status: "IR", label: "Injured Reserve", note: null }, reserveEligibility: ["IR+" as const] } : row), player("d", "D")];
+    data.roster = [...data.roster, { playerId: "d", position: "IR+" }];
+    data.rules.rosterSlots = { ...data.rules.rosterSlots, "IR+": 1 };
+    const proposals = (snap: PlanningSnapshot) => [...candidateAcquisitionSteps(snap, intent, snap.players.find(row => row.id === "c")!)];
+    const full = proposals(data);
+    expect(full.flat().some(step => step.type === "reserve")).toBe(false);
+    expect(full.flat().flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : [])).toEqual(expect.arrayContaining(["a"]));
+    expect(full.flat().some(step => step.dropPlayerId === "b" || step.dropPlayerId === "d")).toBe(false);
+    // With the IR+ slot free, moving him there to make room is a proposal again.
+    data.roster = data.roster.filter(entry => entry.playerId !== "d");
+    expect(proposals(data).flat().some(step => step.type === "reserve" && step.playerId === "b")).toBe(true);
   });
 });
 
