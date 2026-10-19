@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import supabase from "lib/supabase/server";
 import type { Json } from "lib/supabase/database-generated.types";
 
@@ -6,6 +8,38 @@ function assertSupabase() {
 }
 
 export const RUN_ACTIVE_WINDOW_MS = 10 * 60 * 1000;
+
+/**
+ * Resumable runs keep one run_id per as_of_date and scope across invocations.
+ * `metrics.resume` holds the lease and the finished game ids. A run stopped by
+ * its deadline stays `running` with the lease released, so the next invocation
+ * projects only the remaining games. Readers only select `succeeded` runs.
+ */
+export const RUN_RESUME_VERSION = "forge-run-resume-v1";
+// A paused run older than this is failed rather than resumed with newer inputs.
+export const RUN_RESUME_MAX_AGE_MS = 2 * 60 * 60 * 1000;
+// The lease outlives the invocation deadline, so a run whose invocation was
+// killed frees up shortly after the kill.
+export const RUN_LEASE_GRACE_MS = 60_000;
+
+type RunResumeState = {
+  version: typeof RUN_RESUME_VERSION;
+  scope_key: string;
+  lease_owner: string;
+  lease_expires_at: string;
+  completed_game_ids: number[];
+  invocations: number;
+};
+
+export type ForgeRunClaim = {
+  runId: string;
+  scopeKey: string;
+  leaseOwner: string;
+  resumed: boolean;
+  invocations: number;
+  completedGameIds: number[];
+  priorMetrics: { [key: string]: Json | undefined };
+};
 
 type ForgeRunLifecycleRow = {
   run_id: string;
@@ -78,9 +112,74 @@ async function failStaleRunningRun(row: ForgeRunLifecycleRow, nowMs: number) {
   if (error) throw error;
 }
 
-export async function createRun(asOfDate: string): Promise<string> {
-  assertSupabase();
-  const nowMs = Date.now();
+export function readRunResumeState(metrics: Json | null): RunResumeState | null {
+  const resume = isJsonObject(metrics) ? (metrics.resume ?? null) : null;
+  if (
+    !isJsonObject(resume) ||
+    resume.version !== RUN_RESUME_VERSION ||
+    typeof resume.scope_key !== "string" ||
+    typeof resume.lease_owner !== "string" ||
+    typeof resume.lease_expires_at !== "string" ||
+    !Array.isArray(resume.completed_game_ids)
+  ) {
+    return null;
+  }
+  return {
+    version: RUN_RESUME_VERSION,
+    scope_key: resume.scope_key,
+    lease_owner: resume.lease_owner,
+    lease_expires_at: resume.lease_expires_at,
+    completed_game_ids: resume.completed_game_ids
+      .map(Number)
+      .filter(Number.isSafeInteger),
+    invocations: Number.isSafeInteger(resume.invocations)
+      ? Number(resume.invocations)
+      : 1
+  };
+}
+
+/** A resumable run is active while its lease holds; any other by recent activity. */
+export function isRunLeaseActive(
+  row: Pick<ForgeRunLifecycleRow, "updated_at" | "created_at" | "metrics">,
+  nowMs = Date.now()
+): boolean {
+  const resume = readRunResumeState(row.metrics);
+  if (!resume) return !isRunningRunStale(row, nowMs, RUN_ACTIVE_WINDOW_MS);
+  const expiresAtMs = Date.parse(resume.lease_expires_at);
+  return Number.isFinite(expiresAtMs) && expiresAtMs > nowMs;
+}
+
+/** A paused resumable run waits for its next invocation instead of being failed. */
+function isPausedResumableRun(row: ForgeRunLifecycleRow, nowMs: number) {
+  const createdAtMs = row.created_at ? Date.parse(row.created_at) : Number.NaN;
+  return (
+    readRunResumeState(row.metrics) != null &&
+    !isRunLeaseActive(row, nowMs) &&
+    Number.isFinite(createdAtMs) &&
+    nowMs - createdAtMs <= RUN_RESUME_MAX_AGE_MS
+  );
+}
+
+export function buildResumableRunScopeKey(
+  horizonGames: number,
+  gameIds: readonly number[] = []
+) {
+  const ids = [...new Set(gameIds)].sort((a, b) => a - b);
+  return `h${horizonGames}:${ids.length ? ids.join(",") : "full"}`;
+}
+
+export function resumableRunLeaseExpiresAt(
+  deadlineMs: number | undefined,
+  nowMs = Date.now()
+) {
+  return new Date(
+    deadlineMs != null && Number.isFinite(deadlineMs)
+      ? deadlineMs + RUN_LEASE_GRACE_MS
+      : nowMs + RUN_ACTIVE_WINDOW_MS
+  ).toISOString();
+}
+
+async function readRunningRuns(asOfDate: string) {
   const { data: runningRows, error: runningError } = await supabase
     .from("forge_runs")
     .select("run_id,as_of_date,status,created_at,updated_at,metrics")
@@ -89,51 +188,212 @@ export async function createRun(asOfDate: string): Promise<string> {
     .order("created_at", { ascending: false })
     .limit(20);
   if (runningError) throw runningError;
-
-  const rows = ((runningRows ?? []) as ForgeRunLifecycleRow[]).filter(
+  return ((runningRows ?? []) as ForgeRunLifecycleRow[]).filter(
     (row) => row.status === "running"
   );
-  const activeRows = rows.filter(
-    (row) => !isRunningRunStale(row, nowMs, RUN_ACTIVE_WINDOW_MS)
-  );
-  const staleRows = rows.filter((row) =>
-    isRunningRunStale(row, nowMs, RUN_ACTIVE_WINDOW_MS)
-  );
+}
 
-  for (const staleRow of staleRows) {
-    await failStaleRunningRun(staleRow, nowMs);
-  }
+function activeRunError(
+  asOfDate: string,
+  activeRow: ForgeRunLifecycleRow,
+  nowMs: number
+) {
+  const activeAgeMs = getRunActivityAgeMs(activeRow, nowMs);
+  const activeMinutes =
+    activeAgeMs == null
+      ? "unknown"
+      : `${Math.max(1, Math.round(activeAgeMs / 60_000))}m`;
+  const error = new Error(
+    `Projection run already active for ${asOfDate} (run ${activeRow.run_id}, last activity ${activeMinutes} ago).`
+  ) as Error & {
+    code?: string;
+    statusCode?: number;
+    resumeInProgress?: boolean;
+  };
+  error.code = "ACTIVE_RUN_EXISTS";
+  error.statusCode = 409;
+  // Another invocation holds a resumable run's lease: unfinished, not failed.
+  error.resumeInProgress = readRunResumeState(activeRow.metrics) != null;
+  return error;
+}
 
-  if (activeRows.length > 0) {
-    const activeRow = activeRows[0];
-    const activeAgeMs = getRunActivityAgeMs(activeRow, nowMs);
-    const activeMinutes =
-      activeAgeMs == null
-        ? "unknown"
-        : `${Math.max(1, Math.round(activeAgeMs / 60_000))}m`;
-    const error = new Error(
-      `Projection run already active for ${asOfDate} (run ${activeRow.run_id}, last activity ${activeMinutes} ago).`
-    ) as Error & {
-      code?: string;
-      statusCode?: number;
-    };
-    error.code = "ACTIVE_RUN_EXISTS";
-    error.statusCode = 409;
-    throw error;
-  }
-
+async function insertRunningRun(asOfDate: string, metrics: JsonObject) {
   const { data, error } = await supabase
     .from("forge_runs")
     .insert({
       as_of_date: asOfDate,
       status: "running",
       git_sha: process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GIT_SHA ?? null,
-      metrics: {}
+      metrics
     })
     .select("run_id")
     .single<{ run_id: string }>();
   if (error) throw error;
   return data.run_id;
+}
+
+export async function createRun(asOfDate: string): Promise<string> {
+  assertSupabase();
+  const nowMs = Date.now();
+  const rows = await readRunningRuns(asOfDate);
+  const activeRows = rows.filter((row) => isRunLeaseActive(row, nowMs));
+
+  for (const row of rows) {
+    if (!isRunLeaseActive(row, nowMs) && !isPausedResumableRun(row, nowMs)) {
+      await failStaleRunningRun(row, nowMs);
+    }
+  }
+
+  if (activeRows.length > 0) {
+    throw activeRunError(asOfDate, activeRows[0], nowMs);
+  }
+
+  return insertRunningRun(asOfDate, {});
+}
+
+/**
+ * Takes the newest paused run for this date and scope, or starts a new one.
+ * The takeover only succeeds while the run still has the lease owner read
+ * here, so two invocations cannot both continue the same run.
+ */
+export async function claimResumableRun(
+  asOfDate: string,
+  args: { scopeKey: string; leaseExpiresAt: string }
+): Promise<ForgeRunClaim> {
+  assertSupabase();
+  const nowMs = Date.now();
+  const rows = await readRunningRuns(asOfDate);
+  const activeRow = rows.find((row) => isRunLeaseActive(row, nowMs));
+  let candidate: ForgeRunLifecycleRow | null = null;
+
+  for (const row of rows) {
+    if (isRunLeaseActive(row, nowMs)) continue;
+    if (isPausedResumableRun(row, nowMs)) {
+      // Paused runs of another scope wait for their own resume.
+      if (readRunResumeState(row.metrics)?.scope_key !== args.scopeKey) continue;
+      if (!candidate) {
+        candidate = row;
+        continue;
+      }
+    }
+    await failStaleRunningRun(row, nowMs);
+  }
+
+  if (activeRow) throw activeRunError(asOfDate, activeRow, nowMs);
+
+  const leaseOwner = randomUUID();
+  const previous = candidate ? readRunResumeState(candidate.metrics) : null;
+  if (candidate && previous) {
+    const resume: RunResumeState = {
+      ...previous,
+      lease_owner: leaseOwner,
+      lease_expires_at: args.leaseExpiresAt,
+      invocations: previous.invocations + 1
+    };
+    const priorMetrics = candidate.metrics as JsonObject;
+    const { data, error } = await supabase
+      .from("forge_runs")
+      .update({
+        metrics: { ...priorMetrics, resume },
+        updated_at: new Date(nowMs).toISOString()
+      })
+      .eq("run_id", candidate.run_id)
+      .eq("status", "running")
+      .eq("metrics->resume->>lease_owner", previous.lease_owner)
+      .select("run_id");
+    if (error) throw error;
+    if (!data?.length) throw activeRunError(asOfDate, candidate, nowMs);
+    return {
+      runId: candidate.run_id,
+      scopeKey: args.scopeKey,
+      leaseOwner,
+      resumed: true,
+      invocations: resume.invocations,
+      completedGameIds: previous.completed_game_ids,
+      priorMetrics
+    };
+  }
+
+  const resume: RunResumeState = {
+    version: RUN_RESUME_VERSION,
+    scope_key: args.scopeKey,
+    lease_owner: leaseOwner,
+    lease_expires_at: args.leaseExpiresAt,
+    completed_game_ids: [],
+    invocations: 1
+  };
+  return {
+    runId: await insertRunningRun(asOfDate, { resume }),
+    scopeKey: args.scopeKey,
+    leaseOwner,
+    resumed: false,
+    invocations: 1,
+    completedGameIds: [],
+    priorMetrics: {}
+  };
+}
+
+/**
+ * Stores progress (`running`) or the final status of a claimed run. Only the
+ * lease owner may write; a lost lease throws `RUN_LEASE_LOST`. Omitting
+ * `leaseExpiresAt` releases the lease, so the next invocation can resume.
+ */
+export async function writeClaimedRun(
+  claim: ForgeRunClaim,
+  args: {
+    status: "running" | "succeeded" | "failed";
+    metrics: Record<string, unknown>;
+    completedGameIds: number[];
+    leaseExpiresAt?: string;
+  }
+) {
+  assertSupabase();
+  const nowIso = new Date().toISOString();
+  const resume: RunResumeState = {
+    version: RUN_RESUME_VERSION,
+    scope_key: claim.scopeKey,
+    lease_owner: claim.leaseOwner,
+    lease_expires_at: args.leaseExpiresAt ?? nowIso,
+    completed_game_ids: args.completedGameIds,
+    invocations: claim.invocations
+  };
+  const { data, error } = await supabase
+    .from("forge_runs")
+    .update({
+      status: args.status,
+      metrics: { ...args.metrics, resume } as Json,
+      updated_at: nowIso
+    })
+    .eq("run_id", claim.runId)
+    .eq("status", "running")
+    .eq("metrics->resume->>lease_owner", claim.leaseOwner)
+    .select("run_id");
+  if (error) throw error;
+  if (!data?.length) {
+    const lost = new Error(
+      `Projection run ${claim.runId} is no longer held by this invocation.`
+    ) as Error & { code?: string };
+    lost.code = "RUN_LEASE_LOST";
+    throw lost;
+  }
+}
+
+/** Removes a paused run's rows for games it will project again. */
+export async function clearRunGameRows(runId: string, gameIds: number[]) {
+  assertSupabase();
+  if (gameIds.length === 0) return;
+  for (const table of [
+    "forge_player_projections",
+    "forge_team_projections",
+    "forge_goalie_projections"
+  ] as const) {
+    const { error } = await supabase
+      .from(table)
+      .delete()
+      .eq("run_id", runId)
+      .in("game_id", gameIds);
+    if (error) throw error;
+  }
 }
 
 export async function finalizeRun(

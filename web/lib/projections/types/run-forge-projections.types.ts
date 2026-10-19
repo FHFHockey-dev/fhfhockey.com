@@ -276,6 +276,13 @@ export type TeamStrengthPrior = {
   sourceModelVersion?: string | null;
   featureVersion?: number | null;
   windowGames?: number | null;
+  /** How the `nhl_team_data` row was chosen among same-date rows (one per NST season). */
+  rowSelection?: {
+    method: "implied_gp_match" | "single_row";
+    candidateRows: number;
+    gamesPlayed: number | null;
+    impliedGamesPlayed: number | null;
+  };
 };
 
 export type TeamFiveOnFiveProfile = {
@@ -363,6 +370,17 @@ export type RunProjectionResult = {
   teamRowsUpserted: number;
   goalieRowsUpserted: number;
   timedOut: boolean;
+  /**
+   * Set for resumable runs. Counts cover the whole run. With `timedOut`, the
+   * run stays `running` and the next call for the date projects the pending games.
+   */
+  resume?: {
+    resumed: boolean;
+    invocations: number;
+    completedGames: number;
+    totalGames: number;
+    pendingGames: number;
+  };
 };
 
 export type ForgeTeamGameStrengthRow = {

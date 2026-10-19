@@ -736,9 +736,11 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         endDate: "2026-10-18",
         resumeFrom: "8478402"
       });
-      expect(runProjectionV2Mock.mock.calls[0]?.[0]?.query).toEqual({
-        date: "2026-10-19"
-      });
+      const projectionQuery = runProjectionV2Mock.mock.calls[0]?.[0]?.query;
+      expect(Object.keys(projectionQuery).sort()).toEqual(["date", "maxDurationMs"]);
+      expect(projectionQuery.date).toBe("2026-10-19");
+      expect(Number(projectionQuery.maxDurationMs)).toBeGreaterThanOrEqual(30_000);
+      expect(Number(projectionQuery.maxDurationMs)).toBeLessThanOrEqual(180_000);
       const order = [
         updateGamesMock,
         updateNstGamelogMock,
@@ -804,6 +806,57 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         completedEarlier: true
       });
       expect(runProjectionV2Mock).not.toHaveBeenCalled();
+    });
+
+    it("resumes a partial projection run on later invocations without using failed attempts", async () => {
+      const partialProjection = async (_req: any, res: any) => {
+        vi.setSystemTime(Date.now() + 150_000);
+        res.status(207).json({
+          success: false,
+          operationStatus: "partial",
+          resume: {
+            required: true,
+            reason: "runtime_budget",
+            request: { date: "2026-10-19", horizonGames: "1" }
+          }
+        });
+      };
+      // More partial calls than MAX_BLOCKING_STAGE_ATTEMPTS: none counts as a failure.
+      runProjectionV2Mock
+        .mockImplementationOnce(partialProjection)
+        .mockImplementationOnce(partialProjection)
+        .mockImplementationOnce(partialProjection);
+
+      for (const at of ["10:05", "10:10", "10:15"]) {
+        const res = await invokeScheduled(`2026-10-19T${at}:00.000Z`);
+        expect(res.statusCode).toBe(207);
+        expect(res.body.termination).toMatchObject({
+          state: "continuation_required",
+          resumeRequired: true,
+          nextStageId: "projection_execution",
+          reason: "stage_partial"
+        });
+        expect(res.body.failureSummary).toMatchObject({ failedStepCount: 0, firstFailure: null });
+        expect(stageStatus(res, "projection_execution").status).toBe("partial");
+        expect(stageStatus(res, "downstream_projection_consumers").status).toBe("pending");
+        const projectionState = pipelineStateRows.get(
+          "rolling_forge_pipeline|daily_incremental:2026-10-19|projection_execution"
+        );
+        expect(projectionState).toMatchObject({ status: "running", last_error: null });
+      }
+      // Each call gets the time left in its invocation, after the earlier stages.
+      for (const call of runProjectionV2Mock.mock.calls) {
+        expect(Number(call[0].query.maxDurationMs)).toBeLessThanOrEqual(180_000);
+      }
+
+      const done = await invokeScheduled("2026-10-19T10:20:00.000Z");
+      expect(done.statusCode).toBe(200);
+      expect(done.body.termination).toMatchObject({ state: "completed" });
+      expect(runProjectionV2Mock).toHaveBeenCalledTimes(4);
+      expect(updateGamesMock).toHaveBeenCalledTimes(1);
+      expect(
+        auditInsertMock.mock.calls.map((call: any[]) => call[0]?.status)
+      ).toEqual(["continued", "continued", "continued", "success"]);
     });
 
     it("does not run a stage another invocation holds", async () => {

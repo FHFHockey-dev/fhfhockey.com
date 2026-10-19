@@ -57,6 +57,9 @@
  * - A successful run will return a `runId` that can be used to trace the specific projection outputs in the database.
  * - If the process exceeds `maxDurationMs`, it will return a `timedOut: true` status in the response, along with any
  *   partial results that were completed before the timeout.
+ * - A single-date live run is resumable: on timeout it returns 207 with `operationStatus: "partial"` and
+ *   `resume.request`, keeps its `forge_runs` row `running`, and the next call for the same date reuses that
+ *   run_id and projects only the unfinished games. The run is marked `succeeded` once every game is done.
  * - Errors during execution will result in a `500 Internal Server Error` with a descriptive error message.
  */
 import type { NextApiRequest, NextApiResponse } from "next";
@@ -81,7 +84,10 @@ import {
   LINE_COMBO_STALE_HARD_DAYS,
   LINE_COMBO_STALE_SOFT_DAYS,
 } from "lib/projections/constants/projection-weights";
-import type { LineCombinationWithGameDateRow } from "lib/projections/types/run-forge-projections.types";
+import type {
+  LineCombinationWithGameDateRow,
+  RunProjectionResult,
+} from "lib/projections/types/run-forge-projections.types";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { FORGE_COMPATIBILITY_INVENTORY } from "lib/projections/compatibilityInventory";
 import { getGoalieForgePipelineSpec } from "lib/projections/goaliePipeline";
@@ -317,7 +323,6 @@ type Result =
       playerRowsUpserted?: number;
       teamRowsUpserted?: number;
       goalieRowsUpserted?: number;
-      error: string;
       dependencyError?: NormalizedDependencyError;
       results?: Array<{
         asOfDate: string;
@@ -329,12 +334,26 @@ type Result =
         timedOut: boolean;
       }>;
       processedDates?: string[];
-    };
+    } & (
+      | { error: string }
+      // Unfinished, not failed: the resumable run continues on the next call.
+      | { operationStatus: "partial"; resume: ProjectionResumeReceipt; error?: never }
+    );
 
 type TerminationReceipt = {
   state: "not_started" | "blocked" | "resume_required" | "completed";
   resumeRequired: boolean;
   nextStartDate: string | null;
+};
+
+type ProjectionResumeReceipt = {
+  required: true;
+  reason: "runtime_budget" | "run_in_progress_elsewhere";
+  runId: string | null;
+  completedGames: number | null;
+  totalGames: number | null;
+  pendingGames: number | null;
+  request: Record<string, string>;
 };
 
 function getParam(req: NextApiRequest, key: string): string | null {
@@ -1039,6 +1058,72 @@ async function handler(
     : PROJECTION_ROUTE_DEFAULT_BUDGET_MS;
   const deadlineMs = startedAt + budgetMs;
   let preflight = defaultPreflight;
+  // No `error` field: the pipeline and the cron audit read this as unfinished.
+  const buildResumablePartialBody = (args: {
+    reason: ProjectionResumeReceipt["reason"];
+    runId: string | null;
+    resume: RunProjectionResult["resume"] | null;
+    observability: GoalieObservability;
+    rowCounts: Record<string, number>;
+  }): Result => ({
+    success: false,
+    operationStatus: "partial",
+    resume: {
+      required: true,
+      reason: args.reason,
+      runId: args.runId,
+      completedGames: args.resume?.completedGames ?? null,
+      totalGames: args.resume?.totalGames ?? null,
+      pendingGames: args.resume?.pendingGames ?? null,
+      request: {
+        date: asOfDate,
+        horizonGames: String(horizonGames),
+        ...(gameIds.length ? { gameIds: gameIds.join(",") } : {}),
+        ...(bypassPreflight ? { bypassPreflight: "true" } : {}),
+      },
+    },
+    asOfDate,
+    startDate,
+    endDate,
+    horizonGames,
+    chunkDays,
+    resumeFromDate,
+    nextStartDate: asOfDate,
+    termination: {
+      state: "resume_required",
+      resumeRequired: true,
+      nextStartDate: asOfDate,
+    },
+    pipeline,
+    dependencyContract,
+    compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
+    preflight,
+    observability: args.observability,
+    scanSummary: buildProjectionRunScanSummary({
+      status: "partial",
+      requestedDate: asOfDate,
+      activeDataDate: asOfDate,
+      blockingIssueCount: 0,
+      notes: [
+        args.reason === "runtime_budget"
+          ? "Stopped at the runtime budget; the next call for this date projects the remaining games."
+          : "Another call is projecting this date; the next call continues the same run.",
+      ],
+      rowCounts: args.rowCounts,
+    }),
+    timedOut: args.reason === "runtime_budget",
+    maxDurationMs: formatDurationMsToMMSS(budgetMs),
+    durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
+    ...(args.runId ? { runId: args.runId } : {}),
+    ...(args.rowCounts.gamesProcessed != null
+      ? {
+          gamesProcessed: args.rowCounts.gamesProcessed,
+          playerRowsUpserted: args.rowCounts.playerRowsUpserted,
+          teamRowsUpserted: args.rowCounts.teamRowsUpserted,
+          goalieRowsUpserted: args.rowCounts.goalieRowsUpserted,
+        }
+      : {}),
+  });
 
   try {
     preflight = await runProjectionPreflightChecks(asOfDate, bypassPreflight);
@@ -1372,6 +1457,24 @@ async function handler(
       goalieRowsProcessed: out.goalieRowsUpserted,
       skaterRowsProcessed: out.playerRowsUpserted,
     });
+    if (out.timedOut && out.resume) {
+      return res.status(207).json(
+        withTiming(
+          buildResumablePartialBody({
+            reason: "runtime_budget",
+            runId: out.runId,
+            resume: out.resume,
+            observability: singleRunObservability,
+            rowCounts: {
+              gamesProcessed: out.gamesProcessed,
+              playerRowsUpserted: out.playerRowsUpserted,
+              teamRowsUpserted: out.teamRowsUpserted,
+              goalieRowsUpserted: out.goalieRowsUpserted,
+            },
+          }),
+        ),
+      );
+    }
     if (out.timedOut) {
       return res.status(200).json(
         withTiming({
@@ -1461,12 +1564,29 @@ async function handler(
       }),
     );
   } catch (e) {
-    const dependencyError = normalizeDependencyError(e);
     const baseObservability = buildGoalieObservability({
       preflight,
       gamesProcessed: 0,
       goalieRowsProcessed: 0,
     });
+    if (
+      rangeDates.length === 0 &&
+      (e as { resumeInProgress?: unknown })?.resumeInProgress === true
+    ) {
+      // Another call holds this date's resumable run; try again after it stops.
+      return res.status(207).json(
+        withTiming(
+          buildResumablePartialBody({
+            reason: "run_in_progress_elsewhere",
+            runId: null,
+            resume: null,
+            observability: baseObservability,
+            rowCounts: {},
+          }),
+        ),
+      );
+    }
+    const dependencyError = normalizeDependencyError(e);
     const statusCode =
       typeof (e as { statusCode?: unknown })?.statusCode === "number"
         ? Number((e as { statusCode?: number }).statusCode)

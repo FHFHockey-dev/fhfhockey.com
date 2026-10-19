@@ -115,6 +115,65 @@ export function buildTeamStrengthPriorFromInHouseXgAggregateRow(
   };
 }
 
+// `nhl_team_data` is a view that joins the latest standings to every season in
+// `nst_team_stats`, so one team and date can have one row per NST season. The
+// season-to-date row is the one whose xG denominator (xga / xga_per_game, the
+// NST games played) matches the standings `games_played`.
+const NHL_TEAM_DATA_CANDIDATE_LIMIT = 20;
+const NHL_TEAM_DATA_GP_MATCH_TOLERANCE = 1.5;
+
+export function buildTeamStrengthPriorFromNhlTeamDataRows(
+  rows: any[]
+): TeamStrengthPrior | null {
+  const latestDate = rows
+    .map((row) => (typeof row?.date === "string" ? row.date : null))
+    .filter((date): date is string => date != null)
+    .sort()
+    .at(-1);
+  if (!latestDate) return null;
+  const candidates = rows.filter((row) => row?.date === latestDate);
+
+  let selected: any = null;
+  let impliedGamesPlayed: number | null = null;
+  let method: "implied_gp_match" | "single_row";
+  const gamesPlayed = toFiniteOrNull(candidates[0]?.games_played);
+  if (gamesPlayed != null && gamesPlayed > 0) {
+    method = "implied_gp_match";
+    let bestGap = Number.POSITIVE_INFINITY;
+    for (const row of candidates) {
+      const xga = toFiniteOrNull(row?.xga);
+      const xgaPerGame = toFiniteOrNull(row?.xga_per_game);
+      if (xga == null || xgaPerGame == null || xgaPerGame <= 0) continue;
+      const implied = xga / xgaPerGame;
+      const gap = Math.abs(implied - gamesPlayed);
+      if (gap <= NHL_TEAM_DATA_GP_MATCH_TOLERANCE && gap < bestGap) {
+        bestGap = gap;
+        selected = row;
+        impliedGamesPlayed = Number(implied.toFixed(2));
+      }
+    }
+  } else {
+    // Without a season-to-date games count only an unambiguous row is usable.
+    method = "single_row";
+    if (candidates.length === 1) selected = candidates[0];
+  }
+  if (!selected) return null;
+
+  return {
+    source: "nhl_team_data",
+    sourceDate: latestDate,
+    xga: toFiniteOrNull(selected.xga),
+    xgaPerGame: toFiniteOrNull(selected.xga_per_game),
+    xgfPerGame: toFiniteOrNull(selected.xgf_per_game),
+    rowSelection: {
+      method,
+      candidateRows: candidates.length,
+      gamesPlayed,
+      impliedGamesPlayed
+    }
+  };
+}
+
 async function fetchInHouseTeamStrengthPrior(
   teamId: number,
   asOfDate: string
@@ -195,37 +254,28 @@ export async function fetchTeamStrengthPrior(
     }
   }
 
+  const select = "date,games_played,xga,xga_per_game,xgf_per_game";
   const historical = await supabase
     .from("nhl_team_data")
-    .select("date,xga,xga_per_game,xgf_per_game")
+    .select(select)
     .eq("team_abbrev", normalizedAbbrev)
     .lte("date", asOfDate)
     .order("date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(NHL_TEAM_DATA_CANDIDATE_LIMIT);
   if (historical.error) throw historical.error;
 
-  let row = (historical.data as any) ?? null;
-  if (!row) {
+  let rows: any[] = historical.data ?? [];
+  if (rows.length === 0) {
     const latest = await supabase
       .from("nhl_team_data")
-      .select("date,xga,xga_per_game,xgf_per_game")
+      .select(select)
       .eq("team_abbrev", normalizedAbbrev)
       .order("date", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(NHL_TEAM_DATA_CANDIDATE_LIMIT);
     if (latest.error) throw latest.error;
-    row = (latest.data as any) ?? null;
+    rows = latest.data ?? [];
   }
-  if (!row) return null;
-
-  return {
-    source: "nhl_team_data",
-    sourceDate: typeof row.date === "string" ? row.date : null,
-    xga: toFiniteOrNull(row.xga),
-    xgaPerGame: toFiniteOrNull(row.xga_per_game),
-    xgfPerGame: toFiniteOrNull(row.xgf_per_game)
-  };
+  return buildTeamStrengthPriorFromNhlTeamDataRows(rows);
 }
 
 export async function fetchTeamFiveOnFiveProfile(
