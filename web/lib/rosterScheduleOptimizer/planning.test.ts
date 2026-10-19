@@ -1668,3 +1668,23 @@ describe("schedule-first targets", () => {
     expect(fits[0].dates).toEqual(["2026-10-06"]);
   });
 });
+
+describe("lineup goal", () => {
+  it("plans for the manager's chosen goal, defaulting to projected points when they qualify", () => {
+    const data = snapshot();
+    const auto = planRoster(data, intent, { maxSteps: 0 });
+    expect(auto.noMoveOutcome.recommendation?.eligible).toBe(true);
+    expect(auto.selected.objective).toBe("outcome");
+    expect(planRoster(data, { ...intent, objective: "outcome" }, { maxSteps: 0 }).selected.objective).toBe("outcome");
+    expect(planRoster(data, { ...intent, objective: "agp" }, { maxSteps: 0 }).selected.objective).toBe("agp");
+  });
+
+  it("falls back to most starts, and says so, when points are asked for without qualifying projections", () => {
+    const data = snapshot();
+    data.forecasts = [];
+    const result = planRoster(data, { ...intent, objective: "outcome" }, { maxSteps: 0 });
+    expect(result.selected.objective).toBe("agp");
+    expect(result.search.limitations).toContain("Best projected points needs projections for your whole lineup; planning for most starts until then.");
+  });
+});
+

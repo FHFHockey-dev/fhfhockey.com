@@ -1084,7 +1084,10 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   const categoryMode = snapshot.rules.scoring.mode === "categories";
   const coverageTarget = categoryMode ? categoryGoalieCoverageTarget(snapshot, intent) : pointsCoverageTarget;
   const noMoveOutcome = evaluatePlan(snapshot, intent, "outcome", [], false);
-  const objective: PlanningObjective = noMoveOutcome.recommendation?.eligible === true ? "outcome" : "agp";
+  // The manager can ask for most starts or best projected points. Points need projections that qualify for the
+  // whole lineup, so until then a points request (or "auto") plans for most starts.
+  const outcomeEligible = noMoveOutcome.recommendation?.eligible === true;
+  const objective: PlanningObjective = intent.objective !== "agp" && outcomeEligible ? "outcome" : "agp";
   const baseline = objective === "outcome" ? noMoveOutcome : noMoveAgp;
   const selected = evaluatePlan(snapshot, intent, objective, intent.steps, false);
   const noClaimContinuations = intent.steps.flatMap((step, index) => {
@@ -1098,6 +1101,7 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   candidates.forEach(player => relevantPlayerIds.add(player.id));
   snapshot = resolvePlanningContributions(sourceSnapshot, { playerIds: relevantPlayerIds });
   const limitations = new Set<string>();
+  if (intent.objective === "outcome" && !outcomeEligible) limitations.add("Best projected points needs projections for your whole lineup; planning for most starts until then.");
   if (fitResult.timeLimitReached) limitations.add("Schedule-fit analysis reached its time budget; additional team/position targets remain unevaluated.");
   if (fitResult.workQuotaReached) limitations.add("Schedule-fit analysis reached its work quota; additional team/position targets remain unevaluated.");
   if (snapshot.rules.acquisitionTiming === "unknown") limitations.add("Add/drop plans need acquisition-effective timing. Review League rules and scoring.");

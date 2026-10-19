@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useCandidateMetrics } from "hooks/useCandidateMetrics";
 import { normalizeEligibility } from "lib/rosterScheduleOptimizer/eligibility";
 import { candidatePlanForSort, type CandidateComparison, type CandidateDiagnostic, type CandidatePlan } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
@@ -11,6 +11,8 @@ type Candidate = { player: PlanningPlayer; activeGames: number | null; points: n
   eligibilityKnown?: boolean; availabilityKnown?: boolean;
   plan?: CandidatePlan; comparison?: CandidateComparison; diagnostic?: CandidateDiagnostic; upcomingGames?: number | null };
 type Props = {
+  /** Follows the lineup goal (most starts → schedule, best projected points → points); the manager can still switch. */
+  preferredSort?: "points" | "schedule";
   searchQuery?: string;
   changeSearch?: (query: string) => void;
   calendar?: CanonicalSchedule;
@@ -34,7 +36,7 @@ const compareDiscovery = (a: Candidate, b: Candidate) => Number(knownInputs(b)) 
 export const compareCandidateFits = (a: Candidate, b: Candidate, sort: "points" | "schedule") => sort === "schedule"
   ? byFit(a, b) : (b.activePoints ?? -Infinity) - (a.activePoints ?? -Infinity) || byFit(a, b);
 
-export default function CandidateBrowser({ searchQuery, changeSearch, calendar, players, rosterIds, snapshot, intent, manual, select, add, selectPlan, canSelectPlan, markAvailable }: Props) {
+export default function CandidateBrowser({ preferredSort, searchQuery, changeSearch, calendar, players, rosterIds, snapshot, intent, manual, select, add, selectPlan, canSelectPlan, markAvailable }: Props) {
   const [view, setView] = useState<"team" | "all">("all");
   const [localQuery, setLocalQuery] = useState("");
   const query = searchQuery ?? localQuery;
@@ -47,7 +49,8 @@ export default function CandidateBrowser({ searchQuery, changeSearch, calendar, 
   const limit = intent.alternativeCount + extra;
   const resetExpansion = () => setExpansion({ count: intent.alternativeCount, query, extra: 0 });
   const showMore = () => setExpansion({ count: intent.alternativeCount, query, extra: extra + intent.alternativeCount });
-  const [sort, setSort] = useState<"points" | "schedule">("points");
+  const [sort, setSort] = useState<"points" | "schedule">(preferredSort ?? "points");
+  useEffect(() => { if (preferredSort) setSort(preferredSort); }, [preferredSort]);
   const categories = snapshot?.rules?.scoring.mode === "categories";
   // Manager-requested comparisons belong to the snapshot they were requested on.
   const [requested, setRequested] = useState<{ snapshotId: string | null; ids: string[] }>({ snapshotId: null, ids: [] });

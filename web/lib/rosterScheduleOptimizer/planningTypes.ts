@@ -206,6 +206,8 @@ export type PlanIntent = {
   goalieWindow: "early" | "late" | "any";
   goalieSplit: "mon_thu" | "mon_wed";
   alternativeCount: 5 | 10 | 20;
+  /** Manager's lineup goal: most starts, best projected points, or "auto" (default: points when projections qualify). */
+  objective?: "auto" | "agp" | "outcome";
 };
 export type PlanningObjective = "agp" | "outcome";
 export type PlanningAssignment = {

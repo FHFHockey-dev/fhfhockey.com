@@ -544,3 +544,8 @@ details.alternative .candidateRow button { width: auto; }
 // Plan details as its own view.
 .planView { display: flex; flex-direction: column; gap: v.$space-sm; padding: 2px; font-size: 12px; }
 .planView[hidden] { display: none; }
+// Lineup goal: most starts vs best projected points (drives the grid, summary, Optimize and Best Fit ranking).
+.objectiveSwitch { display: flex; flex-shrink: 0; gap: 2px; padding: 2px; border: 1px solid v.$draft-border; border-radius: v.$radius-control; }
+.objectiveSwitch button { min-height: 26px; padding: 2px 8px; border: 0; background: transparent; color: v.$text-secondary; font-size: 11px; white-space: nowrap; }
+.objectiveSwitch button[aria-pressed="true"] { background: v.$primary-color; color: v.$color-neutral-950; font-weight: 700; }
+.objectiveSwitch button:disabled { opacity: .45; cursor: not-allowed; }

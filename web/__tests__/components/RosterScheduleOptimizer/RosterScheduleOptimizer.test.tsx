@@ -693,6 +693,30 @@ describe("RosterScheduleOptimizer workspace", () => {
     await waitFor(() => expect(slider().getAttribute("aria-valuetext")).toBe(failure === "write-failure" ? "Thu, Oct 15" : "Mon, Oct 12"));
     expect(window.localStorage.getItem(WORKSPACE_KEY)).toBe(storedPlan);
   });
+  it("lets the manager pick the lineup goal and saves it with the plan", async () => {
+    const workspace = defaultWorkspace();
+    workspace.roster = [{ playerId: player.id, position: "active" }];
+    workspace.manualPlayers = [{ ...player, eligibilityVerified: true }];
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    const schedule: PlanningData = { ...data, games: [{ id: "game", date: workspace.context.startDate, startsAt: null, teamAbbreviation: "CAR", opponent: "NYR", home: true, status: "scheduled" }],
+      evidence: { schedule: { source: "fixture", asOf: workspace.context.asOf, seasonId: workspace.context.seasonId, completeness: "complete", limitations: [] } } };
+    planningState.evaluate = (snapshot, intent) => planRoster(snapshot, intent);
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"), json: async () => ({ success: true, data: schedule }) })));
+    render(<RosterScheduleOptimizer />);
+    const goal = await screen.findByRole("group", { name: "Lineup goal" });
+    const starts = within(goal).getByRole("button", { name: "Most starts" });
+    const points = within(goal).getByRole("button", { name: "Best projected points" });
+    await waitFor(() => expect(starts.hasAttribute("disabled")).toBe(false));
+    fireEvent.click(starts);
+    await waitFor(() => expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent.objective).toBe("agp"));
+    await waitFor(() => expect(starts.getAttribute("aria-pressed")).toBe("true"));
+    expect(points.getAttribute("aria-pressed")).toBe("false");
+    if (!points.hasAttribute("disabled")) {
+      fireEvent.click(points);
+      await waitFor(() => expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent.objective).toBe("outcome"));
+      await waitFor(() => expect(points.getAttribute("aria-pressed")).toBe("true"));
+    }
+  });
   it.each(["partial", "complete"] as const)("qualifies plan aggregate counters and ratios under %s schedule coverage", async completeness => {
     const workspace = defaultWorkspace();
     workspace.roster = [{ playerId: player.id, position: "active" }];
