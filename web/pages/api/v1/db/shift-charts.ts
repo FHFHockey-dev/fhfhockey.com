@@ -656,10 +656,11 @@ async function fetchAllPlayerPositions(): Promise<PlayerPosition[]> {
 
 async function fetchCurrentRelationshipRosterPositions(
   gameId: number,
+  allowEmptyRoster: boolean,
 ): Promise<{
   expectedPbpRawPayloadHash: string;
   positions: Map<number, RelationshipRosterPosition>;
-}> {
+} | null> {
   const db = supabase as any;
   const { data: status, error: statusError } = await db
     .from("projection_game_materialization_status")
@@ -689,6 +690,7 @@ async function fetchCurrentRelationshipRosterPositions(
         .order("player_id", { ascending: true })
         .range(from, to),
   );
+  if (rows.length === 0 && allowEmptyRoster) return null;
 
   return {
     expectedPbpRawPayloadHash: status.pbp_raw_payload_hash,
@@ -1043,12 +1045,14 @@ async function fetchAndStoreShiftCharts(
   totalRowsVerified: number;
   totalRowsPruned: number;
   idempotentGames: number;
+  skippedGames: { gameId: number; reason: string }[];
   error?: any;
 }> {
   let totalRowsUpserted = 0;
   let totalRowsVerified = 0;
   let totalRowsPruned = 0;
   let idempotentGames = 0;
+  const skippedGames: { gameId: number; reason: string }[] = [];
   let error: any = null;
   try {
     const gameIdSet = new Set<number>();
@@ -1129,8 +1133,17 @@ async function fetchAndStoreShiftCharts(
           throw new Error(`No PBP source found for game ID: ${gameId}`);
         }
 
-        const currentRoster =
-          await fetchCurrentRelationshipRosterPositions(gameId);
+        // Some preseason PBP payloads carry no roster spots. Without them no
+        // shift player can be position-bound, so skip that game with a
+        // recorded reason; an empty roster on any other game type still fails.
+        const currentRoster = await fetchCurrentRelationshipRosterPositions(
+          gameId,
+          Number(gameInfo.gameType) === 1,
+        );
+        if (!currentRoster) {
+          skippedGames.push({ gameId, reason: "preseason_without_roster_spots" });
+          continue;
+        }
 
         const {
           unmatchedNames: unmatched,
@@ -1175,6 +1188,7 @@ async function fetchAndStoreShiftCharts(
       totalRowsVerified,
       totalRowsPruned,
       idempotentGames,
+      skippedGames,
       error,
     };
   } catch (err: any) {
@@ -1188,6 +1202,7 @@ async function fetchAndStoreShiftCharts(
       totalRowsVerified,
       totalRowsPruned,
       idempotentGames,
+      skippedGames,
       error: err,
     };
   }
@@ -1246,6 +1261,7 @@ async function handleShiftChartsRequest(
       rowsVerified: result.totalRowsVerified,
       rowsPruned: result.totalRowsPruned,
       idempotentGames: result.idempotentGames,
+      skippedGames: result.skippedGames,
     };
     if (result.success) {
       responseBody = {
@@ -1257,6 +1273,7 @@ async function handleShiftChartsRequest(
         rowsVerified: result.totalRowsVerified,
         rowsPruned: result.totalRowsPruned,
         idempotentGames: result.idempotentGames,
+        skippedGames: result.skippedGames,
         targetGameId: targetGameId ?? null,
       };
       res.status(200).json(responseBody);
@@ -1272,6 +1289,7 @@ async function handleShiftChartsRequest(
         rowsVerified: result.totalRowsVerified,
         rowsPruned: result.totalRowsPruned,
         idempotentGames: result.idempotentGames,
+        skippedGames: result.skippedGames,
         targetGameId: targetGameId ?? null,
       };
       res.status(500).json(responseBody);

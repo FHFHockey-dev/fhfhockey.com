@@ -193,7 +193,7 @@ const Home: NextPage = ({
           </section>
         ) : null}
         <ClientOnly>
-          {draftRankerHomepageEnabled ? (
+          {draftRankerHomepageEnabled && isOffseason ? (
             <div className={styles.homepageToolSwitcher}>
               <div
                 className={styles.homepageToolTabs}

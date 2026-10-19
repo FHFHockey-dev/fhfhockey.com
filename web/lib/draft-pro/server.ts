@@ -6,6 +6,7 @@ import { requireDraftProCapability, resolveDraftProAccess, type DraftProAccessIn
 import { DRAFT_PRO_ENTITLEMENT_KEY, type DraftProCapability } from "./contracts";
 
 import { ensureDraftProOwnerAccess } from "./ownerAccess";
+import { DraftProRequestError } from "./requestError";
 
 const PATREON_SUPPORTER_ENTITLEMENT_KEY = "patreon_supporter";
 
@@ -97,9 +98,5 @@ export async function loadDraftProAccess(
 
 export function requireDraftProServerCapability(access: Awaited<ReturnType<typeof loadDraftProAccess>>, capability: DraftProCapability) {
   const denial = requireDraftProCapability(access, capability);
-  if (denial) {
-    const error = new Error("Draft Pro access is required for this action.");
-    Object.assign(error, { statusCode: denial.status, code: denial.reason });
-    throw error;
-  }
+  if (denial) throw new DraftProRequestError(denial.status, "Draft Pro access is required for this action.", denial.reason);
 }

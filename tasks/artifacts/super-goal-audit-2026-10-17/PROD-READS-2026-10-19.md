@@ -795,3 +795,122 @@ The contradicted reads are:
 12. **G8 shift-chart invalid `primary_position`/`player_type` count, U-7 NEW 15 repair counts and the inverse manifest, U-8 lineup archive counts, G7-d6 flurry population counts, and exact sustainability counts (C0077, NEW 13.0):** the SQL budget of 20 was exhausted.
 13. **Postgres logs over 7 days:** the logs API caps a query at 24 hours, and only one log call was allowed, so only 24 hours were read.
 14. **Hosted PostgREST `max_rows`:** not readable through SQL; it lives in project API settings.
+
+## Cross-check reads E-1 to E-6 (2026-10-19, ~12:30–12:40Z, Chef `local_4317ea20`)
+
+**Approval:** TJ, relayed by `local_08a0bf1c`: "Approved: have the Chef run read-only checks E-1 to E-6 from CROSS-CHECK-AUDIT.md, one at a time with an 8 s statement timeout, outside scheduled runs, and record the results in PROD-READS-2026-10-19.md."
+
+**Method:**
+- E-3 was later held: "I need to look into the nst-team-stats one. pause that one only until I can confirm".
+- Run after the FORGE v1 live run ended (LEDGER §13). Each SQL check was one SELECT inside `begin read only; set local statement_timeout = '8s'`, against `fyhftlxokyjtpndbkfse`, sequentially. None timed out.
+- E-6 used the Vercel CLI (`GET /v10/projects/fhfhockey/env`), printing names, targets and types only. Values were dropped before printing.
+- No application, cron or API requests, no writes.
+
+### E-1 (A-01): pipeline stages over the last 4 days
+
+**Query:** `select run_time, job_name, status, details->>'statusCode', left(details->>'response',300) from cron_job_audit where run_time > now()-interval '4 days' and job_name in ('run-rolling-forge-pipeline','run-projection-v2','update-shift-charts','/api/v1/db/update-rolling-player-averages','/api/v1/db/ingest-projection-inputs') order by run_time;`
+
+**Result:** 8 rows, all failures.
+
+| Date | `update-shift-charts` (07:45Z) | `run-projection-v2` (10:12Z) |
+|---|---|---|
+| 10-16 | 500 "Conflicting relationship position for player 8483678", rowsAffected 0 | 422 "Preflight freshness checks failed" |
+| 10-17 | same, rowsAffected 0 | 422, same |
+| 10-18 | same, rowsAffected 0 | 422, same |
+| 10-19 (first run on R2 code, 07:45Z) | 500 **"Invalid relationship roster scope for game 2026010007"**, rowsAffected 39, rowsVerified 39 | 422, same |
+
+- No rows match `run-rolling-forge-pipeline`, `/api/v1/db/update-rolling-player-averages` or `/api/v1/db/ingest-projection-inputs` under those exact names. Those stages audit under other names, or they write nested rows only.
+- The 300-character truncation cuts off the failing gate's key in the 422 preflight.
+
+**Verdict: confirmed (A-01).** The pipeline is still failing.
+- R2's namesake fix did clear the 10-16 to 10-18 Pettersson conflict: today's run wrote 39 verified rows before stopping.
+- Shift charts now fail on a **new** error, a roster-scope check for game `2026010007`, which is a type-01 (preseason) game id.
+- `projection_input_ingest` was **not** reached, because `run-projection-v2` fails preflight first.
+
+**Follow-up:**
+- one read of today's full `run-projection-v2` preflight `gates` array, to name the failing gate
+- a code look at the relationship-roster-scope check for preseason game types
+
+### E-2 (A-05): rolling-metric coverage against WGO, 2026-10-14..17
+
+**Query:** per date, `count(*)` of `wgo_skater_stats` (`date`), `count(*)` and `max(player_id)` of `rolling_player_game_metrics` (`game_date`, `strength_state='all'`).
+
+**Result:**
+
+| Date | WGO skater rows | rolling `all` rows | max player_id |
+|---|---|---|---|
+| 10-14 | 72 | 4 | 8474574 |
+| 10-15 | 36 | 0 | — |
+| 10-16 | 72 | 6 | 8474578 |
+| 10-17 | 504 | 16 | 8474586 |
+
+**Verdict: confirmed (A-05).** Coverage is 0–8% of WGO, and the writes stop at the lowest player ids (847457x–847458x). That matches a run being cut off part-way while iterating in id order.
+
+### E-3 (A-12): held at TJ's request
+
+`nst_team_gamelogs_as_rates` was not read. The NST team-daily and CTPI jobs are untouched.
+
+### E-4 (A-21): last 3 ESPN odds runs
+
+**Query:** `select run_time, job_name, status, details->>'statusCode', left(details->>'response',300) from cron_job_audit where job_name='game-predictions-ingest-espn-odds' order by run_time desc limit 3;`
+
+**Result:** all 3 runs (10-18 17:34Z, 10-18 21:10Z, 10-19 11:34Z) returned 502 `ESPN_ODDS_ACCESS_DENIED` / "ESPN odds request failed with 403" from `site.api.espn.com/.../scoreboard?dates=…`.
+
+**Verdict: confirmed (A-21), 403 branch.** ESPN refuses the request. This is a source decision, not an `allSettled` fix. Pausing 2 of the 3 jobs needs approval.
+
+### E-5 (A-02(c)): scoped and local runs among succeeded `forge_runs`
+
+**Query:** counts over `forge_runs where status='succeeded'` of non-empty `metrics->execution_scope->requested_game_ids`, of `git_sha like 'local:%'`, and of either.
+
+**Result:** 382 succeeded runs: **3** game-scoped, **0** `local:`.
+
+**Verdict: confirmed in part (A-02(c)).** Single-game scoped runs do exist in production, so the readers' lack of an `execution_scope` filter can matter. This read did not establish whether any scoped run was ever the newest run for its date.
+
+### E-6 (A-06, A-11): Vercel env names and targets, project `fhfhockey` (93 entries)
+
+| Name | Present | Target | Type |
+|---|---|---|---|
+| `DRAFT_PRO_PRIVATE_IMPORTS_ENABLED` | yes | production | encrypted |
+| `PLAYER_FORECAST_BASELINE_RELEASE_IDS` | **absent** | — | — |
+| `PLAYER_FORECAST_NATIVE_CATALOG_HEAD_ID` | **absent** | — | — |
+| `STARTER_BOARD_COMPUTE_ENABLED` | yes | production | plain |
+
+**Verdicts:**
+- **A-06: inconclusive.** The flag exists in production, but whether it is on needs its value, which TJ can check in the dashboard. If it is on, A-06 is "fix now".
+- **A-11: confirmed.** There is no native catalog head or baseline-release env in production, so nothing native is served there.
+
+## Shift-charts follow-up reads R-1 to R-3 (2026-10-19, ~13:55Z, Chef `local_4317ea20`)
+
+**Approval:** TJ in chat: "Read only checks: yes", for R-1 to R-3 from `tasks/artifacts/shift-charts-scope-2026-10-19/DIAGNOSIS.md`. Each read was one SELECT in `begin read only; set local statement_timeout='8s'`, run sequentially; no writes, no app requests.
+
+### R-1: today's `run-projection-v2` preflight gates
+
+**Method:** the first attempt, a JSON parse of `details->>'response'`, failed. The stored response is truncated at 4,000 characters and ends with "…", so it isn't valid JSON. It was re-planned once as a regex over the text.
+
+**Result** (10:12:12Z run, asOfDate 2026-10-19):
+
+| Gate | Status | Detail |
+|---|---|---|
+| `projection_derived_v2` | **FAIL** | player_latest=none, team_latest=none, goalie_latest=none |
+| `skater_derived_freshness` | **FAIL** | 8 of 8 teams missing recent skater derived rows (7-day window) |
+| `stale_goalie_game_rows` | **FAIL** | 6 of 8 teams missing recent goalie rows (30-day window) |
+| `projection_input_ingest` | PASS | scheduled_recent_games=97, actual_pbp_games=51, shifted_actual_games=51, shift_coverage=1.00, shift_rows=1949 |
+| `core_roster_schedule`, `goalie_start_priors_v2`, `line_combinations`, `outdated_player_team_assignments` (1 drift warning), `skater_line_freshness`, `skater_role_coverage` | PASS | — |
+
+**Verdict:** the diagnosis's hypothesis is **contradicted**. Shift-chart coverage is complete and passes. The 422 comes from the **derived tables**, which have no rows at all (`forge_player_game_strength`, `forge_team_game_strength`, `forge_goalie_game`). By the diagnosis's own downstream note, `selectPendingProjectionDerivedDates` only builds games whose relationship materialization is current. A relationship queue stuck on preseason games therefore starves the derived build, which fits these failures. Not proven by this read.
+
+### R-2: season game types
+
+**Result:**
+- type 1 (preseason): 2026-09-19 to 09-26, 65 games, all played
+- type 2 (regular season): 2026-09-29 to 2027-04-10, 1,344 games, 140 played or today
+
+**Verdict:** preseason is already outside the 14-day `projection_input_ingest` window. The regular season started 09-29.
+
+### R-3: game 2026010007 roster scope
+
+**Result:**
+- `projection_game_materialization_status`: input_status `complete`, hash `38596e61…`
+- `nhl_api_game_roster_spots`: **0 rows under any hash**
+
+**Verdict: confirmed.** The game has an empty roster scope: its preseason play-by-play stored no `rosterSpots`. This is not a hash mismatch, so it does not point to an ingest bug that would also hit regular-season games.

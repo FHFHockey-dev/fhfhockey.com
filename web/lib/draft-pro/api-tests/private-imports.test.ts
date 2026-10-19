@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DraftProRequestError } from "lib/draft-pro/requestError";
 
 const auth = vi.hoisted(() => vi.fn());
 const access = vi.hoisted(() => vi.fn());
@@ -37,7 +38,7 @@ describe("private import begin route", () => {
   });
 
   it("preserves the inactive capability's 403 reason", async () => {
-    const denied: any = new Error("Private imports require an active grant."); denied.statusCode = 403; denied.code = "no_active_grant";
+    const denied = new DraftProRequestError(403, "Private imports require an active grant.", "no_active_grant");
     requireCapability.mockImplementation(() => { throw denied; });
     const res = response(); await handler({ method: "POST", headers: {}, body } as any, res);
     expect(res.statusCode).toBe(403); expect(res.body).toEqual({ error: { code: "no_active_grant", message: "Private imports require an active grant." } }); expect(begin).not.toHaveBeenCalled();
@@ -57,7 +58,7 @@ describe("private import begin route", () => {
 });
 
 const rawFailure = { code: "42P01", message: 'relation "private_table" does not exist' };
-const typed = (message: string) => Object.assign(new Error(message), { statusCode: 400 });
+const typed = (message: string) => new DraftProRequestError(400, message);
 const chunkRequest = (headers: Record<string, string>) => ({ method: "PUT", headers, query: { uploadId: "upload-1", ordinal: "0" }, async *[Symbol.asyncIterator]() { yield Buffer.from("[]"); } });
 
 describe("private import stage and chunk routes", () => {
@@ -91,5 +92,43 @@ describe("private import stage and chunk routes", () => {
     putChunk.mockRejectedValueOnce(rawFailure);
     const res = response(); await chunkHandler(chunkRequest({ "x-draft-pro-upload-prefix": "prefix" }) as any, res);
     expect(res.statusCode).toBe(500); expect(res.body).toEqual({ error: { code: "PRIVATE_IMPORT_CHUNK_UNAVAILABLE", message: "Private imports are unavailable. Your local draft is unchanged." } });
+  });
+});
+
+describe("private import routes trust only DraftProRequestError", () => {
+  const fixed = "Private imports are unavailable. Your local draft is unchanged.";
+  const backendText = "synthetic backend storage details";
+  // Supabase StorageApiError carries statusCode as a string (@supabase/storage-js 2.89.0).
+  const storageError = () => Object.assign(new Error(backendText), { name: "StorageApiError", status: 500, statusCode: "500" });
+  const numericStatusError = () => Object.assign(new Error(backendText), { statusCode: 403, code: "backend_code" });
+  const postgrestError = () => ({ code: "PGRST116", details: `${backendText} (details)`, hint: null, message: backendText });
+  const routes = [
+    { name: "begin", mock: begin, code: "PRIVATE_IMPORT_UNAVAILABLE", call: (res: any) => handler({ method: "POST", headers: {}, body } as any, res) },
+    { name: "stage", mock: stage, code: "PRIVATE_IMPORT_STAGE_UNAVAILABLE", call: (res: any) => stageHandler({ method: "POST", headers: {}, query: { uploadId: "upload-1" }, body: { chunkPaths: ["x"] } } as any, res) },
+    { name: "chunk", mock: putChunk, code: "PRIVATE_IMPORT_CHUNK_UNAVAILABLE", call: (res: any) => chunkHandler(chunkRequest({ "x-draft-pro-upload-prefix": "prefix" }) as any, res) },
+  ];
+  beforeEach(() => { vi.clearAllMocks(); requireCapability.mockReset(); auth.mockResolvedValue({ id: "owner-1" }); access.mockResolvedValue({}); vi.spyOn(console, "error").mockImplementation(() => undefined); });
+
+  it.each(routes.flatMap((route) => [
+    { route, shape: "string statusCode (StorageApiError)", error: storageError },
+    { route, shape: "numeric statusCode", error: numericStatusError },
+    { route, shape: "PostgREST", error: postgrestError },
+  ]))("$route.name: a $shape error gets the fixed 500", async ({ route, error }) => {
+    route.mock.mockRejectedValueOnce(error());
+    const res = response(); await route.call(res);
+    expect(res.statusCode).toBe(500); expect(res.body).toEqual({ error: { code: route.code, message: fixed } });
+    expect(JSON.stringify(res.body)).not.toContain("synthetic backend");
+  });
+
+  it.each(routes)("$route.name: an intentional 400 keeps its status and message", async (route) => {
+    route.mock.mockRejectedValueOnce(typed("Private import upload is unavailable."));
+    const res = response(); await route.call(res);
+    expect(res.statusCode).toBe(400); expect(res.body.error.message).toBe("Private import upload is unavailable.");
+  });
+
+  it("AUDIT: redacts Supabase Storage errors carrying statusCode", async () => {
+    putChunk.mockRejectedValueOnce(storageError());
+    const res = response(); await chunkHandler(chunkRequest({ "x-draft-pro-upload-prefix": "prefix" }) as any, res);
+    expect(res.body.error.message).toBe(fixed);
   });
 });

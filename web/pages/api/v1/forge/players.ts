@@ -6,7 +6,7 @@ import { resolveProjectionTeamIdentity } from "lib/NHL/seasonAwareScheduleTeam";
 import supabase from "lib/supabase/server";
 import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
-import { buildRequestedDateServingState } from "lib/dashboard/freshness";
+import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
 import { buildCanonicalReaderCompatibility } from "lib/projections/compatibilityInventory";
 import * as forgeSkaterContext from "lib/projections/forgeSkaterContext";
 import {
@@ -130,17 +130,37 @@ async function fetchActiveRosterPlayerIdSet(
   );
 }
 
+// Matches the "fallback_recent" window of buildResolvedDataServingContract:
+// an older run is not served as current skater projections.
+const FALLBACK_MAX_AGE_DAYS = 3;
+
+function shiftDateOnly(date: string, days: number): string | null {
+  const ms = Date.parse(`${date}T00:00:00.000Z`);
+  if (!Number.isFinite(ms)) return null;
+  return new Date(ms + days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function isScopedRun(metrics: unknown): boolean {
+  const ids = (metrics as any)?.execution_scope?.requested_game_ids;
+  return Array.isArray(ids) && ids.length > 0;
+}
+
 async function fetchFallbackRunWithPlayerData(
   targetDate: string,
   horizonGames: number,
 ): Promise<{ runId: string; asOfDate: string } | null> {
   if (!supabase) throw new Error("Supabase server client not available");
+  const oldestAllowedDate = shiftDateOnly(targetDate, -FALLBACK_MAX_AGE_DAYS);
+  if (!oldestAllowedDate) return null;
 
   const scanCandidates = async (includeFutureDates: boolean) => {
     let query = supabase
       .from("forge_runs")
       .select("run_id,as_of_date,metrics")
       .eq("status", "succeeded")
+      // Fenced local runs stay private, as in start-chart.
+      .or("git_sha.is.null,git_sha.not.like.local:*")
+      .gte("as_of_date", oldestAllowedDate)
       .order("as_of_date", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(30);
@@ -152,11 +172,23 @@ async function fetchFallbackRunWithPlayerData(
     const { data: candidates, error: candidatesError } = await query;
     if (candidatesError) throw candidatesError;
 
-    const rows = (candidates ?? []) as Array<{
-      run_id: string;
-      as_of_date: string;
-      metrics?: { input_provenance?: { external_fantasy_input_contract?: string } };
-    }>;
+    const rows = (
+      (candidates ?? []) as Array<{
+        run_id: string;
+        as_of_date: string;
+        metrics?: { input_provenance?: { external_fantasy_input_contract?: string } };
+      }>
+    )
+      // Within a date, a full-slate run outranks a later single-game run.
+      .map((row, index) => ({ row, index }))
+      .sort(
+        (a, b) =>
+          (a.row.as_of_date === b.row.as_of_date
+            ? Number(isScopedRun(a.row.metrics)) -
+              Number(isScopedRun(b.row.metrics))
+            : 0) || a.index - b.index,
+      )
+      .map(({ row }) => row);
     for (const row of rows) {
       if (row.metrics?.input_provenance?.external_fantasy_input_contract !== FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT) continue;
       const { count, error } = await supabase
@@ -173,6 +205,16 @@ async function fetchFallbackRunWithPlayerData(
   };
 
   return (await scanCandidates(false)) ?? scanCandidates(true);
+}
+
+async function fetchGamesScheduledCount(date: string): Promise<number> {
+  if (!supabase) throw new Error("Supabase server client not available");
+  const { count, error } = await supabase
+    .from("games")
+    .select("id", { count: "exact", head: true })
+    .eq("date", date);
+  if (error) throw error;
+  return count ?? 0;
 }
 
 function parseHorizonGames(value: string | string[] | undefined): number {
@@ -378,6 +420,21 @@ export default async function handler(
     const degradedProjectionSummary = buildDegradedProjectionSummary(
       projections.map((row) => row.degradedProjectionContext),
     );
+    const serving = buildResolvedDataServingContract({
+      requestedDate: targetDate,
+      resolvedDate,
+      fallbackApplied,
+      strategy: fallbackApplied
+        ? "latest_available_with_data"
+        : "requested_date",
+      requestedScheduledGames: fallbackApplied
+        ? await fetchGamesScheduledCount(targetDate)
+        : null,
+      sourceLabel: "Skater projections",
+    });
+    // As in forge/goalies: rows served despite a blocking date gap are partial.
+    const servingBlocked =
+      projections.length > 0 && serving.severity === "error";
     const responseState = missingRequestedHorizon
       ? "blocked"
       : projections.length > 0
@@ -386,20 +443,13 @@ export default async function handler(
     const missingHorizonMessage = missingRequestedHorizon
       ? `No genuine ${horizonGames}-game projection output is available for ${resolvedDate}; one-game output exists but is not relabeled or scaled.`
       : null;
-    const serving = buildRequestedDateServingState({
-      requestedDate: targetDate,
-      resolvedDate,
-      fallbackApplied,
-      strategy: fallbackApplied
-        ? "latest_available_with_data"
-        : "requested_date",
-    });
     const scanSummary = buildEndpointScanSummary({
       surface: "forge_players_reader",
       requestedDate: targetDate,
       activeDataDate: resolvedDate,
       fallbackApplied,
-      status: responseState,
+      status:
+        servingBlocked && responseState === "ready" ? "partial" : responseState,
       rowCounts: {
         returned: projections.length,
         degraded_projection_rows: degradedProjectionSummary.degradedPlayerCount,
@@ -411,12 +461,13 @@ export default async function handler(
       },
       notes: fallbackApplied
         ? [
+            serving.message,
             `Serving fallback skater projections from ${resolvedDate}.`,
             missingHorizonMessage,
             degradedProjectionSummary.note,
           ]
         : [missingHorizonMessage, degradedProjectionSummary.note],
-      blockingIssueCount: missingRequestedHorizon ? 1 : 0,
+      blockingIssueCount: (missingRequestedHorizon ? 1 : 0) + (servingBlocked ? 1 : 0),
     });
 
     return res.status(200).json({
@@ -443,7 +494,7 @@ export default async function handler(
             ? "requested date had no usable skater rows"
             : null,
         missingRequestedHorizon,
-        message: missingHorizonMessage,
+        message: missingHorizonMessage ?? (servingBlocked ? serving.message : null),
         degradedProjectionSummary,
       },
       modelMetadata,

@@ -4,6 +4,7 @@ import serviceRoleClient from "lib/supabase/server";
 import type { Database, Json } from "lib/supabase/database-generated.types";
 
 import { cleanupPrivateImports } from "./privateImportCleanup";
+import { DraftProRequestError } from "./requestError";
 
 const BUCKET = "draft-pro-private-imports";
 export const PRIVATE_IMPORT_CHUNK_BYTES = 750 * 1024;
@@ -15,7 +16,7 @@ function bytesFrom(value: ArrayBuffer | ArrayLike<number>): OwnedBytes { return 
 function bytesEqual(left: OwnedBytes, right: OwnedBytes) { return left.byteLength === right.byteLength && left.every((value, index) => value === right[index]); }
 // Caller-correctable upload/stage problems answer 400 with their message;
 // untyped errors (storage/RPC failures) are left for the route's fixed 500.
-function invalidPrivateImport(message: string) { return Object.assign(new Error(message), { statusCode: 400 }); }
+function invalidPrivateImport(message: string) { return new DraftProRequestError(400, message); }
 
 function requireRow<T>(rows: T[] | null, message = "Private import transaction returned no result."): T {
   const value = rows?.[0];

@@ -1,0 +1,34 @@
+diff --git a/tasks/artifacts/forge-continuation-2026-10-17/daily-dry-run.ts b/tasks/artifacts/forge-continuation-2026-10-17/daily-dry-run.ts
+index 71b7b86..6b80d0b 100644
+--- a/tasks/artifacts/forge-continuation-2026-10-17/daily-dry-run.ts
++++ b/tasks/artifacts/forge-continuation-2026-10-17/daily-dry-run.ts
+@@ -6,6 +6,7 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+ import { join } from "node:path";
+ import { runForgeDaily, dailyCapturePlan } from "../../../web/scripts/forge-daily";
+ import { validateCadenceCommand } from "../../../web/scripts/native-baseline-cadence";
++import { publishObservedNativeBaselineCadence } from "../../../web/lib/player-forecasts/nativeBaselineCadence";
+ import { prepareNativeInputMaterialization } from "../../../web/lib/player-forecasts/nativeInputMaterialization";
+ import { applyNativeDailyReview } from "../../../web/lib/player-forecasts/nativeDailyPipeline";
+ import { validateNativeBaselinePublication } from "../../../web/lib/player-forecasts/nativeBaselinePublication";
+@@ -53,6 +54,7 @@ const log: any = { receipts: receipts.length };
+   const [commandPath, commandSha] = [join(out, "inputs/preparation-command.json"), sha(readFileSync(join(out, "inputs/preparation-command.json")))];
+   const outputs = await runForgeDaily(["outputs", "--command", commandPath, "--command-sha256", commandSha, "--proof", proofPath, "--proof-sha256", proofSha,
+     "--reviewed", reviewedPath, "--reviewed-sha256", reviewedSha, "--approval-ref", "dry-run:synthetic-approval", "--max-null-participation", "1260",
++    "--standing-approval-ref", "dry-run:synthetic-standing-approval",
+     "--out", join(out, "outputs")], () => new Date(issuedAt));
+   log.outputs = outputs;
+   const plan = read(join(out, "outputs/pending-plan.json"));
+@@ -65,7 +67,12 @@ const log: any = { receipts: receipts.length };
+     const cadence = read(join(out, "outputs/pending-cadence-command.json"));
+     const full = { ...cadence, cadenceInput: { ...cadence.cadenceInput, publicationPlan: reviewedPlan },
+       catalogHead: { headId: "00000000-0000-4000-8000-000000000001", expectedRevision: 0, expectedHash: null, observationId: "00000000-0000-4000-8000-000000000002" } };
+-    log.cadenceValidation = (await validateCadenceCommand(full, proof as any, at)).validation.rows;
++    const validated = await validateCadenceCommand(full, proof as any, at);
++    log.cadenceValidation = validated.validation.rows;
++    // The publish stage's dry run, as runNativeCadence calls it without --execute-target: no client, so no IO.
++    const publishDry: any = await publishObservedNativeBaselineCadence(validated.input, { dryRun: true,
++      approvedPackageHash: hash(validated.input.publicationPlan), producerReceiptIds: full.producerReceiptIds, catalogHead: full.catalogHead });
++    log.publishDry = { status: publishDry.status, reasons: publishDry.reasons ?? [], slot: publishDry.slot?.key ?? null };
+   } catch (error) { log.cadenceValidationError = (error as Error).message; }
+   // Participation comparison against the receipts actually published on 2026-10-16, by method/player/game.
+   const published = new Map<string, any>();

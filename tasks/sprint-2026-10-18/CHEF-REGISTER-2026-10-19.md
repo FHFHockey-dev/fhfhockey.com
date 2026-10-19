@@ -102,3 +102,62 @@ The approvals answer the four questions Chef asked, so each one covers what that
   - P-B: now 07:31 EDT (11:31Z). Read-only; its guard needs only a time after 10-18 10:55Z.
   - FORGE v1 live: now 07:50 EDT (11:50Z). Runbook timing still holds: capture after 04:00Z, outputs at or after 12:00Z (reached naturally after capture, inputs and materialize), publish before 21:30Z. Expiry stays at about 22:59:59.999Z, because issuance plus 12 h is later than the first game.
   - Pre-flight: frozen files equal HEAD `cfeca5024`; port 3105 free; heavy lock free; battery 92% and charging.
+- 11:32Z: **D-01 P-B recovery verified**: all 4 checks pass (`production-plans.md` P-B note).
+  - Job 374 ended at 10:38:24Z, before 10:40.
+  - Baselines: 967 of 967 candidates.
+  - Window-z: 642 players.
+  - Chef spot-check (1 read-only SELECT): `player_baselines` has 400 rows on 10-17, 967 on 10-18 and 966 on 10-19. Today's run is also complete.
+  - ⚠️ 11:34Z: battery is discharging again (99%, about 4.5 h left), so the laptop needs power for the FORGE run.
+- ~12:35Z: **D-06 queued: cross-check reads E-1 to E-6.** TJ's approval was relayed by `local_08a0bf1c` and quoted exactly: "Approved: have the Chef run read-only checks E-1 to E-6 from CROSS-CHECK-AUDIT.md, one at a time with an 8 s statement timeout, outside scheduled runs, and record the results in PROD-READS-2026-10-19.md."
+  - Held until the FORGE v1 run (`local_791cbba4`) finishes.
+  - Hands off the files of `fix-stale-forge-readers` (`local_7570d4f4`): `forge/{players,goalies}.ts`, the 3 draft-pro private-import routes, `privateImportTransport.ts`, `server.ts` and their tests.
+  - E-3 is **held at TJ's request** (relayed by `local_08a0bf1c`, quoted exactly: "I need to look into the nst-team-stats one. pause that one only until I can confirm"). It has not been run. The NST team-daily and CTPI jobs are untouched.
+- ~12:30Z: **D-02 FORGE v1 live run verified: not published, correctly** (LEDGER §13, uncommitted, written by run `local_791cbba4`).
+  - Every gate passed through review: 37 NHL GETs; materialize `closed` with 427 requests in about 95 s; outputs 1,260 entries with 100 null; the reviewer approved planHash `7ecf13a5…`.
+  - Publish dry run `held` with `native_target_scope_mismatch`. Chef read `publish-dry/stage.json`: reasons `["native_target_scope_mismatch"]`, `selectedCatalogUpdated: false`, 0 network requests. Cause: the gate at `nativeBaselineCadence.ts:91-95` needs every baseline source to have a matching target, and 9 means-only players have none.
+  - No publish, no CAS, no head, no readback. This matches the runbook: on `held`, no retry, and report.
+  - Fix after the freeze lifts (2026-10-20 17:00Z): outputs emit seasonal sources only for players with targets (or game-bound targets), plus a publish dry run in `daily-dry-run.ts`. The method window runs to 10-27 04:00Z.
+  - HEAD at the run was `865cbbf12`, TJ's local "sprint" commit; the frozen files still equal HEAD.
+- ~12:40Z: **D-06 E-1, E-2, E-4, E-5, E-6 done** (E-3 held). Results are in `PROD-READS-2026-10-19.md` under "Cross-check reads E-1 to E-6": 5 SQL reads, 1 Vercel env-names GET, no timeouts.
+- ~13:10Z: **Side sessions reviewed by Chef.**
+  - **`forge-target-scope` (`local_582cd0e7`)** wrote `tasks/artifacts/forge-target-scope-fix-2026-10-19/`.
+    - Option (a) is recommended: issue sources only for players with participation targets, which serves 9 fewer players for now. Option (b), game-bound targets, is a separate method project.
+    - Patches 01, 01b (01 on top of v2 01–04) and 02 (publish dry run in the daily dry run).
+    - Offline replay at today's clocks: publishes dry with 0 untargeted sources.
+    - Chef: 01 and 02 pass `git apply --check` on HEAD; frozen files are clean in the checkout.
+    - ❓ TJ: choose (a) or (b), and confirm that the standing approval covers a narrowed v1 issuance with new policy rows. Apply after 2026-10-20 17:00Z.
+  - **`shift-charts-scope` (`local_a597f542`)** wrote `tasks/artifacts/shift-charts-scope-2026-10-19/DIAGNOSIS.md`.
+    - Cause: the relationship queue takes the oldest 16 pending games with no type filter, so preseason games crowd out regular-season ones. Game 2026010007 most likely has an empty roster scope.
+    - Fix (uncommitted, `relationshipMaterialization.ts` plus its test): keep only game types 02 and 03.
+    - Chef reviewed the diff and re-ran the test file: 19/19 pass. The session reports 58/58 across 5 files.
+    - The `run-projection-v2` 422 is most likely the `projection_input_ingest` shift-chart coverage gate (14-day window, no type filter).
+    - ❓ TJ: release it (R3), approve production reads R-1 to R-3, and approve a bounded catch-up of about 80 pending regular-season games.
+- ~13:15Z: **TJ decision, FORGE means-only players** (quoted exactly): "Go with option (a): serve only players with participation targets; the standing approval covers the narrowed issuance. Apply after 10-20 17:00Z."
+  - The v2 replay holds at the same gate (72 sources), so `forge-target-scope` (`local_582cd0e7`) was asked for the matching v2 `inputs-v2` patch `03b` and a final verified apply order.
+  - Planned order after 2026-10-20 17:00Z: v2 01–04, then 01b, then 03b, then 02. Then the focused Vitest list, full tsc under the lock, and the offline replays. No commit without TJ.
+  - The next dated live run needs its own scheduling decision. The method window runs until 10-27 04:00Z.
+- ~13:40Z: **FORGE apply set final.** `forge-target-scope-fix-2026-10-19/` now has `03b-v2-inputs-means-only-filter.patch`, and the README gives the 7-patch apply order: v2 01–04, then 01b, then 03b, then 02. `SHA256SUMS` verifies OK.
+  - Chef applied all 7 in that order to a `git archive HEAD` scratch copy: all apply cleanly.
+  - The session reports that the v2 replay with 03b reaches publish dry run, not `held`.
+  - A duplicate child session (`apply-means-only-filter`, `local_50f8bd81`) wrote an alternative `forge-v2-target-scope-fix-2026-10-19/05-…patch`. **Superseded by 03b; not used.** Kept, not deleted.
+  - Frozen files are still clean in the checkout.
+- ~13:40Z: ⚠️ **Large uncommitted change set in the shared tree that is not Chef's:** about 70 `web/pages/api/v1/**` cron routes, sustainability routes, `pages/index.tsx`, `pages/db/index.tsx`, new `web/lib/cron/nhlOffSeason.ts` and `web/components/Admin/`. No linked session is working. The owner is unknown (TJ or another tool?). Preserved untouched, and no frozen file is among them. It must be attributed before any commit.
+- ~13:45Z: **Attributed:** TJ confirmed that the nhlOffSeason and cron-route change set is his: "Yes, the nhlOffSeason and cron-route changes are mine; leave them alone." Chef does not touch, stage or commit it.
+- ~13:55Z: **R-1 to R-3 done** (TJ: "Read only checks: yes"). Results are in PROD-READS:
+  - The 422 comes from the derived gates (no derived rows), **not** shift coverage, which passes at 1.00.
+  - Preseason ran 09-19 to 09-26; the regular season started 09-29.
+  - 2026010007 has 0 roster rows.
+- ~13:55Z: **TJ shift-charts requirement** (quoted exactly): "I would like to be able to see Pre-season shift charts, but once regular season starts they should not be in the queue. If a user selects a date that is a preseason game they should be able to view it." This was sent to `shift-charts-scope` for a revised fix.
+- **TJ on the catch-up** (quoted exactly): "If the catch up run is `nst-team-stats` I am working on the catch up run, if it is not that then yes run it."
+  - The catch-up is shift-charts relationship materialization, not NST. But production code still queues preseason first and throws on 2026010007, so a catch-up run would fail the same way.
+  - The catch-up is therefore held until the revised fix is released (R3, which needs TJ's release go).
+  - The R3 file set must exclude TJ's own uncommitted cron-route changes.
+- ~14:20Z: **R3 shift-charts fix reviewed by Chef** (`shift-charts-scope` revision).
+  - Changes:
+    - `relationshipMaterialization.ts`: preseason is queued only until a type-02 game has a status row; then only types 02 and 03.
+    - `shift-charts.ts`: a type-01 game with 0 roster rows is skipped as `preseason_without_roster_spots`, while other types still fail closed. The response gains `skippedGames`.
+  - Tests: Chef re-ran 5 files, 60/60 pass. The session reports 87/87 across 10 files including `lib/projections/derived`, plus ESLint clean.
+  - Corrected diagnosis: the stuck relationship queue starves the derived build (`projectionDerivedQueue.ts:38`), which explains the 3 failing gates.
+  - Release file list: 4 web files plus the diagnosis note. None is among TJ's uncommitted files; `shift-charts.ts` was clean before the edit.
+  - ❓ TJ: release go for R3.
+  - After R3 is live: the approved catch-up (`update-shift-charts?maxGames=50`, sequential, outside scheduled times; bound proposed at ≤3 runs).

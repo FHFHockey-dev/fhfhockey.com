@@ -150,6 +150,22 @@ describe("homepage fantasy tool switcher", () => {
     expect(screen.getByTestId("homepage-draft-ranker")).toBeTruthy();
   });
 
+  it("hides the draft ranker during the season even when enabled", () => {
+    render(
+      <Home
+        {...(baseProps as any)}
+        draftRankerHomepageEnabled
+        isOffseason={false}
+        latestNews={[]}
+      />,
+    );
+
+    expect(screen.queryByRole("tablist")).toBeNull();
+    expect(screen.queryByText("Draft Ranker")).toBeNull();
+    expect(screen.queryByTestId("homepage-draft-ranker")).toBeNull();
+    expect(screen.getByTestId("transaction-trends").textContent).toBe("ownership");
+  });
+
   it("keeps transaction trends as the only module when the ranker is disabled", () => {
     render(<Home {...(baseProps as any)} latestNews={[]} />);
 

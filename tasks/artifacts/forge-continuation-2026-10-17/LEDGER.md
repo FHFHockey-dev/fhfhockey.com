@@ -317,3 +317,59 @@ The local harness had run as a superuser on Postgres 17, so I also confirmed tha
 - fresh native means (v2, after the Oct 28 readout)
 - a rolling-window participation method (a method change for owner approval)
 - unit tests for the CLI gates
+
+## 13. Live run 2026-10-19 (scheduled task `forge-daily-live-20261020`; Chef, ~11:50–12:06Z)
+
+**Outcome: not published.** Every stage through review passed. The publish dry run came back `held` (`native_target_scope_mismatch`), so no publish execute, no catalog-head CAS, no head ID and no readback.
+
+All paths below are under `P=/Users/tim/Documents/FHFH-private/forge-rso-completion-20261016-v1/daily-20261019-v1/`.
+
+**Pre-checks.** Started 11:50:48Z, well before the 20:00Z cutoff. HEAD was `865cbbf12`, which contains the driver `0de97e77d`. The frozen v2-ownership files equal HEAD; the only dirty file was the unrelated `tasks/sprint-2026-10-18/CHEF-REGISTER-2026-10-19.md`.
+
+| # | Step | Result |
+|---|---|---|
+| 1 | Head check (1 SQL read, Supabase MCP) | `native_forecast_catalog_heads` exists with 0 rows; the CAS RPC is present |
+| 2 | Capture (`capture/`) | The plan-only run matched: 27 club rosters, Sep 29 and Oct 6 weeks, 8 future weeks from Oct 19. Execute made 37 GETs, all 200, about 1.19 MB, 11:51:24–11:52:04Z, api-web.nhle.com only, no Yahoo |
+| 3 | Inputs (`inputs/`) | `inputs_bound`. Cutoff 11:52:04.734Z; 1,260 participation inputs; 477 parents (524 dropped); 4 games; all gates passed |
+| 4 | Materialize dry (`materialize-dry/`) | 205 rows (1 parent, 120 http receipts, 81 player, 3 participation inputs) plus report and closure; manifest 1,341 items, revision `ebfda674…` |
+| 4 | Materialize execute (`materialize/`) | **`closed`.** 427 requests, 6 insert attempts, 17.9 MB up, 86.9 MB down, about 95 s (≤1,320 and ≤180 s). Closure at 11:53:48.782Z. This is the only hosted write of the run: inserts into `player_forecast_source_observations` |
+| 5 | Outputs (`outputs/`), run at 12:00:32Z | Issued 12:00:33.671Z. 104 rows; 81 native inputs; 584 native sources; 1,260 entries, **100 null** (gate 100). Expiry 2026-10-19T22:59:59.999Z. planHash `7ecf13a5…cc02` |
+| 6 | Independent review (`review-decision.json`) | **Approve** (reviewer `forge-daily-independent-reviewer-agent-2026-10-19`, reviewRef `…:c46ce31c…3fb2`, reviewedAt 12:03:57Z), with 7 findings |
+| 7 | Review applied (`reviewed/`) | `reviewed_pending_publish`; reviewedPlanHash `08c5e4e2…6bba`; head ID drawn `779f3aef-3b5e-427e-80a9-f01b995bf89a` (unused) |
+| 7 | Publish dry (`publish-dry/`) | **`held`: `native_target_scope_mismatch`.** 0 network requests. Not executed |
+| 8 | Readback | Not run (nothing selected to read) |
+
+**What the reviewer found** (all pass):
+- **Means and cutoffs.** All 584 sources are identical to the reviewed Oct 16 rows; only issuedAt and expiresAt differ.
+- **Re-issue disclosure.** Present on all 6 review rows.
+- **Participation.** Identical to the Oct 20 replay. Nulls break down as:
+  - 60 `unknown_eligibility_or_occurrence`: 9711, 10012, 10043
+  - 20 `stale_eligible_history`: 10448
+  - 20 for Fiala 9572: `known_current_roster_conflict` + `no_eligible_history`
+- **Expiry.** Uniform.
+- **Ledger.** Clean.
+- **Rows.** 104 rows, unique IDs, every hash recomputes.
+- **Injury limit to name (disclosed limit).** Spurgeon (9431), Yahoo O (Upper Body) on Oct 16, receives p=1 on all 20 receipts with `knownConflict=null`.
+
+**Why it held.** `publishObservedNativeBaselineCadence` (`web/lib/player-forecasts/nativeBaselineCadence.ts:91-95`) requires every seasonal-rate source to bind to a participation or game target with the same player, team and `rosterRevision`. The 9 means-only players have 75 sources and no targets at all: 8769, 9392, 9806, 9936, 10134, 10590, 10637 (9 sources each) and 9682, 10622 (6 each). The season, game-clock, required-game and issuance checks all pass. The Oct 20 replay's `cadenceValidation: 104` ran only `validateCadenceCommand`, never this slot-scope check, so the gap was untested until today. It is deterministic, so a retry would hold the same way.
+
+**Publish decision (Chef): do not publish.** Two ways around it exist, and neither is authorized:
+- Passing the gate would need an edit to a frozen run file. They stay frozen until 2026-10-20 17:00Z.
+- The other way is hand-dropping the means-only sources from an already-reviewed plan. That would change the plan hash, need a new review, and remove 9 players from what the review approved.
+
+**Revisit (recommended)** after the freeze lifts:
+1. Make `outputs` emit seasonal sources only for players who have participation targets, or emit explicit game-bound targets for means-only players. This needs a decision on whether means-only players are served at all.
+2. Extend `daily-dry-run.ts` to run the publish dry run (`publishObservedNativeBaselineCadence`, dryRun) against the reviewed command, so the replay exercises this gate.
+3. Re-run a dated live run.
+
+The method window still accepts cutoffs until 2026-10-27 04:00Z.
+
+**Hosted footprint today:** 1 read-only SQL, 37 NHL GETs, and the closed materialize inserts above. No publish, no CAS, no Yahoo, no readback requests, no Vercel, no git commit or push.
+
+**Limits (unchanged):**
+- Means are frozen at their Oct 16 cutoffs.
+- Fiala's (9572) carried conflict withholds his 20 receipts.
+- Injury coverage gap: 11 IR/O players are unknown, not withheld (Spurgeon named above).
+- 11 of 69 players have means only. 9 of them are in the bundles and caused the hold.
+- No Yahoo read in v1.
+- The run date moved from 2026-10-20 to 2026-10-19.

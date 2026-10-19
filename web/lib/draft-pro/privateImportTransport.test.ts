@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createHash } from "crypto";
+import { DraftProRequestError } from "lib/draft-pro/requestError";
 
 const rpc = vi.hoisted(() => vi.fn());
 const storageUpload = vi.hoisted(() => vi.fn());
@@ -21,6 +22,8 @@ describe("private import transport ownership boundary", () => {
   it("does not touch Storage when the upload lookup is unavailable to this user", async () => {
     rpc.mockResolvedValueOnce({ data: [], error: null });
     await expect(putPrivateImportChunk({ userId: "other-user", uploadId: "upload-1", prefix: "spoofed", ordinal: 0, bytes: Buffer.from("[]") })).rejects.toMatchObject({ statusCode: 400, message: "Private import upload is unavailable." });
+    rpc.mockResolvedValueOnce({ data: [], error: null });
+    await expect(putPrivateImportChunk({ userId: "other-user", uploadId: "upload-1", prefix: "spoofed", ordinal: 0, bytes: Buffer.from("[]") })).rejects.toBeInstanceOf(DraftProRequestError);
     expect(storageUpload).not.toHaveBeenCalled(); expect(storageDownload).not.toHaveBeenCalled();
   });
 

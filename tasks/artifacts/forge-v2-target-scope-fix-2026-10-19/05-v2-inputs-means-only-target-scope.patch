@@ -1,0 +1,45 @@
+diff --git a/web/scripts/forge-daily-v2.ts b/web/scripts/forge-daily-v2.ts
+index 9d5593e..580decb 100644
+--- a/web/scripts/forge-daily-v2.ts
++++ b/web/scripts/forge-daily-v2.ts
+@@ -9,13 +9,13 @@ import { mkdirSync } from "node:fs";
+ import { resolve } from "node:path";
+ import { boundedFile, privateWrite } from "./native-baseline-cadence";
+ import { historyWeekDates, morningDueAt } from "./forge-daily";
+-import { buildDailyParticipationInputs, dailyExpiresAt, dailyGames, dailyScheduleBindings, reobserveHistoryWindow,
++import { buildDailyParticipationInputs, dailyExpiresAt, dailyGames, dailyScheduleBindings, excludeMeansOnlyNatives, reobserveHistoryWindow,
+   type HttpReceipt } from "../lib/player-forecasts/nativeDailyPipeline";
+ import { assertParticipationCoverage, assertStandingApprovalMethods, buildDailyMaterializationRequestV2, buildRollingDailyParticipationInputs, frozenWindowParticipationParents, nativeDailyKnownConflicts,
+   nativeDailyNullParticipation, nativeDailyOriginalParent, nativeDailyParticipationMethod, nativeDailyScheduleRevision, nativeDailyUniverse,
+   nativeDailyV2Flags } from "../lib/player-forecasts/nativeDailyPipelineV2";
+ import { buildRollingParticipationHistories, rollingHistoryScheduleUrls } from "../lib/player-forecasts/rollingParticipationFrame";
+-import { mergeNativeMaterializationParents } from "../lib/player-forecasts/nativeDailyMeansCapture";
++import { mergeNativeMaterializationParents, nativeMeansMaterializationPieces } from "../lib/player-forecasts/nativeDailyMeansCapture";
+ import { prepareNativeCadenceOutputs, type NativeOutputPreparationCommand } from "../lib/player-forecasts/nativeCadenceOutputPreparation";
+ import { timestampMicros } from "../lib/projections/evidenceTime";
+ 
+@@ -90,7 +90,11 @@ export async function runForgeDailyV2(stage: string, argv: string[], now = () =>
+       participationParents = mergeNativeMaterializationParents(frame.parents, [...rosters, ...futureSchedules].map(nativeDailyOriginalParent)).parents;
+       extra = { exclusions: bindings.exclusions, rollingFrame: frame.coverage };
+     }
+-    const bound = buildDailyMaterializationRequestV2({ acquisition, universe: players, means, participationInputs: participation.inputs,
++    // Means-only players are not served: fresh means bind only for players with a participation target, as the publish gate requires.
++    const scoped = excludeMeansOnlyNatives({ ...retained, acquisition: { ...retained.acquisition, roster: players }, nativeSelection: means.nativeSelection,
++      additionalNativeObservations: means.additionalNativeObservations, existingInputs: undefined }, participation.inputs);
++    const servedMeans = { cutoffAt: means.cutoffAt, ...nativeMeansMaterializationPieces(scoped.request.additionalNativeObservations as any) };
++    const bound = buildDailyMaterializationRequestV2({ acquisition, universe: players, means: servedMeans, participationInputs: participation.inputs,
+       participationParents, cutoffAt, runId, date, sourceKey, seasonId, games });
+     const out = output(args.get("--out") ?? fail("missing_out"));
+     const command = { version: "native-output-preparation-v1" as const, slotKey: `morning:${date}`, dueAt: morningDueAt(date),
+@@ -99,9 +103,9 @@ export async function runForgeDailyV2(stage: string, argv: string[], now = () =>
+     privateWrite(resolve(out, "materialization-request.json"), bound.request);
+     privateWrite(resolve(out, "preparation-command.json"), command);
+     privateWrite(resolve(out, "coverage.json"), { cutoffAt, method, flags, universe: gate, games, ...extra, means: { cutoffAt: means.cutoffAt,
+-      selected: means.nativeSelection.length, coverage: means.coverage }, participation: participation.coverage, requestBytes: bound.requestBytes });
++      selected: means.nativeSelection.length, coverage: means.coverage }, meansOnlyExcluded: scoped.excluded, participation: participation.coverage, requestBytes: bound.requestBytes });
+     return { stage, status: "inputs_bound", method, cutoffAt, flags, universe: gate, nativeSelected: means.nativeSelection.length,
+-      participationInputs: participation.inputs.length, parents: bound.request.parents?.length, requestBytes: bound.requestBytes, games: games.length,
++      meansOnlyExcluded: scoped.excluded.length, participationInputs: participation.inputs.length, parents: bound.request.parents?.length, requestBytes: bound.requestBytes, games: games.length,
+       dueAt: command.dueAt, networkRequests: 0, databaseWrites: 0, out };
+   }
+   if (stage === "outputs-v2") {

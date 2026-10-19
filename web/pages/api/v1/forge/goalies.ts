@@ -294,9 +294,11 @@ async function fetchFallbackRunWithGoalieData(
   if (!supabase) throw new Error("Supabase server client not available");
 
   const findCandidate = async (includeFutureDates: boolean) => {
+    // Only succeeded runs; a failed or still-running run's rows are not served.
     let query = supabase
       .from("forge_goalie_projections")
-      .select("run_id,as_of_date")
+      .select("run_id,as_of_date,forge_runs!inner(status)")
+      .eq("forge_runs.status", "succeeded")
       .eq("horizon_games", horizon)
       .order("as_of_date", { ascending: false })
       .limit(1);
