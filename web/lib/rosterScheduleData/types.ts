@@ -31,6 +31,7 @@ export type NhlScheduleGame = {
 export type FetchedNhlScheduleGame = {
   game: NhlScheduleGame;
   sourceUrl: string;
+  scheduleCoverage?: { version: "nhl-source-days-v1"; date: string; gameIds: number[]; emptyDates: string[] };
 };
 
 export type MatchupWeekMapping =

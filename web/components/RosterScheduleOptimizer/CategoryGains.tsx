@@ -46,7 +46,10 @@ export default function CategoryGains({ baseline, plan, scoring, label, reviewed
         ? "Category gains unavailable: the no-move lineup cannot satisfy the current lineup locks."
         : "Category gains unavailable: the no-move plan fails current league or roster rules."
       : "Category gains unavailable. Review forecast coverage, opponent inputs, acquisition rules and goalie minimums."}</p>}
-    {scoring.categories.map(category => {
+    {[...scoring.categories].sort((a, b) => {
+      const losing = (key: string) => comparable && baseline?.categoryResults.find(row => row.key === key)?.result === "loss" ? 1 : 0;
+      return losing(b.key) - losing(a.key);
+    }).map(category => {
       const before = baseline?.categoryResults.find(row => row.key === category.key);
       const after = plan?.categoryResults.find(row => row.key === category.key);
       const available = comparable && !!before && !!after && finite(before.own) && finite(after.own)
@@ -61,6 +64,6 @@ export default function CategoryGains({ baseline, plan, scoring, label, reviewed
         </>}
       </article>;
     })}
-    <p>Provisional estimates; category changes are not win probabilities.{!reviewed && " Review planning inputs before acting."}</p>
+    <p>Losing categories appear first using provisional mean comparisons. Category changes are not win probabilities; a matchup win-probability model is unavailable. Review the category tradeoffs and choose the plan.{!reviewed && " Review planning inputs before acting."}</p>
   </details>;
 }

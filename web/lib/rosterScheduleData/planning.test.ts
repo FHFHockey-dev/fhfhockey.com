@@ -118,6 +118,25 @@ describe("public RSO data boundary", () => {
   const publicQuery = { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-11" };
   const publicOptions = { now: new Date("2026-10-10T12:00:00Z"), forecastsEnabled: false };
 
+  it("serves interim FORGE daily projections to RSO callers only", async () => {
+    const { db, tables } = formDb([], []);
+    Object.assign(tables, {
+      forge_runs: [{ run_id: "run-b", as_of_date: "2026-10-09", created_at: "2026-10-09T15:00:00Z", git_sha: "abc" }],
+      forge_player_projections: [{ run_id: "run-b", as_of_date: "2026-10-09", horizon_games: 1, game_id: 2026020000, player_id: 847001, team_id: 1,
+        proj_goals_es: 0.3, proj_goals_pp: 0.1, proj_assists_es: 0.4, proj_assists_pp: 0.1, proj_shots_es: 2, proj_shots_pp: 0.5,
+        proj_toi_es_seconds: 900, proj_toi_pp_seconds: 120, proj_hits: 1, proj_blocks: 0.4 }],
+      forge_goalie_projections: [], goalie_start_projections: [] });
+    const bridged = await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true });
+    expect(bridged.forecasts).toEqual([expect.objectContaining({ playerId: "7", gameId: "2026020001",
+      revisionId: "forge-daily-bridge-v1:run-b", stats: expect.objectContaining({ GOALS: 0.4, POINTS: 0.9 }) })]);
+    expect(bridged.evidence.forecasts.source).toBe("Interim FORGE daily projections");
+    expect(bridged.forecastManifest).toMatchObject({ issuedRevisionIds: ["forge-daily-bridge-v1:run-b"], forecastedOpportunities: 1 });
+    expect(bridged.forecastManifest?.exclusionCounts.serving_disabled).toBeUndefined();
+    expect((await loadPlanningData(db as never, publicQuery, publicOptions)).forecasts).toEqual([]);
+    vi.stubEnv("RSO_FORGE_DAILY_BRIDGE", "off");
+    expect((await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true })).forecasts).toEqual([]);
+  });
+
   function cappedInputs(options: Parameters<typeof formDb>[3] = {}) {
     const fixture = formDb([], [], undefined, { cap: 1, ...options });
     fixture.tables.roster_optimizer_team_games = [...rows, { ...rows[0], id: 2, source_game_id: 2026020002,

@@ -1,5 +1,6 @@
-import type { LeagueRules, PlanIntent, PlanningContext, PlanningData, PlanningPlayer, PlanningSnapshot, PlanningWorkspace } from "./planningTypes";
-import { workspaceSchema } from "lib/in-season/workspaceSchema";
+import type { LeagueRules, PlanIntent, PlanningContext, PlanningData, PlanningPlayer, PlanningSnapshot, PlanningWorkspace, ProviderCapabilities, RevisionProposal } from "./planningTypes";
+import { saveWorkspaceSchema, snapshotSchema, workspaceSchema } from "lib/in-season/workspaceSchema";
+import { localDate } from "./planningDates";
 
 export const WORKSPACE_KEY = "fhfh:rso:workspace:v1";
 export const WORKSPACE_HISTORY_LIMIT = 20;
@@ -12,13 +13,168 @@ function contextStorageKey(context: PlanningContext): string {
   return `${WORKSPACE_KEY}:context:${encodeURIComponent(workspaceContextKey(context))}`;
 }
 
-export function defaultContext(now = new Date()): PlanningContext {
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-  const localDate = (date: Date) => { const parts = new Intl.DateTimeFormat("en-US", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date); const part = (type: string) => parts.find((item) => item.type === type)?.value ?? ""; return `${part("year")}-${part("month")}-${part("day")}`; };
-  const start = localDate(now);
-  const end = new Date(`${start}T12:00:00Z`); end.setUTCDate(end.getUTCDate() + 13);
-  const year = Number(start.slice(0, 4)) - (Number(start.slice(5, 7)) < 8 ? 1 : 0);
-  return { provider: "manual", seasonId: year * 10000 + year + 1, leagueId: "manual", teamId: "manual", startDate: start, endDate: end.toISOString().slice(0, 10), timeZone, asOf: now.toISOString() };
+export const WORKSPACE_WRITER_LOCK = `${WORKSPACE_KEY}:writer`;
+export const WORKSPACE_PRESERVATION_JOURNAL = "fhfh:rso:preservation:v1";
+export type PreservedKey = { key: string; value: string | null };
+export type PreservationRemote = { receiptId: string; row: Record<string, unknown> | null };
+export type PreservationProvider = {
+  connected: PlanningSnapshot | null; capabilities: ProviderCapabilities | null; proposal: RevisionProposal | null;
+  refresh: { key: string; userId: string | undefined; state: "busy" | "success" | "partial" | "error"; text: string } | null;
+  schedule: { key: string; userId: string | undefined; nextAutoAt: number; cooldownUntil: number; delay: number; blocked: boolean } | null;
+  settledRefresh: number; lastUpdated: string | null;
+};
+export type WorkspacePreservation = {
+  version: 2; principalId: string; contextKey: string;
+  workspace: PlanningWorkspace; history: PlanningWorkspace[];
+  view: { selectedDate: { context: string; date: string } | null; selectedPlayer: string | null; tab: string };
+  local: PreservedKey[]; session: PreservedKey; remote: PreservationRemote; provider: PreservationProvider | null; checksum: string;
+};
+
+export function preservationKeys(principalId: string, context: PlanningContext): string[] {
+  const key = contextStorageKey(context);
+  const view = JSON.stringify([principalId, workspaceContextKey(context)]);
+  return [WORKSPACE_KEY, key, `${key}:undo`, `fhfh:rso:view-date:v1:${encodeURIComponent(view)}`];
+}
+
+export function readPreservedKeys(storage: Pick<Storage, "getItem">, keys: readonly string[]): PreservedKey[] {
+  return keys.map(key => ({ key, value: storage.getItem(key) }));
+}
+
+export function preservationJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(preservationJson).join(",")}]`;
+  if (value && typeof value === "object") return `{${Object.entries(value).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)
+    .map(([key, item]) => `${JSON.stringify(key)}:${preservationJson(item)}`).join(",")}}`;
+  return JSON.stringify(value);
+}
+
+export async function preservationChecksum(value: unknown): Promise<string> {
+  if (!globalThis.crypto?.subtle) throw new Error("Secure backup checksums are unavailable in this browser.");
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(preservationJson(value)));
+  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+export async function validatePreservation(backup: WorkspacePreservation, principalId: string, contextKey: string,
+  digest = preservationChecksum): Promise<void> {
+  if (!backup || backup.version !== 2 || backup.principalId !== principalId || backup.contextKey !== contextKey
+    || !principalId || !/^[a-f0-9]{64}$/.test(backup.checksum ?? "")) throw new Error("Backup principal or context does not match.");
+  const { checksum, ...payload } = backup;
+  if (await digest(payload) !== checksum) throw new Error("Backup checksum does not match. Nothing was restored.");
+  const workspace = workspaceSchema.parse(backup.workspace);
+  if (workspaceContextKey(workspace.context) !== contextKey || !Array.isArray(backup.history) || backup.history.length > WORKSPACE_HISTORY_LIMIT) throw new Error("Invalid backup context or Undo history.");
+  if (backup.provider !== null) {
+    const provider = backup.provider;
+    if (!provider || !Number.isInteger(provider.settledRefresh) || provider.settledRefresh < 0
+      || provider.lastUpdated !== null && !Number.isFinite(Date.parse(provider.lastUpdated))) throw new Error("Invalid provider authority backup.");
+    if (provider.connected !== null && workspaceContextKey(snapshotSchema.parse(provider.connected).context) !== contextKey) throw new Error("Provider backup belongs to another context.");
+    if (provider.capabilities !== null && (!provider.capabilities || ["roster", "availability", "rules", "matchup", "acquisitions"].some(key => typeof provider.capabilities![key as keyof ProviderCapabilities] !== "boolean")
+      || !Array.isArray(provider.capabilities.limitations) || provider.capabilities.limitations.some(item => typeof item !== "string"))) throw new Error("Invalid provider capabilities backup.");
+    const proposal = provider.proposal;
+    if (proposal !== null) {
+      if (!proposal || typeof proposal.snapshotId !== "string" || !Number.isInteger(proposal.intentRevision) || proposal.intentRevision < 0
+        || !Array.isArray(proposal.issues) || proposal.issues.some(issue => !issue || issue.stepId !== null && typeof issue.stepId !== "string" || typeof issue.message !== "string")) throw new Error("Invalid provider proposal backup.");
+      if (proposal.suggestedSteps !== null) workspaceSchema.parse({ ...workspace, intent: { ...workspace.intent, steps: proposal.suggestedSteps } });
+    }
+    for (const state of [provider.refresh, provider.schedule]) if (state !== null && (!state || state.key !== contextKey || state.userId !== principalId)) throw new Error("Provider refresh backup belongs to another principal or context.");
+    if (provider.refresh !== null && (!["busy", "success", "partial", "error"].includes(provider.refresh.state) || typeof provider.refresh.text !== "string")) throw new Error("Invalid provider refresh backup.");
+    if (provider.schedule !== null && ([provider.schedule.nextAutoAt, provider.schedule.cooldownUntil, provider.schedule.delay].some(value => !Number.isFinite(value) || value < 0) || typeof provider.schedule.blocked !== "boolean")) throw new Error("Invalid provider schedule backup.");
+  }
+  for (const entry of backup.history) if (workspaceContextKey(workspaceSchema.parse(entry).context) !== contextKey) throw new Error("Undo history belongs to another context.");
+  if (!backup.view || !["itinerary", "roster", "candidates", "matchup"].includes(backup.view.tab)
+    || backup.view.selectedPlayer !== null && typeof backup.view.selectedPlayer !== "string") throw new Error("Invalid backup view.");
+  const day = backup.view.selectedDate;
+  if (day && (day.context !== JSON.stringify([principalId, contextKey]) || !/^\d{4}-\d{2}-\d{2}$/.test(day.date)
+    || day.date < workspace.context.startDate || day.date > workspace.context.endDate)) throw new Error("Backup selected day belongs to another context.");
+  const keys = preservationKeys(principalId, workspace.context);
+  if (!backup.session || backup.session.key !== WORKSPACE_PRESERVATION_JOURNAL || backup.session.value !== null && typeof backup.session.value !== "string") throw new Error("Unexpected preservation journal scope.");
+  if (!Array.isArray(backup.local) || backup.local.length !== keys.length || backup.local.some((entry, i) => entry.key !== keys[i]
+    || entry.value !== null && typeof entry.value !== "string")) throw new Error("Backup contains unexpected storage keys.");
+  // Raw persisted bytes and actual in-memory state are independent evidence. Preserve both even after a failed save.
+  if (!backup.remote || typeof backup.remote.receiptId !== "string" || !backup.remote.receiptId) throw new Error("Missing authenticated backup receipt.");
+  const row = backup.remote.row;
+  if (row !== null) {
+    if (typeof row.id !== "string" || row.user_id !== principalId || !Number.isInteger(row.lock_version) || Number(row.lock_version) < 1) throw new Error("Remote backup identity or version does not match.");
+    const saved = saveWorkspaceSchema.parse({ workspace: row.workspace, snapshot: row.snapshot, expectedVersion: row.lock_version });
+    const context = saved.workspace.context;
+    if (workspaceContextKey(context) !== contextKey || row.provider !== context.provider || row.season_id !== context.seasonId
+      || row.league_id !== context.leagueId || row.team_id !== context.teamId || row.start_date !== context.startDate || row.end_date !== context.endDate) throw new Error("Remote backup context does not match.");
+  }
+  if (preservationJson(backup).length > 8 * 1024 * 1024) throw new Error("Backup exceeds the safe restore request size.");
+}
+
+export async function capturePreservation(storage: Pick<Storage, "getItem">, principalId: string,
+  workspace: PlanningWorkspace, history: readonly PlanningWorkspace[], view: WorkspacePreservation["view"], remote: PreservationRemote, originalJournal: string | null = null, provider: PreservationProvider | null = null): Promise<WorkspacePreservation> {
+  const payload = JSON.parse(JSON.stringify({ version: 2, principalId, contextKey: workspaceContextKey(workspace.context), workspace,
+    history, view, local: readPreservedKeys(storage, preservationKeys(principalId, workspace.context)), session: { key: WORKSPACE_PRESERVATION_JOURNAL, value: originalJournal }, remote, provider })) as Omit<WorkspacePreservation, "checksum">;
+  const backup = { ...payload, checksum: await preservationChecksum(payload) };
+  await validatePreservation(backup, principalId, payload.contextKey);
+  assertPreservedKeys(storage, payload.local);
+  return backup;
+}
+
+export function assertPreservedKeys(storage: Pick<Storage, "getItem">, expected: readonly PreservedKey[]): void {
+  if (expected.some(entry => storage.getItem(entry.key) !== entry.value)) throw new Error("Workspace storage changed in another writer. Preservation is held.");
+}
+
+export function restorePreservedKeys(storage: Pick<Storage, "getItem" | "setItem" | "removeItem">,
+  backup: readonly PreservedKey[], expected: readonly PreservedKey[]): void {
+  if (backup.length !== expected.length || backup.some((entry, i) => entry.key !== expected[i].key)) throw new Error("Restore key scope does not match.");
+  assertPreservedKeys(storage, expected);
+  const put = (entry: PreservedKey) => entry.value === null ? storage.removeItem(entry.key) : storage.setItem(entry.key, entry.value);
+  try { backup.forEach(put); assertPreservedKeys(storage, backup); }
+  catch (error) {
+    try { expected.forEach(put); assertPreservedKeys(storage, expected); }
+    catch { throw new Error("Local restoration and rollback failed. Keep preservation held and retain the backup."); }
+    throw error;
+  }
+}
+
+/** Every cooperating RSO writer uses this origin-wide lock, including the global active pointer. */
+export async function withWorkspaceWriter<T>(locks: LockManager | undefined, write: () => T): Promise<T> {
+  if (!locks) return write();
+  return locks.request(WORKSPACE_WRITER_LOCK, { ifAvailable: true }, lock => {
+    if (!lock) throw new Error("Another RSO writer holds this workspace. Local changes have not been saved.");
+    return write();
+  });
+}
+
+export async function acquirePreservationWriter(locks: LockManager | undefined): Promise<{ release: () => void }> {
+  if (!locks) throw new Error("Exclusive workspace locking is unavailable. Preservation cannot be admitted.");
+  return new Promise((resolve, reject) => {
+    void locks.request(WORKSPACE_WRITER_LOCK, { ifAvailable: true }, lock => {
+      if (!lock) { reject(new Error("Another RSO writer is active. Preservation cannot be admitted.")); return; }
+      return new Promise<void>(release => resolve({ release }));
+    }).catch(reject);
+  });
+}
+
+export function currentPlanningRange(now: Date, timeZone: string, period?: { startDate: string | null; endDate: string | null }) {
+  const today = localDate(now.toISOString(), timeZone);
+  const valid = (date: string | null): date is string => Boolean(date && /^\d{4}-\d{2}-\d{2}$/.test(date)
+    && Number.isFinite(Date.parse(`${date}T12:00:00Z`)) && new Date(`${date}T12:00:00Z`).toISOString().slice(0, 10) === date);
+  if (period && valid(period.startDate) && valid(period.endDate) && period.startDate <= today && today <= period.endDate)
+    return { startDate: period.startDate, endDate: period.endDate, source: "provider" as const };
+  const weekday = new Date(`${today}T12:00:00Z`).getUTCDay();
+  const monday = Date.parse(`${today}T12:00:00Z`) - ((weekday + 6) % 7) * 86400000;
+  return { startDate: new Date(monday).toISOString().slice(0, 10), endDate: new Date(monday + 6 * 86400000).toISOString().slice(0, 10), source: "calendar" as const };
+}
+
+export function currentProviderPeriod(snapshot: PlanningSnapshot | null, context: PlanningContext, now: Date) {
+  const evidence = snapshot?.acquisitionEvidence;
+  if (!snapshot || snapshot.context.provider !== "yahoo" || context.provider !== "yahoo"
+    || snapshot.context.teamId !== context.teamId || snapshot.context.leagueId !== context.leagueId || snapshot.context.seasonId !== context.seasonId
+    || snapshot.evidence.roster?.completeness !== "complete" || !evidence?.asOf
+    || evidence.source !== "Yahoo team roster_adds and league current_week" || evidence.counter.coverageType !== "week"
+    || evidence.counter.used === null || !evidence.period.containsHorizon
+    || !evidence.period.week || evidence.counter.coverageWeek !== evidence.period.week
+    || !Number.isFinite(Date.parse(evidence.asOf)) || Math.abs(now.getTime() - Date.parse(evidence.asOf)) > 120000) return undefined;
+  return evidence.period;
+}
+
+export function defaultContext(now = new Date(), timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"): PlanningContext {
+  const range = currentPlanningRange(now, timeZone);
+  const today = localDate(now.toISOString(), timeZone);
+  const year = Number(today.slice(0, 4)) - (Number(today.slice(5, 7)) < 8 ? 1 : 0);
+  return { provider: "manual", seasonId: year * 10000 + year + 1, leagueId: "manual", teamId: "manual", startDate: range.startDate, endDate: range.endDate, timeZone, asOf: now.toISOString() };
 }
 
 export function defaultRules(): LeagueRules {
@@ -125,7 +281,7 @@ export function retainedScheduleSnapshot(workspace: PlanningWorkspace, data: Pla
   })).values()];
   return {
     id: `retained:${workspace.context.teamId}:${workspace.context.startDate}:${workspace.context.endDate}:${asOf}`,
-    context: { ...workspace.context, asOf }, players, roster: workspace.roster, games: data.games, forecasts: data.forecasts, baselineSources: data.baselineSources, forecastManifest: data.forecastManifest,
+    context: { ...workspace.context, asOf }, players, roster: workspace.roster, games: data.games, forecasts: data.forecasts, baselineSources: data.baselineSources, participationSources: data.participationSources, forecastManifest: data.forecastManifest,
     rules: { ...workspace.rules, acquisitionTiming: "unknown", acquisitionCost: null, periods: [], goalieMinimum: { ...workspace.rules.goalieMinimum, credited: null }, unsupported: [...workspace.rules.unsupported, "Retained roster inputs are unverified; this is provisional schedule analysis."] },
     lockedAssignments: workspace.lockedAssignments ?? [], realized: {}, opponent: null,
     evidence: { ...data.evidence, roster: { source: "Retained local roster", asOf: workspace.context.asOf, seasonId: workspace.context.seasonId, completeness: "partial", limitations: ["Yahoo has not verified this roster, its locks or player availability for the current analysis."] } },

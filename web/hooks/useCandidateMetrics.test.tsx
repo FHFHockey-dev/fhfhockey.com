@@ -22,9 +22,12 @@ it("delegates without synchronous fallback, reuses irrelevant-intent work, and c
     { initialProps: { data: snapshot as PlanningSnapshot | null, plan: intent } });
   const first = MockWorker.instances[0];
   expect(first.postMessage).toHaveBeenCalledOnce();
+  expect(first.postMessage).toHaveBeenCalledWith({ snapshot, intent: { ...intent, steps: [], revision: 0, alternativeCount: 5 } });
+  expect(intent.steps).toEqual([]);
   expect(result.current.loading).toBe(true);
   rerender({ data: snapshot, plan: { ...intent, revision: 20, alternativeCount: 20, steps: [{ id: "s" } as PlanIntent["steps"][number]] } });
   expect(MockWorker.instances).toHaveLength(1);
+  expect(first.postMessage).toHaveBeenCalledOnce();
   const changed = { ...snapshot, id: "other-account" };
   rerender({ data: changed, plan: intent });
   expect(first.terminate).toHaveBeenCalledOnce();
@@ -53,4 +56,18 @@ it("reports Worker failure or absence without evaluating on the main thread", ()
   const unavailable = renderHook(() => useCandidateMetrics(snapshot, intent));
   expect(unavailable.result.current.error).toContain("unavailable");
   expect(MockWorker.instances).toHaveLength(1);
+});
+it("forwards manager-requested candidates as a distinct calculation without reusing bounded results", () => {
+  vi.stubGlobal("Worker", MockWorker);
+  const { result, rerender, unmount } = renderHook(({ ids }: { ids: string[] }) => useCandidateMetrics(snapshot, intent, ids),
+    { initialProps: { ids: [] as string[] } });
+  act(() => MockWorker.instances[0].finish(1));
+  expect(result.current.metrics?.activePoints).toEqual([["c", 1]]);
+  rerender({ ids: ["z", "c", "z"] });
+  expect(result.current.metrics).toBeUndefined();
+  expect(MockWorker.instances[1].postMessage).toHaveBeenCalledWith({ snapshot,
+    intent: { ...intent, steps: [], revision: 0, alternativeCount: 5 }, options: { requestedPlayerIds: ["c", "z"] } });
+  rerender({ ids: ["c", "z"] });
+  expect(MockWorker.instances).toHaveLength(2);
+  unmount();
 });

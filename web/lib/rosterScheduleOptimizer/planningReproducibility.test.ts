@@ -92,6 +92,8 @@ function qualityFixture(source: "detailed" | "baseline" | "blended", profile: "p
     issuedRevisionIds: snapshot.forecasts.map(row => row.revisionId), baselineChecksum: source === "detailed" ? null : "rate-snapshot",
     requiredOpportunities: 4, forecastedOpportunities: 4, exclusionCounts: {} };
   snapshot.realized = {};
+  snapshot.evidence = { schedule: { source: "synthetic complete schedule", asOf: snapshot.context.asOf,
+    seasonId: snapshot.context.seasonId, completeness: "complete", limitations: [] } };
   if (profile !== "points") {
     snapshot.rules.scoring = { mode: "categories", weights: {}, categories: goalie ? [
       { key: "SAVE_PERCENTAGE", direction: "higher", numerator: "SAVES_GOALIE", denominator: "SHOTS_AGAINST_GOALIE" },
@@ -107,6 +109,13 @@ function qualityFixture(source: "detailed" | "baseline" | "blended", profile: "p
 }
 
 describe("planning search reproducibility", () => {
+  it.each(["points", "categories", "goalie"] as const)("keeps %s manual and connected results equal for matching canonical inputs", profile => {
+    const manual = qualityFixture("detailed", profile);
+    const connected = structuredClone(manual); connected.context.provider = "yahoo";
+    const options = { maxEvaluations: 30, maxCandidates: 3, maxSteps: 1, beamWidth: 4 };
+    const stable = (result: ReturnType<typeof planRoster>) => ({ ...result, search: { ...result.search, elapsedMs: undefined } });
+    expect(stable(planRoster(connected, intent, options))).toEqual(stable(planRoster(manual, intent, options)));
+  });
   it.each(["detailed", "baseline", "blended"] as const)("reproduces admitted %s quality decisions across scoring profiles and input order", source => {
     for (const profile of ["points", "categories", "goalie"] as const) {
       const snapshot = qualityFixture(source, profile);
@@ -119,16 +128,24 @@ describe("planning search reproducibility", () => {
       const two = planRoster(reversed, intent, options);
       const replayed = planRoster(JSON.parse(JSON.stringify(snapshot)), intent, options);
       for (const result of [one, two, replayed]) {
-        expect(result.baseline.objective).toBe("outcome");
-        expect(result.selected.recommendation?.eligible).toBe(true);
+        expect(result.baseline.objective).toBe(profile === "points" ? "outcome" : "agp");
+        expect(result.selected.recommendation?.eligible).toBe(profile === "points");
         expect(result.selected.comparisonEligible).toBe(true);
         expect(result.baseline.projectedValue).not.toBeNull();
         expect(result.baseline.recommendation?.coverage?.assignmentEligibleCount).toBeGreaterThan(0);
-        const improved = result.alternatives.filter(row => row.steps.length && row.objective === "outcome"
-          && row.recommendation?.eligible && row.projectedValue !== null && row.projectedValue > result.baseline.projectedValue!);
-        expect(improved.length).toBeGreaterThan(0);
-        expect(improved[0].comparisonEligible).toBe(true);
-        expect(improved[0].recommendation?.exclusions?.length).toBeGreaterThan(0);
+        if (profile === "points") {
+          const improved = result.alternatives.filter(row => row.steps.length && row.objective === "outcome"
+            && row.recommendation?.eligible && row.projectedValue !== null && row.projectedValue > result.baseline.projectedValue!);
+          expect(improved.length).toBeGreaterThan(0);
+          expect(improved[0].comparisonEligible).toBe(true);
+          expect(improved[0].recommendation?.exclusions?.length).toBeGreaterThan(0);
+        } else {
+          expect(result.selected.recommendation?.reasons.join(" ")).toContain("manager choice");
+          const choices = result.alternatives.filter(row => row.steps.length && row.comparisonEligible);
+          expect(choices.length).toBeGreaterThan(0);
+          expect(choices.every(row => row.recommendation?.eligible === false)).toBe(true);
+          expect(result.selected.categoryResults.every(row => row.own !== null)).toBe(true);
+        }
         expect(result.selected.forecastInputs?.length).toBeGreaterThan(0);
         expect(result.selected.forecastInputs?.every(row => row.sourceKind === source)).toBe(true);
         if (source === "blended") expect(result.selected.forecastInputs?.[0].contributions?.[profile === "goalie" ? "SAVES_GOALIE" : "GOALS"].blendWeight).toBeCloseTo(4 / 7);
@@ -211,23 +228,25 @@ describe("planning search reproducibility", () => {
     snapshot.players[2].availability = "rostered";
     const options = { maxSteps: 0, maxBenchEvaluations: 0 };
     const result = planRoster(snapshot, intent, options);
-    expect(result.search.benchEvidence).toEqual({ policyVersion: "rso-bench-v1", evaluated: 0,
-      maxEvaluations: 0, complete: false, workQuotaReached: true, timeLimitReached: false });
-    expect(result.selected.recommendation).toMatchObject({ eligible: false, mode: "schedule_capacity", explanationStatus: "partial" });
-    expect(result.selected.recommendation?.exclusions?.[0]).toMatchObject({ reason: "explanation_incomplete" });
-    expect(result.selected.recommendation?.exclusions?.[0].evidence).toBeUndefined();
-    expect(result.selected.comparisonEligible).toBe(false);
+    if (profile === "points") {
+      expect(result.search.benchEvidence).toEqual({ policyVersion: "rso-bench-v1", evaluated: 0,
+        maxEvaluations: 0, complete: false, workQuotaReached: true, timeLimitReached: false });
+      expect(result.selected.recommendation).toMatchObject({ eligible: false, mode: "schedule_capacity", explanationStatus: "partial" });
+      expect(result.selected.recommendation?.exclusions?.[0]).toMatchObject({ reason: "explanation_incomplete" });
+      expect(result.selected.recommendation?.exclusions?.[0].evidence).toBeUndefined();
+      expect(result.selected.comparisonEligible).toBe(false);
+      expect(result.search.limitations.some(item => item.includes("Bench explanations reached their work quota"))).toBe(true);
+    } else {
+      expect(result.search.benchEvidence).toMatchObject({ evaluated: 0, maxEvaluations: 0, complete: true });
+      expect(result.selected.recommendation).toMatchObject({ eligible: false, mode: "schedule_capacity" });
+      expect(result.selected.recommendation?.reasons.join(" ")).toContain("manager choice");
+      expect(result.selected.comparisonEligible).toBe(true);
+      const additionalBudget = planRoster(snapshot, intent, { maxSteps: 0, maxBenchEvaluations: 2 });
+      expect(additionalBudget.search.benchEvidence?.evaluated).toBe(0);
+      expect(additionalBudget.selected).toEqual(result.selected);
+    }
     expect(result.selected.projectedValue).not.toBeNull();
     expect(result.search.complete).toBe(false);
-    expect(result.search.limitations.some(item => item.includes("Bench explanations reached their work quota"))).toBe(true);
-    if (profile !== "points") {
-      // One returned-plan recheck and one forced slot do not prove the best of two slots.
-      const partial = planRoster(snapshot, intent, { maxSteps: 0, maxBenchEvaluations: 2 });
-      expect(partial.search.benchEvidence).toMatchObject({ evaluated: 2, maxEvaluations: 2, complete: false });
-      expect(partial.selected.recommendation?.exclusions?.[0]).toMatchObject({ reason: "explanation_incomplete" });
-      expect(partial.selected.recommendation?.exclusions?.[0].evidence).toBeUndefined();
-      expect(partial.selected.comparisonEligible).toBe(false);
-    }
     const reversed = structuredClone(snapshot);
     reversed.players.reverse(); reversed.roster.reverse(); reversed.games.reverse(); reversed.forecasts.reverse();
     const replay = planRoster(JSON.parse(JSON.stringify(reversed)), intent, options);

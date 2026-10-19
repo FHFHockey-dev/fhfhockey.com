@@ -96,10 +96,34 @@ function applies(key: string, kind: "skater" | "goalie", applicability: Applicab
   return applicability[kind].has(key) || !applicability.skater.has(key) && !applicability.goalie.has(key);
 }
 export function forecastAllows(forecast: GameForecast | null, key: string, use: "assignment" | "totals" | "comparison" | "conditionalTieBreak"): boolean {
+  if (use !== "conditionalTieBreak" && forecast?.conditioning !== "unconditional") return false;
   return (forecast?.contributions ? forecast.contributions[key]?.allowedUses[use] : forecast?.allowedUses?.[use]) === true;
 }
 export function assignmentStats(forecast: GameForecast): StatLine {
   return forecast.assignmentStats ?? forecast.stats;
+}
+/** Supported remaining points on a player's selected assignments, excluding banked results. */
+export function playerAssignedPoints(snapshot: PlanningSnapshot, evaluation: PlanEvaluation, playerId: string): number | null {
+  const player = snapshot.players.find(row => row.id === playerId);
+  if (!player?.eligibilityVerified || !evaluation.legal || !evaluation.comparisonEligible
+    || !finite(evaluation.projectedValue) || snapshot.rules.scoring.mode !== "points") return null;
+  const forecasts = evaluation.forecastInputs ?? [];
+  const applicability = statApplicability({ ...snapshot, forecasts });
+  const weights = Object.entries(snapshot.rules.scoring.weights)
+    .filter(([key, weight]) => weight !== 0 && applies(key, player.playerClass, applicability));
+  if (!weights.length || weights.some(([, weight]) => !finite(weight))) return null;
+  let total = 0;
+  for (const assignment of evaluation.assignments.filter(row => row.playerId === playerId)) {
+    const rows = forecasts.filter(row => row.playerId === playerId && row.gameId === assignment.gameId);
+    if (rows.length !== 1) return null;
+    for (const [key, weight] of weights) {
+      const forecast = rows[0];
+      if (!forecastAllows(forecast, key, "totals") || !forecastAllows(forecast, key, "comparison")
+        || !finite(forecast.stats[key])) return null;
+      total += forecast.stats[key]! * weight;
+    }
+  }
+  return finite(total) ? total : null;
 }
 /** Candidate horizon totals are separate from incremental active-game capacity.
  * Use the same source validation, stat applicability and permissions as plans. */
@@ -472,6 +496,8 @@ function refineOutcomeLineup(
   return best;
 }
 
+/** Provider injury designations that mean the player won't play (day-to-day still might). */
+const OUT_INJURY_STATUSES = new Set(["IR", "IR-LT", "IR-NR", "O"]);
 function prepareEvaluation(snapshot: PlanningSnapshot, playerIds?: ReadonlySet<string>) {
   snapshot = resolvePlanningContributions(sanitizeForecastInputs(snapshot), playerIds ? { playerIds } : undefined);
   const players = new Map(snapshot.players.map(player => [player.id, player]));
@@ -488,6 +514,14 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
   steps: PlanStep[], includeBenchEvidence: boolean, benchBudget?: BenchEvaluationBudget): PlanEvaluation {
   const { snapshot, players, forecasts, applicability, games } = prepared;
   const limitations = new Set<string>(snapshot.rules.unsupported);
+  // Missing roster members must remain in the coverage basis even when no
+  // team/game join can create an opportunity (including a proposed drop).
+  const requiredPlayers = new Set([...snapshot.roster.map(row => row.playerId),
+    ...steps.flatMap(step => [step.playerId, ...(step.dropPlayerId ? [step.dropPlayerId] : [])])]);
+  const unknownTeams = [...requiredPlayers].filter(id => !players.get(id)?.teamAbbreviation);
+  const opportunitiesComplete = snapshot.evidence.schedule?.completeness === "complete" && !unknownTeams.length;
+  if (snapshot.evidence.schedule?.completeness !== "complete") limitations.add("Planning schedule coverage is incomplete or unknown.");
+  for (const id of unknownTeams) limitations.add(`Player ${id} has unknown current NHL team membership; remaining opportunities and net gains are indeterminate.`);
   const unresolved: CoverageIssue[] = [];
   const timeline = buildTimeline(snapshot, intent, steps);
   const slotDiagnostics = expandActiveSlots(snapshot.rules.rosterSlots).diagnostics;
@@ -504,6 +538,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
   let scheduledGames = 0, forecastedOpportunities = 0;
   const weekly = new Map<string, Map<string, string>>();
   const lineupPeriodForDate = (date: string) => lineupPeriodAtDate(date, snapshot.rules.lineupPeriods, snapshot.context.timeZone);
+  const injuredOut = new Set<string>();
   for (const date of dates) {
     const dayGames = games.filter(game => game.date === date);
     const plays: Play[] = [];
@@ -511,6 +546,8 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
       const player = players.get(id);
       if (!player || player.teamAbbreviation !== game.teamAbbreviation || ["IR", "IR+", "NA"].includes(member.position) || time(member.since) > time(gameTime(game, snapshot.context.timeZone))) continue;
       if (!game.startsAt && time(member.since) >= time(zonedMidnight(game.date, snapshot.context.timeZone))) continue;
+      // Out per the provider (IR/O): not a lineup option, so his missing projection can't block the totals.
+      if (player.injury && OUT_INJURY_STATUSES.has(player.injury.status.toUpperCase())) { injuredOut.add(player.name); continue; }
       const forecast = forecasts.get(`${id}:${game.id}`) ?? null;
       if (forecast?.conditioning === "unconditional") forecastedOpportunities++;
       plays.push({ player, game, forecast });
@@ -519,6 +556,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
     playsByDate.set(date, plays);
     scheduledGames += plays.length;
   }
+  if (injuredOut.size) limitations.add(`Not lined up while injured (provider IR/out): ${[...injuredOut].sort().join(", ")}.`);
   // Record game-time ownership before choosing a weekly lineup. The mutable
   // timeline cannot answer an earlier lock-time query after a later transaction.
   for (const date of dates) {
@@ -614,7 +652,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
   const coverageTarget = snapshot.rules.scoring.mode === "categories" ? categoryCoverageTarget : pointsCoverageTarget;
   const requestedMinimum = snapshot.rules.goalieMinimum;
   const categoryCoverageRequested = snapshot.rules.scoring.mode === "categories" && intent.goalieCoverage === "cover"
-    && requestedMinimum.required !== null && !(finite(requestedMinimum.credited) && requestedMinimum.credited >= requestedMinimum.required);
+    && finite(requestedMinimum.required) && requestedMinimum.required > 0 && !(finite(requestedMinimum.credited) && requestedMinimum.credited >= requestedMinimum.required);
   const categoryCoverageSupported = !categoryCoverageRequested || categoryCoverageTarget !== null;
   const goalieSlots = expandActiveSlots(snapshot.rules.rosterSlots).activeSlots.filter(slot => slot.type === "G");
   const coverageKnown = categoryCoverageSupported && (coverageTarget === null || [...playsByDate].flatMap(([date, plays]) => {
@@ -692,41 +730,44 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
     projectedValue = !missingSelectedForecast && (scheduledGames === 0 || forecastedOpportunities > 0) && categoryResults.every(row => row.result !== "unknown") && categoryResults.length ? categoryResults.reduce((sum, row) => sum + (row.result === "win" ? 1 : row.result === "loss" ? -1 : 0), 0) : null;
   }
   const minimum = snapshot.rules.goalieMinimum;
+  // A zero requirement means the league has no goalie minimum, so its checks are bypassed.
+  const hasMinimum = finite(minimum.required) && minimum.required > 0;
   const minimumWindowVerified = goalieMinimumWindowVerified(snapshot);
-  if (minimum.required !== null && !minimumWindowVerified) limitations.add("Goalie minimum progress applies to an unverified or narrower period; coverage cannot be confirmed for this range.");
-  let projected = minimum.credited, confirmed = 0;
-  const minimumAlreadyMet = minimum.required !== null && finite(minimum.credited) && minimum.credited >= minimum.required;
+  if (hasMinimum && !minimumWindowVerified) limitations.add("Goalie minimum progress applies to an unverified or narrower period; coverage cannot be confirmed for this range.");
+  let projected = minimum.credited, confirmed = 0, startsKnown = true;
+  const minimumAlreadyMet = minimum.required === 0 || minimum.required !== null && finite(minimum.credited) && minimum.credited >= minimum.required;
   const goalieByTeamGame = new Map<string, number>();
   for (const play of chosen.values()) if (play.player.playerClass === "goalie") {
     if (play.forecast?.confirmedStart) confirmed++;
     const probability = play.forecast?.confirmedStart ? 1 : play.forecast?.startProbability;
     const key = `${play.game.id}:${play.player.teamAbbreviation}`;
     if (finite(probability)) goalieByTeamGame.set(key, Math.min(1, (goalieByTeamGame.get(key) ?? 0) + probability));
-    else if (!minimumAlreadyMet) projected = null;
+    else { startsKnown = false; if (!minimumAlreadyMet) projected = null; }
   }
-  if (minimum.counts === "appearances" && minimum.required !== null) {
+  const expectedStarts = startsKnown ? [...goalieByTeamGame.values()].reduce((sum, value) => sum + value, 0) : null;
+  if (minimum.counts === "appearances" && hasMinimum) {
     if (!minimumAlreadyMet) { projected = null; limitations.add("Appearance probabilities are unavailable; starter probabilities cannot verify this goalie minimum."); }
-  } else if (minimum.required !== null && minimum.counts === "unknown" && !minimumAlreadyMet) projected = null;
+  } else if (hasMinimum && minimum.counts === "unknown" && !minimumAlreadyMet) projected = null;
   else if (finite(projected)) projected += [...goalieByTeamGame.values()].reduce((sum, value) => sum + value, 0);
-  if (!minimumWindowVerified && minimum.required !== null) projected = null;
-  const risk = minimum.required !== null && (projected === null || projected < minimum.required);
+  if (!minimumWindowVerified && hasMinimum) projected = null;
+  const risk = hasMinimum && (projected === null || projected < (minimum.required ?? 0));
   if (risk && intent.goalieCoverage === "cover") limitations.add("Goalie minimum coverage is not verified.");
-  if (minimum.required !== null && intent.goalieCoverage === "cover" && intent.goalieWindow !== "any") {
+  if (hasMinimum && intent.goalieCoverage === "cover" && intent.goalieWindow !== "any") {
     const available = games.some(game => preferredGoalieDate(game.date, intent) && snapshot.players.some(player => player.playerClass === "goalie" && player.teamAbbreviation === game.teamAbbreviation &&
       (snapshot.roster.some(entry => entry.playerId === player.id) || ["free_agent", "manager_available", "waivers"].includes(player.availability)) &&
       (forecasts.get(`${player.id}:${game.id}`)?.confirmedStart || (forecasts.get(`${player.id}:${game.id}`)?.startProbability ?? 0) > 0)));
     if (!available) limitations.add("Preferred goalie coverage window has no verified usable start; coverage is infeasible with current evidence.");
     else if (![...chosen.values()].some(play => play.player.playerClass === "goalie" && preferredGoalieDate(play.game.date, intent))) limitations.add("This plan does not cover the preferred goalie window.");
   }
-  if (minimum.required !== null && (minimum.counts === "unknown" || minimum.penalty === "unknown")) limitations.add("Goalie minimum semantics are incomplete.");
+  if (hasMinimum && (minimum.counts === "unknown" || minimum.penalty === "unknown")) limitations.add("Goalie minimum semantics are incomplete.");
   if (risk && minimum.penalty === "lose_goalie_categories" && snapshot.rules.scoring.mode === "categories") { projectedValue = null; limitations.add("Goalie-category forfeiture risk makes the matchup projection incomplete."); }
-  if (unresolved.length) projectedValue = null;
+  if (unresolved.length || !opportunitiesComplete) projectedValue = null;
   const legal = timeline.legal && !invalidLocks && !weeklyEvidenceMissing && snapshot.rules.lineupMode !== "unsupported" && (snapshot.rules.lineupMode !== "weekly" || dates.every(date => !!lineupPeriodForDate(date)?.lockAt)) && !slotDiagnostics.some(item => item.severity === "error");
   if ([...chosen.values()].some(play => ["baseline", "blended"].includes(play.forecast?.sourceKind ?? ""))) limitations.add("Includes provisional baseline estimates; no calibrated uncertainty.");
   if (conflictingTargets.size) projectedValue = null;
   const assignmentValue = unresolved.length || (scheduledGames > 0 && forecastedOpportunities === 0) ? null
     : [...chosen.values()].reduce<number | null>((sum, play) => { const value = playValue(play, snapshot, opponent, applicability); return sum === null || value === null ? null : sum + value; }, 0);
-  const inputEligible = legal && !unresolved.length && coverageKnown && assignmentValue !== null && !invalidLocks && !weeklyEvidenceMissing && !snapshot.rules.unsupported.length;
+  const inputEligible = legal && opportunitiesComplete && !unresolved.length && coverageKnown && assignmentValue !== null && !invalidLocks && !weeklyEvidenceMissing && !snapshot.rules.unsupported.length;
   const categoryMode = snapshot.rules.scoring.mode === "categories";
   if (categoryMode) limitations.add("Category assignments use schedule capacity and supported componentwise changes. Incomparable tradeoffs have no approved overall utility; start/sit and acquisition recommendations need manager choice.");
   // Complete per-category facts remain comparable without certifying a scalar
@@ -768,7 +809,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
     reasons: recommendationEligible ? [] : [...limitations], exclusions, unresolved: unresolvedWithReasons, coverage },
     objective, steps, legal, budgetVerified: timeline.budgetVerified,
     assignments, scheduledGames, activeGames: assignments.length, benchGames: Math.max(0, scheduledGames - assignments.length), projectedValue, projectedStats: stats,
-    categoryResults, goalie: { credited: minimum.credited, confirmed, projected, required: minimum.required, risk, minimumSatisfied: minimum.required === null ? null : minimumAlreadyMet }, acquisitions: { ...timeline.acquisitions }, limitations: [...limitations] };
+    categoryResults, goalie: { credited: minimum.credited, confirmed, projected, expectedStarts, required: minimum.required, risk, minimumSatisfied: minimum.required === null ? null : minimumAlreadyMet }, acquisitions: { ...timeline.acquisitions }, limitations: [...limitations] };
   if (!includeBenchEvidence) return evaluation;
   const playByKey = new Map([...playsByDate.values()].flat().map(play => [`${play.player.id}:${play.game.id}`, play]));
   const rowValue = (row: PlanningAssignment) => {
@@ -885,8 +926,16 @@ function safeAlternative(snapshot: PlanningSnapshot, baseline: PlanEvaluation, e
     return relation === "better" || relation === "tradeoff";
   }
   const hasDrop = evaluation.steps.some(step => !!step.dropPlayerId || step.type === "drop");
-  if (!hasDrop && evaluation.objective === "agp" && evaluation.activeGames > baseline.activeGames &&
-    (baseline.projectedValue === null || evaluation.projectedValue === null || evaluation.projectedValue >= baseline.projectedValue)) return true;
+  if (evaluation.objective === "agp" && evaluation.activeGames > baseline.activeGames &&
+    (baseline.projectedValue === null || evaluation.projectedValue === null || evaluation.projectedValue >= baseline.projectedValue)) {
+    if (!hasDrop) return true;
+    // A schedule comparison needs a complete opportunity basis, but missing
+    // quality forecasts do not make a legal capacity comparison unavailable.
+    const required = new Set([...snapshot.roster.map(row => row.playerId),
+      ...evaluation.steps.flatMap(step => [step.playerId, ...(step.dropPlayerId ? [step.dropPlayerId] : [])])]);
+    if (snapshot.evidence.schedule?.completeness === "complete"
+      && [...required].every(id => !!snapshot.players.find(player => player.id === id)?.teamAbbreviation)) return true;
+  }
   const coverageImproves = evaluation.objective === "outcome" && pointsCoverageTarget !== null
     && finite(baseline.goalie.projected) && finite(evaluation.goalie.projected)
     && Math.min(pointsCoverageTarget, evaluation.goalie.projected) > Math.min(pointsCoverageTarget, baseline.goalie.projected);
@@ -966,7 +1015,7 @@ function shortlist(snapshot: PlanningSnapshot, intent: PlanIntent, limit: number
   for (const item of sorted) if (selected.length < limit && !used.has(item.player.id)) { selected.push(item.player); used.add(item.player.id); }
   return selected;
 }
-function* extensions(snapshot: PlanningSnapshot, intent: PlanIntent, prior: PlanStep[], candidates: PlanningPlayer[]): Generator<PlanStep[]> {
+function* extensions(snapshot: PlanningSnapshot, intent: PlanIntent, prior: PlanStep[], candidates: PlanningPlayer[], dropOrder?: ReadonlyMap<string, number>): Generator<PlanStep[]> {
   const owned = new Set(snapshot.roster.map(entry => entry.playerId));
   for (const step of prior) {
     if (step.dropPlayerId) owned.delete(step.dropPlayerId);
@@ -974,8 +1023,14 @@ function* extensions(snapshot: PlanningSnapshot, intent: PlanIntent, prior: Plan
     if (step.type === "drop") owned.delete(step.playerId);
   }
   const dates = [...new Set(snapshot.games.filter(game => game.status === "scheduled" && game.date >= snapshot.context.startDate && game.date <= snapshot.context.endDate && eligibleGame(game, snapshot)).map(game => game.date))].sort();
-  const drops = snapshot.players.filter(player => owned.has(player.id) && player.canDrop === true && !intent.protectedPlayerIds.includes(player.id))
-    .sort((a, b) => (a.holdValue ?? 0) - (b.holdValue ?? 0) || a.id.localeCompare(b.id));
+  // Dropping a player held in IR/IR+/NA frees no active or bench spot, so it can't make room for an add. A player out
+  // injured projects nothing this week, which says nothing about his value on return, so he is never an automatic drop.
+  const reserved = new Set([...snapshot.roster.filter(entry => ["IR", "IR+", "NA"].includes(entry.position)).map(entry => entry.playerId),
+    ...prior.filter(step => step.type === "reserve").map(step => step.playerId)]);
+  const drops = snapshot.players.filter(player => owned.has(player.id) && !reserved.has(player.id) && player.canDrop === true
+    && !(player.injury && OUT_INJURY_STATUSES.has(player.injury.status.toUpperCase())) && !intent.protectedPlayerIds.includes(player.id))
+    .sort((a, b) => (dropOrder?.get(a.id) ?? Infinity) - (dropOrder?.get(b.id) ?? Infinity)
+      || (a.holdValue ?? 0) - (b.holdValue ?? 0) || a.id.localeCompare(b.id));
   const proposals: Array<{ player: PlanningPlayer; date: string; step: PlanStep }> = [];
   const useful = candidates.map(player => ({ player, dates: owned.has(player.id) ? [] : dates.filter(date => snapshot.games.some(game => game.date === date && game.teamAbbreviation === player.teamAbbreviation)) }));
   const maxDates = Math.max(0, ...useful.map(item => item.dates.length));
@@ -994,13 +1049,16 @@ function* extensions(snapshot: PlanningSnapshot, intent: PlanIntent, prior: Plan
       conditional: player.availability === "waivers" || time(at) > time(snapshot.context.asOf), dependsOn: prior.length ? [prior[prior.length - 1].id] : [] };
     proposals.push({ player, date, step });
   }
+  const reserveUsed = (position: string) => snapshot.roster.filter(entry => entry.position === position && owned.has(entry.playerId)).length
+    + prior.filter(step => step.type === "reserve" && step.reservePosition === position).length;
   // Give every candidate/date a chance before expanding the long tail of drop choices.
   for (const { player, date, step } of proposals) {
     yield [step];
     for (const entry of [...snapshot.roster].sort((a, b) => a.playerId.localeCompare(b.playerId))) {
       const reservePlayer = snapshot.players.find(item => item.id === entry.playerId);
       if (!reservePlayer || !owned.has(entry.playerId) || ["IR", "IR+", "NA"].includes(entry.position)) continue;
-      for (const position of [...reservePlayer.reserveEligibility].sort()) if (snapshot.rules.rosterSlots[position]) {
+      // Only a reserve slot with room: a full IR+ would make every such proposal illegal and spend the budget.
+      for (const position of [...reservePlayer.reserveEligibility].sort()) if ((snapshot.rules.rosterSlots[position] ?? 0) > reserveUsed(position)) {
         const prerequisite: PlanStep = { id: `reserve:${entry.playerId}:${prior.length}:${date}`, type: "reserve", playerId: entry.playerId, reservePosition: position, at: step.at, effectiveAt: step.at, conditional: false, dependsOn: step.dependsOn };
         yield [prerequisite, { ...step, dependsOn: [prerequisite.id] }];
       }
@@ -1009,6 +1067,11 @@ function* extensions(snapshot: PlanningSnapshot, intent: PlanIntent, prior: Plan
   }
   for (const { player, step } of proposals) for (const drop of drops.slice(2)) if (drop.id !== player.id)
     yield [{ ...step, id: `${step.id}:drop:${drop.id}`, dropPlayerId: drop.id }];
+}
+
+/** Reuse the same timed acquisition/reserve/drop proposals for bounded candidate comparisons. */
+export function candidateAcquisitionSteps(snapshot: PlanningSnapshot, intent: PlanIntent, player: PlanningPlayer, dropOrder?: ReadonlyMap<string, number>) {
+  return extensions(snapshot, intent, [], [player], dropOrder);
 }
 
 /** Synchronous and serializable; terminate the owning Worker to cancel a running search. */
@@ -1035,7 +1098,10 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   const categoryMode = snapshot.rules.scoring.mode === "categories";
   const coverageTarget = categoryMode ? categoryGoalieCoverageTarget(snapshot, intent) : pointsCoverageTarget;
   const noMoveOutcome = evaluatePlan(snapshot, intent, "outcome", [], false);
-  const objective: PlanningObjective = noMoveOutcome.recommendation?.eligible === true ? "outcome" : "agp";
+  // The manager can ask for most starts or best projected points. Points need projections that qualify for the
+  // whole lineup, so until then a points request (or "auto") plans for most starts.
+  const outcomeEligible = noMoveOutcome.recommendation?.eligible === true;
+  const objective: PlanningObjective = intent.objective !== "agp" && outcomeEligible ? "outcome" : "agp";
   const baseline = objective === "outcome" ? noMoveOutcome : noMoveAgp;
   const selected = evaluatePlan(snapshot, intent, objective, intent.steps, false);
   const noClaimContinuations = intent.steps.flatMap((step, index) => {
@@ -1049,11 +1115,12 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   candidates.forEach(player => relevantPlayerIds.add(player.id));
   snapshot = resolvePlanningContributions(sourceSnapshot, { playerIds: relevantPlayerIds });
   const limitations = new Set<string>();
+  if (intent.objective === "outcome" && !outcomeEligible) limitations.add("Best projected points needs projections for your whole lineup; planning for most starts until then.");
   if (fitResult.timeLimitReached) limitations.add("Schedule-fit analysis reached its time budget; additional team/position targets remain unevaluated.");
   if (fitResult.workQuotaReached) limitations.add("Schedule-fit analysis reached its work quota; additional team/position targets remain unevaluated.");
   if (snapshot.rules.acquisitionTiming === "unknown") limitations.add("Add/drop plans need acquisition-effective timing. Review League rules and scoring.");
   if (snapshot.rules.acquisitionCost === null || !snapshot.rules.periods.length || snapshot.rules.periods.some(period => period.remaining === null)) limitations.add("Add/drop plans need acquisition cost and remaining allowance for every affected period. Review Scoring, budgets, and lock windows.");
-  if (baseline.projectedValue === null) limitations.add("Safe drop recommendations need game-level contribution forecasts. Schedule-fit targets remain available, but are not verified add/drop plans.");
+  if (baseline.projectedValue === null) limitations.add("Fantasy-point drop recommendations need game-level contribution forecasts. Legal hypothetical schedule comparisons may still be returned with net points and drop cost unknown; schedule-fit targets alone are not verified add/drop plans.");
   const availableCount = snapshot.players.filter(player => ["free_agent", "manager_available", "waivers"].includes(player.availability)).length;
   const coverageComplete = candidates.length >= availableCount;
   if (!coverageComplete) limitations.add(`Candidate shortlist contains ${candidates.length} of ${availableCount} available players.`);
@@ -1167,7 +1234,19 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   // Prioritize the user's selected plan; repeated baseline/selected plans share a receipt.
   const selectedExplained = explain(selected), baselineExplained = explain(baseline);
   const noMoveAgpExplained = explain(noMoveAgp), noMoveOutcomeExplained = explain(noMoveOutcome);
-  const alternativesExplained = alternatives.map(explain);
+  const alternativesExplained = alternatives.map(explain).map(evaluation => {
+    if (evaluation.objective !== "agp" || !evaluation.steps.some(step => step.dropPlayerId || step.type === "drop")
+      || evaluation.comparisonEligible && noMoveAgp.comparisonEligible || !evaluation.recommendation) return evaluation;
+    const retainedGames = new Set(evaluation.assignments.map(row => `${row.playerId}:${row.gameId}:${row.date}`));
+    const dropped = new Set(evaluation.steps.flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : step.type === "drop" ? [step.playerId] : []));
+    const reasons = ["Hypothetical schedule comparison using supplied availability and drop permissions; net fantasy points and drop cost are unknown.",
+      ...[...dropped].map(id => {
+        const lost = noMoveAgp.assignments.filter(row => row.playerId === id && !retainedGames.has(`${row.playerId}:${row.gameId}:${row.date}`)).length;
+        return `Dropping ${snapshot.players.find(player => player.id === id)?.name ?? id}: ${lost} scheduled active games from the no-move lineup are absent in this plan; fantasy-point cost is unknown.`;
+      })];
+    return { ...evaluation, recommendation: { ...evaluation.recommendation, eligible: false, mode: "schedule_capacity" as const,
+      reasons: [...evaluation.recommendation.reasons, ...reasons] }, limitations: [...evaluation.limitations, ...reasons] };
+  });
   const continuationsExplained = noClaimContinuations.map(row => ({ ...row, evaluation: explain(row.evaluation) }));
   const benchComplete = !benchBudget.workQuotaReached && !benchBudget.timeLimitReached;
   if (!benchComplete) limitations.add(benchBudget.timeLimitReached

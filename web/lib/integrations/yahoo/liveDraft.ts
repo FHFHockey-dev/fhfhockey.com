@@ -516,10 +516,13 @@ export function removeYahooDisplayOnlyScoring(settings: YahooDraftSettings, payl
 
 // Shared in-season vocabulary without imposing draft-order or auction restrictions.
 export function parseYahooBoardSettings(payload: unknown) {
+  // NHL leagues report the weekly goalie minimum as min_games_played; counting and penalty are not reported.
+  // An explicit zero means no minimum; an absent key stays unknown.
+  const goalieMinimum = toText(findFirstScalar(payload, ["min_games_played"]))?.trim();
   return { ...adaptRosterConfig(payload), ...adaptScoring(payload),
     weeklyDeadline: toText(findFirstScalar(payload, ["weekly_deadline"])),
     rosterType: toText(findFirstScalar(payload, ["roster_type"])),
-    minimumGoalieStarts: toInteger(findFirstScalar(payload, ["min_goalie_appearances"])),
+    minimumGoalieStarts: goalieMinimum && /^\d+$/.test(goalieMinimum) ? Number(goalieMinimum) : null,
   };
 }
 

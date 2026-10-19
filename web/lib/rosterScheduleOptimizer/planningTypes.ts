@@ -1,4 +1,4 @@
-import type { ContributionAllowedUses, ContributionExclusion, ContributionSource, ForecastCalendarPolicy, ResolvedContribution } from "../player-forecasts/contributions";
+import type { ContributionAllowedUses, ContributionExclusion, ContributionParticipation, ContributionSource, ForecastCalendarPolicy, ResolvedContribution } from "../player-forecasts/contributions";
 export type ForecastExclusionReason = ContributionExclusion | "canary_excluded" | "discovery_timeout"
   | "discovery_failed" | "incomplete_refresh" | "eligibility_unverified" | "game_mismatch"
   | "invalid_cutoff" | "no_usable_target" | "conflicting_forecast";
@@ -41,6 +41,8 @@ export type PlanningPlayer = {
   reserveEligibility: Array<"IR" | "IR+" | "NA">;
   waiverClearsAt?: string | null;
   form?: { label: string; games: number; points: number; includedInForecast: boolean | null };
+  /** Provider injury designation (e.g. Yahoo IR, IR-LT, O, DTD); absent when healthy or unknown. */
+  injury?: { status: string; label: string; note: string | null } | null;
 };
 export type RosterEntry = {
   playerId: string;
@@ -84,6 +86,10 @@ export type GameForecast = {
   conditionalStats?: StatLine;
   tieBreakStats?: StatLine;
   appearanceProbability?: number | null;
+  /** Explicit unknown deployment; PPP production does not establish a PP unit. Optional for older snapshots. */
+  powerPlayRole?: { value: null; status: "unavailable" | "not_applicable"; reason: "current_role_evidence_unavailable" | "not_applicable"; source: null };
+  /** Separately admitted modeled start metadata; never weights appearance-conditioned means. */
+  startParticipation?: ContributionParticipation;
   contributions?: Record<string, ResolvedContribution>;
   cutoffAt?: string;
   expiresAt?: string;
@@ -105,6 +111,8 @@ export type AcquisitionPeriod = {
   end: string;
   remaining: number | null;
   source: "provider" | "manager" | "unknown";
+  /** Optional display/edit zone; start/end remain exact instants used by the planner. */
+  timeZone?: string;
   /** Weekly lineup lock, independently specified from acquisition resets. */
   lineupLockAt?: string | null;
 };
@@ -155,6 +163,7 @@ export type AcquisitionEvidence = {
 export type PlanningSnapshot = {
   acquisitionEvidence?: AcquisitionEvidence;
   baselineSources?: ContributionSource[];
+  participationSources?: ContributionParticipation[];
   forecastManifest?: ForecastManifest;
   /** Internal duplicate-input diagnostics, kept with the evaluated snapshot only. */
   forecastInputExclusions?: ForecastDiscoveryExclusion[];
@@ -172,7 +181,7 @@ export type PlanningSnapshot = {
 };
 /** Statistical resolution also serves diagnostics without inventing league rules. */
 export type ContributionPlanningSnapshot = Pick<PlanningSnapshot,
-  "players" | "games" | "forecasts" | "baselineSources" | "forecastManifest" | "forecastInputExclusions"> & {
+  "players" | "games" | "forecasts" | "baselineSources" | "participationSources" | "forecastManifest" | "forecastInputExclusions"> & {
   context: Pick<PlanningContext, "seasonId" | "asOf" | "startDate" | "endDate">;
 };
 export type PlanStep = {
@@ -196,6 +205,8 @@ export type PlanIntent = {
   goalieWindow: "early" | "late" | "any";
   goalieSplit: "mon_thu" | "mon_wed";
   alternativeCount: 5 | 10 | 20;
+  /** Manager's lineup goal: most starts, best projected points, or "auto" (default: points when projections qualify). */
+  objective?: "auto" | "agp" | "outcome";
 };
 export type PlanningObjective = "agp" | "outcome";
 export type PlanningAssignment = {
@@ -259,7 +270,9 @@ export type PlanEvaluation = {
   projectedValue: number | null;
   projectedStats: StatLine;
   categoryResults: Array<{ key: string; own: number | null; opponent: number | null; result: "win" | "tie" | "loss" | "unknown" }>;
-  goalie: { minimumSatisfied?: boolean | null; credited: number | null; confirmed: number; projected: number | null; required: number | null; risk: boolean };
+  goalie: { minimumSatisfied?: boolean | null; credited: number | null; confirmed: number; projected: number | null;
+    /** Expected starts from this plan's active goalie assignments; null when a start probability is missing. */
+    expectedStarts?: number | null; required: number | null; risk: boolean };
   acquisitions: Record<string, number>;
   limitations: string[];
 };
@@ -287,9 +300,12 @@ export type RevisionProposal = {
 export type ProviderCapabilities = {
   roster: boolean; availability: boolean; rules: boolean; matchup: boolean; acquisitions: boolean;
   limitations: string[];
+  /** Always-on provider diagnostics; informational, not review items. Optional for older saved backups. */
+  diagnostics?: string[];
 };
 export type PlanningData = {
   baselineSources?: ContributionSource[];
+  participationSources?: ContributionParticipation[];
   forecastManifest?: ForecastManifest;
   matchupWeeks?: Array<{ gameKey: string; week: number; startDate: string; endDate: string }>;
   players: PlanningPlayer[];
@@ -309,6 +325,8 @@ export type ForecastManifest = {
   scheduleRevision: string;
   rosterRevision: string;
   issuedRevisionIds: string[];
+  participationRevisionIds?: string[];
+  participationChecksum?: string | null;
   baselineChecksum: string | null;
   requiredOpportunities: number;
   forecastedOpportunities: number;
@@ -319,6 +337,8 @@ export type ForecastManifest = {
 export type ManagerRuleOverrides = Omit<Partial<LeagueRules>, "scoring" | "goalieMinimum"> & {
   scoring?: Partial<LeagueRules["scoring"]>;
   goalieMinimum?: Partial<LeagueRules["goalieMinimum"]>;
+  /** League time zone the manager confirmed; Yahoo does not report one. */
+  timeZone?: string;
 };
 export type PlanningWorkspace = {
   version: 1;

@@ -35,7 +35,9 @@ function fixture(): PlanningSnapshot {
     startDate: "2026-10-05", endDate: "2026-10-07", timeZone: "UTC", asOf: "2026-10-05T00:00:00Z" }, players, games, forecasts,
     roster: [{ playerId: "1", position: "active" }, { playerId: "2", position: "bench" }],
     lockedAssignments: [{ date: "2026-10-06", playerId: "1", slotId: "C#1" }], realized: { GOALS: 0, SHOTS: 0 },
-    opponent: { roster: [], realized: { GOALS: 2.5, SHOTS: 10 }, remaining: { GOALS: 0, SHOTS: 0 } }, evidence: {},
+    opponent: { roster: [], realized: { GOALS: 2.5, SHOTS: 10 }, remaining: { GOALS: 0, SHOTS: 0 } }, evidence: {
+      schedule: { source: "synthetic complete schedule", asOf: "2026-10-05T00:00:00Z", seasonId: 20262027, completeness: "complete", limitations: [] },
+    },
     rules: { lineupMode: "daily", rosterSlots: { C: 1, BN: 1 }, acquisitionTiming: "next_day", acquisitionCost: 1,
       periods: [{ id: "Before reset", start: "2026-10-05T00:00:00Z", end: "2026-10-06T00:00:00Z", remaining: 1, source: "manager" },
         { id: "After reset", start: "2026-10-06T00:00:00Z", end: "2026-10-08T00:00:00Z", remaining: 0, source: "manager" }],
@@ -49,10 +51,12 @@ function show(data: PlanningSnapshot, evaluations = evaluated(data), reviewed = 
   render(<CategoryGains {...evaluations} scoring={data.rules.scoring} label="Selected plan" reviewed={reviewed} />);
 }
 
-it("shows per-category gains and losses from startable days, preserving manager moves and reset accounting", () => {
+it("shows per-category gains and losses from a manager-selected startable lineup, preserving moves and reset accounting", () => {
   const data = fixture();
   const original = JSON.stringify(intent);
   const evaluations = evaluated(data);
+  evaluations.plan = evaluatePlan({ ...data, lockedAssignments: [...data.lockedAssignments,
+    { date: "2026-10-07", playerId: "3", slotId: "C#1", source: "manager" }] }, intent, "outcome", intent.steps, false);
   expect(evaluations.plan).toMatchObject({ legal: true, budgetVerified: true, comparisonEligible: true,
     projectedValue: 0, acquisitions: { "Before reset": 1 }, steps: intent.steps });
   expect(evaluations.baseline.projectedValue).toBe(0);
@@ -148,4 +152,19 @@ it("omits category UI for a points league", () => {
   const data = fixture(); data.rules.scoring.mode = "points";
   show(data);
   expect(screen.queryByText(/category gains/)).toBeNull();
+});
+
+it("prioritizes losing categories while leaving the tradeoff decision to the manager", () => {
+  const data = fixture();
+  data.rules.scoring.categories.reverse();
+  const originalOrder = data.rules.scoring.categories.map(category => category.key);
+  const evaluations = evaluated(data);
+  show(data, evaluations);
+  expect(screen.getAllByRole("article").map(row => row.getAttribute("aria-label"))).toEqual([
+    "Selected plan GOALS gain", "Selected plan SHOTS gain",
+  ]);
+  expect(data.rules.scoring.categories.map(category => category.key)).toEqual(originalOrder);
+  expect(screen.getByText(/Losing categories appear first using provisional mean comparisons/)).toBeTruthy();
+  expect(screen.getByText(/win-probability model is unavailable/)).toBeTruthy();
+  expect(screen.getByText(/Review the category tradeoffs and choose the plan/)).toBeTruthy();
 });

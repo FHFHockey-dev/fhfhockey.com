@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { evaluatePlan } from "lib/rosterScheduleOptimizer/planning";
+import { acquisitionEffectiveAt } from "lib/rosterScheduleOptimizer/planningTimeline";
 import { supplementProviderRules } from "lib/rosterScheduleOptimizer/providerRules";
 import { defaultIntent } from "lib/rosterScheduleOptimizer/workspace";
+import { candidatePlanMetrics } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
 
 const mocks = vi.hoisted(() => ({ user: { id: "owner-a" }, allowed: false, requireUser: vi.fn(), access: vi.fn(), snapshot: vi.fn(), planningData: vi.fn(), settings: vi.fn(), draftResource: vi.fn(), boardResource: vi.fn(), planningResource: vi.fn() }));
 vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: mocks.requireUser }));
@@ -21,7 +23,7 @@ vi.mock("lib/integrations/yahoo/rosterPlanning", async (original) => ({
   loadYahooPlanningSnapshot: mocks.snapshot,
 }));
 
-import { yahooPlanningAcquisitions, yahooPlanningCategories, yahooPlanningEditable, yahooPlanningPlayers, yahooPlanningStats, yahooPlanningTeams } from "./rosterPlanning";
+import { yahooInjury, yahooPlanningAcquisitions, yahooPlanningCategories, yahooPlanningEditable, yahooPlanningPlayers, yahooPlanningStats, yahooPlanningTeams } from "./rosterPlanning";
 import type { YahooProviderJsonResult } from "./providerClient";
 import { YahooLiveDraftError } from "./liveDraft";
 import providerHandler from "../../../pages/api/v1/roster-schedule-optimizer/provider";
@@ -52,12 +54,13 @@ describe("Yahoo planning parsers", () => {
       weeks: [{ gameKey: "453", week: 1, startDate: "2026-09-29", endDate: "2026-10-04" }],
       gameKey: "453", leagueKey: "453.l.1", teamKey: "453.l.1.t.1", startDate: "2026-10-01", endDate: "2026-10-03" };
   }
-  it("retains scoped weekly usage, source and dates separately from unverified NHL limits", () => {
+  it("derives remaining weekly adds from a positive limit and the scoped weekly counter, not season moves", () => {
     const args = acquisitionInputs(), evidence = yahooPlanningAcquisitions(args);
     expect(evidence.counter).toEqual({ present: true, coverageType: "week", coverageWeek: 1, reportedValue: "3", used: 3 });
     expect(evidence.period).toEqual({ week: 1, startDate: "2026-09-29", endDate: "2026-10-04", containsHorizon: true });
-    expect(evidence.limit).toEqual({ present: true, reportedValue: "5", verified: false });
-    expect(evidence.remaining).toBeNull();
+    expect(evidence.limit).toEqual({ present: true, reportedValue: "5", verified: true });
+    expect(evidence.remaining).toBe(2);
+    expect(evidence.limitations).toEqual([]);
     expect(evidence.asOf).toBe(args.now.toISOString());
     expect(evidence.fetchedAt).toBe(args.now.toISOString());
     expect(evidence.source).toContain("roster_adds");
@@ -75,6 +78,24 @@ describe("Yahoo planning parsers", () => {
     expect(evidence.limit).toEqual({ present: value !== undefined, reportedValue: value ?? null, verified: false });
     expect(evidence.remaining).toBeNull();
     expect(evidence.counter.used).toBe(3);
+    expect(evidence.limitations).toContain("Yahoo did not report a positive weekly add limit. Remaining allowance is unknown; zero is not assumed to mean unlimited.");
+  });
+  it("derives three remaining adds from the Oct 16 Yahoo capture values (limit 4, week counter 1)", () => {
+    const args = acquisitionInputs();
+    args.settings = args.response({ settings: { max_weekly_adds: "4", weekly_deadline: "intraday" } });
+    args.team = args.response({ team: [{ team_key: args.teamKey }, { is_owned_by_current_login: 1 },
+      { roster_adds: { coverage_type: "week", coverage_value: 1, value: "1" } }] });
+    expect(yahooPlanningAcquisitions(args)).toMatchObject({ remaining: 3, limit: { present: true, reportedValue: "4", verified: true },
+      counter: { used: 1, coverageWeek: 1 }, limitations: [] });
+  });
+  it("keeps remaining unknown when weekly usage exceeds the limit or the counter is unverified", () => {
+    const args = acquisitionInputs();
+    args.settings = args.response({ settings: { max_weekly_adds: "2" } });
+    expect(yahooPlanningAcquisitions(args)).toMatchObject({ remaining: null, limit: { verified: true },
+      limitations: ["Yahoo weekly adds used exceed the reported weekly limit; remaining allowance is unknown."] });
+    args.settings = args.response({ settings: { max_weekly_adds: "5" } });
+    expect(yahooPlanningAcquisitions({ ...args, endDate: "2026-10-05" }).remaining).toBeNull();
+    expect(yahooPlanningAcquisitions({ ...args, league: null }).remaining).toBeNull();
   });
   it("rejects stale, absent, wrong-scope and non-week counters without using season moves", () => {
     const args = acquisitionInputs();
@@ -141,6 +162,141 @@ describe("Yahoo planning parsers", () => {
 });
 
 describe("Yahoo snapshot evidence", () => {
+  it.each(["deadline", "failed-next-page", "stale-next-page", "wrong-league-next-page", "repeated-next-page", "unmapped", "ambiguous", "foreign-game", "eligibility-only", "availability-only", "class-mismatch"])("keeps individually verified partial discovery facts (%s)", async mode => {
+    const network = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("Unexpected network request in synthetic discovery test"));
+    let elapsed = 0;
+    const clock = vi.spyOn(Date, "now").mockImplementation(() => elapsed);
+    const starts: number[] = [];
+    const stopsAfterFirstPage = ["deadline", "unmapped", "ambiguous", "foreign-game", "eligibility-only", "availability-only", "class-mismatch"].includes(mode);
+    try {
+      const mapping = [{ nhl_player_id: "1", yahoo_player_id: "453.p.1" },
+        ...(mode === "unmapped" ? [] : [{ nhl_player_id: "2", yahoo_player_id: "453.p.2" }]),
+        { nhl_player_id: "3", yahoo_player_id: "453.p.3" },
+        ...(mode === "ambiguous" ? [{ nhl_player_id: "99", yahoo_player_id: "453.p.2" }] : [])];
+      const db = { from(table: string) {
+        const query = { select() { return query; }, order() { return query; }, eq() { return query; },
+          async maybeSingle() { return { data: table === "external_teams"
+            ? { id: "team-a", team_metadata: { is_owned: true }, connected_account_id: "account-a", external_league_id: "league-a", external_team_key: "453.l.1.t.1" }
+            : { id: "league-a", connected_account_id: "account-a", external_league_key: "453.l.1" }, error: null }; },
+          async range() { return { data: mapping, error: null }; } };
+        return query;
+      } };
+      const now = new Date("2026-10-01T12:00:00Z");
+      const transport = { responseDate: now.toISOString(), ageSeconds: 0 };
+      mocks.planningData.mockImplementation(async () => ({ players: [1, 2, 3, 4].map(id => ({ id: `canonical-${id}`, nhlId: id,
+        name: `Player ${id}`, teamAbbreviation: "TOR", eligiblePositions: ["C"], eligibilityVerified: false,
+        playerClass: "skater", availability: "unknown", ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] })),
+        games: [{ id: "game", date: "2026-10-02", startsAt: "2026-10-02T23:00:00Z", teamAbbreviation: "TOR", opponent: "OTT", home: true, status: "scheduled" }],
+        forecasts: [], evidence: { schedule: { source: "Synthetic partial schedule", asOf: now.toISOString(), seasonId: 20262027, completeness: "partial", limitations: [] } } }));
+      mocks.settings.mockReturnValue({ rosterType: "date", rosterConfig: { C: 1, BN: 1 }, scoringTypeRecognized: true,
+        unsupportedStatIds: [], unsupportedRosterSlots: [], leagueType: "points", scoringCategories: { GOALS: 1 }, categoryWeights: {}, minimumGoalieStarts: null });
+      mocks.draftResource.mockResolvedValue({ payload: { league_key: "453.l.1", time_zone: "UTC" }, transport });
+      mocks.boardResource.mockImplementation(async ({ resource }: any) => {
+        if (resource.type !== "roster") throw new Error("Synthetic optional read unavailable");
+        return { payload: { team_key: "453.l.1.t.1", is_owned_by_current_login: "1", roster: { date: "2026-10-01", coverage_type: "date", is_editable: "1",
+          players: { count: 1, 0: { player: [{ player_key: "453.p.1" }, { eligible_positions: { position: "C" } }, { selected_position: { position: "C" } }, { is_editable: "1" }] } } } }, transport };
+      });
+      mocks.planningResource.mockImplementation(async ({ resource }: any) => {
+        if (resource.type !== "available_page") throw new Error("Synthetic optional read unavailable");
+        starts.push(resource.start);
+        if (resource.start && mode === "failed-next-page") throw new Error("Synthetic later page failure");
+        const ids = resource.start ? [2] : [2, 3, ...Array.from({ length: 23 }, (_, index) => 100 + index)];
+        if (stopsAfterFirstPage) elapsed = 8000;
+        return { payload: { league_key: resource.start && mode === "wrong-league-next-page" ? "453.l.other" : "453.l.1",
+          players: { count: ids.length, ...Object.fromEntries(ids.map((id, index) => [index, { player: [
+            { player_key: `${mode === "foreign-game" && id === 2 ? "452" : "453"}.p.${id}` },
+            { eligible_positions: id === 2 && mode === "availability-only" ? undefined : { position: id === 2 && mode === "class-mismatch" ? "G" : "LW" } },
+            { ownership: id === 2 && mode === "eligibility-only" ? {} : { ownership_type: "freeagents" } },
+          ] }])) } }, transport: resource.start && mode === "stale-next-page" ? { ...transport, ageSeconds: 61 } : transport };
+      });
+      const actual = await vi.importActual<typeof import("./rosterPlanning")>("./rosterPlanning");
+      const result = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-03", now });
+      expect(result.capabilities.availability).toBe(false);
+      expect(result.snapshot.evidence.availability?.completeness).toBe("partial");
+      expect(starts).toEqual(stopsAfterFirstPage ? [0] : [0, 25, 50, 75]);
+      const candidate = result.snapshot.players.find(player => player.id === "canonical-2")!;
+      const unresolved = ["unmapped", "ambiguous", "foreign-game"].includes(mode);
+      expect(candidate.eligibilityVerified).toBe(!unresolved && mode !== "availability-only");
+      expect(candidate.availability).toBe(unresolved || ["repeated-next-page", "eligibility-only"].includes(mode) ? "unknown" : "free_agent");
+      expect(candidate.eligiblePositions).toEqual(unresolved || mode === "availability-only" ? ["C"] : mode === "class-mismatch" ? ["G"] : ["LW"]);
+      expect(result.snapshot.players.find(player => player.id === "canonical-3")).toMatchObject({ eligibilityVerified: true, eligiblePositions: ["LW"], availability: "free_agent" });
+      expect(result.snapshot.players.find(player => player.id === "canonical-4")).toMatchObject({ eligibilityVerified: false, availability: "unknown" });
+      expect(result.snapshot.roster).toEqual([{ playerId: "canonical-1", position: "active" }]);
+      const metrics = candidatePlanMetrics(result.snapshot, defaultIntent(), { maxCandidates: 1 });
+      const known = metrics.diagnostics.find(row => row.playerId === "canonical-3")!;
+      expect(known.reasons).not.toContain("League positional eligibility is unverified.");
+      expect(known.reasons).not.toContain("League availability is not verified for acquisition.");
+      expect(result.snapshot.rules.acquisitionTiming).toBe("unknown");
+      expect(result.snapshot.rules.acquisitionCost).toBeNull();
+      expect(result.snapshot.rules.periods).toEqual([]);
+      const repeated = mode === "repeated-next-page";
+      const matches = unresolved ? 1 : 2;
+      const both = unresolved || repeated || ["eligibility-only", "availability-only", "class-mismatch"].includes(mode) ? 1 : 2;
+      const eligibilityOnly = repeated || mode === "eligibility-only" ? 1 : 0;
+      const availabilityOnly = ["availability-only", "class-mismatch"].includes(mode) ? 1 : 0;
+      const stop = stopsAfterFirstPage ? "time budget" : repeated ? "end of list with repeated identities"
+        : mode === "failed-next-page" ? "request failure" : mode === "stale-next-page" ? "unverified freshness" : "league scope mismatch";
+      expect(result.capabilities.diagnostics).toContain(`Yahoo availability read: ${starts.length} pages attempted, ${mode === "failed-next-page" ? 1 : starts.length} returned, ${repeated ? 2 : 1} accepted; ${repeated ? 26 : 25} accepted rows, 25 unique, ${repeated ? 1 : 0} repeats. ${elapsed} ms elapsed; 8000 ms budget checked between page batches. Stopped: ${stop}.`);
+      expect(result.capabilities.diagnostics).toContain(`Yahoo availability matches: ${matches} unique catalog matches, ${25 - matches} unmatched; 0 rostered/excluded, ${matches} candidate matches.`);
+      expect(result.capabilities.diagnostics).toContain(`Yahoo provider catalog before search: 3 candidates; ${both} both known, ${eligibilityOnly} eligibility only, ${availabilityOnly} availability only, ${3 - both - eligibilityOnly - availabilityOnly} neither known. Eligibility means usable verified positions; availability means free agent or waivers. Discovery partial; unseen players remain unknown.`);
+      expect(JSON.stringify(result.snapshot)).not.toContain("Yahoo availability read:");
+      expect(result.capabilities.limitations.some(item => /^Yahoo (availability read|availability matches|provider catalog)/.test(item))).toBe(false);
+      expect(mocks.planningResource).toHaveBeenCalledTimes(3 + starts.length);
+      expect(mocks.boardResource).toHaveBeenCalledTimes(2);
+      expect(mocks.draftResource).toHaveBeenCalledTimes(1);
+      expect(network).not.toHaveBeenCalled();
+    } finally { clock.mockRestore(); network.mockRestore(); }
+  });
+  it.each([
+    { waiverDate: 1e100, clearsAt: null },
+    { waiverDate: 8_640_000_000_001, clearsAt: null },
+    { waiverDate: -8_640_000_000_001, clearsAt: null },
+    { waiverDate: "invalid", clearsAt: null },
+    { waiverDate: null, clearsAt: null },
+    { waiverDate: Date.parse("2026-10-02T12:00:00Z") / 1000, clearsAt: "2026-10-02T12:00:00.000Z" },
+  ])("preserves the roster when a candidate waiver date is $waiverDate", async ({ waiverDate, clearsAt }) => {
+    const network = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("Unexpected network request in synthetic waiver test"));
+    try {
+      const db = { from(table: string) {
+        const query = {
+          select() { return query; }, order() { return query; }, eq() { return query; },
+          async maybeSingle() { return { data: table === "external_teams"
+            ? { id: "team-a", team_metadata: { is_owned: true }, connected_account_id: "account-a", external_league_id: "league-a", external_team_key: "453.l.1.t.1" }
+            : { id: "league-a", connected_account_id: "account-a", external_league_key: "453.l.1" }, error: null }; },
+          async range() { return { data: [{ nhl_player_id: 1, yahoo_player_id: 1 }, { nhl_player_id: 2, yahoo_player_id: 2 }], error: null }; },
+        };
+        return query;
+      } };
+      const now = new Date("2026-10-01T12:00:00Z");
+      const transport = { responseDate: now.toISOString(), ageSeconds: 0 };
+      mocks.planningData.mockResolvedValue({ players: [1, 2].map(id => ({ id: `player-${id}`, nhlId: id, name: `Player ${id}`,
+        teamAbbreviation: "TOR", eligiblePositions: ["C"], eligibilityVerified: false, playerClass: "skater", availability: "unknown",
+        ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] })), games: [], forecasts: [], evidence: {} });
+      mocks.settings.mockReturnValue({ rosterType: "date", rosterConfig: { C: 1 }, scoringTypeRecognized: true,
+        unsupportedStatIds: [], unsupportedRosterSlots: [], leagueType: "points", scoringCategories: {}, categoryWeights: {}, minimumGoalieStarts: null });
+      mocks.draftResource.mockResolvedValue({ payload: { league_key: "453.l.1", time_zone: "UTC" }, transport });
+      mocks.boardResource.mockImplementation(async ({ resource }: any) => {
+        if (resource.type !== "roster") throw new Error("Synthetic optional read unavailable");
+        return { payload: { team_key: "453.l.1.t.1", is_owned_by_current_login: "1",
+          roster: { date: "2026-10-01", coverage_type: "date", is_editable: "1", players: { count: 1,
+            0: { player: [{ player_key: "453.p.1" }, { selected_position: { position: "C" } }, { eligible_positions: { position: "C" } }, { is_editable: "1" }] } } } }, transport };
+      });
+      mocks.planningResource.mockImplementation(async ({ resource }: any) => {
+        if (resource.type !== "available_page") throw new Error("Synthetic optional read unavailable");
+        return { payload: { league_key: "453.l.1", players: { count: 1,
+          0: { player: [{ player_key: "453.p.2" }, { ownership: { ownership_type: "waivers", waiver_date: waiverDate } }, { eligible_positions: { position: "C" } }] } } }, transport };
+      });
+      const actual = await vi.importActual<typeof import("./rosterPlanning")>("./rosterPlanning");
+      const result = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-03", now });
+      expect(result.snapshot.roster).toEqual([{ playerId: "player-1", position: "active" }]);
+      const candidate = result.snapshot.players.find(player => player.id === "player-2")!;
+      expect(candidate).toMatchObject({ availability: "waivers", waiverClearsAt: clearsAt });
+      expect(acquisitionEffectiveAt({ ...result.snapshot, rules: { ...result.snapshot.rules, acquisitionTiming: "same_day" } }, candidate, now.toISOString())).toBe(clearsAt);
+      expect(result.capabilities).toMatchObject({ roster: true, rules: false, acquisitions: false });
+      expect(result.snapshot.acquisitionEvidence?.remaining).toBeNull();
+      expect(network).not.toHaveBeenCalled();
+    } finally { network.mockRestore(); }
+  });
   it.each([false, true])("reads nested roster collections and leaves acquisition timing unknown (empty: %s)", async (empty) => {
     const mappingRanges: Array<[number, number]> = [];
     const db = { from(table: string) {
@@ -220,20 +376,42 @@ describe("Yahoo snapshot evidence", () => {
     expect(counted.snapshot.rules.periods).toEqual([]);
     expect(counted.capabilities.acquisitions).toBe(false);
     expect(mocks.planningResource).toHaveBeenCalledWith(expect.objectContaining({ resource: { type: "team", teamKey: "453.l.1.t.1" } }));
+    expect(counted.capabilities.limitations).toContain("Verify remaining acquisitions, reset periods and counting rules and goalie minimum progress; these are not inferred from season transaction totals.");
+    expect(counted.capabilities.limitations.some(item => /time zone/i.test(item))).toBe(false);
+    mocks.draftResource.mockResolvedValue({ payload: { league_key: "453.l.1", draft_status: "postdraft", max_weekly_adds: "4" }, transport });
+    const limited = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-03", timeZone: "America/New_York", now });
+    expect(limited.snapshot.acquisitionEvidence).toMatchObject({ remaining: 4, limit: { verified: true } });
+    expect(limited.snapshot.rules).toMatchObject({ acquisitionCost: 1, periods: [{ id: "yahoo-week-1", start: "2026-09-29T04:00:00.000Z",
+      end: "2026-10-05T04:00:00.000Z", remaining: 4, source: "provider", timeZone: "America/New_York" }] });
+    // The goalie minimum covers the same matchup week; its end date is exclusive.
+    expect(limited.snapshot.rules.goalieMinimum).toMatchObject({ periodStart: "2026-09-29", periodEnd: "2026-10-05" });
+    expect(limited.capabilities.acquisitions).toBe(true);
+    expect(limited.capabilities.limitations).toContain("Verify goalie minimum progress; these are not inferred from season transaction totals.");
+    expect(limited.capabilities.limitations.some(item => /weekly add limit|remaining acquisitions|time zone/i.test(item))).toBe(false);
+    const beyondWeek = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-07", timeZone: "America/New_York", now });
+    expect(beyondWeek.snapshot.rules).toMatchObject({ acquisitionCost: null, periods: [] });
+    mocks.draftResource.mockResolvedValue({ payload: { league_key: "453.l.1", draft_status: "postdraft" }, transport });
+    const unknownZone = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-03", now });
+    expect(unknownZone.capabilities.limitations).toContain("League time zone is unknown; UTC is a display fallback and timing requires verification.");
 
     mocks.draftResource.mockResolvedValue({ payload: { league_key: "453.l.1", time_zone: "America/New_York", draft_status: "postdraft" }, transport });
     const normalized = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a",
       startDate: "2026-10-01", endDate: "2026-10-03", timeZone: "UTC", now });
     expect(normalized.snapshot.context.timeZone).toBe("America/New_York");
-    expect(mocks.planningData).toHaveBeenLastCalledWith(db, expect.objectContaining({ timeZone: "America/New_York" }), { now });
+    expect(mocks.planningData).toHaveBeenLastCalledWith(db, expect.objectContaining({ timeZone: "America/New_York" }), { now, forgeDailyBridge: true });
     mocks.draftResource.mockResolvedValue({ payload: { league_key: "453.l.1", time_zone: "UTC", draft_status: "postdraft" }, transport });
 
-    for (const mode of ["repeated", "oversized", "stale", "wrong-scope", "failed", "deadline", "bounded", "ownership-only"]) {
+    for (const mode of ["repeated", "oversized", "stale", "wrong-scope", "failed", "rate-limited", "optional-limited", "deadline", "bounded", "ownership-only"]) {
       const starts: number[] = [];
       const clock = mode === "deadline" ? vi.spyOn(Date, "now").mockReturnValueOnce(0).mockReturnValue(8000) : null;
       mocks.planningResource.mockImplementation(async ({ resource }: any) => {
-        if (resource.type !== "available_page" || mode === "failed") throw new Error("Optional availability read failed");
+        if (resource.type !== "available_page") {
+          if (mode === "optional-limited") throw new YahooLiveDraftError("Slow down.", 429, "yahoo_rate_limited", resource.type === "team" ? 3600 : 1200);
+          throw new Error("Optional availability read failed");
+        }
+        if (mode === "failed") throw new Error("Optional availability read failed");
         starts.push(resource.start);
+        if (mode === "rate-limited") throw new YahooLiveDraftError("Slow down.", 429, "yahoo_rate_limited", 3600);
         const ids = mode === "bounded" ? Array.from({ length: 25 }, (_, index) => 2002 + resource.start + index)
           : mode === "repeated" && resource.start === 0 ? [2002, ...Array.from({ length: 24 }, (_, index) => 2100 + index)]
             : mode === "oversized" ? Array.from({ length: 26 }, (_, index) => 2002 + index) : [2002];
@@ -249,12 +427,16 @@ describe("Yahoo snapshot evidence", () => {
         expect(partial.snapshot.evidence.availability?.completeness, mode).toBe(mode === "ownership-only" ? "complete" : "partial");
         expect(partial.snapshot.players.find(row => row.id === "candidate")?.availability, mode).toBe(mode === "bounded" ? "free_agent" : "unknown");
         if (mode === "repeated") {
-          expect(starts).toEqual([0, 25]);
+          expect(starts).toEqual([0, 25, 50, 75]);
           expect(partial.capabilities.limitations.join(" ")).toContain("repeated identities remain unknown");
         }
         if (mode === "deadline") {
           expect(starts).toEqual([]);
           expect(partial.capabilities.limitations.join(" ")).toContain("time budget");
+        }
+        if (mode === "rate-limited" || mode === "optional-limited") {
+          expect(partial).toMatchObject({ code: "yahoo_rate_limited", retryAfterSeconds: 3600 });
+          expect(starts).toEqual(mode === "rate-limited" ? [0] : []);
         }
         if (mode === "bounded") {
           expect(starts).toHaveLength(81);
@@ -305,6 +487,16 @@ describe("Yahoo snapshot evidence", () => {
 });
 
 describe("provider snapshot route", () => {
+  it("propagates curated cooldowns for required failures and partial snapshots", async () => {
+    mocks.allowed = true;
+    mocks.snapshot.mockRejectedValueOnce(new YahooLiveDraftError("Slow down.", 429, "yahoo_rate_limited", 3600));
+    const limited = res(); await providerHandler(req("POST", { provider: "yahoo", teamId: "selected", startDate: "2026-10-01", endDate: "2026-10-07" }), limited);
+    expect(limited.statusCode).toBe(429);
+    expect(limited.body).toMatchObject({ success: false, code: "yahoo_rate_limited", retryAfterSeconds: 3600 });
+    mocks.snapshot.mockResolvedValueOnce({ snapshot: { id: "partial" }, capabilities: { availability: false }, code: "yahoo_rate_limited", retryAfterSeconds: 1200 });
+    const partial = res(); await providerHandler(req("POST", { provider: "yahoo", teamId: "selected", startDate: "2026-10-01", endDate: "2026-10-07" }), partial);
+    expect(partial.body).toMatchObject({ success: true, code: "yahoo_rate_limited", retryAfterSeconds: 1200 });
+  });
   it("returns curated provider diagnostics while keeping raw exceptions private", async () => {
     mocks.allowed = true;
     const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
@@ -351,4 +543,13 @@ it("retries one timeout for required planning reads but never retries rate limit
   const limited = vi.fn().mockRejectedValue(new YahooLiveDraftError("limited", 429, "yahoo_rate_limited"));
   await expect(readRequiredPlanningResource(limited)).rejects.toThrow("limited");
   expect(limited).toHaveBeenCalledTimes(1);
+});
+
+describe("Yahoo injury status", () => {
+  it("keeps Yahoo's injury designations and ignores other statuses", () => {
+    expect(yahooInjury({ status: "DTD", status_full: "Day-to-Day", injury_note: "Lower Body" })).toEqual({ status: "DTD", label: "Day-to-Day", note: "Lower Body" });
+    expect(yahooInjury({ status: "ir-lt" })).toEqual({ status: "IR-LT", label: "IR-LT", note: null });
+    expect(yahooInjury({ status: "NA", status_full: "Not Active" })).toBeNull();
+    expect(yahooInjury({})).toBeNull();
+  });
 });

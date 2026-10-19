@@ -69,6 +69,15 @@ describe("Yahoo live draft parser", () => {
     expect(result.weeklyDeadline).toBe("intraday");
     expect(result.rosterConfig).toMatchObject({ C: 2, FWD: 1 });
     expect(result.excludedInjurySlots).toEqual({ "IR+": 1 });
+    expect(result.minimumGoalieStarts).toBeNull();
+  });
+  it("reads the weekly goalie minimum from Yahoo's separate min_games_played settings block", () => {
+    const result = parseYahooBoardSettings({ fantasy_content: { league: [{ league_key: "477.l.1" },
+      { settings: [{ scoring_type: "head", max_weekly_adds: "4" }, { min_games_played: "3" }] }] } });
+    expect(result.minimumGoalieStarts).toBe(3);
+    expect(parseYahooBoardSettings({ min_games_played: "0" }).minimumGoalieStarts).toBe(0);
+    expect(parseYahooBoardSettings({ min_games_played: "" }).minimumGoalieStarts).toBeNull();
+    expect(parseYahooBoardSettings({ min_goalie_appearances: "3" }).minimumGoalieStarts).toBeNull();
   });
   it("uses Yahoo's explicit playoff range and preserves unknown data", () => {
     expect(parseYahooPlayoffWeeks({ league: [{ end_week: "26" }, { settings: [{ uses_playoff: "1", playoff_start_week: "24" }] }] })).toEqual([24, 25, 26]);

@@ -100,7 +100,7 @@ export function buildTimeline(snapshot: PlanningSnapshot, intent: PlanIntent, st
       if (snapshot.rules.acquisitionTiming === "next_day" && localDate(step.effectiveAt, snapshot.context.timeZone) <= localDate(step.at, snapshot.context.timeZone)) { issues.add(`Next-day acquisition ${step.id} is effective too early.`); return; }
       if (snapshot.rules.acquisitionTiming === "unknown") { issues.add("Acquisition timing is unverified; legal use cannot be established."); return; }
       if (player.availability === "waivers") {
-        if (!step.conditional || !player.waiverClearsAt || time(step.effectiveAt) < time(player.waiverClearsAt)) { issues.add(`Waiver claim ${step.id} lacks conditional clearance.`); return; }
+        if (!step.conditional || !player.waiverClearsAt || !finiteTime(player.waiverClearsAt) || time(step.effectiveAt) < time(player.waiverClearsAt)) { issues.add(`Waiver claim ${step.id} lacks conditional clearance.`); return; }
         if (step.waiverSpend !== null && step.waiverSpend !== undefined && (!Number.isFinite(step.waiverSpend) || step.waiverSpend < 0)) { issues.add(`Invalid waiver spend for ${step.id}.`); return; }
         const waiverRules = snapshot.rules.waivers;
         if (!waiverRules || waiverRules.mode === "unknown") {

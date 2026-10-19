@@ -9,7 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try { query = parsePlanningDataQuery(req.query); }
   catch (error) { return res.status(400).json({ success: false, error: error instanceof Error ? error.message : "Invalid planning range." }); }
   try {
-    const data = await loadPlanningData(serviceRoleClient, query);
+    const data = await loadPlanningData(serviceRoleClient, query, { forgeDailyBridge: true });
     res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=300");
     return res.json({ success: true, data });
   } catch {

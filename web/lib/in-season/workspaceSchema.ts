@@ -9,6 +9,7 @@ const instant = z.string().datetime({ offset: true });
 const id = z.string().trim().min(1).max(200);
 const seasonId = z.number().int().refine((value) => { const first = Math.floor(value / 10000); return first >= 2000 && first <= 2199 && value % 10000 === first + 1; }, "Expected an NHL season ID such as 20262027.");
 const timeZone = id.refine((value) => { try { new Intl.DateTimeFormat("en", { timeZone: value }); return true; } catch { return false; } }, "Invalid time zone.");
+const periodTimeZone = timeZone.refine(value => value === "UTC" || value.includes("/"), "Use an explicit IANA time zone.");
 const nullableNumber = z.number().finite().nullable();
 const positiveInteger = z.number().int().positive();
 const stringArray = z.array(id).max(1000);
@@ -30,6 +31,7 @@ const player = z.object({
   ownership: z.number().finite().min(0).max(100).nullable(), canDrop: z.boolean().nullable(), holdValue: nullableNumber,
   reserveEligibility: z.array(z.enum(["IR", "IR+", "NA"])), waiverClearsAt: instant.nullable().optional(),
   form: z.object({ label: id, games: z.number().int().nonnegative(), points: z.number().finite(), includedInForecast: z.boolean().nullable() }).strict().optional(),
+  injury: z.object({ status: id, label: id, note: z.string().nullable() }).strict().nullable().optional(),
 }).strict();
 const rosterEntry = z.object({ playerId: id, position: z.enum(["active", "bench", "IR", "IR+", "NA"]) }).strict();
 const lockedAssignment = z.object({ date, playerId: id, slotId: id.nullable(), source: z.enum(["provider", "manager"]).optional() }).strict();
@@ -45,15 +47,25 @@ const contributionSource = z.object({ kind: z.enum(["detailed", "baseline"]), so
   seasonId, teamId: positiveInteger, gameId: positiveInteger.optional(), scheduledAt: instant.optional(), targetKey: id,
   unit: z.enum(["count", "minutes"]), basis: z.enum(["per_appearance", "per_start", "per_team_game", "unconditional_game"]),
   mean: z.number().finite(), participationIntegrated: z.boolean(), cutoffAt: instant,
-  issuedAt: instant, expiresAt: instant, sourceWatermark: id, scheduleRevision: id,
+  issuedAt: instant, expiresAt: instant, catalogExpiresAt: instant.optional(), sourceWatermark: id, scheduleRevision: id,
   rosterRevision: id, legacyAvailabilityAdjustment: z.boolean().optional(), limitations: stringArray.optional() }).strict();
+const hash = z.string().regex(/^[a-f0-9]{64}$/);
+const participationModel = z.object({ version: z.enum(["skater-participation-frequency-v1", "goalie-appearance-frequency-v1",
+  "skater-frozen-window-appearance-frequency-v1", "goalie-frozen-window-appearance-frequency-v1", "goalie-frozen-window-start-frequency-v1",
+  "skater-roster-observation-appearance-frequency-v1", "goalie-roster-observation-appearance-frequency-v1", "goalie-roster-observation-start-frequency-v1"]),
+  event: z.enum(["positive_minutes", "official_starter"]), probabilityStatus: z.literal("uncalibrated_model"),
+  calibration: z.literal("unavailable"), inputHash: hash, evidenceHashes: z.array(hash).max(1000),
+  numerator: z.number().int().min(0).max(20), denominator: z.number().int().min(1).max(20),
+  selectedGameIds: z.array(positiveInteger).max(20).refine(ids => new Set(ids).size === ids.length, "Duplicate selected participation game."),
+  limitations: stringArray }).strict().refine(model => model.numerator <= model.denominator, "Participation numerator exceeds denominator.");
+const contributionParticipation = z.object({ playerId: positiveInteger, nhlPlayerId: positiveInteger, seasonId, gameId: positiveInteger,
+  teamId: positiveInteger, scheduledAt: instant.optional(), scheduleRevision: id, rosterRevision: id,
+  basis: z.enum(["appearance", "start"]), probability: z.number().finite().min(0).max(1), revisionId: id,
+  released: z.boolean(), allowedUses: allowedUses.optional(), issuedAt: instant, cutoffAt: instant,
+  expiresAt: instant, competitionId: id.optional(), model: participationModel.optional() }).strict();
 const resolvedContribution = z.object({ resolverVersion: z.literal("contribution-resolver-v1"),
   inputs: z.object({ detailed: contributionSource.optional(), baseline: contributionSource.optional(),
-    participation: z.object({ playerId: positiveInteger, nhlPlayerId: positiveInteger, seasonId, gameId: positiveInteger,
-      teamId: positiveInteger, scheduledAt: instant.optional(), scheduleRevision: id, rosterRevision: id,
-      basis: z.enum(["appearance", "start"]), probability: z.number().finite().min(0).max(1), revisionId: id,
-      released: z.boolean(), allowedUses: allowedUses.optional(), issuedAt: instant, cutoffAt: instant,
-      expiresAt: instant, competitionId: id.optional() }).strict().optional(),
+    participation: contributionParticipation.optional(),
     horizonDays: positiveInteger, calendarPolicy: calendarPolicy.optional(), servingEnabled: z.boolean() }).strict().optional(),
   game: contributionGame, targetKey: id, sourceKind: z.enum(["detailed", "baseline", "blended"]).nullable(),
   conditionalMean: nullableNumber, unconditionalMean: nullableNumber,
@@ -75,6 +87,11 @@ const forecast = z.object({ playerId: id, gameId: id, stats: statLine,
   sourceKind: z.enum(["detailed", "baseline", "blended"]).optional(),
   conditionalStats: statLine.optional(), tieBreakStats: statLine.optional(),
   appearanceProbability: z.number().finite().min(0).max(1).nullable().optional(),
+  powerPlayRole: z.discriminatedUnion("status", [
+    z.object({ value: z.null(), source: z.null(), status: z.literal("unavailable"), reason: z.literal("current_role_evidence_unavailable") }).strict(),
+    z.object({ value: z.null(), source: z.null(), status: z.literal("not_applicable"), reason: z.literal("not_applicable") }).strict(),
+  ]).optional(),
+  startParticipation: contributionParticipation.optional(),
   contributions: z.record(z.string().min(1).max(50), resolvedContribution).optional(),
   cutoffAt: instant.optional(), expiresAt: instant.optional(),
   conditioning: z.literal("unconditional"), startProbability: z.number().finite().min(0).max(1).nullable(),
@@ -89,10 +106,10 @@ const forecastManifest = z.object({ version: z.literal("planning-forecasts-v1"),
   acceptedNewsRevision: id.nullable().optional(),
   seasonId, asOf: instant, scheduleRevision: id, rosterRevision: id, issuedRevisionIds: stringArray,
   exclusions: z.array(z.object({ gameId: id, playerId: id.optional(), targetKey: id.optional(), reasons: z.array(forecastExclusionReason).max(100) }).strict()).max(15000).optional(),
-  baselineChecksum: id.nullable(), requiredOpportunities: z.number().int().nonnegative(),
+  baselineChecksum: id.nullable(), participationRevisionIds: z.array(id).max(15000).optional(), participationChecksum: hash.nullable().optional(), requiredOpportunities: z.number().int().nonnegative(),
   forecastedOpportunities: z.number().int().nonnegative(),
   exclusionCounts: z.record(z.string().min(1).max(50), z.number().int().nonnegative()) }).strict();
-const period = z.object({ id, start: instant, end: instant, remaining: z.number().int().nonnegative().nullable(), source: z.enum(["provider", "manager", "unknown"]), lineupLockAt: instant.nullable().optional() }).strict().refine((value) => Date.parse(value.start) < Date.parse(value.end) && (!value.lineupLockAt || Date.parse(value.lineupLockAt) <= Date.parse(value.end)), "Invalid acquisition period bounds.");
+const period = z.object({ id, start: instant, end: instant, remaining: z.number().int().nonnegative().nullable(), source: z.enum(["provider", "manager", "unknown"]), timeZone: periodTimeZone.optional(), lineupLockAt: instant.nullable().optional() }).strict().refine((value) => Date.parse(value.start) < Date.parse(value.end) && (!value.lineupLockAt || Date.parse(value.lineupLockAt) <= Date.parse(value.end)), "Invalid acquisition period bounds.");
 const goalieMinimum = z.object({ required: z.number().int().nonnegative().nullable(), credited: z.number().int().nonnegative().nullable(), periodStart: date.nullable().optional(), periodEnd: date.nullable().optional(), counts: z.enum(["starts", "appearances", "unknown"]), penalty: z.enum(["lose_goalie_categories", "none", "unknown"]) }).strict();
 const goaliePeriodOrdered = (value: { periodStart?: string | null; periodEnd?: string | null }) => !value.periodStart || !value.periodEnd || value.periodStart <= value.periodEnd;
 const rules = z.object({
@@ -107,10 +124,11 @@ const rules = z.object({
 const managerRuleOverrides = rules.partial().extend({
   scoring: rules.shape.scoring.partial().optional(),
   goalieMinimum: goalieMinimum.partial().refine(goaliePeriodOrdered, "Goalie minimum period ends before it starts.").optional(),
+  timeZone: timeZone.optional(),
 });
 const opponent = z.object({ roster: z.array(rosterEntry), realized: statLine, remaining: statLine.nullable() }).strict().nullable();
 const step = z.object({ id, type: z.enum(["add", "drop", "reserve"]), playerId: id, dropPlayerId: id.optional(), reservePosition: z.enum(["IR", "IR+", "NA"]).optional(), at: instant, effectiveAt: instant, conditional: z.boolean(), waiverSpend: z.number().finite().nonnegative().nullable().optional(), dependsOn: stringArray }).strict();
-const intent = z.object({ revision: z.number().int().nonnegative(), steps: z.array(step).max(500), protectedPlayerIds: stringArray, excludedPlayerIds: stringArray, goalieCoverage: z.enum(["accept_risk", "cover"]), goalieWindow: z.enum(["early", "late", "any"]), goalieSplit: z.enum(["mon_thu", "mon_wed"]), alternativeCount: z.union([z.literal(5), z.literal(10), z.literal(20)]) }).strict();
+const intent = z.object({ revision: z.number().int().nonnegative(), steps: z.array(step).max(500), protectedPlayerIds: stringArray, excludedPlayerIds: stringArray, goalieCoverage: z.enum(["accept_risk", "cover"]), goalieWindow: z.enum(["early", "late", "any"]), goalieSplit: z.enum(["mon_thu", "mon_wed"]), alternativeCount: z.union([z.literal(5), z.literal(10), z.literal(20)]), objective: z.enum(["auto", "agp", "outcome"]).optional() }).strict();
 export const workspaceSchema: z.ZodType<PlanningWorkspace> = z.object({ version: z.literal(1), context: contextSchema, rules, managerRuleOverrides: managerRuleOverrides.optional(), roster: z.array(rosterEntry).max(200), lockedAssignments: z.array(lockedAssignment).max(1000).optional(), intent, manualPlayers: z.array(player).max(1000), unresolvedNames: stringArray, realized: statLine, opponent }).strict();
 const acquisitionEvidence = z.object({ source: id, fetchedAt: instant, asOf: instant.nullable(),
   counter: z.object({ present: z.boolean(), coverageType: z.string().max(100).nullable(), coverageWeek: z.number().int().positive().nullable(),
@@ -121,6 +139,7 @@ const acquisitionEvidence = z.object({ source: id, fetchedAt: instant, asOf: ins
 export const snapshotSchema: z.ZodType<PlanningSnapshot> = z.object({ id, context: contextSchema, acquisitionEvidence: acquisitionEvidence.optional(),
   players: z.array(player).max(3000), roster: z.array(rosterEntry).max(200), games: z.array(game).max(5000),
   forecasts: z.array(forecast).max(15000), baselineSources: z.array(contributionSource).max(15000).optional(),
+  participationSources: z.array(contributionParticipation).max(15000).optional(),
   forecastInputExclusions: forecastManifest.shape.exclusions,
   forecastManifest: forecastManifest.optional(), rules, lockedAssignments: z.array(lockedAssignment).max(1000),
   realized: statLine, opponent, evidence: z.record(z.string().min(1), evidence) }).strict();
