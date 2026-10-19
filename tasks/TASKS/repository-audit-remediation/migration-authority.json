@@ -844,23 +844,23 @@
     },
     {
       "order": 84,
-      "path": "supabase/migrations/20261018184229_restrict_provider_linkage_browser_writes.sql",
+      "path": "supabase/migrations/20261019052934_restrict_provider_linkage_browser_writes.sql",
       "sha256": "e3a90e1a3bfd45424c9714f2232fdc1880f6ec25e11196270beb0a1bb89148f7",
       "sourceStatus": "source-authorized",
-      "deploymentState": "pending",
+      "deploymentState": "applied",
       "migrationClass": "security",
-      "rolloutGate": "Drafted 2026-10-18 from the Super Goal audit (G1 problem 5). Removes anon/authenticated writes, TRUNCATE and write policies on connected_accounts, external_leagues, external_teams and provider_sync_runs; authenticated keeps owner-scoped SELECT. Separate explicit migration approval is required; no hosted migration was run.",
-      "stateEvidence": "Never applied to any hosted environment. Disposable socket-only PostgreSQL 17.11 replay of the baseline DDL, RLS, policies and grants passed 23 cases, including the baseline identity-squat reproduction and an idempotent second apply (tasks/artifacts/security-audit-fixes-2026-10-18/provider-linkage-pg-result-v1.json)."
+      "rolloutGate": "Drafted 2026-10-18 from the Super Goal audit (G1 problem 5). Removes anon/authenticated writes, TRUNCATE and write policies on connected_accounts, external_leagues, external_teams and provider_sync_runs; authenticated keeps owner-scoped SELECT. Applied 2026-10-19 by explicit user approval as one targeted migration.",
+      "stateEvidence": "Production ledger supabase_migrations.schema_migrations version 20261019052934 name restrict_provider_linkage_browser_writes (read back 2026-10-19). Read-only preflight showed anon/authenticated with all table privileges and insert/update/delete own policies; read-only post-apply check: authenticated SELECT only, anon none, service_role unchanged, only the four *_select_own policies remain, session lock_timeout back to 0. Local body equals applied body apart from BEGIN/COMMIT. Disposable PostgreSQL 17.11 harness passed 23 cases before apply (tasks/artifacts/security-audit-fixes-2026-10-18/provider-linkage-pg-result-v1.json, which names the pre-rename file 20261018184229_...)."
     },
     {
       "order": 85,
-      "path": "supabase/migrations/20261018190022_restore_private_token_vault.sql",
+      "path": "supabase/migrations/20261019053348_restore_private_token_vault.sql",
       "sha256": "30fce724d3eedbd887126116226a1fa6b227fce2bfd4f1c16fd141478d4ba422",
       "sourceStatus": "source-authorized",
-      "deploymentState": "pending",
+      "deploymentState": "applied",
       "migrationClass": "security",
-      "rolloutGate": "Drafted 2026-10-18 from the Super Goal audit (G1 problem 3). Restores the private token vault (schema, private.connected_account_tokens, the eleventh composite owner FK, the upsert/get/cleanup routines and trigger) that the baseline's public *_secure wrappers call, so a fresh replay can store provider tokens. Guarded and replace-style; it never reads or writes token rows. Separate explicit migration approval is required; no hosted migration was run.",
-      "stateEvidence": "Never applied to any hosted environment. Disposable socket-only PostgreSQL 17.11 harness with a stub Vault passed 20 cases: a fresh active-chain replay fails token writes before (3F000) and works after; its private catalog matches a replay of production-ledger 20260713055508/055537/055538/060931 exactly, including routine bodies; and a re-apply over a populated production-like vault leaves rows, secrets and catalog unchanged (tasks/artifacts/security-audit-fixes-2026-10-18/token-vault-pg-result-v1.json)."
+      "rolloutGate": "Drafted 2026-10-18 from the Super Goal audit (G1 problem 3). Restores the private token vault (schema, private.connected_account_tokens, the eleventh composite owner FK, the upsert/get/cleanup routines and trigger) that the baseline public *_secure wrappers call, so a fresh replay can store provider tokens. Guarded and replace-style; it never reads or writes token rows. Applied 2026-10-19 by explicit user approval as one targeted migration after a hosted parity check.",
+      "stateEvidence": "Production ledger supabase_migrations.schema_migrations version 20261019053348 name restore_private_token_vault (read back 2026-10-19). Read-only preflight: the hosted private routines matched this file byte for byte (prosrc md5 cad87b6e.../984b2c3a.../4ba768f3..., identical arguments, defaults, SECURITY DEFINER, search_path, EXECUTE grants, trigger, 7 indexes, both FKs, schema usage), so the apply re-stated identical definitions; read-only post-apply check showed the same values and session lock_timeout back to 0. Local body equals applied body apart from BEGIN/COMMIT. Disposable PostgreSQL 17.11 harness with a stub Vault passed 20 cases before apply (tasks/artifacts/security-audit-fixes-2026-10-18/token-vault-pg-result-v1.json, which names the pre-rename file 20261018190022_...)."
     }
   ],
   "sourceExtensionApproval": {

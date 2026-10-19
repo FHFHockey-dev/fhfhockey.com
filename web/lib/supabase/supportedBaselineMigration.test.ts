@@ -75,7 +75,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       migrationAuthorityRows.filter(
         (row) => row.deploymentState === "applied",
       ),
-    ).toHaveLength(52);
+    ).toHaveLength(54);
     expect(
       migrationAuthorityRows.filter(
         (row) => row.deploymentState === "unknown",
@@ -85,7 +85,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       migrationAuthorityRows.filter(
         (row) => row.deploymentState === "pending",
       ),
-    ).toHaveLength(4);
+    ).toHaveLength(2);
 
     for (const row of migrationAuthorityRows) {
       expect(row.path).toBe(
@@ -206,7 +206,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
 
   it("leaves browser roles only owner-scoped reads of provider-linkage tables", () => {
     const migration = readMigration(
-      "20261018184229_restrict_provider_linkage_browser_writes.sql",
+      "20261019052934_restrict_provider_linkage_browser_writes.sql",
     );
     const tables = [
       "connected_accounts",
@@ -243,7 +243,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
   it("restores the private token vault the baseline wrappers call", () => {
     const baseline = readMigration("20260716112908_production_schema_baseline.sql");
     const migration = readMigration(
-      "20261018190022_restore_private_token_vault.sql",
+      "20261019053348_restore_private_token_vault.sql",
     );
 
     // The baseline wrappers depend on these routines but never create them.
