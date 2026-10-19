@@ -296,6 +296,77 @@ describe("shift-chart cron audit truth", () => {
     ]);
   });
 
+  it.each([
+    {
+      gameId: 2026010007,
+      gameType: 1,
+      statusCode: 200,
+      body: {
+        success: true,
+        skippedGames: [
+          { gameId: 2026010007, reason: "preseason_without_roster_spots" },
+        ],
+      },
+    },
+    {
+      gameId: 2026020007,
+      gameType: 2,
+      statusCode: 500,
+      body: {
+        success: false,
+        message: "Invalid relationship roster scope for game 2026020007",
+      },
+    },
+  ])(
+    "handles an empty roster scope for game type $gameType",
+    async ({ gameId, gameType, statusCode, body }) => {
+      const hash = "b".repeat(64);
+      const defaultFrom = serviceFromMock.getMockImplementation()!;
+      serviceFromMock.mockImplementation((table: string) =>
+        table === "projection_game_materialization_status"
+          ? {
+              select: () => ({
+                eq: () => ({
+                  maybeSingle: async () => ({
+                    data: {
+                      game_id: gameId,
+                      input_status: "complete",
+                      pbp_raw_payload_hash: hash,
+                    },
+                    error: null,
+                  }),
+                }),
+              }),
+            }
+          : defaultFrom(table),
+      );
+      vi.mocked(fetchPbpGame).mockResolvedValue({
+        id: gameId,
+        season: 20262027,
+        gameType,
+        gameDate: "2026-09-21",
+        homeTeam: { id: 23, abbrev: "VAN" },
+        awayTeam: { id: 22, abbrev: "EDM" },
+      } as any);
+      vi.mocked(isCompleteFinalPbpPayload).mockReturnValue(true);
+      vi.mocked(fetchAllNhleShiftChartsForGame).mockResolvedValue([
+        { gameId, playerId: 8480012, teamId: 23, typeCode: 517 } as any,
+      ]);
+      const req = {
+        method: "POST",
+        query: { gameId: String(gameId) },
+        url: `/api/v1/db/shift-charts?gameId=${gameId}`,
+      } as any;
+      const res = createMockRes();
+
+      await directShiftChartsHandler(req, res);
+
+      expect(res.statusCode).toBe(statusCode);
+      expect(res.body).toEqual(expect.objectContaining(body));
+      expect(persistShiftChartRelationships).not.toHaveBeenCalled();
+    },
+  );
+
   it("lets the compatibility adapter own exactly one success audit row", async () => {
     const req = {
       method: "GET",

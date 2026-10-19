@@ -108,13 +108,13 @@ describe("relationship materialization", () => {
     expect(
       selectPendingRelationshipGameIds({
         games: [
-          { id: 30, date: "2025-10-09" },
-          { id: 10, date: "2025-10-07" },
-          { id: 20, date: "2025-10-07" },
+          { id: 2025020030, date: "2025-10-09" },
+          { id: 2025020010, date: "2025-10-07" },
+          { id: 2025020020, date: "2025-10-07" },
         ],
         statuses: [
           {
-            game_id: 10,
+            game_id: 2025020010,
             input_status: "complete",
             input_fingerprint: INPUT_FINGERPRINT,
             relationship_status: "complete",
@@ -123,7 +123,7 @@ describe("relationship materialization", () => {
               "shift_relationship_materializer_v3_position_bound",
           },
           {
-            game_id: 20,
+            game_id: 2025020020,
             input_status: "complete",
             input_fingerprint: INPUT_FINGERPRINT,
             relationship_status: "pending",
@@ -131,7 +131,7 @@ describe("relationship materialization", () => {
             relationship_algorithm_version: null,
           },
           {
-            game_id: 30,
+            game_id: 2025020030,
             input_status: "complete",
             input_fingerprint: INPUT_FINGERPRINT,
             relationship_status: "complete",
@@ -142,7 +142,37 @@ describe("relationship materialization", () => {
         ],
         maxGames: 2,
       }),
-    ).toEqual([20, 30]);
+    ).toEqual([2025020020, 2025020030]);
+  });
+
+  it("queues preseason games only until a regular-season game has inputs", () => {
+    const pending = (gameId: number) => ({
+      game_id: gameId,
+      input_status: "complete",
+      input_fingerprint: INPUT_FINGERPRINT,
+      relationship_status: "pending",
+      relationship_input_fingerprint: null,
+      relationship_algorithm_version: null,
+    });
+    const games = [
+      { id: 2026010007, date: "2026-09-21" },
+      { id: 2026020001, date: "2026-09-29" },
+      { id: 2026030111, date: "2027-04-20" },
+    ];
+    expect(
+      selectPendingRelationshipGameIds({
+        games,
+        statuses: [pending(2026010007)],
+        maxGames: 2,
+      }),
+    ).toEqual([2026010007]);
+    expect(
+      selectPendingRelationshipGameIds({
+        games,
+        statuses: [pending(2026010007), pending(2026020001), pending(2026030111)],
+        maxGames: 2,
+      }),
+    ).toEqual([2026020001, 2026030111]);
   });
 
   it("fails closed on duplicate queue status rows", () => {

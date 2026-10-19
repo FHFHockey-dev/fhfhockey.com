@@ -125,8 +125,22 @@ export function selectPendingRelationshipGameIds(args: {
     return { id: gameId, date: game.date };
   });
 
+  // NHL game IDs encode the game type in digits 5-6 (01 preseason, 02 regular
+  // season, 03 playoffs). Preseason games are queued only until a
+  // regular-season game has complete inputs; after that they would starve the
+  // bounded queue ahead of the games projections consume. Preseason replays
+  // stay viewable from the NHL API, and `gameId` still targets one directly.
+  const gameType = (gameId: number) => Math.floor(gameId / 10000) % 100;
+  const regularSeasonStarted = games.some(
+    (game) => gameType(game.id) === 2 && statusByGame.has(game.id),
+  );
+
   return games
     .filter((game) => {
+      const type = gameType(game.id);
+      if (type !== 2 && type !== 3 && !(type === 1 && !regularSeasonStarted)) {
+        return false;
+      }
       const status = statusByGame.get(game.id);
       return (
         status != null &&
