@@ -982,7 +982,7 @@ type PlayerGameSourceContext = {
   originalGameId: number | null;
   hasKnownGameId: boolean;
   teamAbbrev: string | null;
-  seasonSource: "wgo" | "counts" | "rates" | "missing";
+  seasonSource: "wgo" | "wgo_date" | "counts" | "rates" | "missing";
   countsSourcePresent: boolean;
   ratesSourcePresent: boolean;
   countsOiSourcePresent: boolean;
@@ -3303,12 +3303,29 @@ function groupByDate<T extends { date_scraped: string }>(
   }, {});
 }
 
+// Seasons run September through August, so the game date fixes the season.
+function getSeasonIdForGameDate(gameDate: string): number | null {
+  const year = Number(gameDate.slice(0, 4));
+  const month = Number(gameDate.slice(5, 7));
+  if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
+    return null;
+  }
+  const startYear = month >= 9 ? year : year - 1;
+  return startYear * 10001 + 1;
+}
+
 function resolveSeasonValue(
   wgo: WgoSkaterRow,
   counts?: NstCountsRow,
   rates?: NstRatesRow
 ): { season: number; source: PlayerGameSourceContext["seasonSource"] } {
   if (wgo.season_id != null) {
+    // Stored WGO rows dated 2010-12-20..2017-01-16 carry season_id 20242025.
+    // Trusting that label leaks those games into current three-season totals.
+    const datedSeason = getSeasonIdForGameDate(wgo.date);
+    if (datedSeason != null && datedSeason !== wgo.season_id) {
+      return { season: datedSeason, source: "wgo_date" };
+    }
     return { season: wgo.season_id, source: "wgo" };
   }
   if (counts?.season != null) {
