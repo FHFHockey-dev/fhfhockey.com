@@ -2,6 +2,7 @@ import type { NextApiResponse } from "next";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import {
   BASELINE_MODEL_NAME,
   BASELINE_MODEL_VERSION,
@@ -60,6 +61,6 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
   });
 }
 
-export default withCronJobAudit(adminOnly(handler as any), {
+export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
   jobName: "game-predictions-score",
 });

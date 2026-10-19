@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
+import { getSeasonById } from "lib/NHL/server";
 import { getTeamAbbreviationById } from "lib/teamsInfo";
 import {
   DEFAULT_SKATER_LIMIT,
@@ -129,7 +130,6 @@ const RECENT_FALLBACK_MAX_DAYS = 3;
 const BLOCKED_FALLBACK_MIN_DAYS = 14;
 const MIN_TREND_SAMPLE_GAMES = 10;
 const DEFAULT_SERIES_GAMES = 40;
-const MAX_SERIES_GAMES = 82;
 const responseCache = new Map<
   string,
   { expiresAt: number; payload: SkaterTrendResponse }
@@ -172,12 +172,30 @@ function parseLimit(input: unknown): number {
   return DEFAULT_SKATER_LIMIT;
 }
 
+// The upper bound is the season's own regular-season length (82, 84, ...),
+// applied once the season is known; see fetchSeasonGameCount.
 function parseSeriesGames(input: unknown): number {
   const candidate = Number(Array.isArray(input) ? input[0] : input);
   if (Number.isFinite(candidate) && candidate > 0) {
-    return Math.min(Math.round(candidate), MAX_SERIES_GAMES);
+    return Math.round(candidate);
   }
   return DEFAULT_SERIES_GAMES;
+}
+
+// Returns null when the count is unavailable, in which case the series keeps
+// every observed game instead of a guessed season length.
+async function fetchSeasonGameCount(seasonId: number): Promise<number | null> {
+  try {
+    const season = await getSeasonById(seasonId);
+    const count = Number(season?.numberOfGames);
+    return Number.isSafeInteger(count) && count > 0 ? count : null;
+  } catch (error) {
+    console.warn("Skater trend season game count unavailable", {
+      seasonId,
+      message: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
 }
 
 function parsePositionGroup(input: unknown): SkaterPositionGroup {
@@ -665,6 +683,7 @@ export default async function handler(
       const season = await fetchCurrentSeason();
       const seasonId = season.id;
       const seasonStart = season.startDate;
+      const seasonGameCountPromise = fetchSeasonGameCount(seasonId);
 
       const categories: Partial<SkaterTrendResponse["categories"]> = {};
       const playerIdsNeeded = new Set<number>();
@@ -686,6 +705,11 @@ export default async function handler(
         })),
       );
       metricFetchMs = Date.now() - metricFetchStartedAt;
+      const seasonGameCount = await seasonGameCountPromise;
+      const boundedSeriesGames =
+        seasonGameCount === null
+          ? seriesGames
+          : Math.min(seriesGames, seasonGameCount);
 
       for (const { category, rows } of categoryRows) {
         for (const row of rows) {
@@ -702,7 +726,7 @@ export default async function handler(
           category,
           windowSize,
           limit,
-          seriesGames,
+          boundedSeriesGames,
         );
         categories[category.id] = {
           series: result.series,
@@ -735,7 +759,7 @@ export default async function handler(
         serving,
         positionGroup,
         limit,
-        seriesGames,
+        seriesGames: boundedSeriesGames,
         windowSize,
         samplePolicy: {
           minimumGames: MIN_TREND_SAMPLE_GAMES,

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireApiUser } from "lib/api/requireApiUser";
 import { getDraftProFeatureFlags } from "lib/draft-pro/features";
 import { beginPrivateImport } from "lib/draft-pro/privateImportTransport";
+import { DraftProRequestError } from "lib/draft-pro/requestError";
 import { loadDraftProAccess, requireDraftProServerCapability } from "lib/draft-pro/server";
 
 const mapping = z.object({ sourceId: z.string().trim().min(1).max(160), headers: z.array(z.object({ original: z.string().trim().min(1).max(160), standardized: z.string().trim().min(1).max(160), selected: z.boolean() }).strict()).max(200) }).strict();
@@ -21,5 +22,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     return res.status(201).json({ data: result });
   }
-  catch (error) { const e = error as { statusCode?: number; code?: string; message?: string }; return res.status(e.statusCode ?? 400).json({ error: { code: e.code ?? "private_import_invalid", message: e.message ?? "Private import is invalid." } }); }
+  catch (cause) {
+    // Typed access/validation errors keep their status and safe message; anything else is an
+    // unexpected storage/RPC failure whose details stay in the server log.
+    if (cause instanceof DraftProRequestError) return res.status(cause.statusCode).json({ error: { code: cause.code ?? "private_import_invalid", message: cause.message } });
+    if (cause instanceof z.ZodError) return res.status(400).json({ error: { code: "private_import_invalid", message: cause.issues[0]?.message ?? "Private import is invalid." } });
+    console.error("Draft Pro private import begin failed", cause);
+    return res.status(500).json({ error: { code: "PRIVATE_IMPORT_UNAVAILABLE", message: "Private imports are unavailable. Your local draft is unchanged." } });
+  }
 }

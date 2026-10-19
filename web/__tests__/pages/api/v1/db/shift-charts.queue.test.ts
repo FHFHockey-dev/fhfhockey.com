@@ -34,6 +34,12 @@ vi.mock("lib/projections/ingest/shifts", () => ({
   buildShiftRelationshipStrengthSegments:
     mocks.buildShiftRelationshipStrengthSegments,
   fetchAllNhleShiftChartsForGame: mocks.fetchAllNhleShiftChartsForGame,
+  // The route reads the stored snapshots; these stand in for them.
+  readStoredProjectionPbp: (gameId: number) => mocks.fetchPbpGame(gameId),
+  readStoredProjectionShiftSnapshot: async (gameId: number) => {
+    const rows = await mocks.fetchAllNhleShiftChartsForGame(gameId);
+    return { rows, rawPayload: { total: rows.length, data: rows, source: "json-api" }, source: "json-api", htmlFallbackError: null };
+  },
 }));
 
 vi.mock("lib/projections/ingest/projectionInputPersistence", () => ({
@@ -171,7 +177,7 @@ describe("shift-chart scheduled relationship queue", () => {
     expect(mocks.selectPendingRelationshipGameIds).toHaveBeenCalledWith({
       games: [],
       statuses: [],
-      maxGames: 16,
+      maxGames: 16 + 64,
     });
     expect(mocks.fetchPbpGame).not.toHaveBeenCalled();
   });
@@ -210,7 +216,7 @@ describe("shift-chart scheduled relationship queue", () => {
           relationship_algorithm_version: "shift_relationship_materializer_v2",
         }),
       ],
-      maxGames: 1,
+      maxGames: 1 + 64,
     });
     expect(
       mocks.selectPendingRelationshipGameIds.mock.results[0]?.value,

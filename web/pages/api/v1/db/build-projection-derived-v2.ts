@@ -50,6 +50,7 @@
  */
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { getRollingForgeStageDependencyContract } from "lib/rollingForgePipeline";
@@ -119,6 +120,10 @@ type Result = {
   errors: string[];
   failedRows: number;
   failedStages: number;
+  // Games left out because ingest never produced their projection inputs
+  // (for example an NHL shift feed that failed validation); they do not
+  // block the rest of their date.
+  skippedGames?: Array<{ date: string; gameId: number; reason: string }>;
   failures: Array<{
     date: string;
     stage:
@@ -383,6 +388,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
 
   const errors: string[] = [];
   const failures: Result["failures"] = [];
+  const skippedGames: NonNullable<Result["skippedGames"]> = [];
   let rowsAffected = 0;
   let rowsVerified = 0;
   let rowsPruned = 0;
@@ -450,6 +456,18 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
           goalie.gamesNotObserved += 1;
         }
       } catch (cause) {
+        if (
+          cause instanceof DerivedStageError &&
+          cause.stage === "input_manifest" &&
+          cause.message.startsWith("Projection input manifest is unavailable")
+        ) {
+          skippedGames.push({
+            date,
+            gameId: game.id,
+            reason: "projection_inputs_unavailable",
+          });
+          continue;
+        }
         const stage =
           cause instanceof DerivedStageError ? cause.stage : "persist";
         const error = cause instanceof Error ? cause.message : String(cause);
@@ -527,11 +545,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     errors,
     failedRows: 0,
     failedStages: failures.length,
+    skippedGames: skippedGames.slice(0, 50),
     failures: failures.slice(0, 30),
     dependencyContract,
   });
 }
 
-export default withCronJobAudit(adminOnly(handler as any), {
+export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
   jobName: "build-projection-derived-v2",
 });

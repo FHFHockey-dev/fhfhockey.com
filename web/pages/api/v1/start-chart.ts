@@ -18,6 +18,7 @@ import {
   extractSkaterModelMetadata,
 } from "lib/projections/forgeSkaterContext";
 import { buildGoalieStarterMixtureRows } from "lib/projections/goalieStarterMixtures";
+import { buildSkaterModeledHeadTotals } from "lib/projections/modeledHeadTotals";
 import { boardSkaterForecast, admittedBoardGoalieForecast, parseBoardScoringRequest, scoreStarterBoardPayload, type BoardScoringRequest } from "lib/projections/starterBoardScoring";
 import {
   normalizeStartChartResponse,
@@ -729,14 +730,6 @@ export const computeDefenseEaseGrades = (
   }
   return grades;
 };
-
-// State rows use null for a non-participating state; only an all-null stat is unavailable.
-export const sumProjectionParts = (
-  ...values: Array<number | null>
-): number | null =>
-  values.every((value) => value == null)
-    ? null
-    : values.reduce<number>((sum, value) => sum + (value ?? 0), 0);
 
 const MAX_ONE_GAME_SKATER_TOI_SECONDS = 65 * 60;
 
@@ -1506,25 +1499,8 @@ export default async function handler(
           yahooPositions.length > 0
             ? yahooPositions
             : canonicalPositions(canonical?.position);
-        const goals = sumProjectionParts(
-          projection.proj_goals_es,
-          projection.proj_goals_pp,
-          projection.proj_goals_pk,
-        );
-        const assists = sumProjectionParts(
-          projection.proj_assists_es,
-          projection.proj_assists_pp,
-          projection.proj_assists_pk,
-        );
-        const shots = sumProjectionParts(
-          projection.proj_shots_es,
-          projection.proj_shots_pp,
-          projection.proj_shots_pk,
-        );
-        const ppPoints = sumProjectionParts(
-          projection.proj_goals_pp,
-          projection.proj_assists_pp,
-        );
+        const { goals, assists, shots, ppPoints } =
+          buildSkaterModeledHeadTotals(projection);
         const projectedToiMinutes = normalizeProjectedToiMinutes(
           projection.proj_toi_es_seconds,
           projection.proj_toi_pp_seconds,

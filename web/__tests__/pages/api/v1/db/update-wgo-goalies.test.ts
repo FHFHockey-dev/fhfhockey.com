@@ -22,6 +22,7 @@ const {
   wgoUpsertMock: vi.fn(),
 }));
 
+vi.mock("lib/cron/nhlOffSeason", () => ({ withNhlOffSeasonSkip: (handler: unknown) => handler }));
 vi.mock("lib/supabase/server", () => ({
   default: {
     from: fromMock,

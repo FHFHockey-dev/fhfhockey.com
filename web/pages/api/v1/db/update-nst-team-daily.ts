@@ -1,7 +1,9 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import adminOnly from "utils/adminOnlyMiddleware";
 import {
   NST_TEAM_DAILY_BURST_INTERVAL_MS,
+  TEAM_DAILY_URLS_PER_DATE,
   resolveTeamDailyNstRequestPlan,
 } from "lib/cron/nstBurstPlans";
 import type { NextApiRequest, NextApiResponse } from "next";
@@ -9,10 +11,11 @@ import * as cheerio from "cheerio";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 import { fetchNstTextByUrl } from "lib/nst/client";
-import { addDays, isAfter, isBefore, parseISO } from "date-fns";
+import { addDays, format, isAfter, isBefore, parseISO } from "date-fns";
 import { toZonedTime, format as tzFormat } from "date-fns-tz";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import { teamNameToAbbreviationMap, teamsInfo } from "lib/teamsInfo";
+import { fetchPaginatedRows } from "lib/power-ratings";
 
 /**
  * URL Examples:
@@ -44,7 +47,9 @@ import { teamNameToAbbreviationMap, teamsInfo } from "lib/teamsInfo";
  * - overwrite: "true" | "false" | "1" | "0" | "yes" | "y" (default varies by runMode)
  *
  * Cron-safe default:
- * - no params => incremental mode, resuming from the latest stored table date
+ * - no params => incremental mode, resuming the day after the latest complete
+ *   stored date (or rechecking it when partial), floored at the season's first
+ *   game and skipping dates with no scheduled games
  *
  * Methods supported: GET, POST
  * For POST requests, parameters can be sent in the request body as JSON
@@ -62,6 +67,10 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 const MAX_DATE_BASED_DATES_PER_RUN = 2;
+// Extra requests per run on top of the date budget. A date whose all-strength
+// probe shows no games costs one request, so it cannot hold the queue in place.
+const EMPTY_DATE_PROBE_ALLOWANCE = 2;
+const PRESEASON_GAME_TYPE = 1;
 
 export const config = {
   maxDuration: 300,
@@ -501,16 +510,16 @@ async function getEarliestDatasetLatestDate(): Promise<string | null> {
   return latest;
 }
 
-async function dateHasCompleteData(date: string): Promise<boolean> {
+async function getMissingDatasets(date: string): Promise<DatasetConfig[]> {
   const results = await Promise.all(
-    DATASETS.map(async ({ table }) => {
+    DATASETS.map(async (dataset) => {
       const { error, count } = await supabase
-        .from(table)
+        .from(dataset.table)
         .select("team_abbreviation", { count: "exact", head: true })
         .eq("date", date);
       if (error) {
         console.warn(
-          `Supabase completeness check failed for ${table} (${date}): ${error.message}`
+          `Supabase completeness check failed for ${dataset.table} (${date}): ${error.message}`
         );
         return false;
       }
@@ -518,7 +527,7 @@ async function dateHasCompleteData(date: string): Promise<boolean> {
     })
   );
 
-  return results.every(Boolean);
+  return DATASETS.filter((_, index) => !results[index]);
 }
 
 function parseDateInput(value: string | undefined): Date | null {
@@ -531,15 +540,15 @@ function parseDateInput(value: string | undefined): Date | null {
 function buildDateQueue(
   runMode: RunMode,
   today: Date,
-  seasonStart: Date,
-  latestDate: string | null,
+  seasonFloor: string,
+  resumeDate: string | null,
   startDateInput?: Date | null,
   endDateInput?: Date | null
 ): string[] {
   const dates: string[] = [];
   const todayStr = formatEstDate(today);
   const todayDate = parseISO(todayStr);
-  const seasonStartDate = parseISO(formatEstDate(seasonStart));
+  const seasonStartDate = parseISO(seasonFloor);
 
   const clampToToday = (date: Date) =>
     isAfter(date, todayDate) ? todayDate : date;
@@ -558,27 +567,18 @@ function buildDateQueue(
     return dates;
   }
 
-  let start: Date;
-  if (startDateInput) {
-    start = startDateInput;
-  } else if (latestDate) {
-    // Recheck the least-current date so a partially written dataset can be
-    // repaired instead of being skipped permanently.
-    start = parseISO(latestDate);
-  } else {
-    start = seasonStartDate;
-  }
+  // Walk calendar-date strings: converting a parsed local midnight to Eastern
+  // time shifts every date back a day on a UTC host.
+  const start = startDateInput
+    ? format(startDateInput, "yyyy-MM-dd")
+    : (resumeDate ?? seasonFloor);
+  const requestedEnd = endDateInput
+    ? format(endDateInput, "yyyy-MM-dd")
+    : todayStr;
+  const end = requestedEnd > todayStr ? todayStr : requestedEnd;
 
-  const end = clampToToday(endDateInput ?? todayDate);
-
-  if (isAfter(start, end)) {
-    return [];
-  }
-
-  let cursor = start;
-  while (!isAfter(cursor, end)) {
-    dates.push(formatEstDate(cursor));
-    cursor = addDays(cursor, 1);
+  for (let cursor = start; cursor <= end; cursor = addCalendarDays(cursor, 1)) {
+    dates.push(cursor);
   }
   return dates;
 }
@@ -620,18 +620,74 @@ function mapRowToInsert(
   return row;
 }
 
+function addCalendarDays(date: string, days: number): string {
+  const next = new Date(`${date}T00:00:00.000Z`);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next.toISOString().slice(0, 10);
+}
+
+function excludePreseason<T extends { or: (filter: string) => T }>(query: T) {
+  // NST is queried with stype=2, so preseason dates never have rows to store.
+  return query.or(`type.is.null,type.neq.${PRESEASON_GAME_TYPE}`);
+}
+
+async function getSeasonFirstGameDate(seasonId: number): Promise<string | null> {
+  const { data, error } = await excludePreseason(
+    supabase.from("games").select("date").eq("seasonId", seasonId)
+  )
+    .order("date", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) {
+    throw new Error(`Failed to read first game date: ${error.message}`);
+  }
+  return data?.date ?? null;
+}
+
+async function getScheduledGameDates(
+  seasonId: number,
+  fromDate: string,
+  toDate: string
+): Promise<Set<string>> {
+  const rows = await fetchPaginatedRows<{ date: string }>(
+    () =>
+      excludePreseason(
+        supabase
+          .from("games")
+          .select("date")
+          .eq("seasonId", seasonId)
+          .gte("date", fromDate)
+          .lte("date", toDate)
+      ),
+    ["date", "id"]
+  );
+  return new Set(rows.map((row) => row.date.slice(0, 10)));
+}
+
+async function resolveIncrementalStartDate(seasonFloor: string): Promise<string> {
+  const latest = await getEarliestDatasetLatestDate();
+  if (!latest || latest < seasonFloor) return seasonFloor;
+  // Recheck a partially written latest date so it can be repaired; once it is
+  // complete, resume the day after it.
+  const missing = await getMissingDatasets(latest);
+  return missing.length > 0 ? latest : addCalendarDays(latest, 1);
+}
+
 async function processDatasetForDate(
   date: string,
   dataset: DatasetConfig
-): Promise<{ inserted: number; table: string }> {
+): Promise<{ inserted: number; table: string; teamGames: number }> {
   const seasonId = seasonIdFromDate(date).toString();
   const url = buildDatasetUrl(date, dataset, seasonId);
   console.log(`[NST] Fetching ${dataset.description} for ${date} -> ${url}`);
   const html = await nstGet(url);
   const rawRows = parseTeamTable(html);
+  const teamGames = rawRows.filter(
+    (raw) => parseNumeric(raw["gp"]) === 1
+  ).length;
   if (rawRows.length === 0) {
     console.log(`[NST] No ${dataset.description} rows for ${date}`);
-    return { inserted: 0, table: dataset.table };
+    return { inserted: 0, table: dataset.table, teamGames };
   }
   const rows = rawRows
     .map((raw) => mapRowToInsert(raw, dataset, date))
@@ -643,7 +699,7 @@ async function processDatasetForDate(
     console.log(
       `[NST] All ${dataset.description} rows skipped for ${date} after mapping.`
     );
-    return { inserted: 0, table: dataset.table };
+    return { inserted: 0, table: dataset.table, teamGames };
   }
   const { error } = await supabase
     .from(dataset.table)
@@ -656,7 +712,7 @@ async function processDatasetForDate(
   console.log(
     `[NST] Upserted ${rows.length} rows into ${dataset.table} for ${date}`
   );
-  return { inserted: rows.length, table: dataset.table };
+  return { inserted: rows.length, table: dataset.table, teamGames };
 }
 
 function coerceParam(value: unknown): string | undefined {
@@ -713,17 +769,34 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
   try {
     const season = await fetchCurrentSeason();
-    const todayEst = toZonedTime(new Date(), TIME_ZONE);
-    const seasonStart = parseISO(season.startDate);
-    const latestDate = await getEarliestDatasetLatestDate();
-    const queuedDates = buildDateQueue(
+    const seasonFirstGameDate = await getSeasonFirstGameDate(season.id);
+    const seasonFloor = seasonFirstGameDate ?? season.startDate.slice(0, 10);
+    const resumeDate =
+      runMode === "incremental" && !startDateParsed
+        ? await resolveIncrementalStartDate(seasonFloor)
+        : null;
+    const calendarDates = buildDateQueue(
       runMode,
-      todayEst,
-      seasonStart,
-      runMode === "forward" ? null : latestDate,
+      new Date(),
+      seasonFloor,
+      resumeDate,
       startDateParsed,
       endDateParsed
     );
+    // A league-wide off day never gets rows, so it must not enter the queue.
+    // Without a schedule for the season, keep every date rather than guess.
+    const scheduledDates =
+      runMode === "incremental" && seasonFirstGameDate && calendarDates.length
+        ? await getScheduledGameDates(
+            season.id,
+            calendarDates[0],
+            calendarDates[calendarDates.length - 1]
+          )
+        : null;
+    const queuedDates = scheduledDates
+      ? calendarDates.filter((date) => scheduledDates.has(date))
+      : calendarDates;
+    const offDays = calendarDates.length - queuedDates.length;
 
     if (queuedDates.length === 0) {
       return res.status(200).json({
@@ -732,6 +805,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         complete: true,
         runMode,
         overwrite,
+        offDays,
       });
     }
 
@@ -739,16 +813,24 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     const maxDatesThisRun = nstRequestPlan.burstAllowed
       ? MAX_DATE_BASED_DATES_PER_RUN
       : 1;
-    const targetDates = queuedDates.slice(0, maxDatesThisRun);
-    const deferredDates = queuedDates.slice(maxDatesThisRun);
+    // Budget requests rather than dates: complete dates cost nothing and a
+    // no-game date costs one probe, so neither stalls the queue.
+    const requestBudget =
+      maxDatesThisRun * TEAM_DAILY_URLS_PER_DATE + EMPTY_DATE_PROBE_ALLOWANCE;
+    let requestsUsed = 0;
+    const retryDates: string[] = [];
+    let deferredDates: string[] = [];
     currentRequestIntervalMs = nstRequestPlan.requestIntervalMs;
 
     const summary = {
       runMode,
       overwrite,
       totalDates: queuedDates.length,
+      offDays,
       processedDates: 0,
       skippedDates: 0,
+      noGameDates: [] as string[],
+      requestsUsed: 0,
       datasetResults: [] as Array<{
         date: string;
         table: string;
@@ -757,17 +839,20 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       errors: [] as string[],
     };
 
-    for (const date of targetDates) {
-      if (!overwrite) {
-        const alreadyExists = await dateHasCompleteData(date);
-        if (alreadyExists) {
-          summary.skippedDates += 1;
-          continue;
-        }
+    for (const [index, date] of queuedDates.entries()) {
+      const datasets = overwrite ? DATASETS : await getMissingDatasets(date);
+      if (datasets.length === 0) {
+        summary.skippedDates += 1;
+        continue;
+      }
+      if (requestsUsed + datasets.length > requestBudget) {
+        deferredDates = queuedDates.slice(index);
+        break;
       }
 
       const errorsBeforeDate = summary.errors.length;
-      for (const dataset of DATASETS) {
+      for (const dataset of datasets) {
+        requestsUsed += 1;
         try {
           const result = await processDatasetForDate(date, dataset);
           if (result.inserted > 0) {
@@ -776,6 +861,12 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
               table: result.table,
               inserted: result.inserted,
             });
+          }
+          // All-strength counts list every team that played, so an empty
+          // table means no games that day; the other situations would be too.
+          if (dataset.key === "as_counts" && result.teamGames === 0) {
+            summary.noGameDates.push(date);
+            break;
           }
         } catch (error: any) {
           const message =
@@ -786,9 +877,11 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       }
       summary.processedDates += 1;
       if (summary.errors.length > errorsBeforeDate) {
-        deferredDates.unshift(date);
+        retryDates.push(date);
       }
     }
+    summary.requestsUsed = requestsUsed;
+    deferredDates = [...retryDates, ...deferredDates];
 
     const success = summary.errors.length === 0;
     const complete = success && deferredDates.length === 0;
@@ -816,4 +909,4 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default withCronJobAudit(adminOnly(handler as any));
+export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)));

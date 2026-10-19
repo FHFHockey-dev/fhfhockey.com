@@ -232,7 +232,6 @@ describe("/api/v1/start-chart", () => {
       computeDefenseEaseGrades,
       getPregameTeamFormThroughDate,
       normalizeProjectedToiMinutes,
-      sumProjectionParts,
     } = await import("../../../../pages/api/v1/start-chart");
     const rating = (teamAbbr: string, xga60: number | null) =>
       ({ teamAbbr, components: { xga60 } }) as any;
@@ -253,9 +252,6 @@ describe("/api/v1/start-chart", () => {
     expect(computeDefenseEaseGrades([rating("ONLY", 3.2)]).get("ONLY")).toBe(
       50,
     );
-    expect(sumProjectionParts(0.4, 0.2, 0)).toBeCloseTo(0.6, 6);
-    expect(sumProjectionParts(0.4, null, 0)).toBeCloseTo(0.4, 6);
-    expect(sumProjectionParts(null, null, null)).toBeNull();
     expect(normalizeProjectedToiMinutes(900, 180, null)).toBe(18);
     expect(normalizeProjectedToiMinutes(null, null, null)).toBeNull();
     expect(normalizeProjectedToiMinutes(3901, null, null)).toBeNull();

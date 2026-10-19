@@ -189,6 +189,51 @@ describe("withCronJobAudit", () => {
     expect(insertMock.mock.calls[0][0].status).toBe("failure");
   });
 
+  it("records a planned continuation 207 as continued, not a failure", async () => {
+    const forge = withCronJobAudit(async (_req, res) => res.status(207).json({
+      success: false,
+      failureSummary: { failedStepCount: 0, firstFailure: null },
+      termination: { state: "continuation_required", resumeRequired: true, nextStageId: "rolling" },
+      stages: [{ steps: [{ status: "partial", summary: { errors: [] } }] }],
+    }), { jobName: "rolling-forge-pipeline" });
+    const rolling = withCronJobAudit(async (_req, res) => res.status(207).json({
+      resumeCursor: { v: 1, status: "partial", nextResumeFrom: 8477000 },
+      message: "Rolling player averages stopped at the runtime budget before every player was processed; resume required.",
+      success: false,
+      operationStatus: "partial",
+      resume: { required: true, nextResumeFrom: 8477000, request: { resumeFrom: 8477000 } },
+      runSummary: { rowsUpserted: 120, processedPlayers: 40 },
+    }), { jobName: "update-rolling-player-averages" });
+
+    await forge(createMockReq(), createMockRes());
+    await rolling(createMockReq(), createMockRes());
+
+    expect(insertMock.mock.calls.map((call) => call[0].status)).toEqual(["continued", "continued"]);
+  });
+
+  it("keeps a 207 continuation that lists failures or errors as a failure", async () => {
+    const forge = withCronJobAudit(async (_req, res) => res.status(207).json({
+      success: false,
+      failureSummary: { failedStepCount: 1, firstFailure: { stageId: "rolling" } },
+      termination: { state: "continuation_required", resumeRequired: true },
+    }), { jobName: "rolling-forge-pipeline" });
+    const rolling = withCronJobAudit(async (_req, res) => res.status(207).json({
+      success: false,
+      resume: { required: true, request: { resumeFrom: 8477000 } },
+      errors: [{ message: "upsert failed" }],
+    }), { jobName: "update-rolling-player-averages" });
+    const noCursor = withCronJobAudit(async (_req, res) => res.status(207).json({
+      success: false,
+      operationStatus: "partial",
+    }), { jobName: "update-rolling-player-averages" });
+
+    await forge(createMockReq(), createMockRes());
+    await rolling(createMockReq(), createMockRes());
+    await noCursor(createMockReq(), createMockRes());
+
+    expect(insertMock.mock.calls.map((call) => call[0].status)).toEqual(["failure", "failure", "failure"]);
+  });
+
   it("uses explicit success before legacy failure words and records the season succeeded count", async () => {
     const wrapped = withCronJobAudit(
       async (_req, res) => {

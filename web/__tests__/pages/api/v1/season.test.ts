@@ -100,6 +100,17 @@ describe("GET /api/v1/season", () => {
     expect(response.body).toEqual({ error: "Unable to resolve season" });
   });
 
+  it("fails closed instead of inventing a season when the current season is unavailable", async () => {
+    mocks.getCurrentSeason.mockRejectedValue(new Error("dependency unavailable"));
+    const response = createResponse();
+
+    await handler({ method: "GET", query: {} } as never, response as never);
+
+    expect(response.statusCode).toBe(503);
+    expect(response.body).toEqual({ error: "Unable to resolve season" });
+    expect(response.headers["Cache-Control"]).toBe("no-store");
+  });
+
   it("keeps the existing current-season path when no season is requested", async () => {
     const season = { seasonId: 20252026 };
     mocks.getCurrentSeason.mockResolvedValue(season);

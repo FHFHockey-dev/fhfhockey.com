@@ -1,6 +1,7 @@
 // PATH: /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/v1/db/update-standings-details/index.ts
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import { NextApiRequest, NextApiResponse } from "next";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { format, parseISO, addDays } from "date-fns";
@@ -19,7 +20,7 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export default withCronJobAudit(adminOnly(async function handler(
+export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(async function handler(
   req: NextApiRequest & { supabase?: SupabaseClient },
   res: NextApiResponse
 ) {
@@ -184,7 +185,7 @@ export default withCronJobAudit(adminOnly(async function handler(
       message: error.message
     });
   }
-}));
+})));
 
 async function getLatestStandingsDate(
   supabase: SupabaseClient,

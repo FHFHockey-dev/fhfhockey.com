@@ -1,4 +1,5 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { SupabaseType } from "lib/supabase/client";
 
@@ -56,7 +57,7 @@ async function listGamesByIds(args: {
   return (data ?? []) as GameRow[];
 }
 
-export default withCronJobAudit(adminOnly(async (req, res) => {
+export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(async (req, res) => {
   const { supabase } = req;
   const gameIds = parseGameIdsParam(req.query.gameIds);
   const startDate =
@@ -162,4 +163,4 @@ export default withCronJobAudit(adminOnly(async (req, res) => {
       message: e?.message ?? "Failed to bulk update power-play combinations."
     });
   }
-}));
+})));

@@ -1,4 +1,5 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import { getCurrentSeason } from "lib/NHL/server";
 import adminOnly from "utils/adminOnlyMiddleware";
 
@@ -21,7 +22,7 @@ function parseAction(value: string | string[] | undefined): "current" | "all" {
 }
 
 export default withCronJobAudit(
-  adminOnly(async (req, res) => {
+  adminOnly(withNhlOffSeasonSkip(async (req, res) => {
     const action = parseAction(req.query.action);
     const explicitSeasonId = parsePositiveInteger(req.query.seasonId);
     const playerId = parsePositiveInteger(req.query.playerId);
@@ -67,6 +68,6 @@ export default withCronJobAudit(
         playerId
       }
     });
-  }),
+  })),
   { jobName: "update-lineup-deployment-tallies" }
 );

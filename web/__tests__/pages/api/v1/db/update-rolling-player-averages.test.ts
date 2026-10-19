@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mainMock, auditInsertMock, getUserMock } = vi.hoisted(() => ({
+const { mainMock, auditInsertMock, auditSelectMock, getUserMock } = vi.hoisted(() => ({
   mainMock: vi.fn(),
   auditInsertMock: vi.fn().mockResolvedValue({ error: null }),
+  auditSelectMock: vi.fn(),
   getUserMock: vi.fn()
 }));
 
@@ -102,9 +103,18 @@ vi.mock("lib/supabase", () => ({
 
 vi.mock("lib/supabase/server", () => ({
   default: {
-    from: vi.fn(() => ({
-      insert: auditInsertMock
-    }))
+    from: vi.fn(() => {
+      const query: Record<string, unknown> = { insert: auditInsertMock };
+      const filters: unknown[][] = [];
+      for (const method of ["select", "eq", "gte", "order"]) {
+        query[method] = (...args: unknown[]) => {
+          filters.push([method, ...args]);
+          return query;
+        };
+      }
+      query.limit = async () => auditSelectMock(filters);
+      return query;
+    })
   }
 }));
 
@@ -355,7 +365,8 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
       upsertConcurrency: 4,
       skipDiagnostics: true,
       dryRunUpsert: undefined,
-      debugUpsertPayload: undefined
+      debugUpsertPayload: undefined,
+      stopClaimingPlayersAtMs: expect.any(Number)
     });
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({
@@ -517,6 +528,137 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
         nextResumeFrom: 8475000
       }
     });
+  });
+
+  it("returns a truthful 207 with a resume request when the daily run reaches its budget", async () => {
+    mainMock.mockResolvedValueOnce(
+      createRollingRunSummary({
+        processedPlayers: 120,
+        lastProcessedPlayerId: 8478000,
+        nextResumeFrom: 8478000,
+        remainingPlayerCount: 480,
+        totalPlayersAfterResumeFilter: 600,
+        stoppedReason: "runtime_budget"
+      })
+    );
+    const req: any = {
+      method: "POST",
+      query: {},
+      body: {},
+      url: "/api/v1/db/update-rolling-player-averages"
+    };
+    const res = createMockRes();
+    const before = Date.now();
+
+    await handler(req, res);
+
+    const args = mainMock.mock.calls[0][0];
+    expect(args.stopClaimingPlayersAtMs).toBeGreaterThanOrEqual(before + 180_000);
+    expect(args.stopClaimingPlayersAtMs).toBeLessThanOrEqual(Date.now() + 180_000);
+    expect(res.statusCode).toBe(207);
+    expect(Object.keys(res.body)[0]).toBe("resumeCursor");
+    expect(res.body).toMatchObject({
+      resumeCursor: {
+        v: 1,
+        windowStartDate: args.startDate,
+        windowEndDate: args.endDate,
+        strengths: "default",
+        status: "partial",
+        nextResumeFrom: 8478000
+      },
+      success: false,
+      operationStatus: "partial",
+      playerClaimBudgetMs: 180000,
+      resume: {
+        required: true,
+        nextResumeFrom: 8478000,
+        remainingPlayerCount: 480,
+        request: {
+          startDate: args.startDate,
+          endDate: args.endDate,
+          executionProfile: "daily_incremental",
+          resumeFrom: 8478000
+        }
+      }
+    });
+  });
+
+  it("continues today's daily window from the cursor a prior partial run left in the audit", async () => {
+    mainMock.mockResolvedValueOnce(
+      createRollingRunSummary({
+        nextResumeFrom: 8478000,
+        remainingPlayerCount: 480,
+        stoppedReason: "runtime_budget"
+      })
+    );
+    const url = "/api/v1/db/update-rolling-player-averages";
+    const first = createMockRes();
+    await handler({ method: "POST", query: {}, body: {}, url } as any, first);
+    // withCronJobAudit stores a 4000-character preview of the response.
+    const preview = JSON.stringify(first.body).slice(0, 3999) + "…";
+    auditSelectMock.mockResolvedValue({
+      data: [
+        { run_time: "later", details: { response: "{\"success\":false,\"error\":\"timeout\"}" } },
+        { run_time: "earlier", details: { response: preview } }
+      ],
+      error: null
+    });
+    mainMock.mockResolvedValueOnce(
+      createRollingRunSummary({ nextResumeFrom: null, stoppedReason: "complete" })
+    );
+
+    const second = createMockRes();
+    await handler(
+      { method: "POST", query: {}, body: { continueDailyWindow: true }, url } as any,
+      second
+    );
+
+    const firstArgs = mainMock.mock.calls[0][0];
+    const secondArgs = mainMock.mock.calls[1][0];
+    expect(secondArgs).toMatchObject({
+      startDate: firstArgs.startDate,
+      endDate: firstArgs.endDate,
+      resumePlayerId: 8478000
+    });
+    expect(auditSelectMock.mock.calls[0][0]).toEqual(
+      expect.arrayContaining([
+        ["eq", "job_name", url],
+        ["gte", "run_time", `${firstArgs.endDate}T00:00:00.000Z`]
+      ])
+    );
+    expect(second.statusCode).toBe(200);
+    expect(second.body.resumeCursor).toMatchObject({
+      status: "complete",
+      nextResumeFrom: null
+    });
+
+    // Once today's window is complete, a further continuation does no work.
+    auditSelectMock.mockResolvedValue({
+      data: [{ run_time: "latest", details: { response: JSON.stringify(second.body) } }],
+      error: null
+    });
+    const third = createMockRes();
+    await handler(
+      { method: "POST", query: {}, body: { continueDailyWindow: true }, url } as any,
+      third
+    );
+    expect(mainMock).toHaveBeenCalledTimes(2);
+    expect(third.statusCode).toBe(200);
+    expect(third.body.message).toMatch(/already complete/);
+  });
+
+  it("refuses continueDailyWindow outside the implicit daily window", async () => {
+    const res = createMockRes();
+    await handler(
+      {
+        method: "GET",
+        query: { startDate: "2026-10-01", endDate: "2026-10-02", continueDailyWindow: "true" },
+        url: "/api/v1/db/update-rolling-player-averages"
+      } as any,
+      res
+    );
+    expect(res.statusCode).toBe(400);
+    expect(mainMock).not.toHaveBeenCalled();
   });
 
   it("blocks unbounded multi-week date-window recomputes", async () => {

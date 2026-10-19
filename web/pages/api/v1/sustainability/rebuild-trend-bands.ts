@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
 import adminOnly from "utils/adminOnlyMiddleware";
@@ -295,4 +296,4 @@ export async function rebuildTrendBandsHandler(
   }
 }
 
-export default withCronJobAudit(adminOnly(rebuildTrendBandsHandler as any));
+export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(rebuildTrendBandsHandler as any)));

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createHash } from "crypto";
+import { DraftProRequestError } from "lib/draft-pro/requestError";
 
 const rpc = vi.hoisted(() => vi.fn());
 const storageUpload = vi.hoisted(() => vi.fn());
@@ -20,10 +21,17 @@ describe("private import transport ownership boundary", () => {
   beforeEach(() => vi.clearAllMocks());
   it("does not touch Storage when the upload lookup is unavailable to this user", async () => {
     rpc.mockResolvedValueOnce({ data: [], error: null });
-    await expect(putPrivateImportChunk({ userId: "other-user", uploadId: "upload-1", prefix: "spoofed", ordinal: 0, bytes: Buffer.from("[]") })).rejects.toThrow("returned no result");
+    await expect(putPrivateImportChunk({ userId: "other-user", uploadId: "upload-1", prefix: "spoofed", ordinal: 0, bytes: Buffer.from("[]") })).rejects.toMatchObject({ statusCode: 400, message: "Private import upload is unavailable." });
+    rpc.mockResolvedValueOnce({ data: [], error: null });
+    await expect(putPrivateImportChunk({ userId: "other-user", uploadId: "upload-1", prefix: "spoofed", ordinal: 0, bytes: Buffer.from("[]") })).rejects.toBeInstanceOf(DraftProRequestError);
     expect(storageUpload).not.toHaveBeenCalled(); expect(storageDownload).not.toHaveBeenCalled();
   });
 
+  it("leaves RPC failures untyped so routes answer a fixed 500", async () => {
+    rpc.mockResolvedValueOnce({ data: null, error: { code: "42P01", message: 'relation "private_table" does not exist' } });
+    await expect(putPrivateImportChunk({ userId: "user", uploadId: "upload-1", prefix: "spoofed", ordinal: 0, bytes: Buffer.from("[]") })).rejects.not.toHaveProperty("statusCode");
+    expect(storageUpload).not.toHaveBeenCalled();
+  });
   it("does not touch Storage when an owned upload is expired", async () => {
     rpc.mockResolvedValueOnce({ data: [uploadRow({ expires_at: "2000-01-01T00:00:00.000Z" })], error: null });
     await expect(putPrivateImportChunk({ userId: "user", uploadId: "upload-1", prefix: "draft-pro-import-staging/user/upload-1", ordinal: 0, bytes: Buffer.from("[]") })).rejects.toThrow("unavailable");
@@ -71,7 +79,7 @@ describe("private import transport ownership boundary", () => {
 
   it("rejects chunk bounds before Storage I/O", async () => {
     rpc.mockResolvedValueOnce({ data: [uploadRow({ declared_max_bytes: 2 })], error: null });
-    await expect(putPrivateImportChunk({ userId: "user", uploadId: "upload-1", prefix: "draft-pro-import-staging/user/upload-1", ordinal: 0, bytes: Buffer.from("too large") })).rejects.toThrow("exceeds its upload reservation");
+    await expect(putPrivateImportChunk({ userId: "user", uploadId: "upload-1", prefix: "draft-pro-import-staging/user/upload-1", ordinal: 0, bytes: Buffer.from("too large") })).rejects.toMatchObject({ statusCode: 400, message: "Chunk exceeds its upload reservation." });
     expect(storageUpload).not.toHaveBeenCalled(); expect(storageDownload).not.toHaveBeenCalled();
   });
 

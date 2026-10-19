@@ -1,9 +1,18 @@
 import supabase from "lib/supabase/server";
 import type { TablesInsert } from "lib/supabase/database-generated.types";
 
+import {
+  fetchHtmlShiftReportPayload,
+  type PlayByPlayPayload,
+} from "lib/supabase/Upserts/nhlRawGamecenter.mjs";
+
 import { nhleFetchJson } from "./nhleFetch";
 import { formatSecondsToClock } from "./time";
-import { fetchPbpGame, isCompleteFinalPbpPayload } from "./pbp";
+import {
+  fetchPbpGame,
+  isCompleteFinalPbpPayload,
+  type PbpResponse,
+} from "./pbp";
 import { parseStrictShiftClock } from "../shiftChartCompleteness";
 
 export type NhleShiftRow = {
@@ -26,13 +35,22 @@ type ShiftchartsResponse = {
   data: NhleShiftRow[];
 };
 
-export type NhleShiftChartsRawPayload = ShiftchartsResponse & {
-  source: "json-api";
-};
+export type NhleShiftChartsRawPayload =
+  | (ShiftchartsResponse & { source: "json-api" })
+  | (ShiftchartsResponse & {
+      source: "htmlreports";
+      upstream: { json: ShiftchartsResponse };
+      htmlReports: { visitorUrl: string; homeUrl: string };
+    });
+
+export type NhleShiftSource = NhleShiftChartsRawPayload["source"];
 
 export type NhleShiftChartsSnapshot = {
   rows: NhleShiftRow[];
   rawPayload: NhleShiftChartsRawPayload;
+  source: NhleShiftSource;
+  /** Why the HTML fallback produced no rows for an empty final JSON feed. */
+  htmlFallbackError: string | null;
 };
 
 export type ShiftStrengthUpsert = Pick<
@@ -304,8 +322,15 @@ function overlapSeconds(
   return Math.max(0, end - start);
 }
 
+/**
+ * Reads the JSON shiftcharts feed. Only when it is empty for a final game does
+ * it fall back to the NHL HTML shift reports, through the same strict envelope
+ * builder the Gamecenter writer uses, so both writers store identical raw
+ * snapshots. `pbp` avoids a second PBP request when the caller already has it.
+ */
 export async function fetchAllNhleShiftChartsSnapshotForGame(
   gameId: number,
+  options: { pbp?: Awaited<ReturnType<typeof fetchPbpGame>> } = {},
 ): Promise<NhleShiftChartsSnapshot> {
   if (!Number.isSafeInteger(gameId) || gameId <= 0) {
     throw new Error("Invalid NHL shift-chart game identity");
@@ -344,6 +369,52 @@ export async function fetchAllNhleShiftChartsSnapshotForGame(
   if (declaredTotal == null || rows.length !== declaredTotal) {
     throw new Error(`Incomplete NHL shift pagination for game ${gameId}`);
   }
+
+  let rawPayload: NhleShiftChartsRawPayload = {
+    total: rows.length,
+    data: rows,
+    source: "json-api",
+  };
+  let htmlFallbackError: string | null = null;
+  if (declaredTotal === 0 && isProjectionShiftHtmlFallbackEnabled()) {
+    const pbp = options.pbp ?? (await fetchPbpGame(gameId));
+    if (pbp.id === gameId && isCompleteFinalPbpPayload(pbp)) {
+      try {
+        const { payload } = await fetchHtmlShiftReportPayload(
+          gameId,
+          Number(pbp.season),
+          // The unmodified provider JSON carries `rosterSpots`; the local PBP
+          // type only declares the fields its own readers use.
+          pbp as unknown as PlayByPlayPayload,
+          { total: 0, data: [] },
+          { strict: true },
+        );
+        if (payload) {
+          rawPayload = payload as unknown as NhleShiftChartsRawPayload;
+          rows = rawPayload.data;
+        }
+      } catch (error) {
+        htmlFallbackError =
+          error instanceof Error ? error.message : String(error);
+      }
+    } else {
+      htmlFallbackError = `PBP is not final and complete for game ${gameId}`;
+    }
+  }
+  return buildShiftSnapshotFromRawPayload(gameId, rawPayload, htmlFallbackError);
+}
+
+/**
+ * Derives the validated, de-duplicated and sorted projection shift rows from a
+ * raw shiftcharts envelope. Ingest (live capture) and update-shift-charts
+ * (stored snapshot) both use this, so their shift source hashes agree.
+ */
+export function buildShiftSnapshotFromRawPayload(
+  gameId: number,
+  rawPayload: NhleShiftChartsRawPayload,
+  htmlFallbackError: string | null = null,
+): NhleShiftChartsSnapshot {
+  const rows = rawPayload.data;
   const identities = new Set<string>();
   const uniqueRows: NhleShiftRow[] = [];
   for (const row of rows) {
@@ -379,11 +450,6 @@ export async function fetchAllNhleShiftChartsSnapshotForGame(
     uniqueRows.push(row);
   }
 
-  const rawPayload: NhleShiftChartsRawPayload = {
-    total: rows.length,
-    data: rows,
-    source: "json-api",
-  };
   const normalizedRows = uniqueRows.sort(
     (left, right) =>
       left.typeCode - right.typeCode ||
@@ -393,7 +459,114 @@ export async function fetchAllNhleShiftChartsSnapshotForGame(
       left.startTime.localeCompare(right.startTime) ||
       left.endTime.localeCompare(right.endTime),
   );
-  return { rows: normalizedRows, rawPayload };
+  return {
+    rows: normalizedRows,
+    rawPayload,
+    source: rawPayload.source,
+    htmlFallbackError,
+  };
+}
+
+/**
+ * The HTML shift-report fallback stays off until it is deliberately enabled.
+ * The capture RPC accepts `htmlreports` from migration 20261019172842; off, an
+ * empty JSON feed behaves exactly as before.
+ */
+export function isProjectionShiftHtmlFallbackEnabled(): boolean {
+  return process.env.PROJECTION_SHIFT_HTML_FALLBACK_ENABLED === "true";
+}
+
+const RAW_SNAPSHOT_COLUMNS = {
+  "play-by-play": { id: "pbp_raw_payload_id", hash: "pbp_raw_payload_hash" },
+  shiftcharts: { id: "shift_raw_payload_id", hash: "shift_raw_payload_hash" },
+} as const;
+
+/**
+ * Reads the raw payload the game's projection inputs were built from, as
+ * pinned by `projection_game_materialization_status`, checking its id, game,
+ * endpoint and hash. No NHL request is made.
+ */
+async function readStoredProjectionRawPayload(
+  gameId: number,
+  endpoint: keyof typeof RAW_SNAPSHOT_COLUMNS,
+): Promise<unknown> {
+  assertSupabase();
+  const db = supabase as any;
+  const columns = RAW_SNAPSHOT_COLUMNS[endpoint];
+  const { data: status, error: statusError } = await db
+    .from("projection_game_materialization_status")
+    .select(`game_id,input_status,${columns.id},${columns.hash}`)
+    .eq("game_id", gameId)
+    .maybeSingle();
+  if (statusError) throw statusError;
+  const rawPayloadId = status?.[columns.id];
+  const payloadHash = status?.[columns.hash];
+  if (
+    !status ||
+    status.game_id !== gameId ||
+    status.input_status !== "complete" ||
+    !Number.isSafeInteger(rawPayloadId) ||
+    rawPayloadId <= 0 ||
+    typeof payloadHash !== "string" ||
+    !/^[a-f0-9]{64}$/.test(payloadHash)
+  ) {
+    throw new Error(`Projection inputs are not complete for game ${gameId}`);
+  }
+
+  const { data: raw, error: rawError } = await db
+    .from("nhl_api_game_payloads_raw")
+    .select("id,game_id,endpoint,payload_hash,payload")
+    .eq("id", rawPayloadId)
+    .maybeSingle();
+  if (rawError) throw rawError;
+  if (
+    !raw ||
+    raw.id !== rawPayloadId ||
+    raw.game_id !== gameId ||
+    raw.endpoint !== endpoint ||
+    raw.payload_hash !== payloadHash ||
+    raw.payload == null ||
+    typeof raw.payload !== "object"
+  ) {
+    throw new Error(
+      `Stored ${endpoint} snapshot does not match projection inputs for game ${gameId}`,
+    );
+  }
+  return raw.payload;
+}
+
+export async function readStoredProjectionPbp(
+  gameId: number,
+): Promise<PbpResponse> {
+  const payload = (await readStoredProjectionRawPayload(
+    gameId,
+    "play-by-play",
+  )) as PbpResponse;
+  if (payload.id !== gameId) {
+    throw new Error(
+      `Stored play-by-play snapshot does not match projection inputs for game ${gameId}`,
+    );
+  }
+  return payload;
+}
+
+export async function readStoredProjectionShiftSnapshot(
+  gameId: number,
+): Promise<NhleShiftChartsSnapshot> {
+  const payload = (await readStoredProjectionRawPayload(
+    gameId,
+    "shiftcharts",
+  )) as NhleShiftChartsRawPayload;
+  if (
+    (payload.source !== "json-api" && payload.source !== "htmlreports") ||
+    !Array.isArray(payload.data) ||
+    payload.total !== payload.data.length
+  ) {
+    throw new Error(
+      `Stored shiftcharts snapshot does not match projection inputs for game ${gameId}`,
+    );
+  }
+  return buildShiftSnapshotFromRawPayload(gameId, payload);
 }
 
 export async function fetchAllNhleShiftChartsForGame(

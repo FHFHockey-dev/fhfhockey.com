@@ -246,11 +246,22 @@ function normalizeNameKey(value) {
     .toUpperCase();
 }
 
-function resolveHtmlShiftPlayer(game, teamId, parsedHeading) {
+/**
+ * Resolves an HTML shift-report heading to a PBP roster spot. Each step takes
+ * the first match; with `strict`, a step with several matches or no match at
+ * all refuses instead, so a strict result always equals the lenient one.
+ */
+function resolveHtmlShiftPlayer(game, teamId, parsedHeading, strict = false) {
+  const refuse = (reason) => {
+    if (!strict) return null;
+    throw new Error(
+      `HTML shift report heading ${parsedHeading.sweaterNumber} ${parsedHeading.lastName} ${reason}`,
+    );
+  };
   const roster = (game.rosterSpots ?? []).filter(
     (spot) => spot.teamId === teamId,
   );
-  if (!roster.length) return null;
+  if (!roster.length) return refuse("has no team roster");
 
   const sweaterMatches = roster.filter(
     (spot) => Number(spot.sweaterNumber) === parsedHeading.sweaterNumber,
@@ -266,19 +277,28 @@ function resolveHtmlShiftPlayer(game, teamId, parsedHeading) {
       normalizeNameKey(spot.firstName?.default ?? "") === firstNameKey &&
       normalizeNameKey(spot.lastName?.default ?? "") === lastNameKey,
   );
+  if (exactNameMatches.length > 1) return refuse("matches several players");
   if (exactNameMatches.length) return exactNameMatches[0];
 
   const lastNameMatches = namePool.filter(
     (spot) => normalizeNameKey(spot.lastName?.default ?? "") === lastNameKey,
   );
+  if (lastNameMatches.length > 1) return refuse("matches several players");
   if (lastNameMatches.length) return lastNameMatches[0];
 
-  return namePool[0] ?? null;
+  return strict ? refuse("matches no roster player") : (namePool[0] ?? null);
+}
+
+// The HTML reports print "0:45"; the JSON feed and the projection validators
+// use "MM:SS", so both writers store the padded form.
+function padShiftClock(value) {
+  const match = /^(\d{1,2}):([0-5]\d)$/.exec(value);
+  return match ? `${match[1].padStart(2, "0")}:${match[2]}` : value;
 }
 
 function parseElapsedClock(value) {
   const [elapsed] = normalizeWhitespace(value).split("/");
-  return normalizeWhitespace(elapsed);
+  return padShiftClock(normalizeWhitespace(elapsed));
 }
 
 function parseHtmlShiftEvent(value) {
@@ -296,7 +316,13 @@ function parseHtmlShiftEvent(value) {
   };
 }
 
-function parseHtmlShiftReportRows(html, game, teamSide, shiftIdStart = 1) {
+function parseHtmlShiftReportRows(
+  html,
+  game,
+  teamSide,
+  shiftIdStart = 1,
+  strict = false,
+) {
   if (!normalizeWhitespace(html)) {
     return { rows: [], nextShiftId: shiftIdStart };
   }
@@ -324,14 +350,21 @@ function parseHtmlShiftReportRows(html, game, teamSide, shiftIdStart = 1) {
       'td[class*="playerHeading"]',
     );
     const parsedHeading = parseHtmlShiftPlayerHeading(headingCell?.text ?? "");
-    if (!parsedHeading) continue;
+    if (!parsedHeading) {
+      if (strict) throw new Error("HTML shift report has an unparseable player heading");
+      continue;
+    }
 
     const rosterSpot = resolveHtmlShiftPlayer(
       game,
       teamMeta.teamId,
       parsedHeading,
+      strict,
     );
-    if (!rosterSpot?.playerId) continue;
+    if (!rosterSpot?.playerId) {
+      if (strict) throw new Error("HTML shift report heading has no player ID");
+      continue;
+    }
 
     for (
       let rowIndex = headingIndex + 1;
@@ -347,11 +380,12 @@ function parseHtmlShiftReportRows(html, game, teamSide, shiftIdStart = 1) {
 
       const startTime = parseElapsedClock(cells[2].text);
       const endTime = parseElapsedClock(cells[3].text);
-      const duration = normalizeWhitespace(cells[4].text);
+      const duration = padShiftClock(normalizeWhitespace(cells[4].text));
       const event = parseHtmlShiftEvent(cells[5].text);
 
       parsedRows.push({
         id: nextShiftId,
+        gameId: Number(game.id),
         playerId: rosterSpot.playerId,
         teamId: teamMeta.teamId,
         teamAbbrev: teamMeta.teamAbbrev,
@@ -363,7 +397,8 @@ function parseHtmlShiftReportRows(html, game, teamSide, shiftIdStart = 1) {
         startTime,
         endTime,
         duration,
-        typeCode: null,
+        // Every HTML report row is a shift interval (the JSON feed's 517).
+        typeCode: 517,
         detailCode: null,
         eventNumber: null,
         eventDescription: event.eventDescription,
@@ -395,6 +430,100 @@ export async function fetchShiftCharts(gameId, fetchOptions = {}) {
   return { total: rows.length, data: rows };
 }
 
+/**
+ * Builds the shared HTML shift-report envelope. The Gamecenter writer and the
+ * projection ingest store this exact object as the `shiftcharts` raw snapshot,
+ * so they must never build it any other way. With `strict`, both team reports
+ * must parse completely or this throws; otherwise it returns null without rows.
+ */
+export function buildHtmlShiftReportPayload({
+  gameId,
+  seasonId,
+  game,
+  jsonPayload,
+  visitorHtml,
+  homeHtml,
+  strict = false,
+}) {
+  const htmlReportUrls = buildHtmlShiftReportUrls(gameId, seasonId);
+  if (strict && (visitorHtml == null || homeHtml == null)) {
+    throw new Error(`HTML shift reports are unavailable for game ${gameId}`);
+  }
+  const visitorRows =
+    visitorHtml != null
+      ? parseHtmlShiftReportRows(visitorHtml, game, "away", 1, strict)
+      : { rows: [], nextShiftId: 1 };
+  const homeRows =
+    homeHtml != null
+      ? parseHtmlShiftReportRows(
+          homeHtml,
+          game,
+          "home",
+          visitorRows.nextShiftId,
+          strict,
+        )
+      : { rows: [], nextShiftId: visitorRows.nextShiftId };
+  if (strict && (visitorRows.rows.length === 0 || homeRows.rows.length === 0)) {
+    throw new Error(`HTML shift reports have no shifts for game ${gameId}`);
+  }
+
+  const fallbackRows = [...visitorRows.rows, ...homeRows.rows];
+  if (fallbackRows.length === 0) return null;
+  return {
+    total: fallbackRows.length,
+    data: fallbackRows,
+    source: "htmlreports",
+    upstream: {
+      json: jsonPayload,
+    },
+    htmlReports: {
+      visitorUrl: htmlReportUrls.visitor,
+      homeUrl: htmlReportUrls.home,
+    },
+  };
+}
+
+/**
+ * Fetches both HTML shift reports for a final game whose JSON feed is empty
+ * and builds the shared envelope. Strict callers (projection inputs) refuse a
+ * missing report; lenient callers keep whichever team parsed.
+ */
+export async function fetchHtmlShiftReportPayload(
+  gameId,
+  seasonId,
+  game,
+  jsonPayload,
+  { strict = false, fetchOptions = {} } = {},
+) {
+  const htmlReportUrls = buildHtmlShiftReportUrls(gameId, seasonId);
+  const [visitorHtmlResult, homeHtmlResult] = await Promise.allSettled([
+    fetchTextWithRetry(htmlReportUrls.visitor, fetchOptions),
+    fetchTextWithRetry(htmlReportUrls.home, fetchOptions),
+  ]);
+  const payload = buildHtmlShiftReportPayload({
+    gameId,
+    seasonId,
+    game,
+    jsonPayload,
+    visitorHtml:
+      visitorHtmlResult.status === "fulfilled" ? visitorHtmlResult.value : null,
+    homeHtml: homeHtmlResult.status === "fulfilled" ? homeHtmlResult.value : null,
+    strict,
+  });
+  return {
+    payload,
+    htmlReportUrls,
+    visitorError:
+      visitorHtmlResult.status === "rejected"
+        ? String(visitorHtmlResult.reason?.message ?? visitorHtmlResult.reason)
+        : null,
+    homeError:
+      homeHtmlResult.status === "rejected"
+        ? String(homeHtmlResult.reason?.message ?? homeHtmlResult.reason)
+        : null,
+  };
+}
+
 async function fetchShiftChartsWithFallback(
   gameId,
   seasonId,
@@ -415,58 +544,23 @@ async function fetchShiftChartsWithFallback(
     };
   }
 
-  const htmlReportUrls = buildHtmlShiftReportUrls(gameId, seasonId);
-  const [visitorHtmlResult, homeHtmlResult] = await Promise.allSettled([
-    fetchTextWithRetry(htmlReportUrls.visitor, fetchOptions),
-    fetchTextWithRetry(htmlReportUrls.home, fetchOptions),
-  ]);
-
-  const visitorRows =
-    visitorHtmlResult.status === "fulfilled"
-      ? parseHtmlShiftReportRows(visitorHtmlResult.value, game, "away", 1)
-      : { rows: [], nextShiftId: 1 };
-  const homeRows =
-    homeHtmlResult.status === "fulfilled"
-      ? parseHtmlShiftReportRows(
-          homeHtmlResult.value,
-          game,
-          "home",
-          visitorRows.nextShiftId,
-        )
-      : { rows: [], nextShiftId: visitorRows.nextShiftId };
-
-  const fallbackRows = [...visitorRows.rows, ...homeRows.rows];
-  if (fallbackRows.length > 0) {
-    return {
-      total: fallbackRows.length,
-      data: fallbackRows,
-      source: "htmlreports",
-      upstream: {
-        json: jsonPayload,
-      },
-      htmlReports: {
-        visitorUrl: htmlReportUrls.visitor,
-        homeUrl: htmlReportUrls.home,
-      },
-    };
-  }
+  const fallback = await fetchHtmlShiftReportPayload(
+    gameId,
+    seasonId,
+    game,
+    jsonPayload,
+    { fetchOptions },
+  );
+  if (fallback.payload) return fallback.payload;
 
   return {
     ...jsonPayload,
     source: "json-api-empty",
     htmlReports: {
-      visitorUrl: htmlReportUrls.visitor,
-      homeUrl: htmlReportUrls.home,
-      visitorError:
-        visitorHtmlResult.status === "rejected"
-          ? String(
-              visitorHtmlResult.reason?.message ?? visitorHtmlResult.reason,
-            )
-          : null,
-      homeError:
-        homeHtmlResult.status === "rejected"
-          ? String(homeHtmlResult.reason?.message ?? homeHtmlResult.reason)
-          : null,
+      visitorUrl: fallback.htmlReportUrls.visitor,
+      homeUrl: fallback.htmlReportUrls.home,
+      visitorError: fallback.visitorError,
+      homeError: fallback.homeError,
     },
   };
 }

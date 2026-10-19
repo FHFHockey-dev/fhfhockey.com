@@ -56,6 +56,7 @@
  */
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import adminOnly from "utils/adminOnlyMiddleware";
 import {
   DEFAULT_MAX_PENDING_URLS_PER_RUN,
@@ -882,4 +883,4 @@ async function getLatestDateSupabase(): Promise<string | null> {
   return latestDate;
 }
 
-export default withCronJobAudit(adminOnly(handler as any));
+export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)));

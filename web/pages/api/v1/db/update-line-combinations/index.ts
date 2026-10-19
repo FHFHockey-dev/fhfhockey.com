@@ -1,6 +1,7 @@
 // C:\Users\timbr\Desktop\FHFH\fhfhockey.com-3\web\pages\api\v1\db\update-line-combinations\index.ts
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import { getCurrentSeason } from "lib/NHL/server";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { SupabaseClient } from "@supabase/supabase-js";
@@ -154,7 +155,7 @@ async function listHistoricalGamesByIds(args: {
   return (data ?? []) as HistoricalGameRow[];
 }
 
-export default withCronJobAudit(adminOnly(async (req, res) => {
+export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(async (req, res) => {
   const supabase = req.supabase;
   const repairMode = parseRepairMode(req.query.repairMode);
   const count = parsePositiveCount(req.query.count, 5);
@@ -398,4 +399,4 @@ export default withCronJobAudit(adminOnly(async (req, res) => {
     console.error(e);
     res.status(400).json({ message: e.message, success: false });
   }
-}));
+})));

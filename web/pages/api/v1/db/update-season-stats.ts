@@ -1,6 +1,7 @@
 // pages/api/v1/db/update-stats-by-season.ts
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import { buildNhlGameSummaryReportUrl } from "lib/NHL/htmlReports";
 import {
@@ -1097,4 +1098,4 @@ function getPlayersGameStats(
   };
 }
 
-export default withCronJobAudit(adminOnly(handler));
+export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler)));

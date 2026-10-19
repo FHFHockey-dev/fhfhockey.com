@@ -70,6 +70,206 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+describe("fetchRollingPlayerAverages main runtime budget", () => {
+  const PLAYER_IDS = [8470001, 8470002, 8470003, 8470004, 8470005, 8470006, 8470007];
+
+  // Serves a 14-day window in which every player has one WGO game, so each
+  // processed player yields exactly one dry-run batch.
+  function createWindowClient(
+    historyRows: (playerId: unknown) => Record<string, unknown>[] = (playerId) => [{
+      player_id: playerId,
+      game_id: 2026020100,
+      date: "2026-10-15",
+      season_id: 20262027,
+      team_abbrev: "TOR",
+      goals: 1,
+      assists: 0,
+      shots: 3,
+      points: 1,
+      toi_per_game: 1080
+    }],
+    games: Record<string, unknown>[] = []
+  ) {
+    return {
+      rpc: vi.fn(async () => ({ data: null, error: null })),
+      from(table: string) {
+        const filters: Record<string, unknown> = {};
+        let selected = "";
+        let rangeFrom = 0;
+        const query: Record<string, unknown> = {};
+        for (const method of ["neq", "gt", "gte", "lt", "lte", "is", "not", "or", "order", "limit", "delete"]) {
+          query[method] = () => query;
+        }
+        query.select = (fields: string) => { selected = fields; return query; };
+        query.eq = (field: string, value: unknown) => { filters[field] = value; return query; };
+        query.in = (field: string, values: unknown[]) => { filters[field] = values; return query; };
+        query.range = (from: number) => { rangeFrom = from; return query; };
+        const rows = () => {
+          if (rangeFrom > 0) return [];
+          if (table === "games") return games;
+          if (table === "players") {
+            return (filters.id as number[]).map((id) => ({ id }));
+          }
+          if (table !== "wgo_skater_stats") return [];
+          if (selected === "player_id") {
+            return PLAYER_IDS.map((player_id) => ({ player_id }));
+          }
+          return historyRows(filters.player_id);
+        };
+        query.then = (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
+          Promise.resolve({ data: rows(), error: null }).then(resolve, reject);
+        return query;
+      }
+    };
+  }
+
+  async function importMainWithClient(client: unknown) {
+    vi.resetModules();
+    vi.doMock("@supabase/supabase-js", () => ({ createClient: () => client }));
+    try {
+      return (await import("./fetchRollingPlayerAverages")).main;
+    } finally {
+      vi.doUnmock("@supabase/supabase-js");
+    }
+  }
+
+  it("stops claiming at the budget and resumes so every player is processed exactly once", async () => {
+    for (const method of ["info", "warn", "debug", "time", "timeEnd"] as const) {
+      vi.spyOn(console, method).mockImplementation(() => undefined);
+    }
+    let fakeNow = 1_000;
+    vi.spyOn(Date, "now").mockImplementation(() => fakeNow);
+    const processed: number[] = [];
+    const observer = (batch: { playerId: number }) => {
+      processed.push(batch.playerId);
+      // Each player costs 10 fake ms of runtime.
+      fakeNow += 10;
+    };
+    const main = await importMainWithClient(createWindowClient());
+    const window = {
+      startDate: "2026-10-05",
+      endDate: "2026-10-19",
+      dryRunUpsert: true,
+      skipDiagnostics: true,
+      playerConcurrency: 2,
+      dryRunBatchObserver: observer
+    };
+
+    const first = await main({ ...window, stopClaimingPlayersAtMs: 1_025 });
+
+    // With two workers, whatever was claimed before the deadline finished,
+    // and the processed players are an id-ordered prefix.
+    const firstCount = processed.length;
+    expect(firstCount).toBeGreaterThan(0);
+    expect(firstCount).toBeLessThan(PLAYER_IDS.length);
+    expect(processed).toEqual(PLAYER_IDS.slice(0, firstCount));
+    expect(first).toMatchObject({
+      stoppedReason: "runtime_budget",
+      processedPlayers: firstCount,
+      lastProcessedPlayerId: PLAYER_IDS[firstCount - 1],
+      nextResumeFrom: PLAYER_IDS[firstCount - 1],
+      remainingPlayerCount: PLAYER_IDS.length - firstCount,
+      totalPlayersAfterResumeFilter: PLAYER_IDS.length
+    });
+
+    const second = await main({
+      ...window,
+      resumePlayerId: first.nextResumeFrom ?? undefined,
+      stopClaimingPlayersAtMs: fakeNow + 1_000
+    });
+
+    expect(second).toMatchObject({
+      stoppedReason: "complete",
+      processedPlayers: PLAYER_IDS.length - firstCount,
+      nextResumeFrom: null,
+      remainingPlayerCount: 0
+    });
+    expect(processed).toEqual(PLAYER_IDS);
+    expect(new Set(processed).size).toBe(PLAYER_IDS.length);
+  });
+
+  it("writes the same window rows as a full-history run while skipping earlier output rows", async () => {
+    for (const method of ["info", "warn", "debug", "time", "timeEnd"] as const) {
+      vi.spyOn(console, method).mockImplementation(() => undefined);
+    }
+    const historyGames = [
+      ["2025-11-02", 20252026, 2025020150, 2, 4, 1150],
+      ["2026-01-12", 20252026, 2025020700, 0, 1, 990],
+      ["2026-03-30", 20252026, 2025021150, 1, 5, 1210],
+      ["2026-10-09", 20262027, 2026020020, 0, 2, 1040],
+      ["2026-10-15", 20262027, 2026020100, 1, 3, 1080],
+      ["2026-10-18", 20262027, 2026020140, 2, 6, 1300]
+    ] as const;
+    // Canonical games resolve every history row.
+    const games = historyGames.map(([date, seasonId, id]) => ({
+      id,
+      date,
+      seasonId,
+      homeTeamId: 10,
+      awayTeamId: 8
+    }));
+    const history = (playerId: unknown) =>
+      historyGames.map(([date, season_id, game_id, goals, shots, toi_per_game]) => ({
+        player_id: playerId,
+        game_id,
+        date,
+        season_id,
+        team_abbrev: "TOR",
+        goals,
+        assists: 1,
+        shots,
+        points: Number(goals) + 1,
+        toi_per_game
+      }));
+    const collect = async (scope: Record<string, unknown>) => {
+      const rows: Record<string, unknown>[] = [];
+      const main = await importMainWithClient(createWindowClient(history, games));
+      await main({
+        playerId: PLAYER_IDS[0],
+        dryRunUpsert: true,
+        skipDiagnostics: true,
+        dryRunBatchObserver: (batch) => {
+          rows.push(...batch.rankingRows, ...batch.supportRows);
+        },
+        ...scope
+      });
+      return rows;
+    };
+
+    const fullHistory = await collect({});
+    const windowed = await collect({ startDate: "2026-10-10", endDate: "2026-10-19" });
+
+    const inWindow = (row: Record<string, unknown>) =>
+      String(row.game_date) >= "2026-10-10" && String(row.game_date) <= "2026-10-19";
+    expect(fullHistory.filter((row) => !inWindow(row)).length).toBeGreaterThan(0);
+    expect(windowed.length).toBeGreaterThan(0);
+    expect(windowed).toEqual(fullHistory.filter(inWindow));
+  });
+
+  it("keeps the incoming cursor when the budget is spent before any player is claimed", async () => {
+    vi.spyOn(console, "info").mockImplementation(() => undefined);
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    vi.spyOn(Date, "now").mockReturnValue(5_000);
+    const main = await importMainWithClient(createWindowClient());
+
+    const summary = await main({
+      startDate: "2026-10-05",
+      endDate: "2026-10-19",
+      dryRunUpsert: true,
+      resumePlayerId: PLAYER_IDS[1],
+      stopClaimingPlayersAtMs: 5_000
+    });
+
+    expect(summary).toMatchObject({
+      stoppedReason: "runtime_budget",
+      processedPlayers: 0,
+      lastProcessedPlayerId: null,
+      nextResumeFrom: PLAYER_IDS[1],
+      remainingPlayerCount: 5
+    });
+  });
+});
+
 describe("fetchRollingPlayerAverages buildGameRecords", () => {
   it.each([
     ["ev", { es_toi_per_game: 866 }, 866],

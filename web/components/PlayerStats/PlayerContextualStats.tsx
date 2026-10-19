@@ -92,13 +92,13 @@ export function PlayerContextualStats({
     const totalPossibleRegularSeasonGames =
       regularSeasonGamesPlayed + regularSeasonMissedGames;
 
-    // Calculate availability percentage based on actual possible games
+    // Calculate availability percentage based on actual possible games. The
+    // denominator includes every game played, so it is never smaller than the
+    // games played and no fixed season length is needed.
     const availabilityPercentage =
       totalPossibleRegularSeasonGames > 0
         ? (regularSeasonGamesPlayed / totalPossibleRegularSeasonGames) * 100
-        : regularSeasonGamesPlayed > 0
-          ? (regularSeasonGamesPlayed / 82) * 100 // Fallback to standard 82-game season
-          : 0;
+        : 0;
 
     // Enhanced availability insight with missed games context
     insights.push({

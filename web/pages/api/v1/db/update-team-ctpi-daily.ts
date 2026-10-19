@@ -1,4 +1,5 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
@@ -250,6 +251,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     if (startDate > endDate) {
       return res.status(200).json({
         message: "No dates to process (start is after today/season end).",
+        success: true,
+        skipped: true,
+        outcome: "skipped",
+        reason: "no_dates",
         startDate,
         endDate,
         rowsUpserted: 0,
@@ -295,6 +300,26 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       });
     }
 
+    if (insertRows.length === 0) {
+      // Off-season runs are skipped upstream, so an empty pass here means the
+      // NST team source has nothing for this season: not a refresh.
+      const warning = `No CTPI rows for season ${seasonId} (${startDate} to ${endDate}): ${allRows.length} NST team-game rows found.`;
+      return res.status(200).json({
+        message: `Skipped: ${warning}`,
+        success: true,
+        skipped: true,
+        outcome: "skipped",
+        reason: "no_source_rows",
+        warnings: [warning],
+        seasonId,
+        datesComputed: dates.length,
+        rowsUpserted: 0,
+        sourceRows: allRows.length,
+        startDate,
+        endDate,
+      });
+    }
+
     await upsertRows(insertRows);
 
     return res.status(200).json({
@@ -314,6 +339,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default withCronJobAudit(adminOnly(handler as any), {
+export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
   jobName: "/api/v1/db/update-team-ctpi-daily",
 });

@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createHash } from "node:crypto";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import type { Database } from "lib/supabase/database-generated.types";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import {
@@ -702,7 +703,7 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
 };
 
 export default withCronJobAudit(
-  adminOnly(withPredictionsSkoRunControl(handler as any) as any),
+  adminOnly(withNhlOffSeasonSkip(withPredictionsSkoRunControl(handler as any) as any)),
   {
     jobName: "update-predictions-sko",
   },

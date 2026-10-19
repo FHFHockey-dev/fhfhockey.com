@@ -4,19 +4,28 @@ type Filters = {
   table: string;
   eq: Record<string, unknown>;
   neq: Record<string, unknown>;
+  gte: Record<string, unknown>;
   in: Record<string, unknown[]>;
+  order: Array<{ column: string; ascending: boolean }>;
+  range: [number, number] | null;
+  limit: number | null;
 };
+
+// Hosted PostgREST returns at most this many rows per request.
+const MAX_ROWS = 1_000;
 
 const {
   resolveQueryMock,
   persistCapturedGameNormalizationMock,
   refreshPlayerMock,
   refreshTeamMock,
+  warmPlayerCacheMock,
 } = vi.hoisted(() => ({
   resolveQueryMock: vi.fn(),
   persistCapturedGameNormalizationMock: vi.fn(),
   refreshPlayerMock: vi.fn(),
   refreshTeamMock: vi.fn(),
+  warmPlayerCacheMock: vi.fn(),
 }));
 
 vi.mock("lib/cron/withCronJobAudit", () => ({
@@ -28,13 +37,51 @@ vi.mock("utils/adminOnlyMiddleware", () => ({
 }));
 
 vi.mock("lib/supabase/server", () => {
+  function shape(filters: Filters, data: unknown) {
+    if (!Array.isArray(data)) return data;
+    let rows = [...data];
+    if (filters.order.length > 0) {
+      rows.sort((a: any, b: any) => {
+        for (const { column, ascending } of filters.order) {
+          if (a[column] === b[column]) continue;
+          return (a[column] < b[column] ? -1 : 1) * (ascending ? 1 : -1);
+        }
+        return 0;
+      });
+    }
+    if (filters.range) rows = rows.slice(filters.range[0], filters.range[1] + 1);
+    if (filters.limit != null) rows = rows.slice(0, filters.limit);
+    return rows.slice(0, MAX_ROWS);
+  }
   function from(table: string) {
-    const filters: Filters = { table, eq: {}, neq: {}, in: {} };
+    const filters: Filters = {
+      table,
+      eq: {},
+      neq: {},
+      gte: {},
+      in: {},
+      order: [],
+      range: null,
+      limit: null,
+    };
     const builder: any = {
       select: () => builder,
-      order: () => builder,
-      limit: () => builder,
-      gte: () => builder,
+      order: (column: string, options?: { ascending?: boolean }) => {
+        filters.order.push({ column, ascending: options?.ascending !== false });
+        return builder;
+      },
+      limit: (count: number) => {
+        filters.limit = count;
+        return builder;
+      },
+      range: (fromIndex: number, toIndex: number) => {
+        filters.range = [fromIndex, toIndex];
+        return builder;
+      },
+      gte: (column: string, value: unknown) => {
+        filters.gte[column] = value;
+        return builder;
+      },
       lt: () => builder,
       eq: (column: string, value: unknown) => {
         filters.eq[column] = value;
@@ -53,10 +100,9 @@ vi.mock("lib/supabase/server", () => {
         return { data: Array.isArray(data) ? (data[0] ?? null) : data, error: null };
       },
       then: (resolve: any, reject: any) =>
-        Promise.resolve({ data: resolveQueryMock(filters), error: null }).then(
-          resolve,
-          reject,
-        ),
+        Promise.resolve()
+          .then(() => ({ data: shape(filters, resolveQueryMock(filters)), error: null }))
+          .then(resolve, reject),
     };
     return builder;
   }
@@ -85,6 +131,7 @@ vi.mock("lib/underlying-stats/playerStatsLandingServer", () => ({
 
 vi.mock("lib/underlying-stats/playerStatsSummaryRefresh", () => ({
   refreshPlayerUnderlyingSummarySnapshotsForGameIds: refreshPlayerMock,
+  warmPlayerStatsLandingSeasonAggregateCache: warmPlayerCacheMock,
 }));
 
 vi.mock("lib/underlying-stats/teamStatsSummaryRefresh", () => ({
@@ -98,13 +145,20 @@ const DERIVED_GAME = 2026020010;
 const PBP_HASH = "a".repeat(64);
 const SHIFT_HASH = "b".repeat(64);
 
-function statusRow(gameId: number, status: string, completedAt: string | null) {
+function statusRow(
+  gameId: number,
+  status: string,
+  completedAt: string | null,
+  overrides: { season_id?: number; game_date?: string; updated_at?: string } = {},
+) {
   return {
     game_id: gameId,
     season_id: 20262027,
     game_date: "2026-10-01",
     status,
     completed_at: completedAt,
+    updated_at: "2026-10-02T00:00:00.000Z",
+    ...overrides,
   };
 }
 
@@ -126,12 +180,17 @@ function installDb(db: Db) {
         return db.heads[`${filters.eq.game_id}:${filters.eq.endpoint}`] ?? null;
       case "nhl_api_game_payloads_raw":
         if (filters.eq.id != null) return db.raws[Number(filters.eq.id)] ?? null;
-        return db.markers.filter((marker) =>
-          (filters.in.game_id ?? []).includes(marker.game_id),
+        return db.markers.filter(
+          (marker) =>
+            (filters.in.game_id ?? []).includes(marker.game_id) &&
+            (filters.gte.fetched_at == null ||
+              marker.fetched_at >= String(filters.gte.fetched_at)),
         );
       case "nhl_xg_shot_features":
         return db.xgFeatures.filter((row) =>
-          (filters.in.game_id ?? []).includes(row.game_id),
+          filters.eq.game_id != null
+            ? row.game_id === filters.eq.game_id
+            : (filters.in.game_id ?? []).includes(row.game_id),
         );
       default:
         throw new Error(`Unexpected table ${filters.table}`);
@@ -181,6 +240,7 @@ describe("/api/v1/db/sweep-gamecenter-normalization", () => {
     persistCapturedGameNormalizationMock.mockResolvedValue({ idempotent: false });
     refreshPlayerMock.mockResolvedValue({ rowsUpserted: 28 });
     refreshTeamMock.mockResolvedValue({ rowsUpserted: 140 });
+    warmPlayerCacheMock.mockResolvedValue(undefined);
   });
 
   it("normalizes a stale game from its snapshot-head payloads without fetching the NHL", async () => {
@@ -324,5 +384,224 @@ describe("/api/v1/db/sweep-gamecenter-normalization", () => {
 
     expect(res.body.limit).toBe(50);
     expect(res.body.xgRefreshNeededGameIds).toEqual([STALE_GAME]);
+  });
+
+  // Ported from the 2026-10-19 cross-check audit (A-07a). Before the fix the
+  // player refresh wrote the completion marker before the team refresh ran, so
+  // a team failure left the game looking finished and it was never retried.
+  it("AUDIT: retries team summaries after player summary committed and team refresh failed", async () => {
+    const db = staleGameDb({
+      incomplete: [],
+      complete: [statusRow(DERIVED_GAME, "complete", "2026-10-02T21:00:00.000Z")],
+    });
+    installDb(db);
+    refreshPlayerMock.mockImplementation(async () => {
+      db.markers = [{ game_id: DERIVED_GAME, fetched_at: "2026-10-02T22:00:00.000Z" }];
+      return { rowsUpserted: 28 };
+    });
+    refreshTeamMock.mockRejectedValueOnce(new Error("synthetic team refresh failure"));
+
+    const first = createMockApiContext();
+    await handler(first.req as any, first.res as any);
+    expect(first.res.statusCode).toBe(502);
+    expect(first.res.body.failures).toEqual([
+      {
+        gameId: DERIVED_GAME,
+        stage: "refresh_team_summaries",
+        message: "synthetic team refresh failure",
+      },
+    ]);
+    expect(refreshPlayerMock).not.toHaveBeenCalled();
+
+    refreshTeamMock.mockResolvedValue({ rowsUpserted: 140 });
+    const second = createMockApiContext();
+    await handler(second.req as any, second.res as any);
+    expect(refreshTeamMock).toHaveBeenCalledTimes(2);
+    expect(refreshPlayerMock).toHaveBeenCalledTimes(1);
+    expect(second.res.statusCode).toBe(200);
+    expect(second.res.body.refreshedGameIds).toEqual([DERIVED_GAME]);
+
+    const third = createMockApiContext();
+    await handler(third.req as any, third.res as any);
+    expect(third.res.body.candidateCount).toBe(0);
+    expect(refreshTeamMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("reports a cache-warm failure after the marker as 207 without holding the game", async () => {
+    installDb(
+      staleGameDb({
+        incomplete: [],
+        complete: [statusRow(DERIVED_GAME, "complete", "2026-10-02T21:00:00.000Z")],
+      }),
+    );
+    warmPlayerCacheMock.mockRejectedValueOnce(new Error("warm failed"));
+    const { req, res } = createMockApiContext();
+
+    await handler(req as any, res as any);
+
+    expect(refreshPlayerMock).toHaveBeenCalledWith(
+      expect.objectContaining({ shouldWarmLandingCache: false }),
+    );
+    expect(res.statusCode).toBe(207);
+    expect(res.body.success).toBe(false);
+    expect(res.body.refreshedGameIds).toEqual([DERIVED_GAME]);
+    expect(res.body.failures).toEqual([
+      { gameId: DERIVED_GAME, stage: "warm_landing_cache", message: "warm failed" },
+    ]);
+  });
+
+  it("keeps refreshing other groups after one group fails and returns 207", async () => {
+    const otherSeasonGame = 2025020010;
+    installDb(
+      staleGameDb({
+        incomplete: [],
+        complete: [
+          statusRow(otherSeasonGame, "complete", "2026-10-02T21:00:00.000Z", {
+            season_id: 20252026,
+            game_date: "2026-09-30",
+          }),
+          statusRow(DERIVED_GAME, "complete", "2026-10-02T21:00:00.000Z"),
+        ],
+      }),
+    );
+    refreshTeamMock.mockRejectedValueOnce(new Error("team boom"));
+    const { req, res } = createMockApiContext();
+
+    await handler(req as any, res as any);
+
+    expect(res.statusCode).toBe(207);
+    expect(res.body.refreshedGameIds).toEqual([DERIVED_GAME]);
+    expect(res.body.failures).toEqual([
+      { gameId: otherSeasonGame, stage: "refresh_team_summaries", message: "team boom" },
+    ]);
+    expect(refreshPlayerMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("pages past more than 1,000 fresh games to reach a newer stale one", async () => {
+    const freshGames = Array.from({ length: 1_000 }, (_, index) =>
+      statusRow(2026020100 + index, "complete", "2026-10-02T10:00:00.000Z", {
+        game_date: "2026-09-25",
+      }),
+    );
+    const newerStale = statusRow(2026021500, "complete", "2026-10-03T10:00:00.000Z", {
+      game_date: "2026-10-03",
+    });
+    installDb(
+      staleGameDb({
+        incomplete: [],
+        complete: [...freshGames, newerStale],
+        markers: freshGames.map((row) => ({
+          game_id: row.game_id,
+          fetched_at: "2026-10-02T11:00:00.000Z",
+        })),
+      }),
+    );
+    const { req, res } = createMockApiContext();
+
+    await handler(req as any, res as any);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.derivedOnlyGameIds).toEqual([2026021500]);
+    expect(refreshPlayerMock).toHaveBeenCalledWith(
+      expect.objectContaining({ gameIds: [2026021500] }),
+    );
+  });
+
+  it("still normalizes a newer game and fills derived slots behind 15 failing games", async () => {
+    const failingGames = Array.from({ length: 15 }, (_, index) =>
+      statusRow(2026020200 + index, "stale", null, {
+        updated_at: "2026-10-01T00:00:00.000Z",
+      }),
+    );
+    const newerGame = statusRow(STALE_GAME, "stale", null, {
+      game_date: "2026-10-05",
+      updated_at: "2026-10-06T00:00:00.000Z",
+    });
+    const db = staleGameDb({
+      incomplete: [...failingGames, newerGame],
+      complete: [statusRow(DERIVED_GAME, "complete", "2026-10-02T21:00:00.000Z")],
+    });
+    for (const row of failingGames) {
+      db.heads[`${row.game_id}:play-by-play`] = { raw_payload_id: 11, payload_hash: PBP_HASH };
+      db.heads[`${row.game_id}:shiftcharts`] = { raw_payload_id: 12, payload_hash: SHIFT_HASH };
+    }
+    installDb(db);
+    persistCapturedGameNormalizationMock.mockImplementation(async (_client, args) => {
+      if (args.gameId !== STALE_GAME) throw new Error("permanent normalization failure");
+      return { idempotent: false };
+    });
+    const { req, res } = createMockApiContext({ limit: "15" });
+
+    await handler(req as any, res as any);
+
+    expect(res.body.normalizedGameIds).toEqual([STALE_GAME]);
+    expect(res.body.failures).toHaveLength(14);
+    expect(res.body.refreshedGameIds).toEqual([STALE_GAME, DERIVED_GAME]);
+    expect(res.statusCode).toBe(207);
+  });
+
+  it("reports every xG-affected game when the games hold more than 1,000 feature rows", async () => {
+    const games = [2026020001, 2026020002, 2026020003];
+    installDb(
+      staleGameDb({
+        incomplete: [],
+        complete: games.map((gameId) =>
+          statusRow(gameId, "complete", "2026-10-02T21:00:00.000Z"),
+        ),
+        xgFeatures: [
+          ...Array.from({ length: 1_200 }, () => ({ game_id: games[0] })),
+          { game_id: games[1] },
+          { game_id: games[2] },
+        ],
+      }),
+    );
+    const { req, res } = createMockApiContext();
+
+    await handler(req as any, res as any);
+
+    expect(res.body.xgRefreshNeededGameIds).toEqual(games);
+  });
+
+  it("ends the window at today's Eastern date", async () => {
+    installDb(staleGameDb({ incomplete: [] }));
+    // 02:30Z on 10-20 is still 10-19 in New York.
+    const nowSpy = vi
+      .spyOn(Date, "now")
+      .mockReturnValue(Date.parse("2026-10-20T02:30:00.000Z"));
+    const { req, res } = createMockApiContext();
+
+    await handler(req as any, res as any);
+    nowSpy.mockRestore();
+
+    expect(res.body.window).toEqual({ startDate: "2026-09-19", endDate: "2026-10-19" });
+  });
+
+  it("does not echo backend error messages in the 500 response", async () => {
+    persistCapturedGameNormalizationMock.mockRejectedValueOnce(
+      new Error("relation private_internal_table is locked"),
+    );
+    const db = staleGameDb();
+    installDb(db);
+    const baseImplementation = resolveQueryMock.getMockImplementation()!;
+    resolveQueryMock.mockImplementation((filters: Filters) => {
+      if (filters.table === "nhl_api_game_normalization_status" && filters.eq.status === "complete") {
+        throw new Error("permission denied for schema secret_internal");
+      }
+      return baseImplementation(filters);
+    });
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { req, res } = createMockApiContext();
+
+    await handler(req as any, res as any);
+    consoleSpy.mockRestore();
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toMatchObject({
+      success: false,
+      stage: "select_derived_stale",
+      error: "Gamecenter normalization sweep failed during select_derived_stale",
+      failures: [{ gameId: STALE_GAME, stage: "normalize_gamecenter" }],
+    });
+    expect(JSON.stringify(res.body)).not.toMatch(/secret_internal|private_internal_table/);
   });
 });

@@ -2,6 +2,7 @@ import type { NextApiResponse } from "next";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import { generatePregamePredictionsForWindow } from "lib/game-predictions/workflow";
 import type { Database } from "lib/supabase/database-generated.types";
 import adminOnly from "utils/adminOnlyMiddleware";
@@ -85,6 +86,6 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
   });
 }
 
-export default withCronJobAudit(adminOnly(handler as any), {
+export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
   jobName: "game-predictions-forecast",
 });

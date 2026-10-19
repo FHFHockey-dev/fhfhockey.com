@@ -118,6 +118,7 @@ const CONFERENCE_LABELS: Record<string, string> = {
 
 const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
   const season = useCurrentSeason();
+  const seasonGameCount = season?.numberOfGames;
   const [data, setData] = useState<Map<string, TeamData[]>>(new Map());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -328,6 +329,7 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
         data.values(),
         selectedConference,
         selectedDivision,
+        seasonGameCount,
       ),
     );
 
@@ -729,7 +731,7 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
     // Draw X axis
     const xAxis = d3
       .axisBottom(xScale)
-      .tickValues(buildGameAxisTicks(maxGames));
+      .tickValues(buildGameAxisTicks(maxGames, seasonGameCount));
     mainG
       .append("g")
       .attr("transform", `translate(0, ${innerHeight})`)
@@ -789,6 +791,7 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
     chartWidth,
     chartHeight,
     compact,
+    seasonGameCount,
   ]);
 
   // -------------------------------

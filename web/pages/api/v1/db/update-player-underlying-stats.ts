@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import {
   PlayerStatsSummaryWriteBusyError,
   refreshPlayerUnderlyingSummarySnapshotsForGameIds,
@@ -322,6 +323,6 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(adminOnly(handler), {
+export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler)), {
   jobName: "/api/v1/db/update-player-underlying-stats",
 });

@@ -20,6 +20,7 @@ import { extractAuditTimingRecord } from "lib/cron/cronReportTiming";
 import { readReportMetrics, repositoryExecutionLimitMs, isNearRepositoryLimit, reportedRuntimeBudgetMs } from "lib/cron/reportMetrics";
 import { buildSqlCronTimingObservation } from "lib/cron/sqlTiming";
 import { readCronScheduleMarkdown } from "lib/cron/cronInventory";
+import { loadNhlSeasonWindow, type NhlSeasonWindow } from "lib/cron/nhlOffSeason";
 import adminOnly from "utils/adminOnlyMiddleware";
 import {
   assessYahooLifecycleHealth,
@@ -49,6 +50,62 @@ const RECURRING_SLOT_GRACE_MS = 5 * 60 * 1000;
 const MAX_UNSCHEDULED_ALERTS = 8;
 const ROUTE_AUDIT_MISSING_WARNING =
   "Cron submission was recorded, but no route audit payload was recorded; route execution is unverified.";
+// A function killed at Vercel's limit never reaches its audit wrapper, so the
+// only trace of it is an absent audit row.
+const KILLED_AT_LIMIT_WARNING =
+  "No audit row was written for this slot; the function may have been killed at the 240 s limit before its audit wrapper could record it.";
+const EXPECTED_WORK_WARNING =
+  "In-season game-data run reported 0 rows affected; it may be silently writing nothing.";
+
+// Routes wrapped in withNhlOffSeasonSkip: they pause between seasons, so during
+// the season a 0-row run is unexpected.
+const GAME_DATA_ROUTES = new Set([
+  "/api/Teams/nst-team-stats",
+  "/api/v1/db/build-projection-derived-v2",
+  "/api/v1/db/calculate-wigo-stats",
+  "/api/v1/db/ingest-projection-inputs",
+  "/api/v1/db/powerPlayTimeFrame",
+  "/api/v1/db/run-fetch-wgo-data",
+  "/api/v1/db/run-projection-accuracy",
+  "/api/v1/db/run-projection-v2",
+  "/api/v1/db/run-rolling-forge-pipeline",
+  "/api/v1/db/sustainability/rebuild-baselines",
+  "/api/v1/db/update-PbP",
+  "/api/v1/db/update-game-goal-projections",
+  "/api/v1/db/update-goalie-projections-v2",
+  "/api/v1/db/update-line-combinations",
+  "/api/v1/db/update-lineup-deployment-tallies",
+  "/api/v1/db/update-nhl-edge-stats",
+  "/api/v1/db/update-nst-current-season",
+  "/api/v1/db/update-nst-gamelog",
+  "/api/v1/db/update-nst-goalies",
+  "/api/v1/db/update-nst-team-daily",
+  "/api/v1/db/update-player-trend-metrics",
+  "/api/v1/db/update-player-underlying-stats",
+  "/api/v1/db/update-power-play-combinations",
+  "/api/v1/db/update-rolling-player-averages",
+  "/api/v1/db/update-season-stats",
+  "/api/v1/db/update-shifts",
+  "/api/v1/db/update-sko-stats",
+  "/api/v1/db/update-standings-details",
+  "/api/v1/db/update-team-ctpi-daily",
+  "/api/v1/db/update-team-power-ratings",
+  "/api/v1/db/update-team-sos",
+  "/api/v1/db/update-team-yearly-summary",
+  "/api/v1/db/update-wgo-averages",
+  "/api/v1/db/update-wgo-goalie-totals",
+  "/api/v1/db/update-wgo-goalies",
+  "/api/v1/db/update-wgo-skaters",
+  "/api/v1/db/update-wgo-totals",
+  "/api/v1/game-predictions/forecast",
+  "/api/v1/game-predictions/ingest-espn-odds",
+  "/api/v1/game-predictions/score",
+  "/api/v1/ml/update-predictions-sko",
+  "/api/v1/sustainability/rebuild-priors",
+  "/api/v1/sustainability/rebuild-score",
+  "/api/v1/sustainability/rebuild-trend-bands",
+  "/api/v1/sustainability/rebuild-window-z",
+]);
 
 const SCHEDULE_ALIAS_MAP: Record<string, string[]> = {
   "update-all-wgo-skaters": [
@@ -144,7 +201,10 @@ const ROUTE_TARGET_TABLE_MAP: Record<string, string> = {
 
 type NormalizedStatus = "success" | "failure" | "unknown";
 type ReportStatus = NormalizedStatus | "disabled";
-type ReportJobStatus = ReportStatus | "missing";
+// "continued": the latest call stopped at its runtime budget on purpose and the
+// UTC day has not ended, so a later call can still complete it.
+type ObservedJobStatus = ReportStatus | "missing";
+type ReportJobStatus = ObservedJobStatus | "continued";
 type ScheduleMethod = "GET" | "POST" | "SQL" | "UNKNOWN";
 
 type ScheduledCronJob = {
@@ -203,9 +263,11 @@ type AuditRow = {
   rowsAffected: number | null;
   rawStatus: unknown;
   status: NormalizedStatus;
+  continued: boolean;
   details: unknown;
   detailsMessage: string | null;
   parsed: ParsedAuditDetails;
+  expectedWorkWarning: string | null;
 };
 
 type RunRow = {
@@ -232,7 +294,7 @@ type JobSummary = {
   jobName: string;
   displayName: string;
   lastStatus: ReportJobStatus;
-  observedExecutionStatus: ReportJobStatus;
+  observedExecutionStatus: ObservedJobStatus;
   lastStatusSource: "audit" | "cron" | "missing" | "unknown";
   scheduleTimeDisplay: string;
   expectedRunDisplay: string;
@@ -286,7 +348,7 @@ type RunDigest = {
   timingProvenance: string;
   runtimeBudgetMs: number | null;
   observationKind?: "scheduled" | "extra";
-  observedExecutionStatus?: ReportJobStatus;
+  observedExecutionStatus?: ObservedJobStatus;
   reason: string | null;
   lastKnownSuccessDisplay: string | null;
   failedRowSamples: string[];
@@ -304,11 +366,13 @@ type ReportCounts = {
   cronFailures: number;
   omittedFailureObservations: number;
   auditUnknown: number;
+  auditContinued: number;
   auditDisabled: number;
   jobsOkLast: number;
   jobsFailingLast: number;
   jobsMissingLast: number;
   jobsUnknownLast: number;
+  jobsContinuedLast: number;
   jobsDisabledLast: number;
   unscheduledRuns: number;
   totalRowsUpserted: number;
@@ -316,6 +380,7 @@ type ReportCounts = {
   warnSlow: number;
   warnPartialFailure: number;
   warnMissingAudit: number;
+  warnExpectedWork: number;
 };
 
 type WarningSummary = {
@@ -326,6 +391,8 @@ type WarningSummary = {
   slowJobs: SlowJobWarning[];
   partialFailureJobs: Array<{ displayName: string; failedRows: number }>;
   missingObservationJobs: Array<{ displayName: string; warnings: string[] }>;
+  expectedWorkJobs: string[];
+  seasonState: NhlSeasonWindow["state"];
   yahooLifecycle: YahooLifecycleWarning[];
 };
 
@@ -346,6 +413,37 @@ function normalizeStatus(value: unknown): NormalizedStatus {
   return "unknown";
 }
 
+function utcDay(time: string): string | null {
+  const ms = Date.parse(time);
+  return Number.isFinite(ms) ? new Date(ms).toISOString().slice(0, 10) : null;
+}
+
+/**
+ * Planned continuations (withCronJobAudit status "continued") per UTC day.
+ * A day whose newest call is a continuation has no completing run yet: it is
+ * in progress today and incomplete once the day has ended.
+ */
+function assessContinuations(audits: AuditRow[], today: string) {
+  const byDay = new Map<string, AuditRow[]>();
+  for (const row of audits) {
+    const day = utcDay(row.time);
+    if (!day) continue;
+    const rows = byDay.get(day);
+    if (rows) rows.push(row);
+    else byDay.set(day, [row]);
+  }
+  const incompleteDays: Array<{ day: string; calls: number }> = [];
+  const callsByDay = new Map<string, number>();
+  for (const [day, rows] of byDay) {
+    const calls = rows.filter((row) => row.continued).length;
+    if (calls === 0) continue;
+    callsByDay.set(day, calls);
+    const newest = rows.reduce((a, b) => (Date.parse(b.time) > Date.parse(a.time) ? b : a));
+    if (newest.continued && day < today) incompleteDays.push({ day, calls });
+  }
+  return { incompleteDays: incompleteDays.sort((a, b) => a.day.localeCompare(b.day)), callsByDay };
+}
+
 function isQuarantinedLegacyRoute(routePath: string | null): boolean {
   return (
     routePath === "/api/v1/db/update-rolling-games" ||
@@ -357,6 +455,8 @@ function skippedOperationWarning(row: AuditRow): string | null {
   const response = row.parsed.response;
   if (row.status === "success" && response && typeof response === "object" && !Array.isArray(response)) {
     const receipt = response as Record<string, unknown>;
+    // Game-data jobs pause between NHL seasons by design (lib/cron/nhlOffSeason).
+    if (receipt.reason === "nhl_off_season") return null;
     const result = receipt.result && typeof receipt.result === "object" ? receipt.result as Record<string, unknown> : receipt;
     if ((row.parsed.routePath === "/api/v1/db/cron/update-stats-cron" &&
           Array.isArray(receipt.attemptedGameIds) && receipt.attemptedGameIds.length === 0 &&
@@ -370,6 +470,22 @@ function skippedOperationWarning(row: AuditRow): string | null {
     }
   }
   return null;
+}
+
+function expectedWorkWarning(
+  row: Omit<AuditRow, "expectedWorkWarning">,
+  seasonWindow: NhlSeasonWindow
+): string | null {
+  if (seasonWindow.state !== "in_season" || row.status !== "success" ||
+      !GAME_DATA_ROUTES.has(row.parsed.routePath ?? "")) return null;
+  const response = row.parsed.response;
+  if (response && typeof response === "object" && !Array.isArray(response) &&
+      (response as Record<string, unknown>).reason === "nhl_off_season") return null;
+  // rows_affected is null when the wrapper could not infer a count; fall back
+  // to the receipt's own top-level write count.
+  const rows = row.rowsAffected ??
+    getDirectNumericField(response, ["rowsUpserted", "rows_upserted", "rowsAffected", "rows_affected"]);
+  return rows === 0 ? EXPECTED_WORK_WARNING : null;
 }
 
 function incompleteYahooReceiptWarning(row: AuditRow): string | null {
@@ -396,7 +512,7 @@ function incompleteYahooReceiptWarning(row: AuditRow): string | null {
 }
 
 function classifyAuditStatus(row: AuditRow): ReportStatus {
-  if (skippedOperationWarning(row) || incompleteYahooReceiptWarning(row)) return "unknown";
+  if (skippedOperationWarning(row) || incompleteYahooReceiptWarning(row) || row.expectedWorkWarning) return "unknown";
   return row.status === "failure" &&
     row.parsed.statusCode === 410 &&
     isQuarantinedLegacyRoute(row.parsed.routePath)
@@ -1235,6 +1351,7 @@ function buildRunDigestFromAudit(
       : [];
   if (skippedOperationWarning(row)) missingObservationWarnings.push(skippedOperationWarning(row)!);
   if (incompleteYahooReceiptWarning(row)) missingObservationWarnings.push(incompleteYahooReceiptWarning(row)!);
+  if (row.expectedWorkWarning) missingObservationWarnings.push(row.expectedWorkWarning);
 
   return {
     key: row.id,
@@ -1404,6 +1521,7 @@ function collectMissingObservationWarnings(job: {
 
   if (job.lastStatus === "missing") {
     warnings.push("No cron or audit observation matched this scheduled slot.");
+    if (job.method !== "SQL") warnings.push(KILLED_AT_LIMIT_WARNING);
   }
 
   if (
@@ -1414,7 +1532,7 @@ function collectMissingObservationWarnings(job: {
     !awaitingPostGraceRun &&
     !awaitingCurrentReportSelfAudit
   ) {
-    warnings.push(ROUTE_AUDIT_MISSING_WARNING);
+    warnings.push(ROUTE_AUDIT_MISSING_WARNING, KILLED_AT_LIMIT_WARNING);
   }
 
   if (job.lastStatus !== "missing" && job.lastDurationMs == null && !awaitingCurrentReportSelfAudit && !awaitingPostGraceRun) {
@@ -1462,6 +1580,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   const sourceOptions = { deadlineAt: sourceDeadlineAt, requestTimeoutMs: REPORT_REQUEST_TIMEOUT_MS };
   const sinceDate = new Date(now.getTime() - REPORT_WINDOW_MS);
   const since = sinceDate.toISOString();
+  // Read alongside the telemetry sources; a slow lookup degrades to "unknown",
+  // which suppresses expected-work warnings rather than guessing.
+  let seasonTimer: ReturnType<typeof setTimeout> | undefined;
+  const seasonWindowPromise = Promise.race([
+    loadNhlSeasonWindow(undefined, now),
+    new Promise<NhlSeasonWindow>((resolve) => {
+      seasonTimer = setTimeout(() => resolve({ state: "unknown", today: "", reason: "timeout" }), REPORT_REQUEST_TIMEOUT_MS);
+    }),
+  ]).finally(() => clearTimeout(seasonTimer));
   const until = now.toISOString();
   const emailRecipient = process.env.CRON_REPORT_EMAIL_RECIPIENT!;
   const previewMode = getQueryString(req, "preview") === "json";
@@ -1519,17 +1646,22 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     });
   }
 
-  const auditRows: AuditRow[] = audits.map((row: any) => ({
-    id: `audit:${reportRowIdentity(row)}`,
-    jobName: String(row.job_name ?? ""),
-    time: String(row.run_time ?? ""),
-    rowsAffected: (row.rows_affected ?? null) as number | null,
-    rawStatus: row.status,
-    status: normalizeStatus(row.status),
-    details: row.details,
-    detailsMessage: extractDetailsMessage(row.details),
-    parsed: parseAuditDetails(row.details),
-  }));
+  const seasonWindow = await seasonWindowPromise;
+  const auditRows: AuditRow[] = audits.map((row: any) => {
+    const auditRow = {
+      id: `audit:${reportRowIdentity(row)}`,
+      jobName: String(row.job_name ?? ""),
+      time: String(row.run_time ?? ""),
+      rowsAffected: (row.rows_affected ?? null) as number | null,
+      rawStatus: row.status,
+      status: normalizeStatus(row.status),
+      continued: String(row.status ?? "").trim().toLowerCase() === "continued",
+      details: row.details,
+      detailsMessage: extractDetailsMessage(row.details),
+      parsed: parseAuditDetails(row.details),
+    };
+    return { ...auditRow, expectedWorkWarning: expectedWorkWarning(auditRow, seasonWindow) };
+  });
   const lastKnownSuccessMap = buildLastKnownSuccessMap(auditRows);
   const auditGapGraceStartedAt =
     auditRows
@@ -1582,9 +1714,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   })), sinceDate, now);
   const runAssignments = assignObservations(scheduledJobs, runRows, sinceDate, now);
 
+  const today = now.toISOString().slice(0, 10);
   const jobSummaries: JobSummary[] = scheduledJobs
     .map((job) => {
-      const matchingAudits = auditRows.filter((row) => auditAssignments.get(row.id) === job.key)
+      const assignedAudits = auditRows.filter((row) => auditAssignments.get(row.id) === job.key);
+      // A planned continuation is resumed by extra calls to the same route; keep
+      // those calls, including the one that completes the run, with this job.
+      const continuedDays = new Set(assignedAudits.filter((row) => row.continued).map((row) => utcDay(row.time)));
+      const followUpAudits = continuedDays.size === 0 || !job.routePath ? [] : auditRows.filter((row) =>
+        !auditAssignments.has(row.id) && row.parsed.routePath === job.routePath && continuedDays.has(utcDay(row.time)));
+      const matchingAudits = [...assignedAudits, ...followUpAudits]
         .sort((a, b) => Date.parse(b.time) - Date.parse(a.time) || a.id.localeCompare(b.id));
       const matchingRuns = runRows.filter((row) => runAssignments.get(row.id) === job.key)
         .sort((a, b) => Date.parse(b.time) - Date.parse(a.time) || a.id.localeCompare(b.id));
@@ -1617,15 +1756,22 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           : preferAudit
             ? (lastAudit?.status ?? "unknown")
             : (lastRun?.status ?? "unknown");
-      const observedStatus: ReportJobStatus =
+      const observedStatus: ObservedJobStatus =
         lastAudit && preferAudit ? classifyAuditStatus(lastAudit)
           : lastRun ? classifyCronStatus(lastRun) : rawLastStatus;
       // A SQL HTTP receipt proves submission only; partial reads cannot prove
       // the latest success. Keep known failures/disabled receipts visible.
-      const lastStatus: ReportJobStatus =
+      const coveredStatus: ReportJobStatus =
         observedStatus === "failure" || observedStatus === "disabled" ? observedStatus
           : !hasFullCoverageForMissing || (!lastAudit && job.method !== "SQL" && lastRun)
             ? "unknown" : observedStatus;
+      const continuations = assessContinuations(matchingAudits, today);
+      const lastAuditDay = lastAudit ? utcDay(lastAudit.time) : null;
+      const lastStatus: ReportJobStatus =
+        coveredStatus === "unknown" && hasFullCoverageForMissing && preferAudit &&
+          lastAudit?.continued && lastAuditDay === today
+          ? "continued"
+          : coveredStatus;
 
       const lastStatusSource: JobSummary["lastStatusSource"] =
         !lastAudit && !lastRun
@@ -1736,13 +1882,28 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         notes.push(noOutputWarning);
         missingObservationWarnings.push(noOutputWarning);
       }
+      if (lastAudit?.expectedWorkWarning) {
+        notes.push(lastAudit.expectedWorkWarning);
+        missingObservationWarnings.push(lastAudit.expectedWorkWarning);
+      }
       const incompleteYahooWarning = lastAudit ? incompleteYahooReceiptWarning(lastAudit) : null;
       if (incompleteYahooWarning) {
         notes.push(incompleteYahooWarning);
         missingObservationWarnings.push(incompleteYahooWarning);
       }
+      if (lastStatus === "continued") {
+        notes.push(`In progress / continued: the latest call stopped at its runtime budget and will resume (${continuations.callsByDay.get(today) ?? 1} continued call(s) today). Flagged only if the UTC day ends without a completing run.`);
+      } else if (lastStatus === "success" && lastAuditDay && continuations.callsByDay.has(lastAuditDay)) {
+        notes.push(`Completed after ${continuations.callsByDay.get(lastAuditDay)} continued call(s).`);
+      }
+      for (const { day, calls } of continuations.incompleteDays) {
+        const warning = `Continuation incomplete: ${day} UTC ended after ${calls} continued call(s) without a completing run.`;
+        notes.push(warning);
+        missingObservationWarnings.push(warning);
+      }
       if (lastStatus === "missing") {
         notes.push("No cron or audit entry matched this scheduled slot.");
+        if (job.method !== "SQL") notes.push(KILLED_AT_LIMIT_WARNING);
       }
       if (lastStatus === "disabled") {
         notes.push(
@@ -1756,7 +1917,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         auditDataAvailable &&
         missingObservationWarnings.includes(ROUTE_AUDIT_MISSING_WARNING)
       ) {
-        notes.push(ROUTE_AUDIT_MISSING_WARNING);
+        notes.push(ROUTE_AUDIT_MISSING_WARNING, KILLED_AT_LIMIT_WARNING);
       }
       if (!lastAudit && !lastRun && !hasFullCoverageForMissing) {
         notes.push(
@@ -1861,7 +2022,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   );
 
   const unmatchedAuditRuns = auditRows
-    .filter((row) => !matchedAuditIds.has(row.id))
+    .filter((row) => !matchedAuditIds.has(row.id) && !row.continued)
     .map((row) =>
       buildRunDigestFromAudit(
         row,
@@ -1913,7 +2074,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         key: job.jobKey,
         label: job.route ?? job.displayName,
         jobName: job.displayName,
-        status: job.lastStatus === "missing" ? "unknown" : job.lastStatus,
+        // The email has no continued label; the note says "In progress / continued".
+        status: job.lastStatus === "missing" ? "unknown"
+          : job.lastStatus === "continued" ? "success" : job.lastStatus,
         runTime: job.lastRunDisplay,
         runTimeDisplay: job.lastRunDisplay,
         method: job.method === "UNKNOWN" ? null : job.method,
@@ -1970,6 +2133,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     )
     .map((job) => job.displayName);
 
+  const WARN_EXPECTED_WORK = jobSummaries
+    .filter((job) => job.missingObservationWarnings.includes(EXPECTED_WORK_WARNING))
+    .map((job) => job.displayName);
+
   const missingObservationJobs = jobSummaries
     .filter((job) => job.missingObservationWarnings.length > 0)
     .map((job) => ({
@@ -2017,6 +2184,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     slowJobs: WARN_SLOW,
     partialFailureJobs: WARN_PARTIAL_FAILURE,
     missingObservationJobs,
+    expectedWorkJobs: WARN_EXPECTED_WORK,
+    seasonState: seasonWindow.state,
     yahooLifecycle,
   };
 
@@ -2038,8 +2207,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       runRows.filter((row) => classifyCronStatus(row) === "failure").length -
       [...auditBriefings, ...notableUnscheduledRuns].filter((row) => row.status === "failure").length),
     auditUnknown: auditRows.filter(
-      (row) => classifyAuditStatus(row) === "unknown"
+      (row) => !row.continued && classifyAuditStatus(row) === "unknown"
     ).length,
+    auditContinued: auditRows.filter((row) => row.continued).length,
     auditDisabled: auditRows.filter(
       (row) => classifyAuditStatus(row) === "disabled"
     ).length,
@@ -2050,6 +2220,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     jobsMissingLast: jobSummaries.filter((job) => job.lastStatus === "missing")
       .length,
     jobsUnknownLast: jobSummaries.filter((job) => job.lastStatus === "unknown")
+      .length,
+    jobsContinuedLast: jobSummaries.filter((job) => job.lastStatus === "continued")
       .length,
     jobsDisabledLast: jobSummaries.filter(
       (job) => job.lastStatus === "disabled"
@@ -2066,6 +2238,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     warnSlow: WARN_SLOW.length,
     warnPartialFailure: WARN_PARTIAL_FAILURE.length,
     warnMissingAudit: WARN_MISSING_AUDIT.length,
+    warnExpectedWork: WARN_EXPECTED_WORK.length,
   };
 
   const shouldRenderCronReport =

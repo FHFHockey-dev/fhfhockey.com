@@ -324,6 +324,7 @@ vi.mock("lib/supabase/server", () => ({
 }));
 
 import handler, {
+  durableSourceRejectionCutoffDate,
   previousUtcDate,
 } from "../../../../../pages/api/v1/db/ingest-projection-inputs";
 
@@ -724,6 +725,224 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
     ]);
     expect(acquireProjectionPipelineLeaseMock).not.toHaveBeenCalled();
     expect(advanceProjectionPipelineLeaseMock).not.toHaveBeenCalled();
+  });
+
+  it("isolates per-game shift source rejections and continues explicit runs", async () => {
+    buildShiftStrengthUpsertsMock.mockImplementation(
+      (gameId: number, _pbp: any, rows: any[]) => {
+        if (gameId === 102) {
+          throw new Error(`No NHL shift rows returned for game ${gameId}`);
+        }
+        if (gameId === 104) {
+          throw new Error(
+            `Shift clock/duration mismatch for game ${gameId}, player 8479979`,
+          );
+        }
+        return Array.from(new Set(rows.map((row) => row.playerId))).map(
+          (playerId) => ({ game_id: gameId, player_id: playerId }),
+        );
+      },
+    );
+    const req: any = {
+      method: "POST",
+      query: { startDate: "2026-03-20", endDate: "2026-03-20" },
+      body: {},
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: false,
+      gamesTotal: 7,
+      gamesProcessed: 5,
+      skipped: 2,
+      skipReasons: { sourceDataRejected: 2, gamecenterFeedUnavailable: 0 },
+      failedRows: 2,
+      lastCompletedGameId: 107,
+      nextGameId: null,
+      errors: [
+        {
+          gameId: 102,
+          date: "2026-03-20",
+          stage: "precheck_shifts",
+          message: "No NHL shift rows returned for game 102",
+          isolated: true,
+        },
+        {
+          gameId: 104,
+          date: "2026-03-20",
+          stage: "precheck_shifts",
+          message: "Shift clock/duration mismatch for game 104, player 8479979",
+          isolated: true,
+        },
+      ],
+    });
+    expect(
+      persistProjectionGameInputsMock.mock.calls.map(
+        ([call]) => call.payload.gameId,
+      ),
+    ).toEqual([101, 103, 105, 106, 107]);
+    expect(captureProjectionRawSourceSnapshotsMock).toHaveBeenCalledTimes(5);
+    expect(acquireProjectionPipelineLeaseMock).not.toHaveBeenCalled();
+  });
+
+  it("does not isolate database failures during the shift precheck", async () => {
+    const classify = await import(
+      "lib/projections/shiftChartCompletenessServer"
+    );
+    const spy = vi
+      .spyOn(classify, "classifyStoredShiftChartStrengthGame")
+      .mockRejectedValueOnce(new Error("shift_charts read failed"));
+    const req: any = {
+      method: "POST",
+      query: { startDate: "2026-03-20", endDate: "2026-03-20" },
+      body: {},
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+    spy.mockRestore();
+
+    expect(res.body).toMatchObject({
+      success: false,
+      skipped: 0,
+      nextGameId: 101,
+      errors: [
+        {
+          gameId: 101,
+          stage: "precheck_shifts",
+          message: "shift_charts read failed",
+        },
+      ],
+    });
+    expect(res.body.errors[0].isolated).toBeUndefined();
+    expect(persistProjectionGameInputsMock).not.toHaveBeenCalled();
+  });
+
+  it("moves the durable cursor past an aged source rejection and completes the slate", async () => {
+    buildShiftStrengthUpsertsMock.mockImplementation(
+      (gameId: number, _pbp: any, rows: any[]) => {
+        if (gameId === 103) {
+          throw new Error(`No NHL shift rows returned for game ${gameId}`);
+        }
+        return Array.from(new Set(rows.map((row) => row.playerId))).map(
+          (playerId) => ({ game_id: gameId, player_id: playerId }),
+        );
+      },
+    );
+    const req: any = { method: "POST", query: {}, body: {} };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.body).toMatchObject({
+      success: false,
+      gamesProcessed: 6,
+      skipped: 1,
+      skipReasons: { sourceDataRejected: 1 },
+      errors: [
+        expect.objectContaining({
+          gameId: 103,
+          stage: "precheck_shifts",
+          isolated: true,
+        }),
+      ],
+    });
+    expect(
+      advanceProjectionPipelineLeaseMock.mock.calls.map(
+        ([call]) => call.nextCursorGameId,
+      ),
+    ).toEqual([102, 103, 104, 105, 106, 107]);
+    expect(finishProjectionPipelineLeaseMock).toHaveBeenCalledWith(
+      expect.objectContaining({ outcome: "complete" }),
+    );
+  });
+
+  it("holds the durable cursor on a source rejection inside the grace window", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-03-21T10:00:00Z"));
+    try {
+      expect(durableSourceRejectionCutoffDate()).toBe("2026-03-19");
+      buildShiftStrengthUpsertsMock.mockImplementation(
+        (gameId: number, _pbp: any, rows: any[]) => {
+          if (gameId === 103) {
+            throw new Error(`No NHL shift rows returned for game ${gameId}`);
+          }
+          return Array.from(new Set(rows.map((row) => row.playerId))).map(
+            (playerId) => ({ game_id: gameId, player_id: playerId }),
+          );
+        },
+      );
+      const req: any = { method: "POST", query: {}, body: {} };
+      const res = createMockRes();
+
+      await handler(req, res);
+
+      expect(res.body).toMatchObject({
+        success: false,
+        skipped: 0,
+        nextGameId: 103,
+        lastCompletedGameId: 102,
+        errors: [
+          expect.objectContaining({
+            gameId: 103,
+            stage: "precheck_shifts",
+            message: "No NHL shift rows returned for game 103",
+          }),
+        ],
+      });
+      expect(res.body.errors[0].isolated).toBeUndefined();
+      expect(advanceProjectionPipelineLeaseMock).toHaveBeenCalledTimes(2);
+      expect(finishProjectionPipelineLeaseMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          outcome: "failed",
+          failureCode: "projection_input_failed",
+          lease: expect.objectContaining({ cursorGameId: 103 }),
+        }),
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("fails the durable slate when a later game blocks after an isolated one", async () => {
+    buildShiftStrengthUpsertsMock.mockImplementation(
+      (gameId: number, _pbp: any, rows: any[]) => {
+        if (gameId === 102) {
+          throw new Error(`No NHL shift rows returned for game ${gameId}`);
+        }
+        return Array.from(new Set(rows.map((row) => row.playerId))).map(
+          (playerId) => ({ game_id: gameId, player_id: playerId }),
+        );
+      },
+    );
+    persistProjectionGameInputsMock.mockImplementationOnce(
+      persistProjectionGameInputsMock.getMockImplementation() as any,
+    );
+    persistProjectionGameInputsMock.mockRejectedValueOnce(
+      new Error("transaction rejected"),
+    );
+    const req: any = { method: "POST", query: {}, body: {} };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.body).toMatchObject({
+      success: false,
+      nextGameId: 103,
+      errors: [
+        expect.objectContaining({ gameId: 102, isolated: true }),
+        expect.objectContaining({ gameId: 103, stage: "persist_inputs" }),
+      ],
+    });
+    expect(finishProjectionPipelineLeaseMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        outcome: "failed",
+        lease: expect.objectContaining({ cursorGameId: 103 }),
+      }),
+    );
   });
 
   it("accepts the returned game cursor and continues deterministically", async () => {
@@ -1162,12 +1381,14 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
 
     expect(res.body).toMatchObject({
       success: false,
-      nextGameId: 101,
+      nextGameId: 102,
+      lastCompletedGameId: null,
       errors: [
         expect.objectContaining({
           gameId: 101,
           stage: "precheck_shifts",
           message: "shift timeline is incomplete",
+          isolated: true,
         }),
       ],
     });

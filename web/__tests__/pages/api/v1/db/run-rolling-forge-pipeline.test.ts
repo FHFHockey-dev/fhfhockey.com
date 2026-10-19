@@ -25,8 +25,83 @@ const {
   gamesSelectMock,
   gamesGteMock,
   gamesLteMock,
-  gamesOrderMock
+  gamesOrderMock,
+  pipelineStateRows,
+  pipelineStateFrom,
+  pipelineStateRpc
 } = vi.hoisted(() => {
+  // In-memory projection_pipeline_state with the lease rules of
+  // advance_projection_pipeline_state_v1 that the pipeline relies on.
+  const pipelineStateRows = new Map<string, any>();
+  const rowKey = (pipeline: string, scope: string, operation: string) =>
+    `${pipeline}|${scope}|${operation}`;
+  const pipelineStateFrom = () => {
+    const filters: Record<string, unknown> = {};
+    const rows = () =>
+      [...pipelineStateRows.values()].filter((row) =>
+        Object.entries(filters).every(([key, value]) => row[key] === value)
+      );
+    const query: any = {
+      select: () => query,
+      eq: (column: string, value: unknown) => {
+        filters[column] = value;
+        return query;
+      },
+      maybeSingle: async () => ({ data: rows()[0] ?? null, error: null }),
+      then: (resolve: any, reject: any) =>
+        Promise.resolve({ data: rows(), error: null }).then(resolve, reject)
+    };
+    return query;
+  };
+  const pipelineStateRpc = vi.fn(async (_name: string, a: any) => {
+    const key = rowKey(a.p_pipeline_key, a.p_scope_key, a.p_operation_key);
+    const current = pipelineStateRows.get(key);
+    const fail = (message: string) => ({ data: null, error: { message } });
+    if (!current && (a.p_transition !== "acquire" || a.p_expected_revision !== 0)) {
+      return fail("PROJECTION_PIPELINE_STATE_ABSENT");
+    }
+    if (current) {
+      if (current.revision !== a.p_expected_revision) {
+        return fail("PROJECTION_PIPELINE_REVISION_MISMATCH");
+      }
+      if (a.p_transition === "acquire" && current.status === "complete") {
+        return { data: [current], error: null };
+      }
+      if (
+        a.p_transition === "acquire" &&
+        current.status === "running" &&
+        Date.parse(current.lease_expires_at) > Date.now() &&
+        current.lease_owner !== a.p_lease_owner
+      ) {
+        return fail("PROJECTION_PIPELINE_LEASE_HELD");
+      }
+      if (
+        a.p_transition !== "acquire" &&
+        (current.status !== "running" || current.lease_owner !== a.p_lease_owner)
+      ) {
+        return fail("PROJECTION_PIPELINE_LEASE_MISMATCH");
+      }
+    }
+    const running = a.p_next_status === "running";
+    const row = {
+      pipeline_key: a.p_pipeline_key,
+      scope_key: a.p_scope_key,
+      operation_key: a.p_operation_key,
+      revision: (current?.revision ?? 0) + 1,
+      status: a.p_next_status,
+      cursor_game_id: a.p_next_cursor_game_id,
+      cursor_date: a.p_next_cursor_date,
+      range_start_date: a.p_range_start_date,
+      range_end_date: a.p_range_end_date,
+      lease_owner: running ? a.p_lease_owner : null,
+      lease_expires_at: running ? a.p_lease_expires_at : null,
+      last_error: a.p_next_status === "failed" ? a.p_last_error : null,
+      updated_at: new Date().toISOString()
+    };
+    pipelineStateRows.set(key, row);
+    return { data: [row], error: null };
+  });
+
   const successResponder = vi.fn(async (_req: any, res: any) => {
     res.status(200).json({ success: true });
   });
@@ -64,7 +139,10 @@ const {
     gamesSelectMock,
     gamesGteMock,
     gamesLteMock,
-    gamesOrderMock
+    gamesOrderMock,
+    pipelineStateRows,
+    pipelineStateFrom,
+    pipelineStateRpc
   };
 });
 
@@ -81,8 +159,11 @@ vi.mock("lib/supabase/server", () => ({
     from: vi.fn((table: string) =>
       table === "cron_job_audit"
         ? { insert: auditInsertMock }
-        : { select: gamesSelectMock }
-    )
+        : table === "projection_pipeline_state"
+          ? pipelineStateFrom()
+          : { select: gamesSelectMock }
+    ),
+    rpc: pipelineStateRpc
   }
 }));
 
@@ -151,6 +232,8 @@ function createMockRes() {
 describe("/api/v1/db/run-rolling-forge-pipeline", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useRealTimers();
+    pipelineStateRows.clear();
     process.env.CRON_SECRET = "test-secret";
   });
 
@@ -542,5 +625,245 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         status: "success"
       })
     ]);
+  });
+
+  describe("resumable scheduled run", () => {
+    const scheduledUrl =
+      "/api/v1/db/run-rolling-forge-pipeline?mode=daily_incremental&includeDownstream=true&includeAccuracy=false&stopOnFailure=false";
+    const invokeScheduled = async (at: string) => {
+      vi.setSystemTime(new Date(at));
+      const req: any = {
+        method: "GET",
+        query: {
+          mode: "daily_incremental",
+          includeDownstream: "true",
+          includeAccuracy: "false",
+          stopOnFailure: "false"
+        },
+        url: scheduledUrl
+      };
+      const res = createMockRes();
+      await handler(req, res);
+      return res;
+    };
+    const slowSuccess = (ms: number) => async (_req: any, res: any) => {
+      vi.setSystemTime(Date.now() + ms);
+      res.status(200).json({ success: true });
+    };
+    const stageStatus = (res: any, id: string) =>
+      res.body.stages.find((stage: any) => stage.id === id);
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+    });
+
+    it("completes every stage in order across several invocations, continuing a partial rolling step", async () => {
+      updatePlayersMock.mockImplementationOnce(slowSuccess(60_000));
+      updateWgoTotalsMock.mockImplementationOnce(slowSuccess(40_000));
+      updateRollingPlayerAveragesMock.mockImplementationOnce(
+        async (_req: any, res: any) => {
+          res.status(207).json({
+            success: false,
+            operationStatus: "partial",
+            resume: {
+              required: true,
+              nextResumeFrom: 8478402,
+              request: { startDate: "2026-10-18", resumeFrom: 8478402 }
+            }
+          });
+        }
+      );
+
+      // 1: two slow stages spend the start budget; the rest wait.
+      const first = await invokeScheduled("2026-10-19T10:05:00.000Z");
+      expect(first.statusCode).toBe(207);
+      expect(first.body.success).toBe(false);
+      expect(first.body.termination).toMatchObject({
+        state: "continuation_required",
+        resumeRequired: true,
+        runKey: "daily_incremental:2026-10-19",
+        nextStageId: "contextual_builders",
+        reason: "runtime_budget",
+        stagesRun: 2
+      });
+      expect(stageStatus(first, "upstream_skater_sources").status).toBe("success");
+      expect(stageStatus(first, "contextual_builders").status).toBe("pending");
+      expect(updateLineCombinationsMock).not.toHaveBeenCalled();
+
+      // 2: the rolling step stops at its budget; that is a continuation, not a failure.
+      const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
+      expect(second.statusCode).toBe(207);
+      expect(second.body.termination).toMatchObject({
+        state: "continuation_required",
+        nextStageId: "rolling_player_recompute",
+        reason: "stage_partial",
+        rollingResumeFrom: 8478402
+      });
+      expect(second.body.failureSummary).toMatchObject({
+        failedStepCount: 0,
+        firstFailure: null
+      });
+      expect(stageStatus(second, "core_entity_freshness")).toMatchObject({
+        status: "success",
+        completedEarlier: true
+      });
+      expect(stageStatus(second, "rolling_player_recompute").status).toBe("partial");
+      expect(stageStatus(second, "projection_input_ingest").status).toBe("pending");
+      expect(updateGamesMock).toHaveBeenCalledTimes(1);
+      expect(ingestProjectionInputsMock).not.toHaveBeenCalled();
+      const firstRollingQuery =
+        updateRollingPlayerAveragesMock.mock.calls[0]?.[0]?.query;
+      expect(firstRollingQuery).toMatchObject({
+        startDate: "2026-10-18",
+        endDate: "2026-10-18",
+        executionProfile: "daily_incremental"
+      });
+      expect(Number(firstRollingQuery.maxRuntimeMs)).toBeGreaterThanOrEqual(30_000);
+      expect(Number(firstRollingQuery.maxRuntimeMs)).toBeLessThanOrEqual(180_000);
+      expect(firstRollingQuery).not.toHaveProperty("resumeFrom");
+
+      // 3: the rolling step resumes after its cursor and the run completes.
+      const third = await invokeScheduled("2026-10-19T10:15:00.000Z");
+      expect(third.statusCode).toBe(200);
+      expect(third.body.success).toBe(true);
+      expect(third.body.termination).toMatchObject({
+        state: "completed",
+        resumeRequired: false,
+        nextStageId: null
+      });
+      expect(updateRollingPlayerAveragesMock.mock.calls[1]?.[0]?.query).toMatchObject({
+        startDate: "2026-10-18",
+        endDate: "2026-10-18",
+        resumeFrom: "8478402"
+      });
+      expect(runProjectionV2Mock.mock.calls[0]?.[0]?.query).toEqual({
+        date: "2026-10-19"
+      });
+      const order = [
+        updateGamesMock,
+        updateNstGamelogMock,
+        updateWgoTotalsMock,
+        updateLineCombinationsMock,
+        updateRollingPlayerAveragesMock,
+        ingestProjectionInputsMock,
+        shiftChartsMock,
+        buildProjectionDerivedMock,
+        updateGoalieProjectionsV2Mock,
+        runProjectionV2Mock
+      ].flatMap((mock) => mock.mock.invocationCallOrder);
+      expect(order).toEqual([...order].sort((a, b) => a - b));
+      expect(order).toHaveLength(11);
+
+      // 4: a later scheduled call finds the run complete and does no work.
+      const fourth = await invokeScheduled("2026-10-19T10:20:00.000Z");
+      expect(fourth.statusCode).toBe(200);
+      expect(fourth.body.termination).toMatchObject({
+        state: "completed",
+        stagesRun: 0
+      });
+      expect(updateGamesMock).toHaveBeenCalledTimes(1);
+      expect(runProjectionV2Mock).toHaveBeenCalledTimes(1);
+    });
+
+    it("stops on a real stage failure, retries it once on the next invocation, then stays stopped", async () => {
+      const failRelationships = async (_req: any, res: any) => {
+        res.status(500).json({ success: false, message: "relationship failed" });
+      };
+      shiftChartsMock
+        .mockImplementationOnce(failRelationships)
+        .mockImplementationOnce(failRelationships);
+
+      const first = await invokeScheduled("2026-10-19T10:05:00.000Z");
+      expect(first.statusCode).toBe(207);
+      expect(first.body.termination).toMatchObject({
+        state: "stopped_on_blocking_failure",
+        resumeRequired: true,
+        nextStageId: "projection_relationship_build",
+        reason: "retry_on_next_invocation"
+      });
+      expect(first.body.failureSummary.failedStepCount).toBe(1);
+      expect(stageStatus(first, "projection_derived_build").status).toBe("skipped");
+      expect(buildProjectionDerivedMock).not.toHaveBeenCalled();
+
+      const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
+      expect(second.statusCode).toBe(207);
+      expect(shiftChartsMock).toHaveBeenCalledTimes(2);
+      expect(ingestProjectionInputsMock).toHaveBeenCalledTimes(1);
+      expect(second.body.termination).toMatchObject({
+        state: "stopped_on_blocking_failure",
+        resumeRequired: false,
+        reason: "attempts_exhausted"
+      });
+
+      const third = await invokeScheduled("2026-10-19T10:15:00.000Z");
+      expect(third.statusCode).toBe(207);
+      expect(third.body.success).toBe(false);
+      expect(shiftChartsMock).toHaveBeenCalledTimes(2);
+      expect(stageStatus(third, "projection_relationship_build")).toMatchObject({
+        status: "failed",
+        completedEarlier: true
+      });
+      expect(runProjectionV2Mock).not.toHaveBeenCalled();
+    });
+
+    it("does not run a stage another invocation holds", async () => {
+      pipelineStateRows.set(
+        "rolling_forge_pipeline|daily_incremental:2026-10-19|core_entity_freshness",
+        {
+        pipeline_key: "rolling_forge_pipeline",
+        scope_key: "daily_incremental:2026-10-19",
+        operation_key: "core_entity_freshness",
+        revision: 1,
+        status: "running",
+        cursor_game_id: null,
+        cursor_date: "2026-10-19",
+        range_start_date: "2026-10-19",
+        range_end_date: "2026-10-19",
+        lease_owner: "other-invocation",
+        lease_expires_at: "2026-10-19T10:08:00.000Z",
+        last_error: null,
+        updated_at: "2026-10-19T10:04:00.000Z"
+        }
+      );
+
+      const res = await invokeScheduled("2026-10-19T10:05:30.000Z");
+
+      expect(res.statusCode).toBe(207);
+      expect(res.body.termination).toMatchObject({
+        state: "continuation_required",
+        reason: "stage_in_progress_elsewhere",
+        nextStageId: "core_entity_freshness"
+      });
+      expect(updateGamesMock).not.toHaveBeenCalled();
+    });
+  });
+
+  it("reports a partial rolling step in an explicit-date run as unfinished, not failed", async () => {
+    updateRollingPlayerAveragesMock.mockImplementationOnce(
+      async (_req: any, res: any) => {
+        res.status(207).json({
+          success: false,
+          operationStatus: "partial",
+          resume: { required: true, nextResumeFrom: 8477000, request: {} }
+        });
+      }
+    );
+    const req: any = {
+      method: "GET",
+      query: { mode: "daily_incremental", date: "2026-03-14" },
+      url: "/api/v1/db/run-rolling-forge-pipeline?mode=daily_incremental&date=2026-03-14"
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(207);
+    expect(res.body.termination).toMatchObject({
+      state: "continuation_required",
+      reason: "stage_partial",
+      rollingResumeFrom: 8477000
+    });
+    expect(res.body.failureSummary.failedStepCount).toBe(0);
+    expect(ingestProjectionInputsMock).not.toHaveBeenCalled();
   });
 });

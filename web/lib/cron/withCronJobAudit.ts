@@ -6,7 +6,9 @@ import {
 } from "lib/cron/timingContract";
 import supabase from "lib/supabase/server";
 
-type AuditStatus = "success" | "failure";
+// "continued" marks a planned partial run: the route stopped at its runtime
+// budget and handed back a cursor for the next call. It is not a failure.
+type AuditStatus = "success" | "failure" | "continued";
 
 type CronAuditRow = {
   job_name: string;
@@ -143,6 +145,30 @@ function inferFailure(body: unknown): boolean {
   return false;
 }
 
+/**
+ * A 207 that stopped at a runtime budget on purpose: the body asks for a
+ * continuation (`termination.state`, `resume.request`, or a partial daily
+ * `resumeCursor` read by `continueDailyWindow`) and lists no failures.
+ */
+function isPlannedContinuation(statusCode: number, body: unknown): boolean {
+  if (statusCode !== 207 || !body || typeof body !== "object" || Array.isArray(body))
+    return false;
+  const b: any = body;
+  const requested =
+    b.termination?.state === "continuation_required" ||
+    (b.resume?.request != null && typeof b.resume.request === "object") ||
+    b.resumeCursor?.status === "partial" ||
+    b.continueDailyWindow === true;
+  if (!requested) return false;
+  if (typeof b.error === "string" && b.error.trim()) return false;
+  if (typeof b.failedRequests === "number" && b.failedRequests > 0) return false;
+  // The FORGE pipeline counts failed steps here; nested child receipts below
+  // it are not failures of this run.
+  if (typeof b.failureSummary?.failedStepCount === "number")
+    return b.failureSummary.failedStepCount === 0;
+  return (inferFailedRows(body) ?? 0) === 0;
+}
+
 function defaultJobName(req: NextApiRequest): string {
   const url = req.url ?? "";
   const pathOnly = url.split("?")[0]?.trim();
@@ -213,11 +239,13 @@ export function withCronJobAudit(
       ? inferRowsAffected(capturedBody)
       : null;
     const failedRows = recordRowMetrics ? inferFailedRows(capturedBody) : null;
+    const plannedContinuation =
+      thrown == null && isPlannedContinuation(statusCode, capturedBody);
     const inferredFailure =
-      thrown != null ||
+      !plannedContinuation && (thrown != null ||
       statusCode === 207 ||
       statusCode >= 400 ||
-      inferFailure(capturedBody);
+      inferFailure(capturedBody));
 
     if (
       opts?.includeFinalAuditReceipt &&
@@ -252,7 +280,11 @@ export function withCronJobAudit(
 
     const row: CronAuditRow = {
       job_name: jobName,
-      status: inferredFailure ? "failure" : "success",
+      status: plannedContinuation
+        ? "continued"
+        : inferredFailure
+          ? "failure"
+          : "success",
       rows_affected: rowsUpserted,
       details: {
         method: req.method ?? null,

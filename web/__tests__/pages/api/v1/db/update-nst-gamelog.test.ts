@@ -21,6 +21,7 @@ const { db, fetchNstTextByUrlMock, fetchCurrentSeasonMock } = vi.hoisted(() => {
 
 vi.mock("dotenv", () => ({ default: { config: vi.fn() } }));
 vi.mock("utils/adminOnlyMiddleware", () => ({ default: (handler: unknown) => handler }));
+vi.mock("lib/cron/nhlOffSeason", () => ({ withNhlOffSeasonSkip: (handler: unknown) => handler }));
 vi.mock("utils/fetchCurrentSeason", () => ({ fetchCurrentSeason: fetchCurrentSeasonMock }));
 vi.mock("lib/nst/client", async (importOriginal) => ({
   ...await importOriginal<typeof import("lib/nst/client")>(),

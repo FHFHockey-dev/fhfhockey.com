@@ -9,6 +9,7 @@ const {
   resendSendMock,
   readFileMock,
   cronAuditEmailMock,
+  loadNhlSeasonWindowMock,
 } = vi.hoisted(() => ({
   cronJobReportSelectMock: vi.fn(),
   cronJobAuditSelectMock: vi.fn(),
@@ -16,6 +17,7 @@ const {
   resendSendMock: vi.fn(),
   readFileMock: vi.fn(),
   cronAuditEmailMock: vi.fn((_props: any) => null),
+  loadNhlSeasonWindowMock: vi.fn(async (): Promise<any> => ({ state: "unknown", today: "2026-03-20", reason: "test default" })),
 }));
 
 // Model PostgREST's bounded range and exact total without making live requests.
@@ -80,6 +82,10 @@ vi.mock("fs/promises", () => ({
   default: {
     readFile: readFileMock,
   },
+}));
+
+vi.mock("lib/cron/nhlOffSeason", () => ({
+  loadNhlSeasonWindow: loadNhlSeasonWindowMock,
 }));
 
 vi.mock("utils/adminOnlyMiddleware", () => ({
@@ -1156,6 +1162,67 @@ ${JSON.stringify(jobs)}
     expect(briefing.reason).toContain("produced no output");
   });
 
+  describe("planned continuations", () => {
+    const rollingSchedule = (time: string) =>
+      `SELECT cron.schedule('update-rolling-player-averages','${time}',$$select net.http_get(url:='https://fhfhockey.com/api/v1/db/update-rolling-player-averages');$$);`;
+    const audit = (runTime: string, status: string, response: Record<string, unknown>) => ({
+      job_name: "update-rolling-player-averages", run_time: runTime, status,
+      details: { method: "GET", url: "/api/v1/db/update-rolling-player-averages", statusCode: status === "continued" ? 207 : 200, response },
+    });
+    const continued = { success: false, operationStatus: "partial", resume: { required: true, request: { resumeFrom: 8477000 } } };
+
+    beforeEach(() => {
+      cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+    });
+
+    it("shows a same-day continuation as in progress, not a failure", async () => {
+      readFileMock.mockResolvedValue(rollingSchedule("0 11 * * *"));
+      cronJobAuditSelectMock.mockResolvedValue({ data: [
+        audit("2026-03-20T11:00:05.000Z", "continued", continued),
+        audit("2026-03-20T11:04:10.000Z", "continued", continued),
+      ], error: null });
+      const res = createMockRes();
+      await handler({ method: "GET" } as any, res);
+      expect(res.body.counts).toMatchObject({ jobsContinuedLast: 1, jobsFailingLast: 0, jobsUnknownLast: 0,
+        auditFailures: 0, auditUnknown: 0, auditContinued: 2, unscheduledRuns: 0 });
+      const briefing = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits[0];
+      expect(briefing.status).toBe("success");
+      expect(briefing.reason).toContain("In progress / continued");
+      expect(briefing.reason).toContain("2 continued call(s) today");
+      expect(briefing.missingObservationWarnings.join(" ")).not.toContain("Continuation incomplete");
+    });
+
+    it("reports the completing call after continuations as the job's success", async () => {
+      readFileMock.mockResolvedValue(rollingSchedule("0 11 * * *"));
+      cronJobAuditSelectMock.mockResolvedValue({ data: [
+        audit("2026-03-20T11:00:05.000Z", "continued", continued),
+        audit("2026-03-20T11:04:10.000Z", "continued", continued),
+        audit("2026-03-20T11:08:30.000Z", "success", { success: true, rowsUpserted: 900 }),
+      ], error: null });
+      const res = createMockRes();
+      await handler({ method: "GET" } as any, res);
+      expect(res.body.counts).toMatchObject({ jobsOkLast: 1, jobsContinuedLast: 0, auditFailures: 0, unscheduledRuns: 0 });
+      const briefing = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits[0];
+      expect(briefing.status).toBe("success");
+      expect(briefing.reason).toContain("Completed after 2 continued call(s).");
+    });
+
+    it("flags a day that ended with only continuations and no completing run", async () => {
+      readFileMock.mockResolvedValue(rollingSchedule("0 13 * * *"));
+      cronJobAuditSelectMock.mockResolvedValue({ data: [
+        audit("2026-03-19T13:00:05.000Z", "continued", continued),
+        audit("2026-03-19T13:04:10.000Z", "continued", continued),
+      ], error: null });
+      const res = createMockRes();
+      await handler({ method: "GET" } as any, res);
+      expect(res.body.counts).toMatchObject({ jobsContinuedLast: 0, jobsUnknownLast: 1, jobsFailingLast: 0, auditFailures: 0 });
+      const briefing = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits[0];
+      expect(briefing.status).toBe("unknown");
+      expect(briefing.missingObservationWarnings).toContain(
+        "Continuation incomplete: 2026-03-19 UTC ended after 2 continued call(s) without a completing run.");
+    });
+  });
+
   it("excludes arrivals beyond the fixed window end", async () => {
     cronJobAuditSelectMock.mockResolvedValue({ data: [{ job_name: "future", run_time: "2026-03-20T12:11:00.000Z", status: "failure" }], error: null });
     const res = createMockRes();
@@ -1236,7 +1303,79 @@ ${JSON.stringify(jobs)}
     expect(cronAuditEmailMock.mock.calls[0][0].audits[0].lastKnownSuccessDisplay).toBeNull();
     expect(cronAuditEmailMock.mock.calls[0][0].audits[0].reason).toContain("produced no output");
   });
+  it("treats an NHL off-season skip as an expected pause, not missing output",async()=>{
+    readFileMock.mockResolvedValue(`SELECT cron.schedule('update-shift-charts','0 12 * * *',$$select net.http_get(url:='https://fhfhockey.com/api/v1/db/shift-charts');$$);`);
+    cronJobReportSelectMock.mockResolvedValue({data:[],error:null});
+    cronJobAuditSelectMock.mockResolvedValue({data:[{job_name:"update-shift-charts",run_time:"2026-03-20T12:01:00.000Z",status:"success",rows_affected:null,details:{method:"GET",url:"/api/v1/db/shift-charts",response:{success:true,skipped:true,outcome:"skipped",reason:"nhl_off_season",message:"Skipped: NHL off-season."}}}],error:null});
+    const res=createMockRes();await handler({method:"GET"} as any,res);
+    expect(res.body.counts.jobsOkLast).toBe(1);
+    expect(String(cronAuditEmailMock.mock.calls[0][0].audits[0].reason ?? "")).not.toContain("produced no output");
+  });
 
+
+  describe("silent-failure detection (A-19)", () => {
+    const ctpiSchedule = "SELECT cron.schedule('update-team-ctpi-daily','0 12 * * *',$$select net.http_get(url:='https://fhfhockey.com/api/v1/db/update-team-ctpi-daily');$$);";
+    const ctpiAudit = (rowsAffected: number | null, response: Record<string, unknown>) => ({ data: [{
+      job_name: "update-team-ctpi-daily", run_time: "2026-03-20T12:01:00.000Z", status: "success", rows_affected: rowsAffected,
+      details: { method: "GET", url: "/api/v1/db/update-team-ctpi-daily", statusCode: 200, durationMs: 1000, response } }], error: null });
+
+    it("warns, without failing, when an in-season game-data run reports 0 rows", async () => {
+      loadNhlSeasonWindowMock.mockResolvedValueOnce({ state: "in_season", today: "2026-03-20", seasonId: 20252026, activeFrom: "2025-09-20", activeUntil: "2026-06-20" });
+      readFileMock.mockResolvedValue(ctpiSchedule);
+      cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+      cronJobAuditSelectMock.mockResolvedValue(ctpiAudit(0, { success: true, rowsUpserted: 0 }));
+      const res = createMockRes();
+      await handler({ method: "GET" } as any, res);
+      expect(res.body.counts).toMatchObject({ jobsOkLast: 0, jobsUnknownLast: 1, jobsFailingLast: 0, auditFailures: 0, warnExpectedWork: 1 });
+      expect(res.body.warnings).toMatchObject({ seasonState: "in_season", expectedWorkJobs: ["update-team-ctpi-daily"] });
+      expect(cronAuditEmailMock.mock.calls[0][0].audits[0].reason).toContain("0 rows affected");
+      expect(resendSendMock.mock.calls[0][0].subject).toContain("⚠️");
+    });
+
+    it("infers 0 rows from the receipt when rows_affected is absent", async () => {
+      loadNhlSeasonWindowMock.mockResolvedValueOnce({ state: "in_season", today: "2026-03-20", seasonId: 20252026, activeFrom: "2025-09-20", activeUntil: "2026-06-20" });
+      readFileMock.mockResolvedValue(ctpiSchedule);
+      cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+      cronJobAuditSelectMock.mockResolvedValue(ctpiAudit(null, { success: true, rowsUpserted: 0 }));
+      const res = createMockRes();
+      await handler({ method: "GET" } as any, res);
+      expect(res.body.counts).toMatchObject({ jobsOkLast: 0, warnExpectedWork: 1 });
+    });
+
+    it("keeps an off-season skip an expected pause with no expected-work warning", async () => {
+      loadNhlSeasonWindowMock.mockResolvedValueOnce({ state: "off_season", today: "2026-07-20", lastSeasonId: 20252026, lastActiveUntil: "2026-06-20", nextSeasonId: null, resumesOn: null });
+      readFileMock.mockResolvedValue(ctpiSchedule);
+      cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+      cronJobAuditSelectMock.mockResolvedValue(ctpiAudit(0, { success: true, skipped: true, outcome: "skipped", reason: "nhl_off_season", message: "Skipped: NHL off-season." }));
+      const res = createMockRes();
+      await handler({ method: "GET" } as any, res);
+      expect(res.body.counts).toMatchObject({ jobsOkLast: 1, jobsUnknownLast: 0, warnExpectedWork: 0 });
+      expect(res.body.warnings.expectedWorkJobs).toEqual([]);
+    });
+
+    it("flags a scheduled run with no audit row as missing and notes a possible 240 s kill", async () => {
+      readFileMock.mockResolvedValue(ctpiSchedule);
+      cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+      cronJobAuditSelectMock.mockResolvedValue({ data: [], error: null });
+      const res = createMockRes();
+      await handler({ method: "GET" } as any, res);
+      expect(res.body.counts).toMatchObject({ jobsMissingLast: 1, jobsOkLast: 0 });
+      expect(res.body.warnings.missingObservationJobs[0].warnings.join(" ")).toContain("killed at the 240 s limit");
+      expect(cronAuditEmailMock.mock.calls[0][0].audits[0].reason).toContain("killed at the 240 s limit");
+      expect(resendSendMock.mock.calls[0][0].subject).toContain("1 missing");
+    });
+
+    it("notes a possible 240 s kill when the scheduler submitted but no audit row followed", async () => {
+      readFileMock.mockResolvedValue(ctpiSchedule);
+      cronJobReportSelectMock.mockResolvedValue({ data: [{ jobname: "update-team-ctpi-daily", scheduled_time: "2026-03-20T12:00:00.000Z", end_time: "2026-03-20T12:00:01.000Z",
+        status: "success", return_message: "OK", sql_text: "select net.http_get(url:='https://fhfhockey.com/api/v1/db/update-team-ctpi-daily');" }], error: null });
+      cronJobAuditSelectMock.mockResolvedValue({ data: [], error: null });
+      const res = createMockRes();
+      await handler({ method: "GET" } as any, res);
+      expect(res.body.counts).toMatchObject({ jobsOkLast: 0, warnMissingAudit: 1 });
+      expect(res.body.warnings.missingObservationJobs[0].warnings.join(" ")).toContain("killed at the 240 s limit");
+    });
+  });
 
   it("a single yesterday recurring receipt cannot prove latest slot is healthy",async()=>{
     readFileMock.mockResolvedValue(`SELECT cron.schedule('recurring-lines','*/25 * * * *',$$select net.http_post(url:='https://fhfhockey.com/api/v1/db/update-line-combinations?count=10');$$);`);

@@ -17,7 +17,7 @@ type QueryResult = {
   error: null;
 };
 
-function createQueryBuilder(resolver: () => QueryResult) {
+function createQueryBuilder(resolver: () => QueryResult, onEq?: (column: string, value: unknown) => void) {
   const state = {
     isHeadCount: false
   };
@@ -26,7 +26,8 @@ function createQueryBuilder(resolver: () => QueryResult) {
       state.isHeadCount = Boolean(options?.head);
       return builder;
     },
-    eq() {
+    eq(column: string, value: unknown) {
+      onEq?.(column, value);
       return builder;
     },
     lte() {
@@ -457,5 +458,44 @@ describe("/api/v1/forge/goalies", () => {
       candidateAsOfDate: "2026-02-06",
       candidateRowCount: 1
     });
+  });
+  it("skips failed and running runs when choosing the fallback goalie run", async () => {
+    const scanRows = [
+      { run_id: "run-failed", as_of_date: "2026-02-06", forge_runs: { status: "failed" } },
+      { run_id: "run-running", as_of_date: "2026-02-06", forge_runs: { status: "running" } },
+      { run_id: "run-121", as_of_date: "2026-02-05", forge_runs: { status: "succeeded" } }
+    ];
+    const prior = fromMock.getMockImplementation()!;
+    let projectionReads = 0;
+    const readRunIds: string[] = [];
+    fromMock.mockImplementation((table: string) => {
+      if (table === "forge_goalie_projections") {
+        projectionReads++;
+        if (projectionReads === 1) return createQueryBuilder(() => ({ data: [], error: null }));
+        if (projectionReads === 2) {
+          let runStatus: unknown;
+          return createQueryBuilder(
+            () => ({ data: scanRows.filter(row => runStatus === undefined || row.forge_runs.status === runStatus), error: null }),
+            (column, value) => { if (column === "forge_runs.status") runStatus = value; }
+          );
+        }
+        return createQueryBuilder(() => ({ data: [{ goalie_id: 5555, team_id: 3, opponent_team_id: 4,
+          players: { fullName: "Fallback Goalie" }, starter_probability: 0.6, uncertainty: {} }], error: null }),
+        (column, value) => { if (column === "run_id") readRunIds.push(String(value)); });
+      }
+      if (table === "forge_runs") {
+        let selectedRunId = "";
+        return createQueryBuilder(() => ({ data: { run_id: selectedRunId, status: "succeeded",
+          metrics: {} }, error: null }),
+        (column, value) => { if (column === "run_id") selectedRunId = String(value); });
+      }
+      return prior(table);
+    });
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({ runId: "run-121", asOfDate: "2026-02-05", fallbackApplied: true });
+    expect(readRunIds).toEqual(["run-121"]);
   });
 });

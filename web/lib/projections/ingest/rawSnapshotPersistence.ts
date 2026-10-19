@@ -184,7 +184,8 @@ export async function captureProjectionRawSourceSnapshots(args: {
     throw new Error("Projection raw snapshot has an invalid game scope");
   }
   if (
-    args.shiftPayload.source !== "json-api" ||
+    (args.shiftPayload.source !== "json-api" &&
+      args.shiftPayload.source !== "htmlreports") ||
     !Array.isArray(args.shiftPayload.data) ||
     args.shiftPayload.data.length === 0 ||
     args.shiftPayload.data.length > 20_000 ||
