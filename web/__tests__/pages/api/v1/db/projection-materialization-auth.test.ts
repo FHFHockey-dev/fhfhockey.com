@@ -29,7 +29,7 @@ describe("projection materialization route authorization", () => {
         'import adminOnly from "utils/adminOnlyMiddleware"',
       );
       expect(source).toMatch(
-        /export default withCronJobAudit\(\s*adminOnly\([A-Za-z][A-Za-z0-9]* as any\),\s*\{/,
+        /export default withCronJobAudit\(\s*adminOnly\((?:withNhlOffSeasonSkip\([A-Za-z][A-Za-z0-9]* as any\)|[A-Za-z][A-Za-z0-9]* as any)\),\s*\{/,
       );
     },
   );
