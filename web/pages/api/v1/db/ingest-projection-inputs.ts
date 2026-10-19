@@ -25,6 +25,11 @@ import {
 } from "lib/projections/ingest/shifts";
 import { captureProjectionRawSourceSnapshots } from "lib/projections/ingest/rawSnapshotPersistence";
 import {
+  persistCapturedGameNormalization,
+  type PlayByPlayPayload,
+  type ShiftChartsPayload,
+} from "lib/supabase/Upserts/nhlRawGamecenter.mjs";
+import {
   buildProjectionInputRpcPayload,
   persistProjectionGameInputs,
   readProjectionInputManifest,
@@ -96,6 +101,7 @@ type Result = {
       | "persist_inputs"
       | "verify_pbp"
       | "verify_shifts"
+      | "normalize_gamecenter"
       | "advance_cursor"
       | "finish_cursor";
     message: string;
@@ -188,6 +194,19 @@ async function hasCompleteShiftTotals(
       })
     ).status === "complete"
   );
+}
+
+async function hasCompleteGamecenterNormalization(
+  gameId: number,
+): Promise<boolean> {
+  assertSupabase();
+  const { data, error } = await supabase
+    .from("nhl_api_game_normalization_status")
+    .select("status")
+    .eq("game_id", gameId)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.status === "complete";
 }
 
 async function listGamesInRange(startDate: string, endDate: string) {
@@ -551,6 +570,7 @@ export async function ingestProjectionInputsHandler(
       | "persist_inputs"
       | "verify_pbp"
       | "verify_shifts"
+      | "normalize_gamecenter"
       | "advance_cursor" = "precheck_pbp";
     try {
       const gameId = g.id;
@@ -638,6 +658,25 @@ export async function ingestProjectionInputsHandler(
         throw new Error(
           `Shift-strength post-write verification failed for game ${gameId}`,
         );
+      }
+
+      // A changed upstream payload advances the shared snapshot head, which
+      // marks the Gamecenter normalization stale. Complete it from the same
+      // captured payloads; no later job revisits the game otherwise.
+      stage = "normalize_gamecenter";
+      if (!(await hasCompleteGamecenterNormalization(gameId))) {
+        await persistCapturedGameNormalization(supabase, {
+          gameId,
+          seasonId: Number(sharedPbp.season),
+          gameDate: sharedPbp.gameDate,
+          // Both are the unmodified provider JSON (`nhleFetchJson` and the raw
+          // shift pages), which carry `rosterSpots` and shift `id`; the local
+          // projection types only declare the fields their own readers use.
+          pbp: sharedPbp as unknown as PlayByPlayPayload,
+          pbpPayloadHash: rawSnapshots.pbp.payloadHash,
+          shiftPayload: shiftSnapshot.rawPayload as unknown as ShiftChartsPayload,
+          shiftPayloadHash: rawSnapshots.shifts.payloadHash,
+        });
       }
 
       result.gamesProcessed += 1;
