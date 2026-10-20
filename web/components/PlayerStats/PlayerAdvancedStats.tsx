@@ -90,7 +90,7 @@ export function PlayerAdvancedStats({
           />
         </div>
 
-        <div className={styles.chartWrapper}>
+        <div className={styles.advancedPanel}>
           <PlayerStatsChart
             gameLog={gameLog}
             playoffGameLog={playoffGameLog}
@@ -103,7 +103,7 @@ export function PlayerAdvancedStats({
       </div>
 
       <div className={styles.advancedGrid}>
-        <div className={styles.chartWrapper}>
+        <div className={styles.advancedPanel}>
           <PlayerRadarChart
             player={player}
             gameLog={gameLog}
