@@ -171,7 +171,7 @@ done
 
 # 4. Generated/cache paths must never ship in a candidate (R8 shipped a stray
 #    node_modules/.vite/vitest results.json via a worker-made patch).
-junk=$(git diff --name-only "$BASE" "$REV" | grep -E '(^|/)(node_modules|\.next[^/]*|\.vite)/' || true)
+junk=$(git diff --name-only --diff-filter=d "$BASE" "$REV" | grep -E '(^|/)(node_modules|\.next[^/]*|\.vite)/' || true)
 [ -n "$junk" ] && hit "generated/cache paths in candidate: $(echo $junk | tr '\n' ' ')"
 
 if [ "$fail" -eq 0 ]; then echo "G1 GUARD PASS  $(git rev-parse --short "$REV")"; else echo "G1 GUARD FAIL  $(git rev-parse --short "$REV")"; fi
