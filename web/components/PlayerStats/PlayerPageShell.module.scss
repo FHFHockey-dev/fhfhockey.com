@@ -1,0 +1,420 @@
+@use "styles/vars" as v;
+
+// Player page shell in the Roster Schedule Optimizer language: dark draft
+// canvas, bordered surfaces, a solid position rail on the identity bar, a dense
+// metric strip, pressed-state view switch and a compact control bar.
+// Patterns copied locally from RosterScheduleOptimizer.module.scss (.topbar,
+// .metrics, .viewSwitch, .controls) — candidates for a later shared extraction.
+
+.workspace {
+  width: 100%;
+  max-width: 1680px;
+  min-width: 0;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+  padding: v.$space-sm;
+  box-sizing: border-box;
+  background: v.$draft-canvas;
+  color: v.$text-primary;
+  font-family: v.$font-family-primary;
+}
+.workspace { @include v.draft-position-colors; }
+
+.workspace :is(button, a, input, summary):focus-visible {
+  outline: 2px solid v.$focus-color;
+  outline-offset: 2px;
+}
+
+// --- Identity bar -----------------------------------------------------------
+// The rail is the left border itself, so its ends follow the radius (no
+// "toenail" fragments).
+.topbar {
+  --position-color: #{v.$primary-color};
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: v.$space-md;
+  padding: v.$space-sm v.$space-md;
+  background: v.$draft-surface;
+  border: 1px solid var(--position-color);
+  border-left-width: 10px;
+  border-radius: v.$radius-md;
+}
+
+.headshot {
+  display: block;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: v.$draft-surface-raised;
+  border: 1px solid v.$draft-border;
+}
+
+.identity {
+  min-width: 0;
+}
+
+.eyebrow {
+  display: block;
+  margin-bottom: 2px;
+  color: v.$primary-color;
+  font-size: v.$font-size-xs;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.name {
+  margin: 0;
+  color: v.$color-white;
+  font: 700 clamp(1.25rem, 2.2vw, 1.6rem) / 1.15 v.$font-family-primary;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px v.$space-sm;
+  margin: v.$space-xs 0 0;
+  padding: 0;
+  list-style: none;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.positionChip {
+  padding: 1px v.$space-xs;
+  border-radius: v.$radius-xs;
+  background: var(--position-color);
+  color: v.$color-neutral-950;
+  font-weight: 700;
+}
+
+.number {
+  color: v.$text-primary;
+  font-family: v.$font-family-numbers;
+}
+
+.topbarActions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: v.$space-xs;
+  min-width: 0;
+  width: min(280px, 100%);
+}
+
+.backLink {
+  align-self: flex-start;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  text-decoration: none;
+
+  &:hover {
+    color: v.$primary-color;
+  }
+}
+
+.search {
+  min-width: 0;
+}
+
+// --- Metric strip -----------------------------------------------------------
+// One row on desktop; even rows below so no tile is orphaned.
+.metrics {
+  --metric-count: 8;
+  display: grid;
+  grid-template-columns: repeat(var(--metric-count), minmax(0, 1fr));
+  gap: v.$space-sm;
+}
+
+@media (max-width: 1100px) {
+  .metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .metrics[data-count="6"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.metric {
+  --metric-color: #{v.$primary-color};
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  padding: v.$space-xs v.$space-sm;
+  background: v.$draft-surface;
+  border: 1px solid var(--metric-color);
+  border-left-width: 6px;
+  border-radius: v.$radius-md;
+}
+
+.metric[data-tone="volume"] { --metric-color: #{v.$color-teal-500}; }
+.metric[data-tone="rate"] { --metric-color: #{v.$color-gold-400}; }
+
+.metricLabel {
+  color: v.$text-secondary;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.metricValue {
+  color: v.$color-white;
+  font: 700 1.15rem / 1.2 v.$font-family-primary;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.metricNote {
+  grid-column: 1 / -1;
+  color: v.$text-secondary;
+  font-size: 10px;
+  line-height: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// --- View switch (tabs) -----------------------------------------------------
+.viewSwitch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-xs;
+  padding: v.$space-xs;
+  background: v.$draft-surface;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-card;
+}
+
+.viewButton {
+  min-height: 32px;
+  padding: v.$space-xs v.$space-md;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-control;
+  background: v.$draft-input;
+  color: v.$text-primary;
+  font: 600 v.$font-size-sm v.$font-family-primary;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  &:hover {
+    border-color: v.$primary-color;
+  }
+
+  &[aria-pressed="true"] {
+    background: v.$primary-color;
+    border-color: v.$primary-color;
+    color: v.$color-neutral-950;
+    font-weight: 700;
+  }
+}
+
+// --- Control bar --------------------------------------------------------------
+.controlBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: v.$space-sm v.$space-md;
+  padding: v.$space-sm;
+  background: v.$draft-surface;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-card;
+  min-width: 0;
+}
+
+.controlGroup {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xs;
+  min-width: 0;
+}
+
+.controlLabel {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+// Segmented toggle: one dark rail, quiet inactive segments, accent active.
+.segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-control;
+  background: v.$draft-input;
+}
+
+.segment {
+  min-height: 30px;
+  padding: 2px v.$space-sm;
+  border: 1px solid transparent;
+  border-radius: v.$radius-xs;
+  background: transparent;
+  color: v.$text-secondary;
+  font: 600 v.$font-size-xs v.$font-family-primary;
+  cursor: pointer;
+
+  &:hover {
+    color: v.$text-primary;
+    background: rgba(v.$primary-color, 0.12);
+  }
+
+  &[aria-pressed="true"] {
+    border: 2px solid v.$primary-color;
+    background: rgba(v.$primary-color, 0.22);
+    color: v.$color-white;
+  }
+}
+
+.statDisclosure {
+  flex: 1 1 22rem;
+  min-width: 0;
+
+  > summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: v.$space-xs;
+    min-height: 32px;
+    cursor: pointer;
+    color: v.$text-primary;
+    font-size: v.$font-size-xs;
+  }
+}
+
+.selectedChips {
+  display: contents;
+}
+
+.chip {
+  padding: 1px v.$space-xs;
+  border: v.$border-subtle;
+  border-radius: v.$radius-xs;
+  background: v.$draft-input;
+  color: v.$text-primary;
+  font: 600 10px v.$font-family-primary;
+  letter-spacing: 0.04em;
+}
+
+.statGroups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+  gap: v.$space-sm v.$space-md;
+  padding-top: v.$space-sm;
+  margin-top: v.$space-xs;
+  border-top: 1px solid v.$draft-border;
+}
+
+.statGroup {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+
+  > legend {
+    padding: 0;
+    margin-bottom: v.$space-xs;
+    color: v.$primary-color;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+}
+
+.statOptions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(9.5rem, 100%), 1fr));
+  gap: 2px v.$space-sm;
+}
+
+.statOption {
+  display: flex;
+  align-items: center;
+  gap: v.$space-xs;
+  min-height: 26px;
+  min-width: 0;
+  color: v.$text-secondary;
+  font-size: 11px;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+
+  input {
+    margin: 0;
+    flex-shrink: 0;
+    accent-color: v.$primary-color;
+  }
+
+  &:hover {
+    color: v.$text-primary;
+  }
+}
+
+// --- Responsive --------------------------------------------------------------
+@media (max-width: 1100px) {
+  .viewButton,
+  .segment {
+    min-height: 44px;
+  }
+
+  .statOption {
+    min-height: 36px;
+  }
+
+  .statDisclosure > summary {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: v.$space-sm;
+  }
+
+  .topbarActions {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .headshot {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+@media (max-width: v.$screen-small-max) {
+  .workspace {
+    padding: v.$space-xs;
+  }
+
+  // Phones: a two-column metric grid keeps every figure visible without a
+  // sideways scroll.
+  .metrics,
+  .metrics[data-count] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: v.$space-xs;
+  }
+
+  .viewSwitch {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .viewButton {
+    padding-inline: v.$space-xs;
+    font-size: v.$font-size-xs;
+  }
+}

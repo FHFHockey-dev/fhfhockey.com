@@ -212,6 +212,15 @@ describe("actual FORGE producer through fenced local transport", () => {
     expect(backend.published).toBe(0);
   });
 
+  it.each([undefined, ""])("refuses a computed board run with no code version (%j) before reserving or writing a run", async sha => {
+    // begin_forge_game_run stores p_code_version as forge_runs.git_sha, so it must never see a missing SHA.
+    for (const key of ["FORGE_CODE_VERSION", "VERCEL_GIT_COMMIT_SHA", "GIT_SHA"]) vi.stubEnv(key, sha);
+    const backend = fixture();
+    await expect(run(false, backend)).rejects.toThrow("Captured FORGE runs require an immutable FORGE_CODE_VERSION");
+    expect(backend.calls.filter(call => call.table.startsWith("rpc/") || call.table === "forge_runs")).toEqual([]);
+    expect(backend.tables.forge_runs).toEqual([]);
+  });
+
   it("does not capture or publish after actual FORGE persistence fails", async () => {
     const backend = fixture("player");
     await expect(run(true, backend)).rejects.toMatchObject({ code: "TEST_WRITE_REJECTED" });

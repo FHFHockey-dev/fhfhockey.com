@@ -19,6 +19,7 @@ import {
 } from "lib/projections/forgeSkaterContext";
 import { buildGoalieStarterMixtureRows } from "lib/projections/goalieStarterMixtures";
 import { buildSkaterModeledHeadTotals } from "lib/projections/modeledHeadTotals";
+import { excludeOffReleaseRuns, isOffReleaseGitSha } from "lib/projections/releasedRunFence";
 import { boardSkaterForecast, admittedBoardGoalieForecast, parseBoardScoringRequest, scoreStarterBoardPayload, type BoardScoringRequest } from "lib/projections/starterBoardScoring";
 import {
   normalizeStartChartResponse,
@@ -868,10 +869,10 @@ async function fetchSlate(
           )
           `,
     )
-    .eq("status", "succeeded")
-    // Fenced local runs are private even after succeeding. Filter before limit
-    // so a private run cannot replace the latest public legacy run.
-    .or("git_sha.is.null,git_sha.not.like.local:*")
+    .eq("status", "succeeded");
+  // Off-release (null or local:) runs are private even after succeeding. Filter
+  // before limit so a private run cannot replace the latest public legacy run.
+  runQuery = excludeOffReleaseRuns(runQuery)
     .eq("as_of_date", targetDate)
     .eq("forge_player_projections.as_of_date", targetDate)
     .eq("forge_player_projections.horizon_games", 1);
@@ -896,7 +897,7 @@ async function fetchSlate(
     ? null
     : ((runResponse.data as unknown as ForgeRunWithProjectionsRow | null) ??
       null);
-  const forgeRun = selectedRun?.git_sha?.startsWith("local:") ? null : selectedRun;
+  const forgeRun = selectedRun && isOffReleaseGitSha(selectedRun.git_sha) ? null : selectedRun;
   let projections = (forgeRun?.forge_player_projections ?? []).filter(
     (row) =>
       row.as_of_date === targetDate &&

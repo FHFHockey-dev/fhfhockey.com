@@ -17,6 +17,13 @@ import {
   PlayerLineupDeploymentTally
 } from "components/PlayerStats/PlayerLineupDeploymentGrid";
 import styles from "components/PlayerStats/PlayerStats.module.scss";
+import shell from "components/PlayerStats/PlayerPageShell.module.scss";
+import { PlayerIdentityBar } from "components/PlayerStats/PlayerIdentityBar";
+import { PlayerSummaryStrip } from "components/PlayerStats/PlayerSummaryStrip";
+import {
+  PlayerStatControls,
+  TIME_FRAME_LABELS
+} from "components/PlayerStats/PlayerStatControls";
 
 // Import types from the shared types file
 import {
@@ -36,8 +43,15 @@ import {
   formatSeason,
   formatDate
 } from "utils/stats/formatters";
-import { fetchAllGameLogRows } from "utils/stats/nhlStatsFetch";
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import { getTeamAbbreviationById, getTeamInfoById } from "lib/teamsInfo";
+import {
+  leagueDateKey,
+  seasonDateWindow,
+  sortGameLogAscending,
+  windowGameLog,
+  windowStartDate
+} from "components/PlayerStats/playerStatsContract";
 
 interface PlayerStatsPageProps {
   player: PlayerInfo | null;
@@ -53,8 +67,12 @@ interface PlayerStatsPageProps {
   }[]; // Add this
   mostRecentSeason?: string | number | null;
   usedGameLogFallback?: boolean;
-  missedGames?: MissedGame[];
+  // Team schedule rows without an appearance (past absences and future games);
+  // null when the schedule could not be determined.
+  missedGames?: MissedGame[] | null;
   lineupDeploymentTallies?: PlayerLineupDeploymentTally[];
+  // League-local date the schedule was classified against (YYYY-MM-DD).
+  asOfDate?: string;
 }
 
 // Simple mock for getCurrentSeason - replace with actual implementation
@@ -83,18 +101,26 @@ export default function PlayerStatsPage({
   availableSeasonsFormatted, // Add this prop
   mostRecentSeason,
   usedGameLogFallback = false,
-  missedGames = [],
-  lineupDeploymentTallies = []
+  missedGames = null,
+  lineupDeploymentTallies = [],
+  asOfDate: ssrAsOfDate
 }: PlayerStatsPageProps) {
   const router = useRouter();
-  const { playerId, season } = router.query;
+  const { playerId } = router.query;
 
-  // Safely convert season to appropriate type
-  const seasonValue = Array.isArray(season) ? season[0] : season;
+  // One season context for every tab: the season the server loaded. Fallback
+  // logs belong to another season, so their schedule context is unknown.
+  const seasonId = mostRecentSeason ?? null;
+  const logSeasonId = usedGameLogFallback ? null : seasonId;
+  const scheduleGames = usedGameLogFallback ? null : missedGames;
+  const asOfDate = ssrAsOfDate ?? leagueDateKey();
 
-  // Use SSR data for now - can integrate hook later
-  const gameLog = ssrGameLog;
-  const playoffGameLog = ssrPlayoffGameLog;
+  // Providers return newest first; every tab works on ascending logs.
+  const gameLog = useMemo(() => sortGameLogAscending(ssrGameLog), [ssrGameLog]);
+  const playoffGameLog = useMemo(
+    () => sortGameLogAscending(ssrPlayoffGameLog),
+    [ssrPlayoffGameLog]
+  );
 
   const [activeTab, setActiveTab] = useState<StatsTab>("overview");
   const [timeFrame, setTimeFrame] = useState<TimeFrame>("season");
@@ -131,12 +157,11 @@ export default function PlayerStatsPage({
   }, [positionConfig, selectedStats.length]);
 
   // Filter game log based on timeframe
-  const filteredGameLog = useMemo(() => {
-    if (timeFrame === "season") return gameLog;
-    const games =
-      timeFrame === "last10" ? 10 : timeFrame === "last20" ? 20 : 30;
-    return gameLog.slice(-games);
-  }, [gameLog, timeFrame]);
+  const filteredGameLog = useMemo(
+    () => windowGameLog(gameLog, timeFrame),
+    [gameLog, timeFrame]
+  );
+  const windowStart = windowStartDate(filteredGameLog, timeFrame);
 
   // Calculate rolling averages and trends
   const processedGameLog = useMemo(() => {
@@ -161,6 +186,22 @@ export default function PlayerStatsPage({
       };
     });
   }, [filteredGameLog, selectedStats]);
+
+  const statGroups = [
+    { label: "Primary", stats: positionConfig.primary },
+    { label: "Secondary", stats: positionConfig.secondary },
+    ...(positionConfig.advanced
+      ? [{ label: "Advanced", stats: positionConfig.advanced }]
+      : [])
+  ];
+  const windowLabel =
+    timeFrame === "custom" ? "Custom" : TIME_FRAME_LABELS[timeFrame];
+  const seasonText = String(seasonId ?? "");
+  const scopeLabel = usedGameLogFallback
+    ? "Most recent games (no logs for the selected season)"
+    : /^\d{8}$/.test(seasonText)
+      ? `${seasonText.slice(0, 4)}-${seasonText.slice(6)} regular season`
+      : "Season unavailable";
 
   const handleStatToggle = (stat: string) => {
     setSelectedStats((prev) =>
@@ -188,53 +229,14 @@ export default function PlayerStatsPage({
         description={`Detailed hockey statistics for ${player.fullName}`}
       />
 
-      <div className={styles.playerStatsPageContainer}>
-        {/* Navigation Header */}
-        <div className={styles.navigationHeader}>
-          <Link href="/stats" className={styles.backButton}>
-            <span className={styles.backIcon}>←</span>
-            Back to Stats
-          </Link>
-          <h1 className={styles.pageTitle}>Player Analytics</h1>
-          <div className={styles.searchContainer}>
-            <PlayerSearchBar />
-          </div>
-        </div>
+      <div className={shell.workspace}>
+        <PlayerIdentityBar
+          player={player}
+          teamLabel={teamLabel}
+          scopeLabel={scopeLabel}
+        />
 
-        {/* Player Header */}
-        <div className={styles.playerHeader}>
-          <div className={styles.playerImageContainer}>
-            {player.image_url && (
-              <img
-                src={player.image_url}
-                alt={player.fullName}
-                width={120}
-                height={120}
-                style={{ borderRadius: "50%" }}
-              />
-            )}
-          </div>
-          <div className={styles.playerInfo}>
-            <h1 className={styles.playerName}>{player.fullName}</h1>
-            <div className={styles.playerDetails}>
-              #{player.sweater_number || "-"} | {player.position}
-              {teamLabel && ` | ${teamLabel}`}
-              <br />
-              {player.birthCity && `${player.birthCity}`}
-              {player.birthCountry && `, ${player.birthCountry}`}
-              <br />
-              {player.heightInCentimeters && (
-                <span>Height: {player.heightInCentimeters} cm</span>
-              )}
-              {player.weightInKilograms && (
-                <span> | Weight: {player.weightInKilograms} kg</span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className={styles.tabNavigation}>
+        <nav className={shell.viewSwitch} aria-label="Player statistics views">
           {(
             [
               "overview",
@@ -246,102 +248,35 @@ export default function PlayerStatsPage({
           ).map((tab) => (
             <button
               key={tab}
+              type="button"
               onClick={() => setActiveTab(tab)}
-              className={`${styles.tabButton} ${activeTab === tab ? styles.active : ""}`}
+              className={shell.viewButton}
+              aria-pressed={activeTab === tab}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
-        </div>
+        </nav>
+
+        {activeTab !== "advanced" && activeTab !== "gamelog" && (
+          <PlayerStatControls
+            timeFrame={timeFrame}
+            onTimeFrameChange={setTimeFrame}
+            groups={statGroups}
+            selectedStats={selectedStats}
+            onToggleStat={handleStatToggle}
+          />
+        )}
 
         {/* Content Area */}
         <div className={styles.contentArea}>
           {activeTab === "overview" && (
             <>
-              {/* Controls for Overview */}
-              <div className={styles.controlsSection}>
-                <div className={styles.controlsGrid}>
-                  {/* Time Frame Selector */}
-                  <div className={styles.timeframeSelector}>
-                    <h4 className={styles.controlHeader}>Time Period</h4>
-                    <div className={styles.timeframeButtons}>
-                      {(
-                        ["season", "last10", "last20", "last30"] as TimeFrame[]
-                      ).map((frame) => (
-                        <button
-                          key={frame}
-                          onClick={() => setTimeFrame(frame)}
-                          className={`${styles.timeframeButton} ${timeFrame === frame ? styles.active : ""}`}
-                        >
-                          {frame === "season"
-                            ? "Full Season"
-                            : frame === "last10"
-                              ? "Last 10"
-                              : frame === "last20"
-                                ? "Last 20"
-                                : "Last 30"}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Stat Selector */}
-                  <div className={styles.statSelector}>
-                    <h4 className={styles.controlHeader}>Statistics</h4>
-                    <div className={styles.statCategories}>
-                      <div className={styles.statCategory}>
-                        <h4>Primary</h4>
-                        <div className={styles.statCheckboxContainer}>
-                          {positionConfig.primary.map((stat: string) => (
-                            <label key={stat} className={styles.statCheckbox}>
-                              <input
-                                type="checkbox"
-                                checked={selectedStats.includes(stat)}
-                                onChange={() => handleStatToggle(stat)}
-                              />
-                              {stat.replace(/_/g, " ").toUpperCase()}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className={styles.statCategory}>
-                        <h4>Secondary</h4>
-                        <div className={styles.statCheckboxContainer}>
-                          {positionConfig.secondary.map((stat: string) => (
-                            <label key={stat} className={styles.statCheckbox}>
-                              <input
-                                type="checkbox"
-                                checked={selectedStats.includes(stat)}
-                                onChange={() => handleStatToggle(stat)}
-                              />
-                              {stat.replace(/_/g, " ").toUpperCase()}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      {positionConfig.advanced && (
-                        <div className={styles.statCategory}>
-                          <h4>Advanced</h4>
-                          <div className={styles.statCheckboxContainer}>
-                            {positionConfig.advanced.map((stat: string) => (
-                              <label key={stat} className={styles.statCheckbox}>
-                                <input
-                                  type="checkbox"
-                                  checked={selectedStats.includes(stat)}
-                                  onChange={() => handleStatToggle(stat)}
-                                />
-                                {stat.replace(/_/g, " ").toUpperCase()}
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <PlayerSummaryStrip
+                gameLog={filteredGameLog}
+                isGoalie={isGoalie}
+                windowLabel={windowLabel}
+              />
 
               <div className={styles.overviewGrid}>
                 <div className={styles.leftColumn}>
@@ -366,15 +301,19 @@ export default function PlayerStatsPage({
                       seasonTotals={seasonTotals}
                       isGoalie={isGoalie}
                       playerId={Number(playerId)}
-                      seasonId={seasonValue}
-                      missedGames={missedGames}
+                      seasonId={seasonId}
+                      missedGames={scheduleGames}
+                      asOfDate={asOfDate}
+                      windowStartDate={windowStart}
                     />
                   </div>
                   {!isGoalie && lineupDeploymentTallies.length > 0 && (
-                    <PlayerLineupDeploymentGrid
-                      rows={lineupDeploymentTallies}
-                      positions={player.position ? [player.position] : undefined}
-                    />
+                    <div className={styles.deploymentPanel}>
+                      <PlayerLineupDeploymentGrid
+                        rows={lineupDeploymentTallies}
+                        positions={player.position ? [player.position] : undefined}
+                      />
+                    </div>
                   )}
                 </div>
                 <div className={styles.rightColumn}>
@@ -388,8 +327,10 @@ export default function PlayerStatsPage({
                       isGoalie={isGoalie}
                       playerId={Number(playerId)}
                       playerTeamId={player.team_id}
-                      seasonId={seasonValue}
-                      missedGames={missedGames}
+                      seasonId={logSeasonId}
+                      missedGames={scheduleGames}
+                      asOfDate={asOfDate}
+                      windowStartDate={windowStart}
                       availableSeasonsFormatted={availableSeasonsFormatted} // Pass the formatted seasons
                     />
                   </div>
@@ -410,96 +351,17 @@ export default function PlayerStatsPage({
               showPlayoffData={showPlayoffData}
               seasonTotals={seasonTotals}
               playerId={Number(playerId)}
-              seasonId={seasonValue}
+              seasonId={seasonId}
+              timeFrame={timeFrame}
+              usedGameLogFallback={usedGameLogFallback}
+              missedGames={scheduleGames}
+              asOfDate={asOfDate}
+              windowStartDate={windowStart}
             />
           )}
 
           {activeTab === "trends" && (
             <>
-              {/* Controls for Trends */}
-              <div className={styles.controlsSection}>
-                <div className={styles.controlsGrid}>
-                  {/* Time Frame Selector */}
-                  <div className={styles.timeframeSelector}>
-                    <h4 className={styles.controlHeader}>Time Period</h4>
-                    <div className={styles.timeframeButtons}>
-                      {(
-                        ["season", "last10", "last20", "last30"] as TimeFrame[]
-                      ).map((frame) => (
-                        <button
-                          key={frame}
-                          onClick={() => setTimeFrame(frame)}
-                          className={`${styles.timeframeButton} ${timeFrame === frame ? styles.active : ""}`}
-                        >
-                          {frame === "season"
-                            ? "Full Season"
-                            : frame === "last10"
-                              ? "Last 10"
-                              : frame === "last20"
-                                ? "Last 20"
-                                : "Last 30"}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Stat Selector */}
-                  <div className={styles.statSelector}>
-                    <h4 className={styles.controlHeader}>Statistics</h4>
-                    <div className={styles.statCategories}>
-                      <div className={styles.statCategory}>
-                        <h4>Primary</h4>
-                        <div className={styles.statCheckboxContainer}>
-                          {positionConfig.primary.map((stat: string) => (
-                            <label key={stat} className={styles.statCheckbox}>
-                              <input
-                                type="checkbox"
-                                checked={selectedStats.includes(stat)}
-                                onChange={() => handleStatToggle(stat)}
-                              />
-                              {stat.replace(/_/g, " ").toUpperCase()}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className={styles.statCategory}>
-                        <h4>Secondary</h4>
-                        <div className={styles.statCheckboxContainer}>
-                          {positionConfig.secondary.map((stat: string) => (
-                            <label key={stat} className={styles.statCheckbox}>
-                              <input
-                                type="checkbox"
-                                checked={selectedStats.includes(stat)}
-                                onChange={() => handleStatToggle(stat)}
-                              />
-                              {stat.replace(/_/g, " ").toUpperCase()}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      {positionConfig.advanced && (
-                        <div className={styles.statCategory}>
-                          <h4>Advanced</h4>
-                          <div className={styles.statCheckboxContainer}>
-                            {positionConfig.advanced.map((stat: string) => (
-                              <label key={stat} className={styles.statCheckbox}>
-                                <input
-                                  type="checkbox"
-                                  checked={selectedStats.includes(stat)}
-                                  onChange={() => handleStatToggle(stat)}
-                                />
-                                {stat.replace(/_/g, " ").toUpperCase()}
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
 
               <PlayerStatsChart
                 gameLog={processedGameLog}
@@ -521,90 +383,6 @@ export default function PlayerStatsPage({
 
           {activeTab === "calendar" && (
             <>
-              {/* Controls for Calendar */}
-              <div className={styles.controlsSection}>
-                <div className={styles.controlsGrid}>
-                  {/* Time Frame Selector */}
-                  <div className={styles.timeframeSelector}>
-                    <h4 className={styles.controlHeader}>Time Period</h4>
-                    <div className={styles.timeframeButtons}>
-                      {(
-                        ["season", "last10", "last20", "last30"] as TimeFrame[]
-                      ).map((frame) => (
-                        <button
-                          key={frame}
-                          onClick={() => setTimeFrame(frame)}
-                          className={`${styles.timeframeButton} ${timeFrame === frame ? styles.active : ""}`}
-                        >
-                          {frame === "season"
-                            ? "Full Season"
-                            : frame === "last10"
-                              ? "Last 10"
-                              : frame === "last20"
-                                ? "Last 20"
-                                : "Last 30"}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Stat Selector */}
-                  <div className={styles.statSelector}>
-                    <h4 className={styles.controlHeader}>Statistics</h4>
-                    <div className={styles.statCategories}>
-                      <div className={styles.statCategory}>
-                        <h4>Primary</h4>
-                        <div className={styles.statCheckboxContainer}>
-                          {positionConfig.primary.map((stat: string) => (
-                            <label key={stat} className={styles.statCheckbox}>
-                              <input
-                                type="checkbox"
-                                checked={selectedStats.includes(stat)}
-                                onChange={() => handleStatToggle(stat)}
-                              />
-                              {stat.replace(/_/g, " ").toUpperCase()}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className={styles.statCategory}>
-                        <h4>Secondary</h4>
-                        <div className={styles.statCheckboxContainer}>
-                          {positionConfig.secondary.map((stat: string) => (
-                            <label key={stat} className={styles.statCheckbox}>
-                              <input
-                                type="checkbox"
-                                checked={selectedStats.includes(stat)}
-                                onChange={() => handleStatToggle(stat)}
-                              />
-                              {stat.replace(/_/g, " ").toUpperCase()}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      {positionConfig.advanced && (
-                        <div className={styles.statCategory}>
-                          <h4>Advanced</h4>
-                          <div className={styles.statCheckboxContainer}>
-                            {positionConfig.advanced.map((stat: string) => (
-                              <label key={stat} className={styles.statCheckbox}>
-                                <input
-                                  type="checkbox"
-                                  checked={selectedStats.includes(stat)}
-                                  onChange={() => handleStatToggle(stat)}
-                                />
-                                {stat.replace(/_/g, " ").toUpperCase()}
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
 
               <PlayerPerformanceHeatmap
                 player={player}
@@ -615,7 +393,10 @@ export default function PlayerStatsPage({
                 isGoalie={isGoalie}
                 playerId={Number(playerId)}
                 playerTeamId={player.team_id}
-                seasonId={seasonValue}
+                seasonId={logSeasonId}
+                missedGames={scheduleGames}
+                asOfDate={asOfDate}
+                windowStartDate={windowStart}
                 availableSeasonsFormatted={availableSeasonsFormatted} // Pass the formatted seasons here too
               />
             </>
@@ -631,7 +412,11 @@ export default function PlayerStatsPage({
                 isGoalie={isGoalie}
                 showPlayoffData={showPlayoffData}
                 playerId={Number(playerId)}
-                seasonId={seasonValue}
+                playerTeamId={player.team_id}
+                seasonId={seasonId}
+                missedGames={scheduleGames}
+                asOfDate={asOfDate}
+                windowStartDate={windowStart}
               />
             </div>
           )}
@@ -641,178 +426,59 @@ export default function PlayerStatsPage({
   );
 }
 
-// Add this function before the main component export
+/**
+ * Team regular-season/playoff games the player has no appearance for, split by
+ * the league-local as-of date: earlier games are absences, games on or after it
+ * are flagged isFuture. Appearances come from the already-loaded game logs
+ * (skater or goalie tables). Returns null when the schedule is unavailable so
+ * the page reports availability as unknown instead of 100%.
+ */
 async function fetchMissedGames(
-  playerId: number,
-  seasonId: string | number | undefined,
-  teamId: number | undefined
-): Promise<MissedGame[]> {
-  if (!playerId || !seasonId || !teamId) {
-    console.log("[SSR] Missing required data for missed games:", {
-      playerId,
-      seasonId,
-      teamId
-    });
-    return [];
-  }
+  seasonId: number | undefined,
+  seasonWindow: { start: string; end: string } | null,
+  teamId: number | undefined,
+  playedDates: Set<string>,
+  asOfDate: string,
+  includePlayoffs: boolean
+): Promise<MissedGame[] | null> {
+  if (!seasonId || !seasonWindow || !teamId) return null;
 
   try {
-    // Convert seasonId to number if it's a string
-    const seasonIdNum =
-      typeof seasonId === "string" ? Number(seasonId) : seasonId;
-
-    console.log(
-      `[SSR] Fetching missed games for player ${playerId}, team ${teamId}, season ${seasonIdNum}`
-    );
-
-    // Extract playoff year from season ID (e.g., 20242025 -> 2025)
-    const playoffYear = Math.floor(seasonIdNum % 10000);
-
-    // Get current date
-    const currentDate = new Date();
-    currentDate.setHours(23, 59, 59, 999); // Set to end of today for accurate comparison
-
-    // Get all team games for the season (both past and future)
     const { data: teamGames, error: teamGamesError } = await supabase
       .from("games")
       .select("id, date, seasonId, type, homeTeamId, awayTeamId")
-      .eq("seasonId", seasonIdNum)
+      .eq("seasonId", seasonId)
+      .gte("date", seasonWindow.start)
+      .lte("date", seasonWindow.end)
       .or(`homeTeamId.eq.${teamId},awayTeamId.eq.${teamId}`)
       .order("date", { ascending: true });
 
     if (teamGamesError) {
       console.error("[SSR] Error fetching team games:", teamGamesError.message);
-      return [];
+      return null;
     }
+    if (!teamGames || teamGames.length === 0) return null;
 
-    if (!teamGames || teamGames.length === 0) {
-      console.log("[SSR] No team games found for season");
-      return [];
-    }
-
-    console.log(
-      `[SSR] Found ${teamGames.length} total team games for season ${seasonIdNum}`
-    );
-
-    // Fetch player's actual games from database tables
-    const playerGameDates = new Set<string>();
-
-    // Fetch regular season games from wgo_skater_stats
-    const { data: regularSeasonGames, error: regularError } = await supabase
-      .from("wgo_skater_stats")
-      .select("date, games_played")
-      .eq("player_id", playerId)
-      .eq("season_id", seasonIdNum)
-      .gt("games_played", 0);
-
-    if (regularError) {
-      console.warn(
-        "[SSR] Error fetching regular season games:",
-        regularError.message
-      );
-    } else if (regularSeasonGames) {
-      regularSeasonGames.forEach((game) => {
-        playerGameDates.add(game.date);
-      });
-      console.log(
-        `[SSR] Player played ${regularSeasonGames.length} regular season games`
-      );
-    }
-
-    // Fetch playoff games from wgo_skater_stats_playoffs (filter by year)
-    const { data: playoffGames, error: playoffError } = await supabase
-      .from("wgo_skater_stats_playoffs")
-      .select("date, games_played")
-      .eq("player_id", playerId)
-      .gte("date", `${playoffYear}-01-01`)
-      .lt("date", `${playoffYear + 1}-01-01`)
-      .gt("games_played", 0);
-
-    if (playoffError) {
-      console.warn("[SSR] Error fetching playoff games:", playoffError.message);
-    } else if (playoffGames) {
-      playoffGames.forEach((game) => {
-        playerGameDates.add(game.date);
-      });
-      console.log(`[SSR] Player played ${playoffGames.length} playoff games`);
-    }
-
-    console.log(
-      `[SSR] Total unique dates player played: ${playerGameDates.size}`
-    );
-    console.log(`[SSR] Player game dates:`, Array.from(playerGameDates).sort());
-
-    // For each team game, check if player has a corresponding game log entry
-    const missedGames: MissedGame[] = [];
-    const futureGames: MissedGame[] = [];
-
+    const scheduleGames: MissedGame[] = [];
     for (const teamGame of teamGames) {
-      const gameDate = teamGame.date;
-      const gameDateObj = new Date(gameDate);
       const isPlayoff = teamGame.type === 3;
-      const isRegularSeason = teamGame.type === 2;
-
-      // Only check regular season (type 2) and playoff (type 3) games
-      if (!isRegularSeason && !isPlayoff) {
-        continue;
-      }
-
-      // Check if this is a future game
-      const isFutureGame = gameDateObj > currentDate;
-
-      // Check if player played on this date (only for past games)
-      if (!isFutureGame && !playerGameDates.has(gameDate)) {
-        // Player missed this past game
-        missedGames.push({
-          date: gameDate,
-          gameId: teamGame.id,
-          homeTeamId: teamGame.homeTeamId,
-          awayTeamId: teamGame.awayTeamId,
-          isPlayoff: isPlayoff,
-          seasonId: teamGame.seasonId
-        });
-
-        console.log(
-          `[SSR] Missed game found: ${gameDate} (${isPlayoff ? "playoff" : "regular season"})`
-        );
-      } else if (isFutureGame) {
-        // This is a future scheduled game
-        futureGames.push({
-          date: gameDate,
-          gameId: teamGame.id,
-          homeTeamId: teamGame.homeTeamId,
-          awayTeamId: teamGame.awayTeamId,
-          isPlayoff: isPlayoff,
-          seasonId: teamGame.seasonId,
-          isFuture: true // Add flag to distinguish future games
-        });
-
-        console.log(
-          `[SSR] Future scheduled game found: ${gameDate} (${isPlayoff ? "playoff" : "regular season"})`
-        );
-      }
+      if (teamGame.type !== 2 && !(includePlayoffs && isPlayoff)) continue;
+      const gameDate = String(teamGame.date).slice(0, 10);
+      if (playedDates.has(gameDate)) continue;
+      scheduleGames.push({
+        date: gameDate,
+        gameId: teamGame.id,
+        homeTeamId: teamGame.homeTeamId,
+        awayTeamId: teamGame.awayTeamId,
+        isPlayoff,
+        seasonId: teamGame.seasonId,
+        isFuture: gameDate >= asOfDate
+      });
     }
-
-    // Combine missed games and future games
-    const allMissedGames = [...missedGames, ...futureGames];
-
-    console.log(`[SSR] Total games found:`, {
-      missedPast: missedGames.length,
-      futureScheduled: futureGames.length,
-      total: allMissedGames.length
-    });
-
-    console.log(`[SSR] Breakdown:`, {
-      missedRegular: missedGames.filter((g) => !g.isPlayoff).length,
-      missedPlayoff: missedGames.filter((g) => g.isPlayoff).length,
-      futureRegular: futureGames.filter((g) => !g.isPlayoff).length,
-      futurePlayoff: futureGames.filter((g) => g.isPlayoff).length
-    });
-
-    return allMissedGames;
+    return scheduleGames;
   } catch (error) {
     console.error("[SSR] Error fetching missed games:", error);
-    return [];
+    return null;
   }
 }
 
@@ -949,6 +615,44 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     typeof selectedSeason
   );
 
+  // Season reads are bounded by the season's dates as well as season_id:
+  // provider rows can carry a wrong season_id (e.g. 2010-2017 rows labelled
+  // 20242025).
+  const { data: seasonRow, error: seasonRowError } = await supabase
+    .from("seasons")
+    .select("id, startDate, endDate")
+    .eq("id", Number(selectedSeason))
+    .maybeSingle();
+  if (seasonRowError) {
+    console.warn("[SSR] Error fetching season dates:", seasonRowError.message);
+  }
+  const seasonWindow = seasonDateWindow(selectedSeason, seasonRow);
+
+  const fetchSeasonLogRows = async (
+    table: "wgo_skater_stats" | "wgo_goalie_stats",
+    idField: "player_id" | "goalie_id",
+    selectFields: string
+  ): Promise<GameLogEntry[]> => {
+    if (!seasonWindow) return [];
+    try {
+      return await fetchAllSupabasePages<GameLogEntry>(
+        ({ from, to }) =>
+          (supabase as any)
+            .from(table)
+            .select(selectFields)
+            .eq(idField, playerIdNum)
+            .eq("season_id", selectedSeason)
+            .gte("date", seasonWindow.start)
+            .lte("date", seasonWindow.end)
+            .order("date", { ascending: false })
+            .range(from, to)
+      );
+    } catch (error) {
+      console.error(`Error fetching data from ${table}:`, error);
+      return [];
+    }
+  };
+
   // Fetch all game log rows for selected season
   let gameLog: GameLogEntry[] = [];
   let playoffGameLog: GameLogEntry[] = [];
@@ -962,13 +666,9 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
   if (isGoalie && selectedSeason) {
     // Regular season goalie stats
-    gameLog = await fetchAllGameLogRows(
-      supabase,
+    gameLog = await fetchSeasonLogRows(
       "wgo_goalie_stats",
       "goalie_id",
-      playerIdNum,
-      "season_id",
-      selectedSeason,
       `date, games_played, games_started, wins, losses, ot_losses, save_pct, goals_against_avg, shutouts, saves, shots_against, goals_against`
     );
 
@@ -989,13 +689,9 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     }
   } else if (selectedSeason) {
     // Regular season skater stats
-    gameLog = await fetchAllGameLogRows(
-      supabase,
+    gameLog = await fetchSeasonLogRows(
       "wgo_skater_stats",
       "player_id",
-      playerIdNum,
-      "season_id",
-      selectedSeason,
       `date, games_played, goals, assists, points, plus_minus, shots, shooting_percentage, pp_points, gw_goals, fow_percentage, toi_per_game, blocked_shots, hits, takeaways, giveaways, sat_pct, zone_start_pct`
     );
 
@@ -1138,102 +834,102 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
         return {
           ...wgoGame,
           // NST Individual Advanced Stats - Possession Percentages (from counts)
-          cf_pct: nstCountsOi.cf_pct || null,
-          ff_pct: nstCountsOi.ff_pct || null,
-          sf_pct: nstCountsOi.sf_pct || null,
-          gf_pct: nstCountsOi.gf_pct || null,
-          xgf_pct: nstCountsOi.xgf_pct || null,
-          scf_pct: nstCountsOi.scf_pct || null,
-          hdcf_pct: nstCountsOi.hdcf_pct || null,
-          mdcf_pct: nstCountsOi.mdcf_pct || null,
-          ldcf_pct: nstCountsOi.ldcf_pct || null,
+          cf_pct: nstCountsOi.cf_pct ?? null,
+          ff_pct: nstCountsOi.ff_pct ?? null,
+          sf_pct: nstCountsOi.sf_pct ?? null,
+          gf_pct: nstCountsOi.gf_pct ?? null,
+          xgf_pct: nstCountsOi.xgf_pct ?? null,
+          scf_pct: nstCountsOi.scf_pct ?? null,
+          hdcf_pct: nstCountsOi.hdcf_pct ?? null,
+          mdcf_pct: nstCountsOi.mdcf_pct ?? null,
+          ldcf_pct: nstCountsOi.ldcf_pct ?? null,
 
           // NST On-Ice Possession Percentages (from counts_oi)
-          on_ice_cf_pct: nstCountsOi.cf_pct || null,
-          on_ice_ff_pct: nstCountsOi.ff_pct || null,
-          on_ice_sf_pct: nstCountsOi.sf_pct || null,
-          on_ice_gf_pct: nstCountsOi.gf_pct || null,
-          on_ice_xgf_pct: nstCountsOi.xgf_pct || null,
-          on_ice_scf_pct: nstCountsOi.scf_pct || null,
-          on_ice_hdcf_pct: nstCountsOi.hdcf_pct || null,
+          on_ice_cf_pct: nstCountsOi.cf_pct ?? null,
+          on_ice_ff_pct: nstCountsOi.ff_pct ?? null,
+          on_ice_sf_pct: nstCountsOi.sf_pct ?? null,
+          on_ice_gf_pct: nstCountsOi.gf_pct ?? null,
+          on_ice_xgf_pct: nstCountsOi.xgf_pct ?? null,
+          on_ice_scf_pct: nstCountsOi.scf_pct ?? null,
+          on_ice_hdcf_pct: nstCountsOi.hdcf_pct ?? null,
 
           // NST Individual Production Per 60 (from rates)
-          goals_per_60: nstRates.goals_per_60 || null,
-          total_assists_per_60: nstRates.total_assists_per_60 || null,
-          first_assists_per_60: nstRates.first_assists_per_60 || null,
-          second_assists_per_60: nstRates.second_assists_per_60 || null,
-          total_points_per_60: nstRates.total_points_per_60 || null,
-          shots_per_60: nstRates.shots_per_60 || null,
-          ixg_per_60: nstRates.ixg_per_60 || null,
-          icf_per_60: nstRates.icf_per_60 || null,
-          iff_per_60: nstRates.iff_per_60 || null,
-          iscfs_per_60: nstRates.iscfs_per_60 || null,
-          hdcf_per_60: nstRates.hdcf_per_60 || null,
-          rush_attempts_per_60: nstRates.rush_attempts_per_60 || null,
-          rebounds_created_per_60: nstRates.rebounds_created_per_60 || null,
+          goals_per_60: nstRates.goals_per_60 ?? null,
+          total_assists_per_60: nstRates.total_assists_per_60 ?? null,
+          first_assists_per_60: nstRates.first_assists_per_60 ?? null,
+          second_assists_per_60: nstRates.second_assists_per_60 ?? null,
+          total_points_per_60: nstRates.total_points_per_60 ?? null,
+          shots_per_60: nstRates.shots_per_60 ?? null,
+          ixg_per_60: nstRates.ixg_per_60 ?? null,
+          icf_per_60: nstRates.icf_per_60 ?? null,
+          iff_per_60: nstRates.iff_per_60 ?? null,
+          iscfs_per_60: nstRates.iscfs_per_60 ?? null,
+          hdcf_per_60: nstRates.hdcf_per_60 ?? null,
+          rush_attempts_per_60: nstRates.rush_attempts_per_60 ?? null,
+          rebounds_created_per_60: nstRates.rebounds_created_per_60 ?? null,
 
           // NST Defensive Per 60 (from rates)
-          hdca_per_60: nstRates.hdca_per_60 || null,
-          sca_per_60: nstRates.sca_per_60 || null,
-          shots_blocked_per_60: nstRates.shots_blocked_per_60 || null,
-          xga_per_60: nstRates.xga_per_60 || null,
-          ga_per_60: nstRates.ga_per_60 || null,
+          hdca_per_60: nstRates.hdca_per_60 ?? null,
+          sca_per_60: nstRates.sca_per_60 ?? null,
+          shots_blocked_per_60: nstRates.shots_blocked_per_60 ?? null,
+          xga_per_60: nstRates.xga_per_60 ?? null,
+          ga_per_60: nstRates.ga_per_60 ?? null,
 
           // NST Discipline Per 60 (from rates)
-          pim_per_60: nstRates.pim_per_60 || null,
-          total_penalties_per_60: nstRates.total_penalties_per_60 || null,
-          penalties_drawn_per_60: nstRates.penalties_drawn_per_60 || null,
+          pim_per_60: nstRates.pim_per_60 ?? null,
+          total_penalties_per_60: nstRates.total_penalties_per_60 ?? null,
+          penalties_drawn_per_60: nstRates.penalties_drawn_per_60 ?? null,
           penalty_differential_per_60:
-            nstRates.penalty_differential_per_60 || null,
-          giveaways_per_60: nstRates.giveaways_per_60 || null,
-          takeaways_per_60: nstRates.takeaways_per_60 || null,
-          hits_per_60: nstRates.hits_per_60 || null,
+            nstRates.penalty_differential_per_60 ?? null,
+          giveaways_per_60: nstRates.giveaways_per_60 ?? null,
+          takeaways_per_60: nstRates.takeaways_per_60 ?? null,
+          hits_per_60: nstRates.hits_per_60 ?? null,
 
           // NST On-Ice Rates Per 60 (from rates_oi)
-          on_ice_goals_per_60: nstRatesOi.gf_per_60 || null,
-          on_ice_goals_against_per_60: nstRatesOi.ga_per_60 || null,
-          on_ice_shots_per_60: nstRatesOi.sf_per_60 || null,
-          on_ice_shots_against_per_60: nstRatesOi.sa_per_60 || null,
-          on_ice_cf_per_60: nstRatesOi.cf_per_60 || null,
-          on_ice_ca_per_60: nstRatesOi.ca_per_60 || null,
-          on_ice_ff_per_60: nstRatesOi.ff_per_60 || null,
-          on_ice_fa_per_60: nstRatesOi.fa_per_60 || null,
-          on_ice_xgf_per_60: nstRatesOi.xgf_per_60 || null,
-          on_ice_xga_per_60: nstRatesOi.xga_per_60 || null,
+          on_ice_goals_per_60: nstRatesOi.gf_per_60 ?? null,
+          on_ice_goals_against_per_60: nstRatesOi.ga_per_60 ?? null,
+          on_ice_shots_per_60: nstRatesOi.sf_per_60 ?? null,
+          on_ice_shots_against_per_60: nstRatesOi.sa_per_60 ?? null,
+          on_ice_cf_per_60: nstRatesOi.cf_per_60 ?? null,
+          on_ice_ca_per_60: nstRatesOi.ca_per_60 ?? null,
+          on_ice_ff_per_60: nstRatesOi.ff_per_60 ?? null,
+          on_ice_fa_per_60: nstRatesOi.fa_per_60 ?? null,
+          on_ice_xgf_per_60: nstRatesOi.xgf_per_60 ?? null,
+          on_ice_xga_per_60: nstRatesOi.xga_per_60 ?? null,
 
           // NST Zone Usage Percentages (from counts_oi)
-          off_zone_start_pct: nstCountsOi.off_zone_start_pct || null,
+          off_zone_start_pct: nstCountsOi.off_zone_start_pct ?? null,
           def_zone_start_pct: def_zone_start_pct,
           neu_zone_start_pct: neu_zone_start_pct,
-          off_zone_faceoff_pct: nstCountsOi.off_zone_faceoff_pct || null,
+          off_zone_faceoff_pct: nstCountsOi.off_zone_faceoff_pct ?? null,
 
           // NST On-Ice Impact (from counts_oi)
-          on_ice_sh_pct: nstCountsOi.on_ice_sh_pct || null,
-          on_ice_sv_pct: nstCountsOi.on_ice_sv_pct || null,
-          pdo: nstCountsOi.pdo || null,
+          on_ice_sh_pct: nstCountsOi.on_ice_sh_pct ?? null,
+          on_ice_sv_pct: nstCountsOi.on_ice_sv_pct ?? null,
+          pdo: nstCountsOi.pdo ?? null,
 
           // NST Raw Counts (from counts)
-          ixg: nstCounts.ixg || null,
-          icf: nstCounts.icf || null,
-          iff: nstCounts.iff || null,
-          hdcf: nstCounts.hdcf || null,
-          hdca: nstCounts.hdca || null,
-          rush_attempts: nstCounts.rush_attempts || null,
-          rebounds_created: nstCounts.rebounds_created || null,
+          ixg: nstCounts.ixg ?? null,
+          icf: nstCounts.icf ?? null,
+          iff: nstCounts.iff ?? null,
+          hdcf: nstCounts.hdcf ?? null,
+          hdca: nstCounts.hdca ?? null,
+          rush_attempts: nstCounts.rush_attempts ?? null,
+          rebounds_created: nstCounts.rebounds_created ?? null,
 
           // NST On-Ice Raw Counts (from counts_oi)
-          cf: nstCountsOi.cf || null,
-          ca: nstCountsOi.ca || null,
-          ff: nstCountsOi.ff || null,
-          fa: nstCountsOi.fa || null,
-          sf: nstCountsOi.sf || null,
-          sa: nstCountsOi.sa || null,
-          gf: nstCountsOi.gf || null,
-          ga: nstCountsOi.ga || null,
-          xgf: nstCountsOi.xgf || null,
-          xga: nstCountsOi.xga || null,
-          scf: nstCountsOi.scf || null,
-          sca: nstCountsOi.sca || null
+          cf: nstCountsOi.cf ?? null,
+          ca: nstCountsOi.ca ?? null,
+          ff: nstCountsOi.ff ?? null,
+          fa: nstCountsOi.fa ?? null,
+          sf: nstCountsOi.sf ?? null,
+          sa: nstCountsOi.sa ?? null,
+          gf: nstCountsOi.gf ?? null,
+          ga: nstCountsOi.ga ?? null,
+          xgf: nstCountsOi.xgf ?? null,
+          xga: nstCountsOi.xga ?? null,
+          scf: nstCountsOi.scf ?? null,
+          sca: nstCountsOi.sca ?? null
         };
       });
 
@@ -1243,81 +939,6 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     } catch (nstError) {
       console.warn("[SSR] Error fetching NST data:", nstError);
       // Continue with WGO data only if NST fetch fails
-    }
-
-    // Fetch missed games data for server-side rendering
-    let missedGames: any[] = [];
-    try {
-      console.log(
-        `[SSR] Fetching missed games for player ${playerIdNum} in season ${selectedSeason}`
-      );
-
-      // Fetch all team games for the season
-      const { data: teamGames, error: teamGamesError } = await supabase
-        .from("games")
-        .select("id, date, seasonId, type, homeTeamId, awayTeamId")
-        .eq("seasonId", selectedSeason)
-        .or(`homeTeamId.eq.${player.team_id},awayTeamId.eq.${player.team_id}`)
-        .order("date", { ascending: true });
-
-      if (teamGamesError) {
-        console.warn(
-          "[SSR] Error fetching team games:",
-          teamGamesError.message
-        );
-      } else if (teamGames && teamGames.length > 0) {
-        console.log(`[SSR] Found ${teamGames.length} team games`);
-
-        // Create sets of dates when player actually played
-        const playerGameDates = new Set<string>();
-
-        // Add regular season game dates
-        gameLog.forEach((game) => {
-          if (game.games_played && game.games_played > 0) {
-            playerGameDates.add(game.date);
-          }
-        });
-
-        console.log(
-          `[SSR] Player played on ${playerGameDates.size} dates in regular season`
-        );
-
-        // Get current date to only count missed games before today
-        const currentDate = new Date();
-        currentDate.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
-
-        // For each team game, check if player has a corresponding game log entry
-        for (const teamGame of teamGames) {
-          const gameDate = teamGame.date;
-          const gameDateObj = new Date(gameDate);
-          gameDateObj.setHours(0, 0, 0, 0); // Set to start of day
-          const isRegularSeason = teamGame.type === 2;
-
-          // Only check regular season (type 2) games before today's date
-          if (!isRegularSeason || gameDateObj >= currentDate) {
-            continue;
-          }
-
-          // Check if player played on this date
-          if (!playerGameDates.has(gameDate)) {
-            // Player missed this game
-            missedGames.push({
-              date: gameDate,
-              gameId: teamGame.id,
-              homeTeamId: teamGame.homeTeamId,
-              awayTeamId: teamGame.awayTeamId,
-              isPlayoff: false, // Regular season only for now
-              seasonId: teamGame.seasonId
-            });
-          }
-        }
-
-        console.log(
-          `[SSR] Found ${missedGames.length} missed regular season games`
-        );
-      }
-    } catch (missedGamesError) {
-      console.warn("[SSR] Error fetching missed games:", missedGamesError);
     }
 
     // Fallback: fetch 10 most recent games if empty
@@ -1430,12 +1051,24 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     console.log("[PlayerStatsPage][DEBUG] First row:", gameLog[0]);
   }
 
-  // Fetch missed games data
-  const missedGamesData = await fetchMissedGames(
-    Number(playerId),
-    selectedSeason,
-    player.team_id ?? undefined
+  // Team schedule rows without an appearance, classified as of today in the
+  // league's time zone. Fallback logs come from another season, so skip them.
+  const asOfDate = leagueDateKey();
+  const playedDates = new Set(
+    [...gameLog, ...playoffGameLog]
+      .filter((game) => Number(game.games_played) > 0)
+      .map((game) => String(game.date).slice(0, 10))
   );
+  const missedGamesData = usedGameLogFallback
+    ? null
+    : await fetchMissedGames(
+        Number(selectedSeason),
+        seasonWindow,
+        player.team_id ?? undefined,
+        playedDates,
+        asOfDate,
+        !isGoalie
+      );
 
   let lineupDeploymentTallies: PlayerLineupDeploymentTally[] = [];
   if (!isGoalie && selectedSeason) {
@@ -1460,10 +1093,6 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     }
   }
 
-  console.log(`[SSR] Final missed games data:`, {
-    count: missedGamesData.length,
-    games: missedGamesData
-  });
 
   // Calculate available seasons from season totals data
   const availableSeasons = seasonTotals.map((season) => {
@@ -1496,7 +1125,8 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
         ? seasonTotals.map((s) => (s as GoalieSeasonTotals).season_id)
         : seasonTotals.map((s) => (s as SkaterSeasonTotals).season_id),
       availableSeasonsFormatted: availableSeasons, // Add formatted seasons for the heatmap
-      missedGames: missedGamesData || [],
+      missedGames: missedGamesData,
+      asOfDate,
       lineupDeploymentTallies
     }
   };

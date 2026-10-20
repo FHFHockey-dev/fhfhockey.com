@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import { candidateHorizonPoints } from "lib/rosterScheduleOptimizer/planning";
 import type { PlanningGame, PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
-import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_VERSION, opponentTilts, teamWinProbability, type ForgeDailyBridgeInputs } from "./forgeDailyBridge";
+import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_VERSION, loadForgeDailyBridgeForecasts, opponentTilts, teamWinProbability, type ForgeDailyBridgeInputs } from "./forgeDailyBridge";
 import { compactBridgeForecasts, expandBridgeForecasts, packPlanningSnapshots, unpackPlanningSnapshots } from "./bridgeForecastWire";
 import { preservationJson } from "lib/rosterScheduleOptimizer/workspace";
 
@@ -277,5 +277,47 @@ describe("FORGE daily bridge", () => {
     expect(points.get("s1")).toBeCloseTo(2 * (0.35 * 3 + 0.45 * 2 + 0.25 + 3.1 * 0.5));
     expect(points.get("g1")).toBeCloseTo(0.8 * (25 * 0.2 + 0.55 * 4) + 0.7 * (25 * 0.2 + 0.55 * 4));
     expect(points.get("s2")).toBeNull();
+  });
+  it.each([
+    ["only off-release runs exist", [] as string[]],
+    ["a newer null or local run shares the released run's date", ["released"]],
+  ])("reads no null-sha or local run when %s", async (_label, expected) => {
+    const runRows = [
+      { run_id: "null-run", as_of_date: "2026-10-19", created_at: "2026-10-19T15:00:00Z", git_sha: null },
+      { run_id: "local-run", as_of_date: "2026-10-19", created_at: "2026-10-19T16:00:00Z", git_sha: "local:unknown" },
+      ...(expected.length ? [{ run_id: "released", as_of_date: "2026-10-19", created_at: "2026-10-19T12:00:00Z", git_sha: "abc" }] : []),
+    ];
+    const runIdReads: unknown[] = [];
+    // Applies the forge_runs git_sha filters the reader sends; every other table is empty.
+    const db = { from: (table: string) => {
+      let rows: Record<string, any>[] = table === "forge_runs" ? [...runRows] : [];
+      const keep = (test: (sha: string | null) => boolean) => { rows = rows.filter(row => test(row.git_sha)); };
+      const builder: any = {
+        select: () => builder, eq: () => builder, gte: () => builder, lte: () => builder, abortSignal: () => builder,
+        in: (column: string, values: unknown[]) => { if (column === "run_id") runIdReads.push(values); return builder; },
+        order: (column: string, options?: { ascending?: boolean }) => {
+          if (column === "created_at") rows.sort((a, b) => (a.created_at < b.created_at ? 1 : -1) * (options?.ascending === false ? 1 : -1));
+          return builder;
+        },
+        not: (column: string, operator: string, value: unknown) => {
+          if (column !== "git_sha") throw new Error(column);
+          if (operator === "is" && value === null) keep(sha => sha !== null);
+          else if (operator === "like" && value === "local:*") keep(sha => sha !== null && !sha.startsWith("local:"));
+          else throw new Error(`${operator} ${value}`);
+          return builder;
+        },
+        or: (expression: string) => {
+          if (expression !== "git_sha.is.null,git_sha.not.like.local:*") throw new Error(expression);
+          keep(sha => sha === null || !sha.startsWith("local:"));
+          return builder;
+        },
+        range: () => builder,
+        then: (resolve: (value: unknown) => unknown) => Promise.resolve(resolve({ data: rows, count: rows.length, error: null })),
+      };
+      return builder;
+    } };
+    const result = await loadForgeDailyBridgeForecasts(db as never, players, games, now, 20262027, Date.now() + 5000, policy);
+    expect(runIdReads).toEqual(expected.length ? [expected, expected] : []);
+    if (!expected.length) expect(result.limitations[0]).toContain("no successful FORGE run");
   });
 });

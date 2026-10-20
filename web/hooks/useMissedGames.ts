@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
 import supabase from "lib/supabase";
+import {
+  leagueDateKey,
+  seasonDateWindow
+} from "components/PlayerStats/playerStatsContract";
 
 interface MissedGame {
   date: string;
@@ -43,6 +47,12 @@ export function useMissedGames(
         const numericPlayerId = Number(playerId);
         const numericTeamId = Number(playerTeamId);
         const numericSeasonId = Number(seasonId);
+        // Bound by date too: provider rows can carry a wrong season id.
+        const seasonWindow = seasonDateWindow(numericSeasonId);
+        if (!seasonWindow) {
+          setMissedGames([]);
+          return;
+        }
 
         console.log("[useMissedGames] Fetching missed games for:", {
           playerId: numericPlayerId,
@@ -58,6 +68,8 @@ export function useMissedGames(
           .from("games")
           .select("id, date, seasonId, type, homeTeamId, awayTeamId")
           .eq("seasonId", numericSeasonId)
+          .gte("date", seasonWindow.start)
+          .lte("date", seasonWindow.end)
           .or(`homeTeamId.eq.${numericTeamId},awayTeamId.eq.${numericTeamId}`)
           .order("date", { ascending: true });
 
@@ -83,6 +95,8 @@ export function useMissedGames(
           .select("date, games_played")
           .eq("player_id", numericPlayerId)
           .eq("season_id", numericSeasonId)
+          .gte("date", seasonWindow.start)
+          .lte("date", seasonWindow.end)
           .gt("games_played", 0);
 
         if (regularError) {
@@ -131,13 +145,14 @@ export function useMissedGames(
 
         // For each team game, check if player has a corresponding game log entry
         const missed: MissedGame[] = [];
-        const today = new Date().toISOString().split("T")[0]; // Get today's date in YYYY-MM-DD format
+        // League-local date; a game today or later is upcoming, not missed.
+        const today = leagueDateKey();
 
         for (const teamGame of teamGames) {
           const gameDate = teamGame.date;
           const isPlayoff = teamGame.type === 3;
           const isRegularSeason = teamGame.type === 2;
-          const isFutureGame = gameDate > today;
+          const isFutureGame = gameDate >= today;
 
           // Only check regular season (type 2) and playoff (type 3) games
           if (!isRegularSeason && !isPlayoff) {

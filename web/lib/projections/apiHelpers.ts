@@ -2,6 +2,7 @@
 import { z } from "zod";
 
 import supabase from "lib/supabase/server";
+import { excludeOffReleaseRuns } from "./releasedRunFence";
 
 export const dateSchema = z
   .string({ required_error: "date is required" })
@@ -36,11 +37,11 @@ export async function requireLatestSucceededRunId(
   asOfDate: string,
 ): Promise<string> {
   if (!supabase) throw new Error("Supabase server client not available");
-  const { data, error } = await supabase
+  const { data, error } = await excludeOffReleaseRuns(supabase
     .from("forge_runs")
     .select("run_id")
     .eq("as_of_date", asOfDate)
-    .eq("status", "succeeded")
+    .eq("status", "succeeded"))
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();

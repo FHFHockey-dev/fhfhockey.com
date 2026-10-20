@@ -1,104 +1,52 @@
-import React, { useState } from "react";
+import React from "react";
 import styles from "./PlayerStats.module.scss";
 
 interface PlayerStatsAdvancedNoteProps {
   showAdvanced?: boolean;
 }
 
+const GLOSSARY: [string, string][] = [
+  ["CF%", "Corsi For Percentage - Shot attempts for vs total shot attempts while on ice"],
+  ["FF%", "Fenwick For Percentage - Unblocked shot attempts for vs total while on ice"],
+  ["xGF%", "Expected Goals For Percentage - Expected goals for vs total while on ice"],
+  ["HDCF%", "High Danger Corsi For Percentage - High danger shot attempts for vs total"],
+  ["Per 60 stats", "Individual stats projected per 60 minutes of ice time"],
+  ["PDO", "On-ice shooting percentage + on-ice save percentage (luck indicator)"],
+  ["Zone Start%", "Percentage of shifts starting in offensive/defensive zones"]
+];
+
+/** Source note and glossary as one compact disclosure (RSO details pattern). */
 export function PlayerStatsAdvancedNote({
   showAdvanced = false
 }: PlayerStatsAdvancedNoteProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-
   if (!showAdvanced) return null;
 
   return (
-    <div className={styles.insightsGrid}>
-      <div className={`${styles.insightCard} ${styles.neutral}`}>
-        <div className={styles.insightLabel}>Advanced Statistics</div>
-        <div className={styles.insightValue}>Enhanced Analytics</div>
-        <div className={styles.insightDescription}>
+    <details className={styles.advancedNote}>
+      <summary>
+        <span className={styles.advancedNoteTitle}>Advanced statistics</span>
+        <span className={styles.advancedNoteHint}>
+          NST possession and per-60 data · glossary
+        </span>
+      </summary>
+      <div className={styles.advancedNoteContent}>
+        <p>
           <strong>NST Data:</strong> Possession metrics (CF%, xGF%, HDCF%), zone
           entries, and individual impact measurements.
-          <br />
+        </p>
+        <p>
           <strong>Key Metrics:</strong> Per-60 minute rates that normalize for
           ice time and provide deeper insights beyond traditional stats.
-          <button
-            className={styles.advancedNoteToggle}
-            onClick={() => setIsExpanded(!isExpanded)}
-            style={{
-              marginTop: "12px",
-              background: "none",
-              border: "1px solid #374151",
-              color: "#9ca3af",
-              padding: "8px 12px",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontSize: "0.875rem",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              width: "100%"
-            }}
-          >
-            <span>View Statistics Glossary</span>
-            <span
-              className={`${styles.toggleIcon} ${isExpanded ? styles.expanded : ""}`}
-              style={{
-                transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
-                transition: "transform 0.2s"
-              }}
-            >
-              ▼
-            </span>
-          </button>
-          {isExpanded && (
-            <div
-              className={styles.advancedNoteContent}
-              style={{ marginTop: "12px" }}
-            >
-              <ul
-                className={styles.advancedGlossary}
-                style={{
-                  margin: 0,
-                  paddingLeft: "16px",
-                  fontSize: "0.75rem",
-                  lineHeight: "1.4"
-                }}
-              >
-                <li style={{ marginBottom: "6px" }}>
-                  <strong>CF%:</strong> Corsi For Percentage - Shot attempts for
-                  vs total shot attempts while on ice
-                </li>
-                <li style={{ marginBottom: "6px" }}>
-                  <strong>FF%:</strong> Fenwick For Percentage - Unblocked shot
-                  attempts for vs total while on ice
-                </li>
-                <li style={{ marginBottom: "6px" }}>
-                  <strong>xGF%:</strong> Expected Goals For Percentage -
-                  Expected goals for vs total while on ice
-                </li>
-                <li style={{ marginBottom: "6px" }}>
-                  <strong>HDCF%:</strong> High Danger Corsi For Percentage -
-                  High danger shot attempts for vs total
-                </li>
-                <li style={{ marginBottom: "6px" }}>
-                  <strong>Per 60 stats:</strong> Individual stats projected per
-                  60 minutes of ice time
-                </li>
-                <li style={{ marginBottom: "6px" }}>
-                  <strong>PDO:</strong> On-ice shooting percentage + on-ice save
-                  percentage (luck indicator)
-                </li>
-                <li style={{ marginBottom: "0" }}>
-                  <strong>Zone Start%:</strong> Percentage of shifts starting in
-                  offensive/defensive zones
-                </li>
-              </ul>
+        </p>
+        <dl className={styles.advancedGlossary}>
+          {GLOSSARY.map(([term, definition]) => (
+            <div key={term}>
+              <dt>{term}</dt>
+              <dd>{definition}</dd>
             </div>
-          )}
-        </div>
+          ))}
+        </dl>
       </div>
-    </div>
+    </details>
   );
 }

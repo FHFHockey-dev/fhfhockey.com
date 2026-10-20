@@ -17,7 +17,8 @@ type QueryResult = {
   error: null;
 };
 
-function createQueryBuilder(resolver: () => QueryResult, onEq?: (column: string, value: unknown) => void) {
+function createQueryBuilder(resolver: () => QueryResult, onEq?: (column: string, value: unknown) => void,
+  onNot?: (column: string, operator: string, value: unknown) => void) {
   const state = {
     isHeadCount: false
   };
@@ -31,6 +32,10 @@ function createQueryBuilder(resolver: () => QueryResult, onEq?: (column: string,
       return builder;
     },
     lte() {
+      return builder;
+    },
+    not(column: string, operator: string, value: unknown) {
+      onNot?.(column, operator, value);
       return builder;
     },
     order() {
@@ -525,5 +530,57 @@ describe("/api/v1/forge/goalies", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({ runId: "run-121", asOfDate: "2026-02-05", fallbackApplied: true });
     expect(readRunIds).toEqual(["run-121"]);
+  });
+
+  it.each([null, "local:unknown", `local:${"b".repeat(40)}`])("rejects an explicit off-release run %j with a clear 422", async gitSha => {
+    const prior = fromMock.getMockImplementation()!;
+    fromMock.mockImplementation((table: string) => table === "forge_runs"
+      ? createQueryBuilder(() => ({ data: { run_id: "11111111-1111-4111-8111-111111111111", as_of_date: "2026-02-07",
+        status: "succeeded", git_sha: gitSha, metrics: { goalie_rows: 32 } }, error: null }))
+      : prior(table));
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07", runId: "11111111-1111-4111-8111-111111111111" } } as any, res);
+    expect(res.statusCode).toBe(422);
+    expect(res.body.data).toBeUndefined();
+    expect(res.body.error).toContain("off the release path");
+  });
+
+  it("skips null-sha and local runs when choosing the fallback goalie run", async () => {
+    const scanRows = [
+      { run_id: "run-local", as_of_date: "2026-02-06", forge_runs: { status: "succeeded", git_sha: "local:unknown" } },
+      { run_id: "run-null", as_of_date: "2026-02-06", forge_runs: { status: "succeeded", git_sha: null } },
+      { run_id: "run-121", as_of_date: "2026-02-05", forge_runs: { status: "succeeded", git_sha: "a".repeat(40) } }
+    ];
+    const prior = fromMock.getMockImplementation()!;
+    let projectionReads = 0;
+    const readRunIds: string[] = [];
+    fromMock.mockImplementation((table: string) => {
+      if (table === "forge_goalie_projections") {
+        projectionReads++;
+        if (projectionReads === 1) return createQueryBuilder(() => ({ data: [], error: null }));
+        if (projectionReads === 2) {
+          const filters: Array<(sha: string | null) => boolean> = [];
+          return createQueryBuilder(
+            () => ({ data: scanRows.filter(row => filters.every(keep => keep(row.forge_runs.git_sha))), error: null }),
+            undefined,
+            (column, operator, value) => {
+              expect(column).toBe("forge_runs.git_sha");
+              if (operator === "is" && value === null) filters.push(sha => sha !== null);
+              else if (operator === "like" && value === "local:*") filters.push(sha => sha !== null && !sha.startsWith("local:"));
+              else throw new Error(`unexpected filter ${operator} ${String(value)}`);
+            }
+          );
+        }
+        return createQueryBuilder(() => ({ data: [{ goalie_id: 5555, team_id: 3, opponent_team_id: 4,
+          players: { fullName: "Fallback Goalie" }, starter_probability: 0.6, uncertainty: {} }], error: null }),
+        (column, value) => { if (column === "run_id") readRunIds.push(String(value)); });
+      }
+      return prior(table);
+    });
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+
+    expect(readRunIds).toEqual(["run-121"]);
+    expect(res.body).toMatchObject({ runId: "run-121", asOfDate: "2026-02-05", fallbackApplied: true });
   });
 });

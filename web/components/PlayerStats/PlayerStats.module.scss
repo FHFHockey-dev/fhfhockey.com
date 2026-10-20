@@ -19,19 +19,29 @@
 // PLACEHOLDERS & EXTENSIONS
 // =============================================================================
 
-// Base for performance-colored cards
+// Dense data card (RSO metric language): neutral surface, full border in the
+// card's tone with a thicker left edge so the rail follows the radius.
 %card-base {
-  padding: v.$space-md;
-  border-radius: v.$border-radius-md;
-  border-left: 4px solid transparent;
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
+  --card-tone: #{v.$draft-border};
+  padding: v.$space-xs v.$space-sm;
+  border: 1px solid var(--card-tone);
+  border-left-width: 6px;
+  border-radius: v.$radius-md;
+  background: v.$draft-surface-raised;
+}
 
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  }
+// Panel title (RSO .panelHead h2): compact, uppercase, never competes with
+// the player name.
+%panel-title {
+  margin: 0;
+  color: v.$text-primary;
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-sm;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-shadow: none;
 }
 
 // Performance color modifiers
@@ -108,6 +118,7 @@
 
 .playerStatsPageContainer {
   width: 95%;
+  max-width: 1680px;
   margin: 2rem auto;
 }
 
@@ -122,43 +133,72 @@
 }
 
 .contentArea {
-  margin: v.$space-xl 0;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+  min-width: 0;
 }
 
 // =============================================================================
 // LAYOUT GRIDS
 // =============================================================================
 
+// Single column until both columns have usable width; minmax(0, …) lets wide
+// children (tables, charts) shrink instead of widening the page.
 .overviewGrid {
-  display: flex;
-  gap: v.$space-lg;
-  margin: v.$space-xl 0;
-  min-height: 500px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: v.$space-sm;
+
+  @media (min-width: 1200px) {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  }
 }
 
 .leftColumn {
   display: flex;
   flex-direction: column;
-  width: 40%;
-  gap: v.$space-md;
+  min-width: 0;
+  gap: v.$space-sm;
 }
 
 .rightColumn {
-  width: 60%;
-  height: 100%;
+  min-width: 0;
 }
 
 .advancedGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: v.$space-xl;
-  margin: v.$space-xl 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: v.$space-sm;
+  margin: 0;
+
+  @media (min-width: 1200px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+// Advanced panels size to their content (the chart owns its canvas height);
+// panels in the same row share the row height.
+.advancedPanel {
+  min-width: 0;
+}
+
+.advancedPanel,
+.advancedTable {
+  display: flex;
+  flex-direction: column;
+
+  > * {
+    flex: 1 1 auto;
+  }
 }
 
 // =============================================================================
 // GENERIC COMPONENT CONTAINERS
 // =============================================================================
 
+// RSO panel: one bordered draft surface per module (no nested card borders),
+// compact padding. No overflow clipping, so content is never cut off.
 .playerStatsContainer,
 .trendContainer,
 .heatmapContainer,
@@ -166,39 +206,184 @@
 .contextualContainer,
 .performanceCalendar,
 .summarySection,
+.chartContainer {
+  min-width: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: v.$space-sm v.$space-md;
+  background: v.$draft-surface;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-card;
+  color: v.$text-primary;
+
+  @media (max-width: v.$screen-small-max) {
+    padding: v.$space-sm;
+  }
+}
+
+.contextualContainer > h3 {
+  @extend %panel-title;
+  margin-bottom: v.$space-sm;
+}
+
 .advancedTable {
-  @include v.component-wrapper;
-  padding: v.$space-xl;
-  margin-bottom: v.$space-xl;
+  min-width: 0;
 }
 
-.summarySection,
-.advancedTable,
-.performanceCalendar {
-  padding: v.$space-lg;
+// Chart panel header (PlayerStatsChart), same anatomy as the table header.
+.chartHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: v.$space-xs v.$space-md;
+  margin-bottom: v.$space-sm;
+
+  h3 {
+    @extend %panel-title;
+  }
 }
 
-.radarSection,
-.insightsSection {
-  flex: 1;
-  min-height: 250px;
-  @include v.component-wrapper;
-  padding: v.$space-lg;
-  box-sizing: border-box;
+.chartSubtitle {
+  color: v.$warning-color;
+  font-size: v.$font-size-xs;
 }
 
-.calendarSection {
-  height: 100%;
-  min-height: 500px;
-  padding: v.$space-sm;
-  outline: 5px solid v.$border-color-primary;
-  border-radius: v.$border-radius-lg * 1.5;
-  box-sizing: border-box;
+// Advanced source note + glossary as one disclosure.
+.advancedNote {
+  min-width: 0;
+  padding: v.$space-xs v.$space-md;
+  background: v.$draft-surface;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-card;
+
+  > summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: v.$space-xs v.$space-md;
+    min-height: 32px;
+    padding-block: v.$space-xs;
+    cursor: pointer;
+
+    @media (max-width: 1100px) {
+      min-height: 44px;
+    }
+  }
 }
 
+.advancedNoteTitle {
+  @extend %panel-title;
+}
+
+.advancedNoteHint {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.advancedNoteContent {
+  padding: v.$space-xs 0 v.$space-sm;
+  border-top: 1px solid v.$draft-border;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  line-height: 1.45;
+
+  p {
+    margin: v.$space-xs 0;
+  }
+
+  strong {
+    color: v.$text-primary;
+  }
+}
+
+.advancedGlossary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+  gap: 2px v.$space-md;
+  margin: v.$space-xs 0 0;
+
+  > div {
+    display: flex;
+    gap: v.$space-xs;
+    padding: 2px 0;
+    border-bottom: 1px solid v.$draft-border;
+  }
+
+  dt {
+    flex: 0 0 auto;
+    min-width: 4.5rem;
+    color: v.$primary-color;
+    font-weight: 700;
+  }
+
+  dd {
+    margin: 0;
+  }
+}
+
+// Game Log: the table panel carries the visible title; keep the tab heading
+// for screen readers only.
+.gameLogTab {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+  min-width: 0;
+
+  > h2 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+// Lineup deployment is shared with Start Chart (compact), so the player page
+// styles it through its own wrapper and leaves the component defaults alone.
 .lcpgSection {
   @include v.component-wrapper;
   padding: v.$space-lg;
+}
+
+.deploymentPanel {
+  min-width: 0;
+
+  .lcpgSection {
+    padding: v.$space-sm v.$space-md;
+    background: v.$draft-surface;
+    border: 1px solid v.$draft-border;
+    border-radius: v.$radius-card;
+    overflow: visible;
+  }
+
+  .lcpgHeader {
+    margin-bottom: v.$space-sm;
+
+    h2 {
+      @extend %panel-title;
+    }
+
+    span {
+      font-size: v.$font-size-xs;
+    }
+  }
+
+  // Keep cells compact instead of stretching to the column width.
+  .lcpgLayout {
+    max-width: 420px;
+  }
+}
+
+// Layout wrappers only; the panels inside carry the surface.
+.radarSection,
+.insightsSection,
+.calendarSection {
+  flex: 1;
+  min-width: 0;
 }
 
 .lcpgHeader {
@@ -304,6 +489,7 @@
 
 .playerHeader {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: v.$space-xl;
   margin: v.$space-xl 0;
@@ -316,7 +502,8 @@
 }
 
 .playerInfo {
-  flex: 1;
+  flex: 1 1 14rem;
+  min-width: 0;
 }
 
 .playerDetails {
@@ -329,6 +516,7 @@
   margin: 0 0 0.5rem 0;
   letter-spacing: 0.1em;
   color: v.$text-primary;
+  overflow-wrap: anywhere;
 }
 
 // =============================================================================
@@ -337,6 +525,7 @@
 
 .tabNavigation {
   display: flex;
+  flex-wrap: wrap; // every tab stays visible on narrow screens
   gap: v.$space-sm;
   margin: v.$space-lg 0;
   border-bottom: 2px solid v.$border-primary;
@@ -371,6 +560,10 @@
   margin: v.$space-lg 0;
   padding: v.$space-lg;
   @include v.component-wrapper;
+
+  @media (max-width: v.$screen-small-max) {
+    padding: v.$space-md;
+  }
 }
 
 .controlsGrid {
@@ -396,19 +589,20 @@
 // =============================================================================
 
 .timeframeSelector {
-  flex: 0 0 auto;
-  min-width: 300px;
+  flex: 0 1 auto;
+  min-width: 0;
 
   .timeframeButtons {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: v.$space-md;
+    gap: v.$space-sm;
   }
 }
 
 .statSelector {
-  flex: 1;
-  min-width: 400px;
+  flex: 1 1 24rem;
+  min-width: 0;
 
   &.input {
     padding: 8px 12px;
@@ -434,8 +628,8 @@
 }
 
 .statCategory {
-  flex: 1;
-  min-width: 200px;
+  flex: 1 1 12rem;
+  min-width: 0;
 
   h4 {
     color: v.$secondary-color;
@@ -446,14 +640,13 @@
   }
 
   .statCheckboxContainer {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(9rem, 100%), 1fr));
     gap: v.$space-xs;
 
     .statCheckbox {
-      flex: 1 1 calc(33.333% - #{v.$space-xs});
       min-width: 0;
-      max-width: calc(33.333% - #{v.$space-xs});
+      overflow-wrap: anywhere;
     }
   }
 }
@@ -511,21 +704,18 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: v.$space-md;
+  margin-bottom: v.$space-sm;
   flex-wrap: wrap;
   gap: v.$space-md;
 
   h3 {
-    font-size: v.$font-size-xl;
-    font-weight: 600;
-    color: v.$text-primary;
-    margin: 0;
+    @extend %panel-title;
   }
 
   p {
     color: v.$text-secondary;
     margin: 0;
-    font-size: v.$font-size-sm;
+    font-size: v.$font-size-xs;
     display: flex;
     align-items: center;
     gap: v.$space-xs;
@@ -553,42 +743,66 @@
   }
 }
 
+// Scrolls inside its own box (both axes); short logs take only their height.
 .scrollableTableWrapper {
-  // Maintained for backward compatibility if needed
-  height: 400px;
-  overflow-y: auto;
-  overflow-x: auto;
-  border-radius: v.$border-radius-md;
-  border: 1px solid v.$border-secondary;
-  background: v.$background-dark;
+  max-height: min(520px, 70vh);
+  overflow: auto;
+  border-radius: v.$radius-control;
+  border: 1px solid v.$draft-border;
+  background: v.$draft-surface;
 }
 
 .statsTable {
   width: 100%;
   border-collapse: collapse;
-  background: v.$background-dark;
+  background: v.$draft-surface;
+  font-variant-numeric: tabular-nums;
 
   th,
   td {
-    padding: v.$space-sm v.$space-md;
+    padding: v.$space-xs v.$space-sm;
     text-align: left;
-    border-bottom: 1px solid v.$border-secondary;
-    font-size: v.$font-size-sm;
+    border-bottom: 1px solid v.$draft-border;
+    font-size: v.$font-size-xs;
+    white-space: nowrap;
+  }
+
+  th:first-child,
+  td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: v.$draft-surface;
+    white-space: nowrap;
+    box-shadow: 1px 0 0 v.$draft-border;
+  }
+
+  tbody tr:nth-child(even) td {
+    background: v.$draft-zebra;
   }
 
   th {
-    background: v.$background-medium;
+    background: v.$draft-surface-raised;
+    font-size: 10px;
     font-weight: 600;
-    color: v.$primary-color;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: v.$text-secondary;
     position: sticky;
     top: 0;
     z-index: 10;
+    white-space: nowrap;
+
+    &:first-child {
+      z-index: 11;
+      background: v.$draft-surface-raised;
+    }
     cursor: pointer;
     user-select: none;
     transition: background-color 0.2s;
 
     &:hover {
-      background: v.$background-light;
+      color: v.$text-primary;
     }
     &.sortable::after {
       content: "↕";
@@ -606,7 +820,7 @@
   }
 
   td {
-    color: v.$text-secondary;
+    color: v.$text-primary;
     &.numeric {
       text-align: right;
       font-variant-numeric: tabular-nums;
@@ -621,14 +835,27 @@
   }
 
   tbody tr {
-    transition: background-color 0.2s;
-    &:hover {
-      background: v.$background-light;
+    &:hover td {
+      background: rgba(v.$primary-color, 0.1);
     }
     &:last-child td {
       border-bottom: none;
     }
   }
+
+  // Missed games: icon + 0 GP + dashes carry the state; the tint is extra.
+  tbody tr.missedGameRow td {
+    background: color-mix(in srgb, #{v.$color-coral-500} 10%, #{v.$draft-surface});
+    color: v.$text-secondary;
+  }
+}
+
+// Missed-game marker in table date cells (source image is 512px).
+.injuredIconTable {
+  width: 14px;
+  height: 14px;
+  margin-left: v.$space-xs;
+  vertical-align: middle;
 }
 
 .tableLabel {
@@ -694,25 +921,9 @@
 // CHART COMPONENTS
 // =============================================================================
 
-.trendContainer,
-.radarContainer {
-  background-color: v.$background-dark;
-  border: 1px solid v.$border-primary;
-  border-radius: v.$border-radius-lg;
-}
-
 .trendHeader,
 .radarHeader {
   align-items: flex-start;
-
-  h3 {
-    font-family: v.$font-family-accent;
-    font-weight: 400;
-    color: v.$secondary-color;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  }
 
   p {
     font-family: v.$font-family-primary;
@@ -724,14 +935,10 @@
 .radarWrapper {
   position: relative;
   width: 100%;
-  padding: v.$space-md;
-  background: linear-gradient(
-    135deg,
-    rgba(v.$background-dark, 0.8) 0%,
-    rgba(v.$background-medium, 0.9) 100%
-  );
-  border: 1px solid v.$border-secondary;
-  border-radius: v.$border-radius-md;
+  padding: v.$space-sm;
+  background: v.$draft-input;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-control;
   overflow: hidden;
 
   canvas {
@@ -741,9 +948,19 @@
 
 .chartWrapper {
   height: 400px;
+
+  @media (max-width: v.$screen-small-max) {
+    height: 300px;
+    padding: v.$space-xs;
+  }
 }
 .radarWrapper {
   height: 350px;
+
+  // No rankings: keep the explanation, drop the empty chart height.
+  &:has(> .noData) {
+    height: auto;
+  }
 }
 
 .rollingAverageToggle {
@@ -788,26 +1005,31 @@
       flex-wrap: wrap;
     }
 
+    // Segmented comparison toggle (same anatomy as the shell's window toggle).
     .comparisonButton {
-      @extend %base-button;
-      padding: v.$space-xs v.$space-sm;
-      font-size: v.$font-size-sm;
-      font-weight: 500;
-      min-width: auto;
-      width: calc(100% / 4 - #{v.$space-xs});
-      white-space: nowrap;
+      flex: 1 1 6rem;
+      min-height: 30px;
+      padding: 2px v.$space-sm;
+      border: 1px solid v.$draft-border;
+      border-radius: v.$radius-xs;
+      background: v.$draft-input;
+      color: v.$text-secondary;
+      font: 600 v.$font-size-xs v.$font-family-primary;
+      cursor: pointer;
 
       &.active {
-        background-color: v.$primary-color;
-        color: v.$text-button;
-        border-color: v.$primary-color;
-        font-weight: 600;
+        border: 2px solid v.$primary-color;
+        background: rgba(v.$primary-color, 0.22);
+        color: v.$color-white;
       }
 
       &:hover:not(.active) {
-        background-color: rgba(v.$primary-color, 0.1);
-        border-color: v.$primary-color;
-        color: v.$primary-color;
+        background: rgba(v.$primary-color, 0.12);
+        color: v.$text-primary;
+      }
+
+      @media (max-width: 1100px) {
+        min-height: 44px;
       }
     }
 
@@ -1079,17 +1301,17 @@
 }
 
 .radarLegend {
-  margin-top: v.$space-lg;
-  padding: v.$space-md;
-  background: rgba(v.$background-medium, 0.5);
-  border-radius: v.$border-radius-md;
-  border: 1px solid v.$border-secondary;
+  margin-top: v.$space-sm;
+  padding: v.$space-xs v.$space-sm;
+  background: v.$draft-input;
+  border-radius: v.$radius-control;
+  border: 1px solid v.$draft-border;
 }
 
 .percentileGuide {
   display: flex;
   flex-wrap: wrap;
-  gap: v.$space-md;
+  gap: 2px v.$space-md;
   justify-content: space-between;
   align-items: center;
 }
@@ -1103,25 +1325,26 @@
   }
 }
 
+// Dense list rows (RSO roster-row language) instead of boxed tiles.
 .radarStats {
-  margin-top: v.$space-lg;
+  margin-top: v.$space-sm;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: v.$space-sm;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  column-gap: v.$space-md;
 }
 
 .statBreakdown {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: v.$space-sm v.$space-md;
-  background: rgba(v.$background-medium, 0.6);
-  border-radius: v.$border-radius-sm;
-  border: 1px solid v.$border-secondary;
-  transition: background-color v.$transition-duration v.$transition-easing;
+  gap: v.$space-sm;
+  min-height: 28px;
+  padding: 2px v.$space-xs;
+  border-bottom: 1px solid v.$draft-border;
+  font-variant-numeric: tabular-nums;
 
-  &:hover {
-    background: rgba(v.$background-medium, 0.8);
+  &:nth-child(even) {
+    background: v.$draft-zebra;
   }
 }
 
@@ -1280,29 +1503,26 @@
 
 .summarySection {
   h3 {
-    font-size: v.$font-size-xl;
-    font-weight: 600;
-    color: v.$text-primary;
-    margin: 0 0 v.$space-lg 0;
+    @extend %panel-title;
+    margin-bottom: v.$space-sm;
   }
   .summaryGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: v.$space-md;
+    grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
+    gap: v.$space-xs;
   }
 }
 
 .insightsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: v.$space-md;
-  margin-bottom: v.$space-xl;
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+  gap: v.$space-xs;
+  margin-bottom: v.$space-sm;
 }
 
 .summaryCard {
   @extend %card-base;
-  background: v.$background-medium;
-  border-left-color: v.$secondary-color;
+  --card-tone: #{v.$primary-color};
 
   &.elite {
     @extend %performance-elite;
@@ -1345,34 +1565,31 @@
     @extend %performance-poor;
   }
 
-  // Legacy trend-based classes
+  // Trend tone (the description text states the same judgement in words).
   &.positive {
-    background: rgba(34, 197, 94, 0.1);
-    border-left-color: #22c55e;
+    --card-tone: #{v.$color-teal-500};
   }
   &.negative {
-    background: rgba(239, 68, 68, 0.1);
-    border-left-color: #ef4444;
+    --card-tone: #{v.$color-coral-500};
   }
   &.neutral {
-    background: rgba(156, 163, 175, 0.1);
-    border-left-color: #9ca3af;
+    --card-tone: #{v.$color-neutral-400};
   }
 }
 
 .summaryLabel,
 .insightLabel {
-  font-size: v.$font-size-sm;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: v.$text-secondary;
-  margin-bottom: v.$space-xs;
 }
 
 .summaryValue,
 .insightValue {
-  font-size: v.$font-size-xl;
-  font-weight: 700;
-  color: v.$text-primary;
-  margin-bottom: v.$space-xs;
+  font: 700 1.15rem / 1.25 v.$font-family-primary;
+  font-variant-numeric: tabular-nums;
+  color: v.$color-white;
 }
 
 .summaryDescription,
@@ -1386,14 +1603,29 @@
 // =============================================================================
 
 .streakSection {
-  margin-bottom: v.$space-xl;
+  margin-bottom: v.$space-sm;
+
+  h4 {
+    @extend %panel-title;
+    margin-bottom: v.$space-xs;
+    font-size: v.$font-size-xs;
+    color: v.$text-secondary;
+  }
 }
 
 .streakCard,
 .seasonComparison {
-  background: v.$background-medium;
-  border-radius: v.$border-radius-md;
-  padding: v.$space-md;
+  background: v.$draft-input;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-control;
+  padding: v.$space-xs v.$space-sm;
+
+  h4 {
+    @extend %panel-title;
+    margin-bottom: v.$space-xs;
+    font-size: v.$font-size-xs;
+    color: v.$text-secondary;
+  }
 }
 
 .skaterStreaks {
@@ -1403,41 +1635,31 @@
 }
 
 .streak {
+  --card-tone: #{v.$color-neutral-400};
   text-align: center;
-  padding: v.$space-sm v.$space-md;
-  border-radius: v.$border-radius-sm;
+  padding: v.$space-xs v.$space-sm;
   min-width: 80px;
-  border-left: 4px solid transparent;
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
+  border: 1px solid var(--card-tone);
+  border-left-width: 6px;
+  border-radius: v.$radius-md;
+  background: v.$draft-surface-raised;
+  color: var(--card-tone);
 
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  }
   &.positive {
-    background: rgba(34, 197, 94, 0.2);
-    color: #22c55e;
-    border-left-color: #22c55e;
+    --card-tone: #{v.$color-teal-500};
   }
   &.negative {
-    background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
-    border-left-color: #ef4444;
+    --card-tone: #{v.$color-coral-500};
   }
   &.neutral {
-    background: rgba(156, 163, 175, 0.2);
-    color: #9ca3af;
-    border-left-color: #9ca3af;
+    --card-tone: #{v.$color-neutral-400};
   }
 }
 
 .streakValue {
   display: block;
-  font-size: v.$font-size-xl;
-  font-weight: 700;
-  line-height: 1;
+  font: 700 1.1rem / 1.1 v.$font-family-primary;
+  font-variant-numeric: tabular-nums;
 }
 .streakLabel {
   display: block;
@@ -1448,8 +1670,8 @@
 
 .comparisonStats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: v.$space-sm;
+  grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr));
+  gap: 2px v.$space-md;
 }
 
 .comparisonItem {
@@ -1475,7 +1697,7 @@
     display: flex;
     flex-direction: column;
     gap: v.$space-lg;
-    margin-bottom: v.$space-xl;
+    margin-bottom: v.$space-sm;
 
     .titleWithControls {
       display: flex;
@@ -1491,10 +1713,7 @@
         gap: v.$space-sm;
 
         h3 {
-          margin: 0;
-          font-size: v.$font-size-xl;
-          font-weight: 600;
-          color: v.$text-primary;
+          @extend %panel-title;
         }
         .infoButton {
           display: flex;
@@ -1610,10 +1829,12 @@
         }
 
         .seasonDropdown {
+          min-height: 32px;
           padding: v.$space-xs v.$space-sm;
-          background: v.$background-medium;
-          border: 1px solid v.$border-secondary;
-          border-radius: v.$border-radius-sm;
+          background: v.$draft-input;
+          border: 1px solid v.$draft-border;
+          border-radius: v.$radius-control;
+          color-scheme: dark;
           color: v.$text-primary;
           font-size: v.$font-size-sm;
           font-weight: 500;
@@ -1645,10 +1866,12 @@
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: v.$space-md;
-      padding: v.$space-md;
-      background: v.$background-medium;
-      border-radius: v.$border-radius-md;
+      gap: v.$space-xs v.$space-md;
+      padding: v.$space-xs v.$space-sm;
+      background: v.$draft-input;
+      border: 1px solid v.$draft-border;
+      border-radius: v.$radius-control;
+      font-size: v.$font-size-xs;
       .legendLabel {
         font-weight: 600;
         color: v.$text-primary;
@@ -1681,31 +1904,64 @@
 
   .calendarGrid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
     gap: v.$space-lg;
     margin-bottom: v.$space-xl;
   }
 
+  // Phones: one complete month with previous/next; wider screens show all.
+  .monthNav {
+    display: none;
+  }
+
+  @media (max-width: v.$screen-small-max) {
+    .monthNav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: v.$space-sm;
+      margin-bottom: v.$space-sm;
+    }
+
+    .calendarMonth:not(.activeMonth) {
+      display: none;
+    }
+  }
+
+  .monthNavButton {
+    @extend %base-button;
+    padding: v.$space-xs v.$space-md;
+    min-height: 44px;
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+  }
+
+  .monthNavLabel {
+    font-weight: 600;
+    color: v.$text-primary;
+  }
+
   .calendarMonth {
-    background: v.$background-medium;
-    border-radius: v.$border-radius-md;
-    padding: v.$space-sm;
-    border: 1px solid v.$border-secondary;
+    background: v.$draft-input;
+    border-radius: v.$radius-control;
+    padding: v.$space-xs;
+    border: 1px solid v.$draft-border;
     display: flex;
     flex-direction: column;
 
     .monthHeader {
       text-align: center;
-      font-family: v.$font-family-accent;
-      font-size: v.$font-size-sm;
-      font-weight: 600;
-      color: v.$primary-color;
-      padding: v.$space-md;
-      background: v.$background-dark;
-      border-top-left-radius: v.$border-radius-sm;
-      border-top-right-radius: v.$border-radius-sm;
+      font-family: v.$font-family-primary;
+      font-size: v.$font-size-xs;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: v.$text-primary;
+      padding: v.$space-xs;
       margin-bottom: v.$space-xxs;
-      border: 1px solid v.$border-primary;
     }
     .daysGrid {
       display: flex;
@@ -1719,11 +1975,12 @@
       margin-bottom: v.$space-xs;
     }
     .dayLabel {
+      min-width: 0;
       text-align: center;
       font-size: v.$font-size-xs;
       font-weight: 600;
       color: v.$text-secondary;
-      padding: v.$space-xs;
+      padding: v.$space-xs 0;
       background: v.$background-dark;
       border-radius: v.$border-radius-sm;
     }
@@ -1734,8 +1991,8 @@
     }
     .dayCell {
       position: relative;
-      min-height: 35px;
-      min-width: 35px;
+      min-width: 0;
+      aspect-ratio: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -1749,6 +2006,11 @@
         transform: scale(1.05);
         z-index: 10;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+      &:focus-visible {
+        outline: 2px solid v.$secondary-color;
+        outline-offset: 1px;
+        z-index: 10;
       }
       &.otherMonth {
         opacity: 0.3;
@@ -1765,7 +2027,7 @@
       }
       &.futureGameDay {
         background: rgba(v.$primary-color, 0.08) !important;
-        border: 2px solid v.$primary-color !important;
+        border: 2px dashed v.$primary-color !important;
         opacity: 0.9;
         &:hover {
           opacity: 1;
@@ -1785,7 +2047,7 @@
       // Combined future game + playoff game styling
       &.futureGameDay.playoffGame {
         background: rgba(v.$primary-color, 0.08) !important;
-        border: 2px solid v.$primary-color !important;
+        border: 2px dashed v.$primary-color !important;
         opacity: 0.9;
         &:hover {
           opacity: 1;
@@ -1799,6 +2061,15 @@
         font-weight: 600;
         color: v.$text-primary;
         margin-bottom: 2px;
+      }
+      .playoffMarker {
+        position: absolute;
+        bottom: 1px;
+        left: 3px;
+        font-size: v.$font-size-xxs;
+        font-weight: 700;
+        line-height: 1;
+        color: v.$warning-color;
       }
       .missedGameIndicator {
         position: absolute;
@@ -1933,14 +2204,14 @@
   }
 
   .calendarFooter {
-    margin-top: v.$space-xl;
-    padding-top: v.$space-lg;
-    border-top: 1px solid v.$border-secondary;
+    margin-top: v.$space-sm;
+    padding-top: v.$space-sm;
+    border-top: 1px solid v.$draft-border;
     .calendarStats {
       display: flex;
       flex-wrap: wrap;
-      gap: v.$space-xl;
-      margin-bottom: v.$space-lg;
+      gap: v.$space-sm v.$space-lg;
+      margin-bottom: v.$space-sm;
       .statItem {
         display: flex;
         flex-direction: column;
@@ -1994,25 +2265,27 @@
 
   // GitHub-style contribution graph
   .contributionGraph {
-    margin: v.$space-xl 0;
-    padding: v.$space-lg;
-    background: v.$background-medium;
-    border-radius: v.$border-radius-md;
-    border: 1px solid v.$border-secondary;
+    margin: v.$space-sm 0;
+    padding: v.$space-sm;
+    background: v.$draft-input;
+    border-radius: v.$radius-control;
+    border: 1px solid v.$draft-border;
 
     .contributionHeader {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: v.$space-lg;
+      margin-bottom: v.$space-xs;
       flex-wrap: wrap;
-      gap: v.$space-md;
+      gap: v.$space-sm;
 
       h4 {
         margin: 0;
-        font-size: v.$font-size-lg;
-        font-weight: 600;
-        color: v.$text-primary;
+        font-size: v.$font-size-xs;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: v.$text-secondary;
         display: flex;
         align-items: center;
         gap: v.$space-xs;
@@ -2031,10 +2304,7 @@
       overflow-x: auto;
       padding: v.$space-sm 0;
       width: 100%;
-      gap: 0; // Keep no gap between main elements (labels and grid)
-      // CRITICAL: Set minimum height so child elements can calculate 100%
-      min-height: 160px;
-
+      gap: 0;
       .monthLabels {
         display: flex;
         flex-direction: column;
@@ -2060,9 +2330,6 @@
         flex-direction: column;
         gap: 2px; // Match week column gap
         margin-right: v.$space-xs;
-        min-width: 20px;
-        // CRITICAL: Ensure the container takes full height of contributionGrid
-        height: 100%;
         align-self: stretch; // Force the container to stretch to parent height
 
         .dayLabelContainer {
@@ -2080,8 +2347,6 @@
           text-align: right;
           padding: 0 v.$space-xs 0 0;
           // CRITICAL: Use EXACT same height as contribution days for perfect alignment
-          height: 14px; // Match the fixed 14px height of contribution days
-          width: 20px;
           display: flex;
           align-items: center;
           justify-content: flex-end;
@@ -2103,8 +2368,6 @@
           text-align: right;
           padding: 0 v.$space-xs 0 0;
           // CRITICAL: Use EXACT same height as contribution days for perfect alignment
-          height: 14px; // Match the fixed 14px height of contribution days
-          width: 20px;
           display: flex;
           align-items: center;
           justify-content: flex-end;
@@ -2119,26 +2382,17 @@
         }
       }
 
+      // Week/day geometry lives in the top-level .contributionGraph block
+      // below (--cell-size). These nested rules have higher specificity and
+      // used to stretch cells to the container width (giant desktop cells).
       .weeksContainer {
         display: flex;
         gap: 2px; // SMALL GAP between week columns for readability
-        flex: 1;
-        min-width: 0;
-        width: 100%;
-        // Ensure container doesn't overflow - account for labels and gaps
-        max-width: calc(100% - 100px);
-        // CRITICAL: Set minimum height to match contributionGrid
-        min-height: 160px;
-        align-self: stretch; // Force the container to stretch to parent height
 
         .weekColumn {
           display: flex;
           flex-direction: column;
           gap: 2px; // SMALL GAP between days for readability
-          // RESPONSIVE WIDTH: Equal distribution accounting for gaps
-          flex: 1;
-          min-width: 0; // Allow shrinking
-          max-width: none; // Remove constraints
 
           .monthHeader {
             width: 100%;
@@ -2162,22 +2416,6 @@
           // RESPONSIVE SQUARE CONTRIBUTION DAYS
           .contributionDay,
           .emptyDay {
-            // CRITICAL: Make days truly responsive to week column width
-            width: 100%;
-            // Calculate height accounting for gaps:
-            // Total available height = 100% - month header (20px) - gaps (6 * 2px = 12px)
-            // Divided by 7 days
-            height: calc((100% - 20px - 12px) / 7);
-
-            // Remove all fixed constraints
-            min-width: unset;
-            min-height: unset;
-            max-width: unset;
-            max-height: unset;
-
-            // Use aspect-ratio as backup for square shape
-            aspect-ratio: 1;
-
             // Styling
             border-radius: clamp(1px, 0.15vw, 2px); // Responsive border radius
             cursor: pointer;
@@ -2259,7 +2497,7 @@
 
             &.future {
               background-color: transparent;
-              border: 1px solid v.$primary-color;
+              border: 1px dashed v.$primary-color;
               opacity: 0.7;
             }
 
@@ -2401,34 +2639,34 @@
       }
     }
 
+    // Same metric anatomy as the shell strip: label, then a strong figure.
     .contributionStats {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: v.$space-md;
-      padding: v.$space-md;
-      background: v.$background-dark;
-      border-radius: v.$border-radius-sm;
-      border: 1px solid v.$border-secondary;
-      flex-wrap: wrap;
-      gap: v.$space-md;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(96px, 100%), 1fr));
+      margin-top: v.$space-sm;
+      gap: v.$space-xs;
 
       .statGroup {
         display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: v.$space-xs;
+        flex-direction: column-reverse;
+        align-items: flex-start;
+        gap: 2px;
+        padding: v.$space-xs v.$space-sm;
+        background: v.$draft-surface;
+        border: 1px solid v.$draft-border;
+        border-radius: v.$radius-control;
 
         .statValue {
-          font-size: v.$font-size-lg;
-          font-weight: 700;
-          color: v.$text-primary;
+          font: 700 1.05rem/1.2 v.$font-family-primary;
+          font-variant-numeric: tabular-nums;
+          color: v.$color-white;
         }
 
         .statLabel {
-          font-size: v.$font-size-xs;
+          font-size: 10px;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
           color: v.$text-secondary;
-          text-align: center;
           line-height: 1.2;
         }
       }
@@ -2442,7 +2680,30 @@
 
 .contributionGraph {
   .contributionGrid {
+    // Single owner of activity-grid geometry: fixed-size cells; long seasons
+    // scroll inside the grid instead of growing cells with the page width.
+    --cell-size: 14px;
     width: 100%;
+
+    .daysLabels {
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      background: v.$background-medium;
+      gap: var(--gap-size, 2px);
+
+      .dayLabelContainer {
+        height: 20px;
+        width: auto;
+      }
+
+      .contributionDayLabel {
+        height: var(--cell-size);
+        width: auto;
+        min-width: 1.75rem;
+        font-size: v.$font-size-xxs;
+      }
+    }
 
     .weeksContainer {
       width: 100%;
@@ -2450,17 +2711,8 @@
       gap: var(--gap-size, 2px);
 
       .weekColumn {
-        // Calculate width accounting for gaps:
-        // (100% - total gap width) / number of weeks
-        width: calc(
-          (100% - (var(--total-weeks, 52) - 1) * var(--gap-size, 2px)) /
-            var(--total-weeks, 52)
-        );
-        flex: 0 0
-          calc(
-            (100% - (var(--total-weeks, 52) - 1) * var(--gap-size, 2px)) /
-              var(--total-weeks, 52)
-          );
+        width: var(--cell-size);
+        flex: 0 0 var(--cell-size);
         min-width: 0; // Allow shrinking below content size
 
         .monthHeader {
@@ -2485,14 +2737,10 @@
         .contributionDay,
         .emptyDay {
           // CRITICAL: Perfect square sizing
-          width: 14px;
-          height: 14px;
+          width: var(--cell-size);
+          height: var(--cell-size);
 
           // Remove all flex-based sizing that was causing rectangles
-          min-width: 14px;
-          min-height: 14px;
-          max-width: 14px;
-          max-height: 14px;
 
           // Remove aspect-ratio as we're using fixed sizes
           aspect-ratio: unset;
@@ -2577,7 +2825,7 @@
 
           &.future {
             background-color: transparent;
-            border: 1px solid v.$primary-color;
+            border: 1px dashed v.$primary-color;
             opacity: 0.7;
           }
 
@@ -2718,34 +2966,34 @@
       }
     }
 
+    // Same metric anatomy as the shell strip: label, then a strong figure.
     .contributionStats {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: v.$space-md;
-      padding: v.$space-md;
-      background: v.$background-dark;
-      border-radius: v.$border-radius-sm;
-      border: 1px solid v.$border-secondary;
-      flex-wrap: wrap;
-      gap: v.$space-md;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(96px, 100%), 1fr));
+      margin-top: v.$space-sm;
+      gap: v.$space-xs;
 
       .statGroup {
         display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: v.$space-xs;
+        flex-direction: column-reverse;
+        align-items: flex-start;
+        gap: 2px;
+        padding: v.$space-xs v.$space-sm;
+        background: v.$draft-surface;
+        border: 1px solid v.$draft-border;
+        border-radius: v.$radius-control;
 
         .statValue {
-          font-size: v.$font-size-lg;
-          font-weight: 700;
-          color: v.$text-primary;
+          font: 700 1.05rem/1.2 v.$font-family-primary;
+          font-variant-numeric: tabular-nums;
+          color: v.$color-white;
         }
 
         .statLabel {
-          font-size: v.$font-size-xs;
+          font-size: 10px;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
           color: v.$text-secondary;
-          text-align: center;
           line-height: 1.2;
         }
       }
@@ -2757,139 +3005,25 @@
 // RESPONSIVE BREAKPOINTS FOR CONTRIBUTION GRAPH
 // =============================================================================
 
-// Set minimum practical size constraints for very small screens
+// Breakpoints only change the cell size; geometry rules stay in one place.
 @media (max-width: v.$screen-small-max) {
   .contributionGraph {
     .contributionGrid {
-      // Reduce container padding to maximize space
-      padding: v.$space-xs 0;
-
-      .daysLabels {
-        min-width: 16px; // Slightly smaller on mobile
-        gap: 1px; // Smaller gap on mobile
-
-        .dayLabelContainer {
-          height: 16px;
-          width: 16px;
-        }
-
-        .contributionDayLabel {
-          // Adjust height calculation for mobile with smaller gaps
-          height: calc((100% - 16px - 6px) / 7); // 6 gaps * 1px each
-          min-height: 6px; // Ensure minimum readability
-        }
-      }
-
-      .weeksContainer {
-        max-width: calc(100% - 70px); // Less space for labels on mobile
-        gap: 1px; // Smaller gap on mobile
-        // Set a minimum height to ensure day labels can calculate properly
-        min-height: 100px;
-
-        .weekColumn {
-          gap: 1px; // Smaller gap on mobile
-
-          .monthHeader {
-            height: 16px; // Match smaller dayLabelContainer
-
-            .monthName {
-              font-size: v.$font-size-xxs;
-            }
-          }
-
-          .contributionDay,
-          .emptyDay {
-            // Adjust height calculation for mobile with smaller gaps
-            height: calc((100% - 16px - 6px) / 7); // 6 gaps * 1px each
-            // Ensure minimum touch-friendly size but keep responsive
-            min-width: 6px;
-            min-height: 6px;
-            border-radius: 1px;
-          }
-        }
-      }
+      --cell-size: 12px;
     }
 
     .contributionLegend {
-      .legendSection {
-        .legendScale {
-          .scaleItem {
-            width: 10px;
-            height: 10px;
-          }
-        }
-      }
-
-      .legendSpecial {
-        .specialItem {
-          .specialIndicator {
-            width: 10px;
-            height: 10px;
-          }
-        }
+      .legendSection .legendScale .scaleItem,
+      .legendSpecial .specialItem .specialIndicator {
+        width: 10px;
+        height: 10px;
       }
     }
   }
 }
 
-// Tablet optimization - maintain responsive behavior with reasonable constraints
-@media (min-width: v.$screen-medium-min) and (max-width: v.$screen-medium-max) {
-  .contributionGraph {
-    .contributionGrid {
-      .daysLabels {
-        .dayLabel {
-          // Adjust for tablet sizes with 2px gaps
-          height: calc((100% - 20px - 12px) / 7);
-        }
-      }
-
-      .weeksContainer {
-        max-width: calc(100% - 85px); // Moderate space for labels
-        min-height: 140px; // Better minimum for tablet sizes
-
-        .weekColumn {
-          .contributionDay,
-          .emptyDay {
-            // Height calculation with 2px gaps
-            height: calc((100% - 20px - 12px) / 7);
-            // Slightly larger minimum for tablets
-            min-width: 8px;
-            min-height: 8px;
-          }
-        }
-      }
-    }
-  }
-}
-
-// Large screen optimization - maintain responsive behavior with maximum constraints
 @media (min-width: v.$screen-large) {
-  .contributionGraph {
-    .contributionGrid {
-      .daysLabels {
-        .dayLabel {
-          // Adjust for large screens with 2px gaps
-          height: calc((100% - 20px - 12px) / 7);
-        }
-      }
-
-      .weeksContainer {
-        max-width: calc(100% - 100px); // More space for labels on large screens
-        min-height: 160px; // Comfortable minimum for large screens
-
-        .weekColumn {
-          .contributionDay,
-          .emptyDay {
-            // Height calculation with 2px gaps
-            height: calc((100% - 20px - 12px) / 7);
-            // Cap maximum size for visual balance but keep responsive
-            max-width: 20px;
-            max-height: 20px;
-            min-width: 10px;
-            min-height: 10px;
-          }
-        }
-      }
-    }
+  .contributionGraph .contributionGrid {
+    --cell-size: 16px;
   }
 }

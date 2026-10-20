@@ -79,6 +79,13 @@ const db = vi.hoisted(() => {
         filters.push((row) => values.includes(row[column]));
         return query;
       },
+      not: (column: string, operator: string, value: unknown) => {
+        if (operator === "is" && value === null) filters.push((row) => read(row, column) != null);
+        else if (operator === "like" && value === "local:*") {
+          filters.push((row) => read(row, column) != null && !String(read(row, column)).startsWith("local:"));
+        } else throw new Error(`unsupported not(${column}, ${operator})`);
+        return query;
+      },
       order: (key: string, options?: { ascending?: boolean }) => {
         order = { key, ascending: options?.ascending !== false };
         return query;
@@ -168,7 +175,7 @@ const playerRows = (runId: string) =>
     .map((row) => `${row.game_id}:${row.player_id}`).sort();
 
 function seedRun(row: Row) {
-  (db.tables.forge_runs ??= []).push({ as_of_date: date, git_sha: null, updated_at: null, ...row });
+  (db.tables.forge_runs ??= []).push({ as_of_date: date, git_sha: "a".repeat(40), updated_at: null, ...row });
 }
 
 function seedPausedRun(args: { runId: string; owner: string; leaseExpiresAt: string; createdAt: string; completed: number[] }) {
@@ -194,6 +201,8 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(start);
   vi.stubEnv("STARTER_BOARD_CAPTURE_ENABLED", "false");
+  // A hosted deployment: runs it makes are served (local runs are fenced).
+  vi.stubEnv("VERCEL_GIT_COMMIT_SHA", "a".repeat(40));
   vi.stubEnv("STARTER_BOARD_COMPUTE_ENABLED", "false");
 });
 afterEach(() => {
@@ -246,6 +255,17 @@ describe("resumable FORGE projection run", () => {
     expect(await requireLatestSucceededRunId(date)).toBe(first.runId);
   });
 
+  it.each([undefined, ""])("stamps an uncaptured localhost run local:unknown and keeps serving the released run (SHA env %j)", async (sha) => {
+    for (const key of ["FORGE_CODE_VERSION", "VERCEL_GIT_COMMIT_SHA", "GIT_SHA"]) vi.stubEnv(key, sha);
+    seedRun({
+      run_id: "released-succeeded", status: "succeeded", created_at: "2026-10-20T06:00:00.000Z",
+      metrics: { input_provenance: buildForgeInputProvenance() },
+    });
+    const result = await runProjectionV2ForDate(date, { deadlineMs: Date.now() + 200_000 });
+    expect(runs().find((row) => row.run_id === result.runId)).toMatchObject({ status: "succeeded", git_sha: "local:unknown" });
+    expect(await requireLatestSucceededRunId(date)).toBe("released-succeeded");
+  });
+
   it("refuses a run whose lease is still held, then takes it over once the lease expires", async () => {
     // A killed invocation: game 1 finished, game 2 was in flight, no release.
     seedPausedRun({
@@ -271,6 +291,41 @@ describe("resumable FORGE projection run", () => {
     expect(runs()).toHaveLength(1);
     expect(runs()[0]).toMatchObject({ status: "succeeded", metrics: { games: 4, resume: { completed_game_ids: [1, 2, 3, 4] } } });
     expect(playerRows("killed-run")).toEqual(["1:1", "1:2", "2:1", "2:2", "3:1", "3:2", "4:1", "4:2"]);
+  });
+
+  it.each([
+    ["hosted", "hosted", true],
+    ["hosted", "local", false],
+    ["local", "hosted", false],
+    ["local", "local", true],
+  ] as const)("a %s invocation meeting a paused %s run resumes it only when both match: %s", async (invocation, paused, resumes) => {
+    // Hosted runs need not share a deployment SHA, only the release side.
+    vi.stubEnv("VERCEL_GIT_COMMIT_SHA", invocation === "hosted" ? "b".repeat(40) : "");
+    vi.stubEnv("GIT_SHA", "");
+    seedPausedRun({
+      runId: "paused-run", owner: "dead-owner", leaseExpiresAt: new Date(start - 1_000).toISOString(),
+      createdAt: new Date(start - 4 * 60_000).toISOString(), completed: [1],
+    });
+    const pausedSha = paused === "hosted" ? "a".repeat(40) : "local:unknown";
+    runs()[0].git_sha = pausedSha;
+
+    const result = await runProjectionV2ForDate(date, { deadlineMs: Date.now() + 200_000 });
+    const pausedRow = runs().find((row) => row.run_id === "paused-run")!;
+    if (resumes) {
+      expect(result).toMatchObject({ runId: "paused-run", resume: { resumed: true, invocations: 2 } });
+      expect(pausedRow).toMatchObject({ status: "succeeded", git_sha: pausedSha });
+      expect(runs()).toHaveLength(1);
+    } else {
+      // The other side's paused run is neither adopted nor failed: it waits for its own resume.
+      expect(result).toMatchObject({ resume: { resumed: false, invocations: 1 } });
+      expect(result.runId).not.toBe("paused-run");
+      expect(runs().find((row) => row.run_id === result.runId)).toMatchObject({
+        status: "succeeded", git_sha: invocation === "hosted" ? "b".repeat(40) : "local:unknown",
+      });
+      expect(pausedRow).toMatchObject({ status: "running", git_sha: pausedSha,
+        metrics: { resume: { lease_owner: "dead-owner", invocations: 1, completed_game_ids: [1] } } });
+      expect(fakes.skaterCalls).toEqual([1, 2, 3, 4]);
+    }
   });
 
   it("fences the previous owner and a second claimer once a run is taken over", async () => {

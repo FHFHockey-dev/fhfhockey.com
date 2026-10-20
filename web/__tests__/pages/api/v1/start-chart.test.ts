@@ -507,7 +507,7 @@ describe("/api/v1/start-chart", () => {
               as_of_date: "2026-02-07",
               created_at: "2026-02-07T12:00:00Z",
               updated_at: "2026-02-07T12:05:00Z",
-              git_sha: null,
+              git_sha: "a".repeat(40),
               metrics: null,
               forge_player_projections: [defaultProjection],
             },
@@ -612,7 +612,7 @@ describe("/api/v1/start-chart", () => {
     expect(res.body.serving.reason).toBe("scheduled_games_missing_projections");
   });
 
-  it.each([`local:${"a".repeat(64)}`, "local:unreviewed"])(
+  it.each([`local:${"a".repeat(64)}`, "local:unreviewed", null])(
     "withholds a returned private succeeded raw run with version %s", async (gitSha) => {
       vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "false");
       const prior = fromMock.getMockImplementation()!;
@@ -634,21 +634,22 @@ describe("/api/v1/start-chart", () => {
     },
   );
 
-  it.each([null, "a".repeat(40)])(
-    "selects the latest normal raw run with version %s before a newer private run can hide it", async (gitSha) => {
+  it.each([null, `local:${"b".repeat(64)}`])(
+    "selects the latest normal raw run before a newer private run with version %s can hide it", async (privateSha) => {
       vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "false");
       const { createClient } = await import("@supabase/supabase-js");
       const requests: URL[] = [];
       const client = createClient("http://localhost:59999", "synthetic-key", { global: {
         fetch: async (input) => {
           const url = new URL(String(input)); requests.push(url);
-          expect(url.searchParams.get("or")).toBe("(git_sha.is.null,git_sha.not.like.local:*)");
+          expect(url.searchParams.get("or")).toBeNull();
+          expect(url.searchParams.getAll("git_sha")).toEqual(["not.is.null", "not.like.local:*"]);
           expect(url.searchParams.get("status")).toBe("eq.succeeded");
           expect(url.searchParams.get("limit")).toBe("1");
           const rows = [
-            { run_id: "private-success", git_sha: `local:${"b".repeat(64)}` },
-            { run_id: "normal-success", git_sha: gitSha },
-          ].filter((row) => row.git_sha === null || !row.git_sha.startsWith("local:")).slice(0, 1);
+            { run_id: "private-success", git_sha: privateSha },
+            { run_id: "normal-success", git_sha: "a".repeat(40) },
+          ].filter((row) => row.git_sha !== null && !row.git_sha.startsWith("local:")).slice(0, 1);
           return new Response(JSON.stringify({ ...rows[0], as_of_date: "2026-02-07",
             created_at: "2026-02-07T12:00:00Z", metrics: null, forge_player_projections: [defaultProjection] }),
             { status: 200, headers: { "Content-Type": "application/json" } });
@@ -1599,7 +1600,7 @@ describe("/api/v1/start-chart", () => {
               as_of_date: "2026-02-07",
               created_at: "2026-02-07T12:00:00Z",
               updated_at: "2026-02-07T12:05:00Z",
-              git_sha: null,
+              git_sha: "a".repeat(40),
               metrics: null,
               forge_player_projections: [],
             },

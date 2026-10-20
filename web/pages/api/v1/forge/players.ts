@@ -4,6 +4,7 @@ import { buildEndpointScanSummary } from "lib/api/scanSummary";
 import { resolveLatestStartedSeasonIdForDate } from "lib/NHL/server";
 import { resolveProjectionTeamIdentity } from "lib/NHL/seasonAwareScheduleTeam";
 import supabase from "lib/supabase/server";
+import { excludeOffReleaseRuns } from "lib/projections/releasedRunFence";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
 import { buildCanonicalReaderCompatibility } from "lib/projections/compatibilityInventory";
@@ -154,12 +155,11 @@ async function fetchFallbackRunWithPlayerData(
   if (!oldestAllowedDate) return null;
 
   const scanCandidates = async (includeFutureDates: boolean) => {
-    let query = supabase
+    // Off-release (null or local:) runs stay private, as in start-chart.
+    let query = excludeOffReleaseRuns(supabase
       .from("forge_runs")
       .select("run_id,as_of_date,metrics")
-      .eq("status", "succeeded")
-      // Fenced local runs stay private, as in start-chart.
-      .or("git_sha.is.null,git_sha.not.like.local:*")
+      .eq("status", "succeeded"))
       .gte("as_of_date", oldestAllowedDate)
       .order("as_of_date", { ascending: false })
       .order("created_at", { ascending: false })
