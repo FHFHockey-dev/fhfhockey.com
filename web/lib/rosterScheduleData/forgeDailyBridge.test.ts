@@ -3,7 +3,8 @@ import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import { candidateHorizonPoints } from "lib/rosterScheduleOptimizer/planning";
 import type { PlanningGame, PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_VERSION, opponentTilts, teamWinProbability, type ForgeDailyBridgeInputs } from "./forgeDailyBridge";
-import { compactBridgeForecasts, expandBridgeForecasts } from "./bridgeForecastWire";
+import { compactBridgeForecasts, expandBridgeForecasts, packPlanningSnapshots, unpackPlanningSnapshots } from "./bridgeForecastWire";
+import { preservationJson } from "lib/rosterScheduleOptimizer/workspace";
 
 const now = new Date("2026-10-19T18:00:00Z");
 const policy = forecastCalendarPolicy(14);
@@ -83,6 +84,37 @@ describe("FORGE daily bridge", () => {
     expect(expandBridgeForecasts(undefined, { players, games })).toEqual([]);
     expect(expandBridgeForecasts({ ...sent, version: "other" }, { players, games })).toEqual([]);
     expect(expandBridgeForecasts({ ...sent, rows: [["s1", "1", 9, "x", {}, 2, "no", null]] }, { players, games })).toEqual([]);
+  });
+
+  it("packs bridge rows in every snapshot of a save or backup, restoring them exactly", () => {
+    const { forecasts } = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy);
+    const snapshot = { id: "s", context: { seasonId: 20262027, startDate: "2026-10-19" }, players, games, forecasts, roster: [] };
+    const save = { workspace: { version: 1 }, snapshot, expectedVersion: null };
+    const backup = { backup: { remote: { row: { workspace: { version: 1 }, snapshot } }, provider: { connected: snapshot } }, exported: false };
+    for (const body of [save, backup]) {
+      const packed = JSON.parse(JSON.stringify(packPlanningSnapshots(body)));
+      expect(JSON.stringify(packed)).not.toContain("issuedContext");
+      const restored = unpackPlanningSnapshots(packed);
+      expect(restored).toEqual(body);
+      // Backup checksums hash the same canonical JSON before and after the round trip.
+      expect(preservationJson(restored)).toBe(preservationJson(body));
+    }
+    expect(JSON.stringify(packPlanningSnapshots(save)).length).toBeLessThan(JSON.stringify(save).length * 0.6);
+    // Full-size payloads from before packing, and snapshots with any other forecast, pass through unchanged.
+    expect(unpackPlanningSnapshots(save)).toEqual(save);
+    const mixed = { ...save, snapshot: { ...snapshot, forecasts: [...forecasts, { ...forecasts[0], revisionId: "issued-revision" }] } };
+    expect(packPlanningSnapshots(mixed)).toEqual(mixed);
+    // A packed snapshot that cannot be rebuilt in full is refused, never restored partially.
+    const broken = JSON.parse(JSON.stringify(packPlanningSnapshots(save)));
+    broken.snapshot.players = [];
+    expect(() => unpackPlanningSnapshots(broken)).toThrow("could not be restored");
+  });
+
+  it("also caps the bytes projections take once rebuilt", () => {
+    const capped = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy, 1_000_000, 3000);
+    expect(capped.forecasts.length).toBeGreaterThan(0);
+    expect(JSON.stringify(capped.forecasts).length).toBeLessThanOrEqual(3000);
+    expect(capped.limitations.at(-1)).toMatch(/trimmed to the first \d+ of 6 player-games/);
   });
 
   it("keeps a skater FORGE gives no power-play line, at zero power-play production", () => {

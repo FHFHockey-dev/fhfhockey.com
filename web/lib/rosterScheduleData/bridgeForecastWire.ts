@@ -93,3 +93,43 @@ export function bridgeWireRowBytes(forecast: GameForecast): number {
   return JSON.stringify([forecast.playerId, forecast.gameId, 0, forecast.expiresAt, forecast.stats, forecast.startProbability,
     forecast.confirmedStart, forecast.conditionalStats ?? null]).length + 1;
 }
+
+const PACKED_KEY = "bridgeForecastWire";
+type SnapshotLike = Inputs & { forecasts: GameForecast[]; context: { seasonId: number } };
+const isSnapshotLike = (value: Record<string, unknown>): value is SnapshotLike => Array.isArray(value.forecasts)
+  && Array.isArray(value.players) && Array.isArray(value.games) && !!value.context && typeof value.context === "object"
+  && Number.isSafeInteger((value.context as { seasonId?: unknown }).seasonId);
+
+/**
+ * Compacts interim bridge rows inside every planning snapshot in a JSON value (workspace saves and loads,
+ * preservation backups and journals). A snapshot is packed only when every forecast in it rebuilds exactly,
+ * so unpacking restores the same rows in the same order and backup checksums are unchanged.
+ */
+export function packPlanningSnapshots<T>(value: T): T {
+  if (Array.isArray(value)) return value.map(packPlanningSnapshots) as T;
+  if (!value || typeof value !== "object") return value;
+  const record = value as Record<string, unknown>;
+  if (isSnapshotLike(record) && record.forecasts.length) {
+    const { forecasts, wire } = compactBridgeForecasts(record.forecasts, record, record.context.seasonId);
+    if (wire && !forecasts.length) return { ...Object.fromEntries(Object.entries(record).map(([key, item]) =>
+      [key, key === "forecasts" ? [] : packPlanningSnapshots(item)])), [PACKED_KEY]: wire } as T;
+  }
+  return Object.fromEntries(Object.entries(record).map(([key, item]) => [key, packPlanningSnapshots(item)])) as T;
+}
+
+/** Restores every snapshot `packPlanningSnapshots` compacted; values without packed snapshots come back unchanged. */
+export function unpackPlanningSnapshots<T>(value: T): T {
+  if (Array.isArray(value)) return value.map(unpackPlanningSnapshots) as T;
+  if (!value || typeof value !== "object") return value;
+  const record = value as Record<string, unknown>;
+  const entries = Object.entries(record).filter(([key]) => key !== PACKED_KEY).map(([key, item]) => [key, unpackPlanningSnapshots(item)] as const);
+  const result = Object.fromEntries(entries) as Record<string, unknown>;
+  if (PACKED_KEY in record && Array.isArray(result.forecasts) && Array.isArray(result.players) && Array.isArray(result.games)) {
+    const rows = (record[PACKED_KEY] as { rows?: unknown })?.rows;
+    const expanded = expandBridgeForecasts(record[PACKED_KEY], result as Inputs);
+    // A packed snapshot that does not rebuild completely is unusable, never silently partial.
+    if (!Array.isArray(rows) || expanded.length !== rows.length) throw new Error("Packed planning snapshot could not be restored.");
+    result.forecasts = [...result.forecasts as GameForecast[], ...expanded];
+  }
+  return result as T;
+}

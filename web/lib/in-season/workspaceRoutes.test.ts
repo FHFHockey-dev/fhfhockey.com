@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { webcrypto } from "node:crypto";
 import { capturePreservation, defaultWorkspace, preservationChecksum, writeWorkspace } from "lib/rosterScheduleOptimizer/workspace";
+import { expandBridgeForecasts, packPlanningSnapshots, unpackPlanningSnapshots } from "lib/rosterScheduleData/bridgeForecastWire";
 
 const state = vi.hoisted(() => ({
   userId: "owner-a", rows: [] as any[], capabilities: [] as string[],
@@ -114,6 +115,27 @@ describe("in-season workspace routes", () => {
     expect(conflict.body.error.code).toBe("version_conflict");
     const saved = res(); await workspaceHandler(req("PUT", { workspace, snapshot, expectedVersion: 2 }), saved);
     expect(saved.body.data.version).toBe(3);
+  });
+  it("saves interim bridge projections sent packed in full, and sends them back packed", async () => {
+    state.capabilities = ["rso_account_save"];
+    const players = [{ id: "7", nhlId: 8470001, nhlTeamId: 10, rosterRevision: "roster-7", name: "Skater", teamAbbreviation: "TOR",
+      eligiblePositions: ["C"], eligibilityVerified: true, playerClass: "skater", availability: "free_agent", ownership: null, canDrop: true,
+      holdValue: null, reserveEligibility: [] }];
+    const games = [{ id: "2026020101", scheduleRevision: "schedule-101", date: "2026-10-02", startsAt: "2026-10-02T23:00:00.000Z",
+      teamAbbreviation: "TOR", opponent: "MTL", home: true, status: "scheduled" }];
+    const wire = { version: "forge-daily-bridge-wire-v1", seasonId: 20262027, limitations: ["Interim FORGE projection."],
+      runs: [["forge-daily-bridge-v1:run-a", "forge-daily-bridge-v1:run-a", "forge-daily-bridge-v1:abc", "2026-10-01T11:00:00.000Z", "2026-10-01T11:00:00.000Z"]],
+      rows: [["7", "2026020101", 0, "2026-10-02T23:00:00.000Z", { GOALS: 0.3 }, null, false, null]] };
+    const bridged = { ...snapshot, players, games, forecasts: expandBridgeForecasts(wire, { players, games } as never) };
+    const sent = packPlanningSnapshots({ workspace, snapshot: bridged, expectedVersion: null });
+    expect(sent.snapshot.forecasts).toEqual([]);
+    const saved = res(); await workspaceHandler(req("PUT", JSON.parse(JSON.stringify(sent))), saved);
+    expect(saved.statusCode).toBe(200);
+    expect(state.rows[0].snapshot.forecasts).toEqual(bridged.forecasts);
+    expect(saved.body.data.snapshot.forecasts).toEqual([]);
+    expect(unpackPlanningSnapshots(JSON.parse(JSON.stringify(saved.body))).data.snapshot).toEqual(bridged);
+    const loaded = res(); await workspaceHandler(req("GET"), loaded);
+    expect(unpackPlanningSnapshots(JSON.parse(JSON.stringify(loaded.body))).data.snapshot).toEqual(bridged);
   });
   it("cannot update another account using its current version", async () => {
     state.rows.push(savedRow("owner-b", 4));
