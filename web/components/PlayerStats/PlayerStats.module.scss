@@ -249,6 +249,49 @@
   font-size: v.$font-size-xs;
 }
 
+// Actual values / relative-to-season-average switch (segmented toggle).
+.chartModeToggle {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-left: auto;
+  padding: 3px;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-control;
+  background: v.$draft-input;
+}
+
+.chartModeButton {
+  min-height: 28px;
+  padding: 2px v.$space-sm;
+  border: 1px solid transparent;
+  border-radius: v.$radius-xs;
+  background: transparent;
+  color: v.$text-secondary;
+  font: 600 v.$font-size-xs v.$font-family-primary;
+  cursor: pointer;
+
+  &:hover {
+    color: v.$text-primary;
+    background: rgba(v.$primary-color, 0.12);
+  }
+
+  &[aria-pressed="true"] {
+    border: 2px solid v.$primary-color;
+    background: rgba(v.$primary-color, 0.22);
+    color: v.$color-white;
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$focus-color;
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 1100px) {
+    min-height: 44px;
+  }
+}
+
 // One panel per unit (counts / rates / percentages / TOI), side by side when
 // there is room.
 .unitPanels {

@@ -1,5 +1,5 @@
 import React from "react";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const { lineMock } = vi.hoisted(() => ({
@@ -67,5 +67,45 @@ describe("PlayerStatsChart unit panels", () => {
     const [counts] = panelProps();
     expect(counts.data.datasets[1].label).toBe("P (5-game avg)");
     expect(counts.data.datasets[1].data).toEqual([null, 2]);
+  });
+
+  it("the season-average toggle draws one indexed panel; the unit split is the default", () => {
+    const season = [1, 2, 3, 4, 5, 6].map((points, i) => ({
+      date: `2026-10-0${i + 1}`,
+      games_played: 1,
+      points,
+      toi_per_game: 1200
+    }));
+    render(
+      <PlayerStatsChart
+        gameLog={season.slice(-3) as any}
+        seasonGameLog={season as any}
+        selectedStats={["points", "toi_per_game"]}
+      />
+    );
+    // Default: per-unit panels.
+    expect(screen.getByText("Counts")).toBeTruthy();
+    expect(screen.getByText("Time on ice")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Actual values" }).getAttribute("aria-pressed")).toBe("true");
+
+    lineMock.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "Relative to season average" }));
+    expect(screen.queryByText("Counts")).toBeNull();
+    const [relative] = panelProps();
+    expect(relative.options.scales.y.title.text).toBe("Index (100 = season average)");
+    // The window shows the last 3 games, indexed with full-season context.
+    expect(relative.data.labels).toHaveLength(3);
+    const points = relative.data.datasets.find((d: any) => d.label === "P");
+    expect(points.data[0]).toBeNull(); // game 4: fewer than 5 games so far
+    expect(points.data[1]).toBeCloseTo((3 / 3.5) * 100);
+    expect(points.data[2]).toBeCloseTo((4 / 3.5) * 100);
+    const toi = relative.data.datasets.find((d: any) => d.label === "TOI");
+    expect(toi.data[2]).toBeCloseTo(100);
+    expect(
+      relative.options.plugins.tooltip.callbacks.label({
+        dataset: points,
+        parsed: { y: 114.3 }
+      })
+    ).toBe("P: 114 (100 = season average)");
   });
 });

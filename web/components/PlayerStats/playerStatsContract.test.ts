@@ -4,6 +4,7 @@ import {
   formatMinutes,
   groupStatsByUnit,
   rollingAverage,
+  seasonIndexSeries,
   toChartValue,
   computeAvailability,
   countAppearances,
@@ -299,5 +300,32 @@ describe("rolling average", () => {
       { date: "8", points: null }
     ];
     expect(rollingAverage(log, "points", 5)).toEqual([1, 1, 2, 2, 2, 3, 3, null]);
+  });
+});
+
+describe("relative to season average (5-game index)", () => {
+  const rows = [1, 2, 3, 4, 5, 6].map((points, i) => ({ date: `2026-10-0${i + 1}`, points }));
+
+  it("indexes the 5-game rolling average to the season average (= 100), only after 5 games", () => {
+    // Season average 3.5; games 5 and 6 have rolling averages 3 and 4.
+    const series = seasonIndexSeries(rows, "points");
+    expect(series.slice(0, 4)).toEqual([null, null, null, null]);
+    expect(series[4]).toBeCloseTo((3 / 3.5) * 100);
+    expect(series[5]).toBeCloseTo((4 / 3.5) * 100);
+  });
+
+  it("missing values are gaps and never count as zero", () => {
+    const withGap = rows.map((row, i) => (i === 5 ? { ...row, points: null } : row));
+    const series = seasonIndexSeries(withGap, "points");
+    // Season average over present values (1..5) = 3; game 6 window = 2..5 -> 3.5.
+    expect(series[4]).toBeCloseTo(100);
+    expect(series[5]).toBeCloseTo((3.5 / 3) * 100);
+    const allMissing = rows.map((row) => ({ ...row, points: null }));
+    expect(seasonIndexSeries(allMissing, "points").every((v) => v === null)).toBe(true);
+  });
+
+  it("a zero season average has no baseline", () => {
+    const zeros = rows.map((row) => ({ ...row, points: 0 }));
+    expect(seasonIndexSeries(zeros, "points").every((v) => v === null)).toBe(true);
   });
 });
