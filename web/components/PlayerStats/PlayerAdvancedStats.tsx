@@ -4,7 +4,12 @@ import { PlayerRadarChart } from "./PlayerRadarChart";
 import { PlayerContextualStats } from "./PlayerContextualStats";
 import { PlayerStatsTable } from "./PlayerStatsTable";
 import { PlayerStatsAdvancedNote } from "./PlayerStatsAdvancedNote";
-import { GameLogEntry, POSITION_STAT_CONFIGS } from "./types";
+import {
+  GameLogEntry,
+  MissedGame,
+  POSITION_STAT_CONFIGS,
+  TimeFrame
+} from "./types";
 import styles from "./PlayerStats.module.scss";
 
 interface PlayerInfo {
@@ -24,7 +29,11 @@ interface PlayerAdvancedStatsProps {
   seasonTotals?: any[];
   playerId?: string | number;
   seasonId?: string | number | null;
-  missedGames?: any[]; // Add missedGames prop
+  timeFrame?: TimeFrame;
+  usedGameLogFallback?: boolean;
+  missedGames?: MissedGame[] | null;
+  asOfDate?: string;
+  windowStartDate?: string | null;
 }
 
 export function PlayerAdvancedStats({
@@ -37,7 +46,11 @@ export function PlayerAdvancedStats({
   seasonTotals = [],
   playerId,
   seasonId,
-  missedGames = [] // Add missedGames to destructured props
+  timeFrame = "season",
+  usedGameLogFallback = false,
+  missedGames,
+  asOfDate,
+  windowStartDate
 }: PlayerAdvancedStatsProps) {
   // Get position-specific advanced stats
   const positionConfig = React.useMemo(() => {
@@ -71,6 +84,9 @@ export function PlayerAdvancedStats({
             playerId={playerId}
             playerTeamId={player.team_id}
             seasonId={seasonId}
+            missedGames={missedGames}
+            asOfDate={asOfDate}
+            windowStartDate={windowStartDate}
           />
         </div>
 
@@ -95,6 +111,9 @@ export function PlayerAdvancedStats({
             selectedStats={advancedStats}
             isGoalie={isGoalie}
             showPlayoffData={showPlayoffData}
+            seasonId={seasonId}
+            timeFrame={timeFrame}
+            usedGameLogFallback={usedGameLogFallback}
           />
         </div>
 
@@ -108,8 +127,10 @@ export function PlayerAdvancedStats({
             playerId={
               typeof playerId === "string" ? Number(playerId) : playerId
             } // Convert string to number
-            seasonId={seasonId} // Pass seasonId to PlayerContextualStats
-            missedGames={missedGames} // Pass missedGames to PlayerContextualStats
+            seasonId={seasonId}
+            missedGames={missedGames}
+            asOfDate={asOfDate}
+            windowStartDate={windowStartDate}
           />
         </div>
       </div>

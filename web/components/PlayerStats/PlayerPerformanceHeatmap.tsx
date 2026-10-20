@@ -6,8 +6,6 @@ import {
   eachDayOfInterval,
   startOfWeek,
   endOfWeek,
-  isAfter,
-  startOfDay,
   getDay,
   addDays,
   startOfYear,
@@ -18,10 +16,17 @@ import { useMissedGames } from "hooks/useMissedGames";
 import {
   PlayerPerformanceHeatmapProps,
   GameLogEntry,
-  formatStatValue,
   STAT_DISPLAY_NAMES,
   MissedGame
 } from "./types";
+import {
+  formatPlayerStat,
+  leagueDateKey,
+  parseLocalDate,
+  scopeLogToSeason,
+  splitTeamSchedule,
+  toDisplayUnits
+} from "./playerStatsContract";
 
 type PerformanceLevel =
   | "elite"
@@ -146,7 +151,12 @@ const calculatePerformanceLevel = (
     if (value === null || value === undefined) return;
 
     const weight = weights[stat as keyof typeof weights] || 1;
-    const percentile = calculatePercentile(Number(value), stat);
+    // Thresholds use percentage points and TOI minutes.
+    const thresholdValue =
+      stat === "toi_per_game"
+        ? Number(value) / 60
+        : (toDisplayUnits(value, stat) ?? 0);
+    const percentile = calculatePercentile(thresholdValue, stat);
 
     totalScore += percentile * weight;
     totalWeight += weight;
@@ -462,12 +472,15 @@ export function PlayerPerformanceHeatmap({
   playerId,
   playerTeamId,
   seasonId,
-  missedGames = [], // Accept missed games from props (server-side data)
-  futureGames = [], // Accept future scheduled games
+  missedGames, // Team schedule rows without an appearance (server-side)
+  asOfDate,
+  windowStartDate = null,
   availableSeasonsFormatted = [] // Add this prop
 }: PlayerPerformanceHeatmapProps & {
-  missedGames?: MissedGame[];
-  futureGames?: any[];
+  // null = schedule unknown; undefined = not supplied (fetched client-side).
+  missedGames?: MissedGame[] | null;
+  asOfDate?: string;
+  windowStartDate?: string | null;
   availableSeasonsFormatted?: {
     value: string | number;
     label: string;
@@ -485,8 +498,7 @@ export function PlayerPerformanceHeatmap({
     seasonId || "current"
   );
 
-  // Get today's date for filtering future games
-  const today = startOfDay(new Date());
+  const effectiveAsOfDate = asOfDate ?? leagueDateKey();
 
   // Extract available seasons from props instead of calculating from game log
   const availableSeasons = useMemo(() => {
@@ -549,55 +561,23 @@ export function PlayerPerformanceHeatmap({
     return selectedSeason;
   }, [selectedSeason, availableSeasons]);
 
-  // Filter game logs by selected season
-  const filteredGameLog = useMemo(() => {
-    if (!currentSeason) return gameLog;
+  // The server scopes logs and schedule to the page season (seasonId); only a
+  // different season selected here falls back to date-based scoping.
+  const filteredGameLog = useMemo(
+    () => scopeLogToSeason(gameLog, currentSeason, seasonId),
+    [gameLog, currentSeason, seasonId]
+  );
 
-    // Convert currentSeason to string for comparison
-    const currentSeasonStr = String(currentSeason);
+  const filteredPlayoffGameLog = useMemo(
+    () => scopeLogToSeason(playoffGameLog, currentSeason, seasonId),
+    [playoffGameLog, currentSeason, seasonId]
+  );
 
-    return gameLog.filter((game) => {
-      if (!game.date) return false;
-      const gameDate = new Date(game.date);
-      const year = gameDate.getFullYear();
-      const seasonStart = gameDate.getMonth() >= 9 ? year : year - 1;
-      const gameSeason = `${seasonStart}${seasonStart + 1}`;
-      return gameSeason === currentSeasonStr;
-    });
-  }, [gameLog, currentSeason]);
-
-  const filteredPlayoffGameLog = useMemo(() => {
-    if (!currentSeason) return playoffGameLog;
-
-    // Convert currentSeason to string for comparison
-    const currentSeasonStr = String(currentSeason);
-
-    return playoffGameLog.filter((game) => {
-      if (!game.date) return false;
-      const gameDate = new Date(game.date);
-      const year = gameDate.getFullYear();
-      const seasonStart = gameDate.getMonth() >= 9 ? year : year - 1;
-      const gameSeason = `${seasonStart}${seasonStart + 1}`;
-      return gameSeason === currentSeasonStr;
-    });
-  }, [playoffGameLog, currentSeason]);
-
-  // Filter missed games by selected season
-  const filteredMissedGamesForSeason = useMemo(() => {
-    if (!currentSeason) return missedGames;
-
-    // Convert currentSeason to string for comparison
-    const currentSeasonStr = String(currentSeason);
-
-    return missedGames.filter((game) => {
-      if (!game.date) return false;
-      const gameDate = new Date(game.date);
-      const year = gameDate.getFullYear();
-      const seasonStart = gameDate.getMonth() >= 9 ? year : year - 1;
-      const gameSeason = `${seasonStart}${seasonStart + 1}`;
-      return gameSeason === currentSeasonStr;
-    });
-  }, [missedGames, currentSeason]);
+  const filteredMissedGamesForSeason = useMemo(
+    () =>
+      missedGames ? scopeLogToSeason(missedGames, currentSeason, seasonId) : missedGames,
+    [missedGames, currentSeason, seasonId]
+  );
 
   // DEBUG: Enhanced logging
   console.log("[PlayerPerformanceHeatmap] Enhanced Debug data:", {
@@ -605,7 +585,7 @@ export function PlayerPerformanceHeatmap({
     availableSeasons: availableSeasons.map((s) => s.label),
     regularSeasonGames: filteredGameLog.length,
     playoffGames: filteredPlayoffGameLog.length,
-    missedGamesFromProps: filteredMissedGamesForSeason.length,
+    missedGamesFromProps: filteredMissedGamesForSeason?.length ?? null,
     playerId,
     playerTeamId,
     seasonId,
@@ -622,27 +602,31 @@ export function PlayerPerformanceHeatmap({
   } = useMissedGames(
     playerId,
     playerTeamId,
-    seasonId,
+    missedGames === undefined ? seasonId : null,
     filteredGameLog,
     filteredPlayoffGameLog
   );
 
-  // Get all games data (both missed and future) from either props or hook
-  const allMissedGamesData =
-    filteredMissedGamesForSeason.length > 0
-      ? filteredMissedGamesForSeason
-      : hookMissedGames;
-
-  // Separate past missed games from future scheduled games
-  const filteredMissedGames = allMissedGamesData.filter((game) => {
-    const gameDate = startOfDay(new Date(game.date));
-    return !isAfter(gameDate, today) && !game.isFuture;
-  });
-
-  const futureScheduledGames = allMissedGamesData.filter((game) => {
-    const gameDate = startOfDay(new Date(game.date));
-    return isAfter(gameDate, today) || game.isFuture;
-  });
+  // Server-supplied schedule wins (even when empty). Games on or after the
+  // as-of date are upcoming, never missed.
+  const { absences: filteredMissedGames, upcoming: futureScheduledGames } =
+    useMemo(
+      () =>
+        splitTeamSchedule(
+          missedGames === undefined
+            ? hookMissedGames
+            : filteredMissedGamesForSeason,
+          effectiveAsOfDate,
+          windowStartDate
+        ),
+      [
+        missedGames,
+        hookMissedGames,
+        filteredMissedGamesForSeason,
+        effectiveAsOfDate,
+        windowStartDate
+      ]
+    );
 
   // Create calendar data combining regular season, playoff games, missed games, and future games
   const calendarData = useMemo(() => {
@@ -673,13 +657,12 @@ export function PlayerPerformanceHeatmap({
     const futureGamesByDate = new Map<string, any>();
 
     allGames.forEach((game) => {
-      const dateKey = format(new Date(game.date), "yyyy-MM-dd");
-      gamesByDate.set(dateKey, game);
+      gamesByDate.set(game.date.slice(0, 10), game);
     });
 
     // Only include missed games that are not in the future
     filteredMissedGames.forEach((missedGame) => {
-      const dateKey = format(new Date(missedGame.date), "yyyy-MM-dd");
+      const dateKey = missedGame.date.slice(0, 10);
       missedGamesByDate.set(dateKey, missedGame);
       console.log(
         `[PlayerPerformanceHeatmap] Added missed game: ${dateKey} (${missedGame.isPlayoff ? "playoff" : "regular"})`
@@ -688,7 +671,7 @@ export function PlayerPerformanceHeatmap({
 
     // Add future scheduled games from the hook data (not the unused futureGames prop)
     futureScheduledGames.forEach((futureGame) => {
-      const dateKey = format(new Date(futureGame.date), "yyyy-MM-dd");
+      const dateKey = futureGame.date.slice(0, 10);
       futureGamesByDate.set(dateKey, futureGame);
       console.log(
         `[PlayerPerformanceHeatmap] Added future game: ${dateKey} (${futureGame.isPlayoff ? "playoff" : "regular"})`
@@ -702,7 +685,7 @@ export function PlayerPerformanceHeatmap({
     });
 
     // Optimized date range calculation
-    const dates = allGames.map((game) => new Date(game.date));
+    const dates = allGames.map((game) => parseLocalDate(game.date));
     if (dates.length === 0) return [];
 
     const minDate = new Date(Math.min(...dates.map((d) => d.getTime())));
@@ -718,7 +701,9 @@ export function PlayerPerformanceHeatmap({
       minDate.getMonth() >= 6
         ? minDate.getFullYear()
         : minDate.getFullYear() - 1;
-    const startDate = new Date(seasonStartYear, 9, 1); // October 1st
+    // October 1st, or earlier when the season opened in September.
+    const octoberFirst = new Date(seasonStartYear, 9, 1);
+    const startDate = minDate < octoberFirst ? startOfMonth(minDate) : octoberFirst;
 
     const seasonEndYear =
       maxDate.getMonth() >= 6
@@ -962,7 +947,7 @@ export function PlayerPerformanceHeatmap({
         }}
       >
         <div className={styles.tooltipHeader}>
-          <strong>{format(new Date(game.date), "MMM d, yyyy")}</strong>
+          <strong>{format(parseLocalDate(game.date), "MMM d, yyyy")}</strong>
           {game.isPlayoff && (
             <span className={styles.playoffLabel}>PLAYOFF GAME</span>
           )}
@@ -983,7 +968,7 @@ export function PlayerPerformanceHeatmap({
                     {STAT_DISPLAY_NAMES[stat] || stat}
                   </span>
                   <span className={styles.statValue}>
-                    {formatStatValue(value, stat)}
+                    {formatPlayerStat(value, stat)}
                   </span>
                 </div>
               </div>
@@ -1010,7 +995,7 @@ export function PlayerPerformanceHeatmap({
         }}
       >
         <div className={styles.tooltipHeader}>
-          <strong>{format(new Date(missedGame.date), "MMM d, yyyy")}</strong>
+          <strong>{format(parseLocalDate(missedGame.date), "MMM d, yyyy")}</strong>
           <span className={styles.missedGameLabel}>
             Missed Game{" "}
             {missedGame.isPlayoff ? "(Playoff)" : "(Regular Season)"}
@@ -1047,7 +1032,7 @@ export function PlayerPerformanceHeatmap({
         }}
       >
         <div className={styles.tooltipHeader}>
-          <strong>{format(new Date(futureGame.date), "MMM d, yyyy")}</strong>
+          <strong>{format(parseLocalDate(futureGame.date), "MMM d, yyyy")}</strong>
           {futureGame.isPlayoff && (
             <span className={styles.playoffLabel}>PLAYOFF GAME</span>
           )}

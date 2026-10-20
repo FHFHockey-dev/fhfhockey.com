@@ -2,6 +2,12 @@ import React, { useMemo } from "react";
 import styles from "./PlayerStats.module.scss";
 import { SeasonTotals, MissedGame } from "./types";
 import { useMissedGames } from "hooks/useMissedGames";
+import {
+  aggregateSummaryStat,
+  computeAvailability,
+  countAppearances,
+  leagueDateKey
+} from "./playerStatsContract";
 
 interface GameLogEntry {
   date: string;
@@ -23,7 +29,11 @@ interface PlayerContextualStatsProps {
   isGoalie: boolean;
   playerId?: number;
   seasonId?: string | number | null;
-  missedGames?: MissedGame[]; // Add missing prop
+  // Team schedule rows without an appearance; null = schedule unknown,
+  // undefined = not supplied (fetched client-side).
+  missedGames?: MissedGame[] | null;
+  asOfDate?: string;
+  windowStartDate?: string | null;
 }
 
 export function PlayerContextualStats({
@@ -34,34 +44,22 @@ export function PlayerContextualStats({
   isGoalie,
   playerId,
   seasonId,
-  missedGames = [] // Accept missed games from props (server-side data)
+  missedGames,
+  asOfDate,
+  windowStartDate = null
 }: PlayerContextualStatsProps) {
-  // Use server-side missed games data instead of client-side hook
-  // Still keep the hook for backward compatibility but prioritize props
-  const {
-    missedGames: hookMissedGames,
-    isLoading: missedGamesLoading,
-    error: missedGamesError
-  } = useMissedGames(
+  // Server-supplied schedule wins (even when empty or null); the client hook
+  // only runs when no schedule was supplied at all.
+  const { missedGames: hookMissedGames } = useMissedGames(
     playerId || player.id,
     player.team_id,
-    seasonId,
+    missedGames === undefined ? seasonId : null,
     gameLog,
     playoffGameLog || []
   );
-
-  // Use server-side data if available, otherwise fall back to hook
   const activeMissedGames =
-    missedGames.length > 0 ? missedGames : hookMissedGames;
-
-  console.log("[PlayerContextualStats] Missed games debug:", {
-    source: missedGames.length > 0 ? "server-side" : "client-hook",
-    propsCount: missedGames.length,
-    hookCount: hookMissedGames.length,
-    activeCount: activeMissedGames.length,
-    loading: missedGamesLoading,
-    error: missedGamesError
-  });
+    missedGames === undefined ? hookMissedGames : missedGames;
+  const effectiveAsOfDate = asOfDate ?? leagueDateKey();
 
   const insights = useMemo(() => {
     if (gameLog.length === 0 && playoffGameLog.length === 0) return null;
@@ -71,49 +69,37 @@ export function PlayerContextualStats({
     const regularSeasonGames = gameLog.length;
     const playoffGames = playoffGameLog.length;
 
-    const gamesPlayed = allGames.reduce(
-      (sum, game) => sum + (game.games_played || 0),
-      0
-    );
+    const gamesPlayed = countAppearances(allGames);
     const insights = [];
 
-    // Enhanced availability calculation using missed games data
-    const regularSeasonGamesPlayed = gameLog.reduce(
-      (sum, game) => sum + (game.games_played || 0),
-      0
+    // Regular-season availability: appearances over elapsed eligible team
+    // games. Future and same-day scheduled games are never absences.
+    const availability = computeAvailability(
+      gameLog,
+      activeMissedGames,
+      effectiveAsOfDate,
+      windowStartDate
     );
+    const availabilityPercentage = availability.percentage;
 
-    // Count only regular season missed games for availability calculation
-    const regularSeasonMissedGames = activeMissedGames.filter(
-      (mg) => !mg.isPlayoff
-    ).length;
-
-    // Total possible regular season games = games played + missed games
-    const totalPossibleRegularSeasonGames =
-      regularSeasonGamesPlayed + regularSeasonMissedGames;
-
-    // Calculate availability percentage based on actual possible games. The
-    // denominator includes every game played, so it is never smaller than the
-    // games played and no fixed season length is needed.
-    const availabilityPercentage =
-      totalPossibleRegularSeasonGames > 0
-        ? (regularSeasonGamesPlayed / totalPossibleRegularSeasonGames) * 100
-        : 0;
-
-    // Enhanced availability insight with missed games context
     insights.push({
       label: "Availability",
-      value: `${availabilityPercentage.toFixed(1)}%`,
+      value:
+        availabilityPercentage === null
+          ? "-"
+          : `${availabilityPercentage.toFixed(1)}%`,
       trend:
-        availabilityPercentage >= 90
-          ? "positive"
-          : availabilityPercentage >= 75
-            ? "neutral"
-            : "negative",
+        availabilityPercentage === null
+          ? "neutral"
+          : availabilityPercentage >= 90
+            ? "positive"
+            : availabilityPercentage >= 75
+              ? "neutral"
+              : "negative",
       description:
-        totalPossibleRegularSeasonGames > 0
-          ? `${regularSeasonGamesPlayed} of ${totalPossibleRegularSeasonGames} possible games${regularSeasonMissedGames > 0 ? ` (${regularSeasonMissedGames} missed)` : ""}`
-          : `${regularSeasonGamesPlayed} games played (missed games data unavailable)`
+        availability.possible !== null && availability.possible > 0
+          ? `${availability.played} of ${availability.possible} possible games${availability.missed ? ` (${availability.missed} missed)` : ""}`
+          : `${availability.played} games played (schedule unavailable)`
     });
 
     if (isGoalie) {
@@ -230,16 +216,8 @@ export function PlayerContextualStats({
         (sum, game) => sum + (Number(game.points) || 0),
         0
       );
-      const goals = allGames.reduce(
-        (sum, game) => sum + (Number(game.goals) || 0),
-        0
-      );
       const assists = allGames.reduce(
         (sum, game) => sum + (Number(game.assists) || 0),
-        0
-      );
-      const shots = allGames.reduce(
-        (sum, game) => sum + (Number(game.shots) || 0),
         0
       );
       const ppPoints = allGames.reduce(
@@ -258,7 +236,12 @@ export function PlayerContextualStats({
       );
 
       const pointsPerGame = gamesPlayed > 0 ? points / gamesPlayed : 0;
-      const shootingPct = shots > 0 ? (goals / shots) * 100 : 0;
+      const shootingFraction = aggregateSummaryStat(
+        allGames,
+        "shooting_percentage"
+      );
+      const shootingPct =
+        shootingFraction === null ? null : shootingFraction * 100;
       const ppContribution = points > 0 ? (ppPoints / points) * 100 : 0;
       const playoffPPG = playoffGames > 0 ? playoffPoints / playoffGames : 0;
 
@@ -293,7 +276,7 @@ export function PlayerContextualStats({
         });
       }
 
-      if (shots > 0) {
+      if (shootingPct !== null) {
         insights.push({
           label: "Shooting %",
           value: `${shootingPct.toFixed(1)}%`,
@@ -443,7 +426,15 @@ export function PlayerContextualStats({
     }
 
     return insights;
-  }, [gameLog, playoffGameLog, player, isGoalie, activeMissedGames]);
+  }, [
+    gameLog,
+    playoffGameLog,
+    player,
+    isGoalie,
+    activeMissedGames,
+    effectiveAsOfDate,
+    windowStartDate
+  ]);
 
   const streakAnalysis = useMemo(() => {
     if (gameLog.length === 0 && playoffGameLog.length === 0) return null;
@@ -672,13 +663,13 @@ export function PlayerContextualStats({
           <div className={styles.comparisonItem}>
             <span className={styles.comparisonLabel}>Regular Season:</span>
             <span className={styles.comparisonValue}>
-              {gameLog.length} games
+              {countAppearances(gameLog)} games
             </span>
           </div>
           <div className={styles.comparisonItem}>
             <span className={styles.comparisonLabel}>Playoff Games:</span>
             <span className={styles.comparisonValue}>
-              {playoffGameLog.length} games
+              {countAppearances(playoffGameLog)} games
             </span>
           </div>
           <div className={styles.comparisonItem}>

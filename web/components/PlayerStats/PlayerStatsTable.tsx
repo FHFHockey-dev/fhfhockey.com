@@ -4,60 +4,16 @@ import { useMissedGames } from "hooks/useMissedGames";
 import {
   PlayerStatsTableProps,
   GameLogEntry,
-  formatStatValue,
   STAT_DISPLAY_NAMES,
   MissedGame
 } from "./types";
-
-const PERCENTAGE_STATS = [
-  "shooting_percentage",
-  "save_pct",
-  "fow_percentage",
-  "sat_pct",
-  "zone_start_pct",
-  "cf_pct",
-  "ff_pct",
-  "sf_pct",
-  "gf_pct",
-  "xgf_pct",
-  "scf_pct",
-  "hdcf_pct",
-  "on_ice_cf_pct",
-  "on_ice_ff_pct",
-  "on_ice_sf_pct",
-  "on_ice_gf_pct",
-  "on_ice_xgf_pct",
-  "on_ice_sh_pct",
-  "on_ice_sv_pct",
-  "off_zone_start_pct",
-  "def_zone_start_pct"
-];
-
-const PER_60_STATS = [
-  "goals_per_60",
-  "total_assists_per_60",
-  "total_points_per_60",
-  "shots_per_60",
-  "ixg_per_60",
-  "icf_per_60",
-  "iff_per_60",
-  "hdcf_per_60",
-  "hdca_per_60",
-  "pim_per_60",
-  "hits_per_60",
-  "takeaways_per_60",
-  "giveaways_per_60",
-  "on_ice_goals_per_60",
-  "on_ice_goals_against_per_60",
-  "on_ice_shots_per_60"
-];
-
-const PER_GAME_STATS = [
-  "toi_per_game",
-  "pp_toi_per_game",
-  "time_on_ice",
-  "goals_against_avg"
-];
+import {
+  countAppearances,
+  formatPlayerStat,
+  leagueDateKey,
+  parseLocalDate,
+  splitTeamSchedule
+} from "./playerStatsContract";
 
 export function PlayerStatsTable({
   gameLog,
@@ -69,8 +25,16 @@ export function PlayerStatsTable({
   playerId,
   playerTeamId,
   seasonId,
-  missedGames = [] // Accept missed games from props (server-side data)
-}: PlayerStatsTableProps & { missedGames?: MissedGame[] }) {
+  missedGames,
+  asOfDate,
+  windowStartDate = null
+}: PlayerStatsTableProps & {
+  // Team schedule rows without an appearance; null = schedule unknown,
+  // undefined = not supplied (fetched client-side).
+  missedGames?: MissedGame[] | null;
+  asOfDate?: string;
+  windowStartDate?: string | null;
+}) {
   // Debug: Log available stats in the first game
   React.useEffect(() => {
     if (gameLog.length > 0) {
@@ -103,28 +67,26 @@ export function PlayerStatsTable({
   // Still keep the hook for backward compatibility but prioritize props
   const {
     missedGames: hookMissedGames,
-    isLoading: missedGamesLoading,
     error: missedGamesError
   } = useMissedGames(
     playerId,
     playerTeamId,
-    seasonId,
+    missedGames === undefined ? seasonId : null,
     gameLog,
     playoffGameLog || []
   );
 
-  // Use server-side data if available, otherwise fall back to hook
-  const activeMissedGames =
-    missedGames.length > 0 ? missedGames : hookMissedGames;
-
-  console.log("[PlayerStatsTable] Missed games debug:", {
-    source: missedGames.length > 0 ? "server-side" : "client-hook",
-    propsCount: missedGames.length,
-    hookCount: hookMissedGames.length,
-    activeCount: activeMissedGames.length,
-    loading: missedGamesLoading,
-    error: missedGamesError
-  });
+  // Server-supplied schedule wins (even when empty); only elapsed absences in
+  // the selected window become rows; upcoming games are never "missed".
+  const activeMissedGames = useMemo(
+    () =>
+      splitTeamSchedule(
+        missedGames === undefined ? hookMissedGames : missedGames,
+        asOfDate ?? leagueDateKey(),
+        windowStartDate
+      ).absences,
+    [missedGames, hookMissedGames, asOfDate, windowStartDate]
+  );
 
   // Combine game log with missed games, sorted by date
   const combinedGameLog = useMemo(() => {
@@ -175,7 +137,7 @@ export function PlayerStatsTable({
     // Combine regular games and missed games, then sort by date
     const combined = [...log, ...missedGameEntries];
     const sorted = combined.sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      (a, b) => String(a.date).localeCompare(String(b.date))
     );
 
     console.log("[PlayerStatsTable] Final combined log:", {
@@ -193,51 +155,9 @@ export function PlayerStatsTable({
     activeMissedGames
   ]);
 
-  // Calculate totals and averages for the timeframe (excluding missed games)
-  const summary = useMemo(() => {
-    const log = showPlayoffData && playoffGameLog ? playoffGameLog : gameLog;
-
-    if (log.length === 0) return null;
-
-    const totals: { [key: string]: number } = {};
-    const gamesPlayed = log.reduce(
-      (sum, game) => sum + (game.games_played || 0),
-      0
-    );
-
-    selectedStats.forEach((stat) => {
-      if (stat === "date" || stat === "games_played") return;
-
-      const values = log.map((game) => Number(game[stat]) || 0);
-
-      // For percentages, calculate weighted average
-      if (PERCENTAGE_STATS.includes(stat as any)) {
-        const weights = log.map((game) => game.games_played || 1);
-        const weightedSum = values.reduce(
-          (sum, val, idx) => sum + val * weights[idx],
-          0
-        );
-        const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
-        totals[stat] = totalWeight > 0 ? weightedSum / totalWeight : 0;
-      } else if (
-        PER_60_STATS.includes(stat as any) ||
-        PER_GAME_STATS.includes(stat as any)
-      ) {
-        // For per-60 and per-game stats, calculate simple average across games where player played
-        const validValues = values.filter((val) => val > 0);
-        totals[stat] =
-          validValues.length > 0
-            ? validValues.reduce((sum, val) => sum + val, 0) /
-              validValues.length
-            : 0;
-      } else {
-        // For counting stats (goals, assists, points, etc.), sum them up
-        totals[stat] = values.reduce((sum, val) => sum + val, 0);
-      }
-    });
-
-    return { totals, gamesPlayed };
-  }, [gameLog, playoffGameLog, selectedStats, showPlayoffData]);
+  const visibleAbsences = combinedGameLog.filter(
+    (game) => game.isMissedGame
+  ).length;
 
   if (combinedGameLog.length === 0) {
     return (
@@ -260,16 +180,14 @@ export function PlayerStatsTable({
         <div className={styles.tableControls}>
           <div className={styles.gameRangeSelector}>
             <span>
-              Games: {gameLog.length}
-              {missedGames.length > 0 && (
+              Games:{" "}
+              {countAppearances(
+                showPlayoffData && playoffGameLog ? playoffGameLog : gameLog
+              )}
+              {visibleAbsences > 0 && (
                 <span className={styles.missedGamesCount}>
                   {" "}
-                  | Missed:{" "}
-                  {
-                    missedGames.filter((mg) =>
-                      showPlayoffData ? mg.isPlayoff : !mg.isPlayoff
-                    ).length
-                  }
+                  | Missed: {visibleAbsences}
                 </span>
               )}
             </span>
@@ -299,7 +217,7 @@ export function PlayerStatsTable({
                 className={game.isMissedGame ? styles.missedGameRow : ""}
               >
                 <td className={styles.dateCell}>
-                  {new Date(game.date).toLocaleDateString()}
+                  {parseLocalDate(game.date).toLocaleDateString()}
                   {game.isMissedGame && (
                     <img
                       src="/pictures/injured.png"
@@ -316,7 +234,7 @@ export function PlayerStatsTable({
                     <td key={stat}>
                       {game.isMissedGame
                         ? "-"
-                        : formatStatValue(game[stat], stat)}
+                        : formatPlayerStat(game[stat], stat)}
                     </td>
                   ))}
               </tr>
