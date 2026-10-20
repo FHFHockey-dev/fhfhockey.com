@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
 import { applyNativeDailyReview, buildDailyMaterializationRequest, buildDailyParticipationInputs, dailyExpiresAt, dailyGames, dailyScheduleBindings,
-  reobserveHistoryWindow, type HttpReceipt } from "./nativeDailyPipeline";
+  excludeMeansOnlyNatives, reobserveHistoryWindow, type HttpReceipt } from "./nativeDailyPipeline";
 import { buildRosterObservationSkaterParticipationReceipt, type RosterObservationSkaterParticipationInput } from "./modeledSkaterParticipation";
 import { normalizeNhlGameToTeamRows } from "../rosterScheduleData/normalize";
 import { normalizePlanningGames } from "../rosterScheduleData/planningInputs";
@@ -120,6 +120,23 @@ describe("v1 daily FORGE driver (synthetic)", () => {
     reused.parents[0].hash = fresh.bodySha256; reused.additionalNativeObservations[0].payload.evidence.contentHash = fresh.bodySha256;
     expect(() => buildDailyMaterializationRequest({ retained: reused, freshReceipts: [fresh], participationInputs: [], cutoffAt: "2026-10-20T10:00:00.000Z",
       runId: "00000000-0000-4000-8000-000000000001", date: "2026-10-20", sourceKey: "s", seasonId: 20262027, games: [] })).toThrow("fresh_receipt_collides_with_retained_parent");
+  });
+
+  it("keeps native means only for players with a participation target of the same identity", () => {
+    const player = (playerId: number, rosterRevision = "roster-a") => ({ playerId, nhlPlayerId: playerId * 11, teamId: 1, rosterRevision, playerClass: "skater" });
+    const observation = (playerId: number, rosterRevision = "roster-a") => ({ payload: { ...player(playerId, rosterRevision), policyVersion: "p" }, payload_hash: `${playerId}` });
+    const retained: any = { nativeSelection: [7, 8, 9].map(playerId => ({ playerId, policyVersion: "p", inputHash: `${playerId}` })),
+      acquisition: { roster: [player(7), player(8), player(9, "roster-b")] },
+      additionalNativeObservations: [observation(7), observation(8), observation(9, "roster-b")], existingInputs: [observation(8)] };
+    const before = hash(retained);
+    const input = (playerId: number) => ({ scope: { ...player(playerId), seasonId: 20262027, gameId: 30 } }) as any;
+    const scoped = excludeMeansOnlyNatives(retained, [input(7), input(7), input(9)]);
+    expect(scoped.request.nativeSelection.map(value => value.playerId)).toEqual([7]);
+    expect(scoped.request.additionalNativeObservations!.map(value => value.payload.playerId)).toEqual([7]);
+    expect(scoped.request.existingInputs).toEqual([]);
+    // 8 has no target; 9's only target carries a different roster revision.
+    expect(scoped.excluded).toEqual([{ playerId: 8, policyVersion: "p" }, { playerId: 9, policyVersion: "p" }]);
+    expect(hash(retained)).toBe(before);
   });
 
   it("applies only an explicit approval of the exact plan and moves review clocks to the review time", () => {

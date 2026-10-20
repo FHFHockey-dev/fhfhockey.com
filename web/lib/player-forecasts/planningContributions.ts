@@ -217,8 +217,10 @@ export function resolvePlanningContributions(snapshot: ContributionPlanningSnaps
         if (!participation) {
           const candidate = catalogParticipation(snapshot.participationSources, identity);
           if (candidate?.model && (player.playerClass === "goalie"
-            ? ["goalie-appearance-frequency-v1", "goalie-frozen-window-appearance-frequency-v1", "goalie-roster-observation-appearance-frequency-v1"]
-            : ["skater-participation-frequency-v1", "skater-frozen-window-appearance-frequency-v1", "skater-roster-observation-appearance-frequency-v1"]).includes(candidate.model.version)
+            ? ["goalie-appearance-frequency-v1", "goalie-frozen-window-appearance-frequency-v1", "goalie-roster-observation-appearance-frequency-v1",
+              "goalie-rolling-14d-appearance-frequency-v1"]
+            : ["skater-participation-frequency-v1", "skater-frozen-window-appearance-frequency-v1", "skater-roster-observation-appearance-frequency-v1",
+              "skater-rolling-14d-appearance-frequency-v1"]).includes(candidate.model.version)
             && (!snapshot.forecastManifest?.participationRevisionIds
             || snapshot.forecastManifest.participationRevisionIds.includes(candidate.revisionId))) participation = candidate;
         }

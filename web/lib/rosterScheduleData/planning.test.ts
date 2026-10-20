@@ -23,6 +23,10 @@ import { acceptedNewsSupersedes, loadAcceptedForecastNews } from "lib/projection
 import { timestampMicros } from "lib/projections/evidenceTime";
 
 import { ROSTER_CONTINUATION_ASSUMPTION } from "lib/player-forecasts/targetRosterObservation";
+import { buildRollingWindowGoalieParticipationReceipt, buildRollingWindowGoalieStartReceipt, buildRollingWindowSkaterParticipationReceipt,
+  rollingParticipationWindow } from "lib/player-forecasts/rollingWindowParticipation";
+import { ROLLING_WINDOW_GOALIE_PARTICIPATION_DATASET, ROLLING_WINDOW_GOALIE_START_DATASET } from "lib/player-forecasts/modeledGoalieParticipationStore";
+import { ROLLING_WINDOW_SKATER_PARTICIPATION_DATASET } from "lib/player-forecasts/modeledSkaterParticipationStore";
 import { fetchBoundedNhlSchedule } from "./source";
 import { normalizeNhlGameToTeamRows } from "./normalize";
 
@@ -170,9 +174,9 @@ describe("public RSO data boundary", () => {
     expect((await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true })).forecasts).toEqual([]);
   });
 
-  it.each(["frozen", "roster observation"].flatMap(family => ["skater", "goalie", "start"].map(kind => ({ family, kind }))))
+  it.each(["frozen", "roster observation", "rolling"].flatMap(family => ["skater", "goalie", "start"].map(kind => ({ family, kind }))))
   ("loads and revokes the separately approved $family $kind catalog", async ({ family, kind }) => {
-    const observed = family === "roster observation";
+    const observed = family === "roster observation", rolling = family === "rolling";
     const { db, tables } = formDb([], []);
     const evidence = { id: "synthetic-frozen-source", hash: "a".repeat(64),
       availableAt: "2026-10-16T09:00:00Z", capturedAt: "2026-10-16T09:00:00Z" };
@@ -189,7 +193,14 @@ describe("public RSO data boundary", () => {
     const clocks = { issuedAt: "2026-10-16T11:00:00Z", expiresAt: "2026-10-16T18:00:00Z" };
     const observation = { playerId: 7, nhlPlayerId: 847001, teamId: 1, seasonId: 20262027, listed: true,
       sourceKind: "official_season_roster" as const, knownConflict: null, evidence, continuationAssumptionVersion: ROSTER_CONTINUATION_ASSUMPTION };
-    const input = observed ? kind === "skater"
+    const window = rollingParticipationWindow(common.cutoffAt);
+    const rollingCommon = { ...common, targetRosterObservation: observation,
+      history: { ...common.history, windowStartAt: window.startAt, windowEndAt: window.endAt } };
+    const input = rolling ? kind === "skater"
+      ? { ...rollingCommon, playerClass: "skater" as const, version: "skater-rolling-14d-participation-input-v1" as const }
+      : kind === "start" ? { ...rollingCommon, playerClass: "goalie" as const, version: "goalie-rolling-14d-start-input-v1" as const }
+      : { ...rollingCommon, playerClass: "goalie" as const, version: "goalie-rolling-14d-participation-input-v1" as const }
+      : observed ? kind === "skater"
       ? { ...common, targetRosterObservation: observation, playerClass: "skater" as const, version: "skater-roster-observation-participation-input-v1" as const }
       : kind === "start" ? { ...common, targetRosterObservation: observation, playerClass: "goalie" as const, version: "goalie-roster-observation-start-input-v1" as const }
       : { ...common, targetRosterObservation: observation, playerClass: "goalie" as const, version: "goalie-roster-observation-participation-input-v1" as const }
@@ -205,13 +216,20 @@ describe("public RSO data boundary", () => {
         case "skater-frozen-window-participation-input-v1": return buildFrozenWindowSkaterParticipationReceipt(input, clocks);
         case "goalie-frozen-window-start-input-v1": return buildFrozenWindowGoalieStartReceipt(input, clocks);
         case "goalie-frozen-window-participation-input-v1": return buildFrozenWindowGoalieParticipationReceipt(input, clocks);
+        case "skater-rolling-14d-participation-input-v1": return buildRollingWindowSkaterParticipationReceipt(input, clocks);
+        case "goalie-rolling-14d-participation-input-v1": return buildRollingWindowGoalieParticipationReceipt(input, clocks);
+        case "goalie-rolling-14d-start-input-v1": return buildRollingWindowGoalieStartReceipt(input, clocks);
       }
     })();
-    const dataset = observed ? kind === "start" ? ROSTER_OBSERVATION_GOALIE_START_DATASET
+    const dataset = rolling ? kind === "start" ? ROLLING_WINDOW_GOALIE_START_DATASET
+      : kind === "skater" ? ROLLING_WINDOW_SKATER_PARTICIPATION_DATASET : ROLLING_WINDOW_GOALIE_PARTICIPATION_DATASET
+      : observed ? kind === "start" ? ROSTER_OBSERVATION_GOALIE_START_DATASET
       : kind === "skater" ? ROSTER_OBSERVATION_SKATER_PARTICIPATION_DATASET : ROSTER_OBSERVATION_GOALIE_PARTICIPATION_DATASET
       : kind === "start" ? FROZEN_WINDOW_GOALIE_START_DATASET
       : kind === "skater" ? FROZEN_WINDOW_SKATER_PARTICIPATION_DATASET : FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASET;
-    const env = observed ? kind === "start" ? "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES"
+    const env = rolling ? kind === "start" ? "PLAYER_FORECAST_ROLLING_14D_GOALIE_START_RELEASES"
+      : `PLAYER_FORECAST_ROLLING_14D_${kind.toUpperCase()}_PARTICIPATION_RELEASES`
+      : observed ? kind === "start" ? "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES"
       : `PLAYER_FORECAST_ROSTER_OBSERVATION_${kind.toUpperCase()}_PARTICIPATION_RELEASES`
       : kind === "start" ? "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_START_RELEASES"
       : `PLAYER_FORECAST_FROZEN_WINDOW_${kind.toUpperCase()}_PARTICIPATION_RELEASES`;
@@ -229,14 +247,18 @@ describe("public RSO data boundary", () => {
     expect(accepted.participationSources).toHaveLength(1);
     const catalogChecksum = playerForecastSourcePayloadHash([[id, hash]]);
     expect(disabled.forecastManifest?.participationChecksum).toBeNull();
-    expect(accepted.forecastManifest?.participationChecksum).toBe(playerForecastSourcePayloadHash(observed
+    expect(accepted.forecastManifest?.participationChecksum).toBe(playerForecastSourcePayloadHash(rolling
+      ? { existing: null, rollingSkater: kind === "skater" ? catalogChecksum : null,
+        rollingGoalie: kind === "goalie" ? catalogChecksum : null, rollingGoalieStarts: kind === "start" ? catalogChecksum : null }
+      : observed
       ? { existing: null, observedSkater: kind === "skater" ? catalogChecksum : null,
         observedGoalie: kind === "goalie" ? catalogChecksum : null, observedGoalieStarts: kind === "start" ? catalogChecksum : null }
       : { legacy: null, frozenSkater: kind === "skater" ? catalogChecksum : null,
         frozenGoalie: kind === "goalie" ? catalogChecksum : null, ...(kind === "start" ? { frozenGoalieStarts: catalogChecksum } : {}) }));
-    expect(accepted.participationSources![0].model?.version).toContain(observed ? "roster-observation" : "frozen-window");
+    expect(accepted.participationSources![0].model?.version).toContain(rolling ? "rolling-14d" : observed ? "roster-observation" : "frozen-window");
     expect(accepted.participationSources![0].basis).toBe(kind === "start" ? "start" : "appearance");
     if (observed) expect(accepted.evidence.participation.source).toContain("roster-observation continuation proxies");
+    if (rolling) expect(accepted.evidence.participation.source).toContain("rolling 14-day history and official roster-observation");
     expect(accepted.forecastManifest?.participationRevisionIds).toEqual([accepted.participationSources![0].revisionId]);
     vi.stubEnv(env, "");
     const revoked = await loadPlanningData(db as never, publicQuery, options);
@@ -528,7 +550,9 @@ describe("public RSO data boundary", () => {
       "PLAYER_FORECAST_PARTICIPATION_RELEASES", "PLAYER_FORECAST_GOALIE_PARTICIPATION_RELEASES",
       "PLAYER_FORECAST_FROZEN_WINDOW_SKATER_PARTICIPATION_RELEASES", "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_PARTICIPATION_RELEASES",
       "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_START_RELEASES", "PLAYER_FORECAST_ROSTER_OBSERVATION_SKATER_PARTICIPATION_RELEASES",
-      "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_PARTICIPATION_RELEASES", "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES"]) vi.stubEnv(key, id);
+      "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_PARTICIPATION_RELEASES", "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES",
+      "PLAYER_FORECAST_ROLLING_14D_SKATER_PARTICIPATION_RELEASES", "PLAYER_FORECAST_ROLLING_14D_GOALIE_PARTICIPATION_RELEASES",
+      "PLAYER_FORECAST_ROLLING_14D_GOALIE_START_RELEASES"]) vi.stubEnv(key, id);
     const { db, calls } = cappedInputs({ hangTable: "native_forecast_catalog_heads" });
     const pending = loadPlanningData(db as any, publicQuery, { ...publicOptions, skipOwnership: true, skipRecentForm: true })
       .catch(error => ({ error }));

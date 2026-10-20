@@ -22,7 +22,8 @@ const powerPlayRole = z.discriminatedUnion("status", [
 ]);
 const model = z.object({ version: z.enum(["skater-participation-frequency-v1", "goalie-appearance-frequency-v1",
   "skater-frozen-window-appearance-frequency-v1", "goalie-frozen-window-appearance-frequency-v1", "goalie-frozen-window-start-frequency-v1",
-  "skater-roster-observation-appearance-frequency-v1", "goalie-roster-observation-appearance-frequency-v1", "goalie-roster-observation-start-frequency-v1"]),
+  "skater-roster-observation-appearance-frequency-v1", "goalie-roster-observation-appearance-frequency-v1", "goalie-roster-observation-start-frequency-v1",
+  "skater-rolling-14d-appearance-frequency-v1", "goalie-rolling-14d-appearance-frequency-v1", "goalie-rolling-14d-start-frequency-v1"]),
   event: z.enum(["positive_minutes", "official_starter"]), probabilityStatus: z.literal("uncalibrated_model"), calibration: z.literal("unavailable"),
   inputHash: z.string(), evidenceHashes: strings, numerator: finite.nonnegative(), denominator: finite.nonnegative(),
   selectedGameIds: z.array(positive), limitations: strings }).strict();

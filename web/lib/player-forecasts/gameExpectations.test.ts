@@ -71,7 +71,7 @@ describe("shared per-game expectation view (synthetic engineering fixtures)", ()
     expect(buildGameExpectations(data, { ...scope, games: 1 }, now).players[0].games[0].powerPlayRole)
       .toEqual({ value: null, status: "not_applicable", reason: "not_applicable", source: null });
   });
-  it.each(["frozen-window", "roster-observation"] as const)("retains independent %s modeled starts through the shared view and StartChart without reweighting appearance means", method => {
+  it.each(["frozen-window", "roster-observation", "rolling-14d"] as const)("retains independent %s modeled starts through the shared view and StartChart without reweighting appearance means", method => {
     const data = fixture(), game = data.games[0]; data.players[0].playerClass = "goalie";
     data.baselineSources = [baseline({ policyVersion: "native-goalie-appearance-volume-rates-v1", targetKey: "SAVES_GOALIE", mean: 20 })];
     const appearance: ContributionParticipation = { playerId: 7, nhlPlayerId: 77, seasonId: 20262027, teamId: 1,

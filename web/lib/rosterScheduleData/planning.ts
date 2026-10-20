@@ -8,8 +8,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { playerForecastSourcePayloadHash } from "lib/player-forecasts/sourceSnapshot";
 import { selectForecastServingSource, unavailableForecastServingSource, type ForecastServingSource } from "lib/player-forecasts/forecastServingSource";
 import { loadNativeContributionBundle } from "lib/player-forecasts/nativeContributionAdmission";
-import { loadModeledGoalieParticipation, loadFrozenWindowGoalieParticipation, loadFrozenWindowGoalieStarts, loadRosterObservationGoalieParticipation, loadRosterObservationGoalieStarts } from "lib/player-forecasts/modeledGoalieParticipationStore";
-import { loadModeledSkaterParticipation, loadFrozenWindowSkaterParticipation, loadRosterObservationSkaterParticipation } from "lib/player-forecasts/modeledSkaterParticipationStore";
+import { loadModeledGoalieParticipation, loadFrozenWindowGoalieParticipation, loadFrozenWindowGoalieStarts, loadRosterObservationGoalieParticipation, loadRosterObservationGoalieStarts,
+  loadRollingWindowGoalieParticipation, loadRollingWindowGoalieStarts } from "lib/player-forecasts/modeledGoalieParticipationStore";
+import { loadModeledSkaterParticipation, loadFrozenWindowSkaterParticipation, loadRosterObservationSkaterParticipation,
+  loadRollingWindowSkaterParticipation } from "lib/player-forecasts/modeledSkaterParticipationStore";
 import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import type { ForgeGameRevision } from "lib/projections/gameRevisions";
 import { starterBoardCanaryGameIds, starterBoardFlags } from "lib/projections/starterBoardFlags";
@@ -54,7 +56,8 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
   const calendarPolicy = forecastCalendarPolicy(Number(process.env.STARTER_BOARD_CALENDAR_HORIZON_DAYS ?? 14));
   const [{ players, games, scheduleRows, scheduleProblems, evidence: sources }, weeks, baseline, skaterParticipation, goalieParticipation,
     frozenSkaterParticipation, frozenGoalieParticipation, frozenGoalieStarts,
-    observedSkaterParticipation, observedGoalieParticipation, observedGoalieStarts] = await Promise.all([
+    observedSkaterParticipation, observedGoalieParticipation, observedGoalieStarts,
+    rollingSkaterParticipation, rollingGoalieParticipation, rollingGoalieStarts] = await Promise.all([
     loadPlanningInputs(db, query, now, inputDeadline),
     pages(() => db.from("yahoo_matchup_weeks").select("id,game_key,week,start_date,end_date", { count: "exact" })
       .eq("season", String(query.seasonId).slice(0, 4)).order("week").order("id"), inputDeadline, 500).catch(() => []),
@@ -78,6 +81,12 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
       .catch(() => ({ sources: [], checksum: null, limitations: ["roster_observation_goalie_participation_read_unavailable"] })),
     withinDeadline(inputDeadline, signal => loadRosterObservationGoalieStarts(db, query.seasonId, now, { signal, environment: selectedEnvironment }))
       .catch(() => ({ sources: [], checksum: null, limitations: ["roster_observation_goalie_starts_read_unavailable"] })),
+    withinDeadline(inputDeadline, signal => loadRollingWindowSkaterParticipation(db, query.seasonId, now, { signal, environment: selectedEnvironment }))
+      .catch(() => ({ sources: [], checksum: null, limitations: ["rolling_skater_participation_read_unavailable"] })),
+    withinDeadline(inputDeadline, signal => loadRollingWindowGoalieParticipation(db, query.seasonId, now, { signal, environment: selectedEnvironment }))
+      .catch(() => ({ sources: [], checksum: null, limitations: ["rolling_goalie_participation_read_unavailable"] })),
+    withinDeadline(inputDeadline, signal => loadRollingWindowGoalieStarts(db, query.seasonId, now, { signal, environment: selectedEnvironment }))
+      .catch(() => ({ sources: [], checksum: null, limitations: ["rolling_goalie_starts_read_unavailable"] })),
   ]);
   // Preserve the existing skater checksum and disabled behavior when no goalie
   // releases are admitted; goalie revisions are an independently pinned catalog.
@@ -88,15 +97,22 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
       frozenGoalie: frozenGoalieParticipation.checksum,
       ...(frozenGoalieStarts.checksum ? { frozenGoalieStarts: frozenGoalieStarts.checksum } : {}) }) : legacyParticipationChecksum;
   const observationEnabled = observedSkaterParticipation.checksum || observedGoalieParticipation.checksum || observedGoalieStarts.checksum;
+  const observedParticipationChecksum = observationEnabled ? playerForecastSourcePayloadHash({ existing: frozenParticipationChecksum,
+    observedSkater: observedSkaterParticipation.checksum, observedGoalie: observedGoalieParticipation.checksum,
+    observedGoalieStarts: observedGoalieStarts.checksum }) : frozenParticipationChecksum;
+  // Rolling catalogs extend the checksum only when admitted, so earlier manifests keep their identity.
+  const rollingEnabled = rollingSkaterParticipation.checksum || rollingGoalieParticipation.checksum || rollingGoalieStarts.checksum;
   const participation = { sources: [...skaterParticipation.sources, ...goalieParticipation.sources,
     ...frozenSkaterParticipation.sources, ...frozenGoalieParticipation.sources, ...frozenGoalieStarts.sources,
-    ...observedSkaterParticipation.sources, ...observedGoalieParticipation.sources, ...observedGoalieStarts.sources],
-    checksum: observationEnabled ? playerForecastSourcePayloadHash({ existing: frozenParticipationChecksum,
-      observedSkater: observedSkaterParticipation.checksum, observedGoalie: observedGoalieParticipation.checksum,
-      observedGoalieStarts: observedGoalieStarts.checksum }) : frozenParticipationChecksum,
+    ...observedSkaterParticipation.sources, ...observedGoalieParticipation.sources, ...observedGoalieStarts.sources,
+    ...rollingSkaterParticipation.sources, ...rollingGoalieParticipation.sources, ...rollingGoalieStarts.sources],
+    checksum: rollingEnabled ? playerForecastSourcePayloadHash({ existing: observedParticipationChecksum,
+      rollingSkater: rollingSkaterParticipation.checksum, rollingGoalie: rollingGoalieParticipation.checksum,
+      rollingGoalieStarts: rollingGoalieStarts.checksum }) : observedParticipationChecksum,
     limitations: [...skaterParticipation.limitations, ...[...goalieParticipation.limitations,
       ...frozenSkaterParticipation.limitations, ...frozenGoalieParticipation.limitations, ...frozenGoalieStarts.limitations,
-      ...observedSkaterParticipation.limitations, ...observedGoalieParticipation.limitations, ...observedGoalieStarts.limitations]
+      ...observedSkaterParticipation.limitations, ...observedGoalieParticipation.limitations, ...observedGoalieStarts.limitations,
+      ...rollingSkaterParticipation.limitations, ...rollingGoalieParticipation.limitations, ...rollingGoalieStarts.limitations]
       .filter(reason => reason !== "modeled_participation_serving_disabled")] };
   const revisions: ForgeGameRevision[] = [];
   const exclusionCounts: Record<string, number> = {};
@@ -191,7 +207,8 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
     forecastedOpportunities: forecasts.length, exclusionCounts, exclusions: exclusionRows };
   if (nativeLimitation) { baseline.limitations.push(nativeLimitation); participation.limitations.push(nativeLimitation); }
   sources.baselines = evidence("Approved contribution rate bundles", baseline.manifests.map(manifest => manifest.issuedAt).sort()[0] ?? null, query.seasonId, baseline.limitations);
-  sources.participation = evidence(observationEnabled ? "Released modeled participation with official roster-observation continuation proxies"
+  sources.participation = evidence(rollingEnabled ? "Released modeled participation with rolling 14-day history and official roster-observation continuation proxies"
+    : observationEnabled ? "Released modeled participation with official roster-observation continuation proxies"
     : frozenSkaterParticipation.checksum || frozenGoalieParticipation.checksum || frozenGoalieStarts.checksum
     ? "Released modeled participation including explicit frozen history"
     : goalieParticipation.checksum ? "Released modeled skater and goalie participation" : "Released modeled skater participation",

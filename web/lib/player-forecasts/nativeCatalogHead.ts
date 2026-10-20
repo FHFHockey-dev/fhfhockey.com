@@ -6,19 +6,26 @@ import { capturePlayerForecastSourceObservation, playerForecastSourcePayloadHash
   SOURCE_OBSERVATION_COLUMNS, validPlannedObservationId, verifyPlannedObservation, type PlannedSourceObservation } from "./sourceSnapshot";
 
 export const NATIVE_CATALOG_PIN_KEYS = ["PLAYER_FORECAST_BASELINE_RELEASE_IDS", "PLAYER_FORECAST_ROSTER_OBSERVATION_SKATER_PARTICIPATION_RELEASES",
-  "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_PARTICIPATION_RELEASES", "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES"] as const;
+  "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_PARTICIPATION_RELEASES", "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES",
+  "PLAYER_FORECAST_ROLLING_14D_SKATER_PARTICIPATION_RELEASES", "PLAYER_FORECAST_ROLLING_14D_GOALIE_PARTICIPATION_RELEASES",
+  "PLAYER_FORECAST_ROLLING_14D_GOALIE_START_RELEASES"] as const;
+/** Groups added after the first published selections. Absent means nothing selected, so earlier
+ * heads still parse and hash unchanged, and a selection without them is byte-identical to before. */
+const ADDED_PIN_KEYS = new Set<string>(NATIVE_CATALOG_PIN_KEYS.slice(4));
 const legacyKeys = ["PLAYER_FORECAST_PARTICIPATION_RELEASES", "PLAYER_FORECAST_GOALIE_PARTICIPATION_RELEASES",
   "PLAYER_FORECAST_FROZEN_WINDOW_SKATER_PARTICIPATION_RELEASES", "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_PARTICIPATION_RELEASES", "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_START_RELEASES"];
 const emptyPins = Object.fromEntries([...NATIVE_CATALOG_PIN_KEYS, ...legacyKeys].map(key => [key, ""]));
 export function unavailableNativeCatalogEnvironment(environment: Record<string, string | undefined>) {
   return { environment: Object.freeze({ ...environment, ...emptyPins }), selection: null, limitation: "native_catalog_head_unavailable_or_invalid" };
 }
-const datasets = ["contribution-bundle-v1", "skater-roster-observation-participation-bundle-v1", "goalie-roster-observation-participation-bundle-v1", "goalie-roster-observation-start-bundle-v1"];
+const datasets = ["contribution-bundle-v1", "skater-roster-observation-participation-bundle-v1", "goalie-roster-observation-participation-bundle-v1", "goalie-roster-observation-start-bundle-v1",
+  "skater-rolling-14d-participation-bundle-v1", "goalie-rolling-14d-participation-bundle-v1", "goalie-rolling-14d-start-bundle-v1"];
 const time = (value: unknown) => typeof value === "string" ? Number(timestampMicros(value) ?? NaN) : NaN;
 const selectionVersion = "native-catalog-selection-v1";
 const uuid = z.string().refine(validPlannedObservationId), digest = z.string().regex(/^[a-f0-9]{64}$/), clock = z.string().refine(value => Number.isFinite(time(value)));
 const selectionShape = z.object({ version: z.literal(selectionVersion), seasonId: z.number().int().positive(), issuedAt: clock, expiresAt: clock,
-  packageHash: digest, pins: z.object(Object.fromEntries(NATIVE_CATALOG_PIN_KEYS.map(key => [key, z.string()])) as Record<typeof NATIVE_CATALOG_PIN_KEYS[number], z.ZodString>).strict(),
+  packageHash: digest, pins: z.object(Object.fromEntries(NATIVE_CATALOG_PIN_KEYS.map(key => [key, ADDED_PIN_KEYS.has(key) ? z.string().optional() : z.string()])) as
+    Record<typeof NATIVE_CATALOG_PIN_KEYS[number], z.ZodString | z.ZodOptional<z.ZodString>>).strict(),
   releases: z.array(z.object({ id: uuid, payloadHash: digest, dataset: z.string() }).strict()).min(1).max(32) }).strict();
 export type NativeCatalogSelection = z.infer<typeof selectionShape>;
 export type NativeCatalogHead = { id: string; season_id: number; revision: number; observation_id: string; payload_hash: string; selected_at: string };
@@ -30,7 +37,7 @@ function validateSelection(value: unknown, seasonId: number, now: Date): NativeC
     || new Set(selection.releases.map(row => row.id)).size !== selection.releases.length) throw new Error("Invalid native catalog selection.");
   const expected: NativeCatalogSelection["releases"] = [];
   for (const [index, key] of NATIVE_CATALOG_PIN_KEYS.entries()) {
-    for (const entry of selection.pins[key].split(",").filter(Boolean)) {
+    for (const entry of (selection.pins[key] ?? "").split(",").filter(Boolean)) {
       const parts = entry.split(":");
       const release = selection.releases.find(row => row.id === parts[0]);
       if (!release || release.dataset !== datasets[index] || (index === 0 ? parts.length !== 1 : parts.length !== 2 || parts[1] !== release.payloadHash)) throw new Error("Native catalog pin/hash mismatch.");
@@ -97,8 +104,9 @@ export function prepareNativeCatalogObservation(args: { plan: { seasonId: number
   observationId: string; issuedAt: string }) {
   if (!validPlannedObservationId(args.observationId)) throw new Error("Invalid catalog observation ID.");
   if (Object.keys(args.pins).some(key => !NATIVE_CATALOG_PIN_KEYS.includes(key as typeof NATIVE_CATALOG_PIN_KEYS[number]))) throw new Error("Unsupported catalog pin group.");
-  const pins = Object.fromEntries(NATIVE_CATALOG_PIN_KEYS.map(key => [key, args.pins[key] ?? ""])) as NativeCatalogSelection["pins"];
-  const selected = new Set(Object.values(pins).flatMap(value => value.split(",").filter(Boolean).map(value => value.split(":")[0])));
+  const pins = Object.fromEntries(NATIVE_CATALOG_PIN_KEYS.flatMap(key => ADDED_PIN_KEYS.has(key) && !args.pins[key] ? []
+    : [[key, args.pins[key] ?? ""]])) as NativeCatalogSelection["pins"];
+  const selected = new Set(Object.values(pins).flatMap(value => (value ?? "").split(",").filter(Boolean).map(value => value.split(":")[0])));
   const rows = args.plan.rows.filter(row => selected.has(row.id));
   const expiries = rows.map(row => { const value = row.payload as any; return value.manifest?.expiresAt ?? value.expiresAt; }).sort((a, b) => time(a) - time(b));
   const payload = validateSelection({ version: selectionVersion, seasonId: args.plan.seasonId, issuedAt: args.issuedAt, expiresAt: expiries[0], packageHash: hash(args.plan), pins,

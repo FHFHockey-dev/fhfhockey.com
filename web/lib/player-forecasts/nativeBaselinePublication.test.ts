@@ -13,6 +13,7 @@ import { materializeNativeInputs, prepareNativeInputMaterialization, verifyNativ
 import { assembleCurrentRosterNativeInputs } from "./currentRosterNativeInputs";
 import { buildSkaterParticipationReceipt } from "./modeledSkaterParticipation";
 import { buildRosterObservationSkaterParticipationReceipt } from "./modeledSkaterParticipation";
+import { buildRollingParticipationHistories } from "./rollingParticipationFrame";
 import { buildSkaterBaselineRates } from "./baselineRates";
 import { baselineAppearanceFromBoxscore } from "./baselineSourceLineage";
 import { buildBaselineContributionBundle, buildNativeSkaterBaselineSnapshot } from "./baselineGeneration";
@@ -378,7 +379,7 @@ describe("bounded publication coordinator (synthetic only)", () => {
   describe("offline later-issuance preparation", () => {
     const closedAt = "2026-10-15T11:30:00.000Z", dueAt = "2026-10-15T12:00:00.000Z", expiresAt = "2026-10-15T18:00:00.000Z";
     const reviewedAt = "2026-10-15T11:00:00.000Z";
-    const setup = () => {
+    const setup = (meansOnly = false) => {
       const request = materializationFixture(), first = prepareNativeInputMaterialization(request, closedAt);
       const requiredAcquisitionScopes = { "native-inputs": { scopeHash: (first.report.payload as any).acquisitionScopeHash, cutoffAt: request.acquisition.cutoffAt } };
       const games = [{ gameId: 30, startsAt: "2026-10-15T23:00:00Z" }];
@@ -391,7 +392,10 @@ describe("bounded publication coordinator (synthetic only)", () => {
         scheduleRevision: "schedule", snapshots: [{ snapshot, teamId: payload.teamId, rosterRevision: payload.rosterRevision }] });
       const planned = [10, 11, 12].map(n => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`);
       const sources = built.sources.map(source => ({ ...source, released: true }));
-      const { checksum: _old, ...unsigned } = { ...built.manifest, evaluationPolicyId: planned[0], reviewId: planned[1], released: true };
+      // A reviewed source of a player with no native input today and no participation target (means-only).
+      if (meansOnly) sources.push({ ...sources[0], playerId: 999, nhlPlayerId: 9999, sourceId: `${sources[0].sourceId}:means-only`, sourceWatermark: "f".repeat(64) });
+      const { checksum: _old, ...unsigned } = { ...built.manifest, evaluationPolicyId: planned[0], reviewId: planned[1], released: true,
+        sourceCount: sources.length, sourceWatermarks: [...new Set(sources.map(source => source.sourceWatermark))].sort() };
       const bundle = { manifest: { ...unsigned, checksum: contributionBundleChecksum({ manifest: unsigned, sources }) }, sources };
       const candidateInputHash = contributionBundleCandidateInputHash(bundle);
       const policy = { version: "baseline-evaluation-policy-v1", seasonId: 20262027, policyVersion: snapshot.policyVersion, candidateInputHash,
@@ -474,6 +478,32 @@ describe("bounded publication coordinator (synthetic only)", () => {
       await expect(prepareNativeCadenceOutputs({ ...daily, daily: { ...daily.daily, expiresAt: later.toISOString() } }, proof, later, nextId)).rejects.toThrow("invalid_daily_issuance");
       const withParticipation = { ...daily, reviewedPlan: { ...daily.reviewedPlan, rows: [...daily.reviewedPlan.rows, fixture().rows[0]] } };
       await expect(prepareNativeCadenceOutputs(withParticipation, proof, later, nextId)).rejects.toThrow("invalid_daily_issuance");
+    });
+    it("drops a means-only player's sources only under the standing approval, minting a policy for the narrowed candidate", async () => {
+      const { command, proof, bundle } = setup(true), later = new Date("2026-10-15T19:00:00.000Z");
+      const daily = { ...command, daily: { expiresAt: "2026-10-15T22:59:59.999Z", participationOwnerApprovalRef: "synthetic-owner" } };
+      await expect(prepareNativeCadenceOutputs(daily, proof, later, nextId)).rejects.toThrow("reviewed_source_without_input");
+      await expect(prepareNativeCadenceOutputs(command, proof, now, nextId)).rejects.toThrow("reviewed_source_without_input");
+      const standing = { ...daily, daily: { ...daily.daily, standingApprovalRef: "synthetic-standing" } };
+      const result = await prepareNativeCadenceOutputs(standing, proof, later, nextId);
+      const reissued = result.plan.rows.find(row => row.entity_kind === "seasonal_rate_bundle")!.payload as any;
+      expect(reissued.sources.map((s: any) => s.sourceId)).toEqual(bundle.sources.filter(s => s.playerId !== 999).map(s => s.sourceId));
+      expect(reissued.manifest).toMatchObject({ sourceCount: bundle.sources.length - 1, issuedAt: later.toISOString() });
+      const candidateInputHash = contributionBundleCandidateInputHash(reissued);
+      expect(candidateInputHash).not.toBe(contributionBundleCandidateInputHash(bundle as any));
+      const policies = result.plan.rows.filter(row => row.entity_kind === "baseline_evaluation_policy");
+      expect(policies).toHaveLength(1);
+      expect(policies[0].id).toBe(reissued.manifest.evaluationPolicyId);
+      expect(policies[0].id).not.toBe(command.reviewedPlan.rows[1].id);
+      expect(policies[0].payload).toMatchObject({ candidateInputHash, status: "owner_approved", ownerApprovalRef: "synthetic-standing", approvedAt: later.toISOString() });
+      expect(policies[0].metadata).toMatchObject({ standingApprovalRef: "synthetic-standing", subsetOfPolicy: command.reviewedPlan.rows[1].id, meansOnlyPlayerIds: [999] });
+      const pending = result.plan.rows.find(row => row.entity_kind === "baseline_validation_review")!;
+      expect(pending.payload).toMatchObject({ candidateInputHash, policyHash: policies[0].payload_hash, status: "pending_independent_review" });
+      expect(result.receipt).toMatchObject({ meansOnlyExcluded: { sources: 1, playerIds: [999] } });
+      const approved = { ...(pending.payload as any), status: "owner_approved", eligible: true, ownerApprovalRef: "synthetic-only", reviewedAt: later.toISOString() };
+      Object.assign(pending, { payload: approved, payload_hash: hash(approved), available_at: later.toISOString(), observed_at: later.toISOString() });
+      const catalogHead = { headId: ids[0], observationId: ids[1], expectedRevision: 0, expectedHash: null };
+      await expect(validateCadenceCommand({ ...result.cadenceCommand, catalogHead } as any, proof, later)).resolves.toMatchObject({ validation: { rows: result.plan.rows.length } });
     });
     it("runs the prepare CLI offline with exact files and refuses an execution target", async () => {
       const { command, proof } = setup(), directory = mkdtempSync(join(tmpdir(), "native-cadence-prepare-"));
@@ -623,6 +653,39 @@ describe("bounded publication coordinator (synthetic only)", () => {
       expect(() => prepareNativeInputMaterialization(changed, now.toISOString())).toThrow("missing");
     } finally { vi.useRealTimers(); }
   });
+  it("materializes rolling-window inputs whose frame evidence resolves to the frame's own parents", async () => {
+    const request = materializationFixture(), boxscore = request.acquisition.receipts[0];
+    const week = (start: string) => {
+      const rawBody = JSON.stringify({ gameWeek: Array.from({ length: 7 }, (_, i) => {
+        const date = new Date(Date.parse(`${start}T12:00:00Z`) + i * 86400000).toISOString().slice(0, 10);
+        return { date, games: date === "2026-10-01" ? [{ id: 2026020001, season: 20262027, gameType: 2, startTimeUTC: "2026-10-01T23:00:00Z",
+          gameState: "OFF", gameScheduleState: "OK", homeTeam: { id: 1, abbrev: "AAA" }, awayTeam: { id: 2, abbrev: "BBB" } }] : [] };
+      }) });
+      return { url: `https://api-web.nhle.com/v1/schedule/${start}`, capturedAt: "2026-10-15T09:00:00Z", rawBody,
+        bodySha256: createHash("sha256").update(rawBody).digest("hex") };
+    };
+    const frame = buildRollingParticipationHistories({ cutoffAt: request.acquisition.cutoffAt, seasonId: 20262027,
+      players: [{ playerId: 7, nhlPlayerId: 77, teamId: 1, playerClass: "skater" }], scheduleReceipts: [week("2026-10-01"), week("2026-10-08")],
+      boxscoreReceipts: [boxscore] });
+    request.parents = frame.parents;
+    request.requiredParents = frame.parents.map(parent => ({ id: parent.id, hash: parent.hash, availableAt: parent.availableAt,
+      capturedAt: parent.capturedAt, url: parent.original?.url ?? null }));
+    request.participationInputs = [{ version: "skater-rolling-14d-participation-input-v1", playerClass: "skater", cutoffAt: request.acquisition.cutoffAt,
+      scope: { playerId: 7, nhlPlayerId: 77, teamId: 1, seasonId: 20262027, gameId: 30, scheduledAt: "2026-10-15T23:00:00Z",
+        scheduleRevision: "schedule", rosterRevision: "roster" },
+      scheduleEvidence: frame.evidence, rosterEvidence: frame.evidence, targetRosterObservation: null, history: frame.histories.get(7)! }];
+    vi.useFakeTimers(); vi.setSystemTime(now);
+    try {
+      const db = database(), result = await materializeNativeInputs(request, { now, dryRun: false, db: db.db });
+      expect(result.status).toBe("closed");
+      const row = result.rows.find(value => value.entity_kind === "participation_input")!;
+      expect(row.payload).toMatchObject({ dataset: "skater-rolling-14d-participation-bundle-v1", inputs: request.participationInputs });
+      const unparented = structuredClone(request);
+      unparented.parents = unparented.parents!.filter(parent => parent.hash !== frame.evidence.hash);
+      unparented.requiredParents = unparented.requiredParents!.filter(parent => parent.hash !== frame.evidence.hash);
+      expect(() => prepareNativeInputMaterialization(unparented, now.toISOString())).toThrow("Participation evidence lacks required acquired parent");
+    } finally { vi.useRealTimers(); }
+  });
   it("holds caller-complete inputs without an actual durable closed producer receipt", async () => {
     const request = cadenceRequest(), db = database();
     expect(await observeClosedNativeCadenceSources(request, db.db)).toMatchObject({ complete: false, reason: "producer_closed_receipt_missing:native-inputs" });
@@ -630,13 +693,30 @@ describe("bounded publication coordinator (synthetic only)", () => {
       .toMatchObject({ status: "held", cadenceComplete: false });
     expect(db.writes).toEqual([]);
   });
+  it("selects rolling-window participation pins only under their own dataset keys", async () => {
+    const plan = nativeFixture(now.toISOString()), validation = await validateNativeBaselinePublication(plan, now);
+    const payload = { version: "skater-rolling-14d-participation-bundle-v1", expiresAt: "2026-10-15T18:00:00Z", entries: [] };
+    const rolling = { ...plan.rows[0], id: "00000000-0000-4000-8000-0000000000aa", dataset_key: payload.version,
+      entity_kind: "participation_bundle", payload, payload_hash: hash(payload) };
+    const withRolling = { ...plan, rows: [...plan.rows, rolling] }, pin = `${rolling.id}:${rolling.payload_hash}`;
+    const observation = prepareNativeCatalogObservation({ plan: withRolling, observationId: ids[1], issuedAt: now.toISOString(),
+      pins: { ...validation.proposedPins, PLAYER_FORECAST_ROLLING_14D_SKATER_PARTICIPATION_RELEASES: pin } });
+    expect((observation.payload as any).pins.PLAYER_FORECAST_ROLLING_14D_SKATER_PARTICIPATION_RELEASES).toBe(pin);
+    expect((observation.payload as any).releases).toContainEqual({ id: rolling.id, payloadHash: rolling.payload_hash, dataset: payload.version });
+    expect(() => prepareNativeCatalogObservation({ plan: withRolling, observationId: ids[1], issuedAt: now.toISOString(),
+      pins: { ...validation.proposedPins, PLAYER_FORECAST_ROLLING_14D_GOALIE_START_RELEASES: pin } })).toThrow("pin/hash mismatch");
+  });
   it("atomically selects all four exact pinsets and resolves them once without weakening native admission", async () => {
     const plan = nativeFixture(now.toISOString()), validation = await validateNativeBaselinePublication(plan, now), db = database(plan.rows);
     const observation = prepareNativeCatalogObservation({ plan, pins: validation.proposedPins, observationId: ids[1], issuedAt: now.toISOString() });
     const selection = await advanceNativeCatalogHead({ db: db.db, headId: ids[0], expectedRevision: 0, expectedHash: null, observation, now, dryRun: false });
     expect(selection).toMatchObject({ status: "selected", selectedCatalogUpdated: true });
-    const resolved = await resolveNativeCatalogEnvironment(db.db, plan.seasonId, now, { PLAYER_FORECAST_NATIVE_CATALOG_HEAD_ID: ids[0], PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES: "stale" });
+    const resolved = await resolveNativeCatalogEnvironment(db.db, plan.seasonId, now, { PLAYER_FORECAST_NATIVE_CATALOG_HEAD_ID: ids[0],
+      PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES: "stale", PLAYER_FORECAST_ROLLING_14D_SKATER_PARTICIPATION_RELEASES: "stale" });
     expect(resolved.selection?.revision).toBe(1); expect(resolved.environment.PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES).toBe("");
+    // A selection without the added rolling groups keeps its original shape and still clears their stale pins.
+    expect(Object.keys((observation.payload as any).pins)).toEqual(NATIVE_CATALOG_PIN_KEYS.slice(0, 4));
+    expect(resolved.environment.PLAYER_FORECAST_ROLLING_14D_SKATER_PARTICIPATION_RELEASES).toBe("");
     expect((await loadNativeContributionBundle(db.db, plan.seasonId, now, { environment: resolved.environment })).sources.length).toBeGreaterThan(0);
     const stale = await advanceNativeCatalogHead({ db: db.db, headId: ids[0], expectedRevision: 0, expectedHash: null, observation: { ...observation, id: "00000000-0000-4000-8000-000000000009" }, now, dryRun: false });
     // Same immutable semantic tuple under a fresh UUID is rejected before CAS, so selection stays unacknowledged.

@@ -173,6 +173,22 @@ export function buildDailyParticipationInputs(args: { retained: ParticipationInp
   return { inputs, coverage };
 }
 
+/** Means-only players are not served: keep a native selection only when today's participation inputs give its
+ * player a target with the same player, NHL player, team and roster revision, as the publish gate requires.
+ * Their native observations leave the request, so neither materialization nor outputs carry them. */
+export function excludeMeansOnlyNatives(retained: NativeMaterializationRequest, participationInputs: ParticipationInput[]) {
+  const key = (value: any) => [value?.playerId, value?.nhlPlayerId, value?.teamId, value?.rosterRevision].join(":");
+  const targets = new Set(participationInputs.map(input => key(input.scope)));
+  const roster = new Map(retained.acquisition.roster.map(player => [player.playerId, player]));
+  const request: NativeMaterializationRequest = { ...retained,
+    nativeSelection: retained.nativeSelection.filter(selection => targets.has(key(roster.get(selection.playerId)))),
+    additionalNativeObservations: retained.additionalNativeObservations?.filter(value => targets.has(key(value.payload))),
+    existingInputs: retained.existingInputs?.filter(value => targets.has(key(value.payload))) };
+  const excluded = retained.nativeSelection.filter(selection => !request.nativeSelection.includes(selection))
+    .map(({ playerId, policyVersion }) => ({ playerId, policyVersion }));
+  return { request, excluded };
+}
+
 /** Retained request re-bound to fresh parents, participation inputs, cutoff and run identity.
  * Retained parents stay only when frozen native or history evidence still reaches them. */
 export function buildDailyMaterializationRequest(args: { retained: NativeMaterializationRequest; freshReceipts: HttpReceipt[];

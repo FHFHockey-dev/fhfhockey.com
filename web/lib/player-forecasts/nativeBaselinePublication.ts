@@ -3,9 +3,11 @@ import { capturePlayerForecastSourceObservation, matchesPlannedObservation, play
   SOURCE_OBSERVATION_COLUMNS, validPlannedObservationId, type PlannedSourceObservation } from "./sourceSnapshot";
 import { persistContributionBundle } from "./contributionStore";
 import { loadNativeContributionBundle } from "./nativeContributionAdmission";
-import { loadModeledSkaterParticipation, loadFrozenWindowSkaterParticipation, loadRosterObservationSkaterParticipation } from "./modeledSkaterParticipationStore";
+import { loadModeledSkaterParticipation, loadFrozenWindowSkaterParticipation, loadRosterObservationSkaterParticipation,
+  loadRollingWindowSkaterParticipation } from "./modeledSkaterParticipationStore";
 import { loadModeledGoalieParticipation, loadFrozenWindowGoalieParticipation, loadFrozenWindowGoalieStarts,
-  loadRosterObservationGoalieParticipation, loadRosterObservationGoalieStarts } from "./modeledGoalieParticipationStore";
+  loadRosterObservationGoalieParticipation, loadRosterObservationGoalieStarts, loadRollingWindowGoalieParticipation,
+  loadRollingWindowGoalieStarts } from "./modeledGoalieParticipationStore";
 import { timestampMicros } from "../projections/evidenceTime";
 
 // Actual complete six-policy/three-method selection measured 35,355,173 bytes.
@@ -23,6 +25,9 @@ const participationMethods = [
   ["goalie-frozen-window-start-bundle-v1", "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_START_RELEASES", loadFrozenWindowGoalieStarts],
   ["goalie-roster-observation-participation-bundle-v1", "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_PARTICIPATION_RELEASES", loadRosterObservationGoalieParticipation],
   ["goalie-roster-observation-start-bundle-v1", "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES", loadRosterObservationGoalieStarts],
+  ["skater-rolling-14d-participation-bundle-v1", "PLAYER_FORECAST_ROLLING_14D_SKATER_PARTICIPATION_RELEASES", loadRollingWindowSkaterParticipation],
+  ["goalie-rolling-14d-participation-bundle-v1", "PLAYER_FORECAST_ROLLING_14D_GOALIE_PARTICIPATION_RELEASES", loadRollingWindowGoalieParticipation],
+  ["goalie-rolling-14d-start-bundle-v1", "PLAYER_FORECAST_ROLLING_14D_GOALIE_START_RELEASES", loadRollingWindowGoalieStarts],
 ] as const;
 const kinds: Record<string, string> = { "baseline-inputs-v1": "player", "goalie-baseline-inputs-v1": "player",
   "baseline-evaluation-policy-v1": "baseline_evaluation_policy", "baseline-validation-review-v1": "baseline_validation_review",

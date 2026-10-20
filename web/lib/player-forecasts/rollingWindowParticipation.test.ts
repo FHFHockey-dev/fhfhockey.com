@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
 import { buildRosterObservationSkaterParticipationReceipt, type RosterObservationSkaterParticipationInput } from "./modeledSkaterParticipation";
 import { buildRosterObservationGoalieParticipationReceipt, buildRosterObservationGoalieStartReceipt,
@@ -8,6 +8,9 @@ import { buildRollingWindowGoalieParticipationReceipt, buildRollingWindowGoalieS
   rollingParticipationWindow, type RollingWindowGoalieStartInput, type RollingWindowSkaterParticipationInput } from "./rollingWindowParticipation";
 import { ROSTER_CONTINUATION_ASSUMPTION } from "./targetRosterObservation";
 import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
+import { loadRollingWindowSkaterParticipation, ROLLING_WINDOW_SKATER_PARTICIPATION_DATASET } from "./modeledSkaterParticipationStore";
+import { loadRollingWindowGoalieParticipation, loadRollingWindowGoalieStarts, ROLLING_WINDOW_GOALIE_PARTICIPATION_DATASET,
+  ROLLING_WINDOW_GOALIE_START_DATASET } from "./modeledGoalieParticipationStore";
 
 const HOUR = 3600000;
 const digest = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -221,5 +224,40 @@ describe("rolling goalie relief versus start", () => {
     expect(() => buildRollingWindowGoalieStartReceipt(value, clocks(value.cutoffAt))).toThrow("rolling-window goalie start");
     expect(() => buildRollingWindowGoalieParticipationReceipt({ ...value, version: "goalie-rolling-14d-participation-input-v1" },
       clocks(value.cutoffAt))).toThrow("rolling-window goalie participation");
+  });
+});
+
+describe("rolling-window release stores", () => {
+  const cases = [
+    { kind: "skater", dataset: ROLLING_WINDOW_SKATER_PARTICIPATION_DATASET, env: "PLAYER_FORECAST_ROLLING_14D_SKATER_PARTICIPATION_RELEASES",
+      legacy: "PLAYER_FORECAST_ROSTER_OBSERVATION_SKATER_PARTICIPATION_RELEASES", load: loadRollingWindowSkaterParticipation,
+      entry: () => { const value = skater(input()); return { input: value, receipt: buildRollingWindowSkaterParticipationReceipt(value, clocks(value.cutoffAt)) }; },
+      basis: "appearance", version: "skater-rolling-14d-appearance-frequency-v1", probability: 2 / 3 },
+    { kind: "goalie", dataset: ROLLING_WINDOW_GOALIE_PARTICIPATION_DATASET, env: "PLAYER_FORECAST_ROLLING_14D_GOALIE_PARTICIPATION_RELEASES",
+      legacy: "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_PARTICIPATION_RELEASES", load: loadRollingWindowGoalieParticipation,
+      entry: () => { const value = { ...input(), version: "goalie-rolling-14d-participation-input-v1" as const };
+        return { input: value, receipt: buildRollingWindowGoalieParticipationReceipt(value, clocks(value.cutoffAt)) }; },
+      basis: "appearance", version: "goalie-rolling-14d-appearance-frequency-v1", probability: 2 / 3 },
+    { kind: "start", dataset: ROLLING_WINDOW_GOALIE_START_DATASET, env: "PLAYER_FORECAST_ROLLING_14D_GOALIE_START_RELEASES",
+      legacy: "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES", load: loadRollingWindowGoalieStarts,
+      entry: () => { const value = input(); return { input: value, receipt: buildRollingWindowGoalieStartReceipt(value, clocks(value.cutoffAt)) }; },
+      basis: "start", version: "goalie-rolling-14d-start-frequency-v1", probability: 1 / 3 },
+  ] as const;
+  it.each(cases)("admits only exact $kind bundles under their own allowlist", async ({ dataset, env, legacy, load, entry, basis, version, probability }) => {
+    const issuance = clocks(input().cutoffAt), payload = { version: dataset, seasonId: 20262027, ...issuance, released: true,
+      ownerApprovalRef: "synthetic-owner", reviewRef: "synthetic-review", entries: [entry()],
+      allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false } };
+    const id = "11111111-1111-4111-8111-111111111111", row = { id, provider: "fhfh", dataset_key: dataset, entity_kind: "participation_bundle",
+      entity_key: "20262027", available_at: issuance.issuedAt, payload_hash: playerForecastSourcePayloadHash(payload), payload };
+    const reply = Promise.resolve({ data: [row], error: null });
+    const chain: any = new Proxy({}, { get: (_, key) => key === "then" ? reply.then.bind(reply) : () => chain });
+    const db = { from: vi.fn(() => chain) }, at = new Date(issuance.issuedAt);
+    expect((await load(db as never, 20262027, at, { environment: { [legacy]: `${id}:${row.payload_hash}` } })).sources).toEqual([]);
+    expect(db.from).not.toHaveBeenCalled();
+    expect((await load(db as never, 20262027, at, { environment: { [env]: `${id}:${row.payload_hash}` } })).sources[0])
+      .toMatchObject({ basis, probability, model: { version } });
+    (row.payload.entries[0].receipt as { numerator: number }).numerator = 3;
+    row.payload_hash = playerForecastSourcePayloadHash(row.payload);
+    expect((await load(db as never, 20262027, at, { environment: { [env]: `${id}:${row.payload_hash}` } })).sources).toEqual([]);
   });
 });

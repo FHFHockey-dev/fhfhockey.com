@@ -171,8 +171,8 @@ describe("saved in-season workspace validation", () => {
       expiresAt: "2026-10-08T00:00:00Z", model: { ...modeledMetadata, ...invalid } };
     expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...snapshot, participationSources: [receipt] }, expectedVersion: null }).success).toBe(false);
   });
-  it("round-trips a resolved goalie forecast carrying modeled start metadata", () => {
-    const startModel = { ...modeledMetadata, version: "goalie-roster-observation-start-frequency-v1", event: "official_starter",
+  it.each(["goalie-roster-observation-start-frequency-v1", "goalie-rolling-14d-start-frequency-v1"])("round-trips a resolved goalie forecast carrying %s start metadata", version => {
+    const startModel = { ...modeledMetadata, version, event: "official_starter",
       numerator: 3, denominator: 4, selectedGameIds: [101, 102, 103, 104] };
     const start = { playerId: 30, nhlPlayerId: 8480030, seasonId: 20262027, gameId: 31, teamId: 6,
       scheduledAt: "2026-10-05T23:00:00Z", scheduleRevision: "schedule-a", rosterRevision: "roster-a", basis: "start",

@@ -3,13 +3,14 @@
  *   inputs   - offline: retained request + captures -> bound materialization request and preparation command
  *   outputs  - offline: closed materialization proof -> pending daily publication plan
  *   review   - offline: independent reviewer decision -> reviewed plan and cadence command
+ * v2 stages: universe (forge-daily-universe.ts), means (native-means-capture.ts), inputs-v2 and outputs-v2 (forge-daily-v2.ts).
  * Materialize and publish use scripts/native-baseline-cadence.ts. Nothing here writes to a database. */
 import { createHash, randomUUID } from "node:crypto";
 import { appendFileSync, closeSync, fsyncSync, mkdirSync, openSync } from "node:fs";
 import { resolve } from "node:path";
 import { boundedFile, privateWrite } from "./native-baseline-cadence";
 import { buildDailyMaterializationRequest, buildDailyParticipationInputs, dailyExpiresAt, dailyGames, dailyScheduleBindings,
-  applyNativeDailyReview, reobserveHistoryWindow, type HttpReceipt, type NativeDailyReviewDecision } from "../lib/player-forecasts/nativeDailyPipeline";
+  applyNativeDailyReview, excludeMeansOnlyNatives, reobserveHistoryWindow, type HttpReceipt, type NativeDailyReviewDecision } from "../lib/player-forecasts/nativeDailyPipeline";
 import { prepareNativeCadenceOutputs, type NativeOutputPreparationCommand } from "../lib/player-forecasts/nativeCadenceOutputPreparation";
 import { playerForecastSourcePayloadHash as hash } from "../lib/player-forecasts/sourceSnapshot";
 
@@ -131,7 +132,8 @@ export async function runForgeDaily(argv: string[], now = () => new Date()) {
       bindings, historyEvidence: history.evidence, cutoffAt, seasonId });
     if (participation.coverage.some((row: any) => row.reasons.length || !row.games)) fail("participation_coverage_incomplete");
     const games = dailyGames(bindings, date), sourceKey = "native-daily-selected-inputs";
-    const bound = buildDailyMaterializationRequest({ retained, freshReceipts: receipts, derivedParents: [history.parent], participationInputs: participation.inputs, cutoffAt,
+    const scoped = excludeMeansOnlyNatives(retained, participation.inputs);
+    const bound = buildDailyMaterializationRequest({ retained: scoped.request, freshReceipts: receipts, derivedParents: [history.parent], participationInputs: participation.inputs, cutoffAt,
       runId: randomUUID(), date, sourceKey, seasonId, games });
     const out = output(args.get("--out") ?? fail("missing_out"));
     const command: Omit<NativeOutputPreparationCommand, "reviewedPlan" | "daily"> = { version: "native-output-preparation-v1", slotKey: `morning:${date}`,
@@ -139,19 +141,21 @@ export async function runForgeDaily(argv: string[], now = () => new Date()) {
       games, requiredAcquisitionScopes: bound.requiredAcquisitionScopes };
     privateWrite(resolve(out, "materialization-request.json"), bound.request);
     privateWrite(resolve(out, "preparation-command.json"), command);
-    privateWrite(resolve(out, "coverage.json"), { cutoffAt, games, exclusions: bindings.exclusions, players: participation.coverage, droppedParents: bound.droppedParents });
+    privateWrite(resolve(out, "coverage.json"), { cutoffAt, games, exclusions: bindings.exclusions, players: participation.coverage, droppedParents: bound.droppedParents,
+      meansOnlyExcluded: scoped.excluded });
     return { stage, status: "inputs_bound", cutoffAt, participationInputs: participation.inputs.length, parents: bound.request.parents?.length,
-      droppedParents: bound.droppedParents, games: games.length, dueAt: command.dueAt, networkRequests: 0, databaseWrites: 0, out };
+      droppedParents: bound.droppedParents, meansOnlyExcluded: scoped.excluded.length, games: games.length, dueAt: command.dueAt, networkRequests: 0, databaseWrites: 0, out };
   }
   if (stage === "outputs") {
     const args = parse(rest, ["--command", "--command-sha256", "--proof", "--proof-sha256", "--reviewed", "--reviewed-sha256", "--approval-ref",
-      "--max-null-participation", "--out"]);
+      "--max-null-participation", "--standing-approval-ref", "--out"]);
     const maxNull = Number(args.get("--max-null-participation") ?? fail("missing_max_null_participation"));
     if (!Number.isSafeInteger(maxNull) || maxNull < 0) fail("invalid_max_null_participation");
     const command = input(args, "command"), proof = input(args, "proof"), reviewed = input(args, "reviewed"), issued = now();
     const participationInputs = proof.rows.filter((row: any) => row.dataset_key === "native-participation-input-v1").flatMap((row: any) => row.payload.inputs);
     const result = await prepareNativeCadenceOutputs({ ...command, reviewedPlan: reviewed, daily: { expiresAt: dailyExpiresAt(issued.toISOString(), participationInputs, command.games),
-      participationOwnerApprovalRef: args.get("--approval-ref") ?? fail("missing_approval_ref") } }, proof, issued);
+      participationOwnerApprovalRef: args.get("--approval-ref") ?? fail("missing_approval_ref"), standingApprovalRef: args.get("--standing-approval-ref") } },
+      proof, issued);
     // A mostly-null participation set is not a usable daily forecast; stop before writing a plan.
     if (result.receipt.nullParticipation > maxNull) fail(`null_participation_exceeds_gate:${result.receipt.nullParticipation}`);
     const out = output(args.get("--out") ?? fail("missing_out"));
@@ -174,6 +178,9 @@ export async function runForgeDaily(argv: string[], now = () => new Date()) {
     privateWrite(resolve(out, "cadence-command.json"), cadenceCommand);
     return { stage, status: "reviewed_pending_publish", reviewedPlanHash: hash(reviewed), rows: reviewed.rows.length, out };
   }
+  if (stage === "universe") return (await import("./forge-daily-universe")).runForgeDailyUniverse(rest, now);
+  if (stage === "means") return (await import("./native-means-capture")).runNativeMeansCapture(rest, now);
+  if (stage === "inputs-v2" || stage === "outputs-v2") return (await import("./forge-daily-v2")).runForgeDailyV2(stage, rest, now);
   return fail("stage_required");
 }
 if (require.main === module) runForgeDaily(process.argv.slice(2)).then(result => console.log(JSON.stringify(result)))

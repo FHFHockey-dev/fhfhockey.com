@@ -221,11 +221,13 @@ const stringOrNull = (value: unknown): string | null =>
 function normalizeParticipationModel(value: unknown, totalsAllowed: boolean): StartChartParticipation["model"] {
   const model = asRecord(value);
   const start = model.version === "goalie-frozen-window-start-frequency-v1"
-    || model.version === "goalie-roster-observation-start-frequency-v1";
+    || model.version === "goalie-roster-observation-start-frequency-v1" || model.version === "goalie-rolling-14d-start-frequency-v1";
   if (!["skater-participation-frequency-v1", "goalie-appearance-frequency-v1",
     "skater-frozen-window-appearance-frequency-v1", "goalie-frozen-window-appearance-frequency-v1",
     "goalie-frozen-window-start-frequency-v1", "skater-roster-observation-appearance-frequency-v1",
-    "goalie-roster-observation-appearance-frequency-v1", "goalie-roster-observation-start-frequency-v1"].includes(model.version)
+    "goalie-roster-observation-appearance-frequency-v1", "goalie-roster-observation-start-frequency-v1",
+    "skater-rolling-14d-appearance-frequency-v1", "goalie-rolling-14d-appearance-frequency-v1",
+    "goalie-rolling-14d-start-frequency-v1"].includes(model.version)
     || model.event !== (start ? "official_starter" : "positive_minutes")
     || model.probabilityStatus !== "uncalibrated_model" || model.calibration !== "unavailable"
     || !stringOrNull(model.inputHash)) return undefined;

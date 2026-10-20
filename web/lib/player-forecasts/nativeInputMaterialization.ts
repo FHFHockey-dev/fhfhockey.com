@@ -10,12 +10,15 @@ import { verifyBaselineHistoricalSources } from "./baselineSourceLineage";
 import { buildRosterObservationSkaterParticipationReceipt, type RosterObservationSkaterParticipationInput } from "./modeledSkaterParticipation";
 import { buildRosterObservationGoalieParticipationReceipt, buildRosterObservationGoalieStartReceipt,
   type RosterObservationGoalieParticipationInput, type RosterObservationGoalieStartInput } from "./modeledGoalieParticipation";
+import { buildRollingWindowGoalieParticipationReceipt, buildRollingWindowGoalieStartReceipt, buildRollingWindowSkaterParticipationReceipt,
+  type RollingWindowGoalieParticipationInput, type RollingWindowGoalieStartInput, type RollingWindowSkaterParticipationInput } from "./rollingWindowParticipation";
 import { withinDeadline } from "../rosterScheduleData/planningInputs";
 import { timestampMicros } from "../projections/evidenceTime";
 import { capturePlayerForecastSourceObservation, matchesPlannedObservation, SOURCE_OBSERVATION_COLUMNS,
   playerForecastSourcePayloadHash as hash, validPlannedObservationId, type PlannedSourceObservation } from "./sourceSnapshot";
 
-type ParticipationInput = RosterObservationSkaterParticipationInput | RosterObservationGoalieParticipationInput | RosterObservationGoalieStartInput;
+type ParticipationInput = RosterObservationSkaterParticipationInput | RosterObservationGoalieParticipationInput | RosterObservationGoalieStartInput
+  | RollingWindowSkaterParticipationInput | RollingWindowGoalieParticipationInput | RollingWindowGoalieStartInput;
 type ParentIdentity = { id: string; hash: string; availableAt: string; capturedAt: string };
 export type NativeMaterializationParent = ParentIdentity & (
   { original: { url: string; rawBody: string; bodySha256: string }; derived?: never }
@@ -229,11 +232,17 @@ export function prepareNativeInputMaterialization(request: NativeMaterialization
     const clocks = { issuedAt: closedAt, expiresAt: new Date(new Date(closedAt).getTime() + 1).toISOString() };
     const dataset = input.version === "skater-roster-observation-participation-input-v1" ? "skater-roster-observation-participation-bundle-v1"
       : input.version === "goalie-roster-observation-participation-input-v1" ? "goalie-roster-observation-participation-bundle-v1"
-        : input.version === "goalie-roster-observation-start-input-v1" ? "goalie-roster-observation-start-bundle-v1" : null;
+        : input.version === "goalie-roster-observation-start-input-v1" ? "goalie-roster-observation-start-bundle-v1"
+          : input.version === "skater-rolling-14d-participation-input-v1" ? "skater-rolling-14d-participation-bundle-v1"
+            : input.version === "goalie-rolling-14d-participation-input-v1" ? "goalie-rolling-14d-participation-bundle-v1"
+              : input.version === "goalie-rolling-14d-start-input-v1" ? "goalie-rolling-14d-start-bundle-v1" : null;
     if (!dataset) throw new Error("Unsupported materialized participation method.");
     if (input.version === "skater-roster-observation-participation-input-v1") buildRosterObservationSkaterParticipationReceipt(input, clocks);
     else if (input.version === "goalie-roster-observation-participation-input-v1") buildRosterObservationGoalieParticipationReceipt(input, clocks);
-    else buildRosterObservationGoalieStartReceipt(input, clocks);
+    else if (input.version === "goalie-roster-observation-start-input-v1") buildRosterObservationGoalieStartReceipt(input, clocks);
+    else if (input.version === "skater-rolling-14d-participation-input-v1") buildRollingWindowSkaterParticipationReceipt(input, clocks);
+    else if (input.version === "goalie-rolling-14d-participation-input-v1") buildRollingWindowGoalieParticipationReceipt(input, clocks);
+    else buildRollingWindowGoalieStartReceipt(input, clocks);
     items.push({ key: `${dataset}:${input.scope.playerId}:${input.scope.gameId}`, hash: hash(input), availableAt: input.cutoffAt });
     const group = groups.get(dataset) ?? []; group.push(input); groups.set(dataset, group);
   }

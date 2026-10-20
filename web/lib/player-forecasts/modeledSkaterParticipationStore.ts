@@ -4,12 +4,15 @@ import { buildSkaterParticipationReceipt, participationFromReceipt,
   type SkaterParticipationInput, type SkaterParticipationReceipt, buildFrozenWindowSkaterParticipationReceipt,
   type FrozenWindowSkaterParticipationInput, type FrozenWindowSkaterParticipationReceipt, buildRosterObservationSkaterParticipationReceipt,
   type RosterObservationSkaterParticipationInput, type RosterObservationSkaterParticipationReceipt } from "./modeledSkaterParticipation";
+import { buildRollingWindowSkaterParticipationReceipt, type RollingWindowSkaterParticipationInput,
+  type RollingWindowSkaterParticipationReceipt } from "./rollingWindowParticipation";
 import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
 import { timestampMicros } from "../projections/evidenceTime";
 
 export const PARTICIPATION_DATASET = "skater-participation-bundle-v1";
 export const FROZEN_WINDOW_SKATER_PARTICIPATION_DATASET = "skater-frozen-window-participation-bundle-v1";
 export const ROSTER_OBSERVATION_SKATER_PARTICIPATION_DATASET = "skater-roster-observation-participation-bundle-v1";
+export const ROLLING_WINDOW_SKATER_PARTICIPATION_DATASET = "skater-rolling-14d-participation-bundle-v1";
 export const SKATER_PARTICIPATION_RELEASE_LIMITS = Object.freeze({
   releases: 8, bundleEntries: 500, bundleBytes: 8 * 1024 * 1024,
   // Owned17 + candidate45 skaters ×20games =1240entries. The measured600-entry
@@ -31,6 +34,10 @@ export type RosterObservationSkaterParticipationBundle = Omit<SkaterParticipatio
   version: typeof ROSTER_OBSERVATION_SKATER_PARTICIPATION_DATASET;
   entries: Array<{ input: RosterObservationSkaterParticipationInput; receipt: RosterObservationSkaterParticipationReceipt }>;
 };
+export type RollingWindowSkaterParticipationBundle = Omit<SkaterParticipationBundle, "version" | "entries"> & {
+  version: typeof ROLLING_WINDOW_SKATER_PARTICIPATION_DATASET;
+  entries: Array<{ input: RollingWindowSkaterParticipationInput; receipt: RollingWindowSkaterParticipationReceipt }>;
+};
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const HASH = /^[0-9a-f]{64}$/;
 const nonempty = (value: unknown) => typeof value === "string" && value.trim().length > 0;
@@ -40,14 +47,16 @@ const time = (value: string) => { const parsed = timestampMicros(value); return 
  * Reproduction authenticates arithmetic, not source truth: publication review must
  * establish genuine complete eligibility/label inputs before allowlisting bytes. */
 async function loadSkaterParticipation(db: SupabaseClient<any>, seasonId: number, now: Date,
-  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal }, mode: "current" | "frozen" | "roster_observation"): Promise<{
+  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal }, mode: "current" | "frozen" | "roster_observation" | "rolling"): Promise<{
     sources: ContributionParticipation[]; checksum: string | null; limitations: string[];
   }> {
   const frozen = mode !== "current";
-  const dataset = mode === "roster_observation" ? ROSTER_OBSERVATION_SKATER_PARTICIPATION_DATASET
+  const dataset = mode === "rolling" ? ROLLING_WINDOW_SKATER_PARTICIPATION_DATASET
+    : mode === "roster_observation" ? ROSTER_OBSERVATION_SKATER_PARTICIPATION_DATASET
     : frozen ? FROZEN_WINDOW_SKATER_PARTICIPATION_DATASET : PARTICIPATION_DATASET;
   const empty = (reason: string) => ({ sources: [], checksum: null, limitations: [reason] });
-  const releases = (options.environment ?? process.env)[mode === "roster_observation" ? "PLAYER_FORECAST_ROSTER_OBSERVATION_SKATER_PARTICIPATION_RELEASES"
+  const releases = (options.environment ?? process.env)[mode === "rolling" ? "PLAYER_FORECAST_ROLLING_14D_SKATER_PARTICIPATION_RELEASES"
+    : mode === "roster_observation" ? "PLAYER_FORECAST_ROSTER_OBSERVATION_SKATER_PARTICIPATION_RELEASES"
     : frozen ? "PLAYER_FORECAST_FROZEN_WINDOW_SKATER_PARTICIPATION_RELEASES" : "PLAYER_FORECAST_PARTICIPATION_RELEASES"]
     ?.split(",").map(value => value.trim()).filter(Boolean) ?? [];
   if (!releases.length) return empty("modeled_participation_serving_disabled");
@@ -66,7 +75,8 @@ async function loadSkaterParticipation(db: SupabaseClient<any>, seasonId: number
   let bytes = 0, entries = 0;
   try {
     for (const row of data) {
-      const pin = pins.find(value => value[0] === row.id), payload = row.payload as SkaterParticipationBundle | FrozenWindowSkaterParticipationBundle | RosterObservationSkaterParticipationBundle;
+      const pin = pins.find(value => value[0] === row.id), payload = row.payload as SkaterParticipationBundle | FrozenWindowSkaterParticipationBundle | RosterObservationSkaterParticipationBundle
+        | RollingWindowSkaterParticipationBundle;
       const rowBytes = Buffer.byteLength(JSON.stringify(payload), "utf8");
       bytes += rowBytes;
       const uses = payload?.allowedUses;
@@ -89,7 +99,8 @@ async function loadSkaterParticipation(db: SupabaseClient<any>, seasonId: number
         if (sources.length >= SKATER_PARTICIPATION_RELEASE_LIMITS.aggregateEntries || entry.input.scope.seasonId !== seasonId
           || entry.receipt.issuedAt !== payload.issuedAt || entry.receipt.expiresAt !== payload.expiresAt) return empty("invalid_participation_release");
         const clocks = { issuedAt: payload.issuedAt, expiresAt: payload.expiresAt };
-        const rebuilt = mode === "roster_observation" ? buildRosterObservationSkaterParticipationReceipt(entry.input as RosterObservationSkaterParticipationInput, clocks)
+        const rebuilt = mode === "rolling" ? buildRollingWindowSkaterParticipationReceipt(entry.input as RollingWindowSkaterParticipationInput, clocks)
+          : mode === "roster_observation" ? buildRosterObservationSkaterParticipationReceipt(entry.input as RosterObservationSkaterParticipationInput, clocks)
           : frozen ? buildFrozenWindowSkaterParticipationReceipt(entry.input as FrozenWindowSkaterParticipationInput, clocks)
           : buildSkaterParticipationReceipt(entry.input as SkaterParticipationInput, clocks);
         if (playerForecastSourcePayloadHash(rebuilt) !== playerForecastSourcePayloadHash(entry.receipt)) return empty("participation_receipt_mismatch");
@@ -102,7 +113,8 @@ async function loadSkaterParticipation(db: SupabaseClient<any>, seasonId: number
     }
   } catch { return empty("invalid_participation_release"); }
   return { sources, checksum: playerForecastSourcePayloadHash(pins.slice().sort((a, b) => a[0].localeCompare(b[0]))),
-    limitations: [mode === "roster_observation" ? "Experimental official season-roster observation continuation proxy; calibration unavailable; source completeness is owner-reviewed."
+    limitations: [mode === "rolling" ? "Experimental rolling 14-day history with official season-roster observation continuation proxy; calibration unavailable; source completeness is owner-reviewed."
+      : mode === "roster_observation" ? "Experimental official season-roster observation continuation proxy; calibration unavailable; source completeness is owner-reviewed."
       : frozen ? "Experimental frozen-window skater appearance frequency; calibration unavailable; source completeness is owner-reviewed."
       : "Experimental modeled skater participation; calibration unavailable; source completeness is owner-reviewed."] };
 }
@@ -124,4 +136,10 @@ export function loadFrozenWindowSkaterParticipation(db: SupabaseClient<any>, sea
 export function loadRosterObservationSkaterParticipation(db: SupabaseClient<any>, seasonId: number, now: Date,
   options: { environment?: Record<string, string | undefined>; signal?: AbortSignal } = {}) {
   return loadSkaterParticipation(db, seasonId, now, options, "roster_observation");
+}
+
+/** Rolling 14-day window: its own exact-hash allowlist; never inherits roster-observation approval. */
+export function loadRollingWindowSkaterParticipation(db: SupabaseClient<any>, seasonId: number, now: Date,
+  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal } = {}) {
+  return loadSkaterParticipation(db, seasonId, now, options, "rolling");
 }

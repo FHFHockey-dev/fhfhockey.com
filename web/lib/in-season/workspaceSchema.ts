@@ -52,7 +52,8 @@ const contributionSource = z.object({ kind: z.enum(["detailed", "baseline"]), so
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
 const participationModel = z.object({ version: z.enum(["skater-participation-frequency-v1", "goalie-appearance-frequency-v1",
   "skater-frozen-window-appearance-frequency-v1", "goalie-frozen-window-appearance-frequency-v1", "goalie-frozen-window-start-frequency-v1",
-  "skater-roster-observation-appearance-frequency-v1", "goalie-roster-observation-appearance-frequency-v1", "goalie-roster-observation-start-frequency-v1"]),
+  "skater-roster-observation-appearance-frequency-v1", "goalie-roster-observation-appearance-frequency-v1", "goalie-roster-observation-start-frequency-v1",
+  "skater-rolling-14d-appearance-frequency-v1", "goalie-rolling-14d-appearance-frequency-v1", "goalie-rolling-14d-start-frequency-v1"]),
   event: z.enum(["positive_minutes", "official_starter"]), probabilityStatus: z.literal("uncalibrated_model"),
   calibration: z.literal("unavailable"), inputHash: hash, evidenceHashes: z.array(hash).max(1000),
   numerator: z.number().int().min(0).max(20), denominator: z.number().int().min(1).max(20),

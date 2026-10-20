@@ -6,6 +6,9 @@ import { buildGoalieParticipationReceipt, goalieParticipationFromReceipt,
   type FrozenWindowGoalieStartInput, type FrozenWindowGoalieStartReceipt, buildRosterObservationGoalieParticipationReceipt, buildRosterObservationGoalieStartReceipt,
   type RosterObservationGoalieParticipationInput, type RosterObservationGoalieParticipationReceipt,
   type RosterObservationGoalieStartInput, type RosterObservationGoalieStartReceipt } from "./modeledGoalieParticipation";
+import { buildRollingWindowGoalieParticipationReceipt, buildRollingWindowGoalieStartReceipt,
+  type RollingWindowGoalieParticipationInput, type RollingWindowGoalieParticipationReceipt,
+  type RollingWindowGoalieStartInput, type RollingWindowGoalieStartReceipt } from "./rollingWindowParticipation";
 import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
 import { timestampMicros } from "../projections/evidenceTime";
 
@@ -14,6 +17,8 @@ export const FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASET = "goalie-frozen-window-
 export const FROZEN_WINDOW_GOALIE_START_DATASET = "goalie-frozen-window-start-bundle-v1";
 export const ROSTER_OBSERVATION_GOALIE_PARTICIPATION_DATASET = "goalie-roster-observation-participation-bundle-v1";
 export const ROSTER_OBSERVATION_GOALIE_START_DATASET = "goalie-roster-observation-start-bundle-v1";
+export const ROLLING_WINDOW_GOALIE_PARTICIPATION_DATASET = "goalie-rolling-14d-participation-bundle-v1";
+export const ROLLING_WINDOW_GOALIE_START_DATASET = "goalie-rolling-14d-start-bundle-v1";
 export type GoalieParticipationBundle = {
   version: typeof GOALIE_PARTICIPATION_DATASET; seasonId: number; issuedAt: string; expiresAt: string;
   released: boolean; allowedUses: ContributionAllowedUses;
@@ -37,6 +42,14 @@ export type RosterObservationGoalieStartBundle = Omit<GoalieParticipationBundle,
   version: typeof ROSTER_OBSERVATION_GOALIE_START_DATASET;
   entries: Array<{ input: RosterObservationGoalieStartInput; receipt: RosterObservationGoalieStartReceipt }>;
 };
+export type RollingWindowGoalieParticipationBundle = Omit<GoalieParticipationBundle, "version" | "entries"> & {
+  version: typeof ROLLING_WINDOW_GOALIE_PARTICIPATION_DATASET;
+  entries: Array<{ input: RollingWindowGoalieParticipationInput; receipt: RollingWindowGoalieParticipationReceipt }>;
+};
+export type RollingWindowGoalieStartBundle = Omit<GoalieParticipationBundle, "version" | "entries"> & {
+  version: typeof ROLLING_WINDOW_GOALIE_START_DATASET;
+  entries: Array<{ input: RollingWindowGoalieStartInput; receipt: RollingWindowGoalieStartReceipt }>;
+};
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const HASH = /^[0-9a-f]{64}$/;
 const nonempty = (value: unknown) => typeof value === "string" && value.trim().length > 0;
@@ -46,16 +59,21 @@ const time = (value: string) => { const parsed = timestampMicros(value); return 
  * Reproduction authenticates arithmetic, not source truth: publication review must
  * establish genuine complete eligibility/label inputs before allowlisting bytes. */
 async function loadGoalieParticipation(db: SupabaseClient<any>, seasonId: number, now: Date,
-  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal }, mode: "current" | "frozen_appearance" | "frozen_start" | "roster_appearance" | "roster_start"): Promise<{
+  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal },
+  mode: "current" | "frozen_appearance" | "frozen_start" | "roster_appearance" | "roster_start" | "rolling_appearance" | "rolling_start"): Promise<{
     sources: ContributionParticipation[]; checksum: string | null; limitations: string[];
   }> {
   const frozen = mode !== "current";
-  const dataset = mode === "roster_start" ? ROSTER_OBSERVATION_GOALIE_START_DATASET
+  const dataset = mode === "rolling_start" ? ROLLING_WINDOW_GOALIE_START_DATASET
+    : mode === "rolling_appearance" ? ROLLING_WINDOW_GOALIE_PARTICIPATION_DATASET
+    : mode === "roster_start" ? ROSTER_OBSERVATION_GOALIE_START_DATASET
     : mode === "roster_appearance" ? ROSTER_OBSERVATION_GOALIE_PARTICIPATION_DATASET
     : mode === "frozen_start" ? FROZEN_WINDOW_GOALIE_START_DATASET
     : frozen ? FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASET : GOALIE_PARTICIPATION_DATASET;
   const empty = (reason: string) => ({ sources: [], checksum: null, limitations: [reason] });
-  const releases = (options.environment ?? process.env)[mode === "roster_start" ? "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES"
+  const releases = (options.environment ?? process.env)[mode === "rolling_start" ? "PLAYER_FORECAST_ROLLING_14D_GOALIE_START_RELEASES"
+    : mode === "rolling_appearance" ? "PLAYER_FORECAST_ROLLING_14D_GOALIE_PARTICIPATION_RELEASES"
+    : mode === "roster_start" ? "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES"
     : mode === "roster_appearance" ? "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_PARTICIPATION_RELEASES"
     : mode === "frozen_start" ? "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_START_RELEASES"
     : frozen ? "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_PARTICIPATION_RELEASES" : "PLAYER_FORECAST_GOALIE_PARTICIPATION_RELEASES"]
@@ -77,7 +95,7 @@ async function loadGoalieParticipation(db: SupabaseClient<any>, seasonId: number
   try {
     for (const row of data) {
       const pin = pins.find(value => value[0] === row.id), payload = row.payload as GoalieParticipationBundle | FrozenWindowGoalieParticipationBundle | FrozenWindowGoalieStartBundle
-        | RosterObservationGoalieParticipationBundle | RosterObservationGoalieStartBundle;
+        | RosterObservationGoalieParticipationBundle | RosterObservationGoalieStartBundle | RollingWindowGoalieParticipationBundle | RollingWindowGoalieStartBundle;
       bytes += Buffer.byteLength(JSON.stringify(payload), "utf8");
       const uses = payload?.allowedUses;
       if (!pin || seen.has(`release:${row.id}`) || bytes > 8 * 1024 * 1024 || row.provider !== "fhfh"
@@ -98,7 +116,9 @@ async function loadGoalieParticipation(db: SupabaseClient<any>, seasonId: number
         if (sources.length >= 500 || entry.input.scope.seasonId !== seasonId
           || entry.receipt.issuedAt !== payload.issuedAt || entry.receipt.expiresAt !== payload.expiresAt) return empty("invalid_participation_release");
         const clocks = { issuedAt: payload.issuedAt, expiresAt: payload.expiresAt };
-        const rebuilt = mode === "roster_start" ? buildRosterObservationGoalieStartReceipt(entry.input as RosterObservationGoalieStartInput, clocks)
+        const rebuilt = mode === "rolling_start" ? buildRollingWindowGoalieStartReceipt(entry.input as RollingWindowGoalieStartInput, clocks)
+          : mode === "rolling_appearance" ? buildRollingWindowGoalieParticipationReceipt(entry.input as RollingWindowGoalieParticipationInput, clocks)
+          : mode === "roster_start" ? buildRosterObservationGoalieStartReceipt(entry.input as RosterObservationGoalieStartInput, clocks)
           : mode === "roster_appearance" ? buildRosterObservationGoalieParticipationReceipt(entry.input as RosterObservationGoalieParticipationInput, clocks)
           : mode === "frozen_start" ? buildFrozenWindowGoalieStartReceipt(entry.input as FrozenWindowGoalieStartInput, clocks)
           : frozen ? buildFrozenWindowGoalieParticipationReceipt(entry.input as FrozenWindowGoalieParticipationInput, clocks)
@@ -113,7 +133,8 @@ async function loadGoalieParticipation(db: SupabaseClient<any>, seasonId: number
     }
   } catch { return empty("invalid_participation_release"); }
   return { sources, checksum: playerForecastSourcePayloadHash(pins.slice().sort((a, b) => a[0].localeCompare(b[0]))),
-    limitations: [mode.startsWith("roster_") ? "Experimental official season-roster observation continuation proxy; calibration unavailable; source completeness is owner-reviewed."
+    limitations: [mode.startsWith("rolling_") ? "Experimental rolling 14-day history with official season-roster observation continuation proxy; calibration unavailable; source completeness is owner-reviewed."
+      : mode.startsWith("roster_") ? "Experimental official season-roster observation continuation proxy; calibration unavailable; source completeness is owner-reviewed."
       : mode === "frozen_start" ? "Experimental frozen-window goalie official starter frequency; calibration unavailable; source completeness is owner-reviewed."
       : frozen ? "Experimental frozen-window goalie appearance frequency; calibration unavailable; source completeness is owner-reviewed."
       : "Experimental modeled goalie participation; calibration unavailable; source completeness is owner-reviewed."] };
@@ -147,4 +168,14 @@ export function loadRosterObservationGoalieParticipation(db: SupabaseClient<any>
 export function loadRosterObservationGoalieStarts(db: SupabaseClient<any>, seasonId: number, now: Date,
   options: { environment?: Record<string, string | undefined>; signal?: AbortSignal } = {}) {
   return loadGoalieParticipation(db, seasonId, now, options, "roster_start");
+}
+
+/** Rolling 14-day window: separate appearance and start allowlists; never inherits roster-observation approval. */
+export function loadRollingWindowGoalieParticipation(db: SupabaseClient<any>, seasonId: number, now: Date,
+  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal } = {}) {
+  return loadGoalieParticipation(db, seasonId, now, options, "rolling_appearance");
+}
+export function loadRollingWindowGoalieStarts(db: SupabaseClient<any>, seasonId: number, now: Date,
+  options: { environment?: Record<string, string | undefined>; signal?: AbortSignal } = {}) {
+  return loadGoalieParticipation(db, seasonId, now, options, "rolling_start");
 }

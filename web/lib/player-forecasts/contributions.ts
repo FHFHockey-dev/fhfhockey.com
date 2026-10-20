@@ -98,7 +98,9 @@ export type ContributionParticipation = {
       | "skater-frozen-window-appearance-frequency-v1" | "goalie-frozen-window-appearance-frequency-v1"
       | "goalie-frozen-window-start-frequency-v1"
       | "skater-roster-observation-appearance-frequency-v1" | "goalie-roster-observation-appearance-frequency-v1"
-      | "goalie-roster-observation-start-frequency-v1"; event: "positive_minutes" | "official_starter";
+      | "goalie-roster-observation-start-frequency-v1"
+      | "skater-rolling-14d-appearance-frequency-v1" | "goalie-rolling-14d-appearance-frequency-v1"
+      | "goalie-rolling-14d-start-frequency-v1"; event: "positive_minutes" | "official_starter";
     probabilityStatus: "uncalibrated_model"; calibration: "unavailable";
     inputHash: string; evidenceHashes: string[]; numerator: number; denominator: number;
     selectedGameIds: number[]; limitations: string[];
@@ -205,7 +207,8 @@ function participationProbability(participation: ContributionParticipation | und
     || !validClock(participation.expiresAt)
     || clock(participation.expiresAt) <= clock(now)) return null;
   const startModel = model?.version === "goalie-frozen-window-start-frequency-v1"
-    || model?.version === "goalie-roster-observation-start-frequency-v1";
+    || model?.version === "goalie-roster-observation-start-frequency-v1"
+    || model?.version === "goalie-rolling-14d-start-frequency-v1";
   if (model && (model.event !== (startModel ? "official_starter" : "positive_minutes") || model.probabilityStatus !== "uncalibrated_model" || model.calibration !== "unavailable"
     || !/^[a-f0-9]{64}$/.test(model.inputHash) || !Array.isArray(model.evidenceHashes) || !model.evidenceHashes.length
     || model.evidenceHashes.length > (startModel ? 196 : model.version === "skater-participation-frequency-v1" ? 131 : 132) || model.evidenceHashes.some(value => !/^[a-f0-9]{64}$/.test(value))
@@ -229,7 +232,8 @@ function participationProbability(participation: ContributionParticipation | und
 export function admittedModeledStart(participation: ContributionParticipation | undefined,
   game: ContributionGame, now: string): ContributionParticipation | undefined {
   return (participation?.model?.version === "goalie-frozen-window-start-frequency-v1"
-    || participation?.model?.version === "goalie-roster-observation-start-frequency-v1")
+    || participation?.model?.version === "goalie-roster-observation-start-frequency-v1"
+    || participation?.model?.version === "goalie-rolling-14d-start-frequency-v1")
     && participation.allowedUses?.totals === true
     && participationProbability(participation, now, game, "start") !== null ? participation : undefined;
 }
@@ -242,10 +246,12 @@ function participationFor(source: ContributionSource, participation: Contributio
   const model = participation?.model;
   const skaterModel = model?.version === "skater-participation-frequency-v1"
     || model?.version === "skater-frozen-window-appearance-frequency-v1"
-    || model?.version === "skater-roster-observation-appearance-frequency-v1";
+    || model?.version === "skater-roster-observation-appearance-frequency-v1"
+    || model?.version === "skater-rolling-14d-appearance-frequency-v1";
   const goalieModel = model?.version === "goalie-appearance-frequency-v1"
     || model?.version === "goalie-frozen-window-appearance-frequency-v1"
-    || model?.version === "goalie-roster-observation-appearance-frequency-v1";
+    || model?.version === "goalie-roster-observation-appearance-frequency-v1"
+    || model?.version === "goalie-rolling-14d-appearance-frequency-v1";
   const compatibleModel = skaterModel
     ? ["skater-baseline-rates-v1", "current-appearance-skater-rates-v1", "native-prior-appearance-skater-rates-v1"].includes(source.policyVersion) && !source.targetKey.endsWith("_GOALIE") && source.targetKey !== "GOALIE_MINUTES"
     : goalieModel && ["native-goalie-appearance-win-rates-v1", "native-goalie-appearance-summary-win-rates-v1",

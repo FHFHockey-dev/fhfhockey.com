@@ -6,6 +6,7 @@ import { buildSkaterParticipationReceipt, type ParticipationEvidence, type Skate
 import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
 import { ROSTER_CONTINUATION_ASSUMPTION } from "./targetRosterObservation";
 import { timestampMicros } from "../projections/evidenceTime";
+import type { RollingWindowGoalieParticipationReceipt, RollingWindowGoalieStartReceipt } from "./rollingWindowParticipation";
 
 export const GOALIE_PARTICIPATION_METHOD = "goalie-appearance-frequency-v1" as const;
 export type GoalieEligibility = {
@@ -78,7 +79,8 @@ export function buildGoalieParticipationReceipt(input: GoalieParticipationInput,
 }
 
 /** Call only after exact bundle release admission, never as automatic publication. */
-export function goalieParticipationFromReceipt(receipt: GoalieParticipationReceipt | FrozenWindowGoalieParticipationReceipt | FrozenWindowGoalieStartReceipt | RosterObservationGoalieParticipationReceipt | RosterObservationGoalieStartReceipt,
+export function goalieParticipationFromReceipt(receipt: GoalieParticipationReceipt | FrozenWindowGoalieParticipationReceipt | FrozenWindowGoalieStartReceipt | RosterObservationGoalieParticipationReceipt | RosterObservationGoalieStartReceipt
+  | RollingWindowGoalieParticipationReceipt | RollingWindowGoalieStartReceipt,
   allowedUses: NonNullable<ContributionParticipation["allowedUses"]>): ContributionParticipation | null {
   if (receipt.probability === null) return null;
   return { ...receipt.scope, basis: receipt.event === "official_starter" ? "start" : "appearance", probability: receipt.probability,
@@ -139,8 +141,9 @@ export function buildFrozenWindowGoalieStartReceipt(input: FrozenWindowGoalieSta
     { issuedAt: issuance.issuedAt, expiresAt: issuance.expiresAt }));
 }
 
-function buildGoalieStartKernel(input: FrozenWindowGoalieStartInput,
-  receipt: FrozenWindowGoalieParticipationReceipt | RosterObservationGoalieParticipationReceipt,
+/** Official-starter event over an appearance receipt's selected opportunities; versions and limitations are the caller's. */
+export function buildGoalieStartKernel(input: FrozenWindowGoalieStartInput,
+  receipt: Omit<FrozenWindowGoalieParticipationReceipt, "version" | "methodVersion">,
   additionalTargetEvidence?: ParticipationEvidence): FrozenWindowGoalieStartReceipt {
   const identities = new Map<string, string>();
   const evidence = [input.scheduleEvidence, input.rosterEvidence, input.history.scheduleEvidence,

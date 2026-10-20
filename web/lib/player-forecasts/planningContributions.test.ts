@@ -53,7 +53,8 @@ function modeledParticipation(): ContributionParticipation {
 
 describe("independent modeled participation catalog", () => {
   const nativeRate = { ...rate, policyVersion: "skater-baseline-rates-v1" };
-  it.each(["skater-participation-frequency-v1", "skater-frozen-window-appearance-frequency-v1", "skater-roster-observation-appearance-frequency-v1"] as const)
+  it.each(["skater-participation-frequency-v1", "skater-frozen-window-appearance-frequency-v1", "skater-roster-observation-appearance-frequency-v1",
+    "skater-rolling-14d-appearance-frequency-v1"] as const)
   ("admits current-appearance skater means with %s without weakening participation gates", version => {
     const data = fixture([{ ...nativeRate, policyVersion: "current-appearance-skater-rates-v1" }]);
     data.participationSources = [modeledParticipation()];
@@ -70,7 +71,8 @@ describe("independent modeled participation catalog", () => {
   });
   it.each(["native-goalie-appearance-win-rates-v1", "native-goalie-appearance-volume-rates-v1",
     "native-goalie-appearance-shutout-rates-v1"].flatMap(policyVersion =>
-    (["goalie-appearance-frequency-v1", "goalie-frozen-window-appearance-frequency-v1", "goalie-roster-observation-appearance-frequency-v1"] as const)
+    (["goalie-appearance-frequency-v1", "goalie-frozen-window-appearance-frequency-v1", "goalie-roster-observation-appearance-frequency-v1",
+      "goalie-rolling-14d-appearance-frequency-v1"] as const)
       .map(version => ({ policyVersion, version }))))("uses $version with $policyVersion, keeping starts separate", ({ policyVersion, version }) => {
     const goalieRate = { ...rate, policyVersion, targetKey: policyVersion.includes("win") ? "WINS_GOALIE"
       : policyVersion.includes("shutout") ? "SHUTOUTS_GOALIE" : "SAVES_GOALIE" };

@@ -2,6 +2,7 @@ import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
 import type { ContributionGame, ContributionParticipation } from "./contributions";
 import { rosterObservationReasons, ROSTER_CONTINUATION_ASSUMPTION, type TargetRosterObservation } from "./targetRosterObservation";
 import { timestampMicros } from "../projections/evidenceTime";
+import type { RollingWindowSkaterParticipationReceipt } from "./rollingWindowParticipation";
 
 export const SKATER_PARTICIPATION_METHOD = "skater-participation-frequency-v1" as const;
 const DAY = 86400000000;
@@ -131,7 +132,8 @@ function buildSkaterParticipationKernel(input: SkaterParticipationInput,
   };
 }
 
-export function participationFromReceipt(receipt: SkaterParticipationReceipt | FrozenWindowSkaterParticipationReceipt | RosterObservationSkaterParticipationReceipt,
+export function participationFromReceipt(receipt: SkaterParticipationReceipt | FrozenWindowSkaterParticipationReceipt | RosterObservationSkaterParticipationReceipt
+  | RollingWindowSkaterParticipationReceipt,
   allowedUses: NonNullable<ContributionParticipation["allowedUses"]>): ContributionParticipation | null {
   if (receipt.probability === null) return null;
   return { ...receipt.scope, basis: "appearance", probability: receipt.probability,
@@ -184,6 +186,15 @@ function buildFrozenWindowSkaterKernel(input: FrozenWindowSkaterParticipationInp
     || end - start !== 14 * DAY || cutoff < end || cutoff - end > 14 * DAY) {
     throw new Error("Invalid frozen 14-day participation frame or lag.");
   }
+  return buildDatedWindowSkaterKernel(input, issuance, { start, end }, targetObservation);
+}
+
+/** Frozen-window steps over a caller-validated half-open history frame [start, end) in epoch
+ * microseconds. Each method keeps its own frame check; versions and limitations are the caller's. */
+export function buildDatedWindowSkaterKernel(input: FrozenWindowSkaterParticipationInput,
+  issuance: { issuedAt: string; expiresAt: string }, frame: { start: number; end: number },
+  targetObservation?: { value: TargetRosterObservation | null }): FrozenWindowSkaterParticipationReceipt {
+  const { start, end } = frame, cutoff = time(input.cutoffAt);
   const additionalEvidence: ParticipationEvidence[] = [], reasons: string[] = [];
   const eligibleAt = (row: DatedParticipationEligibility | null, at: string): boolean | null => {
     if (!row) return null;

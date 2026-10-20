@@ -1,9 +1,8 @@
-import { buildSkaterParticipationReceipt, type DatedParticipationEligibility, type ParticipationEvidence,
-  type RosterObservationSkaterParticipationInput, type RosterObservationSkaterParticipationReceipt,
-  type SkaterParticipationInput } from "./modeledSkaterParticipation";
-import type { RosterObservationGoalieParticipationInput, RosterObservationGoalieParticipationReceipt,
-  RosterObservationGoalieStartInput, RosterObservationGoalieStartReceipt } from "./modeledGoalieParticipation";
-import { rosterObservationReasons, ROSTER_CONTINUATION_ASSUMPTION } from "./targetRosterObservation";
+import { buildDatedWindowSkaterKernel, type RosterObservationSkaterParticipationInput,
+  type RosterObservationSkaterParticipationReceipt } from "./modeledSkaterParticipation";
+import { buildGoalieStartKernel, type RosterObservationGoalieParticipationInput, type RosterObservationGoalieParticipationReceipt,
+  type RosterObservationGoalieStartInput, type RosterObservationGoalieStartReceipt } from "./modeledGoalieParticipation";
+import { ROSTER_CONTINUATION_ASSUMPTION } from "./targetRosterObservation";
 import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
 import { timestampMicros } from "../projections/evidenceTime";
 import { localDate, zonedMidnight } from "../rosterScheduleOptimizer/planningDates";
@@ -38,14 +37,8 @@ export type RollingWindowGoalieStartReceipt = Omit<RosterObservationGoalieStartR
 type Issuance = { issuedAt: string; expiresAt: string };
 type AppearanceInput = RollingWindowSkaterParticipationInput | RollingWindowGoalieParticipationInput | RollingWindowGoalieStartInput;
 
-const DAY = 86400000000;
 const time = (value: string) => { const parsed = timestampMicros(value); return parsed === null ? NaN : Number(parsed); };
-const label = (value: unknown) => value === null || typeof value === "boolean";
 const shiftDate = (date: string, days: number) => new Date(Date.parse(`${date}T12:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
-const isoMicros = (micros: bigint) => {
-  const thousand = BigInt(1000);
-  return `${new Date(Number(micros / thousand)).toISOString().slice(0, -1)}${String(micros % thousand).padStart(3, "0")}Z`;
-};
 
 /** The 14 local dates before the cutoff's America/New_York date, as a half-open instant window.
  * Across a daylight-saving change the window is 14 local days (335 or 337 hours), not 336 hours. */
@@ -56,48 +49,17 @@ export function rollingParticipationWindow(cutoffAt: string) {
   return { startAt: zonedMidnight(dates[0], timeZone), endAt: zonedMidnight(endDate, timeZone), dates, timeZone };
 }
 
-/** Same steps as the roster-observation frozen-window kernel, with the frame check replaced by the
- * rolling window. The exported finite estimator runs under its default 60-day frame, a superset of
- * the 14-day window enforced here first, so selection, labels, staleness and reasons are unchanged. */
+/** The roster-observation frozen-window kernel with only its frame check replaced by the rolling window. */
 function rollingAppearanceKernel(input: AppearanceInput, issuance: Issuance) {
   const window = rollingParticipationWindow(input?.cutoffAt);
   const start = time(window.startAt), end = time(window.endAt);
-  if (!input.scope || !input.history || !Array.isArray(input.history.games)
-    || time(input.history.windowStartAt) !== start || time(input.history.windowEndAt) !== end) {
+  if (!input.history || time(input.history.windowStartAt) !== start || time(input.history.windowEndAt) !== end) {
     throw new Error("Invalid rolling 14-day participation window.");
   }
-  for (const game of input.history.games) {
-    if (!Number.isFinite(time(game?.scheduledAt)) || time(game.scheduledAt) < start || time(game.scheduledAt) >= end) {
-      throw new Error("Invalid participation history opportunity.");
-    }
-  }
-  const reasons = rosterObservationReasons(input.targetRosterObservation, input.scope, input.cutoffAt);
-  const target = input.targetRosterObservation?.evidence ?? null;
-  const eligibleAt = (row: DatedParticipationEligibility | null, at: string): boolean | null => {
-    if (!row) return null;
-    if (row.playerId !== input.scope.playerId || row.nhlPlayerId !== input.scope.nhlPlayerId
-      || row.teamId !== input.scope.teamId || !label(row.eligible)
-      || !Number.isFinite(time(row.effectiveFrom)) || !Number.isFinite(time(row.effectiveUntil))
-      || time(row.effectiveFrom) >= time(row.effectiveUntil)) throw new Error("Invalid rolling-window eligibility identity or interval.");
-    return row.evidence && time(at) >= time(row.effectiveFrom) && time(at) < time(row.effectiveUntil) ? row.eligible : null;
-  };
-  const kernelInput: SkaterParticipationInput = { version: "skater-participation-input-v1", scope: input.scope,
-    cutoffAt: input.cutoffAt, scheduleEvidence: input.scheduleEvidence, rosterEvidence: input.rosterEvidence,
-    history: { complete: input.history.complete, scheduleEvidence: input.history.scheduleEvidence,
-      windowStartAt: isoMicros(timestampMicros(input.cutoffAt)! - BigInt(60 * DAY)),
-      games: input.history.games.map(game => ({ ...game, eligible: eligibleAt(game.eligibility, game.scheduledAt),
-        eligibilityEvidence: game.eligibility?.evidence ?? null })) } };
-  const receipt = buildSkaterParticipationReceipt(kernelInput, { issuedAt: issuance.issuedAt, expiresAt: issuance.expiresAt });
-  // The estimator validated every other evidence row; the target observation joins the same identity check.
-  if (target && [input.scheduleEvidence, input.rosterEvidence, input.history.scheduleEvidence,
-    ...input.history.games.flatMap(game => [game.eligibility?.evidence, game.outcomeEvidence])]
-    .some(source => source?.id === target.id && source.hash !== target.hash)) throw new Error("Conflicting participation evidence identity.");
-  const allReasons = [...new Set([...receipt.reasons, ...reasons])];
-  const { version: _version, methodVersion: _method, ...rest } = receipt;
-  return { ...rest, historyStartAt: input.history.windowStartAt, historyEndAt: input.history.windowEndAt,
-    evidenceHashes: [...new Set([...receipt.evidenceHashes, ...(target ? [target.hash] : [])])].sort(),
-    probability: allReasons.length ? null : receipt.probability, reasons: allReasons,
-    continuationAssumptionVersion: ROSTER_CONTINUATION_ASSUMPTION };
+  const { version: _version, methodVersion: _method, ...receipt } = buildDatedWindowSkaterKernel({ ...input,
+    version: "skater-frozen-window-participation-input-v1", playerClass: "skater", targetEligibility: null },
+    { issuedAt: issuance.issuedAt, expiresAt: issuance.expiresAt }, { start, end }, { value: input.targetRosterObservation });
+  return { ...receipt, continuationAssumptionVersion: ROSTER_CONTINUATION_ASSUMPTION };
 }
 
 const WINDOW_LIMITATIONS = [
@@ -157,37 +119,16 @@ export function buildRollingWindowGoalieParticipationReceipt(input: RollingWindo
 }
 
 /** Distinct official-starter event over the appearance receipt's selected eligible opportunities,
- * with the same start-label evidence rules as the roster-observation start method. */
+ * through the same start kernel as the roster-observation start method. */
 export function buildRollingWindowGoalieStartReceipt(input: RollingWindowGoalieStartInput,
   issuance: Issuance): RollingWindowGoalieStartReceipt {
   if (input?.version !== "goalie-rolling-14d-start-input-v1" || input.playerClass !== "goalie") {
     throw new Error("Invalid rolling-window goalie start input.");
   }
-  const appearance = rollingAppearanceKernel(input, issuance), cutoff = time(input.cutoffAt);
-  const identities = new Map<string, string>();
-  const evidence = [input.scheduleEvidence, input.rosterEvidence, input.history.scheduleEvidence,
-    ...(input.targetRosterObservation?.evidence ? [input.targetRosterObservation.evidence] : []),
-    ...input.history.games.flatMap(game => [game.eligibility?.evidence, game.outcomeEvidence, game.starterEvidence]
-      .filter((row): row is ParticipationEvidence => !!row))];
-  for (const row of evidence) {
-    if (!row || typeof row.id !== "string" || !row.id.trim() || !/^[a-f0-9]{64}$/.test(row.hash)
-      || !Number.isFinite(time(row.availableAt)) || !Number.isFinite(time(row.capturedAt))
-      || time(row.availableAt) > cutoff || time(row.capturedAt) > cutoff
-      || identities.has(row.id) && identities.get(row.id) !== row.hash) throw new Error("Invalid or conflicting start-label evidence.");
-    identities.set(row.id, row.hash);
-  }
-  for (const game of input.history.games) {
-    if (game.officialStarter != null && typeof game.officialStarter !== "boolean") throw new Error("Invalid explicit starter label.");
-    if (game.starterEvidence && (time(game.starterEvidence.availableAt) < time(game.scheduledAt)
-      || time(game.starterEvidence.capturedAt) < time(game.scheduledAt))) throw new Error("Historical starter evidence predates its game.");
-  }
-  const selected = input.history.games.filter(game => appearance.selectedGameIds.includes(game.gameId));
-  const reasons = [...appearance.reasons];
-  if (selected.some(game => game.officialStarter == null || !game.starterEvidence)) reasons.push("unresolved_official_starter_label");
-  const numerator = selected.filter(game => game.officialStarter === true).length;
-  return { ...appearance, version: "modeled-goalie-rolling-14d-start-v1", methodVersion: ROLLING_WINDOW_GOALIE_START_METHOD,
-    event: "official_starter", inputHash: playerForecastSourcePayloadHash(input),
-    evidenceHashes: [...new Set([...appearance.evidenceHashes, ...evidence.map(row => row.hash)])].sort(),
-    numerator, probability: reasons.length ? null : numerator / appearance.denominator, reasons: [...new Set(reasons)],
+  const { version: _version, methodVersion: _method, ...receipt } = buildGoalieStartKernel({ ...input,
+    version: "goalie-frozen-window-start-input-v1", targetEligibility: null }, rollingAppearanceKernel(input, issuance),
+    input.targetRosterObservation?.evidence);
+  return { ...receipt, version: "modeled-goalie-rolling-14d-start-v1", methodVersion: ROLLING_WINDOW_GOALIE_START_METHOD,
+    inputHash: playerForecastSourcePayloadHash(input), continuationAssumptionVersion: ROSTER_CONTINUATION_ASSUMPTION,
     limitations: [...GOALIE_START_LIMITATIONS] };
 }
