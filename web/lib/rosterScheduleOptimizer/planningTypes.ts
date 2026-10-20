@@ -37,6 +37,8 @@ export type PlanningPlayer = {
   playerClass: "skater" | "goalie";
   availability: PlayerAvailability;
   ownership: number | null;
+  /** Ownership provenance (R7/W2). `ownership` stays the fresh value only; this also carries a stale last-known observation. */
+  ownershipEvidence?: { value: number | null; observedOn: string | null; provider: "yahoo" | null; status: "fresh" | "stale" | "unknown" };
   canDrop: boolean | null;
   holdValue: number | null;
   reserveEligibility: Array<"IR" | "IR+" | "NA">;

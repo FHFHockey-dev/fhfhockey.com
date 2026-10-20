@@ -153,6 +153,26 @@ describe("public RSO data boundary", () => {
   const publicQuery = { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-11" };
   const publicOptions = { now: new Date("2026-10-10T12:00:00Z"), forecastsEnabled: false };
 
+  it("keeps fresh ownership (0% included) as the value and a stale reading only as labelled last-known evidence (R7 W2)", async () => {
+    const { db, tables } = formDb([], []);
+    tables.yahoo_nhl_player_map_read = [{ nhl_player_id: 847001, yahoo_player_id: 55 }];
+    const read = async (ownership_pct: unknown, ownership_date: string) => {
+      tables.yahoo_player_ownership_daily = [{ player_key: "nhl.p.55", player_id: 55, ownership_pct, ownership_date, updated_at: "2026-10-10T06:00:00Z" }];
+      return (await loadPlanningData(db as never, publicQuery, publicOptions)).players.find(row => row.nhlId === 847001)!;
+    };
+    expect(await read(0, "2026-10-09")).toMatchObject({ ownership: 0 });
+    expect((await read(0, "2026-10-09")).ownershipEvidence).toBeUndefined();
+    expect(await read("12.5", "2026-10-09")).toMatchObject({ ownership: 12.5 });
+    // Older than three days: never a fresh value, but kept with its date for the "last known" label.
+    expect(await read(40, "2026-10-07")).toMatchObject({ ownership: null,
+      ownershipEvidence: { value: 40, observedOn: "2026-10-07", provider: "yahoo", status: "stale" } });
+    for (const [value, date] of [[null, "2026-10-09"], ["", "2026-10-09"], ["abc", "2026-10-09"], [101, "2026-10-09"], [30, "2026-10-11"]] as const) {
+      const player = await read(value, date);
+      expect(player.ownership, `${value} ${date}`).toBeNull();
+      expect(player.ownershipEvidence, `${value} ${date}`).toBeUndefined();
+    }
+  });
+
   it("serves interim FORGE daily projections to RSO callers only, and never once native serving is selected", async () => {
     const { db, tables } = formDb([], []);
     Object.assign(tables, {

@@ -260,12 +260,14 @@ describe("RSO daily decision replay (offline fixture)", () => {
     // For g2: a 10-11 goalie start worth 1 (4 x 0.25), net +1 point, +1 game and +0.9 expected starts.
     const best = (id: string) => candidatePlanForSort(metrics.candidates.find(row => row.playerId === id)!.plans, "points");
     expect(best("x")).toMatchObject({ netPoints: 1, netAGP: 0 });
-    // Dropping a or b ties exactly (x outscores both at C). Exact ties are pruned to the
-    // lexically first step ID, so drop a is shown even though b contributes less.
+    // Dropping a or b ties exactly (x outscores both at C). R7 keeps both tied drops so the retention policy can
+    // choose; with ownership unknown the shown plan stays the lexically first step ID (drop a).
+    // b is proposed first because the shared drop order ranks the lower contributor first.
     // Dropping the goalie 7 (3 - 5.75 = -2.75, one fewer active game) is dominated and pruned.
     const xPlans = metrics.candidates.find(row => row.playerId === "x")!.plans;
     expect(xPlans.map(plan => [plan.steps.map(step => step.dropPlayerId).join(), plan.netPoints, plan.netAGP]))
-      .toEqual([["a", 1, 0]]);
+      .toEqual([["b", 1, 0], ["a", 1, 0]]);
+    expect(best("x").steps.map(step => step.dropPlayerId)).toEqual(["a"]);
     expect(best("y")).toMatchObject({ netPoints: 0.75, netAGP: 0 });
     expect(best("g2")).toMatchObject({ netPoints: 1, netAGP: 1 });
     expect(best("g2").netGoalieStarts).toBeCloseTo(0.9, 12);

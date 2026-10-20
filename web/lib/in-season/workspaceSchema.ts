@@ -23,12 +23,15 @@ const contextObjectSchema = z.object({
 }).strict();
 const validHorizon = (context: { startDate: string; endDate: string }) => context.endDate >= context.startDate && Date.parse(context.endDate) - Date.parse(context.startDate) <= 366 * 86400000;
 export const contextSchema = contextObjectSchema.refine(validHorizon, "Planning range must be at most 367 days.");
+// Provider ownership as last observed: a stale value is shown as "last known {observedOn}".
+const ownershipEvidence = z.object({ value: z.number().finite().min(0).max(100).nullable(), observedOn: date.nullable(),
+  provider: z.literal("yahoo").nullable(), status: z.enum(["fresh", "stale", "unknown"]) }).strict();
 const player = z.object({
   id, nhlId: positiveInteger.nullable(), nhlTeamId: positiveInteger.optional(), rosterRevision: id.optional(),
   providerId: id.nullable().optional(), name: id,
   teamAbbreviation: id.nullable(), eligiblePositions: stringArray, eligibilityVerified: z.boolean().optional(),
   playerClass: z.enum(["skater", "goalie"]), availability: z.enum(["free_agent", "waivers", "rostered", "manager_available", "unknown"]),
-  ownership: z.number().finite().min(0).max(100).nullable(), canDrop: z.boolean().nullable(), holdValue: nullableNumber,
+  ownership: z.number().finite().min(0).max(100).nullable(), ownershipEvidence: ownershipEvidence.optional(), canDrop: z.boolean().nullable(), holdValue: nullableNumber,
   reserveEligibility: z.array(z.enum(["IR", "IR+", "NA"])), waiverClearsAt: instant.nullable().optional(),
   form: z.object({ label: id, games: z.number().int().nonnegative(), points: z.number().finite(), includedInForecast: z.boolean().nullable() }).strict().optional(),
   injury: z.object({ status: id, label: id, note: z.string().nullable() }).strict().nullable().optional(),

@@ -37,6 +37,11 @@ export function parsePlanningDataQuery(query: Record<string, unknown>): Planning
 
 type Row = Record<string, any>;
 const numberOrNull = (value: unknown) => typeof value === "number" && Number.isFinite(value) ? value : null;
+/** Provider ownership percentage: a finite 0–100 number or plain numeric string; anything else is unknown, never 0. */
+const ownershipPct = (value: unknown) => {
+  const parsed = typeof value === "string" && /^\d+(\.\d+)?$/.test(value) ? Number(value) : numberOrNull(value);
+  return parsed !== null && parsed >= 0 && parsed <= 100 ? parsed : null;
+};
 function evidence(source: string, asOf: string | null, seasonId: number | null, limitations: string[] = []): SourceEvidence {
   return { source, asOf, seasonId, completeness: limitations.length ? "partial" : "complete", limitations };
 }
@@ -235,10 +240,16 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
       const nhl = [...matches][0];
       if (!latest.has(nhl)) latest.set(nhl, row);
     }
+    // A reported 0 is a real 0%; missing, empty, invalid or future rows stay unknown. Only a fresh (≤3-day) reading sets
+    // `ownership`; an older one is kept as labelled last-known evidence, never as a fresh value or ranking input.
     for (const player of players) {
       const row = player.nhlId === null ? null : latest.get(player.nhlId);
-      const value = numberOrNull(row?.ownership_pct);
-      if (value !== null && value >= 0 && value <= 100 && Date.parse(`${row!.ownership_date}T00:00:00Z`) >= now.getTime() - 3 * 86400000) player.ownership = value;
+      const value = ownershipPct(row?.ownership_pct);
+      const observedOn = typeof row?.ownership_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(row.ownership_date) ? row.ownership_date : null;
+      const observedAt = observedOn ? Date.parse(`${observedOn}T00:00:00Z`) : NaN;
+      if (value === null || !Number.isFinite(observedAt) || observedAt > now.getTime()) continue;
+      if (observedAt >= now.getTime() - 3 * 86400000) player.ownership = value;
+      else player.ownershipEvidence = { value, observedOn, provider: "yahoo", status: "stale" };
     }
     sources.ownership = evidence("Yahoo daily ownership", ownership[0]?.updated_at ?? null, query.seasonId, ["Ownership is not league availability; missing or older than three days is unknown."]);
   } catch { sources.ownership = evidence("Yahoo daily ownership", null, query.seasonId, ["Ownership could not be verified."]); }

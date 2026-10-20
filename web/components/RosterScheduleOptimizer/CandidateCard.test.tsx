@@ -97,4 +97,36 @@ describe("complete acquisition card presentation", () => {
     expect(screen.getByText("Move injured to IR first")).toBeTruthy();
     expect((screen.getByRole("button", swap) as HTMLButtonElement).disabled).toBe(false);
   });
+
+  it("cautions on dropping a widely rostered or unknown-demand player, and notes an ownership tie-break (R7)", () => {
+    const busy: PlanningPlayer = { ...player, id: "drop", name: "Rostered Center", ownership: 95 };
+    const { unmount } = render(<CandidateCard {...props} players={[player, busy]} />);
+    expect(screen.getByText("Widely rostered: 95% of Yahoo leagues. Others may claim him quickly if dropped.")).toBeTruthy();
+    unmount();
+    const { unmount: second } = render(<CandidateCard {...props} players={[player, { ...busy, ownership: null }]} />);
+    expect(screen.getByText("Ownership unknown. Demand from other managers isn't checked.")).toBeTruthy();
+    second();
+    render(<CandidateCard {...props} players={[player, { ...busy, ownership: 0 }]} />);
+    expect(screen.queryByText(/Widely rostered|Ownership unknown/)).toBeNull();
+    cleanup();
+    const low = { ...plan, droppedOwnership: 5 }, high = { ...plan, steps: [{ ...plan.steps[0], id: "swap-2", dropPlayerId: "other" }], droppedOwnership: 95 };
+    render(<CandidateCard {...props} plan={low} comparison={{ playerId: "add", plans: [high, low], complete: true }} players={[player, { ...busy, ownership: 5 }]} />);
+    expect(screen.getByText("Same projected result as other options. This one drops the less-rostered player.")).toBeTruthy();
+  });
+
+  it("lists the whole swap's per-category change on a category-league card (W12)", () => {
+    const breakdown = [
+      { key: "GOALS", direction: "higher" as const, ratio: false, before: 2, after: 4, delta: 2, gain: 3, sacrifice: 1, components: null, opponent: null, coverage: "known" as const, reason: null },
+      { key: "SH%", direction: "higher" as const, ratio: true, before: 1 / 6, after: 0.5, delta: 1 / 3, gain: null, sacrifice: null,
+        components: { numerator: { key: "GOALS", net: 2 }, denominator: { key: "SHOTS", net: -4 } }, opponent: null, coverage: "known" as const, reason: null },
+      { key: "GAA", direction: "lower" as const, ratio: true, before: 4, after: 2.5, delta: -1.5, gain: null, sacrifice: null,
+        components: { numerator: { key: "GOALS_AGAINST_GOALIE", net: -1 }, denominator: { key: "GOALIE_MINUTES", net: 0 } }, opponent: null, coverage: "known" as const, reason: null },
+      { key: "SHOTS", direction: "higher" as const, ratio: false, before: null, after: null, delta: null, gain: null, sacrifice: null, components: null, opponent: null, coverage: "incomplete" as const, reason: "missing projection" },
+    ];
+    render(<CandidateCard {...props} categories plan={{ ...plan, categoryBreakdown: breakdown.map(row => ({ ...row, multiplier: row.key === "GAA" ? 60 : 1 })) }} />);
+    expect(screen.getByText("GOALS +2 (+3 / −1)")).toBeTruthy();
+    expect(screen.getByText("SH% +33.3 pts (pooled)")).toBeTruthy();
+    expect(screen.getByText("GAA -1.50 (pooled)")).toBeTruthy();
+    expect(screen.getByText("SHOTS incomplete")).toBeTruthy();
+  });
 });

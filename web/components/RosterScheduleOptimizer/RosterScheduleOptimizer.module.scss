@@ -476,6 +476,8 @@ details.alternative .candidateRow button { width: auto; }
 .dropChip, .reserveChip { margin-left: 6px; padding: 0 5px; border-radius: v.$radius-control; font: normal 700 10px v.$font-family-primary; letter-spacing: .04em; vertical-align: middle; }
 .dropChip { background: v.$color-coral-500; color: v.$color-white; }
 .reserveChip { border: 1px solid v.$text-secondary; color: v.$text-secondary; }
+.dropCaution { display: block; white-space: normal; color: v.$text-secondary; font-size: 10px; line-height: 1.3; }
+.dropCaution[data-caution="high_demand"] { color: v.$warning-color; }
 .moreTools { flex: 1; min-width: 0; }
 .moreTools > summary { cursor: pointer; color: v.$text-secondary; font-size: v.$font-size-xs; }
 .moreTools[open] { display: flex; flex-direction: column; gap: v.$space-xs; }

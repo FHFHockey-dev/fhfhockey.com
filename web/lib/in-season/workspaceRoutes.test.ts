@@ -138,6 +138,21 @@ describe("in-season workspace routes", () => {
     const loaded = res(); await workspaceHandler(req("GET"), loaded);
     expect(unpackPlanningSnapshots(JSON.parse(JSON.stringify(loaded.body))).data.snapshot).toEqual(bridged);
   });
+  it("saves per-player ownership evidence and restores it exactly", async () => {
+    state.capabilities = ["rso_account_save"];
+    const player = { id: "p1", nhlId: 8478402, name: "Connor McDavid", teamAbbreviation: "EDM", eligiblePositions: ["C"], playerClass: "skater",
+      availability: "rostered", ownership: 99, canDrop: false, holdValue: null, reserveEligibility: [],
+      ownershipEvidence: { value: 99, observedOn: "2026-10-18", provider: "yahoo", status: "stale" } };
+    const legacy = { ...player, id: "p2" }; delete (legacy as Partial<typeof player>).ownershipEvidence;
+    const sent = { workspace: { ...workspace, manualPlayers: [player, legacy] }, snapshot: { ...snapshot, players: [player, legacy] }, expectedVersion: null };
+    const saved = res(); await workspaceHandler(req("PUT", JSON.parse(JSON.stringify(packPlanningSnapshots(sent)))), saved);
+    expect(saved.statusCode).toBe(200);
+    const loaded = res(); await workspaceHandler(req("GET"), loaded);
+    const restored = unpackPlanningSnapshots(JSON.parse(JSON.stringify(loaded.body))).data;
+    expect(restored.workspace.manualPlayers).toEqual([player, legacy]);
+    expect(restored.snapshot.players).toEqual([player, legacy]);
+    expect(restored.snapshot.players[1]).not.toHaveProperty("ownershipEvidence");
+  });
   it("cannot update another account using its current version", async () => {
     state.rows.push(savedRow("owner-b", 4));
     state.capabilities = ["rso_account_save"];

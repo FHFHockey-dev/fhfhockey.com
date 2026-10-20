@@ -1,6 +1,7 @@
 import { contributionLedger } from "./contributionLedger";
 import { normalizeEligibility } from "./eligibility";
-import { candidateAcquisitionSteps, candidateHorizonPoints, evaluatePlan } from "./planning";
+import { candidateAcquisitionSteps, candidateHorizonPoints, evaluatePlan, scheduleAdmissionProblem, swapCategoryBreakdown, type CategorySwapRow } from "./planning";
+import { dropContribution, droppedOwnership, orderDropCandidates } from "./retention";
 import { expandActiveSlots } from "./slots";
 import type { PlanEvaluation, PlanIntent, PlanningSnapshot, PlanStep } from "./planningTypes";
 
@@ -12,6 +13,10 @@ export type CandidatePlan = {
   categoryComparisonVerified?: boolean;
   dropped: Array<{ playerId: string; lostAGP: number | null; lostPoints: number | null }>;
   displacedPlayerIds: string[];
+  /** Highest known fresh ownership among dropped players; null when nobody is dropped or any drop's ownership is unknown. */
+  droppedOwnership?: number | null;
+  /** Category leagues: the whole swap's per-category gains and sacrifices against the same-objective no-move lineup (R8). */
+  categoryBreakdown?: CategorySwapRow[] | null;
 };
 export type CandidateComparison = { playerId: string; plans: CandidatePlan[]; complete: boolean };
 export type CandidateDiagnostic = {
@@ -35,8 +40,31 @@ export function compareCandidatePlans(a: CandidatePlan, b: CandidatePlan, sort: 
   return Number(dropped(a)) - Number(dropped(b)) || a.steps.length - b.steps.length
     || a.steps.map(step => step.id).join("|").localeCompare(b.steps.map(step => step.id).join("|"));
 }
+/** Exact equivalents: same known net points and games, drop shape and move count (what the comparator ranks before ids). */
+const equivalenceKey = (plan: CandidatePlan) => plan.netAGP !== null && plan.netPoints !== null
+  ? `${plan.netPoints}|${plan.netAGP}|${dropped(plan)}|${plan.steps.length}` : null;
+/** Within each exact-equivalent group whose drops all have known ownership, the less-rostered drop leads (R7).
+ * Decided per group, never per pair, so the order stays transitive; unknown ownership leaves the id order. */
+function orderCandidatePlans(plans: CandidatePlan[], sort: "points" | "schedule") {
+  const ordered = [...plans].sort((a, b) => compareCandidatePlans(a, b, sort));
+  const groups = new Map<string, number[]>();
+  ordered.forEach((plan, index) => { const key = equivalenceKey(plan); if (key) groups.set(key, [...groups.get(key) ?? [], index]); });
+  for (const indices of groups.values()) {
+    const group = indices.map(index => ordered[index]);
+    if (group.length < 2 || !group.every(plan => plan.droppedOwnership != null)) continue;
+    group.sort((a, b) => a.droppedOwnership! - b.droppedOwnership!).forEach((plan, offset) => { ordered[indices[offset]] = plan; });
+  }
+  return ordered;
+}
 export function candidatePlanForSort(plans: CandidatePlan[], sort: "points" | "schedule") {
-  return [...plans].sort((a, b) => compareCandidatePlans(a, b, sort))[0];
+  return orderCandidatePlans(plans, sort)[0];
+}
+/** True when ownership alone chose this plan over an exactly equivalent one that drops a more-rostered player. */
+export function ownershipBrokeTie(plans: CandidatePlan[], plan: CandidatePlan) {
+  const key = equivalenceKey(plan);
+  const group = key ? plans.filter(row => equivalenceKey(row) === key) : [];
+  return group.length > 1 && group.every(row => row.droppedOwnership != null)
+    && group.some(row => row.droppedOwnership! > plan.droppedOwnership!) && group.every(row => row.droppedOwnership! >= plan.droppedOwnership!);
 }
 
 /** One acquisition with its necessary reserve/drop, not an unbounded sequence search. */
@@ -107,23 +135,19 @@ export function candidatePlanMetrics(snapshot: PlanningSnapshot, intent: PlanInt
     state.reasons = [...new Set([...state.reasons, ...reasons])].slice(0, 8);
   };
   const comparisons: CandidateComparison[] = selected.map(player => ({ playerId: player.id, plans: [], complete: false }));
-  const dropOrder = new Map([...baselineLedger.values()].sort((a, b) => {
-    const left = snapshot.rules.scoring.mode === "points" ? a.projectedPoints : a.activeGames;
-    const right = snapshot.rules.scoring.mode === "points" ? b.projectedPoints : b.activeGames;
-    if (left != null || right != null) {
-      if (left == null) return 1;
-      if (right == null) return -1;
-      if (left !== right) return left - right;
-    }
-    return a.playerId.localeCompare(b.playerId);
-  }).map((row, index) => [row.playerId, index]));
+  // The shared retention order (lineupGaps and the planner use the same one).
+  const playersById = new Map(snapshot.players.map(player => [player.id, player]));
+  const dropOrder = new Map(orderDropCandidates([...baselineLedger.keys()].flatMap(id => playersById.get(id) ?? []),
+    player => dropContribution(snapshot.rules.scoring.mode, baselineLedger.get(player.id))).map((player, index) => [player.id, index]));
   const iterators = selected.map(player => candidateAcquisitionSteps(snapshot, originalIntent, player, dropOrder));
   const proposals = selected.map(() => 0);
   const finished = selected.map(() => false);
   let evaluated = 2;
   const objectives = outcomeBaseline.comparisonEligible ? ["agp", "outcome"] as const : ["agp"] as const;
   const rosterCoverageKnown = snapshot.roster.every(row => snapshot.players.some(player => player.id === row.playerId && player.teamAbbreviation));
-  const scheduleKnown = baseline.legal && rosterCoverageKnown && !snapshot.rules.unsupported.length && snapshot.evidence.schedule?.completeness === "complete";
+  // Same schedule admission as the planner: an expired witness gives no net games, even after a forecast refresh.
+  const scheduleProblem = scheduleAdmissionProblem(snapshot);
+  const scheduleKnown = baseline.legal && rosterCoverageKnown && !snapshot.rules.unsupported.length && !scheduleProblem;
   const retain = (index: number, evaluation: PlanEvaluation) => {
     const state = states[index];
     state.evaluated++;
@@ -151,12 +175,14 @@ export function candidatePlanMetrics(snapshot: PlanningSnapshot, intent: PlanInt
       netPoints: pointsKnown ? evaluation.projectedValue! - baseline.projectedValue! : null,
       netGoalieStarts: evaluation.goalie.expectedStarts != null && baseline.goalie.expectedStarts != null
         ? evaluation.goalie.expectedStarts - baseline.goalie.expectedStarts : null,
-      dropped: [], displacedPlayerIds: [...new Set(baseline.assignments.filter(row => !evaluation.assignments.some(next =>
+      dropped: [], droppedOwnership: droppedOwnership(evaluation.steps, playersById), displacedPlayerIds: [...new Set(baseline.assignments.filter(row => !evaluation.assignments.some(next =>
         next.date === row.date && next.gameId === row.gameId && next.playerId === row.playerId && next.slotId === row.slotId)).map(row => row.playerId))].sort() };
     const rows = comparisons[index].plans;
+    // An exact tie prunes only a plan dropping the same players, so the retention order can still choose between drops.
+    const dropIds = (row: CandidatePlan) => row.steps.flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : []).sort().join("|");
     const dominates = (a: CandidatePlan, b: CandidatePlan) => a.netAGP != null && b.netAGP != null
       && a.netPoints != null && b.netPoints != null && a.netAGP >= b.netAGP && a.netPoints >= b.netPoints
-      && (a.netAGP > b.netAGP || a.netPoints > b.netPoints || compareCandidatePlans(a, b, "points") <= 0);
+      && (a.netAGP > b.netAGP || a.netPoints > b.netPoints || dropIds(a) === dropIds(b) && compareCandidatePlans(a, b, "points") <= 0);
     if (rows.some(row => dominates(row, plan))) return;
     const after = contributionLedger(snapshot, evaluation, originalIntent);
     plan.dropped = evaluation.steps.flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : []).map(playerId => {
@@ -164,6 +190,8 @@ export function candidatePlanMetrics(snapshot: PlanningSnapshot, intent: PlanInt
       return { playerId, lostAGP: before?.activeGames != null && retained?.activeGames != null ? before.activeGames - retained.activeGames : null,
         lostPoints: before?.projectedPoints != null && retained?.projectedPoints != null ? before.projectedPoints - retained.projectedPoints : null };
     });
+    if (snapshot.rules.scoring.mode === "categories")
+      plan.categoryBreakdown = swapCategoryBreakdown(snapshot, evaluation.objective === "outcome" ? outcomeBaseline : agpBaseline, evaluation);
     comparisons[index].plans = [...rows.filter(row => !dominates(plan, row)), plan];
   };
   // Round-robin work lets every selected candidate reach its first legal swap before expanding.
@@ -205,7 +233,7 @@ export function candidatePlanMetrics(snapshot: PlanningSnapshot, intent: PlanInt
       ...(!baseline.legal ? ["The original roster baseline fails legal lineup or roster checks."] : []),
       ...(!rosterCoverageKnown ? ["Owned-player team membership is unknown; lost contributions and net gains are indeterminate."] : []),
       ...snapshot.rules.unsupported,
-      ...(snapshot.evidence.schedule?.completeness !== "complete" ? ["Planning schedule coverage is incomplete or unknown."] : []),
+      ...(scheduleProblem ? [scheduleProblem] : []),
     ]);
   }
   const representative = comparisons.map(row => ({ playerId: row.playerId, plan: candidatePlanForSort(row.plans, "points") }));

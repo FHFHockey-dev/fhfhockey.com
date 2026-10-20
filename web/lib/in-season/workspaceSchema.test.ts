@@ -250,6 +250,39 @@ describe("saved in-season workspace validation", () => {
     expect(workspaceQuerySchema.safeParse({ ...query, startDate: "2026-02-31", endDate: "2026-10-07" }).success).toBe(false);
     expect(workspaceQuerySchema.safeParse({ ...query, startDate: "2026-10-01", endDate: "2027-10-03" }).success).toBe(false);
   });
+  describe("per-player ownership evidence", () => {
+    const player = { id: "p1", nhlId: 8478402, name: "Connor McDavid", teamAbbreviation: "EDM", eligiblePositions: ["C"], playerClass: "skater",
+      availability: "rostered", ownership: 99, canDrop: false, holdValue: null, reserveEligibility: [] };
+    const evidence = { value: 99, observedOn: "2026-10-18", provider: "yahoo", status: "stale" };
+    const save = (row: unknown) => ({ workspace: { ...workspace, manualPlayers: [row] }, snapshot: { ...snapshot, players: [row] }, expectedVersion: null });
+
+    it("parses saves without it unchanged and round-trips it exactly when present", () => {
+      const legacy = saveWorkspaceSchema.parse(save(player));
+      expect(legacy.workspace.manualPlayers[0]).toEqual(player);
+      expect(legacy.snapshot?.players[0]).not.toHaveProperty("ownershipEvidence");
+      for (const ownershipEvidence of [evidence, { value: null, observedOn: null, provider: null, status: "unknown" },
+        { value: 0, observedOn: "2026-10-20", provider: "yahoo", status: "fresh" }, { value: 100, observedOn: "2026-10-20", provider: "yahoo", status: "fresh" }]) {
+        const parsed = saveWorkspaceSchema.parse(save({ ...player, ownershipEvidence }));
+        expect(parsed.workspace.manualPlayers[0]).toEqual({ ...player, ownershipEvidence });
+        expect(parsed.snapshot?.players[0]).toEqual({ ...player, ownershipEvidence });
+      }
+    });
+
+    it.each([
+      { value: 100.5 }, { value: -1 }, { value: Number.NaN }, { value: "99" },
+      { observedOn: "2026-13-01" }, { observedOn: "10/18/2026" }, { observedOn: "2026-10-18T00:00:00Z" },
+      { provider: "espn" }, { provider: "" }, { status: "old" }, { status: null },
+      { source: "yahoo" },
+    ])("rejects invalid ownership evidence %j", (change) => {
+      expect(saveWorkspaceSchema.safeParse(save({ ...player, ownershipEvidence: { ...evidence, ...change } })).success).toBe(false);
+    });
+
+    it.each(["value", "observedOn", "provider", "status"])("rejects ownership evidence missing %s", (key) => {
+      const { [key as keyof typeof evidence]: _dropped, ...partial } = evidence;
+      expect(saveWorkspaceSchema.safeParse(save({ ...player, ownershipEvidence: partial })).success).toBe(false);
+      expect(saveWorkspaceSchema.safeParse(save({ ...player, ownershipEvidence: null })).success).toBe(false);
+    });
+  });
   it("rejects impossible probabilities, ownership, costs and rule periods", () => {
     const invalidRules = { ...rules, acquisitionCost: -1 };
     expect(saveWorkspaceSchema.safeParse({ workspace: { ...workspace, rules: invalidRules }, snapshot, expectedVersion: null }).success).toBe(false);
