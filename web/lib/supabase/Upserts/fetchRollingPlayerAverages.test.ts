@@ -246,6 +246,65 @@ describe("fetchRollingPlayerAverages main runtime budget", () => {
     expect(windowed).toEqual(fullHistory.filter(inWindow));
   });
 
+  it("keeps WGO rows whose season label contradicts their date out of the three-season totals", async () => {
+    for (const method of ["info", "warn", "debug", "time", "timeEnd"] as const) {
+      vi.spyOn(console, method).mockImplementation(() => undefined);
+    }
+    // Production wgo_skater_stats labels its 2010-12-20..2017-01-16 rows
+    // season_id 20242025, so veterans' 2014-15 games look like 2024-25 games.
+    const historyGames = [
+      ["2014-10-20", 20242025, 5, 1200],
+      ["2014-11-03", 20242025, 5, 1200],
+      ["2015-01-15", 20242025, 5, 1200],
+      ["2024-11-02", 20242025, 1, 1000],
+      ["2025-02-10", 20242025, 1, 1000],
+      ["2025-11-02", 20252026, 1, 1000],
+      ["2026-01-12", 20252026, 1, 1000],
+      ["2026-10-09", 20262027, 1, 1000],
+      ["2026-10-15", 20262027, 1, 1000]
+    ] as const;
+    const history = (playerId: unknown) =>
+      historyGames.map(([date, season_id, hits, toi_per_game]) => ({
+        player_id: playerId,
+        game_id: null,
+        date,
+        season_id,
+        team_abbrev: "TOR",
+        goals: 0,
+        assists: 0,
+        shots: 1,
+        points: 0,
+        hits,
+        blocked_shots: 1,
+        toi_per_game
+      }));
+    const supportRows: Array<Record<string, any>> = [];
+    const main = await importMainWithClient(createWindowClient(history));
+    await main({
+      playerId: PLAYER_IDS[0],
+      strengths: ["all"],
+      startDate: "2026-10-10",
+      endDate: "2026-10-19",
+      dryRunUpsert: true,
+      skipDiagnostics: true,
+      dryRunBatchObserver: (batch) => {
+        supportRows.push(...batch.supportRows);
+      }
+    });
+
+    expect(supportRows.map((row) => row.game_date)).toEqual(["2026-10-15"]);
+    const historical = supportRows[0].support_payload.historicalCompatibility;
+    // 2024-25 through 2026-27 hold six real games: 6 hits, 6000 s, 6 blocks.
+    expect(historical).toMatchObject({
+      hits_per_60_hits_3ya: 6,
+      hits_per_60_toi_seconds_3ya: 6000,
+      blocks_per_60_blocks_3ya: 6,
+      three_year_games_played: 6,
+      hits_per_60_hits_career: 21,
+      career_games_played: 9
+    });
+  });
+
   it("keeps the incoming cursor when the budget is spent before any player is claimed", async () => {
     vi.spyOn(console, "info").mockImplementation(() => undefined);
     vi.spyOn(console, "warn").mockImplementation(() => undefined);

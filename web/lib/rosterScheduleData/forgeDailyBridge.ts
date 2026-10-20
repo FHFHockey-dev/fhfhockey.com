@@ -212,6 +212,21 @@ export function seasonRates(rows: Row[], seasonId: number): Map<number, SeasonRa
   return result;
 }
 
+const SPECIAL_TEAMS_COLUMNS = ["proj_goals_pp", "proj_assists_pp", "proj_shots_pp", "proj_toi_pp_seconds",
+  "proj_goals_pk", "proj_assists_pk", "proj_shots_pk", "proj_toi_pk_seconds"];
+/** Up to this much projected power-play time per game counts as none. */
+const NO_POWER_PLAY_SECONDS = 6;
+/** FORGE leaves power-play and penalty-kill heads blank for a skater with no such history. With (about) no projected
+ * power-play time that is no production, not unknown; with real power-play time the blanks stay unknown. */
+function withSpecialTeamsZeros(row: Row): { row: Row; filled: boolean; unknown: boolean } {
+  if (![row.proj_goals_es, row.proj_assists_es, row.proj_shots_es].every(finite)) return { row, filled: false, unknown: false };
+  const blanks = SPECIAL_TEAMS_COLUMNS.filter(key => !finite(row[key]));
+  const powerPlayBlank = blanks.some(key => key.includes("_pp"));
+  if (powerPlayBlank && finite(row.proj_toi_pp_seconds) && row.proj_toi_pp_seconds > NO_POWER_PLAY_SECONDS) return { row, filled: false, unknown: true };
+  return blanks.length ? { row: { ...row, ...Object.fromEntries(blanks.map(key => [key, 0])) }, filled: powerPlayBlank, unknown: false }
+    : { row, filled: false, unknown: false };
+}
+
 function skaterStats(row: Row, rates: SeasonRates | null): StatLine | null {
   const heads = buildSkaterModeledHeadTotals(row);
   if (heads.goals === null || heads.assists === null || heads.shots === null) return null;
@@ -323,13 +338,16 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       modelVersion: `${FORGE_DAILY_BRIDGE_VERSION}:${run.gitSha ?? "unknown"}`, limitations: [FORECAST_LIMITATION] });
   };
   const identified = players.filter(player => player.nhlId !== null && finite(player.nhlTeamId) && player.rosterRevision && player.teamAbbreviation);
-  let staleSkaters = 0;
+  let staleSkaters = 0, noPowerPlay = 0, unknownPowerPlay = 0;
   for (const player of identified.filter(row => row.playerClass === "skater")) {
     const row = skaterLatest.get(player.nhlId);
     if (!row || row.team_id !== player.nhlTeamId) continue;
     // Missing from his team's latest run: scratched, injured or reassigned since.
     if (row.as_of_date !== teamLatestDate.get(row.team_id)) { staleSkaters++; continue; }
-    const stats = skaterStats(row, rates ? rates.get(player.nhlId!) ?? rates.get(0)! : null);
+    const special = withSpecialTeamsZeros(row);
+    if (special.filled) noPowerPlay++;
+    if (special.unknown) unknownPowerPlay++;
+    const stats = skaterStats(special.row, rates ? rates.get(player.nhlId!) ?? rates.get(0)! : null);
     const projectedAgainst = context(player.teamAbbreviation, abbreviationById.get(row.opponent_team_id));
     if (stats) for (const game of upcoming(player.teamAbbreviation!)) {
       const facing = String(row.game_id) === game.id ? null : context(player.teamAbbreviation, game.opponent);
@@ -412,6 +430,8 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     "Goalie starts use each goalie's last-10 start share (season share when missing), or FORGE's own starter probability for an already projected game. Per-start lines come from his latest FORGE line, or his team's when he has none.",
     inputs.goalieNews ? `Goalie news (IFTTT, accepted automatically): ${news.confirmed} confirmed, ${news.speculative} likely or projected (start chance at least ${FORGE_DAILY_BRIDGE_GOALIE_NEWS_FLOORS.likely * 100}% / ${FORGE_DAILY_BRIDGE_GOALIE_NEWS_FLOORS.projected * 100}%), ${news.ruledOut} ruled out${news.disputed ? `, ${news.disputed} disputed and ignored` : ""}.`
       : "Goalie news could not be read; start chances use start shares only.",
+    ...(noPowerPlay ? [`${noPowerPlay} skaters with no FORGE power-play line or time count 0 power-play production.`] : []),
+    ...(unknownPowerPlay ? [`${unknownPowerPlay} skaters have projected power-play time but no FORGE power-play line, so they get no forecast.`] : []),
     ...(staleSkaters ? [`${staleSkaters} skaters missing from their team's latest FORGE run get no forecast (likely scratched, injured or moved).`] : []),
     ...(kept < forecasts.length ? [`Interim projections were trimmed to the first ${kept} of ${forecasts.length} player-games to fit the planning transport; later games stay schedule-only.`] : []),
   ];

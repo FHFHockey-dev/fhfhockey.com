@@ -899,7 +899,8 @@ describe("planning engine", () => {
     const result = evaluatePlan(data, intent, "agp");
     expect(result.legal).toBe(true);
     expect(result.activeGames).toBe(1);
-    expect(result.assignments.map(row => row.date)).toEqual(["2026-10-06"]);
+    // Today's games already under way keep their locked slots but are not remaining starts.
+    expect(result.assignments.filter(row => !(row.date === "2026-10-05" && row.locked)).map(row => row.date)).toEqual(["2026-10-06"]);
     expect(data.context).toEqual(context);
   });
   it("maximizes weekly games rather than a player's single-game score", () => {
@@ -1717,3 +1718,41 @@ describe("injured players", () => {
   });
 });
 
+
+describe("games already under way", () => {
+  // Yahoo locks a daily player at his game time for the rest of the day: a (A0, 20:00) has started; b (B0, 23:00) has not.
+  function underway(asOf = "2026-10-05T20:30:00Z", locks: PlanningSnapshot["lockedAssignments"] = []) {
+    const data = snapshot();
+    data.context = { ...data.context, asOf };
+    data.games = data.games.map(game => game.id === "A0" ? { ...game, status: "live" as const } : game.id === "B0" ? { ...game, startsAt: "2026-10-05T23:00:00Z" } : game);
+    data.forecasts = [];
+    data.lockedAssignments = locks;
+    return data;
+  }
+  const today = (evaluation: ReturnType<typeof evaluatePlan>) => evaluation.assignments.filter(row => row.date === "2026-10-05")
+    .map(row => `${row.playerId}@${row.slotId}${row.locked ? ":locked" : ""}`);
+
+  it("keeps a started player in his pre-start slot and closes it to later games", () => {
+    expect(today(evaluatePlan(underway("2026-10-05T19:00:00Z"), intent, "agp", [], false))).toEqual(["a@C#1"]);
+    const live = evaluatePlan(underway(), intent, "agp", [], false);
+    expect(live.legal).toBe(true);
+    expect(today(live)).toEqual(["a@C#1:locked"]);
+    // Only the games still to be played count as remaining starts.
+    expect(live.activeGames).toBe(live.assignments.filter(row => row.date !== "2026-10-05").length);
+  });
+
+  it("follows the provider's lock for a started game instead of failing the plan", () => {
+    const locked = evaluatePlan(underway(undefined, [{ date: "2026-10-05", playerId: "a", slotId: "C#1" }]), intent, "agp", [], false);
+    expect(locked.legal).toBe(true);
+    expect(today(locked)).toEqual(["a@C#1:locked"]);
+    expect(locked.limitations.some(line => line.startsWith("Locked assignment"))).toBe(false);
+    // Benched by the provider: the slot is open for the later game.
+    expect(today(evaluatePlan(underway(undefined, [{ date: "2026-10-05", playerId: "a", slotId: null }]), intent, "agp", [], false))).toEqual(["b@C#1"]);
+  });
+
+  it("still shows today's locked lineup once every game today has started", () => {
+    const late = evaluatePlan(underway("2026-10-05T23:30:00Z"), intent, "agp", [], false);
+    expect(late.legal).toBe(true);
+    expect(today(late)).toEqual(["a@C#1:locked"]);
+  });
+});
