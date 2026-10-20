@@ -7,7 +7,7 @@ import { hasScheduleCoverage, pages } from "lib/rosterScheduleData/planningInput
 import { recurringRange, RECURRING_PROFILE } from "lib/rosterScheduleData/recurring";
 import type { YahooMatchupWeekRow } from "lib/rosterScheduleData/types";
 import adminOnly from "utils/adminOnlyMiddleware";
-import { updateRosterOptimizerScheduleHandler } from "../update-roster-optimizer-schedule";
+import { updateRosterOptimizerScheduleHandler, type ScheduleWriteControl } from "../update-roster-optimizer-schedule";
 
 // Scheduled refresh of the RSO schedule cache. The planning reader calls a
 // horizon complete only when every date carries an nhl-source-days-v1 witness
@@ -32,14 +32,14 @@ async function loadMatchupWeeks(db: Db): Promise<YahooMatchupWeekRow[]> {
   return data ?? [];
 }
 
-// Runs the bounded writer in-process; it only reads `query` and `supabase`.
-async function runBoundedSync(db: Db, query: Record<string, string>): Promise<SyncResult> {
+// Runs the bounded writer in-process; it only reads `query`, `supabase` and `writeControl`.
+async function runBoundedSync(db: Db, query: Record<string, string>, writeControl: ScheduleWriteControl): Promise<SyncResult> {
   const result: SyncResult = { statusCode: 200, body: null };
   const res = {
     status(code: number) { result.statusCode = code; return res; },
     json(body: unknown) { result.body = body; return res; },
   };
-  await updateRosterOptimizerScheduleHandler({ query, supabase: db } as unknown as NextApiRequest,
+  await updateRosterOptimizerScheduleHandler({ query, supabase: db, writeControl } as unknown as NextApiRequest,
     res as unknown as NextApiResponse);
   return result;
 }
@@ -72,13 +72,20 @@ export async function updateRosterOptimizerScheduleDailyHandler(req: NextApiRequ
         message: `Skipped: no Yahoo matchup period for game key ${RECURRING_PROFILE.gameKey} contains ${today}.` });
     }
     const window = recurringRange(now, weeks);
+    // The deadline aborts the writer: it issues no write statement after this
+    // point, but one already sent may still be acknowledged by the database.
+    const controller = new AbortController();
+    const writeControl: ScheduleWriteControl = { signal: controller.signal, writeStarted: false };
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const sync = await Promise.race([runBoundedSync(db, window),
-      new Promise<null>(resolve => { timer = setTimeout(() => resolve(null), SYNC_DEADLINE_MS); })])
+    const sync = await Promise.race([runBoundedSync(db, window, writeControl),
+      new Promise<null>(resolve => { timer = setTimeout(() => { controller.abort(); resolve(null); }, SYNC_DEADLINE_MS); })])
       .finally(() => clearTimeout(timer));
     if (!sync) {
-      return res.status(504).json({ success: false, writeOutcome: "unknown", error: { code: "DAILY_SCHEDULE_REFRESH_TIMEOUT",
-        message: `The bounded refresh did not finish within ${SYNC_DEADLINE_MS / 1000} s; read the window back before any retry.` } });
+      const limit = `The bounded refresh did not finish within ${SYNC_DEADLINE_MS / 1000} s`;
+      return res.status(504).json({ success: false, writeOutcome: writeControl.writeStarted ? "unknown" : "not_attempted",
+        error: { code: "DAILY_SCHEDULE_REFRESH_TIMEOUT", message: writeControl.writeStarted
+          ? `${limit}; a write was already issued and its acknowledgment is unknown (cancellation does not undo it). Read the window back before any retry.`
+          : `${limit} and was cancelled before any schedule write.` } });
     }
     if (sync.statusCode !== 200 || sync.body?.success !== true) {
       return res.status(sync.statusCode >= 400 ? sync.statusCode : 500).json(sync.body);

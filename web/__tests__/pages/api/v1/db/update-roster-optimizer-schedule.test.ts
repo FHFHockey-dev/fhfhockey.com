@@ -93,6 +93,7 @@ vi.mock("lib/rosterScheduleData/source", () => ({
 
 import handler, {
   parseRosterScheduleSyncRequest,
+  updateRosterOptimizerScheduleHandler,
 } from "../../../../../pages/api/v1/db/update-roster-optimizer-schedule";
 
 function response() {
@@ -605,6 +606,36 @@ describe("update roster optimizer schedule route", () => {
     expect(retry.body).toMatchObject({ success: true, data: { rowsUpserted: 2, changes: { unchangedRows: 2 } } });
     expect(tableData.roster_optimizer_team_games).toHaveLength(2);
     expect(deleteInMock).not.toHaveBeenCalled();
+  });
+
+  it("stops at the caller's deadline before any write and reports nothing written", async () => {
+    const controller = new AbortController();
+    const writeControl = { signal: controller.signal, writeStarted: false };
+    const source = await fetchBoundedMock();
+    fetchBoundedMock.mockImplementationOnce(async () => { controller.abort(); return source; });
+    const res = response();
+    await updateRosterOptimizerScheduleHandler({ query: {}, supabase: serviceClient, writeControl } as never, res as never);
+    expect(fetchBoundedMock.mock.calls.at(-1)?.[0]).toMatchObject({ signal: controller.signal });
+    expect(res).toMatchObject({ statusCode: 504, body: { success: false, writeOutcome: "not_attempted",
+      error: { code: "SCHEDULE_SYNC_ABORTED" } } });
+    expect(upsertMock).not.toHaveBeenCalled();
+    expect(writeControl.writeStarted).toBe(false);
+  });
+
+  it("issues no further statement once the deadline passes mid-write and reports the outcome as unknown", async () => {
+    const controller = new AbortController();
+    const writeControl = { signal: controller.signal, writeStarted: false };
+    const source = await fetchBoundedMock();
+    fetchBoundedMock.mockResolvedValueOnce({ ...source, games: Array.from({ length: 300 }, (_, index) =>
+      ({ ...source.games[0], game: { ...source.games[0].game, id: 2026020001 + index } })) });
+    upsertMock.mockImplementationOnce(async () => { controller.abort(); return { error: null }; });
+    const res = response();
+    await updateRosterOptimizerScheduleHandler({ query: {}, supabase: serviceClient, writeControl } as never, res as never);
+    expect(res).toMatchObject({ statusCode: 504, body: { success: false, writeOutcome: "unknown",
+      error: { code: "SCHEDULE_SYNC_ABORTED" } } });
+    expect(upsertMock).toHaveBeenCalledTimes(1); // 600 sides would take two 500-row statements
+    expect(deleteInMock).not.toHaveBeenCalled();
+    expect(writeControl.writeStarted).toBe(true);
   });
 
   it("rejects unauthorized or wrong-method inspection without source, schedule or audit writes", async () => {

@@ -70,6 +70,14 @@ class SyncRouteError extends Error {
   }
 }
 
+/**
+ * Set by an in-process caller with a deadline (the daily cron). Every write
+ * statement checks `signal` first and marks `writeStarted` in the same tick, so
+ * once the caller aborts no further statement is issued and "not attempted" is
+ * exact. An already-issued statement may still land; aborting never undoes it.
+ */
+export type ScheduleWriteControl = { signal: AbortSignal; writeStarted: boolean };
+
 function firstQueryValue(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
@@ -428,6 +436,16 @@ export async function updateRosterOptimizerScheduleHandler(
 ) {
   let guardedRequest = false;
   let writesAttempted = false;
+  const control = (req as NextApiRequest & { writeControl?: ScheduleWriteControl }).writeControl;
+  const assertActive = () => {
+    if (control?.signal.aborted) {
+      throw new SyncRouteError({
+        code: "SCHEDULE_SYNC_ABORTED",
+        message: "The caller's deadline passed; no further schedule write was issued.",
+        status: 504,
+      });
+    }
+  };
   try {
     const request = parseRosterScheduleSyncRequest(req.query);
     const { dryRun, guard } = parseRefreshGuard(req.query, request);
@@ -435,6 +453,22 @@ export async function updateRosterOptimizerScheduleHandler(
     const serviceClient = (req as NextApiRequest & { supabase: unknown })
       .supabase;
     const readClient = serviceClient as SyncReadClient;
+    const writeClient = {
+      from: (table: string) => ({
+        upsert: (...args: Parameters<ReturnType<ScheduleWriteClient["from"]>["upsert"]>) => {
+          assertActive();
+          writesAttempted = true;
+          if (control) control.writeStarted = true;
+          return (serviceClient as ScheduleWriteClient).from(table).upsert(...args);
+        },
+        delete: () => {
+          assertActive();
+          writesAttempted = true;
+          if (control) control.writeStarted = true;
+          return (serviceClient as ScheduleDeleteClient).from(table).delete();
+        },
+      }),
+    };
     const weeks = await loadYahooMatchupWeeks(readClient, request.gameKey);
     const yahooSeasons = new Set(weeks.map((week) => week.season));
     if (yahooSeasons.size !== 1) {
@@ -450,13 +484,16 @@ export async function updateRosterOptimizerScheduleHandler(
       throw new RefreshGuardError("REFRESH_SCOPE_MISMATCH", "Resolved NHL season differs from the approved season.");
     }
     const teams = await loadSeasonTeams({ client: readClient, seasonId });
+    assertActive();
     const sourceResult =
       request.mode === "full"
         ? await fetchFullSeasonNhlSchedule({ seasonId, teams })
         : await fetchBoundedNhlSchedule({
             startDate: request.startDate,
             endDate: request.endDate,
+            ...(control ? { signal: control.signal } : {}),
           });
+    assertActive();
     const fetchedAt = new Date().toISOString();
     const normalized = buildScheduleRows({
       fetchedAt,
@@ -483,9 +520,8 @@ export async function updateRosterOptimizerScheduleHandler(
     });
     // Guarded scopes fit one upsert statement (<=1000 sides). The audit remains
     // separate; a timeout/unknown acknowledgement still requires DB readback.
-    writesAttempted = !dryRun && normalized.rows.length > 0;
     const rowsUpserted = dryRun ? 0 : await upsertRosterScheduleRows({
-      client: serviceClient as ScheduleWriteClient,
+      client: writeClient,
       rows: normalized.rows,
       ...(guard ? { chunkSize: guard.maxSides } : {}),
     });
@@ -497,7 +533,7 @@ export async function updateRosterOptimizerScheduleHandler(
           })
         : [];
     const rowsDeleted = await deleteRosterScheduleRows({
-      client: serviceClient as ScheduleDeleteClient,
+      client: writeClient,
       rowIds: staleRowIds,
     });
 
@@ -592,7 +628,7 @@ export async function updateRosterOptimizerScheduleHandler(
           });
     return res.status(routeError.status).json({
       success: false,
-      ...(guardedRequest || error instanceof RefreshGuardError
+      ...(guardedRequest || error instanceof RefreshGuardError || control
         ? { writeOutcome: writesAttempted ? "unknown" : "not_attempted" } : {}),
       error: {
         code: routeError.code,

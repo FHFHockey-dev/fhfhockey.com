@@ -74,5 +74,7 @@ export type RosterScheduleReadFilter = {
   gameKey: string;
   startWeek: number;
   endWeek: number;
+  /** "witnessed" keeps non-countable mapped rows so source-day coverage can be verified on the full set. */
+  scope?: "countable" | "witnessed";
 };
 

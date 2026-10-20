@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { auditRecordMock, getScheduleDailyMock, seasonWindowMock, serviceClient, tables } = vi.hoisted(() => {
+const { auditRecordMock, getScheduleDailyMock, seasonWindowMock, serviceClient, tables, writeDelay } = vi.hoisted(() => {
   const tables: Record<string, Array<Record<string, any>>> = {};
+  const writeDelay = { ms: 0 }; // > 0 holds each upsert acknowledgment on the (fake) clock
   let nextId = 1;
   // In-memory PostgREST stand-in: filters, exact counts, limit/range paging and
   // upsert on the cache's (game_key, source_game_id, team_id) identity.
@@ -34,19 +35,22 @@ const { auditRecordMock, getScheduleDailyMock, seasonWindowMock, serviceClient, 
     from: (table: string) => ({
       select: (columns: string, options?: { count?: string }) => query(table).select(columns, options),
       upsert: (rows: Array<Record<string, any>>) => {
-        const stored = (tables[table] ??= []);
-        for (const row of rows) {
-          const index = stored.findIndex(existing => existing.game_key === row.game_key
-            && existing.source_game_id === row.source_game_id && existing.team_id === row.team_id);
-          if (index >= 0) stored[index] = { ...row, id: stored[index].id };
-          else stored.push({ ...row, id: nextId++ });
-        }
-        return Promise.resolve({ error: null });
+        const apply = () => {
+          const stored = (tables[table] ??= []);
+          for (const row of rows) {
+            const index = stored.findIndex(existing => existing.game_key === row.game_key
+              && existing.source_game_id === row.source_game_id && existing.team_id === row.team_id);
+            if (index >= 0) stored[index] = { ...row, id: stored[index].id };
+            else stored.push({ ...row, id: nextId++ });
+          }
+          return { error: null };
+        };
+        return writeDelay.ms ? new Promise(resolve => setTimeout(() => resolve(apply()), writeDelay.ms)) : Promise.resolve(apply());
       },
       delete: () => ({ in: () => Promise.resolve({ error: null }) }),
     }),
   };
-  return { auditRecordMock: vi.fn(), getScheduleDailyMock: vi.fn(), seasonWindowMock: vi.fn(), serviceClient, tables };
+  return { auditRecordMock: vi.fn(), getScheduleDailyMock: vi.fn(), seasonWindowMock: vi.fn(), serviceClient, tables, writeDelay };
 });
 
 vi.mock("lib/supabase/server", () => ({ default: serviceClient }));
@@ -114,6 +118,7 @@ async function invoke(query: Record<string, string> = {}, headers: Record<string
 describe("daily roster optimizer schedule cron", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    writeDelay.ms = 0;
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date(NOW));
     process.env.CRON_SECRET = "schedule-secret";
@@ -205,9 +210,64 @@ describe("daily roster optimizer schedule cron", () => {
     await vi.advanceTimersByTimeAsync(120_000);
     const res = await pending;
 
-    expect(res).toMatchObject({ statusCode: 504, body: { success: false, writeOutcome: "unknown",
+    expect(res).toMatchObject({ statusCode: 504, body: { success: false, writeOutcome: "not_attempted",
       error: { code: "DAILY_SCHEDULE_REFRESH_TIMEOUT" } } });
     expect(tables.roster_optimizer_team_games).toEqual([]);
+  });
+
+  it("cancels a late-resolving refresh at the deadline so no write follows the 504", async () => {
+    vi.useRealTimers();
+    vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
+    vi.setSystemTime(new Date(NOW));
+    getScheduleDailyMock.mockImplementation((date: string) => date === "2026-11-01"
+      ? new Promise(resolve => setTimeout(() => resolve(schedulePage(date)), 130_000))
+      : Promise.resolve(schedulePage(date)));
+
+    const pending = invoke();
+    await vi.waitFor(() => expect(getScheduleDailyMock).toHaveBeenCalledTimes(3));
+    await vi.advanceTimersByTimeAsync(120_000);
+    const res = await pending;
+
+    expect(res).toMatchObject({ statusCode: 504, body: { success: false, writeOutcome: "not_attempted",
+      error: { code: "DAILY_SCHEDULE_REFRESH_TIMEOUT" } } });
+    expect(getScheduleDailyMock.mock.calls[2][1]).toMatchObject({ aborted: true });
+    // The source resolves after the 504; the aborted writer must not upsert it.
+    await vi.advanceTimersByTimeAsync(20_000);
+    for (let tick = 0; tick < 20; tick++) await Promise.resolve();
+    expect(tables.roster_optimizer_team_games).toEqual([]);
+    expect(auditRecordMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports a write in flight at the deadline as unknown and never claims cancellation undid it", async () => {
+    vi.useRealTimers();
+    vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
+    vi.setSystemTime(new Date(NOW));
+    writeDelay.ms = 130_000;
+
+    const pending = invoke();
+    await vi.advanceTimersByTimeAsync(120_000);
+    const res = await pending;
+
+    expect(res).toMatchObject({ statusCode: 504, body: { success: false, writeOutcome: "unknown",
+      error: { code: "DAILY_SCHEDULE_REFRESH_TIMEOUT" } } });
+    expect(res.body.error.message).toMatch(/does not undo/);
+    // The late acknowledgment can still land, which is why the receipt says unknown.
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(tables.roster_optimizer_team_games).toHaveLength(22);
+  });
+
+  it("confirms coverage when a witnessed game is postponed", async () => {
+    getScheduleDailyMock.mockImplementation(async (date: string) => {
+      const page = schedulePage(date);
+      for (const day of page.gameWeek) for (const game of day.games) if (day.date === "2026-10-21") game.gameScheduleState = "PPD";
+      return page;
+    });
+
+    const res = await invoke();
+
+    expect(res).toMatchObject({ statusCode: 200, body: { success: true, data: { coverage: { status: "complete" }, rowsRead: 22 } } });
+    expect(tables.roster_optimizer_team_games.filter(row => row.game_date === "2026-10-21")
+      .map(row => row.is_countable)).toEqual([false, false]);
   });
 
   it("skips between Yahoo periods without fetching the source", async () => {

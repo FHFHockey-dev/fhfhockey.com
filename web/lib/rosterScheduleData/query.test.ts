@@ -85,6 +85,15 @@ describe("roster schedule query", () => {
     );
   });
 
+  it("keeps postponed or cancelled mapped rows only for an explicit witnessed read", async () => {
+    expect(parseRosterScheduleReadFilter({ scope: "witnessed" })).toMatchObject({ scope: "witnessed" });
+    expect(() => parseRosterScheduleReadFilter({ scope: "all" })).toThrow("matchup-week range");
+    const { calls, client } = createQuery([]);
+    await readRosterSchedule(client, { gameKey: "477", startWeek: 1, endWeek: 2, scope: "witnessed" });
+    expect(calls).toContainEqual(["eq", "mapping_status", "mapped"]);
+    expect(calls).not.toContainEqual(["eq", "is_countable", true]);
+  });
+
   it("loads every page when the matrix exceeds the Data API row limit", async () => {
     const rows = Array.from({ length: 1_001 }, (_, id) => ({ id }));
     const { calls, client } = createQuery(rows);
