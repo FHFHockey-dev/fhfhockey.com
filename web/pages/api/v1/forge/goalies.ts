@@ -6,6 +6,7 @@ import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
 import { buildGoalieReaderCompatibility } from "lib/projections/compatibilityInventory";
 import supabase from "lib/supabase/server";
 import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
+import { excludeOffReleaseRuns, isOffReleaseGitSha } from "lib/projections/releasedRunFence";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import {
   buildProjectionApiErrorResponse,
@@ -264,7 +265,7 @@ async function fetchRunSummary(runId: string) {
   if (!supabase) throw new Error("Supabase server client not available");
   const { data, error } = await supabase
     .from("forge_runs")
-    .select("run_id,as_of_date,status,created_at,metrics")
+    .select("run_id,as_of_date,status,created_at,git_sha,metrics")
     .eq("run_id", runId)
     .maybeSingle();
   if (error) throw error;
@@ -273,6 +274,7 @@ async function fetchRunSummary(runId: string) {
     as_of_date: string;
     status: string;
     created_at: string;
+    git_sha: string | null;
     metrics: any;
   } | null;
 }
@@ -294,11 +296,12 @@ async function fetchFallbackRunWithGoalieData(
   if (!supabase) throw new Error("Supabase server client not available");
 
   const findCandidate = async (includeFutureDates: boolean) => {
-    // Only succeeded runs; a failed or still-running run's rows are not served.
-    let query = supabase
+    // Only succeeded released runs; failed, still-running or off-release
+    // (null or local:) runs' rows are not served.
+    let query = excludeOffReleaseRuns(supabase
       .from("forge_goalie_projections")
-      .select("run_id,as_of_date,forge_runs!inner(status)")
-      .eq("forge_runs.status", "succeeded")
+      .select("run_id,as_of_date,forge_runs!inner(status,git_sha)")
+      .eq("forge_runs.status", "succeeded"), "forge_runs.git_sha")
       .eq("horizon_games", horizon)
       .order("as_of_date", { ascending: false })
       .limit(1);
@@ -484,6 +487,11 @@ export default async function handler(
       fetchGoalieCalibrationHints(resolvedDate),
     ]);
     const runSummary = resolvedRunSummaryMaybe ?? requestedRunSummary;
+    if (q.runId && requestedRunSummary && isOffReleaseGitSha(requestedRunSummary.git_sha)) {
+      const error = new Error(`Projection run ${q.runId} was made off the release path (null or local git_sha) and is not served.`);
+      (error as any).statusCode = 422;
+      throw error;
+    }
     if (runSummary?.run_id !== resolvedRunId || runSummary?.status !== "succeeded"
       || runSummary?.metrics?.input_provenance?.external_fantasy_input_contract !== FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT) {
       const error = new Error("Selected goalie run lacks external fantasy exclusion provenance.");

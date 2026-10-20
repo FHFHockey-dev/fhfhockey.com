@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import supabase from "lib/supabase/server";
 import type { Json } from "lib/supabase/database-generated.types";
+import { LOCAL_UNKNOWN_GIT_SHA } from "lib/projections/releasedRunFence";
 
 function assertSupabase() {
   if (!supabase) throw new Error("Supabase server client not available");
@@ -223,7 +224,8 @@ async function insertRunningRun(asOfDate: string, metrics: JsonObject) {
     .insert({
       as_of_date: asOfDate,
       status: "running",
-      git_sha: process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GIT_SHA ?? null,
+      // No deployment SHA means an off-release (local) run: never stamp null.
+      git_sha: process.env.VERCEL_GIT_COMMIT_SHA || process.env.GIT_SHA || LOCAL_UNKNOWN_GIT_SHA,
       metrics
     })
     .select("run_id")

@@ -63,6 +63,9 @@ function createQueryBuilder(
     or() {
       return builder;
     },
+    not() {
+      return builder;
+    },
     order() {
       return builder;
     },
@@ -903,6 +906,14 @@ describe("/api/v1/forge/players", () => {
             filters.push((row) => !row.git_sha?.startsWith("local:"));
             return builder;
           };
+          builder.not = (column: string, operator: string, value: unknown) => {
+            expect(column).toBe("git_sha");
+            if (operator === "is" && value === null) filters.push((row) => row.git_sha != null);
+            else if (operator === "like" && value === "local:*") {
+              filters.push((row) => row.git_sha != null && !row.git_sha.startsWith("local:"));
+            } else throw new Error(`unexpected filter ${operator} ${String(value)}`);
+            return builder;
+          };
           return builder;
         }
         if (table === "games") {
@@ -930,7 +941,7 @@ describe("/api/v1/forge/players", () => {
 
     it("does not serve a 20-day-old latest succeeded run as ready", async () => {
       const projectionRunIds = installRuns([
-        { run_id: "stale-run", as_of_date: "2026-09-29", metrics: qualified },
+        { run_id: "stale-run", as_of_date: "2026-09-29", git_sha: "abc123", metrics: qualified },
       ]);
       const res = createMockRes();
       await handler(
@@ -947,12 +958,19 @@ describe("/api/v1/forge/players", () => {
       expect(projectionRunIds).not.toContain("stale-run");
     });
 
-    it("prefers the full-slate run over a later single-game run and a later local run", async () => {
+    it("prefers the full-slate run over a later single-game, local or null-sha run", async () => {
       const projectionRunIds = installRuns([
+        {
+          run_id: "null-sha-run",
+          as_of_date: "2026-10-18",
+          git_sha: null,
+          metrics: { ...qualified, execution_scope: { requested_game_ids: [] } },
+        },
         { run_id: "local-run", as_of_date: "2026-10-18", git_sha: `local:${"a".repeat(64)}`, metrics: qualified },
         {
           run_id: "scoped-run",
           as_of_date: "2026-10-18",
+          git_sha: "abc123",
           metrics: { ...qualified, execution_scope: { requested_game_ids: [2026020101] } },
         },
         {
@@ -977,12 +995,13 @@ describe("/api/v1/forge/players", () => {
         scanSummary: { status: "ready", blockingIssueCount: 0 },
       });
       expect(projectionRunIds).not.toContain("local-run");
+      expect(projectionRunIds).not.toContain("null-sha-run");
       expect(projectionRunIds).not.toContain("scoped-run");
     });
 
     it("flags a recent fallback as blocked serving when the requested date had games", async () => {
       installRuns(
-        [{ run_id: "yesterday-run", as_of_date: "2026-10-18", metrics: qualified }],
+        [{ run_id: "yesterday-run", as_of_date: "2026-10-18", git_sha: "abc123", metrics: qualified }],
         6,
       );
       const res = createMockRes();

@@ -79,6 +79,13 @@ const db = vi.hoisted(() => {
         filters.push((row) => values.includes(row[column]));
         return query;
       },
+      not: (column: string, operator: string, value: unknown) => {
+        if (operator === "is" && value === null) filters.push((row) => read(row, column) != null);
+        else if (operator === "like" && value === "local:*") {
+          filters.push((row) => read(row, column) != null && !String(read(row, column)).startsWith("local:"));
+        } else throw new Error(`unsupported not(${column}, ${operator})`);
+        return query;
+      },
       order: (key: string, options?: { ascending?: boolean }) => {
         order = { key, ascending: options?.ascending !== false };
         return query;
@@ -168,7 +175,7 @@ const playerRows = (runId: string) =>
     .map((row) => `${row.game_id}:${row.player_id}`).sort();
 
 function seedRun(row: Row) {
-  (db.tables.forge_runs ??= []).push({ as_of_date: date, git_sha: null, updated_at: null, ...row });
+  (db.tables.forge_runs ??= []).push({ as_of_date: date, git_sha: "a".repeat(40), updated_at: null, ...row });
 }
 
 function seedPausedRun(args: { runId: string; owner: string; leaseExpiresAt: string; createdAt: string; completed: number[] }) {
@@ -194,6 +201,8 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(start);
   vi.stubEnv("STARTER_BOARD_CAPTURE_ENABLED", "false");
+  // A hosted deployment: runs it makes are served (local runs are fenced).
+  vi.stubEnv("VERCEL_GIT_COMMIT_SHA", "a".repeat(40));
   vi.stubEnv("STARTER_BOARD_COMPUTE_ENABLED", "false");
 });
 afterEach(() => {
@@ -244,6 +253,17 @@ describe("resumable FORGE projection run", () => {
     // One row per game and player; game 3's stray row from the cut-off pass is gone.
     expect(playerRows(first.runId)).toEqual(["1:1", "1:2", "2:1", "2:2", "3:1", "3:2", "4:1", "4:2"]);
     expect(await requireLatestSucceededRunId(date)).toBe(first.runId);
+  });
+
+  it.each([undefined, ""])("stamps an uncaptured localhost run local:unknown and keeps serving the released run (SHA env %j)", async (sha) => {
+    for (const key of ["FORGE_CODE_VERSION", "VERCEL_GIT_COMMIT_SHA", "GIT_SHA"]) vi.stubEnv(key, sha);
+    seedRun({
+      run_id: "released-succeeded", status: "succeeded", created_at: "2026-10-20T06:00:00.000Z",
+      metrics: { input_provenance: buildForgeInputProvenance({ externalFantasyInputsExcluded: true }) },
+    });
+    const result = await runProjectionV2ForDate(date, { deadlineMs: Date.now() + 200_000 });
+    expect(runs().find((row) => row.run_id === result.runId)).toMatchObject({ status: "succeeded", git_sha: "local:unknown" });
+    expect(await requireLatestSucceededRunId(date)).toBe("released-succeeded");
   });
 
   it("refuses a run whose lease is still held, then takes it over once the lease expires", async () => {
