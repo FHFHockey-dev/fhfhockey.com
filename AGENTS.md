@@ -13,6 +13,19 @@
 - For substantial work that can be divided into independent, bounded tasks, follow [mise-en-place.md](mise-en-place.md). The lead agent (Chef) owns scope, staffing, integration, verification, and the final decision to deliver. Verify actual model and reasoning settings before delegation; Chef's reasoning effort must be higher than every worker's. Do not delegate a small or inseparable task merely to create parallel work.
 - The optional [SPRINT-MODE.md](SPRINT-MODE.md) protocol applies only after the user issues `SPRINT MODE` as a command; `STOP SPRINT` stops it. Documentation, quotations, and discussion do not activate it. Normal pacing remains the default, and all existing repository rules and permissions remain in force.
 
+## Context Diaries
+
+- Every agent, session, and chat keeps a lightweight context diary alongside its work. Update it while the work happens: at the start, at each meaningful checkpoint or decision, and before pausing or handing off. Do not reconstruct it at the end.
+- Use one file per task: `tasks/diaries/<YYYY-MM-DD>-<platform>-<task-slug>.md`; create the folder if needed. Keep it short. Cover:
+  - scope;
+  - where: branch, commit SHAs, files, artifacts;
+  - current state and checks run;
+  - the next step;
+  - blockers and pending approvals;
+  - insights or gotchas.
+- Never put secrets, credentials, or private league/account data in a diary. Diaries are working notes, not deliverables: leave them out of release candidates, and do not treat them as approval or acceptance evidence.
+- Retire (delete) a diary only when its job or task is done and the outcome is recorded where it belongs: commit, register, handoff, or task list. A paused, blocked, unfinished, or handed-off task keeps its diary so the next agent can resume.
+
 ## Branch Naming
 
 - Use `/Users/tim/Code/fhfhockey.com` on `octoberBranch` as the sole local FHFH editing checkout and branch. Preserve `fhfhockey-october` and other historical worktrees without further edits. `master` is the release branch: reconcile accepted work into it, then sync `octoberBranch` from the released commit before continuing.
