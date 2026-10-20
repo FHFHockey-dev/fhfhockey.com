@@ -1,6 +1,6 @@
 # ignoreCommand fix for cms-fhfhockey and functions-fhfhockey (proposal, NOT applied)
 
-Status: awaiting TJ. Changes ignored-build behaviour, so it ships only in an approved master candidate.
+Status: TJ approved for R7 (2026-10-20 ~16:25Z). Shortened 2026-10-20 ~19:00Z to 224 chars after the R7 gate caught the 307-char draft exceeding Vercel's 256-char ignoreCommand limit (web/scripts/vercel-ignore.test.ts); that test now pins the missing-SHA policy. Changes ignored-build behaviour, so it ships only in an approved master candidate.
 
 ## Problem (R5 push, CHEF-REGISTER-2026-10-19 ~18:17Z)
 - `cms/vercel.json` and `functions/vercel.json` exit 1 (= build) whenever `VERCEL_GIT_PREVIOUS_SHA` is empty **or not in the shallow clone**.
@@ -9,7 +9,7 @@ Status: awaiting TJ. Changes ignored-build behaviour, so it ships only in an app
 
 ## Proposed command (same string for both files)
 ```sh
-if test -n "$VERCEL_GIT_PREVIOUS_SHA" && git cat-file -e "$VERCEL_GIT_PREVIOUS_SHA^{commit}" 2>/dev/null; then git diff --quiet "$VERCEL_GIT_PREVIOUS_SHA" HEAD ./; elif test -n "$VERCEL_GIT_PREVIOUS_SHA" && git cat-file -e "HEAD~1^{commit}" 2>/dev/null; then git diff --quiet HEAD~1 HEAD ./; else exit 1; fi
+p=$VERCEL_GIT_PREVIOUS_SHA;if [ -n "$p" ]&&git cat-file -e "$p^{commit}" 2>/dev/null;then git diff --quiet "$p" HEAD ./;elif [ -n "$p" ]&&git cat-file -e HEAD~1 2>/dev/null;then git diff --quiet HEAD~1 HEAD ./;else exit 1;fi
 ```
 - **Previous SHA present in the clone:** unchanged behaviour.
 - **Previous SHA given but missing from the clone:** build only if the tip commit touched this directory.

@@ -1,5 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "ignoreCommand": "if test -n \"$VERCEL_GIT_PREVIOUS_SHA\" && git cat-file -e \"$VERCEL_GIT_PREVIOUS_SHA^{commit}\" 2>/dev/null; then git diff --quiet \"$VERCEL_GIT_PREVIOUS_SHA\" HEAD ./; elif test -n \"$VERCEL_GIT_PREVIOUS_SHA\" && git cat-file -e \"HEAD~1^{commit}\" 2>/dev/null; then git diff --quiet HEAD~1 HEAD ./; else exit 1; fi",
+  "ignoreCommand": "p=$VERCEL_GIT_PREVIOUS_SHA;if [ -n \"$p\" ]&&git cat-file -e \"$p^{commit}\" 2>/dev/null;then git diff --quiet \"$p\" HEAD ./;elif [ -n \"$p\" ]&&git cat-file -e HEAD~1 2>/dev/null;then git diff --quiet HEAD~1 HEAD ./;else exit 1;fi",
   "rewrites": [{ "source": "/studio/:match*", "destination": "/:match*" }]
 }
