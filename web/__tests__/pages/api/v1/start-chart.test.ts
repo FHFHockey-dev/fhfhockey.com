@@ -684,8 +684,11 @@ describe("/api/v1/start-chart", () => {
 
   function sharedAdmissionInputs(fixture: ReturnType<typeof consumerGameRevisionFixture>, newsFailure = false) {
     const previous = fromMock.getMockImplementation()!;
+    // The planning reader certifies the slate only from witnessed source days.
+    const witness = (date: string) => ({ scheduleCoverage: { version: "nhl-source-days-v1", date, emptyDates: [],
+      gameIds: [...new Set(fixture.scheduleRows.filter(row => row.game_date === date).map(row => row.source_game_id))].sort() } });
     const tables: Record<string, any[]> = {
-      roster_optimizer_team_games: fixture.scheduleRows,
+      roster_optimizer_team_games: fixture.scheduleRows.map(row => ({ ...row, source_metadata: witness(row.game_date) })),
       fhfh_player_identities: fixture.players.map(row => ({
         id: Number(row.id), nhl_player_id: row.nhlId, canonical_name: row.name,
         canonical_position: row.playerClass === "goalie" ? "G" : "C",

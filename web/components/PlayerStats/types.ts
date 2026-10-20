@@ -17,6 +17,9 @@ export interface MissedGame {
   isPlayoff: boolean;
   seasonId: number;
   isFuture?: boolean; // Flag to distinguish future scheduled games
+  // Past team game whose box score has no provider rows for the player's team
+  // yet (ingestion gap): neither played nor missed.
+  isUnconfirmed?: boolean;
 }
 
 export interface SkaterGameLogEntry extends BaseGameLogEntry {

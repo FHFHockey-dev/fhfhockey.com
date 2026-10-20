@@ -249,6 +249,48 @@
   font-size: v.$font-size-xs;
 }
 
+// One panel per unit (counts / rates / percentages / TOI), side by side when
+// there is room.
+.unitPanels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr));
+  gap: v.$space-sm;
+}
+
+.unitPanel {
+  min-width: 0;
+}
+
+.unitPanelHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: v.$space-sm;
+  margin-bottom: v.$space-xs;
+
+  h4 {
+    margin: 0;
+    color: v.$text-secondary;
+    font-size: v.$font-size-xs;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  span {
+    color: v.$text-secondary;
+    font-size: 10px;
+  }
+}
+
+.chartWrapper.unitChart {
+  height: 260px;
+
+  @media (max-width: v.$screen-small-max) {
+    height: 220px;
+  }
+}
+
 // Advanced source note + glossary as one disclosure.
 .advancedNote {
   min-width: 0;

@@ -78,6 +78,41 @@ describe("shared forecast reload for the owned roster", () => {
     expect(refreshed.forecasts).toBe(read.data.forecasts);
   });
 
+  it("does not let a forecast refresh revive a schedule witness that expired before planning time", () => {
+    const { snapshot, read, intent } = fixture();
+    // Schedule observed 35.5h before the provider snapshot: still fresh when the snapshot was taken.
+    snapshot.evidence.schedule = { ...snapshot.evidence.schedule!, asOf: "2026-10-11T00:30:00Z" };
+    const fresh = planRoster(refreshForecastInputs(snapshot, read), intent);
+    expect(fresh.baseline).toMatchObject({ comparisonEligible: true, projectedValue: 10 });
+    expect(fresh.baseline.limitations.some(line => line.includes("Reload the schedule"))).toBe(false);
+    // A later forecast read moves the planning clock to 36.5h past the schedule observation.
+    const refreshed = refreshForecastInputs(snapshot, { ...read, checkedAt: "2026-10-12T13:00:00Z" });
+    expect(refreshed.context.asOf).toBe("2026-10-12T13:00:00Z");
+    expect(refreshed.evidence.schedule).toBe(snapshot.evidence.schedule);
+    const stale = planRoster(refreshed, intent);
+    expect(stale.baseline).toMatchObject({ comparisonEligible: false, projectedValue: null, recommendation: { eligible: false } });
+    expect(stale.baseline.limitations).toContain("Schedule evidence observed 2026-10-11T00:30:00.000Z expired 2026-10-12T12:30:00.000Z; planning time is 2026-10-12T13:00:00.000Z. Reload the schedule; a forecast refresh does not renew it.");
+    expect(stale.alternatives.every(plan => !plan.steps.length)).toBe(true);
+  });
+
+  it("keeps legacy schedule evidence without an observation time usable, with a visible note", () => {
+    const { snapshot, read, intent } = fixture();
+    const refreshed = refreshForecastInputs(snapshot, { ...read, checkedAt: "2026-10-14T00:00:00Z",
+      data: { ...read.data, forecastManifest: { ...read.data.forecastManifest!, asOf: "2026-10-13T23:59:00Z" } } });
+    const withSchedule = (asOf: string | null) => planRoster({ ...refreshed, games: refreshed.games.map(game => ({ ...game, date: "2026-10-15", startsAt: "2026-10-15T20:00:00Z" })),
+      evidence: { ...refreshed.evidence, schedule: { ...snapshot.evidence.schedule!, asOf } } }, intent).baseline;
+    // Saved or legacy evidence with no observation time: today's behavior plus a note, never a silent block.
+    const legacy = withSchedule(null);
+    expect(legacy).toMatchObject({ comparisonEligible: true, projectedValue: 10 });
+    expect(legacy.limitations).toContain("Schedule evidence has no observation time, so its freshness was not rechecked at planning time. Reload the schedule to confirm it.");
+    // A witness observed after an older planning clock (a restored manual workspace, client clock skew) has not expired.
+    const newer = withSchedule("2026-10-14T06:00:00Z");
+    expect(newer).toMatchObject({ comparisonEligible: true, projectedValue: 10 });
+    expect(newer.limitations.some(line => line.startsWith("Schedule evidence"))).toBe(false);
+    // An expired observation still blocks.
+    expect(withSchedule("2026-10-12T00:00:00Z")).toMatchObject({ comparisonEligible: false, projectedValue: null });
+  });
+
   it("replaces the participation catalog and evidence while preserving provider state and denied uses", () => {
     const { snapshot, read } = fixture();
     const receipt: ContributionParticipation = { playerId: 1, nhlPlayerId: 1001, seasonId: snapshot.context.seasonId,

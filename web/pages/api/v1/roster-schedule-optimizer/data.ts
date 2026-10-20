@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import serviceRoleClient from "lib/supabase/server";
 import { loadPlanningData, parsePlanningDataQuery } from "lib/rosterScheduleData/planning";
-import { compactBridgeForecasts } from "lib/rosterScheduleData/bridgeForecastWire";
+import { compactBridgeForecasts, fitBridgeWire, PLANNING_RESPONSE_BYTE_BUDGET } from "lib/rosterScheduleData/bridgeForecastWire";
 
 /** Public shared inputs. No league/account data or admin/research payloads. */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -14,7 +14,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=300");
     // Interim bridge projections travel compactly beside `data`; clients rebuild them exactly.
     const bridge = compactBridgeForecasts(data.forecasts, data, query.seasonId);
-    return res.json({ success: true, data: { ...data, forecasts: bridge.forecasts }, ...(bridge.wire ? { bridgeForecasts: bridge.wire } : {}) });
+    // The whole body, bridge wire included, must fit the platform response limit; the latest bridge rows give way first.
+    const body = fitBridgeWire(bridge.wire, wire => ({ success: true, data: { ...data, forecasts: bridge.forecasts }, ...(wire ? { bridgeForecasts: wire } : {}) }),
+      PLANNING_RESPONSE_BYTE_BUDGET);
+    if (!body) return res.status(503).json({ success: false, code: "planning_range_too_large", error: "This planning range is too large to display. Choose a shorter range." });
+    return res.json(body);
   } catch {
     return res.status(503).json({ success: false, error: "Planning data is temporarily unavailable. Your saved manual workspace is preserved." });
   }

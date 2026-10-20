@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import supabase from "lib/supabase";
+import { getTeamAbbreviationById } from "lib/teamsInfo";
 import {
   leagueDateKey,
   seasonDateWindow
@@ -13,6 +14,8 @@ interface MissedGame {
   isPlayoff: boolean;
   seasonId: number;
   isFuture: boolean; // Add flag to distinguish between missed and future games
+  // Past game with no loaded box score for the team: not an absence.
+  isUnconfirmed?: boolean;
 }
 
 interface UseMissedGamesResult {
@@ -181,6 +184,30 @@ export function useMissedGames(
           futureRegular: missed.filter((g) => !g.isPlayoff && g.isFuture)
             .length,
           futurePlayoff: missed.filter((g) => g.isPlayoff && g.isFuture).length
+        });
+
+        // A past game only counts as missed when the team's box score has
+        // been loaded (regular season; playoff dates stay unconfirmed here).
+        const teamAbbrev = getTeamAbbreviationById(numericTeamId);
+        const pastRegularDates = missed
+          .filter((game) => !game.isFuture && !game.isPlayoff)
+          .map((game) => game.date);
+        let covered: Set<string> | null = null;
+        if (teamAbbrev && pastRegularDates.length > 0) {
+          const { data: coverageRows, error: coverageError } = await supabase
+            .from("wgo_skater_stats")
+            .select("date")
+            .eq("team_abbrev", teamAbbrev)
+            .in("date", pastRegularDates)
+            .limit(5000);
+          if (!coverageError) {
+            covered = new Set((coverageRows ?? []).map((row) => row.date));
+          }
+        }
+        missed.forEach((game) => {
+          if (!game.isFuture && (game.isPlayoff || !covered?.has(game.date))) {
+            game.isUnconfirmed = true;
+          }
         });
 
         setMissedGames(missed);

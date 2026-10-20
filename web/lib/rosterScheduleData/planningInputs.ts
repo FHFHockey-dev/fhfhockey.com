@@ -80,13 +80,54 @@ export async function pages(build: () => any, deadline: number, maximum = 15000,
   });
 }
 
+export function hasScheduleCoverage(rows: Row[], query: PlanningDataQuery, now: Date): boolean {
+  const validDate = (value: unknown): value is string => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
+    && Number.isFinite(Date.parse(value)) && new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value;
+  const fresh = (row: Row) => typeof row.fetched_at === "string" && Number.isFinite(Date.parse(row.fetched_at))
+    && Date.parse(row.fetched_at) <= now.getTime() && now.getTime() - Date.parse(row.fetched_at) <= 36 * 3600000;
+  const days = new Map<string, Row[]>();
+  for (const row of rows) if (row.game_type === 2) days.set(row.game_date, [...(days.get(row.game_date) ?? []), row]);
+  const covered = new Set<string>(), empty = new Set<string>();
+  for (const [date, sides] of days) {
+    const witness = sides[0].source_metadata?.scheduleCoverage;
+    if (!validDate(date) || witness?.version !== "nhl-source-days-v1" || witness.date !== date
+      || !Array.isArray(witness.gameIds) || !witness.gameIds.length || witness.gameIds.length > 500
+      || witness.gameIds.some((id: unknown) => !Number.isSafeInteger(id) || Number(id) <= 0)
+      || new Set(witness.gameIds).size !== witness.gameIds.length
+      || !Array.isArray(witness.emptyDates) || witness.emptyDates.length > 31 || !witness.emptyDates.every(validDate)
+      || sides.length !== witness.gameIds.length * 2
+      || sides.some(row => !fresh(row) || row.fetched_at !== sides[0].fetched_at
+        || JSON.stringify(row.source_metadata?.scheduleCoverage) !== JSON.stringify(witness))) continue;
+    const paired = witness.gameIds.every((id: number) => {
+      const pair = sides.filter(row => row.source_game_id === id);
+      return pair.length === 2 && pair[0].team_abbreviation && pair[1].team_abbreviation
+        && pair[0].team_abbreviation !== pair[1].team_abbreviation
+        && pair[0].opponent_abbreviation === pair[1].team_abbreviation && pair[1].opponent_abbreviation === pair[0].team_abbreviation
+        && pair[0].home_away !== pair[1].home_away && [pair[0].home_away, pair[1].home_away].every(side => ["home", "away"].includes(side))
+        && pair[0].start_time === pair[1].start_time && pair[0].game_status === pair[1].game_status
+        && pair[0].schedule_status === pair[1].schedule_status;
+    });
+    if (paired) { covered.add(date); for (const date of witness.emptyDates) empty.add(date); }
+  }
+  // Local scoring dates can cross either source-day boundary. Require both
+  // padding days when translating timestamps into a league timezone.
+  const padding = query.timeZone ? 1 : 0;
+  const first = Date.parse(`${query.startDate}T12:00:00Z`) - padding * 86400000;
+  const last = Date.parse(`${query.endDate}T12:00:00Z`) + padding * 86400000;
+  for (let time = first; time <= last; time += 86400000) {
+    const date = new Date(time).toISOString().slice(0, 10);
+    if (empty.has(date) && days.has(date) || !covered.has(date) && !empty.has(date)) return false;
+  }
+  return true;
+}
+
 /** Shared current schedule and identity inputs; no forecast or account mutations. */
 export async function loadPlanningInputs(db: SupabaseClient<any>, query: PlanningDataQuery, now: Date,
   inputDeadline = Date.now() + 8000) {
   const offsetDate = (value: string, days: number) => new Date(Date.parse(`${value}T12:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
   const [scheduleRows, identities, teams, rosters] = await Promise.all([
     pages(() => db.from("roster_optimizer_team_games")
-      .select("id,source_game_id,source_season_id,game_type,game_date,start_time,game_status,schedule_status,is_countable,team_abbreviation,opponent_abbreviation,home_away,fetched_at", { count: "exact" })
+      .select("id,source_game_id,source_season_id,game_type,game_date,start_time,game_status,schedule_status,is_countable,team_abbreviation,opponent_abbreviation,home_away,fetched_at,source_metadata", { count: "exact" })
       .eq("source_season_id", query.seasonId).gte("game_date", offsetDate(query.startDate, -1)).lte("game_date", offsetDate(query.endDate, 1))
       .order("source_game_id").order("team_abbreviation").order("fetched_at").order("id"), inputDeadline),
     pages(() => db.from("fhfh_player_identities")
@@ -122,6 +163,7 @@ export async function loadPlanningInputs(db: SupabaseClient<any>, query: Plannin
   const timestamps = scopedScheduleRows.map(row => row.fetched_at).filter((value): value is string => typeof value === "string"
     && Number.isFinite(Date.parse(value)) && Date.parse(value) <= now.getTime()).sort((a, b) => Date.parse(a) - Date.parse(b));
   const scheduleProblems = !games.length ? ["No countable schedule games were found for this range."] : [];
+  if (!hasScheduleCoverage(scheduleRows, query, now)) scheduleProblems.push("Complete source-day coverage for the requested horizon is unverified; fresh cached rows alone do not establish every roster team's games or off days.");
   if (timestamps.length !== scopedScheduleRows.length || !timestamps[0] || now.getTime() - Date.parse(timestamps[0]) > 36 * 3600000) scheduleProblems.push("Schedule coverage may be stale or incomplete. Reloading this reader does not update the upstream cache.");
   const identityProblems = players.some((player) => !player.teamAbbreviation) ? ["Some canonical players lack unique current-season NHL roster membership; review their team before planning."] : [];
   if (uniqueNhl.size !== identities.length) identityProblems.push("Conflicting NHL identity mappings were excluded from the search catalog.");

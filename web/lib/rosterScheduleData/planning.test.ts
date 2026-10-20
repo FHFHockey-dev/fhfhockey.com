@@ -10,6 +10,8 @@ import { normalizeStartChartResponse } from "lib/projections/startChartContract"
 import { buildNativeSkaterParticipationFields } from "lib/projections/nativeGoalAccounting";
 import { acceptedNewsSupersedes, loadAcceptedForecastNews } from "lib/projections/acceptedNews";
 import { timestampMicros } from "lib/projections/evidenceTime";
+import { fetchBoundedNhlSchedule } from "./source";
+import { normalizeNhlGameToTeamRows } from "./normalize";
 
 const membershipCreatedAt = ["2026-09-01T00:00:00Z"];
 const rosterRevision = forgeRosterRevision({ canonicalId: 7, nhlId: 847001, seasonId: 20262027, teamId: 1, membershipCreatedAt });
@@ -181,7 +183,7 @@ describe("public RSO data boundary", () => {
     expect(calls).toContainEqual({ table: "fhfh_player_identities", method: "is", args: ["merged_into_id", null] });
   });
 
-  it("checks freshness of returned league dates without letting unrelated padding stale the scope", async () => {
+  it("keeps returned-row freshness separate from unverified horizon coverage", async () => {
     const { db, tables } = cappedInputs();
     tables.roster_optimizer_team_games = [{ ...rows[0], fetched_at: "2026-10-10T09:00:00Z" },
       { ...rows[0], id: 2, source_game_id: 2026020002, game_date: "2026-10-09",
@@ -189,12 +191,15 @@ describe("public RSO data boundary", () => {
     const query = { ...publicQuery, timeZone: "UTC" };
     const fresh = await loadPlanningData(db as any, query, publicOptions);
     expect(fresh.games).toHaveLength(1);
-    expect(fresh.evidence.schedule).toMatchObject({ completeness: "complete", asOf: "2026-10-10T09:00:00Z" });
-    expect(fresh.forecastManifest?.exclusions?.some(row => row.reasons.includes("incomplete_refresh"))).toBe(false);
+    expect(fresh.evidence.schedule).toMatchObject({ completeness: "partial", asOf: "2026-10-10T09:00:00Z" });
+    expect(fresh.evidence.schedule.limitations.join(" ")).toContain("source-day coverage");
+    expect(fresh.evidence.schedule.limitations.join(" ")).not.toContain("may be stale");
+    expect(fresh.forecastManifest?.exclusions?.some(row => row.reasons.includes("incomplete_refresh"))).toBe(true);
     (tables.roster_optimizer_team_games[1] as Record<string, unknown>).start_time = "2026-10-10T00:30:00Z";
     const crossing = await loadPlanningData(db as any, query, publicOptions);
     expect(crossing.games).toHaveLength(2);
     expect(crossing.evidence.schedule.completeness).toBe("partial");
+    expect(crossing.evidence.schedule.limitations.join(" ")).toContain("may be stale");
     expect(crossing.forecastManifest?.exclusions).toContainEqual({ gameId: "2026020002", reasons: ["incomplete_refresh"] });
   });
 
@@ -206,6 +211,57 @@ describe("public RSO data boundary", () => {
       expect(result.evidence.schedule.completeness).toBe("partial");
       expect(result.forecastManifest?.exclusions).toContainEqual({ gameId: "2026020001", reasons: ["incomplete_refresh"] });
     }
+  });
+
+  it("requires a complete captured day, paired games and explicit off days before certifying the horizon", async () => {
+    const { db, tables } = formDb([], []);
+    const coverage = { version: "nhl-source-days-v1", date: "2026-10-10", gameIds: [2026020001], emptyDates: ["2026-10-09", "2026-10-11", "2026-10-12"] };
+    const side = { ...rows[0], fetched_at: "2026-10-10T09:00:00Z", source_metadata: { scheduleCoverage: coverage } };
+    const away = { ...side, id: 2, team_abbreviation: "MTL", opponent_abbreviation: "TOR", home_away: "away" };
+    tables.roster_optimizer_team_games = [side, away];
+    const query = { ...publicQuery, timeZone: "UTC" };
+    const read = () => loadPlanningData(db as never, query, publicOptions);
+    // A certified horizon always carries its oldest fetch as the observation time the planner rechecks (R5).
+    expect((await read()).evidence.schedule).toMatchObject({ completeness: "complete", asOf: "2026-10-10T09:00:00Z" });
+    tables.roster_optimizer_team_games = [side];
+    expect((await read()).evidence.schedule.completeness).toBe("partial");
+    tables.roster_optimizer_team_games = [side, { ...away, fetched_at: "2026-10-10T10:00:00Z" }];
+    expect((await read()).evidence.schedule.completeness).toBe("partial");
+    tables.roster_optimizer_team_games = [side, away];
+    coverage.gameIds.push(2026020002);
+    expect((await read()).evidence.schedule.completeness).toBe("partial");
+    coverage.gameIds.pop();
+    coverage.emptyDates = ["2026-10-11", "2026-10-12"];
+    expect((await read()).evidence.schedule.completeness).toBe("partial");
+    coverage.emptyDates.push("2026-10-09", "2026-10-10");
+    expect((await read()).evidence.schedule.completeness).toBe("partial");
+    coverage.emptyDates = ["2026-10-09", "2026-10-11", "2026-10-12"];
+    side.fetched_at = away.fetched_at = "2026-10-08T09:00:00Z";
+    expect((await read()).evidence.schedule.completeness).toBe("partial");
+    side.fetched_at = away.fetched_at = "2026-10-10T11:00:00Z";
+    expect((await read()).evidence.schedule.completeness).toBe("complete");
+    tables.roster_optimizer_team_games = [];
+    expect((await read()).evidence.schedule.completeness).toBe("partial");
+  });
+
+  it("certifies the horizon from rows the bounded schedule writer stamps, not from unstamped rows", async () => {
+    const nhlGame = { id: 2026020001, season: 20262027, gameType: 2, gameDate: "2026-10-10", startTimeUTC: "2026-10-10T23:00:00Z",
+      gameState: "FUT", gameScheduleState: "OK", homeTeam: { id: 1, abbrev: "TOR" }, awayTeam: { id: 2, abbrev: "MTL" } };
+    const page = { gameWeek: ["2026-10-09", "2026-10-10", "2026-10-11", "2026-10-12"]
+      .map(date => ({ date, games: date === nhlGame.gameDate ? [nhlGame] : [] })) };
+    const source = await fetchBoundedNhlSchedule({ startDate: "2026-10-09", endDate: "2026-10-12",
+      readSchedulePage: async () => page as never });
+    const written = source.games.flatMap(entry => normalizeNhlGameToTeamRows({ ...entry, fetchedAt: "2026-10-10T09:00:00Z",
+      gameKey: "477", yahooSeason: "2026", mapping: { status: "unmapped", reason: "no_week" } }))
+      .map((row, index) => ({ ...row, id: index + 1 }));
+    const { db, tables } = formDb([], []);
+    const read = () => loadPlanningData(db as never, { ...publicQuery, timeZone: "UTC" }, publicOptions);
+    tables.roster_optimizer_team_games = written;
+    expect((await read()).evidence.schedule.completeness).toBe("complete");
+    // The production writer bytes persist the same rows without the witness.
+    tables.roster_optimizer_team_games = written.map(({ source_metadata: { scheduleCoverage: _witness, ...metadata }, ...row }) =>
+      ({ ...row, source_metadata: metadata }));
+    expect((await read()).evidence.schedule.completeness).toBe("partial");
   });
 
   it("completes capped required scopes before counting games and competing players", async () => {

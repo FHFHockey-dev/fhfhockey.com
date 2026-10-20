@@ -28,8 +28,10 @@ export async function loadCachedCanonicalSchedule(dates: string[], seasonId: num
     return unknown("Cached matchup-week mapping is unavailable. Team schedule coverage remains unverified.");
   const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 8000);
   try {
+    // The witnessed scope includes postponed/cancelled sides; a day witness lists them too.
     const params = new URLSearchParams({ gameKey: selectedWeeks[0].gameKey,
-      startWeek: String(Math.min(...selectedWeeks.map(week => week.week))), endWeek: String(Math.max(...selectedWeeks.map(week => week.week))) });
+      startWeek: String(Math.min(...selectedWeeks.map(week => week.week))), endWeek: String(Math.max(...selectedWeeks.map(week => week.week))),
+      scope: "witnessed" });
     const response = await fetch(`/api/v1/roster-schedule-optimizer/schedule?${params}`, { signal: controller.signal });
     const body = await response.json(), rows = body?.data?.games;
     if (!response.ok || body?.success !== true || body.data.version !== "roster-team-games.v1"
@@ -46,7 +48,7 @@ export async function loadCachedCanonicalSchedule(dates: string[], seasonId: num
         || !Number.isSafeInteger(row.team_id) || !Number.isSafeInteger(row.opponent_team_id)
         || row.team_id <= 0 || row.opponent_team_id <= 0 || row.team_id === row.opponent_team_id
         || !/^[A-Z]{2,4}$/.test(row.team_abbreviation) || !/^[A-Z]{2,4}$/.test(row.opponent_abbreviation)
-        || !["home", "away"].includes(row.home_away) || !Number.isFinite(Date.parse(row.start_time))
+        || !["home", "away"].includes(row.home_away) || typeof row.is_countable !== "boolean" || !Number.isFinite(Date.parse(row.start_time))
         || !Number.isFinite(Date.parse(row.fetched_at)) || Date.parse(row.fetched_at) > now
         || now - Date.parse(row.fetched_at) >= 36 * 3600000)
         return unknown("Cached schedule identity, clocks or freshness are unresolved.");
@@ -71,9 +73,10 @@ export async function loadCachedCanonicalSchedule(dates: string[], seasonId: num
         || pair[1].team_id !== pair[0].opponent_team_id || pair[0].team_abbreviation !== pair[1].opponent_abbreviation
         || pair[1].team_abbreviation !== pair[0].opponent_abbreviation || pair[0].home_away === pair[1].home_away
         || pair[0].start_time !== pair[1].start_time || pair[0].game_status !== pair[1].game_status
-        || pair[0].schedule_status !== pair[1].schedule_status)) continue;
+        || pair[0].schedule_status !== pair[1].schedule_status || pair[0].is_countable !== pair[1].is_countable)) continue;
       covered.add(date); for (const value of witness.emptyDates) empty.add(value);
       for (const pair of pairs) {
+        if (!pair[0].is_countable) continue; // witnessed coverage only; never a playable game
         const home = pair.find((row: any) => row.home_away === "home"), away = pair.find((row: any) => row.home_away === "away");
         const game: GameData = { id: home.source_game_id, season: seasonId, gameType: 2,
           gameDate: localDate(home.start_time, timeZone), startTimeUTC: home.start_time,

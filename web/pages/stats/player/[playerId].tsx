@@ -47,6 +47,7 @@ import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import { getTeamAbbreviationById, getTeamInfoById } from "lib/teamsInfo";
 import {
   leagueDateKey,
+  rollingAverage,
   seasonDateWindow,
   sortGameLogAscending,
   windowGameLog,
@@ -164,27 +165,17 @@ export default function PlayerStatsPage({
   const windowStart = windowStartDate(filteredGameLog, timeFrame);
 
   // Calculate rolling averages and trends
+  // 5-game rolling averages over present values; empty windows are gaps.
   const processedGameLog = useMemo(() => {
-    return filteredGameLog.map((game: GameLogEntry, index: number) => {
-      const rollingWindow = filteredGameLog.slice(
-        Math.max(0, index - 4),
-        index + 1
-      );
-      const rollingStats: { [key: string]: number } = {};
-
-      selectedStats.forEach((stat) => {
-        const values = rollingWindow.map(
-          (g: GameLogEntry) => Number(g[stat]) || 0
-        );
-        rollingStats[`${stat}_5game_avg`] =
-          values.reduce((a: number, b: number) => a + b, 0) / values.length;
-      });
-
-      return {
-        ...game,
-        ...rollingStats
-      };
-    });
+    const rolling = Object.fromEntries(
+      selectedStats.map((stat) => [stat, rollingAverage(filteredGameLog, stat)])
+    );
+    return filteredGameLog.map((game: GameLogEntry, index: number) => ({
+      ...game,
+      ...Object.fromEntries(
+        selectedStats.map((stat) => [`${stat}_5game_avg`, rolling[stat][index]])
+      )
+    }));
   }, [filteredGameLog, selectedStats]);
 
   const statGroups = [
@@ -433,13 +424,52 @@ export default function PlayerStatsPage({
  * (skater or goalie tables). Returns null when the schedule is unavailable so
  * the page reports availability as unknown instead of 100%.
  */
+// Provider table and team column that prove a box score was loaded.
+type BoxScoreSource = {
+  table: "wgo_skater_stats" | "wgo_goalie_stats";
+  playoffTable: "wgo_skater_stats_playoffs" | null;
+  teamColumn: "team_abbrev" | "team_abbreviation";
+};
+
+/**
+ * Dates (from `dates`) on which the provider has at least one row for the
+ * team. Unknown coverage (no abbreviation, query error) returns null, so the
+ * caller treats those games as unconfirmed rather than missed.
+ */
+async function fetchBoxScoreCoverage(
+  table: string,
+  teamColumn: string,
+  teamAbbrev: string | undefined,
+  dates: string[]
+): Promise<Set<string> | null> {
+  if (!teamAbbrev) return null;
+  if (dates.length === 0) return new Set();
+  try {
+    const rows = await fetchAllSupabasePages<{ date: string }>(
+      ({ from, to }) =>
+        (supabase as any)
+          .from(table)
+          .select("date")
+          .eq(teamColumn, teamAbbrev)
+          .in("date", dates)
+          .order("date", { ascending: true })
+          .range(from, to)
+    );
+    return new Set(rows.map((row) => String(row.date).slice(0, 10)));
+  } catch (error) {
+    console.warn(`[SSR] Box score coverage unavailable for ${table}:`, error);
+    return null;
+  }
+}
+
 async function fetchMissedGames(
   seasonId: number | undefined,
   seasonWindow: { start: string; end: string } | null,
   teamId: number | undefined,
   playedDates: Set<string>,
   asOfDate: string,
-  includePlayoffs: boolean
+  includePlayoffs: boolean,
+  source: BoxScoreSource
 ): Promise<MissedGame[] | null> {
   if (!seasonId || !seasonWindow || !teamId) return null;
 
@@ -474,6 +504,33 @@ async function fetchMissedGames(
         seasonId: teamGame.seasonId,
         isFuture: gameDate >= asOfDate
       });
+    }
+
+    // A past game only counts as missed when the box score for the player's
+    // team has been loaded; otherwise the absent row is an ingestion gap.
+    const teamAbbrev = getTeamAbbreviationById(teamId);
+    const pastDates = (playoff: boolean) =>
+      scheduleGames
+        .filter((game) => !game.isFuture && game.isPlayoff === playoff)
+        .map((game) => game.date);
+    const regularCoverage = await fetchBoxScoreCoverage(
+      source.table,
+      source.teamColumn,
+      teamAbbrev,
+      pastDates(false)
+    );
+    const playoffCoverage = source.playoffTable
+      ? await fetchBoxScoreCoverage(
+          source.playoffTable,
+          source.teamColumn,
+          teamAbbrev,
+          pastDates(true)
+        )
+      : new Set<string>();
+    for (const game of scheduleGames) {
+      if (game.isFuture) continue;
+      const coverage = game.isPlayoff ? playoffCoverage : regularCoverage;
+      if (!coverage || !coverage.has(game.date)) game.isUnconfirmed = true;
     }
     return scheduleGames;
   } catch (error) {
@@ -1067,7 +1124,18 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
         player.team_id ?? undefined,
         playedDates,
         asOfDate,
-        !isGoalie
+        !isGoalie,
+        isGoalie
+          ? {
+              table: "wgo_goalie_stats",
+              playoffTable: null,
+              teamColumn: "team_abbreviation"
+            }
+          : {
+              table: "wgo_skater_stats",
+              playoffTable: "wgo_skater_stats_playoffs",
+              teamColumn: "team_abbrev"
+            }
       );
 
   let lineupDeploymentTallies: PlayerLineupDeploymentTally[] = [];

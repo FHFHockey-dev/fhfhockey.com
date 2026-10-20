@@ -47,6 +47,7 @@ export function parseRosterScheduleReadFilter(query: {
   gameKey?: string | string[];
   startWeek?: string | string[];
   endWeek?: string | string[];
+  scope?: string | string[];
 }): RosterScheduleReadFilter {
   const gameKey =
     firstQueryValue(query.gameKey)?.trim() || DEFAULT_YAHOO_GAME_KEY;
@@ -69,7 +70,11 @@ export function parseRosterScheduleReadFilter(query: {
   if (endWeek - startWeek + 1 > MAX_MATCHUP_WEEK_SPAN) {
     throw new Error(`The matchup-week range cannot exceed ${MAX_MATCHUP_WEEK_SPAN} weeks.`);
   }
-  return { gameKey, startWeek, endWeek };
+  const scope = firstQueryValue(query.scope) ?? "countable";
+  if (scope !== "countable" && scope !== "witnessed") {
+    throw new Error("The matchup-week range scope must be countable or witnessed.");
+  }
+  return { gameKey, startWeek, endWeek, ...(scope === "witnessed" ? { scope } : {}) };
 }
 
 const READ_COLUMNS = [
@@ -102,7 +107,11 @@ const READ_COLUMNS = [
 
 const READ_PAGE_SIZE = 1_000;
 
-/** Paged Data API reads supply the complete team-game matrix. */
+/**
+ * Paged Data API reads supply the complete team-game matrix. Countable rows are
+ * the default; the witnessed scope also returns postponed/cancelled sides,
+ * because a source-day witness lists every regular-season game of its date.
+ */
 export async function readRosterSchedule(
   client: ScheduleReadClient,
   filter: RosterScheduleReadFilter,
@@ -110,14 +119,14 @@ export async function readRosterSchedule(
   const games: RosterOptimizerTeamGameRecord[] = [];
 
   for (let from = 0; ; from += READ_PAGE_SIZE) {
-    const { data, error } = await client
+    const mapped = client
       .from("roster_optimizer_team_games")
       .select(READ_COLUMNS)
       .eq("game_key", filter.gameKey)
       .gte("week", filter.startWeek)
       .lte("week", filter.endWeek)
-      .eq("mapping_status", "mapped")
-      .eq("is_countable", true)
+      .eq("mapping_status", "mapped");
+    const { data, error } = await (filter.scope === "witnessed" ? mapped : mapped.eq("is_countable", true))
       .order("game_date", { ascending: true })
       .order("source_game_id", { ascending: true })
       .order("team_id", { ascending: true })

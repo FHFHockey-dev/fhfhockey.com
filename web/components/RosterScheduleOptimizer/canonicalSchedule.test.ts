@@ -29,7 +29,7 @@ describe("remaining-date cached schedule context", () => {
   function rows() {
     const shared = { game_key: "477", source_season_id: 20262027, source_game_id: 2026020123,
       game_date: "2026-10-16", start_time: "2026-10-16T23:00:00Z", game_type: 2,
-      game_status: "FUT", schedule_status: "OK", fetched_at: "2026-10-16T07:00:00Z",
+      game_status: "FUT", schedule_status: "OK", is_countable: true, fetched_at: "2026-10-16T07:00:00Z",
       source_metadata: { scheduleCoverage: { version: "nhl-source-days-v1", date: "2026-10-16",
         gameIds: [2026020123], emptyDates: ["2026-10-15", "2026-10-17", "2026-10-18", "2026-10-19"] } } };
     return [{ ...shared, team_id: 26, opponent_team_id: 17, team_abbreviation: "LAK", opponent_abbreviation: "DET", home_away: "home" },
@@ -44,9 +44,27 @@ describe("remaining-date cached schedule context", () => {
     const fetcher = serve();
     expect(await loadCachedCanonicalSchedule(remaining, 20262027, "America/New_York", weeks, now))
       .toMatchObject({ complete: true, games: [{ id: 2026020123, gameDate: "2026-10-16" }] });
-    expect(fetcher).toHaveBeenCalledWith("/api/v1/roster-schedule-optimizer/schedule?gameKey=477&startWeek=1&endWeek=2", expect.anything());
+    expect(fetcher).toHaveBeenCalledWith("/api/v1/roster-schedule-optimizer/schedule?gameKey=477&startWeek=1&endWeek=2&scope=witnessed", expect.anything());
     expect(getSchedule).not.toHaveBeenCalled(); expect(getTeams).not.toHaveBeenCalled();
     expect((await loadCachedCanonicalSchedule(dates, 20262027, "America/New_York", weeks, now)).complete).toBe(false);
+  });
+  it("verifies a witnessed postponed pair on the full cached set but returns only playable games", async () => {
+    const values = rows().map(row => ({ ...row, source_metadata: { scheduleCoverage: {
+      ...row.source_metadata.scheduleCoverage, gameIds: [2026020123, 2026020124] } } }));
+    const postponed = values.map((row, index) => ({ ...row, source_game_id: 2026020124, team_id: index ? 9 : 8,
+      opponent_team_id: index ? 8 : 9, team_abbreviation: index ? "MTL" : "TOR", opponent_abbreviation: index ? "TOR" : "MTL",
+      schedule_status: "PPD", is_countable: false }));
+    // Stand-in for the schedule route: non-countable sides appear only in the witnessed scope.
+    const fetcher = vi.fn(async (url: string) => ({ ok: true, json: async () => ({ success: true, data: {
+      version: "roster-team-games.v1", games: url.includes("scope=witnessed") ? [...values, ...postponed] : values } }) }));
+    vi.stubGlobal("fetch", fetcher);
+    const result = await loadCachedCanonicalSchedule(remaining, 20262027, "UTC", weeks, now);
+    expect(result).toMatchObject({ complete: true, error: null });
+    expect(result.games.map(item => item.id)).toEqual([2026020123]);
+    const countableOnly = postponed.map(row => ({ ...row, schedule_status: "OK" }));
+    fetcher.mockImplementation(async () => ({ ok: true, json: async () => ({ success: true, data: {
+      version: "roster-team-games.v1", games: [...values, ...countableOnly.slice(0, 1)] } }) }));
+    expect((await loadCachedCanonicalSchedule(remaining, 20262027, "UTC", weeks, now)).complete).toBe(false);
   });
   it("does not read any source while cached week mapping is missing", async () => {
     const fetcher = serve();
@@ -95,7 +113,7 @@ describe("remaining-date cached schedule context", () => {
     expect(vi.getTimerCount()).toBe(0);
     expect(fetcher).toHaveBeenCalledTimes(2); expect(getSchedule).not.toHaveBeenCalled();
   });
-  it.each(["missing side", "stale", "wrong season", "conflicting side", "missing witness", "read failure"])(
+  it.each(["missing side", "stale", "wrong season", "conflicting side", "missing witness", "unknown countability", "read failure"])(
     "withholds incomplete cached evidence: %s", async mode => {
       const values = rows();
       if (mode === "missing side") values.pop();
@@ -103,6 +121,7 @@ describe("remaining-date cached schedule context", () => {
       if (mode === "wrong season") values[0].source_season_id = 20252026;
       if (mode === "conflicting side") values[1].home_away = "home";
       if (mode === "missing witness") values[0].source_metadata.scheduleCoverage.emptyDates = [];
+      if (mode === "unknown countability") delete (values[0] as Partial<typeof values[0]>).is_countable;
       const fetcher = serve(values);
       if (mode === "read failure") fetcher.mockRejectedValue(new Error("unavailable"));
       expect(await loadCachedCanonicalSchedule(remaining, 20262027, "UTC", weeks, now)).toMatchObject({ complete: false, games: [] });

@@ -9,7 +9,7 @@ import { DEFENSE_B2B_FATIGUE_BOOST, OPPONENT_AWAY_PENALTY, OPPONENT_B2B_PENALTY,
 import type { TeamStrengthPrior } from "lib/projections/types/run-forge-projections.types";
 import type { GameForecast, PlanningGame, PlanningPlayer, StatLine } from "lib/rosterScheduleOptimizer/planningTypes";
 import { pages, withinDeadline } from "./planningInputs";
-import { bridgeWireRowBytes, FORGE_DAILY_BRIDGE_VERSION } from "./bridgeForecastWire";
+import { bridgeWireRowBytes, FORGE_DAILY_BRIDGE_VERSION, jsonUtf8Bytes } from "./bridgeForecastWire";
 
 type Row = Record<string, any>;
 type Run = { runId: string; asOfDate: string; issuedAt: string; gitSha: string | null };
@@ -423,7 +423,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   forecasts.sort((a, b) => (a.issuedContext!.scheduledAt).localeCompare(b.issuedContext!.scheduledAt) || a.playerId.localeCompare(b.playerId) || a.gameId.localeCompare(b.gameId));
   let bytes = 0, expandedBytes = 0, kept = forecasts.length;
   for (const [index, forecast] of forecasts.entries()) {
-    bytes += bridgeWireRowBytes(forecast); expandedBytes += JSON.stringify(forecast).length + 1;
+    bytes += bridgeWireRowBytes(forecast); expandedBytes += jsonUtf8Bytes(forecast) + 1;
     if (bytes > byteBudget || expandedBytes > expandedByteBudget) { kept = index; break; }
   }
   const coveredTeams = new Set(forecasts.map(row => row.issuedContext!.teamId)).size;

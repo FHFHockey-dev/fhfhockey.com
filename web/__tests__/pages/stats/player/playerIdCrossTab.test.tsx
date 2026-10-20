@@ -275,7 +275,9 @@ describe("player page cross-tab contract", () => {
         skaterRow("2024-10-12", 0, 2, { player_id: 8485406, season_id: 20242025 }),
         skaterRow("2024-10-15", 1, 2, { player_id: 8485406, season_id: 20242025 }),
         // Mislabelled provider row from another era.
-        skaterRow("2012-03-01", 3, 3, { player_id: 8485406, season_id: 20242025 })
+        skaterRow("2012-03-01", 3, 3, { player_id: 8485406, season_id: 20242025 }),
+        // A teammate's row proves the 2024-10-13 box score was loaded.
+        skaterRow("2024-10-13", 0, 1, { player_id: 999, season_id: 20242025, team_abbrev: "NJD" })
       ],
       wgo_skater_stats_playoffs: [],
       nst_gamelog_as_counts: [],
@@ -285,7 +287,8 @@ describe("player page cross-tab contract", () => {
       player_lineup_deployment_tallies: [],
       seasons: [{ id: 20242025, startDate: "2024-10-04", endDate: "2025-06-17", regularSeasonEndDate: "2025-04-17" }],
       games: [
-        ...["2024-10-10", "2024-10-12", "2024-10-13", "2024-10-15"].map((date, i) => ({
+        // 2024-10-14 has no provider rows for the team at all (ingestion gap).
+        ...["2024-10-10", "2024-10-12", "2024-10-13", "2024-10-14", "2024-10-15"].map((date, i) => ({
           id: i + 1, date, seasonId: 20242025, type: 2, homeTeamId: 1, awayTeamId: 2
         })),
         { id: 99, date: "2012-03-02", seasonId: 20242025, type: 2, homeTeamId: 1, awayTeamId: 2 }
@@ -301,6 +304,7 @@ describe("player page cross-tab contract", () => {
         gte: (c: string, v: any) => ((out = out.filter((r) => r[c] >= v)), q),
         lt: (c: string, v: any) => ((out = out.filter((r) => r[c] < v)), q),
         lte: (c: string, v: any) => ((out = out.filter((r) => r[c] <= v)), q),
+        in: (c: string, vs: unknown[]) => ((out = out.filter((r) => vs.map(String).includes(String(r[c])))), q),
         or: (expr: string) => {
           const parts = expr.split(",").map((p) => p.split(".eq."));
           out = out.filter((r) => parts.some(([c, v]) => String(r[c]) === v));
@@ -330,12 +334,21 @@ describe("player page cross-tab contract", () => {
       "2024-10-12",
       "2024-10-15"
     ]);
-    expect(result.props.missedGames.map((g: Row) => g.date)).toEqual(["2024-10-13"]);
+    // Only a game whose box score is loaded can be an absence; a team game
+    // with no provider rows is awaiting data, not missed.
+    expect(
+      result.props.missedGames.filter((g: any) => !g.isUnconfirmed).map((g: Row) => g.date)
+    ).toEqual(["2024-10-13"]);
+    expect(
+      result.props.missedGames.filter((g: any) => g.isUnconfirmed).map((g: Row) => g.date)
+    ).toEqual(["2024-10-14"]);
 
     fromMock.mockReset();
     renderPage(result.props);
     const tabs = snapshotAllTabs();
-    expect(tabs.overview.availability).toBe("3 of 4 possible games (1 missed)");
+    expect(tabs.overview.availability).toBe(
+      "3 of 4 possible games (1 missed) · 1 awaiting box score"
+    );
     expect(tabs.calendar.games).toBe("3");
     expect(tabs.calendar.missed).toBe("1");
     expect(tabs.gamelog.header).toBe("Games: 3 | Missed: 1");

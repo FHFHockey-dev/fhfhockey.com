@@ -100,26 +100,33 @@ export function countAppearances(rows: Record<string, any>[]): number {
 
 /**
  * Split the team schedule rows the server returns (past games without an
- * appearance plus future games) into elapsed absences and upcoming games. A
- * game on or after the as-of date is never an absence. `windowStartDate`
- * limits absences to the selected game window.
+ * appearance plus future games) into elapsed absences, upcoming games and
+ * unconfirmed games. A game on or after the as-of date is never an absence,
+ * and neither is a past game whose box score has not been loaded for the
+ * player's team (a missing provider row is not proof the player sat out).
+ * `windowStartDate` limits past games to the selected game window.
  */
 export function splitTeamSchedule(
   scheduleGames: MissedGame[] | null | undefined,
   asOfDate: string,
   windowStartDate: string | null = null
-): { absences: MissedGame[]; upcoming: MissedGame[] } {
+): { absences: MissedGame[]; upcoming: MissedGame[]; unconfirmed: MissedGame[] } {
   const absences: MissedGame[] = [];
   const upcoming: MissedGame[] = [];
+  const unconfirmed: MissedGame[] = [];
   for (const game of scheduleGames ?? []) {
     const key = dateKey(game.date);
     if (game.isFuture || key >= asOfDate) {
       upcoming.push(game);
-    } else if (!windowStartDate || key >= windowStartDate) {
+    } else if (windowStartDate && key < windowStartDate) {
+      continue;
+    } else if (game.isUnconfirmed) {
+      unconfirmed.push(game);
+    } else {
       absences.push(game);
     }
   }
-  return { absences, upcoming };
+  return { absences, upcoming, unconfirmed };
 }
 
 export interface Availability {
@@ -127,6 +134,8 @@ export interface Availability {
   missed: number | null;
   possible: number | null;
   percentage: number | null;
+  // Past regular-season team games still awaiting a box score.
+  unconfirmed: number | null;
 }
 
 /** Regular-season availability: appearances over elapsed eligible team games. */
@@ -138,19 +147,23 @@ export function computeAvailability(
 ): Availability {
   const played = countAppearances(gameLog);
   if (scheduleGames == null) {
-    return { played, missed: null, possible: null, percentage: null };
+    return {
+      played,
+      missed: null,
+      possible: null,
+      percentage: null,
+      unconfirmed: null
+    };
   }
-  const missed = splitTeamSchedule(
-    scheduleGames,
-    asOfDate,
-    windowStartDate
-  ).absences.filter((game) => !game.isPlayoff).length;
+  const split = splitTeamSchedule(scheduleGames, asOfDate, windowStartDate);
+  const missed = split.absences.filter((game) => !game.isPlayoff).length;
   const possible = played + missed;
   return {
     played,
     missed,
     possible,
-    percentage: possible > 0 ? (played / possible) * 100 : null
+    percentage: possible > 0 ? (played / possible) * 100 : null,
+    unconfirmed: split.unconfirmed.filter((game) => !game.isPlayoff).length
   };
 }
 
@@ -275,4 +288,89 @@ export function formatPlayerStat(value: unknown, stat: string): string {
   if (COUNT_STATS.has(stat) && Number.isInteger(n)) return String(n);
   if (stat === "usat_pct") return `${n.toFixed(1)}%`;
   return formatStatValue(n, stat);
+}
+
+// --- Chart units ------------------------------------------------------------
+// Stats on different scales never share an axis: counts, rates (per 60 / per
+// game / indexes), percentages on 0-100, and time on ice in minutes.
+export type ChartUnit = "count" | "rate" | "percent" | "toi";
+
+export const CHART_UNIT_ORDER: ChartUnit[] = ["count", "rate", "percent", "toi"];
+
+export const CHART_UNIT_META: Record<ChartUnit, { label: string; axis: string }> = {
+  count: { label: "Counts", axis: "Per game" },
+  rate: { label: "Rates", axis: "Per 60 / per game" },
+  percent: { label: "Percentages", axis: "%" },
+  toi: { label: "Time on ice", axis: "Minutes" }
+};
+
+const TOI_STATS = new Set(["toi_per_game", "pp_toi_per_game", "time_on_ice"]);
+// PDO is an index around 100 (or 1.0), not a share, so it is not on 0-100.
+const NOT_PERCENT = new Set(["pdo"]);
+
+export function statChartUnit(stat: string): ChartUnit {
+  if (TOI_STATS.has(stat)) return "toi";
+  if (
+    (PERCENTAGE_STATS as readonly string[]).includes(stat) &&
+    !NOT_PERCENT.has(stat)
+  ) {
+    return "percent";
+  }
+  if (
+    NOT_PERCENT.has(stat) ||
+    (PER_60_STATS as readonly string[]).includes(stat) ||
+    (PER_GAME_STATS as readonly string[]).includes(stat)
+  ) {
+    return "rate";
+  }
+  return "count";
+}
+
+/** Selected stats grouped by unit, in a fixed panel order; empty groups dropped. */
+export function groupStatsByUnit(
+  stats: string[]
+): { unit: ChartUnit; stats: string[] }[] {
+  return CHART_UNIT_ORDER.map((unit) => ({
+    unit,
+    stats: stats.filter((stat) => statChartUnit(stat) === unit)
+  })).filter((group) => group.stats.length > 0);
+}
+
+/** Value in its chart unit: percentage points, minutes, or as stored. */
+export function toChartValue(value: unknown, stat: string): number | null {
+  const n = finite(value);
+  if (n === null) return null;
+  const unit = statChartUnit(stat);
+  if (unit === "toi") return n / 60;
+  if (unit === "percent") {
+    return stat === "save_pct" ? n * 100 : toDisplayUnits(n, stat);
+  }
+  return n;
+}
+
+export function formatMinutes(minutes: number): string {
+  const totalSeconds = Math.round(minutes * 60);
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return `${mins}:${String(secs).padStart(2, "0")}`;
+}
+
+/**
+ * Trailing rolling average over the values present in each window; a window
+ * with no values is a gap (null), never zero.
+ */
+export function rollingAverage(
+  rows: DatedRow[],
+  stat: string,
+  size = 5
+): (number | null)[] {
+  return rows.map((_, index) => {
+    const values = rows
+      .slice(Math.max(0, index - size + 1), index + 1)
+      .map((row) => finite(row[stat]))
+      .filter((value): value is number => value !== null);
+    return values.length
+      ? values.reduce((sum, value) => sum + value, 0) / values.length
+      : null;
+  });
 }

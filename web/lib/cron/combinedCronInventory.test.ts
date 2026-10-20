@@ -268,8 +268,8 @@ SELECT cron.schedule(
     ).toHaveLength(56);
     expect(
       inventory.jobs.filter((job) => job.provider === "vercel"),
-    ).toHaveLength(27);
-    expect(inventory.jobs).toHaveLength(83);
+    ).toHaveLength(28);
+    expect(inventory.jobs).toHaveLength(84);
     expect(inventory.jobs).toContainEqual(
       expect.objectContaining({
         provider: "vercel",
