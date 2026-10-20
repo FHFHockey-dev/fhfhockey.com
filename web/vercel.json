@@ -114,6 +114,10 @@
     {
       "path": "/api/v1/db/cron-report",
       "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/v1/db/cron/update-roster-optimizer-schedule-daily",
+      "schedule": "52 8,14 * * *"
     }
   ]
 }

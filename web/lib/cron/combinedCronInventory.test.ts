@@ -268,8 +268,8 @@ SELECT cron.schedule(
     ).toHaveLength(58);
     expect(
       inventory.jobs.filter((job) => job.provider === "vercel"),
-    ).toHaveLength(27);
-    expect(inventory.jobs).toHaveLength(85);
+    ).toHaveLength(28);
+    expect(inventory.jobs).toHaveLength(86);
     // pg_cron job 234 was intentionally disabled; the Vercel 13:00 UTC cron
     // is the sole daily report. Live SQL jobs 394/396/397 were added 2026-10-18.
     expect(

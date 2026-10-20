@@ -1,0 +1,1207 @@
+diff --git a/web/__tests__/pages/api/v1/db/update-roster-optimizer-schedule-daily.test.ts b/web/__tests__/pages/api/v1/db/update-roster-optimizer-schedule-daily.test.ts
+new file mode 100644
+index 0000000..7663c0c
+--- /dev/null
++++ b/web/__tests__/pages/api/v1/db/update-roster-optimizer-schedule-daily.test.ts
+@@ -0,0 +1,323 @@
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++
++const { auditRecordMock, getScheduleDailyMock, seasonWindowMock, serviceClient, tables, writeDelay } = vi.hoisted(() => {
++  const tables: Record<string, Array<Record<string, any>>> = {};
++  const writeDelay = { ms: 0 }; // > 0 holds each upsert acknowledgment on the (fake) clock
++  let nextId = 1;
++  // In-memory PostgREST stand-in: filters, exact counts, limit/range paging and
++  // upsert on the cache's (game_key, source_game_id, team_id) identity.
++  const query = (table: string) => {
++    const filters: Array<(row: Record<string, any>) => boolean> = [];
++    let counted = false;
++    let limit = Number.POSITIVE_INFINITY;
++    let range: [number, number] | null = null;
++    const builder: Record<string, any> = {
++      select(_columns: string, options?: { count?: string }) { counted = options?.count === "exact"; return builder; },
++      eq(column: string, value: unknown) { filters.push(row => row[column] === value); return builder; },
++      gt(column: string, value: any) { filters.push(row => row[column] > value); return builder; },
++      gte(column: string, value: any) { filters.push(row => row[column] >= value); return builder; },
++      lte(column: string, value: any) { filters.push(row => row[column] <= value); return builder; },
++      in(column: string, values: unknown[]) { filters.push(row => values.includes(row[column])); return builder; },
++      order() { return builder; },
++      limit(value: number) { limit = value; return builder; },
++      range(from: number, to: number) { range = [from, to]; return builder; },
++      abortSignal() { return builder; },
++      then(resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) {
++        const matched = (tables[table] ?? []).filter(row => filters.every(filter => filter(row)))
++          .sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
++        const data = range ? matched.slice(range[0], range[1] + 1) : matched.slice(0, limit);
++        return Promise.resolve({ data, error: null, count: counted ? matched.length : null }).then(resolve, reject);
++      },
++    };
++    return builder;
++  };
++  const serviceClient = {
++    from: (table: string) => ({
++      select: (columns: string, options?: { count?: string }) => query(table).select(columns, options),
++      upsert: (rows: Array<Record<string, any>>) => {
++        const apply = () => {
++          const stored = (tables[table] ??= []);
++          for (const row of rows) {
++            const index = stored.findIndex(existing => existing.game_key === row.game_key
++              && existing.source_game_id === row.source_game_id && existing.team_id === row.team_id);
++            if (index >= 0) stored[index] = { ...row, id: stored[index].id };
++            else stored.push({ ...row, id: nextId++ });
++          }
++          return { error: null };
++        };
++        return writeDelay.ms ? new Promise(resolve => setTimeout(() => resolve(apply()), writeDelay.ms)) : Promise.resolve(apply());
++      },
++      delete: () => ({ in: () => Promise.resolve({ error: null }) }),
++    }),
++  };
++  return { auditRecordMock: vi.fn(), getScheduleDailyMock: vi.fn(), seasonWindowMock: vi.fn(), serviceClient, tables, writeDelay };
++});
++
++vi.mock("lib/supabase/server", () => ({ default: serviceClient }));
++vi.mock("lib/NHL/base", () => ({ get: vi.fn() }));
++vi.mock("lib/NHL/server/scheduleDaily", () => ({ getScheduleDaily: getScheduleDailyMock }));
++vi.mock("lib/cron/withCronJobAudit", () => ({
++  withCronJobAudit: (handler: (req: unknown, res: unknown) => unknown) => async (req: unknown, res: unknown) => {
++    await handler(req, res);
++    await auditRecordMock();
++  },
++}));
++vi.mock("lib/cron/nhlOffSeason", async (importOriginal) => {
++  const actual = await importOriginal<typeof import("lib/cron/nhlOffSeason")>();
++  return {
++    ...actual,
++    withNhlOffSeasonSkip: (handler: Parameters<typeof actual.withNhlOffSeasonSkip>[0]) =>
++      actual.withNhlOffSeasonSkip(handler, { loadWindow: seasonWindowMock }),
++  };
++});
++
++import handler from "../../../../../pages/api/v1/db/cron/update-roster-optimizer-schedule-daily";
++
++const NOW = "2026-10-21T09:50:00.000Z"; // Wednesday; New York date 2026-10-21
++
++function offset(date: string, days: number) {
++  return new Date(Date.parse(`${date}T12:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
++}
++
++// Every third date is an off day; other dates have one NYR–PHI game.
++function schedulePage(cursor: string) {
++  return {
++    gameWeek: Array.from({ length: 7 }, (_, index) => {
++      const date = offset(cursor, index);
++      const day = Math.round((Date.parse(date) - Date.parse("2026-10-01")) / 86400000);
++      return {
++        date,
++        games: day % 3 === 0 ? [] : [{
++          id: 2026020000 + day, season: 20262027, gameType: 2, startTimeUTC: `${date}T23:00:00Z`,
++          gameState: "FUT", gameScheduleState: "OK",
++          homeTeam: { id: 3, abbrev: "NYR" }, awayTeam: { id: 4, abbrev: "PHI" },
++        }],
++      };
++    }),
++  };
++}
++
++function response() {
++  return {
++    statusCode: 200,
++    body: null as any,
++    headers: {} as Record<string, unknown>,
++    setHeader(key: string, value: unknown) { this.headers[key] = value; },
++    status(code: number) { this.statusCode = code; return this; },
++    json(body: unknown) { this.body = body; return this; },
++  };
++}
++
++async function invoke(query: Record<string, string> = {}, headers: Record<string, string> = { authorization: "Bearer schedule-secret" },
++  method = "GET") {
++  const res = response();
++  await handler({ method, headers, query } as never, res as never);
++  return res;
++}
++
++describe("daily roster optimizer schedule cron", () => {
++  beforeEach(() => {
++    vi.clearAllMocks();
++    writeDelay.ms = 0;
++    vi.useFakeTimers({ toFake: ["Date"] });
++    vi.setSystemTime(new Date(NOW));
++    process.env.CRON_SECRET = "schedule-secret";
++    tables.yahoo_matchup_weeks = [
++      ["2026-10-06", "2026-10-18"], ["2026-10-19", "2026-10-25"], ["2026-10-26", "2026-11-01"], ["2026-11-02", "2026-11-08"],
++    ].map(([start_date, end_date], index) => ({ id: index + 10, game_key: "477", season: "2026", week: index + 1, start_date, end_date }));
++    tables.seasons = [{ id: 20262027, startDate: "2026-09-20", endDate: "2027-06-30" }];
++    tables.team_season = [{ seasonId: 20262027, teamId: 3 }, { seasonId: 20262027, teamId: 4 }];
++    tables.teams = [{ id: 3, abbreviation: "NYR" }, { id: 4, abbreviation: "PHI" }];
++    tables.roster_optimizer_team_games = [];
++    getScheduleDailyMock.mockImplementation(async (date: string) => schedulePage(date));
++    seasonWindowMock.mockResolvedValue({ state: "in_season", today: "2026-10-21", seasonId: 20262027,
++      activeFrom: "2026-10-06", activeUntil: "2027-06-20" });
++  });
++
++  afterEach(() => { delete process.env.CRON_SECRET; vi.useRealTimers(); });
++
++  it("refreshes the current and next week plus padding and confirms coverage", async () => {
++    const res = await invoke();
++
++    expect(res.statusCode).toBe(200);
++    expect(getScheduleDailyMock.mock.calls.map(([date]) => date)).toEqual(["2026-10-18", "2026-10-25", "2026-11-01"]);
++    expect(res.body).toMatchObject({
++      success: true,
++      writeOutcome: "acknowledged",
++      data: {
++        window: { startDate: "2026-10-18", endDate: "2026-11-02" },
++        sourceSeasonId: 20262027,
++        fetchedAt: NOW,
++        coverage: { status: "complete", validUntil: "2026-10-22T21:50:00.000Z" },
++        gamesFetched: 11,
++        unmappedGames: 0,
++        ignoredGames: 0,
++        rowsRead: 22,
++      },
++    });
++    expect(res.body.rowsUpserted).toBe(22);
++    expect(tables.roster_optimizer_team_games[0].source_metadata.scheduleCoverage).toMatchObject({
++      version: "nhl-source-days-v1",
++      emptyDates: ["2026-10-19", "2026-10-22", "2026-10-25", "2026-10-28", "2026-10-31"],
++    });
++    expect(auditRecordMock).toHaveBeenCalledTimes(1);
++  });
++
++  it("reports incomplete coverage when a cached game left the source window", async () => {
++    // A vanished game stays cached (bounded mode never deletes), so its date has
++    // more sides than the new witness lists and the reader would not count it.
++    tables.roster_optimizer_team_games.push(...["away", "home"].map((side, index) => ({
++      id: 900 + index, game_key: "477", season: "2026", source_game_id: 2026029999, team_id: index ? 3 : 4,
++      source_season_id: 20262027, game_type: 2, game_date: "2026-10-20", start_time: "2026-10-20T23:00:00Z",
++      game_status: "FUT", schedule_status: "OK", mapping_status: "mapped", is_countable: true, week: 2,
++      team_abbreviation: index ? "NYR" : "PHI", opponent_abbreviation: index ? "PHI" : "NYR", home_away: side,
++      fetched_at: "2026-10-20T09:50:00.000Z", source_metadata: {},
++    })));
++
++    const res = await invoke();
++
++    expect(res.statusCode).toBe(409);
++    expect(res.body).toMatchObject({
++      success: false,
++      writeOutcome: "acknowledged",
++      error: { code: "SCHEDULE_COVERAGE_INCOMPLETE" },
++      data: { coverage: { status: "incomplete" }, rowsRead: 24 },
++    });
++    expect(auditRecordMock).toHaveBeenCalledTimes(1);
++  });
++
++  it("passes a source failure through without writing", async () => {
++    getScheduleDailyMock.mockImplementation(async (date: string) => {
++      const page = schedulePage(date);
++      return date === "2026-10-25" ? { gameWeek: page.gameWeek.slice(1) } : page;
++    });
++
++    const res = await invoke();
++
++    expect(res.statusCode).toBe(500);
++    expect(res.body).toMatchObject({ success: false, error: { code: "SCHEDULE_SYNC_FAILED" } });
++    expect(tables.roster_optimizer_team_games).toEqual([]);
++  });
++
++  it("stops waiting on a hung source read before the function limit", async () => {
++    vi.useRealTimers();
++    vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
++    vi.setSystemTime(new Date(NOW));
++    getScheduleDailyMock.mockImplementation(() => new Promise(() => undefined));
++
++    const pending = invoke();
++    await vi.waitFor(() => expect(getScheduleDailyMock).toHaveBeenCalled());
++    await vi.advanceTimersByTimeAsync(120_000);
++    const res = await pending;
++
++    expect(res).toMatchObject({ statusCode: 504, body: { success: false, writeOutcome: "not_attempted",
++      error: { code: "DAILY_SCHEDULE_REFRESH_TIMEOUT" } } });
++    expect(tables.roster_optimizer_team_games).toEqual([]);
++  });
++
++  it("cancels a late-resolving refresh at the deadline so no write follows the 504", async () => {
++    vi.useRealTimers();
++    vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
++    vi.setSystemTime(new Date(NOW));
++    getScheduleDailyMock.mockImplementation((date: string) => date === "2026-11-01"
++      ? new Promise(resolve => setTimeout(() => resolve(schedulePage(date)), 130_000))
++      : Promise.resolve(schedulePage(date)));
++
++    const pending = invoke();
++    await vi.waitFor(() => expect(getScheduleDailyMock).toHaveBeenCalledTimes(3));
++    await vi.advanceTimersByTimeAsync(120_000);
++    const res = await pending;
++
++    expect(res).toMatchObject({ statusCode: 504, body: { success: false, writeOutcome: "not_attempted",
++      error: { code: "DAILY_SCHEDULE_REFRESH_TIMEOUT" } } });
++    expect(getScheduleDailyMock.mock.calls[2][1]).toMatchObject({ aborted: true });
++    // The source resolves after the 504; the aborted writer must not upsert it.
++    await vi.advanceTimersByTimeAsync(20_000);
++    for (let tick = 0; tick < 20; tick++) await Promise.resolve();
++    expect(tables.roster_optimizer_team_games).toEqual([]);
++    expect(auditRecordMock).toHaveBeenCalledTimes(1);
++  });
++
++  it("reports a write in flight at the deadline as unknown and never claims cancellation undid it", async () => {
++    vi.useRealTimers();
++    vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
++    vi.setSystemTime(new Date(NOW));
++    writeDelay.ms = 130_000;
++
++    const pending = invoke();
++    await vi.advanceTimersByTimeAsync(120_000);
++    const res = await pending;
++
++    expect(res).toMatchObject({ statusCode: 504, body: { success: false, writeOutcome: "unknown",
++      error: { code: "DAILY_SCHEDULE_REFRESH_TIMEOUT" } } });
++    expect(res.body.error.message).toMatch(/does not undo/);
++    // The late acknowledgment can still land, which is why the receipt says unknown.
++    await vi.advanceTimersByTimeAsync(10_000);
++    expect(tables.roster_optimizer_team_games).toHaveLength(22);
++  });
++
++  it("confirms coverage when a witnessed game is postponed", async () => {
++    getScheduleDailyMock.mockImplementation(async (date: string) => {
++      const page = schedulePage(date);
++      for (const day of page.gameWeek) for (const game of day.games) if (day.date === "2026-10-21") game.gameScheduleState = "PPD";
++      return page;
++    });
++
++    const res = await invoke();
++
++    expect(res).toMatchObject({ statusCode: 200, body: { success: true, data: { coverage: { status: "complete" }, rowsRead: 22 } } });
++    expect(tables.roster_optimizer_team_games.filter(row => row.game_date === "2026-10-21")
++      .map(row => row.is_countable)).toEqual([false, false]);
++  });
++
++  it("skips between Yahoo periods without fetching the source", async () => {
++    vi.setSystemTime(new Date("2026-10-04T09:50:00.000Z"));
++
++    const res = await invoke();
++
++    expect(res).toMatchObject({ statusCode: 200, body: { success: true, skipped: true, reason: "no_active_yahoo_period" } });
++    expect(getScheduleDailyMock).not.toHaveBeenCalled();
++  });
++
++  it("fails visibly once the pinned game key's season is long over", async () => {
++    vi.setSystemTime(new Date("2027-10-12T09:50:00.000Z"));
++    tables.yahoo_matchup_weeks = tables.yahoo_matchup_weeks.filter(week => week.week < 3);
++
++    const res = await invoke();
++
++    expect(res).toMatchObject({ statusCode: 409, body: { success: false, error: { code: "PROFILE_RENEWAL_REQUIRED" } } });
++    expect(getScheduleDailyMock).not.toHaveBeenCalled();
++  });
++
++  it("skips the NHL off-season", async () => {
++    seasonWindowMock.mockResolvedValue({ state: "off_season", today: "2026-07-15", lastSeasonId: 20252026,
++      lastActiveUntil: "2026-06-25", nextSeasonId: 20262027, resumesOn: "2026-09-20" });
++
++    const res = await invoke();
++
++    expect(res).toMatchObject({ statusCode: 200, body: { skipped: true, reason: "nhl_off_season" } });
++    expect(getScheduleDailyMock).not.toHaveBeenCalled();
++  });
++
++  it("rejects caller-chosen windows", async () => {
++    const res = await invoke({ startDate: "2026-10-01" });
++
++    expect(res).toMatchObject({ statusCode: 400, body: { success: false, error: { code: "INVALID_QUERY" } } });
++    expect(getScheduleDailyMock).not.toHaveBeenCalled();
++  });
++
++  it("rejects other methods", async () => {
++    const res = await invoke({}, undefined, "PUT");
++
++    expect(res).toMatchObject({ statusCode: 405, headers: { Allow: ["GET", "POST"] } });
++    expect(getScheduleDailyMock).not.toHaveBeenCalled();
++  });
++
++  it("rejects unauthenticated calls before any work", async () => {
++    const res = await invoke({}, {});
++
++    expect(res).toMatchObject({ statusCode: 401, body: { success: false } });
++    expect(seasonWindowMock).not.toHaveBeenCalled();
++    expect(getScheduleDailyMock).not.toHaveBeenCalled();
++  });
++});
+diff --git a/web/__tests__/pages/api/v1/db/update-roster-optimizer-schedule.test.ts b/web/__tests__/pages/api/v1/db/update-roster-optimizer-schedule.test.ts
+index bbdd504..6804a5e 100644
+--- a/web/__tests__/pages/api/v1/db/update-roster-optimizer-schedule.test.ts
++++ b/web/__tests__/pages/api/v1/db/update-roster-optimizer-schedule.test.ts
+@@ -93,6 +93,7 @@ vi.mock("lib/rosterScheduleData/source", () => ({
+ 
+ import handler, {
+   parseRosterScheduleSyncRequest,
++  updateRosterOptimizerScheduleHandler,
+ } from "../../../../../pages/api/v1/db/update-roster-optimizer-schedule";
+ 
+ function response() {
+@@ -237,6 +238,18 @@ describe("update roster optimizer schedule route", () => {
+     );
+   });
+ 
++  it("forwards captured source-day coverage into both persisted team sides", async () => {
++    const source = await fetchFullSeasonMock();
++    const scheduleCoverage = { version: "nhl-source-days-v1", date: "2026-10-05", gameIds: [2026020001], emptyDates: ["2026-10-06"] };
++    source.games[0].scheduleCoverage = scheduleCoverage;
++    const res = response();
++    await handler({ method: "POST", headers: { authorization: "Bearer schedule-secret" },
++      query: { mode: "full", gameKey: "477" } } as never, res as never);
++    expect(res.statusCode).toBe(200);
++    expect(upsertMock.mock.calls[0][0]).toHaveLength(2);
++    for (const row of upsertMock.mock.calls[0][0]) expect(row.source_metadata.scheduleCoverage).toEqual(scheduleCoverage);
++  });
++
+   it("removes stale cache identities only after a complete full refresh", async () => {
+     tableData.roster_optimizer_team_games = [
+       {
+@@ -595,6 +608,36 @@ describe("update roster optimizer schedule route", () => {
+     expect(deleteInMock).not.toHaveBeenCalled();
+   });
+ 
++  it("stops at the caller's deadline before any write and reports nothing written", async () => {
++    const controller = new AbortController();
++    const writeControl = { signal: controller.signal, writeStarted: false };
++    const source = await fetchBoundedMock();
++    fetchBoundedMock.mockImplementationOnce(async () => { controller.abort(); return source; });
++    const res = response();
++    await updateRosterOptimizerScheduleHandler({ query: {}, supabase: serviceClient, writeControl } as never, res as never);
++    expect(fetchBoundedMock.mock.calls.at(-1)?.[0]).toMatchObject({ signal: controller.signal });
++    expect(res).toMatchObject({ statusCode: 504, body: { success: false, writeOutcome: "not_attempted",
++      error: { code: "SCHEDULE_SYNC_ABORTED" } } });
++    expect(upsertMock).not.toHaveBeenCalled();
++    expect(writeControl.writeStarted).toBe(false);
++  });
++
++  it("issues no further statement once the deadline passes mid-write and reports the outcome as unknown", async () => {
++    const controller = new AbortController();
++    const writeControl = { signal: controller.signal, writeStarted: false };
++    const source = await fetchBoundedMock();
++    fetchBoundedMock.mockResolvedValueOnce({ ...source, games: Array.from({ length: 300 }, (_, index) =>
++      ({ ...source.games[0], game: { ...source.games[0].game, id: 2026020001 + index } })) });
++    upsertMock.mockImplementationOnce(async () => { controller.abort(); return { error: null }; });
++    const res = response();
++    await updateRosterOptimizerScheduleHandler({ query: {}, supabase: serviceClient, writeControl } as never, res as never);
++    expect(res).toMatchObject({ statusCode: 504, body: { success: false, writeOutcome: "unknown",
++      error: { code: "SCHEDULE_SYNC_ABORTED" } } });
++    expect(upsertMock).toHaveBeenCalledTimes(1); // 600 sides would take two 500-row statements
++    expect(deleteInMock).not.toHaveBeenCalled();
++    expect(writeControl.writeStarted).toBe(true);
++  });
++
+   it("rejects unauthorized or wrong-method inspection without source, schedule or audit writes", async () => {
+     for (const req of [{ method: "POST", headers: {} },
+       { method: "GET", headers: { authorization: "Bearer schedule-secret" } }]) {
+diff --git a/web/__tests__/pages/api/v1/start-chart.test.ts b/web/__tests__/pages/api/v1/start-chart.test.ts
+index 68f5fdf..6594bf1 100644
+--- a/web/__tests__/pages/api/v1/start-chart.test.ts
++++ b/web/__tests__/pages/api/v1/start-chart.test.ts
+@@ -684,8 +684,11 @@ describe("/api/v1/start-chart", () => {
+ 
+   function sharedAdmissionInputs(fixture: ReturnType<typeof consumerGameRevisionFixture>, newsFailure = false) {
+     const previous = fromMock.getMockImplementation()!;
++    // The planning reader certifies the slate only from witnessed source days.
++    const witness = (date: string) => ({ scheduleCoverage: { version: "nhl-source-days-v1", date, emptyDates: [],
++      gameIds: [...new Set(fixture.scheduleRows.filter(row => row.game_date === date).map(row => row.source_game_id))].sort() } });
+     const tables: Record<string, any[]> = {
+-      roster_optimizer_team_games: fixture.scheduleRows,
++      roster_optimizer_team_games: fixture.scheduleRows.map(row => ({ ...row, source_metadata: witness(row.game_date) })),
+       fhfh_player_identities: fixture.players.map(row => ({
+         id: Number(row.id), nhl_player_id: row.nhlId, canonical_name: row.name,
+         canonical_position: row.playerClass === "goalie" ? "G" : "C",
+diff --git a/web/components/RosterScheduleOptimizer/canonicalSchedule.test.ts b/web/components/RosterScheduleOptimizer/canonicalSchedule.test.ts
+index 3e066cf..5152642 100644
+--- a/web/components/RosterScheduleOptimizer/canonicalSchedule.test.ts
++++ b/web/components/RosterScheduleOptimizer/canonicalSchedule.test.ts
+@@ -29,7 +29,7 @@ describe("remaining-date cached schedule context", () => {
+   function rows() {
+     const shared = { game_key: "477", source_season_id: 20262027, source_game_id: 2026020123,
+       game_date: "2026-10-16", start_time: "2026-10-16T23:00:00Z", game_type: 2,
+-      game_status: "FUT", schedule_status: "OK", fetched_at: "2026-10-16T07:00:00Z",
++      game_status: "FUT", schedule_status: "OK", is_countable: true, fetched_at: "2026-10-16T07:00:00Z",
+       source_metadata: { scheduleCoverage: { version: "nhl-source-days-v1", date: "2026-10-16",
+         gameIds: [2026020123], emptyDates: ["2026-10-15", "2026-10-17", "2026-10-18", "2026-10-19"] } } };
+     return [{ ...shared, team_id: 26, opponent_team_id: 17, team_abbreviation: "LAK", opponent_abbreviation: "DET", home_away: "home" },
+@@ -44,10 +44,28 @@ describe("remaining-date cached schedule context", () => {
+     const fetcher = serve();
+     expect(await loadCachedCanonicalSchedule(remaining, 20262027, "America/New_York", weeks, now))
+       .toMatchObject({ complete: true, games: [{ id: 2026020123, gameDate: "2026-10-16" }] });
+-    expect(fetcher).toHaveBeenCalledWith("/api/v1/roster-schedule-optimizer/schedule?gameKey=477&startWeek=1&endWeek=2", expect.anything());
++    expect(fetcher).toHaveBeenCalledWith("/api/v1/roster-schedule-optimizer/schedule?gameKey=477&startWeek=1&endWeek=2&scope=witnessed", expect.anything());
+     expect(getSchedule).not.toHaveBeenCalled(); expect(getTeams).not.toHaveBeenCalled();
+     expect((await loadCachedCanonicalSchedule(dates, 20262027, "America/New_York", weeks, now)).complete).toBe(false);
+   });
++  it("verifies a witnessed postponed pair on the full cached set but returns only playable games", async () => {
++    const values = rows().map(row => ({ ...row, source_metadata: { scheduleCoverage: {
++      ...row.source_metadata.scheduleCoverage, gameIds: [2026020123, 2026020124] } } }));
++    const postponed = values.map((row, index) => ({ ...row, source_game_id: 2026020124, team_id: index ? 9 : 8,
++      opponent_team_id: index ? 8 : 9, team_abbreviation: index ? "MTL" : "TOR", opponent_abbreviation: index ? "TOR" : "MTL",
++      schedule_status: "PPD", is_countable: false }));
++    // Stand-in for the schedule route: non-countable sides appear only in the witnessed scope.
++    const fetcher = vi.fn(async (url: string) => ({ ok: true, json: async () => ({ success: true, data: {
++      version: "roster-team-games.v1", games: url.includes("scope=witnessed") ? [...values, ...postponed] : values } }) }));
++    vi.stubGlobal("fetch", fetcher);
++    const result = await loadCachedCanonicalSchedule(remaining, 20262027, "UTC", weeks, now);
++    expect(result).toMatchObject({ complete: true, error: null });
++    expect(result.games.map(item => item.id)).toEqual([2026020123]);
++    const countableOnly = postponed.map(row => ({ ...row, schedule_status: "OK" }));
++    fetcher.mockImplementation(async () => ({ ok: true, json: async () => ({ success: true, data: {
++      version: "roster-team-games.v1", games: [...values, ...countableOnly.slice(0, 1)] } }) }));
++    expect((await loadCachedCanonicalSchedule(remaining, 20262027, "UTC", weeks, now)).complete).toBe(false);
++  });
+   it("does not read any source while cached week mapping is missing", async () => {
+     const fetcher = serve();
+     expect((await loadCachedCanonicalSchedule(remaining, 20262027, "UTC", [], now)).complete).toBe(false);
+@@ -95,7 +113,7 @@ describe("remaining-date cached schedule context", () => {
+     expect(vi.getTimerCount()).toBe(0);
+     expect(fetcher).toHaveBeenCalledTimes(2); expect(getSchedule).not.toHaveBeenCalled();
+   });
+-  it.each(["missing side", "stale", "wrong season", "conflicting side", "missing witness", "read failure"])(
++  it.each(["missing side", "stale", "wrong season", "conflicting side", "missing witness", "unknown countability", "read failure"])(
+     "withholds incomplete cached evidence: %s", async mode => {
+       const values = rows();
+       if (mode === "missing side") values.pop();
+@@ -103,6 +121,7 @@ describe("remaining-date cached schedule context", () => {
+       if (mode === "wrong season") values[0].source_season_id = 20252026;
+       if (mode === "conflicting side") values[1].home_away = "home";
+       if (mode === "missing witness") values[0].source_metadata.scheduleCoverage.emptyDates = [];
++      if (mode === "unknown countability") delete (values[0] as Partial<typeof values[0]>).is_countable;
+       const fetcher = serve(values);
+       if (mode === "read failure") fetcher.mockRejectedValue(new Error("unavailable"));
+       expect(await loadCachedCanonicalSchedule(remaining, 20262027, "UTC", weeks, now)).toMatchObject({ complete: false, games: [] });
+diff --git a/web/components/RosterScheduleOptimizer/canonicalSchedule.ts b/web/components/RosterScheduleOptimizer/canonicalSchedule.ts
+index 3cb062f..6c53aae 100644
+--- a/web/components/RosterScheduleOptimizer/canonicalSchedule.ts
++++ b/web/components/RosterScheduleOptimizer/canonicalSchedule.ts
+@@ -28,8 +28,10 @@ export async function loadCachedCanonicalSchedule(dates: string[], seasonId: num
+     return unknown("Cached matchup-week mapping is unavailable. Team schedule coverage remains unverified.");
+   const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 8000);
+   try {
++    // The witnessed scope includes postponed/cancelled sides; a day witness lists them too.
+     const params = new URLSearchParams({ gameKey: selectedWeeks[0].gameKey,
+-      startWeek: String(Math.min(...selectedWeeks.map(week => week.week))), endWeek: String(Math.max(...selectedWeeks.map(week => week.week))) });
++      startWeek: String(Math.min(...selectedWeeks.map(week => week.week))), endWeek: String(Math.max(...selectedWeeks.map(week => week.week))),
++      scope: "witnessed" });
+     const response = await fetch(`/api/v1/roster-schedule-optimizer/schedule?${params}`, { signal: controller.signal });
+     const body = await response.json(), rows = body?.data?.games;
+     if (!response.ok || body?.success !== true || body.data.version !== "roster-team-games.v1"
+@@ -46,7 +48,7 @@ export async function loadCachedCanonicalSchedule(dates: string[], seasonId: num
+         || !Number.isSafeInteger(row.team_id) || !Number.isSafeInteger(row.opponent_team_id)
+         || row.team_id <= 0 || row.opponent_team_id <= 0 || row.team_id === row.opponent_team_id
+         || !/^[A-Z]{2,4}$/.test(row.team_abbreviation) || !/^[A-Z]{2,4}$/.test(row.opponent_abbreviation)
+-        || !["home", "away"].includes(row.home_away) || !Number.isFinite(Date.parse(row.start_time))
++        || !["home", "away"].includes(row.home_away) || typeof row.is_countable !== "boolean" || !Number.isFinite(Date.parse(row.start_time))
+         || !Number.isFinite(Date.parse(row.fetched_at)) || Date.parse(row.fetched_at) > now
+         || now - Date.parse(row.fetched_at) >= 36 * 3600000)
+         return unknown("Cached schedule identity, clocks or freshness are unresolved.");
+@@ -71,9 +73,10 @@ export async function loadCachedCanonicalSchedule(dates: string[], seasonId: num
+         || pair[1].team_id !== pair[0].opponent_team_id || pair[0].team_abbreviation !== pair[1].opponent_abbreviation
+         || pair[1].team_abbreviation !== pair[0].opponent_abbreviation || pair[0].home_away === pair[1].home_away
+         || pair[0].start_time !== pair[1].start_time || pair[0].game_status !== pair[1].game_status
+-        || pair[0].schedule_status !== pair[1].schedule_status)) continue;
++        || pair[0].schedule_status !== pair[1].schedule_status || pair[0].is_countable !== pair[1].is_countable)) continue;
+       covered.add(date); for (const value of witness.emptyDates) empty.add(value);
+       for (const pair of pairs) {
++        if (!pair[0].is_countable) continue; // witnessed coverage only; never a playable game
+         const home = pair.find((row: any) => row.home_away === "home"), away = pair.find((row: any) => row.home_away === "away");
+         const game: GameData = { id: home.source_game_id, season: seasonId, gameType: 2,
+           gameDate: localDate(home.start_time, timeZone), startTimeUTC: home.start_time,
+diff --git a/web/lib/cron/combinedCronInventory.test.ts b/web/lib/cron/combinedCronInventory.test.ts
+index d898ee8..e16018b 100644
+--- a/web/lib/cron/combinedCronInventory.test.ts
++++ b/web/lib/cron/combinedCronInventory.test.ts
+@@ -268,8 +268,8 @@ SELECT cron.schedule(
+     ).toHaveLength(56);
+     expect(
+       inventory.jobs.filter((job) => job.provider === "vercel"),
+-    ).toHaveLength(27);
+-    expect(inventory.jobs).toHaveLength(83);
++    ).toHaveLength(28);
++    expect(inventory.jobs).toHaveLength(84);
+     expect(inventory.jobs).toContainEqual(
+       expect.objectContaining({
+         provider: "vercel",
+diff --git a/web/lib/rosterScheduleData/planning.test.ts b/web/lib/rosterScheduleData/planning.test.ts
+index 807b144..c2f44b1 100644
+--- a/web/lib/rosterScheduleData/planning.test.ts
++++ b/web/lib/rosterScheduleData/planning.test.ts
+@@ -10,6 +10,8 @@ import { normalizeStartChartResponse } from "lib/projections/startChartContract"
+ import { buildNativeSkaterParticipationFields } from "lib/projections/nativeGoalAccounting";
+ import { acceptedNewsSupersedes, loadAcceptedForecastNews } from "lib/projections/acceptedNews";
+ import { timestampMicros } from "lib/projections/evidenceTime";
++import { fetchBoundedNhlSchedule } from "./source";
++import { normalizeNhlGameToTeamRows } from "./normalize";
+ 
+ const membershipCreatedAt = ["2026-09-01T00:00:00Z"];
+ const rosterRevision = forgeRosterRevision({ canonicalId: 7, nhlId: 847001, seasonId: 20262027, teamId: 1, membershipCreatedAt });
+@@ -181,7 +183,7 @@ describe("public RSO data boundary", () => {
+     expect(calls).toContainEqual({ table: "fhfh_player_identities", method: "is", args: ["merged_into_id", null] });
+   });
+ 
+-  it("checks freshness of returned league dates without letting unrelated padding stale the scope", async () => {
++  it("keeps returned-row freshness separate from unverified horizon coverage", async () => {
+     const { db, tables } = cappedInputs();
+     tables.roster_optimizer_team_games = [{ ...rows[0], fetched_at: "2026-10-10T09:00:00Z" },
+       { ...rows[0], id: 2, source_game_id: 2026020002, game_date: "2026-10-09",
+@@ -189,12 +191,15 @@ describe("public RSO data boundary", () => {
+     const query = { ...publicQuery, timeZone: "UTC" };
+     const fresh = await loadPlanningData(db as any, query, publicOptions);
+     expect(fresh.games).toHaveLength(1);
+-    expect(fresh.evidence.schedule).toMatchObject({ completeness: "complete", asOf: "2026-10-10T09:00:00Z" });
+-    expect(fresh.forecastManifest?.exclusions?.some(row => row.reasons.includes("incomplete_refresh"))).toBe(false);
++    expect(fresh.evidence.schedule).toMatchObject({ completeness: "partial", asOf: "2026-10-10T09:00:00Z" });
++    expect(fresh.evidence.schedule.limitations.join(" ")).toContain("source-day coverage");
++    expect(fresh.evidence.schedule.limitations.join(" ")).not.toContain("may be stale");
++    expect(fresh.forecastManifest?.exclusions?.some(row => row.reasons.includes("incomplete_refresh"))).toBe(true);
+     (tables.roster_optimizer_team_games[1] as Record<string, unknown>).start_time = "2026-10-10T00:30:00Z";
+     const crossing = await loadPlanningData(db as any, query, publicOptions);
+     expect(crossing.games).toHaveLength(2);
+     expect(crossing.evidence.schedule.completeness).toBe("partial");
++    expect(crossing.evidence.schedule.limitations.join(" ")).toContain("may be stale");
+     expect(crossing.forecastManifest?.exclusions).toContainEqual({ gameId: "2026020002", reasons: ["incomplete_refresh"] });
+   });
+ 
+@@ -208,6 +213,56 @@ describe("public RSO data boundary", () => {
+     }
+   });
+ 
++  it("requires a complete captured day, paired games and explicit off days before certifying the horizon", async () => {
++    const { db, tables } = formDb([], []);
++    const coverage = { version: "nhl-source-days-v1", date: "2026-10-10", gameIds: [2026020001], emptyDates: ["2026-10-09", "2026-10-11", "2026-10-12"] };
++    const side = { ...rows[0], fetched_at: "2026-10-10T09:00:00Z", source_metadata: { scheduleCoverage: coverage } };
++    const away = { ...side, id: 2, team_abbreviation: "MTL", opponent_abbreviation: "TOR", home_away: "away" };
++    tables.roster_optimizer_team_games = [side, away];
++    const query = { ...publicQuery, timeZone: "UTC" };
++    const read = () => loadPlanningData(db as never, query, publicOptions);
++    expect((await read()).evidence.schedule.completeness).toBe("complete");
++    tables.roster_optimizer_team_games = [side];
++    expect((await read()).evidence.schedule.completeness).toBe("partial");
++    tables.roster_optimizer_team_games = [side, { ...away, fetched_at: "2026-10-10T10:00:00Z" }];
++    expect((await read()).evidence.schedule.completeness).toBe("partial");
++    tables.roster_optimizer_team_games = [side, away];
++    coverage.gameIds.push(2026020002);
++    expect((await read()).evidence.schedule.completeness).toBe("partial");
++    coverage.gameIds.pop();
++    coverage.emptyDates = ["2026-10-11", "2026-10-12"];
++    expect((await read()).evidence.schedule.completeness).toBe("partial");
++    coverage.emptyDates.push("2026-10-09", "2026-10-10");
++    expect((await read()).evidence.schedule.completeness).toBe("partial");
++    coverage.emptyDates = ["2026-10-09", "2026-10-11", "2026-10-12"];
++    side.fetched_at = away.fetched_at = "2026-10-08T09:00:00Z";
++    expect((await read()).evidence.schedule.completeness).toBe("partial");
++    side.fetched_at = away.fetched_at = "2026-10-10T11:00:00Z";
++    expect((await read()).evidence.schedule.completeness).toBe("complete");
++    tables.roster_optimizer_team_games = [];
++    expect((await read()).evidence.schedule.completeness).toBe("partial");
++  });
++
++  it("certifies the horizon from rows the bounded schedule writer stamps, not from unstamped rows", async () => {
++    const nhlGame = { id: 2026020001, season: 20262027, gameType: 2, gameDate: "2026-10-10", startTimeUTC: "2026-10-10T23:00:00Z",
++      gameState: "FUT", gameScheduleState: "OK", homeTeam: { id: 1, abbrev: "TOR" }, awayTeam: { id: 2, abbrev: "MTL" } };
++    const page = { gameWeek: ["2026-10-09", "2026-10-10", "2026-10-11", "2026-10-12"]
++      .map(date => ({ date, games: date === nhlGame.gameDate ? [nhlGame] : [] })) };
++    const source = await fetchBoundedNhlSchedule({ startDate: "2026-10-09", endDate: "2026-10-12",
++      readSchedulePage: async () => page as never });
++    const written = source.games.flatMap(entry => normalizeNhlGameToTeamRows({ ...entry, fetchedAt: "2026-10-10T09:00:00Z",
++      gameKey: "477", yahooSeason: "2026", mapping: { status: "unmapped", reason: "no_week" } }))
++      .map((row, index) => ({ ...row, id: index + 1 }));
++    const { db, tables } = formDb([], []);
++    const read = () => loadPlanningData(db as never, { ...publicQuery, timeZone: "UTC" }, publicOptions);
++    tables.roster_optimizer_team_games = written;
++    expect((await read()).evidence.schedule.completeness).toBe("complete");
++    // The production writer bytes persist the same rows without the witness.
++    tables.roster_optimizer_team_games = written.map(({ source_metadata: { scheduleCoverage: _witness, ...metadata }, ...row }) =>
++      ({ ...row, source_metadata: metadata }));
++    expect((await read()).evidence.schedule.completeness).toBe("partial");
++  });
++
+   it("completes capped required scopes before counting games and competing players", async () => {
+     const { db, calls } = cappedInputs();
+     const result = await loadPlanningData(db as any, publicQuery, publicOptions);
+diff --git a/web/lib/rosterScheduleData/planningInputs.ts b/web/lib/rosterScheduleData/planningInputs.ts
+index df55b85..f7f2f6d 100644
+--- a/web/lib/rosterScheduleData/planningInputs.ts
++++ b/web/lib/rosterScheduleData/planningInputs.ts
+@@ -80,13 +80,54 @@ export async function pages(build: () => any, deadline: number, maximum = 15000,
+   });
+ }
+ 
++export function hasScheduleCoverage(rows: Row[], query: PlanningDataQuery, now: Date): boolean {
++  const validDate = (value: unknown): value is string => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
++    && Number.isFinite(Date.parse(value)) && new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value;
++  const fresh = (row: Row) => typeof row.fetched_at === "string" && Number.isFinite(Date.parse(row.fetched_at))
++    && Date.parse(row.fetched_at) <= now.getTime() && now.getTime() - Date.parse(row.fetched_at) <= 36 * 3600000;
++  const days = new Map<string, Row[]>();
++  for (const row of rows) if (row.game_type === 2) days.set(row.game_date, [...(days.get(row.game_date) ?? []), row]);
++  const covered = new Set<string>(), empty = new Set<string>();
++  for (const [date, sides] of days) {
++    const witness = sides[0].source_metadata?.scheduleCoverage;
++    if (!validDate(date) || witness?.version !== "nhl-source-days-v1" || witness.date !== date
++      || !Array.isArray(witness.gameIds) || !witness.gameIds.length || witness.gameIds.length > 500
++      || witness.gameIds.some((id: unknown) => !Number.isSafeInteger(id) || Number(id) <= 0)
++      || new Set(witness.gameIds).size !== witness.gameIds.length
++      || !Array.isArray(witness.emptyDates) || witness.emptyDates.length > 31 || !witness.emptyDates.every(validDate)
++      || sides.length !== witness.gameIds.length * 2
++      || sides.some(row => !fresh(row) || row.fetched_at !== sides[0].fetched_at
++        || JSON.stringify(row.source_metadata?.scheduleCoverage) !== JSON.stringify(witness))) continue;
++    const paired = witness.gameIds.every((id: number) => {
++      const pair = sides.filter(row => row.source_game_id === id);
++      return pair.length === 2 && pair[0].team_abbreviation && pair[1].team_abbreviation
++        && pair[0].team_abbreviation !== pair[1].team_abbreviation
++        && pair[0].opponent_abbreviation === pair[1].team_abbreviation && pair[1].opponent_abbreviation === pair[0].team_abbreviation
++        && pair[0].home_away !== pair[1].home_away && [pair[0].home_away, pair[1].home_away].every(side => ["home", "away"].includes(side))
++        && pair[0].start_time === pair[1].start_time && pair[0].game_status === pair[1].game_status
++        && pair[0].schedule_status === pair[1].schedule_status;
++    });
++    if (paired) { covered.add(date); for (const date of witness.emptyDates) empty.add(date); }
++  }
++  // Local scoring dates can cross either source-day boundary. Require both
++  // padding days when translating timestamps into a league timezone.
++  const padding = query.timeZone ? 1 : 0;
++  const first = Date.parse(`${query.startDate}T12:00:00Z`) - padding * 86400000;
++  const last = Date.parse(`${query.endDate}T12:00:00Z`) + padding * 86400000;
++  for (let time = first; time <= last; time += 86400000) {
++    const date = new Date(time).toISOString().slice(0, 10);
++    if (empty.has(date) && days.has(date) || !covered.has(date) && !empty.has(date)) return false;
++  }
++  return true;
++}
++
+ /** Shared current schedule and identity inputs; no forecast or account mutations. */
+ export async function loadPlanningInputs(db: SupabaseClient<any>, query: PlanningDataQuery, now: Date,
+   inputDeadline = Date.now() + 8000) {
+   const offsetDate = (value: string, days: number) => new Date(Date.parse(`${value}T12:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
+   const [scheduleRows, identities, teams, rosters] = await Promise.all([
+     pages(() => db.from("roster_optimizer_team_games")
+-      .select("id,source_game_id,source_season_id,game_type,game_date,start_time,game_status,schedule_status,is_countable,team_abbreviation,opponent_abbreviation,home_away,fetched_at", { count: "exact" })
++      .select("id,source_game_id,source_season_id,game_type,game_date,start_time,game_status,schedule_status,is_countable,team_abbreviation,opponent_abbreviation,home_away,fetched_at,source_metadata", { count: "exact" })
+       .eq("source_season_id", query.seasonId).gte("game_date", offsetDate(query.startDate, -1)).lte("game_date", offsetDate(query.endDate, 1))
+       .order("source_game_id").order("team_abbreviation").order("fetched_at").order("id"), inputDeadline),
+     pages(() => db.from("fhfh_player_identities")
+@@ -122,6 +163,7 @@ export async function loadPlanningInputs(db: SupabaseClient<any>, query: Plannin
+   const timestamps = scopedScheduleRows.map(row => row.fetched_at).filter((value): value is string => typeof value === "string"
+     && Number.isFinite(Date.parse(value)) && Date.parse(value) <= now.getTime()).sort((a, b) => Date.parse(a) - Date.parse(b));
+   const scheduleProblems = !games.length ? ["No countable schedule games were found for this range."] : [];
++  if (!hasScheduleCoverage(scheduleRows, query, now)) scheduleProblems.push("Complete source-day coverage for the requested horizon is unverified; fresh cached rows alone do not establish every roster team's games or off days.");
+   if (timestamps.length !== scopedScheduleRows.length || !timestamps[0] || now.getTime() - Date.parse(timestamps[0]) > 36 * 3600000) scheduleProblems.push("Schedule coverage may be stale or incomplete. Reloading this reader does not update the upstream cache.");
+   const identityProblems = players.some((player) => !player.teamAbbreviation) ? ["Some canonical players lack unique current-season NHL roster membership; review their team before planning."] : [];
+   if (uniqueNhl.size !== identities.length) identityProblems.push("Conflicting NHL identity mappings were excluded from the search catalog.");
+diff --git a/web/lib/rosterScheduleData/query.test.ts b/web/lib/rosterScheduleData/query.test.ts
+index 9899095..7d4c47d 100644
+--- a/web/lib/rosterScheduleData/query.test.ts
++++ b/web/lib/rosterScheduleData/query.test.ts
+@@ -85,6 +85,15 @@ describe("roster schedule query", () => {
+     );
+   });
+ 
++  it("keeps postponed or cancelled mapped rows only for an explicit witnessed read", async () => {
++    expect(parseRosterScheduleReadFilter({ scope: "witnessed" })).toMatchObject({ scope: "witnessed" });
++    expect(() => parseRosterScheduleReadFilter({ scope: "all" })).toThrow("matchup-week range");
++    const { calls, client } = createQuery([]);
++    await readRosterSchedule(client, { gameKey: "477", startWeek: 1, endWeek: 2, scope: "witnessed" });
++    expect(calls).toContainEqual(["eq", "mapping_status", "mapped"]);
++    expect(calls).not.toContainEqual(["eq", "is_countable", true]);
++  });
++
+   it("loads every page when the matrix exceeds the Data API row limit", async () => {
+     const rows = Array.from({ length: 1_001 }, (_, id) => ({ id }));
+     const { calls, client } = createQuery(rows);
+diff --git a/web/lib/rosterScheduleData/query.ts b/web/lib/rosterScheduleData/query.ts
+index 34a39b0..bb5010a 100644
+--- a/web/lib/rosterScheduleData/query.ts
++++ b/web/lib/rosterScheduleData/query.ts
+@@ -47,6 +47,7 @@ export function parseRosterScheduleReadFilter(query: {
+   gameKey?: string | string[];
+   startWeek?: string | string[];
+   endWeek?: string | string[];
++  scope?: string | string[];
+ }): RosterScheduleReadFilter {
+   const gameKey =
+     firstQueryValue(query.gameKey)?.trim() || DEFAULT_YAHOO_GAME_KEY;
+@@ -69,7 +70,11 @@ export function parseRosterScheduleReadFilter(query: {
+   if (endWeek - startWeek + 1 > MAX_MATCHUP_WEEK_SPAN) {
+     throw new Error(`The matchup-week range cannot exceed ${MAX_MATCHUP_WEEK_SPAN} weeks.`);
+   }
+-  return { gameKey, startWeek, endWeek };
++  const scope = firstQueryValue(query.scope) ?? "countable";
++  if (scope !== "countable" && scope !== "witnessed") {
++    throw new Error("The matchup-week range scope must be countable or witnessed.");
++  }
++  return { gameKey, startWeek, endWeek, ...(scope === "witnessed" ? { scope } : {}) };
+ }
+ 
+ const READ_COLUMNS = [
+@@ -102,7 +107,11 @@ const READ_COLUMNS = [
+ 
+ const READ_PAGE_SIZE = 1_000;
+ 
+-/** Paged Data API reads supply the complete team-game matrix. */
++/**
++ * Paged Data API reads supply the complete team-game matrix. Countable rows are
++ * the default; the witnessed scope also returns postponed/cancelled sides,
++ * because a source-day witness lists every regular-season game of its date.
++ */
+ export async function readRosterSchedule(
+   client: ScheduleReadClient,
+   filter: RosterScheduleReadFilter,
+@@ -110,14 +119,14 @@ export async function readRosterSchedule(
+   const games: RosterOptimizerTeamGameRecord[] = [];
+ 
+   for (let from = 0; ; from += READ_PAGE_SIZE) {
+-    const { data, error } = await client
++    const mapped = client
+       .from("roster_optimizer_team_games")
+       .select(READ_COLUMNS)
+       .eq("game_key", filter.gameKey)
+       .gte("week", filter.startWeek)
+       .lte("week", filter.endWeek)
+-      .eq("mapping_status", "mapped")
+-      .eq("is_countable", true)
++      .eq("mapping_status", "mapped");
++    const { data, error } = await (filter.scope === "witnessed" ? mapped : mapped.eq("is_countable", true))
+       .order("game_date", { ascending: true })
+       .order("source_game_id", { ascending: true })
+       .order("team_id", { ascending: true })
+diff --git a/web/lib/rosterScheduleData/recurring.ts b/web/lib/rosterScheduleData/recurring.ts
+new file mode 100644
+index 0000000..c690e05
+--- /dev/null
++++ b/web/lib/rosterScheduleData/recurring.ts
+@@ -0,0 +1,85 @@
++import type { YahooMatchupWeekRow } from "./types";
++import type { getScheduleDaily } from "lib/NHL/server/scheduleDaily";
++
++// Proposal only. This file is not part of the application import graph.
++export const RECURRING_PROFILE = Object.freeze({
++  version: "current-next-v1", gameKey: "477", seasonId: 20262027,
++  maxDays: 31, maxSides: 1000, maxPages: 5,
++  pageBytes: 1024 * 1024, writeBytes: 1024 * 1024, pageMs: 8000, runMs: 90000,
++});
++
++export function parseRecurringQuery(query: Record<string, unknown>) {
++  if (Object.keys(query).some(key => !["profile", "dryRun"].includes(key))
++    || query.profile !== RECURRING_PROFILE.version
++    || query.dryRun !== undefined && !["true", "false"].includes(query.dryRun as string)) {
++    throw new Error("Use only profile=current-next-v1 and dryRun=true|false.");
++  }
++  return { dryRun: query.dryRun !== "false" };
++}
++
++function offset(date: string, days: number) {
++  return new Date(Date.parse(`${date}T12:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
++}
++
++export function recurringRange(now: Date, weeks: readonly YahooMatchupWeekRow[]) {
++  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York",
++    year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
++  const valid = (value: string | null): value is string => Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value)
++    && Number.isFinite(Date.parse(value)) && new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value);
++  if (!weeks.length || weeks.length > 64 || weeks.some(week => week.game_key !== RECURRING_PROFILE.gameKey
++    || week.season !== "2026" || !valid(week.start_date) || !valid(week.end_date) || week.start_date > week.end_date)) {
++    throw new Error("Recurring Yahoo calendar is invalid or outside the pinned season.");
++  }
++  const active = weeks.filter(week => week.start_date! <= today && today <= week.end_date!);
++  if (active.length !== 1) throw new Error("Exactly one active Yahoo period is required.");
++  const weekday = new Date(`${today}T12:00:00Z`).getUTCDay();
++  const monday = offset(today, -((weekday + 6) % 7));
++  const calendarEnd = offset(monday, 13);
++  const startDate = offset(active[0].start_date! < monday ? active[0].start_date! : monday, -1);
++  const endDate = offset(active[0].end_date! > calendarEnd ? active[0].end_date! : calendarEnd, 1);
++  const days = (Date.parse(endDate) - Date.parse(startDate)) / 86400000 + 1;
++  if (days > RECURRING_PROFILE.maxDays) throw new Error("Recurring horizon exceeds its approved day budget.");
++  return { mode: "bounded" as const, gameKey: RECURRING_PROFILE.gameKey, startDate, endDate };
++}
++
++/** Per-page, decoded-body cap; redirect following and retries are forbidden. */
++export const fetchRecurringSchedulePage = async (date: string, runSignal: AbortSignal): ReturnType<typeof getScheduleDaily> => {
++  if (runSignal.aborted) throw new Error("Recurring refresh deadline exceeded.");
++  const controller = new AbortController();
++  const abort = () => controller.abort();
++  runSignal.addEventListener("abort", abort, { once: true });
++  const timer = setTimeout(abort, RECURRING_PROFILE.pageMs);
++  try {
++    const response = await fetch(`https://api-web.nhle.com/v1/schedule/${date}`, {
++      headers: { Accept: "application/json", "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)" },
++      cache: "no-store", redirect: "error", signal: controller.signal,
++    });
++    if (!response.ok || !response.headers.get("content-type")?.toLowerCase().includes("application/json") || !response.body) {
++      throw new Error("Recurring NHL schedule response is not successful JSON.");
++    }
++    const advertised = response.headers.get("content-length");
++    if (advertised && Number(advertised) > RECURRING_PROFILE.pageBytes) throw new Error("Recurring source byte budget exceeded.");
++    const reader = response.body.getReader();
++    const decoder = new TextDecoder();
++    let bytes = 0, body = "";
++    try {
++      for (;;) {
++        const { value, done } = await reader.read();
++        if (controller.signal.aborted) throw new Error("Recurring source deadline exceeded.");
++        if (done) break;
++        bytes += value.byteLength;
++        if (bytes > RECURRING_PROFILE.pageBytes) throw new Error("Recurring source byte budget exceeded.");
++        body += decoder.decode(value, { stream: true });
++      }
++      body += decoder.decode();
++    } finally {
++      await reader.cancel().catch(() => undefined);
++      reader.releaseLock();
++    }
++    return JSON.parse(body);
++  } finally {
++    clearTimeout(timer);
++    runSignal.removeEventListener("abort", abort);
++    controller.abort();
++  }
++};
+diff --git a/web/lib/rosterScheduleData/source.test.ts b/web/lib/rosterScheduleData/source.test.ts
+index b2ea77e..50af947 100644
+--- a/web/lib/rosterScheduleData/source.test.ts
++++ b/web/lib/rosterScheduleData/source.test.ts
+@@ -66,6 +66,18 @@ describe("roster optimizer NHL schedule source", () => {
+     ]);
+   });
+ 
++  it("persists observed game IDs and explicit empty days through the existing row metadata", async () => {
++    getScheduleDailyMock.mockResolvedValue({ gameWeek: [
++      { date: "2026-10-05", games: [game] }, { date: "2026-10-06", games: [] },
++    ] });
++    const result = await fetchBoundedNhlSchedule({ startDate: "2026-10-05", endDate: "2026-10-06" });
++    const rows = normalizeNhlGameToTeamRows({ ...result.games[0], fetchedAt: "2026-10-01T10:00:00Z",
++      gameKey: "477", yahooSeason: "2026", mapping: { status: "unmapped", reason: "no_week" } });
++    for (const row of rows) expect(row.source_metadata.scheduleCoverage).toEqual({
++      version: "nhl-source-days-v1", date: "2026-10-05", gameIds: [2026020001], emptyDates: ["2026-10-06"],
++    });
++  });
++
+   it("marks a partial club refresh incomplete so stale rows are preserved", async () => {
+     getMock
+       .mockResolvedValueOnce({ games: [game] })
+diff --git a/web/lib/rosterScheduleData/source.ts b/web/lib/rosterScheduleData/source.ts
+index a7543f1..9f7bab6 100644
+--- a/web/lib/rosterScheduleData/source.ts
++++ b/web/lib/rosterScheduleData/source.ts
+@@ -106,6 +106,7 @@ export async function fetchBoundedNhlSchedule(args: {
+   startDate: string;
+   endDate: string;
+   signal?: AbortSignal;
++  readSchedulePage?: (date: string) => ReturnType<typeof getScheduleDaily>;
+ }): Promise<{
+   complete: boolean;
+   games: FetchedNhlScheduleGame[];
+@@ -118,9 +119,10 @@ export async function fetchBoundedNhlSchedule(args: {
+     throw new Error("Invalid bounded NHL schedule range.");
+   }
+   const fetched: FetchedNhlScheduleGame[] = [];
++  const observedDays = new Map<string, Set<number>>();
+   for (let cursor = args.startDate; cursor <= args.endDate; cursor = addUtcDays(cursor, 7)) {
+     if (args.signal?.aborted) throw args.signal.reason ?? new Error("NHL schedule read aborted.");
+-    const payload = (await getScheduleDaily(cursor, args.signal)) as unknown as {
++    const payload = (await (args.readSchedulePage ? args.readSchedulePage(cursor) : getScheduleDaily(cursor, args.signal))) as unknown as {
+       gameWeek?: Array<{ date?: string; games?: Array<Omit<NhlScheduleGame, "gameDate"> & { gameDate?: string | null }> }>;
+     };
+     if (args.signal?.aborted) throw args.signal.reason ?? new Error("NHL schedule read aborted.");
+@@ -134,6 +136,12 @@ export async function fetchBoundedNhlSchedule(args: {
+       }
+       if (!Array.isArray(day.games)) throw new Error("NHL schedule day is incomplete.");
+       seenDates.add(day.date);
++      const ids = new Set(day.games.filter(game => game.gameType === 2).map(game => game.id));
++      const prior = observedDays.get(day.date);
++      if (prior && JSON.stringify([...prior].sort()) !== JSON.stringify([...ids].sort())) {
++        throw new Error("Conflicting NHL source day coverage.");
++      }
++      observedDays.set(day.date, ids);
+       for (const game of day.games) {
+         if (game.gameDate != null && game.gameDate !== day.date) throw new Error("NHL game date conflicts with its schedule day.");
+         fetched.push({ game: { ...game, gameDate: day.date }, sourceUrl });
+@@ -144,6 +152,9 @@ export async function fetchBoundedNhlSchedule(args: {
+     }
+   }
+   const deduped = dedupeFetchedGames(fetched);
++  const emptyDates = [...observedDays].filter(([, ids]) => !ids.size).map(([date]) => date).sort();
++  for (const entry of deduped.games) entry.scheduleCoverage = { version: "nhl-source-days-v1",
++    date: entry.game.gameDate, gameIds: [...observedDays.get(entry.game.gameDate)!].sort((a, b) => a - b), emptyDates };
+   const warning = duplicateWarning(deduped.duplicateGameIds);
+   return {
+     complete: true,
+diff --git a/web/lib/rosterScheduleData/types.ts b/web/lib/rosterScheduleData/types.ts
+index 9f42b55..8a85c61 100644
+--- a/web/lib/rosterScheduleData/types.ts
++++ b/web/lib/rosterScheduleData/types.ts
+@@ -74,5 +74,7 @@ export type RosterScheduleReadFilter = {
+   gameKey: string;
+   startWeek: number;
+   endWeek: number;
++  /** "witnessed" keeps non-countable mapped rows so source-day coverage can be verified on the full set. */
++  scope?: "countable" | "witnessed";
+ };
+ 
+diff --git a/web/pages/api/v1/db/cron/update-roster-optimizer-schedule-daily.ts b/web/pages/api/v1/db/cron/update-roster-optimizer-schedule-daily.ts
+new file mode 100644
+index 0000000..55f1784
+--- /dev/null
++++ b/web/pages/api/v1/db/cron/update-roster-optimizer-schedule-daily.ts
+@@ -0,0 +1,133 @@
++import type { NextApiRequest, NextApiResponse } from "next";
++import type { SupabaseClient } from "@supabase/supabase-js";
++
++import { nhlCalendarDate, withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
++import { withCronJobAudit } from "lib/cron/withCronJobAudit";
++import { hasScheduleCoverage, pages } from "lib/rosterScheduleData/planningInputs";
++import { recurringRange, RECURRING_PROFILE } from "lib/rosterScheduleData/recurring";
++import type { YahooMatchupWeekRow } from "lib/rosterScheduleData/types";
++import adminOnly from "utils/adminOnlyMiddleware";
++import { updateRosterOptimizerScheduleHandler, type ScheduleWriteControl } from "../update-roster-optimizer-schedule";
++
++// Scheduled refresh of the RSO schedule cache. The planning reader calls a
++// horizon complete only when every date carries an nhl-source-days-v1 witness
++// fetched within 36 h, so each run rewrites the whole current + next week and
++// active Yahoo period (recurringRange) through the existing bounded writer, then
++// reads the window back through the reader's own coverage check.
++const COVERAGE_TTL_MS = 36 * 3600000;
++const SYNC_DEADLINE_MS = 120_000; // the NHL reads have no timeout of their own; maxDuration is 240 s
++const READBACK_MS = 8000;
++const MAX_SIDES = 1000; // 31 dates × 32 clubs ≤ 992 team sides
++const RENEWAL_GRACE_DAYS = 90; // covers the playoffs after the last Yahoo period
++const SCHEDULE_COLUMNS = "id,source_game_id,source_season_id,game_type,game_date,start_time,game_status,schedule_status,is_countable,team_abbreviation,opponent_abbreviation,home_away,fetched_at,source_metadata";
++
++type Db = SupabaseClient<any>;
++type SyncResult = { statusCode: number; body: any };
++
++async function loadMatchupWeeks(db: Db): Promise<YahooMatchupWeekRow[]> {
++  const { data, error } = await db.from("yahoo_matchup_weeks")
++    .select("id,game_key,season,week,start_date,end_date")
++    .eq("game_key", RECURRING_PROFILE.gameKey).order("week", { ascending: true });
++  if (error) throw error;
++  return data ?? [];
++}
++
++// Runs the bounded writer in-process; it only reads `query`, `supabase` and `writeControl`.
++async function runBoundedSync(db: Db, query: Record<string, string>, writeControl: ScheduleWriteControl): Promise<SyncResult> {
++  const result: SyncResult = { statusCode: 200, body: null };
++  const res = {
++    status(code: number) { result.statusCode = code; return res; },
++    json(body: unknown) { result.body = body; return res; },
++  };
++  await updateRosterOptimizerScheduleHandler({ query, supabase: db, writeControl } as unknown as NextApiRequest,
++    res as unknown as NextApiResponse);
++  return result;
++}
++
++export async function updateRosterOptimizerScheduleDailyHandler(req: NextApiRequest, res: NextApiResponse) {
++  if (req.method !== "GET" && req.method !== "POST") {
++    res.setHeader("Allow", ["GET", "POST"]);
++    return res.status(405).json({ success: false, error: { code: "METHOD_NOT_ALLOWED", message: `Method ${req.method} Not Allowed` } });
++  }
++  const unexpected = Object.keys(req.query).filter(key => key !== "ignoreOffSeason");
++  if (unexpected.length) {
++    return res.status(400).json({ success: false, error: { code: "INVALID_QUERY",
++      message: `The daily refresh derives its own window; remove ${unexpected.join(", ")}.` } });
++  }
++  const db = (req as NextApiRequest & { supabase: Db }).supabase;
++  let written = false;
++  try {
++    const now = new Date();
++    const today = nhlCalendarDate(now);
++    const weeks = await loadMatchupWeeks(db);
++    if (!weeks.length) throw new Error(`No Yahoo matchup weeks exist for game key ${RECURRING_PROFILE.gameKey}.`);
++    if (!weeks.some(week => week.start_date && week.end_date && week.start_date <= today && today <= week.end_date)) {
++      // Playoffs and preseason skip; long after the last period, the pinned key is a past season.
++      const lastEnd = weeks.map(week => week.end_date ?? "").sort().at(-1)!;
++      if (today > new Date(Date.parse(`${lastEnd}T12:00:00Z`) + RENEWAL_GRACE_DAYS * 86400000).toISOString().slice(0, 10)) {
++        return res.status(409).json({ success: false, error: { code: "PROFILE_RENEWAL_REQUIRED",
++          message: `Yahoo game key ${RECURRING_PROFILE.gameKey} ended ${lastEnd}; pin the new season's game key.` } });
++      }
++      return res.status(200).json({ success: true, skipped: true, outcome: "skipped", reason: "no_active_yahoo_period",
++        message: `Skipped: no Yahoo matchup period for game key ${RECURRING_PROFILE.gameKey} contains ${today}.` });
++    }
++    const window = recurringRange(now, weeks);
++    // The deadline aborts the writer: it issues no write statement after this
++    // point, but one already sent may still be acknowledged by the database.
++    const controller = new AbortController();
++    const writeControl: ScheduleWriteControl = { signal: controller.signal, writeStarted: false };
++    let timer: ReturnType<typeof setTimeout> | undefined;
++    const sync = await Promise.race([runBoundedSync(db, window, writeControl),
++      new Promise<null>(resolve => { timer = setTimeout(() => { controller.abort(); resolve(null); }, SYNC_DEADLINE_MS); })])
++      .finally(() => clearTimeout(timer));
++    if (!sync) {
++      const limit = `The bounded refresh did not finish within ${SYNC_DEADLINE_MS / 1000} s`;
++      return res.status(504).json({ success: false, writeOutcome: writeControl.writeStarted ? "unknown" : "not_attempted",
++        error: { code: "DAILY_SCHEDULE_REFRESH_TIMEOUT", message: writeControl.writeStarted
++          ? `${limit}; a write was already issued and its acknowledgment is unknown (cancellation does not undo it). Read the window back before any retry.`
++          : `${limit} and was cancelled before any schedule write.` } });
++    }
++    if (sync.statusCode !== 200 || sync.body?.success !== true) {
++      return res.status(sync.statusCode >= 400 ? sync.statusCode : 500).json(sync.body);
++    }
++    written = true;
++    const data = sync.body.data;
++    const rows = await pages(() => db.from("roster_optimizer_team_games")
++      .select(SCHEDULE_COLUMNS, { count: "exact" })
++      .eq("source_season_id", data.sourceSeasonId).gte("game_date", window.startDate).lte("game_date", window.endDate)
++      .order("source_game_id").order("team_abbreviation").order("fetched_at").order("id"), Date.now() + READBACK_MS, MAX_SIDES);
++    // No timeZone: check exactly the fetched dates, which already include the ±1 padding.
++    const complete = hasScheduleCoverage(rows,
++      { seasonId: data.sourceSeasonId, startDate: window.startDate, endDate: window.endDate }, new Date());
++    return res.status(complete ? 200 : 409).json({
++      success: complete,
++      ...(complete ? {} : { error: { code: "SCHEDULE_COVERAGE_INCOMPLETE",
++        message: "The refresh was written, but the read-back window lacks complete fresh source-day coverage." } }),
++      writeOutcome: "acknowledged",
++      rowsUpserted: data.rowsUpserted,
++      data: {
++        window: { startDate: window.startDate, endDate: window.endDate },
++        sourceSeasonId: data.sourceSeasonId,
++        fetchedAt: data.fetchedAt,
++        coverage: complete
++          ? { status: "complete", validUntil: new Date(Date.parse(data.fetchedAt) + COVERAGE_TTL_MS).toISOString() }
++          : { status: "incomplete" },
++        gamesFetched: data.gamesFetched,
++        unmappedGames: data.unmappedGames,
++        ignoredGames: data.ignoredGames,
++        rowsRead: rows.length,
++        warnings: data.warnings,
++      },
++    });
++  } catch (error: unknown) {
++    return res.status(500).json({ success: false, ...(written ? { writeOutcome: "acknowledged" } : {}),
++      error: { code: "DAILY_SCHEDULE_REFRESH_FAILED",
++      message: error instanceof Error ? error.message.slice(0, 1000) : "Daily schedule refresh failed." } });
++  }
++}
++
++// GET for Vercel cron, POST for pg_cron or a manual run.
++export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(updateRosterOptimizerScheduleDailyHandler) as any), {
++  jobName: "update-roster-optimizer-schedule-daily",
++  includeFinalAuditReceipt: true,
++});
+diff --git a/web/pages/api/v1/db/update-roster-optimizer-schedule.ts b/web/pages/api/v1/db/update-roster-optimizer-schedule.ts
+index 1a68e62..e33a921 100644
+--- a/web/pages/api/v1/db/update-roster-optimizer-schedule.ts
++++ b/web/pages/api/v1/db/update-roster-optimizer-schedule.ts
+@@ -70,6 +70,14 @@ class SyncRouteError extends Error {
+   }
+ }
+ 
++/**
++ * Set by an in-process caller with a deadline (the daily cron). Every write
++ * statement checks `signal` first and marks `writeStarted` in the same tick, so
++ * once the caller aborts no further statement is issued and "not attempted" is
++ * exact. An already-issued statement may still land; aborting never undoes it.
++ */
++export type ScheduleWriteControl = { signal: AbortSignal; writeStarted: boolean };
++
+ function firstQueryValue(value: string | string[] | undefined): string | undefined {
+   return Array.isArray(value) ? value[0] : value;
+ }
+@@ -408,6 +416,7 @@ function buildScheduleRows(args: {
+       gameKey: args.gameKey,
+       mapping,
+       sourceUrl: entry.sourceUrl,
++      scheduleCoverage: entry.scheduleCoverage,
+       yahooSeason: args.yahooSeason,
+     });
+     rows.push(
+@@ -427,6 +436,16 @@ export async function updateRosterOptimizerScheduleHandler(
+ ) {
+   let guardedRequest = false;
+   let writesAttempted = false;
++  const control = (req as NextApiRequest & { writeControl?: ScheduleWriteControl }).writeControl;
++  const assertActive = () => {
++    if (control?.signal.aborted) {
++      throw new SyncRouteError({
++        code: "SCHEDULE_SYNC_ABORTED",
++        message: "The caller's deadline passed; no further schedule write was issued.",
++        status: 504,
++      });
++    }
++  };
+   try {
+     const request = parseRosterScheduleSyncRequest(req.query);
+     const { dryRun, guard } = parseRefreshGuard(req.query, request);
+@@ -434,6 +453,22 @@ export async function updateRosterOptimizerScheduleHandler(
+     const serviceClient = (req as NextApiRequest & { supabase: unknown })
+       .supabase;
+     const readClient = serviceClient as SyncReadClient;
++    const writeClient = {
++      from: (table: string) => ({
++        upsert: (...args: Parameters<ReturnType<ScheduleWriteClient["from"]>["upsert"]>) => {
++          assertActive();
++          writesAttempted = true;
++          if (control) control.writeStarted = true;
++          return (serviceClient as ScheduleWriteClient).from(table).upsert(...args);
++        },
++        delete: () => {
++          assertActive();
++          writesAttempted = true;
++          if (control) control.writeStarted = true;
++          return (serviceClient as ScheduleDeleteClient).from(table).delete();
++        },
++      }),
++    };
+     const weeks = await loadYahooMatchupWeeks(readClient, request.gameKey);
+     const yahooSeasons = new Set(weeks.map((week) => week.season));
+     if (yahooSeasons.size !== 1) {
+@@ -449,13 +484,16 @@ export async function updateRosterOptimizerScheduleHandler(
+       throw new RefreshGuardError("REFRESH_SCOPE_MISMATCH", "Resolved NHL season differs from the approved season.");
+     }
+     const teams = await loadSeasonTeams({ client: readClient, seasonId });
++    assertActive();
+     const sourceResult =
+       request.mode === "full"
+         ? await fetchFullSeasonNhlSchedule({ seasonId, teams })
+         : await fetchBoundedNhlSchedule({
+             startDate: request.startDate,
+             endDate: request.endDate,
++            ...(control ? { signal: control.signal } : {}),
+           });
++    assertActive();
+     const fetchedAt = new Date().toISOString();
+     const normalized = buildScheduleRows({
+       fetchedAt,
+@@ -482,9 +520,8 @@ export async function updateRosterOptimizerScheduleHandler(
+     });
+     // Guarded scopes fit one upsert statement (<=1000 sides). The audit remains
+     // separate; a timeout/unknown acknowledgement still requires DB readback.
+-    writesAttempted = !dryRun && normalized.rows.length > 0;
+     const rowsUpserted = dryRun ? 0 : await upsertRosterScheduleRows({
+-      client: serviceClient as ScheduleWriteClient,
++      client: writeClient,
+       rows: normalized.rows,
+       ...(guard ? { chunkSize: guard.maxSides } : {}),
+     });
+@@ -496,7 +533,7 @@ export async function updateRosterOptimizerScheduleHandler(
+           })
+         : [];
+     const rowsDeleted = await deleteRosterScheduleRows({
+-      client: serviceClient as ScheduleDeleteClient,
++      client: writeClient,
+       rowIds: staleRowIds,
+     });
+ 
+@@ -591,7 +628,7 @@ export async function updateRosterOptimizerScheduleHandler(
+           });
+     return res.status(routeError.status).json({
+       success: false,
+-      ...(guardedRequest || error instanceof RefreshGuardError
++      ...(guardedRequest || error instanceof RefreshGuardError || control
+         ? { writeOutcome: writesAttempted ? "unknown" : "not_attempted" } : {}),
+       error: {
+         code: routeError.code,
+diff --git a/web/vercel.json b/web/vercel.json
+index d7e7e2a..e299b7d 100644
+--- a/web/vercel.json
++++ b/web/vercel.json
+@@ -114,6 +114,10 @@
+     {
+       "path": "/api/v1/db/cron-report",
+       "schedule": "0 13 * * *"
++    },
++    {
++      "path": "/api/v1/db/cron/update-roster-optimizer-schedule-daily",
++      "schedule": "52 8,14 * * *"
+     }
+   ]
+ }
