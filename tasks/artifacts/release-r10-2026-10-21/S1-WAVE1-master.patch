@@ -1,0 +1,671 @@
+diff --git a/web/__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts b/web/__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts
+index bea850d..1a74d0d 100644
+--- a/web/__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts
++++ b/web/__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts
+@@ -45,6 +45,21 @@ describe("/api/v1/roster-schedule-optimizer/data", () => {
+     expect(rebuilt[0].limitations.at(-1)).toBe(`Interim projections were trimmed to the first ${kept} of 7200 player-games to fit the planning response; later games stay schedule-only.`);
+   });
+ 
++  it("selects one source per request and leaves the response unchanged until the catalog head env is set (S-1)", async () => {
++    vi.stubEnv("PLAYER_FORECAST_NATIVE_CATALOG_HEAD_ID", "");
++    mocks.load.mockResolvedValue(data);
++    // The database stub has no methods: any lookup before activation would throw.
++    const dark = await request();
++    expect(dark.code).toBe(200);
++    expect(dark.body).toEqual({ success: true, data: { ...data, forecasts: [] } });
++    expect(dark.setHeader).toHaveBeenCalledWith("Cache-Control", "public, s-maxage=300, stale-while-revalidate=300");
++    expect(mocks.load.mock.calls[0][2]).toMatchObject({ forgeDailyBridge: true, source: { kind: "legacy", reason: "native_not_activated" } });
++    vi.stubEnv("PLAYER_FORECAST_NATIVE_CATALOG_HEAD_ID", "not-a-head-id");
++    const unusable = await request();
++    expect(unusable.body.forecastSource).toEqual({ kind: "empty", headRevision: null, expiresAt: null, reason: "native_catalog_head_unavailable_or_invalid" });
++    vi.unstubAllEnvs();
++  });
++
+   it("refuses a range whose data cannot fit even without bridge rows, with a clear code", async () => {
+     const players = Array.from({ length: 5000 }, (_, index) => ({ id: String(index + 1), nhlId: null, name: "ø".repeat(500),
+       teamAbbreviation: null, eligiblePositions: [], playerClass: "skater", availability: "free_agent", ownership: null, canDrop: null,
+diff --git a/web/lib/player-forecasts/forecastServingSource.test.ts b/web/lib/player-forecasts/forecastServingSource.test.ts
+new file mode 100644
+index 0000000..008c8e9
+--- /dev/null
++++ b/web/lib/player-forecasts/forecastServingSource.test.ts
+@@ -0,0 +1,113 @@
++import { afterEach, describe, expect, it, vi } from "vitest";
++import { forecastSourceSummary, selectForecastServingSource } from "./forecastServingSource";
++import { NATIVE_CATALOG_PIN_KEYS, prepareNativeCatalogObservation } from "./nativeCatalogHead";
++import { playerForecastSourcePayloadHash as hash, type PlannedSourceObservation } from "./sourceSnapshot";
++
++// Same synthetic catalog shape as nativeCatalogHead.test.ts; selection only, no publication.
++const now = new Date("2026-10-15T12:00:00Z");
++const ids = [1, 2, 3, 4].map(n => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`);
++const seasonId = 20262027;
++const expiresAt = "2026-10-15T18:00:00.000Z";
++
++function release(id: string, dataset: string, expiry: string): PlannedSourceObservation {
++  const payload = { manifest: { expiresAt: expiry } };
++  return { id, provider: "fhfh", dataset_key: dataset, entity_kind: "bundle", entity_key: String(seasonId), source_url: null,
++    source_revision_key: null, observed_at: "2026-10-15T10:00:00Z", available_at: "2026-10-15T10:00:00Z",
++    payload_hash: hash(payload), payload, metadata: {} };
++}
++
++function selectedCatalog() {
++  const baseline = release(ids[2], "contribution-bundle-v1", expiresAt);
++  const skaters = release(ids[3], "skater-roster-observation-participation-bundle-v1", "2026-10-15T22:59:59.999Z");
++  const observation = prepareNativeCatalogObservation({ plan: { seasonId, rows: [baseline, skaters] }, observationId: ids[1],
++    issuedAt: now.toISOString(), pins: { PLAYER_FORECAST_BASELINE_RELEASE_IDS: baseline.id,
++      PLAYER_FORECAST_ROSTER_OBSERVATION_SKATER_PARTICIPATION_RELEASES: `${skaters.id}:${skaters.payload_hash}` } });
++  const head = { id: ids[0], season_id: seasonId, revision: 4, observation_id: observation.id,
++    payload_hash: observation.payload_hash, selected_at: now.toISOString() };
++  const tables: Record<string, Record<string, unknown>[]> = { native_forecast_catalog_heads: [head],
++    player_forecast_source_observations: [observation, baseline, skaters] };
++  const from = vi.fn((table: string) => {
++    let rows = [...(tables[table] ?? [])];
++    const query: any = {
++      select: () => query,
++      eq: (column: string, value: unknown) => { rows = rows.filter(row => row[column] === value); return query; },
++      in: (column: string, values: unknown[]) => { rows = rows.filter(row => values.includes(row[column])); return query; },
++      limit: (count: number) => { rows = rows.slice(0, count); return query; },
++      abortSignal: () => query,
++      then: (resolve: (value: unknown) => unknown, reject?: (error: unknown) => unknown) =>
++        Promise.resolve({ data: structuredClone(rows), error: null }).then(resolve, reject),
++    };
++    return query;
++  });
++  return { db: { from } as never, from };
++}
++
++const stalePins = { PLAYER_FORECAST_BASELINE_RELEASE_IDS: "stale-process-pin", PLAYER_FORECAST_PARTICIPATION_RELEASES: "stale-legacy-pin" };
++const fallbacks = [undefined, "empty", "legacy_flagged", "LEGACY_FLAGGED", "legacy"] as const;
++const env = (headId: string | undefined, fallback: string | undefined) => ({ ...stalePins,
++  ...(headId === undefined ? {} : { PLAYER_FORECAST_NATIVE_CATALOG_HEAD_ID: headId }),
++  ...(fallback === undefined ? {} : { FORGE_NATIVE_SERVING_FALLBACK: fallback }) });
++const fallbackKind = (fallback: string | undefined) => fallback === "legacy_flagged" ? "legacy_flagged" : "empty";
++
++afterEach(() => vi.useRealTimers());
++
++describe("forecast serving source selection", () => {
++  it.each(fallbacks)("selects legacy with the process pins and no lookup while the head env is unset (fallback=%s)", async fallback => {
++    const { db, from } = selectedCatalog(), environment = env(undefined, fallback);
++    const source = await selectForecastServingSource(db, seasonId, now, environment);
++    expect(source).toEqual({ kind: "legacy", reason: "native_not_activated", environment });
++    expect(from).not.toHaveBeenCalled();
++  });
++
++  it("never resolves a lazy season before activation", async () => {
++    const { db } = selectedCatalog(), season = vi.fn(async () => seasonId);
++    expect((await selectForecastServingSource(db, season, now, env(undefined, undefined))).kind).toBe("legacy");
++    expect(season).not.toHaveBeenCalled();
++  });
++
++  it.each(fallbacks)("selects native from the head's pins only, whatever the fallback (fallback=%s)", async fallback => {
++    const { db } = selectedCatalog();
++    const source = await selectForecastServingSource(db, async () => seasonId, now, env(ids[0], fallback));
++    expect(source).toMatchObject({ kind: "native", headId: ids[0], headRevision: 4, issuedAt: now.toISOString(), expiresAt });
++    expect(source.environment.PLAYER_FORECAST_BASELINE_RELEASE_IDS).toBe(ids[2]);
++    expect(source.environment.PLAYER_FORECAST_PARTICIPATION_RELEASES).toBe("");
++    expect(forecastSourceSummary(source)).toEqual({ kind: "native", headRevision: 4, expiresAt, reason: null });
++  });
++
++  it.each(fallbacks.flatMap(fallback => [Date.parse(expiresAt), Date.parse(expiresAt) + 1].map(at => [fallback, at] as const)))(
++    "falls back with native_catalog_expired at and after expiry (fallback=%s, clock=%s)", async (fallback, at) => {
++      const { db } = selectedCatalog();
++      const source = await selectForecastServingSource(db, seasonId, new Date(at), env(ids[0], fallback));
++      expect(source.kind).toBe(fallbackKind(fallback));
++      expect(forecastSourceSummary(source)).toEqual({ kind: fallbackKind(fallback), headRevision: null, expiresAt: null, reason: "native_catalog_expired" });
++      for (const key of NATIVE_CATALOG_PIN_KEYS) expect(source.environment[key]).toBe("");
++      expect(source.environment.PLAYER_FORECAST_PARTICIPATION_RELEASES).toBe("");
++    });
++
++  it.each(fallbacks.flatMap(fallback => [["missing head", ids[3]], ["malformed head ID", "not-a-uuid"], ["other season", ids[0]]]
++    .map(([label, headId]) => [fallback, label, headId] as const)))(
++    "falls back with head_unavailable_or_invalid, never keeping process pins (fallback=%s, %s)", async (fallback, label, headId) => {
++      const { db } = selectedCatalog();
++      const source = await selectForecastServingSource(db, label === "other season" ? 20252026 : seasonId, now, env(headId, fallback));
++      expect(source).toMatchObject({ kind: fallbackKind(fallback), reason: "native_catalog_head_unavailable_or_invalid" });
++      for (const key of NATIVE_CATALOG_PIN_KEYS) expect(source.environment[key]).toBe("");
++    });
++
++  it.each([undefined, "legacy_flagged"])("counts an 8 s deadline miss as unavailable (fallback=%s)", async fallback => {
++    vi.useFakeTimers();
++    const hung = { from: () => { const query: any = { select: () => query, eq: () => query, in: () => query, limit: () => query,
++      abortSignal: () => query, then: () => undefined }; return query; } } as never;
++    const pending = selectForecastServingSource(hung, seasonId, now, env(ids[0], fallback));
++    await vi.advanceTimersByTimeAsync(7999);
++    let settled = false; void pending.then(() => { settled = true; });
++    await Promise.resolve(); expect(settled).toBe(false);
++    await vi.advanceTimersByTimeAsync(1);
++    expect(await pending).toMatchObject({ kind: fallbackKind(fallback), reason: "native_catalog_head_unavailable_or_invalid" });
++  });
++
++  it("falls back when the season itself cannot be resolved", async () => {
++    const { db } = selectedCatalog();
++    const source = await selectForecastServingSource(db, async () => { throw new Error("no season"); }, now, env(ids[0], undefined));
++    expect(source).toMatchObject({ kind: "empty", reason: "native_catalog_head_unavailable_or_invalid" });
++  });
++});
+diff --git a/web/lib/player-forecasts/forecastServingSource.ts b/web/lib/player-forecasts/forecastServingSource.ts
+new file mode 100644
+index 0000000..0149b39
+--- /dev/null
++++ b/web/lib/player-forecasts/forecastServingSource.ts
+@@ -0,0 +1,79 @@
++import type { SupabaseClient } from "@supabase/supabase-js";
++import { timestampMicros } from "../projections/evidenceTime";
++import { withinDeadline } from "../rosterScheduleData/planningInputs";
++import { resolveNativeCatalogEnvironment, unavailableNativeCatalogEnvironment, type NativeCatalogHead } from "./nativeCatalogHead";
++import { validPlannedObservationId } from "./sourceSnapshot";
++
++/** Same budget as the planning head read; a miss counts as an unavailable head. */
++export const FORECAST_SERVING_DEADLINE_MS = 8000;
++export type NativeUnavailableReason = "native_catalog_head_unavailable_or_invalid" | "native_catalog_expired";
++type ServingEnvironment = Readonly<Record<string, string | undefined>>;
++/** `environment` is what the forecast loaders read: the process env before
++ * activation, the head's pins only for native, and blank pins otherwise. */
++export type ForecastServingSource =
++  | { kind: "legacy"; reason: "native_not_activated"; environment: ServingEnvironment }
++  | { kind: "native"; headId: string; headRevision: number; issuedAt: string; expiresAt: string; environment: ServingEnvironment }
++  | { kind: "legacy_flagged" | "empty"; reason: NativeUnavailableReason; environment: ServingEnvironment };
++export type ForecastSourceSummary = { kind: ForecastServingSource["kind"]; headRevision: number | null; expiresAt: string | null; reason: string | null };
++
++const micros = (value: unknown) => typeof value === "string" ? Number(timestampMicros(value) ?? NaN) : NaN;
++
++/** Pre-activation is legacy; a configured but unusable head never keeps the process pins (D-2: anything but `legacy_flagged` is `empty`). */
++export function unavailableForecastServingSource(env: ServingEnvironment, reason: NativeUnavailableReason = "native_catalog_head_unavailable_or_invalid"): ForecastServingSource {
++  if (!env.PLAYER_FORECAST_NATIVE_CATALOG_HEAD_ID) return { kind: "legacy", reason: "native_not_activated", environment: env };
++  return { kind: env.FORGE_NATIVE_SERVING_FALLBACK === "legacy_flagged" ? "legacy_flagged" : "empty", reason,
++    environment: unavailableNativeCatalogEnvironment({ ...env }).environment };
++}
++
++export function forecastSourceSummary(source: ForecastServingSource): ForecastSourceSummary {
++  return source.kind === "native" ? { kind: "native", headRevision: source.headRevision, expiresAt: source.expiresAt, reason: null }
++    : { kind: source.kind, headRevision: null, expiresAt: null, reason: source.reason };
++}
++
++function linkSignals(deadline: AbortSignal, external?: AbortSignal) {
++  if (!external) return deadline;
++  const controller = new AbortController(), abort = () => controller.abort();
++  if (deadline.aborted || external.aborted) abort();
++  deadline.addEventListener("abort", abort, { once: true }); external.addEventListener("abort", abort, { once: true });
++  return controller.signal;
++}
++
++/** The immutable selection row behind a head, read for its issuance window only.
++ * On success the resolver has already validated this row against the same clock. */
++async function readSelectionWindow(db: SupabaseClient<any>, headId: string, seasonId: number, signal: AbortSignal, known?: NativeCatalogHead) {
++  let head = known;
++  if (!head) {
++    const result = await db.from("native_forecast_catalog_heads").select("id,season_id,revision,observation_id,payload_hash").eq("id", headId).limit(2).abortSignal(signal);
++    if (result.error || !Array.isArray(result.data) || result.data.length !== 1 || result.data[0].season_id !== seasonId) return null;
++    head = result.data[0] as NativeCatalogHead;
++  }
++  const result = await db.from("player_forecast_source_observations").select("id,payload_hash,payload").eq("id", head.observation_id).limit(2).abortSignal(signal);
++  const row = Array.isArray(result.data) && result.data.length === 1 ? result.data[0] : null;
++  const issuedAt = row?.payload?.issuedAt, expiresAt = row?.payload?.expiresAt;
++  if (result.error || !row || row.payload_hash !== head.payload_hash || !Number.isFinite(micros(issuedAt)) || !Number.isFinite(micros(expiresAt))) return null;
++  return { head, issuedAt: issuedAt as string, expiresAt: expiresAt as string };
++}
++
++/** The single server-side forecast source for Start Chart, RSO and FORGE (one call per request).
++ * `seasonId` may be lazy so pre-activation requests make no lookups at all. */
++export async function selectForecastServingSource(db: SupabaseClient<any>, seasonId: number | (() => Promise<number>), now = new Date(),
++  env: ServingEnvironment = process.env, signal?: AbortSignal): Promise<ForecastServingSource> {
++  const headId = env.PLAYER_FORECAST_NATIVE_CATALOG_HEAD_ID;
++  if (!headId) return unavailableForecastServingSource(env);
++  try {
++    return await withinDeadline(Date.now() + FORECAST_SERVING_DEADLINE_MS, async deadlineSignal => {
++      const linked = linkSignals(deadlineSignal, signal);
++      const season = typeof seasonId === "function" ? await seasonId() : seasonId;
++      const resolved = await resolveNativeCatalogEnvironment(db, season, now, { ...env }, linked);
++      const expired = (window: { expiresAt: string } | null) => !!window && micros(window.expiresAt) <= now.getTime() * 1000;
++      if (resolved.selection) {
++        const window = await readSelectionWindow(db, headId, season, linked, resolved.selection);
++        if (!window || expired(window)) return unavailableForecastServingSource(env, window ? "native_catalog_expired" : undefined);
++        return { kind: "native", headId, headRevision: window.head.revision, issuedAt: window.issuedAt, expiresAt: window.expiresAt, environment: resolved.environment };
++      }
++      // The resolver reports every failure alike; only an expired selection gets its own reason.
++      const window = validPlannedObservationId(headId) ? await readSelectionWindow(db, headId, season, linked).catch(() => null) : null;
++      return unavailableForecastServingSource(env, expired(window) ? "native_catalog_expired" : undefined);
++    });
++  } catch { return unavailableForecastServingSource(env); }
++}
+diff --git a/web/lib/player-forecasts/nativeCatalogHead.test.ts b/web/lib/player-forecasts/nativeCatalogHead.test.ts
+new file mode 100644
+index 0000000..27c8b20
+--- /dev/null
++++ b/web/lib/player-forecasts/nativeCatalogHead.test.ts
+@@ -0,0 +1,79 @@
++import { describe, expect, it, vi } from "vitest";
++import { NATIVE_CATALOG_PIN_KEYS, prepareNativeCatalogObservation, resolveNativeCatalogEnvironment } from "./nativeCatalogHead";
++import { playerForecastSourcePayloadHash as hash, type PlannedSourceObservation } from "./sourceSnapshot";
++
++// Serving-side head resolution only; publication and CAS stay with nativeBaselinePublication.test.ts.
++const now = new Date("2026-10-15T12:00:00Z");
++const ids = [1, 2, 3, 4].map(n => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`);
++const seasonId = 20262027;
++
++function release(id: string, dataset: string, expiresAt: string): PlannedSourceObservation {
++  const payload = { manifest: { expiresAt } };
++  return { id, provider: "fhfh", dataset_key: dataset, entity_kind: "bundle", entity_key: String(seasonId), source_url: null,
++    source_revision_key: null, observed_at: "2026-10-15T10:00:00Z", available_at: "2026-10-15T10:00:00Z",
++    payload_hash: hash(payload), payload, metadata: {} };
++}
++
++function database(tables: Record<string, Record<string, unknown>[]>) {
++  const from = vi.fn((table: string) => {
++    let rows = [...(tables[table] ?? [])];
++    const query: any = {
++      select: () => query,
++      eq: (column: string, value: unknown) => { rows = rows.filter(row => row[column] === value); return query; },
++      in: (column: string, values: unknown[]) => { rows = rows.filter(row => values.includes(row[column])); return query; },
++      limit: (count: number) => { rows = rows.slice(0, count); return query; },
++      abortSignal: () => query,
++      then: (resolve: (value: unknown) => unknown, reject?: (error: unknown) => unknown) =>
++        Promise.resolve({ data: structuredClone(rows), error: null }).then(resolve, reject),
++    };
++    return query;
++  });
++  return { db: { from } as never, from };
++}
++
++function selectedCatalog() {
++  const baseline = release(ids[2], "contribution-bundle-v1", "2026-10-15T18:00:00.000Z");
++  const skaters = release(ids[3], "skater-roster-observation-participation-bundle-v1", "2026-10-15T22:59:59.999Z");
++  const observation = prepareNativeCatalogObservation({ plan: { seasonId, rows: [baseline, skaters] }, observationId: ids[1],
++    issuedAt: now.toISOString(), pins: { PLAYER_FORECAST_BASELINE_RELEASE_IDS: baseline.id,
++      PLAYER_FORECAST_ROSTER_OBSERVATION_SKATER_PARTICIPATION_RELEASES: `${skaters.id}:${skaters.payload_hash}` } });
++  const head = { id: ids[0], season_id: seasonId, revision: 1, observation_id: observation.id,
++    payload_hash: observation.payload_hash, selected_at: now.toISOString() };
++  return { observation, ...database({ native_forecast_catalog_heads: [head],
++    player_forecast_source_observations: [observation, baseline, skaters] }) };
++}
++
++describe("native catalog head resolution", () => {
++  it("admits a selected catalog strictly before its earliest release expiry and fails closed exactly at and after it", async () => {
++    const { db, observation } = selectedCatalog();
++    const expiresAt = Date.parse((observation.payload as { expiresAt: string }).expiresAt);
++    expect(expiresAt).toBe(Date.parse("2026-10-15T18:00:00.000Z"));
++    const environment = { PLAYER_FORECAST_NATIVE_CATALOG_HEAD_ID: ids[0], PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES: "stale" };
++    const at = (ms: number) => resolveNativeCatalogEnvironment(db, seasonId, new Date(ms), environment);
++    const admitted = await at(expiresAt - 1);
++    expect(admitted.selection?.revision).toBe(1);
++    expect(admitted.environment.PLAYER_FORECAST_BASELINE_RELEASE_IDS).toBe(ids[2]);
++    expect(admitted.environment.PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES).toBe("");
++    for (const ms of [expiresAt, expiresAt + 1]) {
++      const resolved = await at(ms);
++      expect(resolved.selection).toBeNull(); expect(resolved.limitation).toBeTruthy();
++      for (const key of NATIVE_CATALOG_PIN_KEYS) expect(resolved.environment[key]).toBe("");
++    }
++    // A clock before issuance never admits a future-issued selection.
++    expect((await at(now.getTime() - 1)).selection).toBeNull();
++  });
++
++  it("clears every pin for a head from another season instead of keeping stale environment pins", async () => {
++    const { db } = selectedCatalog();
++    const mismatched = await resolveNativeCatalogEnvironment(db, 20252026, now,
++      { PLAYER_FORECAST_NATIVE_CATALOG_HEAD_ID: ids[0], PLAYER_FORECAST_BASELINE_RELEASE_IDS: "stale" });
++    expect(mismatched.selection).toBeNull();
++    for (const key of NATIVE_CATALOG_PIN_KEYS) expect(mismatched.environment[key]).toBe("");
++  });
++
++  it("keeps head selection default-off without a lookup", async () => {
++    const { db, from } = selectedCatalog(), environment = { PLAYER_FORECAST_BASELINE_RELEASE_IDS: "unchanged" };
++    expect(await resolveNativeCatalogEnvironment(db, seasonId, now, environment)).toMatchObject({ environment, selection: null, limitation: null });
++    expect(from).not.toHaveBeenCalled();
++  });
++});
+diff --git a/web/lib/player-forecasts/nativeCatalogHead.ts b/web/lib/player-forecasts/nativeCatalogHead.ts
+new file mode 100644
+index 0000000..09a7c02
+--- /dev/null
++++ b/web/lib/player-forecasts/nativeCatalogHead.ts
+@@ -0,0 +1,147 @@
++import type { SupabaseClient } from "@supabase/supabase-js";
++import { z } from "zod";
++import { timestampMicros } from "../projections/evidenceTime";
++import { withinDeadline } from "../rosterScheduleData/planningInputs";
++import { capturePlayerForecastSourceObservation, playerForecastSourcePayloadHash as hash,
++  SOURCE_OBSERVATION_COLUMNS, validPlannedObservationId, verifyPlannedObservation, type PlannedSourceObservation } from "./sourceSnapshot";
++
++export const NATIVE_CATALOG_PIN_KEYS = ["PLAYER_FORECAST_BASELINE_RELEASE_IDS", "PLAYER_FORECAST_ROSTER_OBSERVATION_SKATER_PARTICIPATION_RELEASES",
++  "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_PARTICIPATION_RELEASES", "PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES",
++  "PLAYER_FORECAST_ROLLING_14D_SKATER_PARTICIPATION_RELEASES", "PLAYER_FORECAST_ROLLING_14D_GOALIE_PARTICIPATION_RELEASES",
++  "PLAYER_FORECAST_ROLLING_14D_GOALIE_START_RELEASES"] as const;
++/** Groups added after the first published selections. Absent means nothing selected, so earlier
++ * heads still parse and hash unchanged, and a selection without them is byte-identical to before. */
++const ADDED_PIN_KEYS = new Set<string>(NATIVE_CATALOG_PIN_KEYS.slice(4));
++const legacyKeys = ["PLAYER_FORECAST_PARTICIPATION_RELEASES", "PLAYER_FORECAST_GOALIE_PARTICIPATION_RELEASES",
++  "PLAYER_FORECAST_FROZEN_WINDOW_SKATER_PARTICIPATION_RELEASES", "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_PARTICIPATION_RELEASES", "PLAYER_FORECAST_FROZEN_WINDOW_GOALIE_START_RELEASES"];
++const emptyPins = Object.fromEntries([...NATIVE_CATALOG_PIN_KEYS, ...legacyKeys].map(key => [key, ""]));
++export function unavailableNativeCatalogEnvironment(environment: Record<string, string | undefined>) {
++  return { environment: Object.freeze({ ...environment, ...emptyPins }), selection: null, limitation: "native_catalog_head_unavailable_or_invalid" };
++}
++const datasets = ["contribution-bundle-v1", "skater-roster-observation-participation-bundle-v1", "goalie-roster-observation-participation-bundle-v1", "goalie-roster-observation-start-bundle-v1",
++  "skater-rolling-14d-participation-bundle-v1", "goalie-rolling-14d-participation-bundle-v1", "goalie-rolling-14d-start-bundle-v1"];
++const time = (value: unknown) => typeof value === "string" ? Number(timestampMicros(value) ?? NaN) : NaN;
++const selectionVersion = "native-catalog-selection-v1";
++const uuid = z.string().refine(validPlannedObservationId), digest = z.string().regex(/^[a-f0-9]{64}$/), clock = z.string().refine(value => Number.isFinite(time(value)));
++const selectionShape = z.object({ version: z.literal(selectionVersion), seasonId: z.number().int().positive(), issuedAt: clock, expiresAt: clock,
++  packageHash: digest, pins: z.object(Object.fromEntries(NATIVE_CATALOG_PIN_KEYS.map(key => [key, ADDED_PIN_KEYS.has(key) ? z.string().optional() : z.string()])) as
++    Record<typeof NATIVE_CATALOG_PIN_KEYS[number], z.ZodString | z.ZodOptional<z.ZodString>>).strict(),
++  releases: z.array(z.object({ id: uuid, payloadHash: digest, dataset: z.string() }).strict()).min(1).max(32) }).strict();
++export type NativeCatalogSelection = z.infer<typeof selectionShape>;
++export type NativeCatalogHead = { id: string; season_id: number; revision: number; observation_id: string; payload_hash: string; selected_at: string };
++const headColumns = "id,season_id,revision,observation_id,payload_hash,selected_at";
++function validateSelection(value: unknown, seasonId: number, now: Date): NativeCatalogSelection {
++  const selection = selectionShape.parse(value);
++  if (selection.seasonId !== seasonId || time(selection.issuedAt) > now.getTime() * 1000 || time(selection.expiresAt) <= now.getTime() * 1000
++    || time(selection.expiresAt) <= time(selection.issuedAt) || Buffer.byteLength(JSON.stringify(selection)) > 64 * 1024
++    || new Set(selection.releases.map(row => row.id)).size !== selection.releases.length) throw new Error("Invalid native catalog selection.");
++  const expected: NativeCatalogSelection["releases"] = [];
++  for (const [index, key] of NATIVE_CATALOG_PIN_KEYS.entries()) {
++    for (const entry of (selection.pins[key] ?? "").split(",").filter(Boolean)) {
++      const parts = entry.split(":");
++      const release = selection.releases.find(row => row.id === parts[0]);
++      if (!release || release.dataset !== datasets[index] || (index === 0 ? parts.length !== 1 : parts.length !== 2 || parts[1] !== release.payloadHash)) throw new Error("Native catalog pin/hash mismatch.");
++      expected.push(release);
++    }
++  }
++  if (!selection.pins[NATIVE_CATALOG_PIN_KEYS[0]] || expected.length !== selection.releases.length
++    || new Set(expected.map(row => row.id)).size !== expected.length) throw new Error("Native catalog release scope mismatch.");
++  return selection;
++}
++function validHead(value: any, id: string, seasonId: number): value is NativeCatalogHead {
++  return value?.id === id && value.season_id === seasonId && Number.isSafeInteger(value.revision) && value.revision > 0
++    && validPlannedObservationId(value.observation_id) && /^[a-f0-9]{64}$/.test(value.payload_hash) && Number.isFinite(time(value.selected_at));
++}
++async function readHead(db: SupabaseClient<any>, id: string, seasonId: number, signal?: AbortSignal) {
++  const query = db.from("native_forecast_catalog_heads").select(headColumns).eq("id", id).limit(2);
++  const result = await (signal ? query.abortSignal(signal) : query);
++  if (result.error || !Array.isArray(result.data) || result.data.length > 1 || result.data.length === 1 && !validHead(result.data[0], id, seasonId)) throw new Error("Native catalog head unavailable.");
++  return result.data[0] as NativeCatalogHead | undefined;
++}
++async function verifyReleases(db: SupabaseClient<any>, selection: NativeCatalogSelection, signal?: AbortSignal, metadataOnly = false) {
++  const query = db.from("player_forecast_source_observations").select(`id,provider,dataset_key,entity_key,available_at,payload_hash${metadataOnly ? "" : ",payload"}`)
++    .in("id", selection.releases.map(row => row.id)).limit(selection.releases.length + 1);
++  const result = await (signal ? query.abortSignal(signal) : query);
++  if (result.error || !Array.isArray(result.data) || result.data.length !== selection.releases.length
++    || Buffer.byteLength(JSON.stringify(result.data)) > 32 * 1024 * 1024 || new Set(result.data.map((row: any) => row.id)).size !== result.data.length) throw new Error("Native catalog releases unavailable.");
++  for (const expected of selection.releases) {
++    // PostgREST cannot infer the conditional projection string; every field is
++    // checked below before this untyped Data API row is used.
++    const actual: any = result.data.find((row: any) => row.id === expected.id), payload = actual?.payload;
++    const expiresAt = payload?.manifest?.expiresAt ?? payload?.expiresAt;
++    if (!actual || actual.provider !== "fhfh" || actual.entity_key !== String(selection.seasonId) || actual.dataset_key !== expected.dataset
++      || actual.payload_hash !== expected.payloadHash || !Number.isFinite(time(actual.available_at))
++      || !metadataOnly && (hash(payload) !== expected.payloadHash || !Number.isFinite(time(expiresAt)) || time(selection.expiresAt) > time(expiresAt))
++      || time(actual.available_at) > time(selection.issuedAt)) throw new Error("Native catalog release hash/clock mismatch.");
++  }
++}
++/** Explicit exact-head opt-in only. An invalid enabled head clears every release
++ * pin, never falls back to the process's older catalog. Admission stays separate. */
++export async function resolveNativeCatalogEnvironment(db: SupabaseClient<any>, seasonId: number, now: Date,
++  environment: Record<string, string | undefined> = process.env, signal?: AbortSignal) {
++  const id = environment.PLAYER_FORECAST_NATIVE_CATALOG_HEAD_ID;
++  if (!id) return { environment, selection: null, limitation: null };
++  try {
++    if (!validPlannedObservationId(id)) throw new Error("Invalid head ID.");
++    const head = await readHead(db, id, seasonId, signal); if (!head || time(head.selected_at) > now.getTime() * 1000) throw new Error("Missing head.");
++    const query = db.from("player_forecast_source_observations").select(SOURCE_OBSERVATION_COLUMNS).eq("id", head.observation_id).limit(2);
++    const result = await (signal ? query.abortSignal(signal) : query);
++    if (result.error || !Array.isArray(result.data) || result.data.length !== 1) throw new Error("Missing selection.");
++    const row = result.data[0], selection = validateSelection(row.payload, seasonId, now);
++    if (row.provider !== "fhfh" || row.dataset_key !== selectionVersion || row.entity_kind !== "catalog_selection" || row.entity_key !== String(seasonId)
++      || row.payload_hash !== head.payload_hash || hash(row.payload) !== head.payload_hash
++      || time(row.available_at) !== time(selection.issuedAt) || time(selection.issuedAt) > time(head.selected_at)) throw new Error("Selection envelope mismatch.");
++    // Existing native/participation loaders rehash the full immutable payloads
++    // and admit their original expiries; do not transfer those bodies twice.
++    await verifyReleases(db, selection, signal, true);
++    return { environment: Object.freeze({ ...environment, ...emptyPins, ...selection.pins }), selection: head, limitation: null };
++  } catch { return unavailableNativeCatalogEnvironment(environment); }
++}
++
++/** Derive immutable pin references from the existing publisher's validated plan.
++ * This helper grants no release/admission and does not write a mutable head. */
++export function prepareNativeCatalogObservation(args: { plan: { seasonId: number; rows: PlannedSourceObservation[] }; pins: Record<string, string>;
++  observationId: string; issuedAt: string }) {
++  if (!validPlannedObservationId(args.observationId)) throw new Error("Invalid catalog observation ID.");
++  if (Object.keys(args.pins).some(key => !NATIVE_CATALOG_PIN_KEYS.includes(key as typeof NATIVE_CATALOG_PIN_KEYS[number]))) throw new Error("Unsupported catalog pin group.");
++  const pins = Object.fromEntries(NATIVE_CATALOG_PIN_KEYS.flatMap(key => ADDED_PIN_KEYS.has(key) && !args.pins[key] ? []
++    : [[key, args.pins[key] ?? ""]])) as NativeCatalogSelection["pins"];
++  const selected = new Set(Object.values(pins).flatMap(value => (value ?? "").split(",").filter(Boolean).map(value => value.split(":")[0])));
++  const rows = args.plan.rows.filter(row => selected.has(row.id));
++  const expiries = rows.map(row => { const value = row.payload as any; return value.manifest?.expiresAt ?? value.expiresAt; }).sort((a, b) => time(a) - time(b));
++  const payload = validateSelection({ version: selectionVersion, seasonId: args.plan.seasonId, issuedAt: args.issuedAt, expiresAt: expiries[0], packageHash: hash(args.plan), pins,
++    releases: rows.map(row => ({ id: row.id, payloadHash: row.payload_hash, dataset: row.dataset_key })) }, args.plan.seasonId, new Date(args.issuedAt));
++  return { id: args.observationId, provider: "fhfh", dataset_key: selectionVersion, entity_kind: "catalog_selection", entity_key: String(payload.seasonId),
++    source_url: null, source_revision_key: payload.packageHash, observed_at: args.issuedAt, available_at: args.issuedAt, payload_hash: hash(payload), payload, metadata: {} } satisfies PlannedSourceObservation;
++}
++/** One CAS, no retry. A lost acknowledgement succeeds only after exact head readback. */
++export async function advanceNativeCatalogHead(args: { db: SupabaseClient<any>; headId: string; expectedRevision: number; expectedHash: string | null;
++  observation: PlannedSourceObservation; now: Date; dryRun?: boolean }) {
++  const selection = validateSelection(args.observation.payload, Number(args.observation.entity_key), args.now);
++  if (!validPlannedObservationId(args.headId) || !Number.isSafeInteger(args.expectedRevision) || args.expectedRevision < 0
++    || (args.expectedRevision === 0 ? args.expectedHash !== null : !/^[a-f0-9]{64}$/.test(args.expectedHash ?? ""))
++    || args.observation.payload_hash !== hash(selection)) throw new Error("Invalid catalog CAS identity.");
++  if (!validPlannedObservationId(args.observation.id) || args.observation.provider !== "fhfh" || args.observation.dataset_key !== selectionVersion
++    || args.observation.entity_kind !== "catalog_selection" || args.observation.entity_key !== String(selection.seasonId)
++    || args.observation.source_revision_key !== selection.packageHash || args.observation.source_url !== null
++    || time(args.observation.observed_at) !== time(selection.issuedAt) || time(args.observation.available_at) !== time(selection.issuedAt)) throw new Error("Invalid catalog observation envelope.");
++  if (args.dryRun !== false) return { status: "dry_run" as const, selectedCatalogUpdated: false };
++  const deadline = Date.now() + 30000;
++  try {
++    await withinDeadline(Math.min(deadline, Date.now() + 8000), signal => verifyReleases(args.db, selection, signal));
++    await withinDeadline(Math.min(deadline, Date.now() + 8000), () => capturePlayerForecastSourceObservation({ supabase: args.db, observationId: args.observation.id, provider: args.observation.provider,
++      datasetKey: args.observation.dataset_key, entityKind: args.observation.entity_kind, entityKey: args.observation.entity_key,
++      sourceRevisionKey: args.observation.source_revision_key, observedAt: args.observation.observed_at, availableAt: args.observation.available_at,
++      payload: args.observation.payload, metadata: args.observation.metadata }));
++    await withinDeadline(Math.min(deadline, Date.now() + 8000), () => verifyPlannedObservation(args.db, args.observation));
++    let acknowledgementUnknown = false;
++    try {
++      const acknowledgement = await withinDeadline(Math.min(deadline, Date.now() + 8000), signal => args.db.rpc("cas_native_forecast_catalog_head", { p_head_id: args.headId, p_season_id: selection.seasonId,
++        p_expected_revision: args.expectedRevision, p_expected_hash: args.expectedHash, p_observation_id: args.observation.id, p_payload_hash: args.observation.payload_hash }).abortSignal(signal));
++      acknowledgementUnknown = !!acknowledgement.error && acknowledgement.error.code !== "40001";
++    } catch { acknowledgementUnknown = true; }
++    const head = await withinDeadline(Math.min(deadline, Date.now() + 8000), signal => readHead(args.db, args.headId, selection.seasonId, signal));
++    if (head?.revision === args.expectedRevision + 1 && head.observation_id === args.observation.id && head.payload_hash === args.observation.payload_hash) return { status: "selected" as const, selectedCatalogUpdated: true, head };
++    return { status: acknowledgementUnknown ? "unknown" as const : "conflict" as const, selectedCatalogUpdated: false };
++  } catch { return { status: "unknown" as const, selectedCatalogUpdated: false }; }
++}
+diff --git a/web/lib/player-forecasts/sourceSnapshot.ts b/web/lib/player-forecasts/sourceSnapshot.ts
+index ff09dd1..0d31979 100644
+--- a/web/lib/player-forecasts/sourceSnapshot.ts
++++ b/web/lib/player-forecasts/sourceSnapshot.ts
+@@ -1,5 +1,31 @@
+ import crypto from "crypto";
+ import type { SupabaseClient } from "@supabase/supabase-js";
++import { timestampMicros } from "../projections/evidenceTime";
++
++export type PlannedSourceObservation = {
++  id: string; provider: string; dataset_key: string; entity_kind: string; entity_key: string;
++  source_url: string | null; source_revision_key: string | null;
++  observed_at: string; available_at: string; payload_hash: string; payload: unknown; metadata: Record<string, unknown>;
++};
++export const SOURCE_OBSERVATION_COLUMNS = "id,provider,dataset_key,entity_kind,entity_key,source_url,source_revision_key,observed_at,available_at,payload_hash,payload,metadata";
++export function validPlannedObservationId(value: string) {
++  return /^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(value);
++}
++export function matchesPlannedObservation(actual: any, expected: PlannedSourceObservation): boolean {
++  return !!actual && ["id", "provider", "dataset_key", "entity_kind", "entity_key", "source_url", "source_revision_key", "payload_hash"]
++    .every(key => actual[key] === expected[key as keyof PlannedSourceObservation])
++    && ["observed_at", "available_at"].every(key => timestampMicros(expected[key as "observed_at"]) !== null
++      && timestampMicros(actual[key]) === timestampMicros(expected[key as "observed_at"]))
++    && actual.payload_hash === playerForecastSourcePayloadHash(actual.payload)
++    && playerForecastSourcePayloadHash(actual.payload) === playerForecastSourcePayloadHash(expected.payload)
++    && playerForecastSourcePayloadHash(actual.metadata) === playerForecastSourcePayloadHash(expected.metadata);
++}
++export async function verifyPlannedObservation(db: SupabaseClient<any>, expected: PlannedSourceObservation) {
++  const { data, error } = await db.from("player_forecast_source_observations").select(SOURCE_OBSERVATION_COLUMNS).eq("id", expected.id).limit(2);
++  if (error || !Array.isArray(data) || data.length !== 1 || !matchesPlannedObservation(data[0], expected)) {
++    throw new Error("Planned source observation conflicts or cannot be verified.");
++  }
++}
+ 
+ function canonicalize(value: unknown): unknown {
+   if (Array.isArray(value)) return value.map(canonicalize);
+@@ -32,13 +58,13 @@ export async function capturePlayerForecastSourceObservation(args: {
+   availableAt?: string;
+   payload: unknown;
+   metadata?: Record<string, unknown>;
++  observationId?: string;
+ }): Promise<{ inserted: boolean; payloadHash: string }> {
+   const availableAt = args.availableAt ?? new Date().toISOString();
+   const observedAt = args.observedAt ?? availableAt;
+   const payloadHash = playerForecastSourcePayloadHash(args.payload);
+-  const { error } = await args.supabase
+-    .from("player_forecast_source_observations")
+-    .insert({
++  if (args.observationId !== undefined && !validPlannedObservationId(args.observationId)) throw new Error("Invalid planned observation ID.");
++  const row = {
+       provider: args.provider,
+       dataset_key: args.datasetKey,
+       entity_kind: args.entityKind,
+@@ -50,8 +76,13 @@ export async function capturePlayerForecastSourceObservation(args: {
+       payload_hash: payloadHash,
+       payload: args.payload,
+       metadata: args.metadata ?? {},
+-    });
+-  if (error?.code === "23505") return { inserted: false, payloadHash };
++      ...(args.observationId !== undefined ? { id: args.observationId } : {}),
++    };
++  const { error } = await args.supabase.from("player_forecast_source_observations").insert(row);
++  if (error?.code === "23505") {
++    if (args.observationId) await verifyPlannedObservation(args.supabase, row as PlannedSourceObservation);
++    return { inserted: false, payloadHash };
++  }
+   if (error) throw error;
+   return { inserted: true, payloadHash };
+ }
+diff --git a/web/lib/rosterScheduleData/planning.test.ts b/web/lib/rosterScheduleData/planning.test.ts
+index 166fd1c..859f33f 100644
+--- a/web/lib/rosterScheduleData/planning.test.ts
++++ b/web/lib/rosterScheduleData/planning.test.ts
+@@ -12,6 +12,7 @@ import { acceptedNewsSupersedes, loadAcceptedForecastNews } from "lib/projection
+ import { timestampMicros } from "lib/projections/evidenceTime";
+ import { fetchBoundedNhlSchedule } from "./source";
+ import { normalizeNhlGameToTeamRows } from "./normalize";
++import { unavailableForecastServingSource } from "lib/player-forecasts/forecastServingSource";
+ 
+ const membershipCreatedAt = ["2026-09-01T00:00:00Z"];
+ const rosterRevision = forgeRosterRevision({ canonicalId: 7, nhlId: 847001, seasonId: 20262027, teamId: 1, membershipCreatedAt });
+@@ -139,6 +140,37 @@ describe("public RSO data boundary", () => {
+     expect((await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true })).forecasts).toEqual([]);
+   });
+ 
++  it("stays dark until the catalog head env is set: no head read, the same reads and result as legacy (S-1)", async () => {
++    const bridgeTables = {
++      forge_runs: [{ run_id: "run-b", as_of_date: "2026-10-09", created_at: "2026-10-09T15:00:00Z", git_sha: "abc" }],
++      forge_player_projections: [{ run_id: "run-b", as_of_date: "2026-10-09", horizon_games: 1, game_id: 2026020000, player_id: 847001, team_id: 1,
++        proj_goals_es: 0.3, proj_goals_pp: 0.1, proj_assists_es: 0.4, proj_assists_pp: 0.1, proj_shots_es: 2, proj_shots_pp: 0.5,
++        proj_toi_es_seconds: 900, proj_toi_pp_seconds: 120, proj_hits: 1, proj_blocks: 0.4 }],
++      forge_goalie_projections: [], goalie_start_projections: [] };
++    const run = async (source?: NonNullable<Parameters<typeof loadPlanningData>[2]>["source"]) => {
++      const { db, tables, calls } = formDb([], []); Object.assign(tables, bridgeTables);
++      const result = await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true, ...(source ? { source } : {}) });
++      return { result, calls: calls.map(call => `${call.table}.${call.method}`), rpc: db.rpc.mock.calls.length };
++    };
++    vi.stubEnv("PLAYER_FORECAST_NATIVE_CATALOG_HEAD_ID", "");
++    const dark = await run(), legacy = await run(unavailableForecastServingSource({}));
++    expect(dark.calls.some(call => call.startsWith("native_forecast_catalog_heads."))).toBe(false);
++    expect(dark.calls).toEqual(legacy.calls);
++    expect(dark.rpc).toBe(legacy.rpc);
++    expect(dark.result).toEqual(legacy.result);
++    expect(dark.result.evidence.forecasts.source).toBe("Interim FORGE daily projections");
++    // A set but unusable head serves nothing (D-2) and reads no baselines or interim bridge.
++    vi.stubEnv("PLAYER_FORECAST_NATIVE_CATALOG_HEAD_ID", "not-a-head-id");
++    const empty = await run();
++    expect(empty.result.forecasts).toEqual([]);
++    expect(empty.result.evidence.baselines.limitations).toEqual(["native_catalog_head_unavailable_or_invalid"]);
++    expect(empty.calls.some(call => call.startsWith("forge_runs.") || call.startsWith("player_forecast_source_observations."))).toBe(false);
++    // Native catalog readers are not released in this slice: a native head serves nothing yet rather than mixing sources.
++    const native = await run({ kind: "native", headId: "h", headRevision: 1, issuedAt: "2026-10-10T11:00:00Z", expiresAt: "2026-10-10T23:00:00Z", environment: {} });
++    expect(native.result.forecasts).toEqual([]);
++    expect(native.result.evidence.baselines.limitations).toEqual(["native_catalog_readers_not_released"]);
++  });
++
+   function cappedInputs(options: Parameters<typeof formDb>[3] = {}) {
+     const fixture = formDb([], [], undefined, { cap: 1, ...options });
+     fixture.tables.roster_optimizer_team_games = [...rows, { ...rows[0], id: 2, source_game_id: 2026020002,
+diff --git a/web/lib/rosterScheduleData/planning.ts b/web/lib/rosterScheduleData/planning.ts
+index 43c41f7..a21faab 100644
+--- a/web/lib/rosterScheduleData/planning.ts
++++ b/web/lib/rosterScheduleData/planning.ts
+@@ -7,6 +7,7 @@ export type { PlanningDataQuery } from "./planningInputs";
+ import type { SupabaseClient } from "@supabase/supabase-js";
+ import { playerForecastSourcePayloadHash } from "lib/player-forecasts/sourceSnapshot";
+ import { loadApprovedContributionBundle } from "lib/player-forecasts/contributionStore";
++import { selectForecastServingSource, unavailableForecastServingSource, type ForecastServingSource } from "lib/player-forecasts/forecastServingSource";
+ import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
+ import type { ForgeGameRevision } from "lib/projections/gameRevisions";
+ import { starterBoardCanaryGameIds, starterBoardFlags } from "lib/projections/starterBoardFlags";
+@@ -37,18 +38,27 @@ function evidence(source: string, asOf: string | null, seasonId: number | null,
+ }
+ 
+ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningDataQuery, options: { now?: Date; forecastsEnabled?: boolean; deadlineMs?: number;
++  /** A source the caller already selected for this request; otherwise it is selected here. */
++  source?: ForecastServingSource;
+   /** RSO only: serve interim FORGE daily projections while issued game forecasts are not served. */
+   forgeDailyBridge?: boolean } = {}): Promise<PlanningData> {
+   const now = options.now ?? new Date();
+   const deadline = Math.min(options.deadlineMs ?? Infinity, Date.now() + 20000);
++  // Dark until PLAYER_FORECAST_NATIVE_CATALOG_HEAD_ID is set: without it the source is `legacy`, selected with no lookups,
++  // and every read below is unchanged. Native catalog readers are not released yet, so any other source serves no baselines
++  // and no interim bridge (D-2: an unusable head is empty).
++  const source = options.source ?? await withinDeadline(Math.min(deadline, Date.now() + 8000), signal => selectForecastServingSource(db, query.seasonId, now, process.env, signal))
++    .catch(() => unavailableForecastServingSource(process.env));
++  const nativeLimitation = source.kind === "legacy" ? null : source.kind === "native" ? "native_catalog_readers_not_released" : source.reason;
+   const inputDeadline = Math.min(deadline, Date.now() + 8000);
+   const calendarPolicy = forecastCalendarPolicy(Number(process.env.STARTER_BOARD_CALENDAR_HORIZON_DAYS ?? 14));
+   const [{ players, games, scheduleRows, scheduleProblems, evidence: sources }, weeks, baseline] = await Promise.all([
+     loadPlanningInputs(db, query, now, inputDeadline),
+     pages(() => db.from("yahoo_matchup_weeks").select("id,game_key,week,start_date,end_date", { count: "exact" })
+       .eq("season", String(query.seasonId).slice(0, 4)).order("week").order("id"), inputDeadline, 500).catch(() => []),
+-    withinDeadline(inputDeadline, signal => loadApprovedContributionBundle(db, query.seasonId, now, { signal }))
+-      .catch(() => ({ sources: [], manifests: [], checksum: null, limitations: ["baseline_read_unavailable"] })),
++    nativeLimitation ? Promise.resolve({ sources: [], manifests: [], checksum: null, limitations: [nativeLimitation] })
++      : withinDeadline(inputDeadline, signal => loadApprovedContributionBundle(db, query.seasonId, now, { signal }))
++        .catch(() => ({ sources: [], manifests: [], checksum: null, limitations: ["baseline_read_unavailable"] })),
+   ]);
+   const revisions: ForgeGameRevision[] = [];
+   const exclusionCounts: Record<string, number> = {};
+@@ -109,7 +119,7 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
+   forecastProblems.push(...admissionProblems);
+   let forecasts = admitted, bridged = false;
+   // Interim RSO source (TJ, 2026-10-19): only while no issued forecasts or baselines are served.
+-  if (options.forgeDailyBridge && !admitted.length && !baseline.sources.length && process.env.RSO_FORGE_DAILY_BRIDGE !== "off") {
++  if (options.forgeDailyBridge && source.kind === "legacy" && !admitted.length && !baseline.sources.length && process.env.RSO_FORGE_DAILY_BRIDGE !== "off") {
+     try {
+       const bridge = await loadForgeDailyBridgeForecasts(db, players, games, now, query.seasonId, deadline, calendarPolicy);
+       forecastProblems.push(...bridge.limitations);
+diff --git a/web/pages/api/v1/roster-schedule-optimizer/data.ts b/web/pages/api/v1/roster-schedule-optimizer/data.ts
+index c15c6f5..c00e47a 100644
+--- a/web/pages/api/v1/roster-schedule-optimizer/data.ts
++++ b/web/pages/api/v1/roster-schedule-optimizer/data.ts
+@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
+ import serviceRoleClient from "lib/supabase/server";
+ import { loadPlanningData, parsePlanningDataQuery } from "lib/rosterScheduleData/planning";
+ import { compactBridgeForecasts, fitBridgeWire, PLANNING_RESPONSE_BYTE_BUDGET } from "lib/rosterScheduleData/bridgeForecastWire";
++import { forecastSourceSummary, selectForecastServingSource } from "lib/player-forecasts/forecastServingSource";
+ 
+ /** Public shared inputs. No league/account data or admin/research payloads. */
+ export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+@@ -10,12 +11,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
+   try { query = parsePlanningDataQuery(req.query); }
+   catch (error) { return res.status(400).json({ success: false, error: error instanceof Error ? error.message : "Invalid planning range." }); }
+   try {
+-    const data = await loadPlanningData(serviceRoleClient, query, { forgeDailyBridge: true });
+-    res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=300");
++    // One server-side source per request. Before activation it is `legacy` (no lookups) and the response is unchanged.
++    const source = await selectForecastServingSource(serviceRoleClient, query.seasonId);
++    const data = await loadPlanningData(serviceRoleClient, query, { source, forgeDailyBridge: true });
++    // A shared copy of native forecasts never outlives the selected catalog.
++    const nativeMaxAge = source.kind === "native" ? Math.max(0, Math.min(300, Math.floor((Date.parse(source.expiresAt) - Date.now()) / 1000))) : null;
++    res.setHeader("Cache-Control", nativeMaxAge === null ? "public, s-maxage=300, stale-while-revalidate=300" : `public, s-maxage=${nativeMaxAge}, stale-while-revalidate=0`);
++    const forecastSource = source.kind === "legacy" ? {} : { forecastSource: forecastSourceSummary(source) };
+     // Interim bridge projections travel compactly beside `data`; clients rebuild them exactly.
+     const bridge = compactBridgeForecasts(data.forecasts, data, query.seasonId);
+     // The whole body, bridge wire included, must fit the platform response limit; the latest bridge rows give way first.
+-    const body = fitBridgeWire(bridge.wire, wire => ({ success: true, data: { ...data, forecasts: bridge.forecasts }, ...(wire ? { bridgeForecasts: wire } : {}) }),
++    const body = fitBridgeWire(bridge.wire, wire => ({ success: true, data: { ...data, forecasts: bridge.forecasts }, ...(wire ? { bridgeForecasts: wire } : {}), ...forecastSource }),
+       PLANNING_RESPONSE_BYTE_BUDGET);
+     if (!body) return res.status(503).json({ success: false, code: "planning_range_too_large", error: "This planning range is too large to display. Choose a shorter range." });
+     return res.json(body);
