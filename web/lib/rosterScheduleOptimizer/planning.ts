@@ -397,7 +397,7 @@ function refineOutcomeLineup(
     const goalieGroups = new Map<string, number>();
     for (const row of rows) {
       const play = playByKey.get(`${row.playerId}:${row.gameId}`);
-      // A locked row with no plannable play is a game already under way: it holds its slot but adds nothing.
+      // A locked row with no plannable play (a game already under way, or a locked player listed out) holds its slot but adds nothing.
       if (!play && row.locked) continue;
       const forecast = forecasts.get(`${row.playerId}:${row.gameId}`);
       if (!play || play.player.eligibilityVerified !== true || !forecast || forecast.conditioning !== "unconditional") return invalid;
@@ -500,6 +500,8 @@ function refineOutcomeLineup(
 
 /** Provider injury designations that mean the player won't play (day-to-day still might). */
 const OUT_INJURY_STATUSES = new Set(["IR", "IR-LT", "IR-NR", "O"]);
+/** Out per the provider: never valued in a lineup and never an automatic drop. */
+export const providerListsOut = (player: Pick<PlanningPlayer, "injury">) => !!player.injury && OUT_INJURY_STATUSES.has(player.injury.status.toUpperCase());
 function prepareEvaluation(snapshot: PlanningSnapshot, playerIds?: ReadonlySet<string>) {
   snapshot = resolvePlanningContributions(sanitizeForecastInputs(snapshot), playerIds ? { playerIds } : undefined);
   const players = new Map(snapshot.players.map(player => [player.id, player]));
@@ -544,6 +546,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
   // started keep the slot the provider locked, else the slot today's lineup gave them before puck drop, so a
   // later game cannot take it. These rows are shown but never planned, valued or counted as remaining games.
   const today = localDate(snapshot.context.asOf, snapshot.context.timeZone);
+  const slotLocked = (playerId: string, date: string) => snapshot.lockedAssignments.some(lock => lock.date === date && lock.playerId === playerId && lock.slotId !== null);
   const startedPlays: Play[] = [], startedRows: PlanningAssignment[] = [];
   if (snapshot.rules.lineupMode === "daily" && today >= snapshot.context.startDate && today <= snapshot.context.endDate) {
     const todayGames = snapshot.games.filter(game => game.date === today && ["scheduled", "live", "final"].includes(game.status));
@@ -553,7 +556,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
       const preStart: Play[] = [];
       for (const entry of snapshot.roster) {
         const player = players.get(entry.playerId);
-        if (!player || ["IR", "IR+", "NA"].includes(entry.position) || player.injury && OUT_INJURY_STATUSES.has(player.injury.status.toUpperCase())) continue;
+        if (!player || ["IR", "IR+", "NA"].includes(entry.position) || providerListsOut(player) && !slotLocked(player.id, today)) continue;
         for (const game of todayGames.filter(game => game.teamAbbreviation === player.teamAbbreviation)) {
           const play = { player, game, forecast: allForecasts.get(`${player.id}:${game.id}`) ?? null };
           preStart.push(play);
@@ -571,6 +574,8 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
     }
   }
   const injuredOut = new Set<string>();
+  // An out player the provider has locked into a daily slot still occupies it: held rows add no value or remaining game.
+  const heldByDate = new Map<string, Play[]>(), heldKeys = new Set<string>();
   for (const date of dates) {
     const dayGames = games.filter(game => game.date === date);
     const plays: Play[] = [];
@@ -579,7 +584,14 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
       if (!player || player.teamAbbreviation !== game.teamAbbreviation || ["IR", "IR+", "NA"].includes(member.position) || time(member.since) > time(gameTime(game, snapshot.context.timeZone))) continue;
       if (!game.startsAt && time(member.since) >= time(zonedMidnight(game.date, snapshot.context.timeZone))) continue;
       // Out per the provider (IR/O): not a lineup option, so his missing projection can't block the totals.
-      if (player.injury && OUT_INJURY_STATUSES.has(player.injury.status.toUpperCase())) { injuredOut.add(player.name); continue; }
+      if (providerListsOut(player)) {
+        injuredOut.add(player.name);
+        if (snapshot.rules.lineupMode === "daily" && slotLocked(id, date)) {
+          heldByDate.set(date, [...heldByDate.get(date) ?? [], { player, game, forecast: null }]);
+          heldKeys.add(`${id}:${game.id}`);
+        }
+        continue;
+      }
       const forecast = forecasts.get(`${id}:${game.id}`) ?? null;
       if (forecast?.conditioning === "unconditional") forecastedOpportunities++;
       plays.push({ player, game, forecast });
@@ -663,11 +675,11 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
           limitations.add(`Locked assignment for ${lock.playerId} on ${date} conflicts with weekly lineup.`);
       }
     } else rows = date === today && startedPlays.length
-      ? assign(snapshot, intent, objective, [...plays, ...startedPlays], date, [
+      ? assign(snapshot, intent, objective, [...plays, ...startedPlays, ...heldByDate.get(date) ?? []], date, [
         ...snapshot.lockedAssignments.filter(item => item.date === date && !startedPlays.some(play => play.player.id === item.playerId)),
         ...startedPlays.map(play => ({ playerId: play.player.id, slotId: startedRows.find(row => row.playerId === play.player.id)?.slotId ?? null })),
       ], limitations, applicability, unresolved)
-      : assign(snapshot, intent, objective, plays, date, snapshot.lockedAssignments.filter(item => item.date === date), limitations, applicability, unresolved);
+      : assign(snapshot, intent, objective, [...plays, ...heldByDate.get(date) ?? []], date, snapshot.lockedAssignments.filter(item => item.date === date), limitations, applicability, unresolved);
     for (const lock of snapshot.lockedAssignments.filter(item => item.date === date)) {
       const inactiveLock = snapshot.rules.lineupMode === "weekly" && lock.slotId !== null && !plays.some(play => play.player.id === lock.playerId) && weekly.get(windowByDate.get(date) ?? "")?.get(lock.slotId) === lock.playerId;
       if (lock.slotId === null ? rows.some(row => row.playerId === lock.playerId) : !inactiveLock && !rows.some(row => row.playerId === lock.playerId && row.slotId === lock.slotId)) invalidLocks = true;
@@ -838,7 +850,8 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
   const comparisonEligible = inputEligible && projectedValue !== null && [...playsByDate.values()].flat()
     .filter(play => !snapshot.lockedAssignments.some(lock => lock.date === play.game.date && lock.playerId === play.player.id && lock.slotId === null))
     .every(play => scoringTargets(snapshot, play, applicability).every(key => forecastAllows(play.forecast, key, "comparison")));
-  const plannedRows = assignments.filter(row => !startedRows.some(started => started.playerId === row.playerId && started.gameId === row.gameId)).length;
+  const plannedRows = assignments.filter(row => !heldKeys.has(`${row.playerId}:${row.gameId}`)
+    && !startedRows.some(started => started.playerId === row.playerId && started.gameId === row.gameId)).length;
   const evaluation: PlanEvaluation = { assignmentValue, comparisonEligible,
     forecastManifestId: conflictingTargets.size
       ? `${snapshot.forecastManifest?.id ?? snapshot.id}:conflict:${conflictFingerprint(coverage.exclusions
@@ -1067,7 +1080,7 @@ function* extensions(snapshot: PlanningSnapshot, intent: PlanIntent, prior: Plan
   const reserved = new Set([...snapshot.roster.filter(entry => ["IR", "IR+", "NA"].includes(entry.position)).map(entry => entry.playerId),
     ...prior.filter(step => step.type === "reserve").map(step => step.playerId)]);
   const drops = snapshot.players.filter(player => owned.has(player.id) && !reserved.has(player.id) && player.canDrop === true
-    && !(player.injury && OUT_INJURY_STATUSES.has(player.injury.status.toUpperCase())) && !intent.protectedPlayerIds.includes(player.id))
+    && !providerListsOut(player) && !intent.protectedPlayerIds.includes(player.id))
     .sort((a, b) => (dropOrder?.get(a.id) ?? Infinity) - (dropOrder?.get(b.id) ?? Infinity)
       || (a.holdValue ?? 0) - (b.holdValue ?? 0) || a.id.localeCompare(b.id));
   const proposals: Array<{ player: PlanningPlayer; date: string; step: PlanStep }> = [];

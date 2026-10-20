@@ -50,4 +50,15 @@ describe("lineup gap report", () => {
     expect(report.bestDrop?.playerId).toBe("b");
     expect(report.adds).toEqual([]);
   });
+
+  it("never offers a player the provider lists as out as the drop, matching the planner", () => {
+    const data = snapshot();
+    data.players = data.players.map(row => row.id === "a" ? { ...row, injury: { status: "IR-LT", label: "Injured Reserve", note: null } } : row);
+    // With b protected, a is the only other candidate; being out makes him no drop at all.
+    const keepB = { ...intent, protectedPlayerIds: ["b"] };
+    expect(lineupGapReport(data, keepB, evaluatePlan(data, intent, "outcome", [], false)).bestDrop).toBeNull();
+    // Day-to-day is still a drop option.
+    data.players = data.players.map(row => row.id === "a" ? { ...row, injury: { status: "DTD", label: "Day-to-Day", note: null } } : row);
+    expect(lineupGapReport(data, keepB, evaluatePlan(data, intent, "outcome", [], false)).bestDrop?.playerId).toBe("a");
+  });
 });
