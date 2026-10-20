@@ -163,9 +163,22 @@ const fakes = vi.hoisted(() => ({
   plans: new Map<number, { value: number; pause?: "projection_write" | "sidecar"; paused?: () => void; resume?: Promise<void> }>(),
   skaterError: null as Error | null,
   snapshotError: null as Error | null,
+  snapshotSaves: 0,
+  rpcCalls: [] as string[],
+  publishedRuns: [] as string[],
 }));
 
-vi.mock("lib/supabase/server", () => ({ default: { from: db.from } }));
+vi.mock("lib/supabase/server", () => ({ default: {
+  from: db.from,
+  // Starter Board computation reserves its run through this RPC.
+  rpc: async (name: string) => {
+    fakes.rpcCalls.push(name);
+    if (name !== "begin_forge_game_run") throw new Error(`unexpected rpc ${name}`);
+    (db.tables.forge_runs ??= []).push({ run_id: "reserved-run", as_of_date: "2026-10-20", status: "running",
+      git_sha: "a".repeat(40), created_at: new Date().toISOString(), updated_at: null, metrics: {} });
+    return { data: "reserved-run", error: null };
+  },
+} }));
 vi.mock("./pbpCompletenessServer", () => ({ hasCompleteStoredPbpGame: async () => true }));
 vi.mock("./shiftChartCompletenessServer", () => ({
   classifyStoredShiftChartStrengthGame: async () => ({ status: "complete" }),
@@ -226,8 +239,13 @@ vi.mock("./inputCapture", async (importOriginal) => ({
 vi.mock("./gameRevisions", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./gameRevisions")>()),
   saveForgeInputSnapshot: async () => {
+    fakes.snapshotSaves += 1;
     if (fakes.snapshotError) throw fakes.snapshotError;
     return "snapshot-1";
+  },
+  publishForgeGameRevisions: async (runId: string) => {
+    fakes.publishedRuns.push(runId);
+    return 4;
   },
 }));
 vi.mock("./stages/goalie-stage", async (importOriginal) => ({
@@ -310,6 +328,9 @@ beforeEach(() => {
   fakes.plans.clear();
   fakes.skaterError = null;
   fakes.snapshotError = null;
+  fakes.snapshotSaves = 0;
+  fakes.rpcCalls = [];
+  fakes.publishedRuns = [];
   fakes.skaterCalls = [];
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(start);
@@ -558,8 +579,53 @@ describe("resumable FORGE projection run", () => {
       expect(db.tables.game_prediction_outputs).toEqual(sidecarGame);
     });
 
-  describe("captured run (Starter Board capture on, compute off)", () => {
+  describe("Starter Board capture on, compute off (production today)", () => {
     beforeEach(() => vi.stubEnv("STARTER_BOARD_CAPTURE_ENABLED", "true"));
+
+    it("takes a resumable claim, so the deadline pauses the run, and saves no input snapshot", async () => {
+      const first = await runProjectionV2ForDate(date, { deadlineMs: start + 50_000 });
+
+      expect(first).toMatchObject({ timedOut: true, gamesProcessed: 2, resume: { resumed: false, invocations: 1, pendingGames: 2 } });
+      expect(runs()[0]).toMatchObject({ run_id: first.runId, status: "running",
+        metrics: { resume: { completed_game_ids: [1, 2], released_by: expect.any(String) } } });
+
+      vi.setSystemTime(start + 5 * 60_000);
+      const second = await runProjectionV2ForDate(date, { deadlineMs: Date.now() + 200_000 });
+
+      expect(second).toMatchObject({ runId: first.runId, timedOut: false, resume: { resumed: true, invocations: 2, completedGames: 4 } });
+      expect(runs()).toHaveLength(1);
+      expect(runs()[0].status).toBe("succeeded");
+      expect(fakes.snapshotSaves).toBe(0);
+      expect(fakes.rpcCalls).toEqual([]);
+      expect(second).not.toHaveProperty("inputSnapshotId");
+    });
+  });
+
+  describe("Starter Board capture and compute on: unchanged captured path", () => {
+    beforeEach(() => {
+      vi.stubEnv("STARTER_BOARD_CAPTURE_ENABLED", "true");
+      vi.stubEnv("STARTER_BOARD_COMPUTE_ENABLED", "true");
+    });
+
+    it("reserves the run, captures its inputs, saves the snapshot and publishes revisions", async () => {
+      const result = await runProjectionV2ForDate(date, { deadlineMs: start + 200_000 });
+
+      expect(result).toMatchObject({ runId: "reserved-run", timedOut: false, gamesProcessed: 4, inputSnapshotId: "snapshot-1", publishedGames: 4 });
+      expect(result).not.toHaveProperty("resume");
+      expect(fakes.rpcCalls).toEqual(["begin_forge_game_run"]);
+      expect(fakes.snapshotSaves).toBe(1);
+      expect(fakes.publishedRuns).toEqual(["reserved-run"]);
+      expect(runs()).toHaveLength(1);
+      expect(runs()[0]).toMatchObject({ status: "succeeded" });
+    });
+  });
+
+  describe("Starter Board compute on outside the canary: a captured run that publishes nothing", () => {
+    beforeEach(() => {
+      vi.stubEnv("STARTER_BOARD_CAPTURE_ENABLED", "true");
+      vi.stubEnv("STARTER_BOARD_COMPUTE_ENABLED", "true");
+      vi.stubEnv("STARTER_BOARD_CANARY_GAME_IDS", "999999");
+    });
 
     it("keeps a succeeded run succeeded when the later input-snapshot save fails, and reports the step", async () => {
       fakes.snapshotError = new Error("<!DOCTYPE html><html><title>supabase.co | 520</title></html>");
@@ -573,6 +639,9 @@ describe("resumable FORGE projection run", () => {
       expect(result).not.toHaveProperty("inputSnapshotId");
       // Capture runs single-call (no resume lease) and finalize before the snapshot.
       expect(result).not.toHaveProperty("resume");
+      expect(fakes.snapshotSaves).toBe(1);
+      expect(fakes.rpcCalls).toEqual([]);
+      expect(fakes.publishedRuns).toEqual([]);
       expect(runs()).toHaveLength(1);
       expect(runs()[0]).toMatchObject({ run_id: result.runId, status: "succeeded", metrics: { games: 4 } });
       expect(runs()[0].metrics).not.toHaveProperty("error");
