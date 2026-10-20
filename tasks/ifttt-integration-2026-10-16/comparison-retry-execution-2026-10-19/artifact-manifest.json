@@ -1,0 +1,40 @@
+{
+  "version": "approved-single-retry-execution-evidence-v1",
+  "files": [
+    {
+      "path": "RESULT.md",
+      "sha256": "fe62ae0ef09168fc8a736166e8de26f133b8be33d23dc60b3d4b1a6c86211d86",
+      "bytes": 4619
+    },
+    {
+      "path": "aggregate-budget.sqlite",
+      "sha256": "a3d98e15e73b9a58f2312d33153c15bf1b30711f0f80f48a16a83d05eb64e361",
+      "bytes": 36864
+    },
+    {
+      "path": "command-result.json",
+      "sha256": "88acfe920b20c13b772058e0b7f956418cfa5c34a3ce072bcf55307f1a5d2329",
+      "bytes": 443
+    },
+    {
+      "path": "local-tls-metadata.json",
+      "sha256": "2b924b5bdccdfb21ac381ce09b188c7c2ab2f29af63f8b318d41e58e4a6c47af",
+      "bytes": 642
+    },
+    {
+      "path": "result-summary.json",
+      "sha256": "0af63b787fd133d432a22297091042577d1d7d6bedb395fa61b9a4d13838f45d",
+      "bytes": 2566
+    },
+    {
+      "path": "run-01/final-ledger.json",
+      "sha256": "14c6693cf379d5aa966cade86b85663fbae6a51022fe4c83880e9f5021823cb3",
+      "bytes": 855
+    },
+    {
+      "path": "run-01/stopped-partial-pair.json",
+      "sha256": "8f96931c913acffc15edcf5b88e3556e752c535a21acfb0b967b6bf0d79b528a",
+      "bytes": 1615
+    }
+  ]
+}

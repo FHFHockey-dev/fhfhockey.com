@@ -58,11 +58,27 @@ describe("sustainability read contracts", () => {
       ]
     });
 
-    expect(payload.flags.state).toBe("overperforming");
+    expect(payload.flags).toEqual({ overperforming: false, underperforming: false, state: "unavailable" });
+    expect(payload.metadata).toMatchObject({ score_semantics: "process_support_index" });
     expect(payload.probabilities.status).toBe("pending_calibration");
     expect(payload.explanations[0]).toMatchObject({ feature: "shp", impact: 1.4 });
     expect(payload.projections[0]).toMatchObject({ metric_key: "goals", expected_value: 2.5 });
   });
+
+  it.each([100, 60, 50, 40, 0, -1, NaN, Infinity, -Infinity, null, undefined])(
+    "keeps process score %s without inventing a performance state",
+    (score) => {
+      const payload = shapePlayerSustainabilityPayload({
+        playerId: 1, window: 10, horizon: 5,
+        score: score === undefined ? null : { s_100: score, s_raw: score } as any,
+        bands: [], projections: [],
+      });
+      expect(payload.sustainability_score).toBe(score ?? null);
+      expect(payload.score_raw).toBe(score ?? null);
+      expect(payload.flags).toEqual({ overperforming: false, underperforming: false, state: "unavailable" });
+      expect(payload.metadata.performance_state_note).toContain("does not measure observed performance");
+    },
+  );
 
   it("groups opponent projections by game and honors the requested game count", () => {
     const base: any = {

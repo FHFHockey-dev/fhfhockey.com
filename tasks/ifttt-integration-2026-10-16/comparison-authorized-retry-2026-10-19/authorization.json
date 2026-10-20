@@ -1,0 +1,12 @@
+{
+  "userApproval": "Approve one retry with a $0.52 total test cap.",
+  "totalCapNanoUsd": 520000000,
+  "originalReservationNanoUsd": 254394800,
+  "retriesAuthorized": 1,
+  "payloadScope": "original Lindgren family to /v1/responses and /v1/decisions only",
+  "executionManifestSha256": "f1e452f1a7737a1fb5fc831ed78138a3d9d445867886005418be3315d8b9a968",
+  "authority": "Direct human approval relayed by parent01a15411-3560-7632-8d31-1dd2447ba00e in trusted transcript_evidence",
+  "approvedPayload": "Retained SeattleKrakenPR Ryan Lindgren post, original source/time/player context and derived proposals; same source, labels and prompts as first attempt",
+  "ordinaryBillingAssumptions": "Previously accepted published standard rates/context ceilings/premiums; usage-based conservative ceilings, not invoice guarantee",
+  "restrictions": "No release/reset of original uncertainty; one instrumented retry; same-family Decisions only after known settlement and full reservation; no further retry after uncertainty; no extra family or production action"
+}

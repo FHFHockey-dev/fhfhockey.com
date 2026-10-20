@@ -1,0 +1,46 @@
+{
+  "ledger_path": "tasks/ifttt-integration-2026-10-16/comparison-retry-execution-2026-10-19/aggregate-budget.sqlite",
+  "sha256": "8b9574da4b587e756cb177360b97cb7af6d410e59686d0c5a2953d5bfa20db1a",
+  "read_mode": "SQLite mode=ro; before/after file hash checked",
+  "aggregate_cap_nano_usd": 520000000,
+  "aggregate_exposure_nano_usd": 254807878,
+  "available_nano_usd": 265192122,
+  "blocked_state_preserved": "unknown billed outcome",
+  "attempts": [
+    {
+      "id": "lindgren-0",
+      "endpoint": "responses",
+      "reserve": 254394800,
+      "state": "uncertain",
+      "actual": null
+    },
+    {
+      "id": "lindgren-approved-retry-0",
+      "endpoint": "responses",
+      "reserve": 254394800,
+      "state": "settled",
+      "actual": 0
+    },
+    {
+      "id": "lindgren-certifi-attempt-0",
+      "endpoint": "responses",
+      "reserve": 254394800,
+      "state": "settled",
+      "actual": 256988
+    },
+    {
+      "id": "lindgren-verifier-support-0",
+      "endpoint": "decisions",
+      "reserve": 231000000,
+      "state": "settled",
+      "actual": 65450
+    },
+    {
+      "id": "lindgren-verifier-support-1",
+      "endpoint": "decisions",
+      "reserve": 231000000,
+      "state": "settled",
+      "actual": 90640
+    }
+  ]
+}

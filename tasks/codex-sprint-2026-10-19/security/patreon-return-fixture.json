@@ -1,0 +1,10 @@
+{
+  "result": "PASS",
+  "scope": "pure sanitizer + WHATWG URL normalization + Node header-value acceptance; no network/navigation",
+  "source": "web/lib/integrations/patreon/oauth.ts",
+  "sha256": "d601718f6225cf4880adf53a346be97feec094421b0552f469ba54f5057285ca",
+  "inputJson": "\"/\\t/attacker.example\"",
+  "sanitizerPreservedInput": true,
+  "normalizedOrigin": "https://attacker.example",
+  "locationHeaderAccepted": true
+}

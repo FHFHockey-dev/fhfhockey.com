@@ -1,0 +1,57 @@
+{
+  "status": "stopped_partial_pair",
+  "failure": {
+    "stage": "open",
+    "exceptionType": "SSLCertVerificationError",
+    "cause": "tls_certificate_error",
+    "openCallStarted": true,
+    "dispatch": "unknown",
+    "provider": {
+      "httpStatus": null,
+      "requestId": null,
+      "responseId": null,
+      "reportedUsage": {}
+    },
+    "usageAuthority": "reported_only; does not settle or release reservation",
+    "errno": 1,
+    "verify_code": 20
+  },
+  "errorType": "PilotFailure",
+  "manifestSha256": "f1e452f1a7737a1fb5fc831ed78138a3d9d445867886005418be3315d8b9a968",
+  "goldClaimsInDenominator": 2,
+  "familyMustNotBeExcluded": true,
+  "verdict": "inconclusive",
+  "ledger": {
+    "cap_nano_usd": 520000000,
+    "exposure_nano_usd": 508789600,
+    "known_nano_usd": 0,
+    "blocked": "unknown billed outcome",
+    "attempts": [
+      [
+        "lindgren-0",
+        "lindgren-sequential-one-question",
+        "responses",
+        "089b0f5245e08c54157766093a75e9904ce78b7baac77052ec52669e0e8d1086",
+        254394800,
+        "uncertain",
+        null,
+        "RuntimeError",
+        "2026-10-19T19:58:29.421635+00:00",
+        "2026-10-19T19:58:29.512656+00:00"
+      ],
+      [
+        "lindgren-approved-retry-0",
+        "user-approved-single-retry",
+        "responses",
+        "089b0f5245e08c54157766093a75e9904ce78b7baac77052ec52669e0e8d1086",
+        254394800,
+        "uncertain",
+        null,
+        "PilotFailure",
+        "2026-10-19T20:34:17.908769+00:00",
+        "2026-10-19T20:34:18.044736+00:00"
+      ]
+    ],
+    "original_unresolved_reservation_nano_usd": 254394800
+  }
+}

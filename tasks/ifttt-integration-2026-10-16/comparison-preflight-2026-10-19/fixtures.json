@@ -1,0 +1,2455 @@
+{
+  "version": "synthetic-comparison-controls-v1",
+  "empirical_evaluation": false,
+  "fixtures": [
+    {
+      "source": {
+        "family_id": "family-01",
+        "source_id": "synthetic-01",
+        "author": "TestReporter",
+        "text": "Tickets and sponsor specials tonight. Go Harbor!",
+        "url": "https://example.invalid/TestReporter/status/1",
+        "published_at": "2026-10-01T18:00:00Z",
+        "received_at": "2026-10-01T18:01:00Z",
+        "attribution_status": "original",
+        "players": [
+          {
+            "playerId": 1,
+            "fullName": "Arden Vale",
+            "lastName": "Vale",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Vale"
+            ]
+          },
+          {
+            "playerId": 2,
+            "fullName": "Bex Lark",
+            "lastName": "Lark",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Lark"
+            ]
+          },
+          {
+            "playerId": 3,
+            "fullName": "Cato Reed",
+            "lastName": "Reed",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Reed"
+            ]
+          },
+          {
+            "playerId": 4,
+            "fullName": "Daro Snow",
+            "lastName": "Snow",
+            "teamId": 99,
+            "position": "G",
+            "aliases": [
+              "Snow"
+            ]
+          },
+          {
+            "playerId": 5,
+            "fullName": "Elo Moss",
+            "lastName": "Moss",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Moss"
+            ]
+          }
+        ],
+        "aliases": [
+          "invented-original-1"
+        ],
+        "context": {
+          "kind": "synthetic_roster_only",
+          "independent_world_evidence": null
+        }
+      },
+      "labels": {
+        "provenance": {
+          "kind": "synthetic_software_control",
+          "author": "assistant-authored test oracle",
+          "human_adjudication": false,
+          "empirical_ground_truth": false,
+          "established_before_mock_outputs": true
+        },
+        "source_hash": "348c7c9c8fac7bc4c5b3de7c60f24bfe41eb966a4a6267ef34f7f3e5b4e63200",
+        "complete": true,
+        "material": false,
+        "claims": [],
+        "ungradable_reasons": [
+          "independent real-world identity/team/game/time context absent"
+        ]
+      },
+      "strata": [
+        "no_update",
+        "negative"
+      ],
+      "mock_extraction": {
+        "material": false,
+        "claims": [],
+        "overflow": false
+      },
+      "mock_decisions_extraction": {},
+      "mock_decisions_rules": {}
+    },
+    {
+      "source": {
+        "family_id": "family-02",
+        "source_id": "synthetic-02",
+        "author": "TestReporter",
+        "text": "Harbor: Arden Vale will not play tonight.",
+        "url": "https://example.invalid/TestReporter/status/2",
+        "published_at": "2026-10-02T18:00:00Z",
+        "received_at": "2026-10-02T18:01:00Z",
+        "attribution_status": "original",
+        "players": [
+          {
+            "playerId": 1,
+            "fullName": "Arden Vale",
+            "lastName": "Vale",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Vale"
+            ]
+          },
+          {
+            "playerId": 2,
+            "fullName": "Bex Lark",
+            "lastName": "Lark",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Lark"
+            ]
+          },
+          {
+            "playerId": 3,
+            "fullName": "Cato Reed",
+            "lastName": "Reed",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Reed"
+            ]
+          },
+          {
+            "playerId": 4,
+            "fullName": "Daro Snow",
+            "lastName": "Snow",
+            "teamId": 99,
+            "position": "G",
+            "aliases": [
+              "Snow"
+            ]
+          },
+          {
+            "playerId": 5,
+            "fullName": "Elo Moss",
+            "lastName": "Moss",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Moss"
+            ]
+          }
+        ],
+        "aliases": [
+          "invented-original-2"
+        ],
+        "context": {
+          "kind": "synthetic_roster_only",
+          "independent_world_evidence": null
+        }
+      },
+      "labels": {
+        "provenance": {
+          "kind": "synthetic_software_control",
+          "author": "assistant-authored test oracle",
+          "human_adjudication": false,
+          "empirical_ground_truth": false,
+          "established_before_mock_outputs": true
+        },
+        "source_hash": "cfe583a24e1b12add6b974c4d91181322c840f14f8a1df6b6308fdf85042686f",
+        "complete": true,
+        "material": true,
+        "claims": [
+          {
+            "id": "gold-2-0",
+            "expected": {
+              "player": "Arden Vale",
+              "player_id": null,
+              "team": "Harbor",
+              "role": null,
+              "event": "availability",
+              "value": "out",
+              "polarity": "negative",
+              "certainty": "asserted",
+              "time": "tonight",
+              "condition": null,
+              "source_id": "synthetic-02",
+              "source_author": "TestReporter"
+            },
+            "gradable": [
+              "player",
+              "team",
+              "role",
+              "event",
+              "value",
+              "polarity",
+              "certainty",
+              "time",
+              "condition",
+              "source_id",
+              "source_author"
+            ],
+            "evidence": {
+              "start": 0,
+              "end": 41,
+              "text": "Harbor: Arden Vale will not play tonight."
+            },
+            "actionable": true,
+            "external_truth": null
+          }
+        ],
+        "ungradable_reasons": [
+          "independent real-world identity/team/game/time context absent"
+        ]
+      },
+      "strata": [
+        "injury",
+        "negation"
+      ],
+      "mock_extraction": {
+        "material": true,
+        "claims": [
+          {
+            "id": "x-2-0",
+            "player": "Arden Vale",
+            "player_id": null,
+            "team": "Harbor",
+            "role": null,
+            "event": "availability",
+            "value": "out",
+            "polarity": "negative",
+            "certainty": "asserted",
+            "time": "tonight",
+            "condition": null,
+            "source_id": "synthetic-02",
+            "source_author": "TestReporter",
+            "evidence": {
+              "start": 0,
+              "end": 41,
+              "text": "Harbor: Arden Vale will not play tonight."
+            }
+          }
+        ],
+        "overflow": false
+      },
+      "mock_decisions_extraction": {
+        "x-2-0": {
+          "supported": true,
+          "confidence": 0.99,
+          "wording": "direct_assertion"
+        }
+      },
+      "mock_decisions_rules": {}
+    },
+    {
+      "source": {
+        "family_id": "family-03",
+        "source_id": "synthetic-03",
+        "author": "TestReporter",
+        "text": "Arden Vale is a GTD tonight; if he cannot go, Bex Lark will play.",
+        "url": "https://example.invalid/TestReporter/status/3",
+        "published_at": "2026-10-03T18:00:00Z",
+        "received_at": "2026-10-03T18:01:00Z",
+        "attribution_status": "original",
+        "players": [
+          {
+            "playerId": 1,
+            "fullName": "Arden Vale",
+            "lastName": "Vale",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Vale"
+            ]
+          },
+          {
+            "playerId": 2,
+            "fullName": "Bex Lark",
+            "lastName": "Lark",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Lark"
+            ]
+          },
+          {
+            "playerId": 3,
+            "fullName": "Cato Reed",
+            "lastName": "Reed",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Reed"
+            ]
+          },
+          {
+            "playerId": 4,
+            "fullName": "Daro Snow",
+            "lastName": "Snow",
+            "teamId": 99,
+            "position": "G",
+            "aliases": [
+              "Snow"
+            ]
+          },
+          {
+            "playerId": 5,
+            "fullName": "Elo Moss",
+            "lastName": "Moss",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Moss"
+            ]
+          }
+        ],
+        "aliases": [
+          "invented-original-3"
+        ],
+        "context": {
+          "kind": "synthetic_roster_only",
+          "independent_world_evidence": null
+        }
+      },
+      "labels": {
+        "provenance": {
+          "kind": "synthetic_software_control",
+          "author": "assistant-authored test oracle",
+          "human_adjudication": false,
+          "empirical_ground_truth": false,
+          "established_before_mock_outputs": true
+        },
+        "source_hash": "94e4f0b4f15c5982e6cabaea847ba6bd09ca1c208eb726c413c8b34c0856b985",
+        "complete": true,
+        "material": true,
+        "claims": [
+          {
+            "id": "gold-3-0",
+            "expected": {
+              "player": "Arden Vale",
+              "player_id": null,
+              "team": null,
+              "role": null,
+              "event": "availability",
+              "value": "uncertain",
+              "polarity": "positive",
+              "certainty": "tentative",
+              "time": "tonight",
+              "condition": null,
+              "source_id": "synthetic-03",
+              "source_author": "TestReporter"
+            },
+            "gradable": [
+              "player",
+              "team",
+              "role",
+              "event",
+              "value",
+              "polarity",
+              "certainty",
+              "time",
+              "condition",
+              "source_id",
+              "source_author"
+            ],
+            "evidence": {
+              "start": 0,
+              "end": 27,
+              "text": "Arden Vale is a GTD tonight"
+            },
+            "actionable": false,
+            "external_truth": null
+          },
+          {
+            "id": "gold-3-1",
+            "expected": {
+              "player": "Bex Lark",
+              "player_id": null,
+              "team": null,
+              "role": null,
+              "event": "availability",
+              "value": "available",
+              "polarity": "positive",
+              "certainty": "conditional",
+              "time": "tonight",
+              "condition": "if Arden Vale cannot go",
+              "source_id": "synthetic-03",
+              "source_author": "TestReporter"
+            },
+            "gradable": [
+              "player",
+              "team",
+              "role",
+              "event",
+              "value",
+              "polarity",
+              "certainty",
+              "time",
+              "condition",
+              "source_id",
+              "source_author"
+            ],
+            "evidence": {
+              "start": 29,
+              "end": 65,
+              "text": "if he cannot go, Bex Lark will play."
+            },
+            "actionable": false,
+            "external_truth": null
+          }
+        ],
+        "ungradable_reasons": [
+          "independent real-world identity/team/game/time context absent"
+        ]
+      },
+      "strata": [
+        "abbreviation",
+        "conditional",
+        "multi_person"
+      ],
+      "mock_extraction": {
+        "material": true,
+        "claims": [
+          {
+            "id": "x-3-0",
+            "player": "Arden Vale",
+            "player_id": null,
+            "team": null,
+            "role": null,
+            "event": "availability",
+            "value": "uncertain",
+            "polarity": "positive",
+            "certainty": "tentative",
+            "time": "tonight",
+            "condition": null,
+            "source_id": "synthetic-03",
+            "source_author": "TestReporter",
+            "evidence": {
+              "start": 0,
+              "end": 27,
+              "text": "Arden Vale is a GTD tonight"
+            }
+          },
+          {
+            "id": "x-3-1",
+            "player": "Bex Lark",
+            "player_id": null,
+            "team": null,
+            "role": null,
+            "event": "availability",
+            "value": "available",
+            "polarity": "positive",
+            "certainty": "conditional",
+            "time": "tonight",
+            "condition": "if Arden Vale cannot go",
+            "source_id": "synthetic-03",
+            "source_author": "TestReporter",
+            "evidence": {
+              "start": 29,
+              "end": 65,
+              "text": "if he cannot go, Bex Lark will play."
+            }
+          }
+        ],
+        "overflow": false
+      },
+      "mock_decisions_extraction": {
+        "x-3-0": {
+          "supported": true,
+          "confidence": 0.99,
+          "wording": "direct_assertion"
+        },
+        "x-3-1": {
+          "supported": true,
+          "confidence": 0.99,
+          "wording": "direct_assertion"
+        }
+      },
+      "mock_decisions_rules": {}
+    },
+    {
+      "source": {
+        "family_id": "family-04",
+        "source_id": "synthetic-04",
+        "author": "TestReporter",
+        "text": "Arden Vale and Bex Lark will not play tonight.",
+        "url": "https://example.invalid/TestReporter/status/4",
+        "published_at": "2026-10-04T18:00:00Z",
+        "received_at": "2026-10-04T18:01:00Z",
+        "attribution_status": "original",
+        "players": [
+          {
+            "playerId": 1,
+            "fullName": "Arden Vale",
+            "lastName": "Vale",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Vale"
+            ]
+          },
+          {
+            "playerId": 2,
+            "fullName": "Bex Lark",
+            "lastName": "Lark",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Lark"
+            ]
+          },
+          {
+            "playerId": 3,
+            "fullName": "Cato Reed",
+            "lastName": "Reed",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Reed"
+            ]
+          },
+          {
+            "playerId": 4,
+            "fullName": "Daro Snow",
+            "lastName": "Snow",
+            "teamId": 99,
+            "position": "G",
+            "aliases": [
+              "Snow"
+            ]
+          },
+          {
+            "playerId": 5,
+            "fullName": "Elo Moss",
+            "lastName": "Moss",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Moss"
+            ]
+          }
+        ],
+        "aliases": [
+          "invented-original-4"
+        ],
+        "context": {
+          "kind": "synthetic_roster_only",
+          "independent_world_evidence": null
+        }
+      },
+      "labels": {
+        "provenance": {
+          "kind": "synthetic_software_control",
+          "author": "assistant-authored test oracle",
+          "human_adjudication": false,
+          "empirical_ground_truth": false,
+          "established_before_mock_outputs": true
+        },
+        "source_hash": "01ddc1bc7549929e75dd2caa5eb1f51c13067996a5327c6279a3a46962b97729",
+        "complete": true,
+        "material": true,
+        "claims": [
+          {
+            "id": "gold-4-0",
+            "expected": {
+              "player": "Arden Vale",
+              "player_id": null,
+              "team": null,
+              "role": null,
+              "event": "availability",
+              "value": "out",
+              "polarity": "negative",
+              "certainty": "asserted",
+              "time": "tonight",
+              "condition": null,
+              "source_id": "synthetic-04",
+              "source_author": "TestReporter"
+            },
+            "gradable": [
+              "player",
+              "team",
+              "role",
+              "event",
+              "value",
+              "polarity",
+              "certainty",
+              "time",
+              "condition",
+              "source_id",
+              "source_author"
+            ],
+            "evidence": {
+              "start": 0,
+              "end": 46,
+              "text": "Arden Vale and Bex Lark will not play tonight."
+            },
+            "actionable": true,
+            "external_truth": null
+          },
+          {
+            "id": "gold-4-1",
+            "expected": {
+              "player": "Bex Lark",
+              "player_id": null,
+              "team": null,
+              "role": null,
+              "event": "availability",
+              "value": "out",
+              "polarity": "negative",
+              "certainty": "asserted",
+              "time": "tonight",
+              "condition": null,
+              "source_id": "synthetic-04",
+              "source_author": "TestReporter"
+            },
+            "gradable": [
+              "player",
+              "team",
+              "role",
+              "event",
+              "value",
+              "polarity",
+              "certainty",
+              "time",
+              "condition",
+              "source_id",
+              "source_author"
+            ],
+            "evidence": {
+              "start": 0,
+              "end": 46,
+              "text": "Arden Vale and Bex Lark will not play tonight."
+            },
+            "actionable": true,
+            "external_truth": null
+          }
+        ],
+        "ungradable_reasons": [
+          "independent real-world identity/team/game/time context absent"
+        ]
+      },
+      "strata": [
+        "multi_person",
+        "shared_clause"
+      ],
+      "mock_extraction": {
+        "material": true,
+        "claims": [
+          {
+            "id": "x-4-0",
+            "player": "Arden Vale",
+            "player_id": null,
+            "team": null,
+            "role": null,
+            "event": "availability",
+            "value": "out",
+            "polarity": "negative",
+            "certainty": "asserted",
+            "time": "tonight",
+            "condition": null,
+            "source_id": "synthetic-04",
+            "source_author": "TestReporter",
+            "evidence": {
+              "start": 0,
+              "end": 46,
+              "text": "Arden Vale and Bex Lark will not play tonight."
+            }
+          },
+          {
+            "id": "x-4-1",
+            "player": "Bex Lark",
+            "player_id": null,
+            "team": null,
+            "role": null,
+            "event": "availability",
+            "value": "out",
+            "polarity": "negative",
+            "certainty": "asserted",
+            "time": "tonight",
+            "condition": null,
+            "source_id": "synthetic-04",
+            "source_author": "TestReporter",
+            "evidence": {
+              "start": 0,
+              "end": 46,
+              "text": "Arden Vale and Bex Lark will not play tonight."
+            }
+          }
+        ],
+        "overflow": false
+      },
+      "mock_decisions_extraction": {
+        "x-4-0": {
+          "supported": true,
+          "confidence": 0.99,
+          "wording": "direct_assertion"
+        },
+        "x-4-1": {
+          "supported": true,
+          "confidence": 0.99,
+          "wording": "direct_assertion"
+        }
+      },
+      "mock_decisions_rules": {}
+    },
+    {
+      "source": {
+        "family_id": "family-05",
+        "source_id": "synthetic-05",
+        "author": "TestReporter",
+        "text": "Correction: Bex Lark will play tonight. My earlier report that Bex Lark would miss the game is retracted.",
+        "url": "https://example.invalid/TestReporter/status/5",
+        "published_at": "2026-10-05T18:00:00Z",
+        "received_at": "2026-10-05T18:01:00Z",
+        "attribution_status": "original",
+        "players": [
+          {
+            "playerId": 1,
+            "fullName": "Arden Vale",
+            "lastName": "Vale",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Vale"
+            ]
+          },
+          {
+            "playerId": 2,
+            "fullName": "Bex Lark",
+            "lastName": "Lark",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Lark"
+            ]
+          },
+          {
+            "playerId": 3,
+            "fullName": "Cato Reed",
+            "lastName": "Reed",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Reed"
+            ]
+          },
+          {
+            "playerId": 4,
+            "fullName": "Daro Snow",
+            "lastName": "Snow",
+            "teamId": 99,
+            "position": "G",
+            "aliases": [
+              "Snow"
+            ]
+          },
+          {
+            "playerId": 5,
+            "fullName": "Elo Moss",
+            "lastName": "Moss",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Moss"
+            ]
+          }
+        ],
+        "aliases": [
+          "invented-original-5"
+        ],
+        "context": {
+          "kind": "synthetic_roster_only",
+          "independent_world_evidence": null
+        }
+      },
+      "labels": {
+        "provenance": {
+          "kind": "synthetic_software_control",
+          "author": "assistant-authored test oracle",
+          "human_adjudication": false,
+          "empirical_ground_truth": false,
+          "established_before_mock_outputs": true
+        },
+        "source_hash": "b97a2ae78770723ff0b7af458460dafb0f28405172525dcf6e118601ad68cd02",
+        "complete": true,
+        "material": true,
+        "claims": [
+          {
+            "id": "gold-5-0",
+            "expected": {
+              "player": "Bex Lark",
+              "player_id": null,
+              "team": null,
+              "role": null,
+              "event": "availability",
+              "value": "available",
+              "polarity": "positive",
+              "certainty": "asserted",
+              "time": "tonight",
+              "condition": null,
+              "source_id": "synthetic-05",
+              "source_author": "TestReporter"
+            },
+            "gradable": [
+              "player",
+              "team",
+              "role",
+              "event",
+              "value",
+              "polarity",
+              "certainty",
+              "time",
+              "condition",
+              "source_id",
+              "source_author"
+            ],
+            "evidence": {
+              "start": 0,
+              "end": 39,
+              "text": "Correction: Bex Lark will play tonight."
+            },
+            "actionable": true,
+            "external_truth": null
+          },
+          {
+            "id": "gold-5-1",
+            "expected": {
+              "player": "Bex Lark",
+              "player_id": null,
+              "team": null,
+              "role": null,
+              "event": "correction",
+              "value": "earlier_out_report_retracted",
+              "polarity": "positive",
+              "certainty": "asserted",
+              "time": "tonight",
+              "condition": null,
+              "source_id": "synthetic-05",
+              "source_author": "TestReporter"
+            },
+            "gradable": [
+              "player",
+              "team",
+              "role",
+              "event",
+              "value",
+              "polarity",
+              "certainty",
+              "time",
+              "condition",
+              "source_id",
+              "source_author"
+            ],
+            "evidence": {
+              "start": 40,
+              "end": 105,
+              "text": "My earlier report that Bex Lark would miss the game is retracted."
+            },
+            "actionable": false,
+            "external_truth": null
+          }
+        ],
+        "ungradable_reasons": [
+          "independent real-world identity/team/game/time context absent"
+        ]
+      },
+      "strata": [
+        "correction",
+        "retraction"
+      ],
+      "mock_extraction": {
+        "material": true,
+        "claims": [
+          {
+            "id": "x-5-0",
+            "player": "Bex Lark",
+            "player_id": null,
+            "team": null,
+            "role": null,
+            "event": "availability",
+            "value": "available",
+            "polarity": "positive",
+            "certainty": "asserted",
+            "time": "tonight",
+            "condition": null,
+            "source_id": "synthetic-05",
+            "source_author": "TestReporter",
+            "evidence": {
+              "start": 0,
+              "end": 39,
+              "text": "Correction: Bex Lark will play tonight."
+            }
+          },
+          {
+            "id": "x-5-1",
+            "player": "Bex Lark",
+            "player_id": null,
+            "team": null,
+            "role": null,
+            "event": "correction",
+            "value": "earlier_out_report_retracted",
+            "polarity": "positive",
+            "certainty": "asserted",
+            "time": "tonight",
+            "condition": null,
+            "source_id": "synthetic-05",
+            "source_author": "TestReporter",
+            "evidence": {
+              "start": 40,
+              "end": 105,
+              "text": "My earlier report that Bex Lark would miss the game is retracted."
+            }
+          }
+        ],
+        "overflow": false
+      },
+      "mock_decisions_extraction": {
+        "x-5-0": {
+          "supported": true,
+          "confidence": 0.99,
+          "wording": "direct_assertion"
+        },
+        "x-5-1": {
+          "supported": true,
+          "confidence": 0.99,
+          "wording": "direct_assertion"
+        }
+      },
+      "mock_decisions_rules": {}
+    },
+    {
+      "source": {
+        "family_id": "family-06",
+        "source_id": "synthetic-06",
+        "author": "TestReporter",
+        "text": "Cato Reed might return Friday.",
+        "url": "https://example.invalid/TestReporter/status/6",
+        "published_at": null,
+        "received_at": "2026-10-06T18:01:00Z",
+        "attribution_status": "original",
+        "players": [
+          {
+            "playerId": 1,
+            "fullName": "Arden Vale",
+            "lastName": "Vale",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Vale"
+            ]
+          },
+          {
+            "playerId": 2,
+            "fullName": "Bex Lark",
+            "lastName": "Lark",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Lark"
+            ]
+          },
+          {
+            "playerId": 3,
+            "fullName": "Cato Reed",
+            "lastName": "Reed",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Reed"
+            ]
+          },
+          {
+            "playerId": 4,
+            "fullName": "Daro Snow",
+            "lastName": "Snow",
+            "teamId": 99,
+            "position": "G",
+            "aliases": [
+              "Snow"
+            ]
+          },
+          {
+            "playerId": 5,
+            "fullName": "Elo Moss",
+            "lastName": "Moss",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Moss"
+            ]
+          }
+        ],
+        "aliases": [
+          "invented-original-6"
+        ],
+        "context": {
+          "kind": "synthetic_roster_only",
+          "independent_world_evidence": null
+        }
+      },
+      "labels": {
+        "provenance": {
+          "kind": "synthetic_software_control",
+          "author": "assistant-authored test oracle",
+          "human_adjudication": false,
+          "empirical_ground_truth": false,
+          "established_before_mock_outputs": true
+        },
+        "source_hash": "ffdbb2b316a8b6b3a2869eb1343d007c40d0dbe3beba92776ed98f1dafacf4f5",
+        "complete": true,
+        "material": true,
+        "claims": [
+          {
+            "id": "gold-6-0",
+            "expected": {
+              "player": "Cato Reed",
+              "player_id": null,
+              "team": null,
+              "role": null,
+              "event": "availability",
+              "value": "possible_return",
+              "polarity": "positive",
+              "certainty": "tentative",
+              "time": "Friday",
+              "condition": null,
+              "source_id": "synthetic-06",
+              "source_author": "TestReporter"
+            },
+            "gradable": [
+              "player",
+              "team",
+              "role",
+              "event",
+              "value",
+              "polarity",
+              "certainty",
+              "time",
+              "condition",
+              "source_id",
+              "source_author"
+            ],
+            "evidence": {
+              "start": 0,
+              "end": 30,
+              "text": "Cato Reed might return Friday."
+            },
+            "actionable": false,
+            "external_truth": null
+          }
+        ],
+        "ungradable_reasons": [
+          "independent real-world identity/team/game/time context absent"
+        ]
+      },
+      "strata": [
+        "temporal_ambiguity",
+        "missing_clock"
+      ],
+      "mock_extraction": {
+        "material": true,
+        "claims": [
+          {
+            "id": "x-6-0",
+            "player": "Cato Reed",
+            "player_id": null,
+            "team": null,
+            "role": null,
+            "event": "availability",
+            "value": "possible_return",
+            "polarity": "positive",
+            "certainty": "tentative",
+            "time": "Friday",
+            "condition": null,
+            "source_id": "synthetic-06",
+            "source_author": "TestReporter",
+            "evidence": {
+              "start": 0,
+              "end": 30,
+              "text": "Cato Reed might return Friday."
+            }
+          }
+        ],
+        "overflow": false
+      },
+      "mock_decisions_extraction": {
+        "x-6-0": {
+          "supported": true,
+          "confidence": 0.99,
+          "wording": "direct_assertion"
+        }
+      },
+      "mock_decisions_rules": {}
+    },
+    {
+      "source": {
+        "family_id": "family-07",
+        "source_id": "synthetic-07",
+        "author": "TestReporter",
+        "text": "Practice lines:\nVale - Lark - Reed",
+        "url": "https://example.invalid/TestReporter/status/7",
+        "published_at": "2026-10-07T18:00:00Z",
+        "received_at": "2026-10-07T18:01:00Z",
+        "attribution_status": "original",
+        "players": [
+          {
+            "playerId": 1,
+            "fullName": "Arden Vale",
+            "lastName": "Vale",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Vale"
+            ]
+          },
+          {
+            "playerId": 2,
+            "fullName": "Bex Lark",
+            "lastName": "Lark",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Lark"
+            ]
+          },
+          {
+            "playerId": 3,
+            "fullName": "Cato Reed",
+            "lastName": "Reed",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Reed"
+            ]
+          },
+          {
+            "playerId": 4,
+            "fullName": "Daro Snow",
+            "lastName": "Snow",
+            "teamId": 99,
+            "position": "G",
+            "aliases": [
+              "Snow"
+            ]
+          },
+          {
+            "playerId": 5,
+            "fullName": "Elo Moss",
+            "lastName": "Moss",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Moss"
+            ]
+          }
+        ],
+        "aliases": [
+          "invented-original-7"
+        ],
+        "context": {
+          "kind": "synthetic_roster_only",
+          "independent_world_evidence": null
+        }
+      },
+      "labels": {
+        "provenance": {
+          "kind": "synthetic_software_control",
+          "author": "assistant-authored test oracle",
+          "human_adjudication": false,
+          "empirical_ground_truth": false,
+          "established_before_mock_outputs": true
+        },
+        "source_hash": "9ffc63a3c181e861a15c5339feacd232fa9b922e021f5656eceed70917fdcef0",
+        "complete": true,
+        "material": true,
+        "claims": [
+          {
+            "id": "gold-7-0",
+            "expected": {
+              "player": "Arden Vale",
+              "player_id": null,
+              "team": null,
+              "role": "es_forward",
+              "event": "line",
+              "value": "member",
+              "polarity": "positive",
+              "certainty": "asserted",
+              "time": "practice",
+              "condition": null,
+              "source_id": "synthetic-07",
+              "source_author": "TestReporter"
+            },
+            "gradable": [
+              "player",
+              "team",
+              "role",
+              "event",
+              "value",
+              "polarity",
+              "certainty",
+              "time",
+              "condition",
+              "source_id",
+              "source_author"
+            ],
+            "evidence": {
+              "start": 0,
+              "end": 34,
+              "text": "Practice lines:\nVale - Lark - Reed"
+            },
+            "actionable": false,
+            "external_truth": null
+          },
+          {
+            "id": "gold-7-1",
+            "expected": {
+              "player": "Bex Lark",
+              "player_id": null,
+              "team": null,
+              "role": "es_forward",
+              "event": "line",
+              "value": "member",
+              "polarity": "positive",
+              "certainty": "asserted",
+              "time": "practice",
+              "condition": null,
+              "source_id": "synthetic-07",
+              "source_author": "TestReporter"
+            },
+            "gradable": [
+              "player",
+              "team",
+              "role",
+              "event",
+              "value",
+              "polarity",
+              "certainty",
+              "time",
+              "condition",
+              "source_id",
+              "source_author"
+            ],
+            "evidence": {
+              "start": 0,
+              "end": 34,
+              "text": "Practice lines:\nVale - Lark - Reed"
+            },
+            "actionable": false,
+            "external_truth": null
+          },
+          {
+            "id": "gold-7-2",
+            "expected": {
+              "player": "Cato Reed",
+              "player_id": null,
+              "team": null,
+              "role": "es_forward",
+              "event": "line",
+              "value": "member",
+              "polarity": "positive",
+              "certainty": "asserted",
+              "time": "practice",
+              "condition": null,
+              "source_id": "synthetic-07",
+              "source_author": "TestReporter"
+            },
+            "gradable": [
+              "player",
+              "team",
+              "role",
+              "event",
+              "value",
+              "polarity",
+              "certainty",
+              "time",
+              "condition",
+              "source_id",
+              "source_author"
+            ],
+            "evidence": {
+              "start": 0,
+              "end": 34,
+              "text": "Practice lines:\nVale - Lark - Reed"
+            },
+            "actionable": false,
+            "external_truth": null
+          }
+        ],
+        "ungradable_reasons": [
+          "independent real-world identity/team/game/time context absent"
+        ]
+      },
+      "strata": [
+        "line",
+        "multi_person"
+      ],
+      "mock_extraction": {
+        "material": true,
+        "claims": [
+          {
+            "id": "x-7-0",
+            "player": "Arden Vale",
+            "player_id": null,
+            "team": null,
+            "role": "es_forward",
+            "event": "line",
+            "value": "member",
+            "polarity": "positive",
+            "certainty": "asserted",
+            "time": "practice",
+            "condition": null,
+            "source_id": "synthetic-07",
+            "source_author": "TestReporter",
+            "evidence": {
+              "start": 0,
+              "end": 34,
+              "text": "Practice lines:\nVale - Lark - Reed"
+            }
+          },
+          {
+            "id": "x-7-1",
+            "player": "Bex Lark",
+            "player_id": null,
+            "team": null,
+            "role": "es_forward",
+            "event": "line",
+            "value": "member",
+            "polarity": "positive",
+            "certainty": "asserted",
+            "time": "practice",
+            "condition": null,
+            "source_id": "synthetic-07",
+            "source_author": "TestReporter",
+            "evidence": {
+              "start": 0,
+              "end": 34,
+              "text": "Practice lines:\nVale - Lark - Reed"
+            }
+          },
+          {
+            "id": "x-7-2",
+            "player": "Cato Reed",
+            "player_id": null,
+            "team": null,
+            "role": "es_forward",
+            "event": "line",
+            "value": "member",
+            "polarity": "positive",
+            "certainty": "asserted",
+            "time": "practice",
+            "condition": null,
+            "source_id": "synthetic-07",
+            "source_author": "TestReporter",
+            "evidence": {
+              "start": 0,
+              "end": 34,
+              "text": "Practice lines:\nVale - Lark - Reed"
+            }
+          }
+        ],
+        "overflow": false
+      },
+      "mock_decisions_extraction": {
+        "x-7-0": {
+          "supported": true,
+          "confidence": 0.99,
+          "wording": "direct_assertion"
+        },
+        "x-7-1": {
+          "supported": true,
+          "confidence": 0.99,
+          "wording": "direct_assertion"
+        },
+        "x-7-2": {
+          "supported": true,
+          "confidence": 0.99,
+          "wording": "direct_assertion"
+        }
+      },
+      "mock_decisions_rules": {}
+    },
+    {
+      "source": {
+        "family_id": "family-08",
+        "source_id": "synthetic-08",
+        "author": "TestReporter",
+        "text": "PP1: Vale - Lark - Reed - Snow - Moss",
+        "url": "https://example.invalid/TestReporter/status/8",
+        "published_at": "2026-10-08T18:00:00Z",
+        "received_at": "2026-10-08T18:01:00Z",
+        "attribution_status": "original",
+        "players": [
+          {
+            "playerId": 1,
+            "fullName": "Arden Vale",
+            "lastName": "Vale",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Vale"
+            ]
+          },
+          {
+            "playerId": 2,
+            "fullName": "Bex Lark",
+            "lastName": "Lark",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Lark"
+            ]
+          },
+          {
+            "playerId": 3,
+            "fullName": "Cato Reed",
+            "lastName": "Reed",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Reed"
+            ]
+          },
+          {
+            "playerId": 4,
+            "fullName": "Daro Snow",
+            "lastName": "Snow",
+            "teamId": 99,
+            "position": "G",
+            "aliases": [
+              "Snow"
+            ]
+          },
+          {
+            "playerId": 5,
+            "fullName": "Elo Moss",
+            "lastName": "Moss",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Moss"
+            ]
+          }
+        ],
+        "aliases": [
+          "invented-original-8"
+        ],
+        "context": {
+          "kind": "synthetic_roster_only",
+          "independent_world_evidence": null
+        }
+      },
+      "labels": {
+        "provenance": {
+          "kind": "synthetic_software_control",
+          "author": "assistant-authored test oracle",
+          "human_adjudication": false,
+          "empirical_ground_truth": false,
+          "established_before_mock_outputs": true
+        },
+        "source_hash": "99e0c340a6afed7d3839464b5c1ee573bd9baa7dd086063c3ea56e2da304aadc",
+        "complete": true,
+        "material": true,
+        "claims": [
+          {
+            "id": "gold-8-0",
+            "expected": {
+              "player": "Arden Vale",
+              "player_id": null,
+              "team": null,
+              "role": "pp1",
+              "event": "pp",
+              "value": "member",
+              "polarity": "positive",
+              "certainty": "asserted",
+              "time": null,
+              "condition": null,
+              "source_id": "synthetic-08",
+              "source_author": "TestReporter"
+            },
+            "gradable": [
+              "player",
+              "team",
+              "role",
+              "event",
+              "value",
+              "polarity",
+              "certainty",
+              "time",
+              "condition",
+              "source_id",
+              "source_author"
+            ],
+            "evidence": {
+              "start": 0,
+              "end": 37,
+              "text": "PP1: Vale - Lark - Reed - Snow - Moss"
+            },
+            "actionable": false,
+            "external_truth": null
+          },
+          {
+            "id": "gold-8-1",
+            "expected": {
+              "player": "Bex Lark",
+              "player_id": null,
+              "team": null,
+              "role": "pp1",
+              "event": "pp",
+              "value": "member",
+              "polarity": "positive",
+              "certainty": "asserted",
+              "time": null,
+              "condition": null,
+              "source_id": "synthetic-08",
+              "source_author": "TestReporter"
+            },
+            "gradable": [
+              "player",
+              "team",
+              "role",
+              "event",
+              "value",
+              "polarity",
+              "certainty",
+              "time",
+              "condition",
+              "source_id",
+              "source_author"
+            ],
+            "evidence": {
+              "start": 0,
+              "end": 37,
+              "text": "PP1: Vale - Lark - Reed - Snow - Moss"
+            },
+            "actionable": false,
+            "external_truth": null
+          },
+          {
+            "id": "gold-8-2",
+            "expected": {
+              "player": "Cato Reed",
+              "player_id": null,
+              "team": null,
+              "role": "pp1",
+              "event": "pp",
+              "value": "member",
+              "polarity": "positive",
+              "certainty": "asserted",
+              "time": null,
+              "condition": null,
+              "source_id": "synthetic-08",
+              "source_author": "TestReporter"
+            },
+            "gradable": [
+              "player",
+              "team",
+              "role",
+              "event",
+              "value",
+              "polarity",
+              "certainty",
+              "time",
+              "condition",
+              "source_id",
+              "source_author"
+            ],
+            "evidence": {
+              "start": 0,
+              "end": 37,
+              "text": "PP1: Vale - Lark - Reed - Snow - Moss"
+            },
+            "actionable": false,
+            "external_truth": null
+          },
+          {
+            "id": "gold-8-3",
+            "expected": {
+              "player": "Daro Snow",
+              "player_id": null,
+              "team": null,
+              "role": "pp1",
+              "event": "pp",
+              "value": "member",
+              "polarity": "positive",
+              "certainty": "asserted",
+              "time": null,
+              "condition": null,
+              "source_id": "synthetic-08",
+              "source_author": "TestReporter"
+            },
+            "gradable": [
+              "player",
+              "team",
+              "role",
+              "event",
+              "value",
+              "polarity",
+              "certainty",
+              "time",
+              "condition",
+              "source_id",
+              "source_author"
+            ],
+            "evidence": {
+              "start": 0,
+              "end": 37,
+              "text": "PP1: Vale - Lark - Reed - Snow - Moss"
+            },
+            "actionable": false,
+            "external_truth": null
+          },
+          {
+            "id": "gold-8-4",
+            "expected": {
+              "player": "Elo Moss",
+              "player_id": null,
+              "team": null,
+              "role": "pp1",
+              "event": "pp",
+              "value": "member",
+              "polarity": "positive",
+              "certainty": "asserted",
+              "time": null,
+              "condition": null,
+              "source_id": "synthetic-08",
+              "source_author": "TestReporter"
+            },
+            "gradable": [
+              "player",
+              "team",
+              "role",
+              "event",
+              "value",
+              "polarity",
+              "certainty",
+              "time",
+              "condition",
+              "source_id",
+              "source_author"
+            ],
+            "evidence": {
+              "start": 0,
+              "end": 37,
+              "text": "PP1: Vale - Lark - Reed - Snow - Moss"
+            },
+            "actionable": false,
+            "external_truth": null
+          }
+        ],
+        "ungradable_reasons": [
+          "independent real-world identity/team/game/time context absent"
+        ]
+      },
+      "strata": [
+        "pp",
+        "multi_person"
+      ],
+      "mock_extraction": {
+        "material": true,
+        "claims": [
+          {
+            "id": "x-8-0",
+            "player": "Arden Vale",
+            "player_id": null,
+            "team": null,
+            "role": "pp1",
+            "event": "pp",
+            "value": "member",
+            "polarity": "positive",
+            "certainty": "asserted",
+            "time": null,
+            "condition": null,
+            "source_id": "synthetic-08",
+            "source_author": "TestReporter",
+            "evidence": {
+              "start": 0,
+              "end": 37,
+              "text": "PP1: Vale - Lark - Reed - Snow - Moss"
+            }
+          },
+          {
+            "id": "x-8-1",
+            "player": "Bex Lark",
+            "player_id": null,
+            "team": null,
+            "role": "pp1",
+            "event": "pp",
+            "value": "member",
+            "polarity": "positive",
+            "certainty": "asserted",
+            "time": null,
+            "condition": null,
+            "source_id": "synthetic-08",
+            "source_author": "TestReporter",
+            "evidence": {
+              "start": 0,
+              "end": 37,
+              "text": "PP1: Vale - Lark - Reed - Snow - Moss"
+            }
+          },
+          {
+            "id": "x-8-2",
+            "player": "Cato Reed",
+            "player_id": null,
+            "team": null,
+            "role": "pp1",
+            "event": "pp",
+            "value": "member",
+            "polarity": "positive",
+            "certainty": "asserted",
+            "time": null,
+            "condition": null,
+            "source_id": "synthetic-08",
+            "source_author": "TestReporter",
+            "evidence": {
+              "start": 0,
+              "end": 37,
+              "text": "PP1: Vale - Lark - Reed - Snow - Moss"
+            }
+          },
+          {
+            "id": "x-8-3",
+            "player": "Daro Snow",
+            "player_id": null,
+            "team": null,
+            "role": "pp1",
+            "event": "pp",
+            "value": "member",
+            "polarity": "positive",
+            "certainty": "asserted",
+            "time": null,
+            "condition": null,
+            "source_id": "synthetic-08",
+            "source_author": "TestReporter",
+            "evidence": {
+              "start": 0,
+              "end": 37,
+              "text": "PP1: Vale - Lark - Reed - Snow - Moss"
+            }
+          },
+          {
+            "id": "x-8-4",
+            "player": "Elo Moss",
+            "player_id": null,
+            "team": null,
+            "role": "pp1",
+            "event": "pp",
+            "value": "member",
+            "polarity": "positive",
+            "certainty": "asserted",
+            "time": null,
+            "condition": null,
+            "source_id": "synthetic-08",
+            "source_author": "TestReporter",
+            "evidence": {
+              "start": 0,
+              "end": 37,
+              "text": "PP1: Vale - Lark - Reed - Snow - Moss"
+            }
+          }
+        ],
+        "overflow": false
+      },
+      "mock_decisions_extraction": {
+        "x-8-0": {
+          "supported": true,
+          "confidence": 0.99,
+          "wording": "direct_assertion"
+        },
+        "x-8-1": {
+          "supported": true,
+          "confidence": 0.99,
+          "wording": "direct_assertion"
+        },
+        "x-8-2": {
+          "supported": true,
+          "confidence": 0.99,
+          "wording": "direct_assertion"
+        },
+        "x-8-3": {
+          "supported": true,
+          "confidence": 0.99,
+          "wording": "direct_assertion"
+        },
+        "x-8-4": {
+          "supported": true,
+          "confidence": 0.99,
+          "wording": "direct_assertion"
+        }
+      },
+      "mock_decisions_rules": {}
+    },
+    {
+      "source": {
+        "family_id": "family-09",
+        "source_id": "synthetic-09",
+        "author": "TestReporter",
+        "text": "Harbor confirms Daro Snow starts tonight.",
+        "url": "https://example.invalid/TestReporter/status/9",
+        "published_at": "2026-10-09T18:00:00Z",
+        "received_at": "2026-10-09T18:01:00Z",
+        "attribution_status": "original",
+        "players": [
+          {
+            "playerId": 1,
+            "fullName": "Arden Vale",
+            "lastName": "Vale",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Vale"
+            ]
+          },
+          {
+            "playerId": 2,
+            "fullName": "Bex Lark",
+            "lastName": "Lark",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Lark"
+            ]
+          },
+          {
+            "playerId": 3,
+            "fullName": "Cato Reed",
+            "lastName": "Reed",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Reed"
+            ]
+          },
+          {
+            "playerId": 4,
+            "fullName": "Daro Snow",
+            "lastName": "Snow",
+            "teamId": 99,
+            "position": "G",
+            "aliases": [
+              "Snow"
+            ]
+          },
+          {
+            "playerId": 5,
+            "fullName": "Elo Moss",
+            "lastName": "Moss",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Moss"
+            ]
+          }
+        ],
+        "aliases": [
+          "invented-original-9"
+        ],
+        "context": {
+          "kind": "synthetic_roster_only",
+          "independent_world_evidence": null
+        }
+      },
+      "labels": {
+        "provenance": {
+          "kind": "synthetic_software_control",
+          "author": "assistant-authored test oracle",
+          "human_adjudication": false,
+          "empirical_ground_truth": false,
+          "established_before_mock_outputs": true
+        },
+        "source_hash": "4b551aaf555f1c8ddb0dc6041e440b0d615613fec0fd0eeadd89d55851840144",
+        "complete": true,
+        "material": true,
+        "claims": [
+          {
+            "id": "gold-9-0",
+            "expected": {
+              "player": "Daro Snow",
+              "player_id": null,
+              "team": "Harbor",
+              "role": "goalie",
+              "event": "starter",
+              "value": "starter",
+              "polarity": "positive",
+              "certainty": "asserted",
+              "time": "tonight",
+              "condition": null,
+              "source_id": "synthetic-09",
+              "source_author": "TestReporter"
+            },
+            "gradable": [
+              "player",
+              "team",
+              "role",
+              "event",
+              "value",
+              "polarity",
+              "certainty",
+              "time",
+              "condition",
+              "source_id",
+              "source_author"
+            ],
+            "evidence": {
+              "start": 0,
+              "end": 41,
+              "text": "Harbor confirms Daro Snow starts tonight."
+            },
+            "actionable": true,
+            "external_truth": null
+          }
+        ],
+        "ungradable_reasons": [
+          "independent real-world identity/team/game/time context absent"
+        ]
+      },
+      "strata": [
+        "goalie",
+        "asserted"
+      ],
+      "mock_extraction": {
+        "material": true,
+        "claims": [
+          {
+            "id": "x-9-0",
+            "player": "Daro Snow",
+            "player_id": null,
+            "team": "Harbor",
+            "role": "goalie",
+            "event": "starter",
+            "value": "starter",
+            "polarity": "positive",
+            "certainty": "asserted",
+            "time": "tonight",
+            "condition": null,
+            "source_id": "synthetic-09",
+            "source_author": "TestReporter",
+            "evidence": {
+              "start": 0,
+              "end": 41,
+              "text": "Harbor confirms Daro Snow starts tonight."
+            }
+          }
+        ],
+        "overflow": false
+      },
+      "mock_decisions_extraction": {
+        "x-9-0": {
+          "supported": true,
+          "confidence": 0.99,
+          "wording": "direct_assertion"
+        }
+      },
+      "mock_decisions_rules": {}
+    },
+    {
+      "source": {
+        "family_id": "family-10",
+        "source_id": "synthetic-10",
+        "author": "TestReporter",
+        "text": "Arden Vale skated at practice today; this does not confirm he will play tonight.",
+        "url": "https://example.invalid/TestReporter/status/10",
+        "published_at": "2026-10-10T18:00:00Z",
+        "received_at": "2026-10-10T18:01:00Z",
+        "attribution_status": "original",
+        "players": [
+          {
+            "playerId": 1,
+            "fullName": "Arden Vale",
+            "lastName": "Vale",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Vale"
+            ]
+          },
+          {
+            "playerId": 2,
+            "fullName": "Bex Lark",
+            "lastName": "Lark",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Lark"
+            ]
+          },
+          {
+            "playerId": 3,
+            "fullName": "Cato Reed",
+            "lastName": "Reed",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Reed"
+            ]
+          },
+          {
+            "playerId": 4,
+            "fullName": "Daro Snow",
+            "lastName": "Snow",
+            "teamId": 99,
+            "position": "G",
+            "aliases": [
+              "Snow"
+            ]
+          },
+          {
+            "playerId": 5,
+            "fullName": "Elo Moss",
+            "lastName": "Moss",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Moss"
+            ]
+          }
+        ],
+        "aliases": [
+          "invented-original-10"
+        ],
+        "context": {
+          "kind": "synthetic_roster_only",
+          "independent_world_evidence": null
+        }
+      },
+      "labels": {
+        "provenance": {
+          "kind": "synthetic_software_control",
+          "author": "assistant-authored test oracle",
+          "human_adjudication": false,
+          "empirical_ground_truth": false,
+          "established_before_mock_outputs": true
+        },
+        "source_hash": "369de816af1e0a31135ba916602f0d5cdc61aa4cfe43621bb42201ace8ab2f7c",
+        "complete": true,
+        "material": true,
+        "claims": [
+          {
+            "id": "gold-10-0",
+            "expected": {
+              "player": "Arden Vale",
+              "player_id": null,
+              "team": null,
+              "role": null,
+              "event": "attendance",
+              "value": "skated",
+              "polarity": "positive",
+              "certainty": "observation",
+              "time": "today",
+              "condition": null,
+              "source_id": "synthetic-10",
+              "source_author": "TestReporter"
+            },
+            "gradable": [
+              "player",
+              "team",
+              "role",
+              "event",
+              "value",
+              "polarity",
+              "certainty",
+              "time",
+              "condition",
+              "source_id",
+              "source_author"
+            ],
+            "evidence": {
+              "start": 0,
+              "end": 80,
+              "text": "Arden Vale skated at practice today; this does not confirm he will play tonight."
+            },
+            "actionable": true,
+            "external_truth": null
+          }
+        ],
+        "ungradable_reasons": [
+          "independent real-world identity/team/game/time context absent"
+        ]
+      },
+      "strata": [
+        "attendance_not_selection"
+      ],
+      "mock_extraction": {
+        "material": true,
+        "claims": [
+          {
+            "id": "x-10-0",
+            "player": "Arden Vale",
+            "player_id": null,
+            "team": null,
+            "role": null,
+            "event": "attendance",
+            "value": "skated",
+            "polarity": "positive",
+            "certainty": "observation",
+            "time": "today",
+            "condition": null,
+            "source_id": "synthetic-10",
+            "source_author": "TestReporter",
+            "evidence": {
+              "start": 0,
+              "end": 80,
+              "text": "Arden Vale skated at practice today; this does not confirm he will play tonight."
+            }
+          }
+        ],
+        "overflow": false
+      },
+      "mock_decisions_extraction": {
+        "x-10-0": {
+          "supported": true,
+          "confidence": 0.99,
+          "wording": "direct_assertion"
+        }
+      },
+      "mock_decisions_rules": {}
+    },
+    {
+      "source": {
+        "family_id": "family-11",
+        "source_id": "synthetic-11",
+        "author": "TestReporter",
+        "text": "RT @Original: Bex Lark is out tonight.",
+        "url": "https://example.invalid/TestReporter/status/11",
+        "published_at": "2026-10-11T18:00:00Z",
+        "received_at": "2026-10-11T18:01:00Z",
+        "attribution_status": "unresolved_relay",
+        "players": [
+          {
+            "playerId": 1,
+            "fullName": "Arden Vale",
+            "lastName": "Vale",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Vale"
+            ]
+          },
+          {
+            "playerId": 2,
+            "fullName": "Bex Lark",
+            "lastName": "Lark",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Lark"
+            ]
+          },
+          {
+            "playerId": 3,
+            "fullName": "Cato Reed",
+            "lastName": "Reed",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Reed"
+            ]
+          },
+          {
+            "playerId": 4,
+            "fullName": "Daro Snow",
+            "lastName": "Snow",
+            "teamId": 99,
+            "position": "G",
+            "aliases": [
+              "Snow"
+            ]
+          },
+          {
+            "playerId": 5,
+            "fullName": "Elo Moss",
+            "lastName": "Moss",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Moss"
+            ]
+          }
+        ],
+        "aliases": [
+          "invented-original-11"
+        ],
+        "context": {
+          "kind": "synthetic_roster_only",
+          "independent_world_evidence": null
+        }
+      },
+      "labels": {
+        "provenance": {
+          "kind": "synthetic_software_control",
+          "author": "assistant-authored test oracle",
+          "human_adjudication": false,
+          "empirical_ground_truth": false,
+          "established_before_mock_outputs": true
+        },
+        "source_hash": "4484012d78a526a230ca2e26244b037230293d1b961561d5e55310a5b60fd96e",
+        "complete": true,
+        "material": true,
+        "claims": [
+          {
+            "id": "gold-11-0",
+            "expected": {
+              "player": "Bex Lark",
+              "player_id": null,
+              "team": null,
+              "role": null,
+              "event": "availability",
+              "value": "out",
+              "polarity": "positive",
+              "certainty": "asserted",
+              "time": "tonight",
+              "condition": null,
+              "source_id": "synthetic-11",
+              "source_author": "TestReporter"
+            },
+            "gradable": [
+              "player",
+              "team",
+              "role",
+              "event",
+              "value",
+              "polarity",
+              "certainty",
+              "time",
+              "condition",
+              "source_id",
+              "source_author"
+            ],
+            "evidence": {
+              "start": 0,
+              "end": 38,
+              "text": "RT @Original: Bex Lark is out tonight."
+            },
+            "actionable": false,
+            "external_truth": null
+          }
+        ],
+        "ungradable_reasons": [
+          "independent real-world identity/team/game/time context absent"
+        ]
+      },
+      "strata": [
+        "attribution",
+        "relay"
+      ],
+      "mock_extraction": {
+        "material": true,
+        "claims": [
+          {
+            "id": "x-11-0",
+            "player": "Bex Lark",
+            "player_id": null,
+            "team": null,
+            "role": null,
+            "event": "availability",
+            "value": "out",
+            "polarity": "positive",
+            "certainty": "asserted",
+            "time": "tonight",
+            "condition": null,
+            "source_id": "synthetic-11",
+            "source_author": "TestReporter",
+            "evidence": {
+              "start": 0,
+              "end": 38,
+              "text": "RT @Original: Bex Lark is out tonight."
+            }
+          }
+        ],
+        "overflow": false
+      },
+      "mock_decisions_extraction": {
+        "x-11-0": {
+          "supported": true,
+          "confidence": 0.99,
+          "wording": "direct_assertion"
+        }
+      },
+      "mock_decisions_rules": {}
+    },
+    {
+      "source": {
+        "family_id": "family-12",
+        "source_id": "synthetic-12",
+        "author": "TestReporter",
+        "text": "Harbor practice: Daro Snow is skating as an extra forward today, not starting in goal.",
+        "url": "https://example.invalid/TestReporter/status/12",
+        "published_at": "2026-10-12T18:00:00Z",
+        "received_at": "2026-10-12T18:01:00Z",
+        "attribution_status": "original",
+        "players": [
+          {
+            "playerId": 1,
+            "fullName": "Arden Vale",
+            "lastName": "Vale",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Vale"
+            ]
+          },
+          {
+            "playerId": 2,
+            "fullName": "Bex Lark",
+            "lastName": "Lark",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Lark"
+            ]
+          },
+          {
+            "playerId": 3,
+            "fullName": "Cato Reed",
+            "lastName": "Reed",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Reed"
+            ]
+          },
+          {
+            "playerId": 4,
+            "fullName": "Daro Snow",
+            "lastName": "Snow",
+            "teamId": 99,
+            "position": "G",
+            "aliases": [
+              "Snow"
+            ]
+          },
+          {
+            "playerId": 5,
+            "fullName": "Elo Moss",
+            "lastName": "Moss",
+            "teamId": 99,
+            "position": "C",
+            "aliases": [
+              "Moss"
+            ]
+          }
+        ],
+        "aliases": [
+          "invented-original-12"
+        ],
+        "context": {
+          "kind": "synthetic_roster_only",
+          "independent_world_evidence": null
+        }
+      },
+      "labels": {
+        "provenance": {
+          "kind": "synthetic_software_control",
+          "author": "assistant-authored test oracle",
+          "human_adjudication": false,
+          "empirical_ground_truth": false,
+          "established_before_mock_outputs": true
+        },
+        "source_hash": "f816a4e97cfbbf7ed563696361f8c7946c545b141ffd1e3a37f77e66302eb4d0",
+        "complete": true,
+        "material": true,
+        "claims": [
+          {
+            "id": "gold-12-0",
+            "expected": {
+              "player": "Daro Snow",
+              "player_id": null,
+              "team": "Harbor",
+              "role": "extra_forward",
+              "event": "attendance",
+              "value": "skating",
+              "polarity": "positive",
+              "certainty": "observation",
+              "time": "today",
+              "condition": null,
+              "source_id": "synthetic-12",
+              "source_author": "TestReporter"
+            },
+            "gradable": [
+              "player",
+              "team",
+              "role",
+              "event",
+              "value",
+              "polarity",
+              "certainty",
+              "time",
+              "condition",
+              "source_id",
+              "source_author"
+            ],
+            "evidence": {
+              "start": 0,
+              "end": 86,
+              "text": "Harbor practice: Daro Snow is skating as an extra forward today, not starting in goal."
+            },
+            "actionable": true,
+            "external_truth": null
+          }
+        ],
+        "ungradable_reasons": [
+          "independent real-world identity/team/game/time context absent"
+        ]
+      },
+      "strata": [
+        "unusual_practice_role",
+        "health_attendance_selection"
+      ],
+      "mock_extraction": {
+        "material": true,
+        "claims": [
+          {
+            "id": "x-12-0",
+            "player": "Daro Snow",
+            "player_id": null,
+            "team": "Harbor",
+            "role": "extra_forward",
+            "event": "attendance",
+            "value": "skating",
+            "polarity": "positive",
+            "certainty": "observation",
+            "time": "today",
+            "condition": null,
+            "source_id": "synthetic-12",
+            "source_author": "TestReporter",
+            "evidence": {
+              "start": 0,
+              "end": 86,
+              "text": "Harbor practice: Daro Snow is skating as an extra forward today, not starting in goal."
+            }
+          }
+        ],
+        "overflow": false
+      },
+      "mock_decisions_extraction": {
+        "x-12-0": {
+          "supported": true,
+          "confidence": 0.99,
+          "wording": "direct_assertion"
+        }
+      },
+      "mock_decisions_rules": {}
+    }
+  ]
+}

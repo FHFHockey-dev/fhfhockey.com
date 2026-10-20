@@ -117,6 +117,7 @@ export const LEGACY_PREDICTION_ARTIFACTS: LegacyPredictionArtifact[] = [
  * path names sKO, or whose header says "Legacy sKO-only", must be registered above.
  */
 export const SKO_NAMED_NON_QUARANTINE_PATHS: Record<string, string> = {
+  "web/lib/sko/gap.ts": "Pure SKO/VuDu Phase 0 descriptive gap math (new contract); no legacy model or product wiring.",
   "web/pages/api/v1/db/update-sko-stats.ts": "Operational legacy source writer for sko_skater_stats (ownership contract, Phase 2).",
   "web/lib/supabase/Upserts/fetchSKOskaterStats.js": "Legacy manual source-ingest script for sko_* tables; not part of the reader or formula bundle.",
   "web/lib/supabase/Upserts/fetchSKOyears.js": "Legacy manual source-ingest script for sko_* tables; not part of the reader or formula bundle.",

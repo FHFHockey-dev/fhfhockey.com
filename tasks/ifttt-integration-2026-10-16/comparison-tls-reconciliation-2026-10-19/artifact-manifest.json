@@ -1,0 +1,135 @@
+{
+  "version": "tls-reconciliation-and-transport-evidence-v1",
+  "files": [
+    {
+      "path": "CHECKPOINT.md",
+      "sha256": "084d0778750f0522884c5020fb36f0510e5dcc05c35096981262dd7f193843e5",
+      "bytes": 4006
+    },
+    {
+      "path": "after/aggregate-budget.sqlite",
+      "sha256": "3665ac2cb6506264ba9119e29356a193eda270477ba5c055b6edb88c3b8b5824",
+      "bytes": 49152
+    },
+    {
+      "path": "before/aggregate-budget.sqlite",
+      "sha256": "a3d98e15e73b9a58f2312d33153c15bf1b30711f0f80f48a16a83d05eb64e361",
+      "bytes": 36864
+    },
+    {
+      "path": "before/execution-manifest.json",
+      "sha256": "f1e452f1a7737a1fb5fc831ed78138a3d9d445867886005418be3315d8b9a968",
+      "bytes": 4193
+    },
+    {
+      "path": "before/pilot.py",
+      "sha256": "51636d9806da64a5315e5f4e9c9340fc15e677d89dc8450187126e88bdb43a8a",
+      "bytes": 27618
+    },
+    {
+      "path": "before/test_pilot.py",
+      "sha256": "6a4200f819b8e1353ecdcbe0a8fcc858f8185a96ce671167c8e322bed4c6a96b",
+      "bytes": 25174
+    },
+    {
+      "path": "certifi-provenance.json",
+      "sha256": "6911a8a02a31ee2b9346e71f8d96a000f87b9c7e84dee7c185f482a8aeb6d266",
+      "bytes": 1094
+    },
+    {
+      "path": "evidence-pins.json",
+      "sha256": "ccc983465607abef6c3469e222d2fb2b3991f137a8469637112d98e2e4f5139e",
+      "bytes": 1171
+    },
+    {
+      "path": "evidence-summary.json",
+      "sha256": "ddb000c0bc338c789eeb72969cf118c5159914b684438a3434c45b3e99023b2a",
+      "bytes": 1089
+    },
+    {
+      "path": "focused-tests-result.json",
+      "sha256": "c9a13ab0997c0b17f9f081be08c4dba7b6fe44b2483d0c66c20c98da7c19f115",
+      "bytes": 264
+    },
+    {
+      "path": "focused-tests.log",
+      "sha256": "f67fd9dcf54b662397f38daca429c4f561056f92078848ad82e1fe6a28090073",
+      "bytes": 8219
+    },
+    {
+      "path": "pilot.py.patch",
+      "sha256": "ed7bae37399bd107d72d843104c8ce15ca234b9f6c81d93349fed3b84127a35e",
+      "bytes": 1540
+    },
+    {
+      "path": "reconciliation-receipt.json",
+      "sha256": "ddff0fb238736bb3497c2e409a73996ca25bd0cdc5fdabfd920885490c5770c7",
+      "bytes": 1383
+    },
+    {
+      "path": "reconciliation.py",
+      "sha256": "c44a198b2716a0af39abc49cec016bdcff3a456bb3af20e430ed89c3732524c5",
+      "bytes": 5342
+    },
+    {
+      "path": "review-evidence/REVIEW.md",
+      "sha256": "1288818392cd4a7677b08b2258b81eae264e278a3f04b041118f48a6499fe99a",
+      "bytes": 4734
+    },
+    {
+      "path": "review-evidence/offline-no-http-proof.json",
+      "sha256": "12987886ef8699dafe2cca60cccbc0b72aef976cd87fe07fb9209f4255ef3969",
+      "bytes": 482
+    },
+    {
+      "path": "review-evidence/offline-trust-option.json",
+      "sha256": "f7c19cd548ea06650876e60220ad706297beeee07d3fc2854017b84637982656",
+      "bytes": 1253
+    },
+    {
+      "path": "review-evidence/probe_no_http_after_tls_failure.py",
+      "sha256": "8a7f16fae145346a274904f17e7cf3c8691b006503cc67d3ff6f4ce7c78fe3ba",
+      "bytes": 2578
+    },
+    {
+      "path": "review-evidence/stdlib-call-path.json",
+      "sha256": "8084b5d8f5cad5bc4e0d9d8e673a509fdff6ea922eb5f6d4be1a16b47e2622ec",
+      "bytes": 18978
+    },
+    {
+      "path": "reviewer-harness/secret-escaped_body-evidence.json",
+      "sha256": "db133d8230cbc1eb10a9ffd728e4e69ca6b07c567675b5f2b7116ed7939d2c16",
+      "bytes": 195
+    },
+    {
+      "path": "reviewer-harness/secret-header-evidence.json",
+      "sha256": "4ec845a48f28d17fbccb6c1f08c18a4ff45f6ce27fecab7c37443696595c19c4",
+      "bytes": 189
+    },
+    {
+      "path": "reviewer-harness/tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/test_independent.py",
+      "sha256": "e8b1e40ed454b49bba9dde0c0e5dd7e74962454e33a27695a1f0aa7c9e7850f4",
+      "bytes": 3479
+    },
+    {
+      "path": "reviewer-harness/unsealed-request-evidence.json",
+      "sha256": "71ff0d27c29cc59f1e279f30dbf7a5444c6006a6bae29761c1e4636f8edf5ece",
+      "bytes": 224
+    },
+    {
+      "path": "source-manifest.json",
+      "sha256": "3379f668fd0fb0c45a45fe39437efa0a6d55cc59d20c15c69c560fa3ac132150",
+      "bytes": 5420
+    },
+    {
+      "path": "test_pilot.py.patch",
+      "sha256": "11c837d11a4e710b5017be4c67d3b9f7fd2f1cc314bb02915a4e92b36aad1c2b",
+      "bytes": 1765
+    },
+    {
+      "path": "test_reconciliation.py",
+      "sha256": "b3b5aabca0b827e3f7e423adb9732c239e6f8798a0e39ba153888c136a1155cb",
+      "bytes": 3506
+    }
+  ]
+}

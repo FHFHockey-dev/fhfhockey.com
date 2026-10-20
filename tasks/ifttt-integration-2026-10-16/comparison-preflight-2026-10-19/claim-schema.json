@@ -1,0 +1,136 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "material",
+    "claims",
+    "overflow"
+  ],
+  "properties": {
+    "material": {
+      "type": "boolean"
+    },
+    "overflow": {
+      "type": "boolean"
+    },
+    "claims": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "player",
+          "player_id",
+          "team",
+          "role",
+          "event",
+          "value",
+          "polarity",
+          "certainty",
+          "time",
+          "condition",
+          "source_id",
+          "source_author",
+          "id",
+          "evidence"
+        ],
+        "properties": {
+          "player": {
+            "type": "string",
+            "minLength": 1
+          },
+          "player_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "team": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "role": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "event": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1
+          },
+          "polarity": {
+            "type": "string",
+            "enum": [
+              "positive",
+              "negative"
+            ]
+          },
+          "certainty": {
+            "type": "string",
+            "enum": [
+              "asserted",
+              "tentative",
+              "conditional",
+              "observation"
+            ]
+          },
+          "time": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "condition": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_author": {
+            "type": "string",
+            "minLength": 1
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "start",
+              "end",
+              "text"
+            ],
+            "properties": {
+              "start": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "end": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

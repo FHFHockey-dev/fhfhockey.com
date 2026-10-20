@@ -192,6 +192,6 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any), {
   jobName: "update-PbP",
-});
+}));

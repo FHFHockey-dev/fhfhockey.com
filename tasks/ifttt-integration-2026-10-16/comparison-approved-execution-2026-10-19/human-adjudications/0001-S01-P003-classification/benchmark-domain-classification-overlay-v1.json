@@ -1,0 +1,28 @@
+{
+  "version": "domain-classification-clarification-v1",
+  "base_benchmark_version": "human-reviewed-assistant-adjudicated-development-v1",
+  "base_benchmark_sha256": "a0ee294d19555ed92cebb886765f040ca5ad0bb1761ba3815281e921ea7da876",
+  "authority": "Owner original grade and explicit reaffirmation, recorded without rewriting either.",
+  "human_messages": [
+    "Sentinel_dd16c76325ec8191a7075ab20d95ceec",
+    "Sentinel_0031fc7eefd08191b68af3bcd527314f"
+  ],
+  "audit_of_base": "V1 already retains confirmed_starter for Sorokin in hockey_parsing_conventions. Its separate observed-source layer records the warmup evidence; that layer must not replace or downgrade the required normalized domain category.",
+  "change_kind": "Versioned semantic-layer clarification; no original benchmark or source-observation overwrite.",
+  "target": {
+    "sample_id": "S01",
+    "subject": "Ilya Sorokin",
+    "source_id": "x:2105434001074962845"
+  },
+  "required_normalized_domain_classification": "confirmed_starter",
+  "attendance_or_observation_only_is_sufficient": false,
+  "observed_source_quote_preserved": "Ilya Sorokin leads the Islanders out for warmups at Scotiabank Arena.",
+  "interpretation": "Confirmed goalie/starter is the task-specific hockey category; 100% is not calibrated probability or independent world verification.",
+  "P004_human_adjudication": null,
+  "source_observation_layer_remains": true,
+  "independent_world_truth": null,
+  "owner_publication_readiness": null,
+  "canonical_binding_verified": false,
+  "implementation_change_authorized_or_made": false,
+  "model_rerun_performed": false
+}

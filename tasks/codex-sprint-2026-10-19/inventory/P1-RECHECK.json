@@ -1,0 +1,640 @@
+{
+  "capturedAt": "2026-10-19T23:07:12.335802+00:00",
+  "head": "8a6ac8adccee73fae8e07045c86b374ce8c98008",
+  "branchCount": 182,
+  "branchTipsMatchOriginalReport": true,
+  "worktreeCount": 104,
+  "stashCount": 2,
+  "wholePorcelainIdentical": true,
+  "branchRefsIdentical": true,
+  "worktreeRegistryIdentical": true,
+  "stashMetadataIdentical": true,
+  "statusBeforeSHA256": "92b1217d10e7c1bf05d3822bcfa2a7e7bb1168148dd096d5ca946cb86629d5bc",
+  "statusAfterSHA256": "92b1217d10e7c1bf05d3822bcfa2a7e7bb1168148dd096d5ca946cb86629d5bc",
+  "worktrees": [
+    {
+      "path": "/Users/tim/Code/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 474,
+      "statusExit": 0
+    },
+    {
+      "path": "/private/tmp/draft-pro-final-verify.o4JDBA",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/draft-pro-release-verify.WqqqHi",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-avatar-wigo-20261002",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-blog-usability-20261008",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-cron-benchmark-context-20261004",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-cron-child-ingest-fixes",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-cron-delivered-followup-20261004",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-cron-preseason-exclusions",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-cron-report-fixes-20261003",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-cron-report-production-only-20261004",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-cron-reporting-combined-20261004",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-cron-yahoo-inventory-20261004",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-draft-recovery-20261002",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-forecast-contract-20261007",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-forecast-design-a-appearance-manifest-20261008",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-forecast-design-a-research-20261007",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-forecast-input-recovery-20261004",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-forecast-native-goal-accounting-20261007",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-forecast-native-producer-remediation-20261007",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-forecast-research-goal-kernel-20261008",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-historical-draft-reconciliation-20261003",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-master-reconciliation-20261008",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-migration-authority-20261002-1615",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-native-c2-admission-20261010",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-native-diagnostic-authorization-20261010",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-nst-current-season-resume",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-october-reconciliation-20261009",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-production-reconciliation-20261003",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-release-build-config-20261008",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-release-local-integration-20261009",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-release-safe-20261008",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-research-safe-20261008",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-rso-bounded-refresh-guard-20261004",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-rso-forge-consumer",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-rso-rules-20261009",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-rso-task-execution-20261008",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-shift-generation-safety-20261004",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-shift-ingestion-repair-20261004",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-social-card-readiness-20261008",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-start-chart-consumer",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhf-underlying-stats-acceptance-20261009",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfh-forge-evidence-time-precision-20261009",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfh-forge-output-evidence-binding-20261009",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfh-game-grid-calculation-fixes-20261008",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfh-game-grid-release-candidate-20261007",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfh-game-grid-visual-fixes-20261007",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfh-player-resolution-fixes",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfh-pr364-conflicts",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfh-weekscore-bounded-20261006",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfh-weekscore-date-consistency-20261006",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfhockey-checkpoint-avatar-sync",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfhockey-checkpoint-date-workflows",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfhockey-checkpoint-draft-recovery",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfhockey-checkpoint-forecast-generation",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfhockey-checkpoint-goalie",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfhockey-checkpoint-lines",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfhockey-checkpoint-offline-baseline",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfhockey-checkpoint-pk-v2",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfhockey-checkpoint-player-resolution",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfhockey-checkpoint-rankings-core",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfhockey-checkpoint-rso",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfhockey-checkpoint-shift-chart",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfhockey-checkpoint-wigo-chevron",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfhockey-forecast-generation-20261002",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfhockey-in-season-workflows-20261002",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfhockey-local-release-candidate-20261002",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfhockey-pk-source-qualification",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfhockey-rankings-trust-validation",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfhockey-rso-closure-20261002",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfhockey-rso-rankings-integration-20261002",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/fhfhockey-yahoo-cutover.9Q5b0m",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/lines-checkpoint-candidate-20261002",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/lines-producer-integration-20261002",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/rso-baseline-closed-20261002",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/rso-baseline-closed-replay-20261002",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/private/tmp/rso-full-game-baseline-20261002",
+      "exists": false,
+      "dirtyEntries": null,
+      "statusExit": null
+    },
+    {
+      "path": "/Users/tim/.codex/worktrees/category-scoring-boost-release/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/.codex/worktrees/draft-audit-integration/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/.codex/worktrees/draft-pro-chef/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/.codex/worktrees/draft-pro-live-release/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/.codex/worktrees/draft-ziggy-integration/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/.codex/worktrees/dust-dashboard-handoff/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/.codex/worktrees/forecast-checkpoint-1/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 14,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/.codex/worktrees/forecast-live-input-repair/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/.codex/worktrees/forecast-m1-caller-integration/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/.codex/worktrees/forecast-paired-prerequisites/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/.codex/worktrees/forecast-research-admin/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/.codex/worktrees/forecast-research-capture-ready/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/.codex/worktrees/forecast-research-observation-reuse/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/.codex/worktrees/forecast-research-prospective/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/.codex/worktrees/forecast-selection-exports/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/.codex/worktrees/forge-evidence-capture/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/.codex/worktrees/forge-evidence-installation/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/.codex/worktrees/forge-pp-shot-support/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/.codex/worktrees/positional-weighting-release/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/.codex/worktrees/roster-schedule-optimizer/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/.codex/worktrees/rso-consolidated-execution/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 1,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/.codex/worktrees/social-share-tools/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/.codex/worktrees/stripe-release-repair/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/Code/draft-pro-csv-release",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey-fantrax-guidance",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey-october",
+      "exists": true,
+      "dirtyEntries": 29,
+      "statusExit": 0
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-10/task-6/oct11-release/timestamp-continuation-runtime-v1/fhfhockey.com",
+      "exists": true,
+      "dirtyEntries": 0,
+      "statusExit": 0
+    }
+  ]
+}

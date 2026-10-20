@@ -1,0 +1,5 @@
+{
+  "source": "tasks/ifttt-integration-2026-10-16/comparison-authorized-retry-2026-10-19/retry.py",
+  "sourceSha256": "7ac550206dcd2d493b96c28ae62b5cfa46322176a690672b493ce93f04efae16",
+  "reason": "New explicitly authorized attempt with reconciled baseline; same orchestration/request and one shared aggregate ledger; old executor unchanged"
+}

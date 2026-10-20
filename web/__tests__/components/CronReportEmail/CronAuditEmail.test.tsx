@@ -6,6 +6,41 @@ import { describe, expect, it } from "vitest";
 import { CronAuditEmail } from "components/CronReportEmail/CronAuditEmail";
 
 describe("CronAuditEmail", () => {
+  it("uses five exclusive sections, hides healthy rows, and keeps disabled and runtime warnings explicit", () => {
+    const base = { key: "", label: "job", jobName: "", status: "success" as const,
+      runTimeDisplay: "UTC / EDT", method: "GET", route: "/job", routePath: "/job", targetTable: null,
+      statusCode: 200, durationMs: 1000, rowsUpserted: 0, rowsAffected: 0, failedRows: 0,
+      reason: null, lastKnownSuccessDisplay: null, failedRowSamples: [] };
+    const html = renderToStaticMarkup(<CronAuditEmail sinceDate="2026-03-19T12:10:00.000Z"
+      successHistory={{ since: "2026-02-18T12:10:00.000Z", until: "2026-03-20T12:10:00.000Z", complete: false, error: "page budget exceeded" }}
+      summary={{ auditRuns: 8, auditSuccesses: 4, auditFailures: 1, auditUnknown: 2, totalRowsUpserted: 0, totalFailedRows: 2 }}
+      audits={[
+        { ...base, key: "failed", jobName: "failed-job", status: "failure" },
+        { ...base, key: "missing", jobName: "missing-job", status: "unknown", missingObservationWarnings: ["No cron or audit observation matched this scheduled slot."] },
+        { ...base, key: "gap", jobName: "gap-job", status: "unknown" },
+        { ...base, key: "disabled", jobName: "disabled-job", status: "disabled" },
+        { ...base, key: "partial", jobName: "partial-job", failedRows: 2 },
+        { ...base, key: "skipped", jobName: "skipped-job", status: "unknown", missingObservationWarnings: ["Operation was skipped or produced no output"] },
+        { ...base, key: "near", jobName: "near-job", durationMs: 218000, repositoryLimitMs: 240000 },
+        { ...base, key: "healthy", jobName: "healthy-job" },
+      ]} />);
+    const headings = ["Critical failures", "Missing required jobs", "Audit gaps / unknown / disabled", "Partial successes / skipped results / runtime warnings", "Successful jobs"];
+    expect(html.match(/<h2 /g)).toHaveLength(5);
+    for (let index = 0; index < headings.length - 1; index++) {
+      expect(html.indexOf(headings[index])).toBeLessThan(html.indexOf(headings[index + 1]));
+    }
+    for (const name of ["failed-job", "missing-job", "gap-job", "disabled-job", "partial-job", "skipped-job", "near-job"]) {
+      expect(html.match(new RegExp(name, "g"))).toHaveLength(1);
+    }
+    expect(html).not.toContain("healthy-job");
+    expect(html).toContain("DISABLED");
+    expect(html).toContain("NEAR LIMIT");
+    expect(html).toContain("1 healthy job;");
+    expect(html).toContain("Last recorded success: Unknown;");
+    expect(html).toContain("Success history lookback: 2026-02-18");
+    expect(html).toContain("Lookup incomplete; latest success is unverified");
+  });
+
   it("does not present an undated static benchmark as evidence about a current receipt", () => {
     const html = renderToStaticMarkup(<CronAuditEmail sinceDate="2026-10-03T15:55:00Z"
       summary={{ auditRuns: 1, auditSuccesses: 0, auditFailures: 1, auditUnknown: 0, totalRowsUpserted: 0, totalFailedRows: 0 }}
@@ -50,7 +85,7 @@ describe("CronAuditEmail", () => {
       summary={{ auditRuns: 2, auditSuccesses: 1, auditFailures: 1, auditUnknown: 0, totalRowsUpserted: 741, totalFailedRows: 0 }}
       audits={[
         { key: "pbp", label: "PBP", jobName: "PBP", status: "failure", runTimeDisplay: "EDT", method: "GET", route: "/api/v1/db/update-PbP", routePath: "/api/v1/db/update-PbP", targetTable: null, statusCode: 500, durationMs: null, rowsUpserted: 741, rowsAffected: 741, failedRows: null, failedOperations: 1, reason: "Shift clock/duration mismatch", lastKnownSuccessDisplay: null, failedRowSamples: [] },
-        { key: "report", label: "Report", jobName: "Report", status: "success", runTimeDisplay: "EDT", method: "GET", route: "/api/v1/db/cron-report", routePath: "/api/v1/db/cron-report", targetTable: null, statusCode: 200, durationMs: 0, rowsUpserted: null, rowsAffected: null, failedRows: null, reason: null, lastKnownSuccessDisplay: null, failedRowSamples: [] },
+        { key: "report", label: "Report", jobName: "Report", status: "unknown", observedExecutionStatus: "success", runTimeDisplay: "EDT", method: "GET", route: "/api/v1/db/cron-report", routePath: "/api/v1/db/cron-report", targetTable: null, statusCode: 200, durationMs: 0, rowsUpserted: null, rowsAffected: null, failedRows: null, reason: null, lastKnownSuccessDisplay: null, failedRowSamples: [] },
       ]} />);
     expect(html).toContain("741");
     expect(html).toContain("Unknown</strong>");
@@ -70,7 +105,7 @@ describe("CronAuditEmail", () => {
     expect(screen.getByText(/deployed override unverified/)).toBeTruthy();
   });
 
-  it("includes clean successful jobs once in the briefing", () => {
+  it("summarizes clean successful jobs without listing individual receipts", () => {
     render(
       <CronAuditEmail
         sinceDate="2026-03-20T03:00:00.000Z"
@@ -106,8 +141,8 @@ describe("CronAuditEmail", () => {
       />
     );
 
-    expect(screen.getAllByText("update-teams-job")).toHaveLength(1);
-    expect(screen.getByText("OK")).toBeTruthy();
+    expect(screen.queryByText("update-teams-job")).toBeNull();
+    expect(screen.getByText(/1 healthy job; individual successful receipts omitted/)).toBeTruthy();
   });
   it("renders incomplete totals as unknown and retains observed failures", () => {
     const markup = renderToStaticMarkup(<CronAuditEmail

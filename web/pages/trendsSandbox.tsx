@@ -371,6 +371,7 @@ function buildPlayerSubtitle(option: {
 }
 
 function formatStateLabel(state: SandboxScoreRow["expectationState"]) {
+  if (state === "unavailable") return "Performance unavailable";
   if (state === "overperforming") return "Overperforming";
   if (state === "underperforming") return "Underperforming";
   return "Stable";
@@ -416,12 +417,16 @@ function getWindowLabel(windowCode: string) {
 }
 
 function getBarometerLabel(state: SandboxScoreRow["expectationState"] | null) {
+  if (state === "unavailable") return "Performance unavailable";
   if (state === "overperforming") return "Running Hot";
   if (state === "underperforming") return "Running Cold";
   return "On Pace";
 }
 
 function getBarometerHelperCopy(state: SandboxScoreRow["expectationState"] | null) {
+  if (state === "unavailable") {
+    return "This process support index blends underlying skill and conversion signals. It does not measure observed performance against an expectation; over/underperformance is unavailable.";
+  }
   if (state === "overperforming") {
     return "Current form is running above the player's usual lane.";
   }
@@ -2406,7 +2411,8 @@ export default function TrendsSandboxPage() {
       stable: rows.filter((row) => row.expectationState === "stable").slice(0, 5),
       underperforming: rows
         .filter((row) => row.expectationState === "underperforming")
-        .slice(0, 5)
+        .slice(0, 5),
+      unavailable: rows.filter((row) => row.expectationState === "unavailable").slice(0, 5)
     };
   }, [scoreData]);
 
@@ -2696,7 +2702,7 @@ export default function TrendsSandboxPage() {
       <section className={styles.sustainabilityWorkbench}>
         <article className={styles.surfaceCard}>
           <div className={styles.surfaceCardHeader}>
-            <h2 className={styles.surfaceCardTitle}>Form Barometer</h2>
+            <h2 className={styles.surfaceCardTitle}>{activeRow?.expectationState === "unavailable" ? "Process Support Index" : "Form Barometer"}</h2>
             <span className={styles.surfaceCardMeta}>
               {activeRow
                 ? getBarometerLabel(activeRow.expectationState)
@@ -2706,6 +2712,7 @@ export default function TrendsSandboxPage() {
           {activeRow ? (
             <div className={styles.meterBlock}>
               <div className={styles.barometerRail}>
+                {activeRow.expectationState !== "unavailable" ? <>
                 <div className={styles.barometerScale}>
                   <span>Cold</span>
                   <span>Usual Range</span>
@@ -2720,6 +2727,7 @@ export default function TrendsSandboxPage() {
                     style={{ left: `${barometerPointer}%` }}
                   />
                 </div>
+                </> : null}
                 <p className={styles.barometerCopy}>
                   {getBarometerHelperCopy(activeRow.expectationState)}
                 </p>
@@ -2737,12 +2745,12 @@ export default function TrendsSandboxPage() {
                   <span>{getBarometerLabel(activeRow.expectationState)}</span>
                 </div>
                 <div>
-                  <strong>Heat Check</strong>
+                  <strong>{activeRow.expectationState === "unavailable" ? "Raw Process Index" : "Heat Check"}</strong>
                   <span>{formatNumber(activeRow.rawScore, 2)}</span>
                 </div>
                 <div>
-                  <strong>Stability Score</strong>
-                  <span>{formatNumber(activeRow.zScore, 2)}</span>
+                  <strong>{activeRow.expectationState === "unavailable" ? "Performance comparison" : "Stability Score"}</strong>
+                  <span>{activeRow.expectationState === "unavailable" ? "Unavailable" : formatNumber(activeRow.zScore, 2)}</span>
                 </div>
                 <div>
                   <strong>Gap vs Usual</strong>
@@ -2897,11 +2905,11 @@ export default function TrendsSandboxPage() {
         <div className={styles.bandHeader}>
           <h2>Slate Snapshot</h2>
           <span className={styles.bandStatus}>
-            Quick leaders by current form reading
+            {entityType === "skater" ? "Process support index; performance comparison unavailable" : "Quick leaders by current form reading"}
           </span>
         </div>
         <div className={styles.leaderboardGrid}>
-          {(["overperforming", "stable", "underperforming"] as const).map(
+          {(entityType === "skater" ? ["unavailable"] as const : ["overperforming", "stable", "underperforming"] as const).map(
             (state) => (
               <div key={state} className={styles.leaderboardCard}>
                 <div className={styles.leaderboardTitle}>

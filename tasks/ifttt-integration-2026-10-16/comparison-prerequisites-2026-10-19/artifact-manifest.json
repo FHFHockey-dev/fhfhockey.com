@@ -1,0 +1,49 @@
+{
+  "files": [
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-prerequisites-2026-10-19/CHECKPOINT.md",
+      "sha256": "3c5faabf8217d3e4984548e23ca0af5ac8f22349bc968f59a6870083afd75cd1",
+      "bytes": 9320
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-prerequisites-2026-10-19/provider-availability.json",
+      "sha256": "3d9ed90294476338c56e6bad752c7987fdff15de3892750954bccd73408e93da",
+      "bytes": 1387
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-prerequisites-2026-10-19/provisional-source-labels.json",
+      "sha256": "8d2b8c6b2a20f19aee679a822192cb5f0d1675d3147d4a2179e1e00bea17bc79",
+      "bytes": 7380
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-prerequisites-2026-10-19/real-source-families.json",
+      "sha256": "04c6531d23ff5547bd474b3f5c4e7096ce970faaf16d78a51092577a47ed8b57",
+      "bytes": 3891
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-prerequisites-2026-10-19/recover_sources.py",
+      "sha256": "2858f041f57f9b5529074bfc171cc94df9bfa5a1f683970137c67f71641b2bce",
+      "bytes": 9058
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-prerequisites-2026-10-19/recovery-validation.json",
+      "sha256": "deb28da2fb73815b7cd30e7df45fd973dcd024d58ddadf9d8fde6b1c28e64e2f",
+      "bytes": 581
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-prerequisites-2026-10-19/tiny-decisions-request.json",
+      "sha256": "deae93f98253106a7f8bcd228963b56221dbbf8df116b842370a18d1f90179cc",
+      "bytes": 954
+    }
+  ],
+  "priorFrozenSourceManifestSha256": "6c38a68216c1c36a619ef6fd14222c4137bd5bf74533c345a8433734e33587c7",
+  "priorFrozen77PinsUnchanged": true,
+  "prior26ArtifactsUnchanged": true,
+  "paidCalls": 0,
+  "spendUsd": "0.00",
+  "readyProvisionalDevelopmentTexts": 3,
+  "provisionalClaimSpansVerified": 7,
+  "humanAdjudicated": 0,
+  "worldAuthenticated": 0,
+  "untouchedHoldout": 0
+}

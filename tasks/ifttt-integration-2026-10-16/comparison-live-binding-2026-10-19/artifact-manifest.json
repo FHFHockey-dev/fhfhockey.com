@@ -1,0 +1,94 @@
+{
+  "files": [
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/BOUND-QUESTION.md",
+      "sha256": "a5618dfd1abcd44a888b2d057470208b296de5d0209f86a4a9d2d12eee10e110",
+      "bytes": 1523
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/CHECKPOINT.md",
+      "sha256": "3620d17506b144ec23f8c21d2e544c971415c491550dd3dda64c0639a2af8098",
+      "bytes": 8072
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/evidence/actual-lindgren-rules.json",
+      "sha256": "dbf6114c10a5c80a6e02431c0684ad051f9c490661a687e897c8cd57f7914cc5",
+      "bytes": 582
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/evidence/actual-rules-decisions-request-initial.json",
+      "sha256": "61e18ae68eb219cadf528091b4ff4911ce1fc9b5fc68817dcb1a95ed050bcae0",
+      "bytes": 3800
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/evidence/actual-rules-decisions-request.json",
+      "sha256": "c4b3301101e2d3fd114279a0445e3a963b075aaf24475a51f61d92e1afdf938a",
+      "bytes": 3924
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/evidence/actual-rules-grade.json",
+      "sha256": "b9c992d8baf9e76c60d9805ee1e26027c943edf5cefe07116c3b921fbe1631b2",
+      "bytes": 3299
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/evidence/binding-tests-final.log",
+      "sha256": "f719fd3ac83d5dc42901aee19895f465ef773479a5f241e38ed60662d2fbdd79",
+      "bytes": 2232
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/evidence/binding-tests-final19.log",
+      "sha256": "4c1fa75174e6de111f4f67f8d15367144960a205c618ba33ed012d4f0db4ae7c",
+      "bytes": 2856
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/evidence/binding-tests-initial.log",
+      "sha256": "3a75daa642bc04ef4398ad75997e13b0b97179b2a10ae663e0b5f32633b740c6",
+      "bytes": 4949
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/evidence/credential-availability.json",
+      "sha256": "a2f38853fda788fe62bb8d778b9b4a05eaa38cd3e1f10ed42c54130eca4dc824",
+      "bytes": 344
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/evidence/local-readiness.json",
+      "sha256": "8da9faf273e5f6bab565570713abe452917c74741450f19e2ce239f5eca7fad7",
+      "bytes": 186
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/evidence/preparation-notes.json",
+      "sha256": "8b0469d754581be91361c127a2c5ebcc21e1015a0dbd486f735707f318a224ec",
+      "bytes": 872
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/evidence/readiness-summary.json",
+      "sha256": "ab5e5413e8eead72ad5a9f158512d66aa4f15de0f926f8c700deefc1525b0234",
+      "bytes": 1289
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/pilot.py",
+      "sha256": "11808a534dd3ebe40f7a1bef324dc0e50086c71953671f737d292500cd70cc25",
+      "bytes": 14247
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/prepare-rules.ts",
+      "sha256": "694a8337e9136c3975fd7aad2af816989b4cb34219a059ccfb95bc1060df7bb9",
+      "bytes": 481
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/source-manifest.json",
+      "sha256": "b1980092a569266d3b056f82625baa7326e01aaae30983761f3bfbcca67bf448",
+      "bytes": 5046
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/test_pilot.py",
+      "sha256": "560d256026db17650865afc319f8c30b569cb23595bcff26216e0f572912224b",
+      "bytes": 12515
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/vite.config.mjs",
+      "sha256": "5b7dfa51e70e6c8e38ad601d69eefe7a02e675210c7cc03fddc019d7c00a5ad8",
+      "bytes": 207
+    }
+  ]
+}

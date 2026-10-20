@@ -1,0 +1,85 @@
+{
+  "version": "offline-diagnostic-fix-evidence-v1",
+  "files": [
+    {
+      "path": "CHECKPOINT.md",
+      "sha256": "4f28e68a9a16df4254a97378ea93c387c95e40765dbee81907f1e4798ad1cfbe",
+      "bytes": 4284
+    },
+    {
+      "path": "all-controls-result.json",
+      "sha256": "004c8c793757351cca88dff7e8463ef81742c04741efb7c90fc658f35177c00e",
+      "bytes": 365
+    },
+    {
+      "path": "all-controls.log",
+      "sha256": "bfb8dcc171f4c3a81ba38d4d044662299ed48bb2decf69a5806b8310ba6e4e67",
+      "bytes": 6944
+    },
+    {
+      "path": "before/pilot.py",
+      "sha256": "640db83c58c2045c65f2935d69fe63e7d75ea23402bef8a994b27cf9354daba9",
+      "bytes": 21598
+    },
+    {
+      "path": "before/test_pilot.py",
+      "sha256": "a106d6d7200f91d1252cfa8ad571bd12f0d23c488102824e5d5e3884b63c09af",
+      "bytes": 15790
+    },
+    {
+      "path": "diagnostic-tests-result.json",
+      "sha256": "1c02cdc037a6220434ee76da59efb6a55f8ad808d4bf2b70d91660a759d8833a",
+      "bytes": 171
+    },
+    {
+      "path": "diagnostic-tests.log",
+      "sha256": "6965e946975b2a1cb23bf12508bf348778366b2ae4ac12482d26f17454b40678",
+      "bytes": 2147
+    },
+    {
+      "path": "evidence-summary.json",
+      "sha256": "e22d5af2a8dbeeabb6b295dfe1aac8eb26cf17e58ba713ad4bf8d87869741d4c",
+      "bytes": 1719
+    },
+    {
+      "path": "original-pins.json",
+      "sha256": "e899e3ae73e9142aab199cd60342cbd69adade7585fa70fd81ce8e6ba4b2b62b",
+      "bytes": 392
+    },
+    {
+      "path": "pilot.py.patch",
+      "sha256": "b8b32e839c9a19e7debab9236c0d91b46564cd93b10b1e518dbc04b66cd4c762",
+      "bytes": 12710
+    },
+    {
+      "path": "reviewer-harness/secret-escaped_body-evidence.json",
+      "sha256": "db133d8230cbc1eb10a9ffd728e4e69ca6b07c567675b5f2b7116ed7939d2c16",
+      "bytes": 195
+    },
+    {
+      "path": "reviewer-harness/secret-header-evidence.json",
+      "sha256": "4ec845a48f28d17fbccb6c1f08c18a4ff45f6ce27fecab7c37443696595c19c4",
+      "bytes": 189
+    },
+    {
+      "path": "reviewer-harness/tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/test_independent.py",
+      "sha256": "e8b1e40ed454b49bba9dde0c0e5dd7e74962454e33a27695a1f0aa7c9e7850f4",
+      "bytes": 3479
+    },
+    {
+      "path": "reviewer-harness/unsealed-request-evidence.json",
+      "sha256": "71ff0d27c29cc59f1e279f30dbf7a5444c6006a6bae29761c1e4636f8edf5ece",
+      "bytes": 224
+    },
+    {
+      "path": "source-manifest.json",
+      "sha256": "4b69642eb9cd1c9ab238b09dbbc60591e010b556696677c040bd1051314e08de",
+      "bytes": 3741
+    },
+    {
+      "path": "test_pilot.py.patch",
+      "sha256": "0c290d700749aac011f8ece35e29ad88ef608c468e5e9bec974f706515b1d448",
+      "bytes": 10159
+    }
+  ]
+}

@@ -149,4 +149,4 @@ export async function rebuildWindowZHandler(
   }
 }
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(rebuildWindowZHandler as any)));
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(rebuildWindowZHandler as any)));

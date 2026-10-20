@@ -1,0 +1,41 @@
+{
+  "status": "completed_benchmark_and_unexecuted_plan",
+  "created_at_utc": "2026-10-19T22:07:18.895238+00:00",
+  "benchmark_sha256": "a0ee294d19555ed92cebb886765f040ca5ad0bb1761ba3815281e921ea7da876",
+  "packet_sha256": "55d2c5b3b9b3b09910928c2e801d26f6305d12316d82efeefbbfe046e5c131dd",
+  "files": {
+    "BENCHMARK.md": "b684fa6e22ec93079dca56e0279d0d2a447825cb95483fa444c6bd2af2a57051",
+    "RUN-PROPOSAL.md": "eb9c44dc8943638c4ed73ccdcf00af2466a751a0bfefd0d129d83bc8f16b38f8",
+    "approval-evidence.json": "6f79d8c77be0ac41bdb6e27b900e7f3c9c92782d37c8359013c3ba7e05341af4",
+    "benchmark.json": "a0ee294d19555ed92cebb886765f040ca5ad0bb1761ba3815281e921ea7da876",
+    "budget-readback.json": "571880d1f52729fc621f31a372fa0f6001b06fbbfcd9577615959b607d780ca6",
+    "build_benchmark.py": "8202657ada3f1f078324010fc9c3746719400b103db861f3eb488e55b805eb45",
+    "evaluation-inputs.json": "09e29383836c8fbee139422ebcbf6258b9605847c315c5254dd28b6dab9d3452",
+    "manifest.json": "e8651605e40da19a979a121e8bd488056c03941c9149547675de33f1134da486",
+    "offline-tests.log": "2a7095cef9919441ec0b1eb5cc8a0d4c55f20063baaa107c147242c645d85ca0",
+    "run-plan.json": "ba6171731753de135023f26488e0747c0257eb474e332cae89e31dfdda860334",
+    "scoring-policy.json": "7f3eaffe6781a72117db9d69b3344b6ea9cfafac338022a1bb87724cddac1796",
+    "test_benchmark.py": "8238f61f0473e2e8d127dcb0e6a6399436cef85f32175b25d4ead2e086b070ee",
+    "verification.json": "2121e5b70303d145ad529992aa178e16afb2682b7f46f70f1866c123dce43440",
+    "verify_benchmark.py": "3bad515e767a7ea16500e7babb1da0f500f36c64dd0e46f588e95668e511907c"
+  },
+  "checks": {
+    "artifact_source_and_prior_hashes": "passed",
+    "all_50_source_evidence_spans": "passed",
+    "focused_offline_tests": "11 passed",
+    "application_suite": "not run; no application code changed",
+    "independent_review": "not commissioned in this increment"
+  },
+  "preserved_prior_files": 20,
+  "paid_requests": 0,
+  "new_provider_spend_nano_usd": 0,
+  "ledger_modified": false,
+  "running_checks": false,
+  "remaining_preflight": [
+    "multi-record formatter/projector and deterministic scorer",
+    "equal frozen identity/context without answer leakage",
+    "tight complete-input Responses reservation bounds",
+    "reviewed scope-specific persistent aggregate continuation plus exact execution approval"
+  ],
+  "scope": "Only this additive artifact directory. No original packet/annotation/model/provisional-grade edit; no production action."
+}

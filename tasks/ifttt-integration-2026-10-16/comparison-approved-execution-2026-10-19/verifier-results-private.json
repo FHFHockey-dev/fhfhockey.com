@@ -1,0 +1,202 @@
+{
+  "S01": {
+    "rules_decisions": {
+      "whole_set_status": "scored",
+      "probability_uncalibrated": 0.96,
+      "threshold_supported": true,
+      "human_source_supported_set": null,
+      "source_adjudicated_correctness": null,
+      "per_claim_confidence": null,
+      "independent_corroboration": false
+    },
+    "extraction_decisions": {
+      "whole_set_status": "scored",
+      "probability_uncalibrated": 0.26,
+      "threshold_supported": false,
+      "human_source_supported_set": null,
+      "source_adjudicated_correctness": null,
+      "per_claim_confidence": null,
+      "independent_corroboration": false
+    }
+  },
+  "S02": {
+    "rules_decisions": {
+      "whole_set_status": "scored",
+      "probability_uncalibrated": 1.0,
+      "threshold_supported": true,
+      "human_source_supported_set": null,
+      "source_adjudicated_correctness": null,
+      "per_claim_confidence": null,
+      "independent_corroboration": false
+    },
+    "extraction_decisions": {
+      "whole_set_status": "scored",
+      "probability_uncalibrated": 0.97,
+      "threshold_supported": true,
+      "human_source_supported_set": null,
+      "source_adjudicated_correctness": null,
+      "per_claim_confidence": null,
+      "independent_corroboration": false
+    }
+  },
+  "S03": {
+    "rules_decisions": {
+      "whole_set_status": "scored",
+      "probability_uncalibrated": 0.88,
+      "threshold_supported": false,
+      "human_source_supported_set": null,
+      "source_adjudicated_correctness": null,
+      "per_claim_confidence": null,
+      "independent_corroboration": false
+    },
+    "extraction_decisions": {
+      "whole_set_status": "scored",
+      "probability_uncalibrated": 0.95,
+      "threshold_supported": true,
+      "human_source_supported_set": null,
+      "source_adjudicated_correctness": null,
+      "per_claim_confidence": null,
+      "independent_corroboration": false
+    }
+  },
+  "S04": {
+    "rules_decisions": {
+      "whole_set_status": "scored",
+      "probability_uncalibrated": 1.0,
+      "threshold_supported": true,
+      "human_source_supported_set": null,
+      "source_adjudicated_correctness": null,
+      "per_claim_confidence": null,
+      "independent_corroboration": false
+    },
+    "extraction_decisions": {
+      "whole_set_status": "scored",
+      "probability_uncalibrated": 0.94,
+      "threshold_supported": false,
+      "human_source_supported_set": null,
+      "source_adjudicated_correctness": null,
+      "per_claim_confidence": null,
+      "independent_corroboration": false
+    }
+  },
+  "S05": {
+    "rules_decisions": {
+      "whole_set_status": "missing",
+      "probability_uncalibrated": null,
+      "threshold_supported": null,
+      "human_source_supported_set": null,
+      "source_adjudicated_correctness": null,
+      "per_claim_confidence": null,
+      "independent_corroboration": false
+    },
+    "extraction_decisions": {
+      "whole_set_status": "missing",
+      "probability_uncalibrated": null,
+      "threshold_supported": null,
+      "human_source_supported_set": null,
+      "source_adjudicated_correctness": null,
+      "per_claim_confidence": null,
+      "independent_corroboration": false
+    }
+  },
+  "S06": {
+    "rules_decisions": {
+      "whole_set_status": "missing",
+      "probability_uncalibrated": null,
+      "threshold_supported": null,
+      "human_source_supported_set": null,
+      "source_adjudicated_correctness": null,
+      "per_claim_confidence": null,
+      "independent_corroboration": false
+    },
+    "extraction_decisions": {
+      "whole_set_status": "missing",
+      "probability_uncalibrated": null,
+      "threshold_supported": null,
+      "human_source_supported_set": null,
+      "source_adjudicated_correctness": null,
+      "per_claim_confidence": null,
+      "independent_corroboration": false
+    }
+  },
+  "S07": {
+    "rules_decisions": {
+      "whole_set_status": "missing",
+      "probability_uncalibrated": null,
+      "threshold_supported": null,
+      "human_source_supported_set": null,
+      "source_adjudicated_correctness": null,
+      "per_claim_confidence": null,
+      "independent_corroboration": false
+    },
+    "extraction_decisions": {
+      "whole_set_status": "missing",
+      "probability_uncalibrated": null,
+      "threshold_supported": null,
+      "human_source_supported_set": null,
+      "source_adjudicated_correctness": null,
+      "per_claim_confidence": null,
+      "independent_corroboration": false
+    }
+  },
+  "S08": {
+    "rules_decisions": {
+      "whole_set_status": "missing",
+      "probability_uncalibrated": null,
+      "threshold_supported": null,
+      "human_source_supported_set": null,
+      "source_adjudicated_correctness": null,
+      "per_claim_confidence": null,
+      "independent_corroboration": false
+    },
+    "extraction_decisions": {
+      "whole_set_status": "missing",
+      "probability_uncalibrated": null,
+      "threshold_supported": null,
+      "human_source_supported_set": null,
+      "source_adjudicated_correctness": null,
+      "per_claim_confidence": null,
+      "independent_corroboration": false
+    }
+  },
+  "S09": {
+    "rules_decisions": {
+      "whole_set_status": "missing",
+      "probability_uncalibrated": null,
+      "threshold_supported": null,
+      "human_source_supported_set": null,
+      "source_adjudicated_correctness": null,
+      "per_claim_confidence": null,
+      "independent_corroboration": false
+    },
+    "extraction_decisions": {
+      "whole_set_status": "missing",
+      "probability_uncalibrated": null,
+      "threshold_supported": null,
+      "human_source_supported_set": null,
+      "source_adjudicated_correctness": null,
+      "per_claim_confidence": null,
+      "independent_corroboration": false
+    }
+  },
+  "S10": {
+    "rules_decisions": {
+      "whole_set_status": "missing",
+      "probability_uncalibrated": null,
+      "threshold_supported": null,
+      "human_source_supported_set": null,
+      "source_adjudicated_correctness": null,
+      "per_claim_confidence": null,
+      "independent_corroboration": false
+    },
+    "extraction_decisions": {
+      "whole_set_status": "missing",
+      "probability_uncalibrated": null,
+      "threshold_supported": null,
+      "human_source_supported_set": null,
+      "source_adjudicated_correctness": null,
+      "per_claim_confidence": null,
+      "independent_corroboration": false
+    }
+  }
+}

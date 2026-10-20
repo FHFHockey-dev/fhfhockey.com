@@ -1,0 +1,711 @@
+{
+  "controls": {
+    "perfect_provisional_source_control": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "proposal_precision": 1.0,
+      "proposal_recall": 1.0,
+      "eligible_precision": 1.0,
+      "eligible_actionable_recall": 0.5,
+      "hallucinations": 0,
+      "unsafe_acceptance": 0,
+      "usable_source_updates": 1,
+      "usable_world_updates": null,
+      "world_truth": "ungraded_without_independent_asof_evidence",
+      "missed_actionable": 1,
+      "actionable_gold": 2,
+      "predictions": 2,
+      "accepted": 1,
+      "held": 1,
+      "relevant": true,
+      "relevance_correct": true,
+      "ungradable_fields": 4,
+      "errors": [],
+      "field_accuracy": {
+        "player": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "team": {
+          "correct": 1,
+          "total": 1,
+          "gold_nonnull": 1,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "role": {
+          "correct": 1,
+          "total": 1,
+          "gold_nonnull": 1,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "event": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "value": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "polarity": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "certainty": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "time": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 1,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "condition": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 0,
+          "predicted_nonnull": 0,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": null,
+          "recall": null
+        },
+        "source_id": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "source_author": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        }
+      },
+      "taxonomy": [],
+      "field_precision_policy": "matched_gold_gradable_fields_only; unmatched assertions counted separately"
+    },
+    "approximation_loss": {
+      "tp": 1,
+      "fp": 1,
+      "fn": 1,
+      "proposal_precision": 0.5,
+      "proposal_recall": 0.5,
+      "eligible_precision": 0.0,
+      "eligible_actionable_recall": 0.0,
+      "hallucinations": 0,
+      "unsafe_acceptance": 1,
+      "usable_source_updates": 0,
+      "usable_world_updates": null,
+      "world_truth": "ungraded_without_independent_asof_evidence",
+      "missed_actionable": 2,
+      "actionable_gold": 2,
+      "predictions": 2,
+      "accepted": 1,
+      "held": 1,
+      "relevant": true,
+      "relevance_correct": true,
+      "ungradable_fields": 4,
+      "errors": [],
+      "field_accuracy": {
+        "player": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "team": {
+          "correct": 1,
+          "total": 1,
+          "gold_nonnull": 1,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "role": {
+          "correct": 1,
+          "total": 1,
+          "gold_nonnull": 1,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "event": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "value": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "polarity": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "certainty": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "time": {
+          "correct": 1,
+          "total": 2,
+          "gold_nonnull": 1,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "condition": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 0,
+          "predicted_nonnull": 0,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": null,
+          "recall": null
+        },
+        "source_id": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "source_author": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        }
+      },
+      "taxonomy": [
+        {
+          "type": "field_error",
+          "fields": [
+            "time"
+          ],
+          "gold": "lindgren-provisional-2",
+          "predicted": "control-1"
+        }
+      ],
+      "field_precision_policy": "matched_gold_gradable_fields_only; unmatched assertions counted separately"
+    },
+    "injury_cause_loss": {
+      "tp": 1,
+      "fp": 1,
+      "fn": 1,
+      "proposal_precision": 0.5,
+      "proposal_recall": 0.5,
+      "eligible_precision": 0.0,
+      "eligible_actionable_recall": 0.0,
+      "hallucinations": 0,
+      "unsafe_acceptance": 1,
+      "usable_source_updates": 0,
+      "usable_world_updates": null,
+      "world_truth": "ungraded_without_independent_asof_evidence",
+      "missed_actionable": 2,
+      "actionable_gold": 2,
+      "predictions": 2,
+      "accepted": 1,
+      "held": 1,
+      "relevant": true,
+      "relevance_correct": true,
+      "ungradable_fields": 4,
+      "errors": [],
+      "field_accuracy": {
+        "player": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "team": {
+          "correct": 1,
+          "total": 1,
+          "gold_nonnull": 1,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "role": {
+          "correct": 1,
+          "total": 1,
+          "gold_nonnull": 1,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "event": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "value": {
+          "correct": 1,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 0.5,
+          "recall": 0.5
+        },
+        "polarity": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "certainty": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "time": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 1,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "condition": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 0,
+          "predicted_nonnull": 0,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": null,
+          "recall": null
+        },
+        "source_id": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "source_author": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        }
+      },
+      "taxonomy": [
+        {
+          "type": "field_error",
+          "fields": [
+            "value"
+          ],
+          "gold": "lindgren-provisional-2",
+          "predicted": "control-1"
+        }
+      ],
+      "field_precision_policy": "matched_gold_gradable_fields_only; unmatched assertions counted separately"
+    },
+    "omitted_absence": {
+      "tp": 1,
+      "fp": 0,
+      "fn": 1,
+      "proposal_precision": 1.0,
+      "proposal_recall": 0.5,
+      "eligible_precision": null,
+      "eligible_actionable_recall": 0.0,
+      "hallucinations": 0,
+      "unsafe_acceptance": 0,
+      "usable_source_updates": 0,
+      "usable_world_updates": null,
+      "world_truth": "ungraded_without_independent_asof_evidence",
+      "missed_actionable": 2,
+      "actionable_gold": 2,
+      "predictions": 1,
+      "accepted": 0,
+      "held": 1,
+      "relevant": true,
+      "relevance_correct": true,
+      "ungradable_fields": 4,
+      "errors": [],
+      "field_accuracy": {
+        "player": {
+          "correct": 1,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 0.5
+        },
+        "team": {
+          "correct": 1,
+          "total": 1,
+          "gold_nonnull": 1,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "role": {
+          "correct": 1,
+          "total": 1,
+          "gold_nonnull": 1,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "event": {
+          "correct": 1,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 0.5
+        },
+        "value": {
+          "correct": 1,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 0.5
+        },
+        "polarity": {
+          "correct": 1,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 0.5
+        },
+        "certainty": {
+          "correct": 1,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 0.5
+        },
+        "time": {
+          "correct": 1,
+          "total": 2,
+          "gold_nonnull": 1,
+          "predicted_nonnull": 0,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": null,
+          "recall": 0.0
+        },
+        "condition": {
+          "correct": 1,
+          "total": 2,
+          "gold_nonnull": 0,
+          "predicted_nonnull": 0,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": null,
+          "recall": null
+        },
+        "source_id": {
+          "correct": 1,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 0.5
+        },
+        "source_author": {
+          "correct": 1,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 0.5
+        }
+      },
+      "taxonomy": [],
+      "field_precision_policy": "matched_gold_gradable_fields_only; unmatched assertions counted separately"
+    },
+    "unknown_verification_abstains_without_repair": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "proposal_precision": 1.0,
+      "proposal_recall": 1.0,
+      "eligible_precision": null,
+      "eligible_actionable_recall": 0.0,
+      "hallucinations": 0,
+      "unsafe_acceptance": 0,
+      "usable_source_updates": 0,
+      "usable_world_updates": null,
+      "world_truth": "ungraded_without_independent_asof_evidence",
+      "missed_actionable": 2,
+      "actionable_gold": 2,
+      "predictions": 2,
+      "accepted": 0,
+      "held": 2,
+      "relevant": true,
+      "relevance_correct": true,
+      "ungradable_fields": 4,
+      "errors": [],
+      "field_accuracy": {
+        "player": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "team": {
+          "correct": 1,
+          "total": 1,
+          "gold_nonnull": 1,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "role": {
+          "correct": 1,
+          "total": 1,
+          "gold_nonnull": 1,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "event": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "value": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "polarity": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "certainty": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "time": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 1,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "condition": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 0,
+          "predicted_nonnull": 0,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": null,
+          "recall": null
+        },
+        "source_id": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "source_author": {
+          "correct": 2,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 2,
+          "correct_nonnull": 2,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        }
+      },
+      "taxonomy": [],
+      "field_precision_policy": "matched_gold_gradable_fields_only; unmatched assertions counted separately"
+    }
+  },
+  "count": 5,
+  "paidCalls": 0,
+  "synthetic": true,
+  "worldTruth": "ungraded"
+}

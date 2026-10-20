@@ -1,0 +1,19 @@
+{
+  "authority": "owner-bounded-comparison-continuation",
+  "approved": true,
+  "owner_messages": [
+    "Sentinel_ebb4741523d08191a5c1758e396d6513",
+    "Sentinel_310f334b9f788191b3953303dbe16e1d"
+  ],
+  "owner_statements": [
+    "Do what is most useful. You've barely spent $0.01 of the allocation for testing",
+    "Feel free to do a paid test or two so long as it is justified"
+  ],
+  "earlier_exact_payload_approval": "Sentinel_f2ed42c53adc8191a74da983ab5205a7",
+  "plan_hash": "0130f42f9b0b73272690666f4e9e4953bf0c63ba8cbb9b13c0dc8cea983e1492",
+  "maximum_calls": 1,
+  "cap_nano_usd": 520000000,
+  "preserve_unknown_nano_usd": 254394800,
+  "execution_manifest_sha256": "134008da2514bc46926dbd79cecadda60ca930ae83267c567e07c31b003efc9a",
+  "scope": "Second and final justified test: one checker for S10 including its uniquely reanchored revision from the saved response. No new extraction or new samples."
+}

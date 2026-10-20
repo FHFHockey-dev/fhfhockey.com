@@ -1,0 +1,17 @@
+{
+  "status": "original_constructor_and_reply_parser_passed_offline",
+  "sourceSha256": "640db83c58c2045c65f2935d69fe63e7d75ea23402bef8a994b27cf9354daba9",
+  "control": {
+    "wireSha256": "089b0f5245e08c54157766093a75e9904ce78b7baac77052ec52669e0e8d1086",
+    "method": "POST",
+    "timeoutSeconds": 20,
+    "tlsHostnameVerification": true,
+    "tlsCertificatesRequired": true
+  },
+  "realKeyRead": false,
+  "ledgerOpened": false,
+  "networkCalls": 0,
+  "stubCalls": 1,
+  "localHttpServer": false,
+  "limitation": "No DNS/TLS handshake, actual HTTP socket send or provider ran; this does not identify the original failure."
+}

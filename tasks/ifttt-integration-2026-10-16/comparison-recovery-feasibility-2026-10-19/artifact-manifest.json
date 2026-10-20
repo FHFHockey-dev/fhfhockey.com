@@ -1,0 +1,37 @@
+{
+  "version": "bounded-recovery-feasibility-v1",
+  "files": [
+    {
+      "path": "FEASIBILITY.md",
+      "sha256": "7269ab442a439d6ae7b43d65e1f9717cccb8fcb7ba4b29a48544cd53c5613093",
+      "bytes": 5584
+    },
+    {
+      "path": "documentation-evidence.json",
+      "sha256": "8d34c859dde285a899952c4e2d745bf548ddd6f965b46836963b0a785e01bbb9",
+      "bytes": 2068
+    },
+    {
+      "path": "feasibility-summary.json",
+      "sha256": "94881fa5e78a9cac7fe626d7eff326d67d269de4ebb7497319d6796f5ded9677",
+      "bytes": 2130
+    },
+    {
+      "path": "offline_original_transport.py",
+      "sha256": "bcf1f4b5580812368d441682f41205654409092851891bf7e4c21200c49fbc44",
+      "bytes": 3347
+    },
+    {
+      "path": "original-transport-control.json",
+      "sha256": "39154ba70836b33e0ce60c24a76fde660b28a7d771e30e487e718b29bee3c2bf",
+      "bytes": 626
+    },
+    {
+      "path": "original-transport-control.log",
+      "sha256": "98afa3e539b14734b3f9b42f8f665c2723ead8468afc30fd267d003e47fa918a",
+      "bytes": 627
+    }
+  ],
+  "priorDiagnosticFixAndOriginalRunUnchanged": true,
+  "originalBudgetUnchanged": true
+}

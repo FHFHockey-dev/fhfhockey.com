@@ -1,0 +1,71 @@
+{
+  "record_id": "0003-owner-S07-S10",
+  "packet_sha256": "55d2c5b3b9b3b09910928c2e801d26f6305d12316d82efeefbbfe046e5c131dd",
+  "authority": "Assistant proposals relayed by parent, not owner-approved corrections or revised owner labels.",
+  "proposals": [
+    {
+      "id": "P05",
+      "sample_id": "S08",
+      "source_quotes": [
+        {
+          "record_id": "S08",
+          "quote": "Bussi pic.twitter.com/iVLdaOV5Ir"
+        }
+      ],
+      "assistant_proposal": "Timing alone should not promote a lineup or projected goalie to confirmed. Require explicit starter or qualifying warmup evidence and the applicable identity/time context.",
+      "owner_approved": false,
+      "status": "pending bundled clarification; assistant proposal only"
+    },
+    {
+      "id": "P06",
+      "sample_id": "S08",
+      "source_quotes": [
+        {
+          "record_id": "S08",
+          "quote": "Carrier - Aho - Svechnikov"
+        },
+        {
+          "record_id": "S08",
+          "quote": "Slavin - Chatfield"
+        }
+      ],
+      "assistant_proposal": "Left-to-right LW/C/RW and LD/RD assignment is a parsing convention. Keep any such interpretation separate from independently verified player position or fantasy eligibility.",
+      "owner_approved": false,
+      "status": "pending bundled clarification; assistant proposal only"
+    },
+    {
+      "id": "P07",
+      "sample_id": "S09",
+      "source_quotes": [
+        {
+          "record_id": "S09",
+          "quote": "Carter Hart is the first goaltender off the ice."
+        }
+      ],
+      "assistant_proposal": "Vegas team membership and the next-game binding require source-time roster and schedule context. Preserve first-off as the observed source evidence; the owner projected-start inference does not independently authenticate those bindings.",
+      "owner_approved": false,
+      "status": "pending bundled clarification; assistant proposal only"
+    },
+    {
+      "id": "P08",
+      "sample_id": "S10",
+      "source_quotes": [
+        {
+          "record_id": "S10A",
+          "quote": "Might be much ado about nothing, but Olofsson is taking PP1 reps with Marner up top."
+        },
+        {
+          "record_id": "S10B",
+          "quote": "This was a 5-on-3 drill. At ease."
+        }
+      ],
+      "assistant_proposal": "No regular-PP update from the clarified drill, while retaining the source correction and retracting or superseding any proposal derived from A rather than deleting its immutable evidence.",
+      "owner_approved": false,
+      "status": "pending bundled clarification; assistant proposal only"
+    }
+  ],
+  "model_outputs_consulted_or_disclosed": false,
+  "implementation_authorized": false,
+  "benchmark_finalized": false,
+  "publication_and_world_truth": "ungraded"
+}

@@ -1,0 +1,120 @@
+--- prior-authorized-retry.py
++++ certifi-attempt.py
+@@ -1,4 +1,4 @@
+-"""One explicitly approved retry; carries the original uncertainty forward."""
++"""One explicitly approved certifi attempt; retains the original uncertainty."""
+ import argparse
+ import hashlib
+ import json
+@@ -16,12 +16,15 @@
+ 
+ ORIGINAL_DB = ROOT / 'comparison-live-binding-2026-10-19/experiment-state/budget.sqlite'
+ ORIGINAL_SHA = 'ac28e83814ed20381b3cfee8049bfdc580dfc556f98ca1da33c70f0897015c44'
+-OUTPUT = ROOT / 'comparison-retry-execution-2026-10-19'
+-AGGREGATE_DB = OUTPUT / 'aggregate-budget.sqlite'
++OUTPUT = ROOT / 'comparison-certifi-execution-2026-10-19'
++AGGREGATE_DB = ROOT / 'comparison-retry-execution-2026-10-19/aggregate-budget.sqlite'
++BASELINE_SHA = '3665ac2cb6506264ba9119e29356a193eda270477ba5c055b6edb88c3b8b5824'
++RECONCILED_RETRY = 'lindgren-approved-retry-0'
+ CAP = 520_000_000
+ ORIGINAL_RESERVE = 254_394_800
+-RETRY_PREFIX = 'lindgren-approved-retry-'
+-APPROVAL = 'Approve one retry with a $0.52 total test cap.'
++RETRY_PREFIX = 'lindgren-certifi-attempt-'
++APPROVAL = 'yes'
++APPROVAL_QUESTION = 'May I make one further attempt using that fix, still within the approved $0.52 total cap?'
+ MANIFEST = HERE / 'execution-manifest.json'
+ AUTHORIZATION = HERE / 'authorization.json'
+ 
+@@ -31,14 +34,15 @@
+ 
+ 
+ def required_paths():
+-    return [Path(__file__), HERE / 'test_retry.py', *pilot.execution_paths(),
+-            pilot.HERE / 'test_pilot.py', ROOT / 'comparison-diagnostic-fix-2026-10-19/source-manifest.json']
++    return [Path(__file__), HERE / 'test_attempt.py', *pilot.execution_paths(),
++            pilot.HERE / 'test_pilot.py', ROOT / 'comparison-tls-reconciliation-2026-10-19/source-manifest.json',
++            ROOT / 'comparison-tls-reconciliation-2026-10-19/reconciliation-receipt.json']
+ 
+ 
+ def verify():
+-    pilot.require(sha(Path(pilot.__file__)) == '51636d9806da64a5315e5f4e9c9340fc15e677d89dc8450187126e88bdb43a8a', 'unapproved diagnostic binding')
++    pilot.require(sha(Path(pilot.__file__)) == 'f51cad6f6dc67feed2b988c2451c92be216b34bd8c2269eef8d982e3b492913b', 'unapproved diagnostic binding')
+     auth = json.loads(AUTHORIZATION.read_text())
+-    pilot.require(auth.get('userApproval') == APPROVAL and auth.get('totalCapNanoUsd') == CAP, 'exact retry approval absent')
++    pilot.require(auth.get('userApproval') == APPROVAL and auth.get('approvalQuestion') == APPROVAL_QUESTION and auth.get('totalCapNanoUsd') == CAP, 'exact retry approval absent')
+     pilot.require(auth.get('originalReservationNanoUsd') == ORIGINAL_RESERVE and auth.get('retriesAuthorized') == 1, 'retry scope changed')
+     pilot.require(auth.get('payloadScope') == 'original Lindgren family to /v1/responses and /v1/decisions only', 'payload scope changed')
+     pilot.require(auth.get('executionManifestSha256') == sha(MANIFEST), 'retry manifest not bound')
+@@ -51,13 +55,14 @@
+     rules = json.loads(pilot.RULES_OUTPUT.read_text())
+     pilot.require(pilot.digest(rules) == '29c49101ec3566d16f0a8e7ae411109b5943311b78fe0dcd2fab7c38c111797c', 'rules proposals changed')
+     pilot.require(sha(ORIGINAL_DB) == ORIGINAL_SHA, 'original ledger changed')
++    pilot.require(sha(AGGREGATE_DB) == BASELINE_SHA, 'aggregate differs from reconciled baseline; inspect before any repeat')
+     pilot.basic_limits('responses', pilot.EXTRACTION)
+     pilot.require(pilot.EXTRACTION['input'] == pilot.canonical(pilot.request_input(pilot.PROFILE['source'])), 'source binding changed')
+     return {'authorizationSha256': sha(AUTHORIZATION), 'manifestSha256': sha(MANIFEST), 'rules': rules}
+ 
+ 
+ class AggregateLedger(pilot.Ledger):
+-    """The sole new live ledger includes all original rows, never a fresh budget."""
++    """Continue the existing aggregate; never create, copy or reset a ledger."""
+     def __init__(self, plan):
+         original_bytes = ORIGINAL_DB.read_bytes()
+         pilot.require(hashlib.sha256(original_bytes).hexdigest() == ORIGINAL_SHA, 'original ledger changed')
+@@ -72,27 +77,20 @@
+         pilot.require(self.original_row[6:8] == ('uncertain', None) and self.original_row[5] == ORIGINAL_RESERVE, 'original exposure changed')
+         pilot.require(old_experiment[2:] == (260_000_000, 'unknown billed outcome'), 'unexpected original budget')
+         self.original_block = old_experiment[3]
+-        # Exclusive creation prevents overwriting a prior/partial aggregate.
+-        try:
+-            fd = os.open(AGGREGATE_DB, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+-        except FileExistsError:
+-            created = False
+-        else:
+-            created = True
+-            with os.fdopen(fd, 'wb') as f:
+-                f.write(original_bytes);f.flush();os.fsync(f.fileno())
+-        self.db = sqlite3.connect(AGGREGATE_DB, timeout=2, isolation_level=None)
++        self.receipt = json.loads((ROOT / 'comparison-tls-reconciliation-2026-10-19/reconciliation-receipt.json').read_text())
++        self.db = sqlite3.connect('file:' + str(AGGREGATE_DB.resolve()) + '?mode=rw', uri=True, timeout=2, isolation_level=None)
+         try:
+             self.db.execute('PRAGMA synchronous=FULL')
+             with self.tx():
+-                if created:
+-                    pilot.require(self.db.execute('SELECT * FROM attempts ORDER BY id').fetchall() == originals, 'aggregate import differs')
+-                    self.db.execute('CREATE TABLE retry_authorization (id INTEGER PRIMARY KEY CHECK(id=1), original_sha TEXT NOT NULL, authorization_sha TEXT NOT NULL, manifest_sha TEXT NOT NULL)')
+-                    self.db.execute('INSERT INTO retry_authorization VALUES(1,?,?,?)', (ORIGINAL_SHA, plan['authorizationSha256'], plan['manifestSha256']))
+-                    self.db.execute('UPDATE experiment SET cap=? WHERE id=1', (CAP,))
+                 pilot.require(self.db.execute('SELECT cap FROM experiment').fetchone() == (CAP,), 'aggregate cap drift')
+-                pilot.require(self.db.execute('SELECT original_sha,authorization_sha,manifest_sha FROM retry_authorization').fetchone() ==
+-                              (ORIGINAL_SHA, plan['authorizationSha256'], plan['manifestSha256']), 'aggregate authorization drift')
++                self.zero_row = self.db.execute('SELECT * FROM attempts WHERE id=?',(RECONCILED_RETRY,)).fetchone()
++                pilot.require(self.zero_row is not None and self.zero_row[5:8] == (ORIGINAL_RESERVE,'settled',0), 'reviewed zero settlement missing')
++                zero_digest = hashlib.sha256(json.dumps(self.zero_row,sort_keys=True,separators=(',',':')).encode()).hexdigest()
++                pilot.require(zero_digest == self.receipt['afterRowSha256'], 'reconciled retry row changed')
++                self.db.execute('CREATE TABLE IF NOT EXISTS continuation_authorizations (attempt_prefix TEXT PRIMARY KEY, baseline_sha TEXT NOT NULL, authorization_sha TEXT NOT NULL, manifest_sha TEXT NOT NULL)')
++                self.db.execute('INSERT OR IGNORE INTO continuation_authorizations VALUES(?,?,?,?)',(RETRY_PREFIX,BASELINE_SHA,plan['authorizationSha256'],plan['manifestSha256']))
++                pilot.require(self.db.execute('SELECT baseline_sha,authorization_sha,manifest_sha FROM continuation_authorizations WHERE attempt_prefix=?',(RETRY_PREFIX,)).fetchone() ==
++                              (BASELINE_SHA,plan['authorizationSha256'],plan['manifestSha256']), 'continuation authorization drift')
+                 self.check_original()
+         except BaseException:
+             self.db.close()
+@@ -100,6 +98,8 @@
+ 
+     def check_original(self):
+         pilot.require(self.db.execute("SELECT * FROM attempts WHERE id='lindgren-0'").fetchone() == self.original_row, 'original attempt was modified')
++        pilot.require(self.db.execute('SELECT * FROM attempts WHERE id=?',(RECONCILED_RETRY,)).fetchone() == self.zero_row, 'reviewed zero attempt was modified')
++        pilot.require(json.loads(self.db.execute('SELECT record_json FROM attempt_reconciliations WHERE attempt_id=?',(RECONCILED_RETRY,)).fetchone()[0]) == self.receipt, 'reconciliation audit changed')
+ 
+     def reserve(self, index, endpoint, payload, amount):
+         pilot.require(type(index) is int and 0 <= index < 3, 'unapproved retry stage')
+@@ -108,7 +108,7 @@
+         with self.tx():
+             self.check_original()
+             pilot.require(self.db.execute('SELECT blocked FROM experiment').fetchone() == (self.original_block,), 'new blocking outcome')
+-            rows = self.db.execute("SELECT id,state FROM attempts WHERE id<>'lindgren-0' ORDER BY id").fetchall()
++            rows = self.db.execute("SELECT id,state FROM attempts WHERE id NOT IN ('lindgren-0','lindgren-approved-retry-0') ORDER BY id").fetchall()
+             pilot.require(rows == [(RETRY_PREFIX + str(i), 'settled') for i in range(index)], 'retry exists or previous outcome unresolved; no resend')
+             if self._exposure() + amount > CAP:
+                 raise pilot.BudgetStop('aggregate remainder cannot cover next full reservation')

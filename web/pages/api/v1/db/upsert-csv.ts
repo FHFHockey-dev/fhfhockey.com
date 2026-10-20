@@ -295,8 +295,7 @@ async function getPlayerIdByFullName(
   }
 }
 
-export default withCronJobAudit(adminOnly(
-  async (
+export default adminOnly(withCronJobAudit(async (
     req: NextApiRequest & { supabase: SupabaseClient },
     res: NextApiResponse
   ) => {
@@ -570,5 +569,4 @@ export default withCronJobAudit(adminOnly(
         message: error.message || "An unexpected error occurred."
       });
     }
-  }
-));
+  }));

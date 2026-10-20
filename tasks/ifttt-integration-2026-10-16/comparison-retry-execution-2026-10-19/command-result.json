@@ -1,0 +1,11 @@
+{
+  "command": "PYTHONDONTWRITEBYTECODE=1 python3 retry.py --execute",
+  "cwd": "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-authorized-retry-2026-10-19",
+  "result": {
+    "chunk_id": "1ea49e",
+    "wall_time_seconds": 0.118526952,
+    "exit_code": 0,
+    "original_token_count": 23,
+    "output": "{\"status\": \"stopped_partial_pair\", \"verdict\": \"inconclusive\", \"exposureNanoUsd\": 508789600}\n"
+  }
+}

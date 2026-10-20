@@ -1,0 +1,3588 @@
+{
+  "meaning": "lexical_contract_diagnostic_only",
+  "automatic_factual_winner": null,
+  "factual_quality_established": false,
+  "source_adjudication_required": true,
+  "legacy_diagnostic": {
+    "version": "multi-record-source-comparison-v1",
+    "groups": [
+      {
+        "group_id": "S01",
+        "arms": {
+          "rules": {
+            "denominator": 2,
+            "source_tp": 0,
+            "source_fp": 0,
+            "source_fn": 2,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 2,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 0,
+            "local_eligible": 0,
+            "holds": [],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "rules_decisions": {
+            "denominator": 2,
+            "source_tp": 0,
+            "source_fp": 0,
+            "source_fn": 2,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 2,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 0,
+            "local_eligible": 0,
+            "holds": [],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "extraction": {
+            "denominator": 2,
+            "source_tp": 0,
+            "source_fp": 2,
+            "source_fn": 2,
+            "field_errors": [
+              {
+                "gold_id": "S01-C01",
+                "claim_id": "c1",
+                "fields": [
+                  "event",
+                  "value",
+                  "time"
+                ]
+              },
+              {
+                "gold_id": "S01-C02",
+                "claim_id": "c2",
+                "fields": [
+                  "event",
+                  "value",
+                  "modality"
+                ]
+              }
+            ],
+            "uncertainty_or_time_errors": 2,
+            "unsupported_additions": [
+              {
+                "claim_id": "c1",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "event",
+                  "value",
+                  "time"
+                ]
+              },
+              {
+                "claim_id": "c2",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "event",
+                  "value",
+                  "modality"
+                ]
+              }
+            ],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 2,
+              "explicit_literal_matches": 2
+            },
+            "correction": null,
+            "held": 2,
+            "local_eligible": 0,
+            "holds": [
+              {
+                "claim_id": "c1",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified"
+                ]
+              },
+              {
+                "claim_id": "c2",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time"
+                ]
+              }
+            ],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "extraction_decisions": {
+            "denominator": 2,
+            "source_tp": 0,
+            "source_fp": 2,
+            "source_fn": 2,
+            "field_errors": [
+              {
+                "gold_id": "S01-C01",
+                "claim_id": "c1",
+                "fields": [
+                  "event",
+                  "value",
+                  "time"
+                ]
+              },
+              {
+                "gold_id": "S01-C02",
+                "claim_id": "c2",
+                "fields": [
+                  "event",
+                  "value",
+                  "modality"
+                ]
+              }
+            ],
+            "uncertainty_or_time_errors": 2,
+            "unsupported_additions": [
+              {
+                "claim_id": "c1",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "event",
+                  "value",
+                  "time"
+                ]
+              },
+              {
+                "claim_id": "c2",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "event",
+                  "value",
+                  "modality"
+                ]
+              }
+            ],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 2,
+              "explicit_literal_matches": 2
+            },
+            "correction": null,
+            "held": 2,
+            "local_eligible": 0,
+            "holds": [
+              {
+                "claim_id": "c1",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "c2",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              }
+            ],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          }
+        },
+        "raw_extraction_grade": {
+          "denominator": 2,
+          "source_tp": 0,
+          "source_fp": 2,
+          "source_fn": 2,
+          "field_errors": [],
+          "uncertainty_or_time_errors": 0,
+          "unsupported_additions": [],
+          "unproved_external_additions": [],
+          "convention_credits": [],
+          "source_contract_projection_mismatches": 0,
+          "literal_team_field_coverage": {
+            "gold_nonnull": 2,
+            "explicit_literal_matches": 0
+          },
+          "correction": null,
+          "held": 0,
+          "local_eligible": 0,
+          "holds": [],
+          "published": 0,
+          "owner_publication_readiness": null,
+          "world_truth": null,
+          "errors": [
+            "S01:evidence mismatch",
+            "S01:evidence mismatch"
+          ],
+          "missing_records": [],
+          "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+        },
+        "alignment_audit": [
+          {
+            "record_id": "S01",
+            "audit": [
+              {
+                "index": 0,
+                "action": "reanchored",
+                "reason": "unique_exact_source_quote",
+                "beforeEvidence": {
+                  "end": 59,
+                  "start": 0,
+                  "text": "Ilya Sorokin leads the Islanders out for warmups at Scotiabank Arena."
+                },
+                "afterEvidence": {
+                  "start": 0,
+                  "end": 69,
+                  "text": "Ilya Sorokin leads the Islanders out for warmups at Scotiabank Arena."
+                }
+              },
+              {
+                "index": 1,
+                "action": "reanchored",
+                "reason": "unique_exact_source_quote",
+                "beforeEvidence": {
+                  "end": 92,
+                  "start": 60,
+                  "text": "Anthony Stolarz for the Leafs."
+                },
+                "afterEvidence": {
+                  "start": 70,
+                  "end": 100,
+                  "text": "Anthony Stolarz for the Leafs."
+                }
+              }
+            ]
+          }
+        ],
+        "evaluation_only": true
+      },
+      {
+        "group_id": "S02",
+        "arms": {
+          "rules": {
+            "denominator": 6,
+            "source_tp": 0,
+            "source_fp": 0,
+            "source_fn": 6,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 0,
+            "local_eligible": 0,
+            "holds": [],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "rules_decisions": {
+            "denominator": 6,
+            "source_tp": 0,
+            "source_fp": 0,
+            "source_fn": 6,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 0,
+            "local_eligible": 0,
+            "holds": [],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "extraction": {
+            "denominator": 6,
+            "source_tp": 0,
+            "source_fp": 5,
+            "source_fn": 6,
+            "field_errors": [
+              {
+                "gold_id": "S02-C01",
+                "claim_id": "1",
+                "fields": [
+                  "event",
+                  "value"
+                ]
+              },
+              {
+                "gold_id": "S02-C03",
+                "claim_id": "2",
+                "fields": [
+                  "value"
+                ]
+              },
+              {
+                "gold_id": "S02-C04",
+                "claim_id": "3",
+                "fields": [
+                  "value"
+                ]
+              },
+              {
+                "gold_id": "S02-C05",
+                "claim_id": "4",
+                "fields": [
+                  "event",
+                  "value"
+                ]
+              },
+              {
+                "gold_id": "S02-C06",
+                "claim_id": "5",
+                "fields": [
+                  "value",
+                  "polarity",
+                  "modality"
+                ]
+              }
+            ],
+            "uncertainty_or_time_errors": 1,
+            "unsupported_additions": [
+              {
+                "claim_id": "1",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "event",
+                  "value"
+                ]
+              },
+              {
+                "claim_id": "2",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value"
+                ]
+              },
+              {
+                "claim_id": "3",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value"
+                ]
+              },
+              {
+                "claim_id": "4",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "event",
+                  "value"
+                ]
+              },
+              {
+                "claim_id": "5",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "polarity",
+                  "modality"
+                ]
+              }
+            ],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 5,
+            "local_eligible": 0,
+            "holds": [
+              {
+                "claim_id": "1",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified"
+                ]
+              },
+              {
+                "claim_id": "2",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "governing_qualification"
+                ]
+              },
+              {
+                "claim_id": "3",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time"
+                ]
+              },
+              {
+                "claim_id": "4",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "5",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time"
+                ]
+              }
+            ],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "extraction_decisions": {
+            "denominator": 6,
+            "source_tp": 0,
+            "source_fp": 5,
+            "source_fn": 6,
+            "field_errors": [
+              {
+                "gold_id": "S02-C01",
+                "claim_id": "1",
+                "fields": [
+                  "event",
+                  "value"
+                ]
+              },
+              {
+                "gold_id": "S02-C03",
+                "claim_id": "2",
+                "fields": [
+                  "value"
+                ]
+              },
+              {
+                "gold_id": "S02-C04",
+                "claim_id": "3",
+                "fields": [
+                  "value"
+                ]
+              },
+              {
+                "gold_id": "S02-C05",
+                "claim_id": "4",
+                "fields": [
+                  "event",
+                  "value"
+                ]
+              },
+              {
+                "gold_id": "S02-C06",
+                "claim_id": "5",
+                "fields": [
+                  "value",
+                  "polarity",
+                  "modality"
+                ]
+              }
+            ],
+            "uncertainty_or_time_errors": 1,
+            "unsupported_additions": [
+              {
+                "claim_id": "1",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "event",
+                  "value"
+                ]
+              },
+              {
+                "claim_id": "2",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value"
+                ]
+              },
+              {
+                "claim_id": "3",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value"
+                ]
+              },
+              {
+                "claim_id": "4",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "event",
+                  "value"
+                ]
+              },
+              {
+                "claim_id": "5",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "polarity",
+                  "modality"
+                ]
+              }
+            ],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 5,
+            "local_eligible": 0,
+            "holds": [
+              {
+                "claim_id": "1",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified"
+                ]
+              },
+              {
+                "claim_id": "2",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "governing_qualification"
+                ]
+              },
+              {
+                "claim_id": "3",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time"
+                ]
+              },
+              {
+                "claim_id": "4",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "5",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time"
+                ]
+              }
+            ],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          }
+        },
+        "raw_extraction_grade": {
+          "denominator": 6,
+          "source_tp": 0,
+          "source_fp": 5,
+          "source_fn": 6,
+          "field_errors": [],
+          "uncertainty_or_time_errors": 0,
+          "unsupported_additions": [],
+          "unproved_external_additions": [],
+          "convention_credits": [],
+          "source_contract_projection_mismatches": 0,
+          "literal_team_field_coverage": {
+            "gold_nonnull": 0,
+            "explicit_literal_matches": 0
+          },
+          "correction": null,
+          "held": 0,
+          "local_eligible": 0,
+          "holds": [],
+          "published": 0,
+          "owner_publication_readiness": null,
+          "world_truth": null,
+          "errors": [
+            "S02:evidence mismatch",
+            "S02:evidence mismatch",
+            "S02:evidence mismatch",
+            "S02:evidence mismatch",
+            "S02:evidence mismatch"
+          ],
+          "missing_records": [],
+          "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+        },
+        "alignment_audit": [
+          {
+            "record_id": "S02",
+            "audit": [
+              {
+                "index": 0,
+                "action": "reanchored",
+                "reason": "unique_exact_source_quote",
+                "beforeEvidence": {
+                  "end": 53,
+                  "start": 0,
+                  "text": "Sanderson skated before main practice today but didn't join his teammates."
+                },
+                "afterEvidence": {
+                  "start": 0,
+                  "end": 74,
+                  "text": "Sanderson skated before main practice today but didn't join his teammates."
+                }
+              },
+              {
+                "index": 1,
+                "action": "reanchored",
+                "reason": "unique_exact_source_quote",
+                "beforeEvidence": {
+                  "end": 110,
+                  "start": 54,
+                  "text": "org is hopeful he will play this weekend."
+                },
+                "afterEvidence": {
+                  "start": 75,
+                  "end": 116,
+                  "text": "org is hopeful he will play this weekend."
+                }
+              },
+              {
+                "index": 2,
+                "action": "reanchored",
+                "reason": "unique_exact_source_quote",
+                "beforeEvidence": {
+                  "end": 163,
+                  "start": 111,
+                  "text": "Burakovsky isn't close to returning (upper body)."
+                },
+                "afterEvidence": {
+                  "start": 117,
+                  "end": 166,
+                  "text": "Burakovsky isn't close to returning (upper body)."
+                }
+              },
+              {
+                "index": 3,
+                "action": "reanchored",
+                "reason": "unique_exact_source_quote",
+                "beforeEvidence": {
+                  "end": 214,
+                  "start": 164,
+                  "text": "Foegele took rushes on the 1st line for second consecutive day."
+                },
+                "afterEvidence": {
+                  "start": 167,
+                  "end": 230,
+                  "text": "Foegele took rushes on the 1st line for second consecutive day."
+                }
+              },
+              {
+                "index": 4,
+                "action": "reanchored",
+                "reason": "unique_exact_source_quote",
+                "beforeEvidence": {
+                  "end": 250,
+                  "start": 215,
+                  "text": "No decision has been made on his availability."
+                },
+                "afterEvidence": {
+                  "start": 231,
+                  "end": 277,
+                  "text": "No decision has been made on his availability."
+                }
+              }
+            ]
+          }
+        ],
+        "evaluation_only": true
+      },
+      {
+        "group_id": "S03",
+        "arms": {
+          "rules": {
+            "denominator": 1,
+            "source_tp": 1,
+            "source_fp": 0,
+            "source_fn": 0,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 1,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 1,
+            "local_eligible": 0,
+            "holds": [
+              {
+                "claim_id": "rules-x:2108996072647573721-0",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified"
+                ]
+              }
+            ],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "rules_decisions": {
+            "denominator": 1,
+            "source_tp": 1,
+            "source_fp": 0,
+            "source_fn": 0,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 1,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 1,
+            "local_eligible": 0,
+            "holds": [
+              {
+                "claim_id": "rules-x:2108996072647573721-0",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              }
+            ],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "extraction": {
+            "denominator": 1,
+            "source_tp": 0,
+            "source_fp": 1,
+            "source_fn": 1,
+            "field_errors": [
+              {
+                "gold_id": "S03-C01",
+                "claim_id": "S03-1",
+                "fields": [
+                  "time",
+                  "governing_evidence"
+                ]
+              }
+            ],
+            "uncertainty_or_time_errors": 1,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 1,
+              "explicit_literal_matches": 1
+            },
+            "correction": null,
+            "held": 1,
+            "local_eligible": 0,
+            "holds": [
+              {
+                "claim_id": "S03-1",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified"
+                ]
+              }
+            ],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "extraction_decisions": {
+            "denominator": 1,
+            "source_tp": 0,
+            "source_fp": 1,
+            "source_fn": 1,
+            "field_errors": [
+              {
+                "gold_id": "S03-C01",
+                "claim_id": "S03-1",
+                "fields": [
+                  "time",
+                  "governing_evidence"
+                ]
+              }
+            ],
+            "uncertainty_or_time_errors": 1,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 1,
+              "explicit_literal_matches": 1
+            },
+            "correction": null,
+            "held": 1,
+            "local_eligible": 0,
+            "holds": [
+              {
+                "claim_id": "S03-1",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified"
+                ]
+              }
+            ],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          }
+        },
+        "raw_extraction_grade": {
+          "denominator": 1,
+          "source_tp": 0,
+          "source_fp": 1,
+          "source_fn": 1,
+          "field_errors": [],
+          "uncertainty_or_time_errors": 0,
+          "unsupported_additions": [],
+          "unproved_external_additions": [],
+          "convention_credits": [],
+          "source_contract_projection_mismatches": 0,
+          "literal_team_field_coverage": {
+            "gold_nonnull": 1,
+            "explicit_literal_matches": 0
+          },
+          "correction": null,
+          "held": 0,
+          "local_eligible": 0,
+          "holds": [],
+          "published": 0,
+          "owner_publication_readiness": null,
+          "world_truth": null,
+          "errors": [
+            "S03:evidence mismatch"
+          ],
+          "missing_records": [],
+          "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+        },
+        "alignment_audit": [
+          {
+            "record_id": "S03",
+            "audit": [
+              {
+                "index": 0,
+                "action": "reanchored",
+                "reason": "unique_exact_source_quote",
+                "beforeEvidence": {
+                  "end": 86,
+                  "start": 68,
+                  "text": "He’ll get the start"
+                },
+                "afterEvidence": {
+                  "start": 69,
+                  "end": 88,
+                  "text": "He’ll get the start"
+                }
+              }
+            ]
+          }
+        ],
+        "evaluation_only": true
+      },
+      {
+        "group_id": "S04",
+        "arms": {
+          "rules": {
+            "denominator": 11,
+            "source_tp": 0,
+            "source_fp": 0,
+            "source_fn": 11,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 10,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 0,
+            "local_eligible": 0,
+            "holds": [],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "rules_decisions": {
+            "denominator": 11,
+            "source_tp": 0,
+            "source_fp": 0,
+            "source_fn": 11,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 10,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 0,
+            "local_eligible": 0,
+            "holds": [],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "extraction": {
+            "denominator": 11,
+            "source_tp": 0,
+            "source_fp": 11,
+            "source_fn": 11,
+            "field_errors": [
+              {
+                "gold_id": "S04-C01",
+                "claim_id": "c2",
+                "fields": [
+                  "value",
+                  "time",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "gold_id": "S04-C02",
+                "claim_id": "c3",
+                "fields": [
+                  "value",
+                  "time",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "gold_id": "S04-C03",
+                "claim_id": "c4",
+                "fields": [
+                  "value",
+                  "time",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "gold_id": "S04-C04",
+                "claim_id": "c5",
+                "fields": [
+                  "value",
+                  "time",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "gold_id": "S04-C05",
+                "claim_id": "c6",
+                "fields": [
+                  "value",
+                  "time",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "gold_id": "S04-C06",
+                "claim_id": "c7",
+                "fields": [
+                  "value",
+                  "time"
+                ]
+              },
+              {
+                "gold_id": "S04-C07",
+                "claim_id": "c1",
+                "fields": [
+                  "value",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "gold_id": "S04-C08",
+                "claim_id": "c9",
+                "fields": [
+                  "value",
+                  "time"
+                ]
+              },
+              {
+                "gold_id": "S04-C09",
+                "claim_id": "c10",
+                "fields": [
+                  "value",
+                  "time"
+                ]
+              },
+              {
+                "gold_id": "S04-C10",
+                "claim_id": "c11",
+                "fields": [
+                  "value",
+                  "time"
+                ]
+              },
+              {
+                "gold_id": "S04-C11",
+                "claim_id": "c8",
+                "fields": [
+                  "event",
+                  "value",
+                  "governing_evidence"
+                ]
+              }
+            ],
+            "uncertainty_or_time_errors": 11,
+            "unsupported_additions": [
+              {
+                "claim_id": "c2",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "time",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "claim_id": "c3",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "time",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "claim_id": "c4",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "time",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "claim_id": "c5",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "time",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "claim_id": "c6",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "time",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "claim_id": "c7",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "time"
+                ]
+              },
+              {
+                "claim_id": "c1",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "claim_id": "c9",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "time"
+                ]
+              },
+              {
+                "claim_id": "c10",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "time"
+                ]
+              },
+              {
+                "claim_id": "c11",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "time"
+                ]
+              },
+              {
+                "claim_id": "c8",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "event",
+                  "value",
+                  "governing_evidence"
+                ]
+              }
+            ],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 10,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 11,
+            "local_eligible": 0,
+            "holds": [
+              {
+                "claim_id": "c1",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "c2",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "c3",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "c4",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "c5",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "c6",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "c7",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "c8",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "c9",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "c10",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "c11",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              }
+            ],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "extraction_decisions": {
+            "denominator": 11,
+            "source_tp": 0,
+            "source_fp": 11,
+            "source_fn": 11,
+            "field_errors": [
+              {
+                "gold_id": "S04-C01",
+                "claim_id": "c2",
+                "fields": [
+                  "value",
+                  "time",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "gold_id": "S04-C02",
+                "claim_id": "c3",
+                "fields": [
+                  "value",
+                  "time",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "gold_id": "S04-C03",
+                "claim_id": "c4",
+                "fields": [
+                  "value",
+                  "time",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "gold_id": "S04-C04",
+                "claim_id": "c5",
+                "fields": [
+                  "value",
+                  "time",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "gold_id": "S04-C05",
+                "claim_id": "c6",
+                "fields": [
+                  "value",
+                  "time",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "gold_id": "S04-C06",
+                "claim_id": "c7",
+                "fields": [
+                  "value",
+                  "time"
+                ]
+              },
+              {
+                "gold_id": "S04-C07",
+                "claim_id": "c1",
+                "fields": [
+                  "value",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "gold_id": "S04-C08",
+                "claim_id": "c9",
+                "fields": [
+                  "value",
+                  "time"
+                ]
+              },
+              {
+                "gold_id": "S04-C09",
+                "claim_id": "c10",
+                "fields": [
+                  "value",
+                  "time"
+                ]
+              },
+              {
+                "gold_id": "S04-C10",
+                "claim_id": "c11",
+                "fields": [
+                  "value",
+                  "time"
+                ]
+              },
+              {
+                "gold_id": "S04-C11",
+                "claim_id": "c8",
+                "fields": [
+                  "event",
+                  "value",
+                  "governing_evidence"
+                ]
+              }
+            ],
+            "uncertainty_or_time_errors": 11,
+            "unsupported_additions": [
+              {
+                "claim_id": "c2",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "time",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "claim_id": "c3",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "time",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "claim_id": "c4",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "time",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "claim_id": "c5",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "time",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "claim_id": "c6",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "time",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "claim_id": "c7",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "time"
+                ]
+              },
+              {
+                "claim_id": "c1",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "governing_evidence"
+                ]
+              },
+              {
+                "claim_id": "c9",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "time"
+                ]
+              },
+              {
+                "claim_id": "c10",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "time"
+                ]
+              },
+              {
+                "claim_id": "c11",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "time"
+                ]
+              },
+              {
+                "claim_id": "c8",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "event",
+                  "value",
+                  "governing_evidence"
+                ]
+              }
+            ],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 10,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 11,
+            "local_eligible": 0,
+            "holds": [
+              {
+                "claim_id": "c1",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "c2",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "c3",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "c4",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "c5",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "c6",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "c7",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "c8",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "c9",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "c10",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "c11",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              }
+            ],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          }
+        },
+        "raw_extraction_grade": {
+          "denominator": 11,
+          "source_tp": 0,
+          "source_fp": 11,
+          "source_fn": 11,
+          "field_errors": [],
+          "uncertainty_or_time_errors": 0,
+          "unsupported_additions": [],
+          "unproved_external_additions": [],
+          "convention_credits": [],
+          "source_contract_projection_mismatches": 0,
+          "literal_team_field_coverage": {
+            "gold_nonnull": 10,
+            "explicit_literal_matches": 0
+          },
+          "correction": null,
+          "held": 0,
+          "local_eligible": 0,
+          "holds": [],
+          "published": 0,
+          "owner_publication_readiness": null,
+          "world_truth": null,
+          "errors": [
+            "S04:evidence mismatch",
+            "S04:evidence mismatch",
+            "S04:evidence mismatch",
+            "S04:evidence mismatch",
+            "S04:evidence mismatch",
+            "S04:evidence mismatch",
+            "S04:evidence mismatch",
+            "S04:evidence mismatch",
+            "S04:evidence mismatch",
+            "S04:evidence mismatch",
+            "S04:evidence mismatch"
+          ],
+          "missing_records": [],
+          "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+        },
+        "alignment_audit": [
+          {
+            "record_id": "S04",
+            "audit": [
+              {
+                "index": 0,
+                "action": "reanchored",
+                "reason": "unique_exact_source_quote",
+                "beforeEvidence": {
+                  "end": 71,
+                  "start": 25,
+                  "text": "power play groups same as yesterday"
+                },
+                "afterEvidence": {
+                  "start": 10,
+                  "end": 45,
+                  "text": "power play groups same as yesterday"
+                }
+              },
+              {
+                "index": 1,
+                "action": "reanchored",
+                "reason": "unique_exact_source_quote",
+                "beforeEvidence": {
+                  "end": 131,
+                  "start": 85,
+                  "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+                },
+                "afterEvidence": {
+                  "start": 124,
+                  "end": 172,
+                  "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+                }
+              },
+              {
+                "index": 2,
+                "action": "reanchored",
+                "reason": "unique_exact_source_quote",
+                "beforeEvidence": {
+                  "end": 131,
+                  "start": 85,
+                  "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+                },
+                "afterEvidence": {
+                  "start": 124,
+                  "end": 172,
+                  "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+                }
+              },
+              {
+                "index": 3,
+                "action": "reanchored",
+                "reason": "unique_exact_source_quote",
+                "beforeEvidence": {
+                  "end": 131,
+                  "start": 85,
+                  "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+                },
+                "afterEvidence": {
+                  "start": 124,
+                  "end": 172,
+                  "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+                }
+              },
+              {
+                "index": 4,
+                "action": "reanchored",
+                "reason": "unique_exact_source_quote",
+                "beforeEvidence": {
+                  "end": 131,
+                  "start": 85,
+                  "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+                },
+                "afterEvidence": {
+                  "start": 124,
+                  "end": 172,
+                  "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+                }
+              },
+              {
+                "index": 5,
+                "action": "reanchored",
+                "reason": "unique_exact_source_quote",
+                "beforeEvidence": {
+                  "end": 131,
+                  "start": 85,
+                  "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+                },
+                "afterEvidence": {
+                  "start": 124,
+                  "end": 172,
+                  "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+                }
+              },
+              {
+                "index": 6,
+                "action": "reanchored",
+                "reason": "unique_exact_source_quote",
+                "beforeEvidence": {
+                  "end": 176,
+                  "start": 137,
+                  "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+                },
+                "afterEvidence": {
+                  "start": 175,
+                  "end": 217,
+                  "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+                }
+              },
+              {
+                "index": 7,
+                "action": "reanchored",
+                "reason": "unique_exact_source_quote",
+                "beforeEvidence": {
+                  "end": 176,
+                  "start": 137,
+                  "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+                },
+                "afterEvidence": {
+                  "start": 175,
+                  "end": 217,
+                  "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+                }
+              },
+              {
+                "index": 8,
+                "action": "reanchored",
+                "reason": "unique_exact_source_quote",
+                "beforeEvidence": {
+                  "end": 176,
+                  "start": 137,
+                  "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+                },
+                "afterEvidence": {
+                  "start": 175,
+                  "end": 217,
+                  "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+                }
+              },
+              {
+                "index": 9,
+                "action": "reanchored",
+                "reason": "unique_exact_source_quote",
+                "beforeEvidence": {
+                  "end": 176,
+                  "start": 137,
+                  "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+                },
+                "afterEvidence": {
+                  "start": 175,
+                  "end": 217,
+                  "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+                }
+              },
+              {
+                "index": 10,
+                "action": "reanchored",
+                "reason": "unique_exact_source_quote",
+                "beforeEvidence": {
+                  "end": 176,
+                  "start": 137,
+                  "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+                },
+                "afterEvidence": {
+                  "start": 175,
+                  "end": 217,
+                  "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+                }
+              }
+            ]
+          }
+        ],
+        "evaluation_only": true
+      },
+      {
+        "group_id": "S05",
+        "arms": {
+          "rules": {
+            "denominator": 3,
+            "source_tp": 0,
+            "source_fp": 3,
+            "source_fn": 3,
+            "field_errors": [
+              {
+                "gold_id": "S05-C01",
+                "claim_id": "rules-x:2108958442983686184-0",
+                "fields": [
+                  "time"
+                ]
+              },
+              {
+                "gold_id": "S05-C02",
+                "claim_id": "rules-x:2108958442983686184-1",
+                "fields": [
+                  "time"
+                ]
+              },
+              {
+                "gold_id": "S05-C03",
+                "claim_id": "rules-x:2108957630253113386-0",
+                "fields": [
+                  "time"
+                ]
+              }
+            ],
+            "uncertainty_or_time_errors": 3,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 3,
+            "local_eligible": 0,
+            "holds": [
+              {
+                "claim_id": "rules-x:2108958442983686184-0",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2108958442983686184-1",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2108957630253113386-0",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time"
+                ]
+              }
+            ],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "rules_decisions": {
+            "denominator": 3,
+            "source_tp": 0,
+            "source_fp": 3,
+            "source_fn": 3,
+            "field_errors": [
+              {
+                "gold_id": "S05-C01",
+                "claim_id": "rules-x:2108958442983686184-0",
+                "fields": [
+                  "time"
+                ]
+              },
+              {
+                "gold_id": "S05-C02",
+                "claim_id": "rules-x:2108958442983686184-1",
+                "fields": [
+                  "time"
+                ]
+              },
+              {
+                "gold_id": "S05-C03",
+                "claim_id": "rules-x:2108957630253113386-0",
+                "fields": [
+                  "time"
+                ]
+              }
+            ],
+            "uncertainty_or_time_errors": 3,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 3,
+            "local_eligible": 0,
+            "holds": [
+              {
+                "claim_id": "rules-x:2108958442983686184-0",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2108958442983686184-1",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2108957630253113386-0",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unresolved_time",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              }
+            ],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "extraction": {
+            "denominator": 3,
+            "source_tp": 0,
+            "source_fp": 6,
+            "source_fn": 3,
+            "field_errors": [
+              {
+                "gold_id": "S05-C01",
+                "claim_id": "S05A-1",
+                "fields": [
+                  "governing_evidence"
+                ]
+              },
+              {
+                "gold_id": "S05-C02",
+                "claim_id": "S05A-3",
+                "fields": [
+                  "governing_evidence"
+                ]
+              },
+              {
+                "gold_id": "S05-C03",
+                "claim_id": "S05B-1",
+                "fields": [
+                  "time",
+                  "governing_evidence"
+                ]
+              }
+            ],
+            "uncertainty_or_time_errors": 3,
+            "unsupported_additions": [
+              {
+                "claim_id": "S05B-2",
+                "kind": "unmatched_assertion"
+              }
+            ],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 4,
+            "local_eligible": 0,
+            "holds": [
+              {
+                "claim_id": "S05A-1",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "producer_output_invalid"
+                ]
+              },
+              {
+                "claim_id": "S05A-3",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "producer_output_invalid"
+                ]
+              },
+              {
+                "claim_id": "S05B-1",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "producer_output_invalid"
+                ]
+              },
+              {
+                "claim_id": "S05B-2",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "producer_output_invalid",
+                  "unresolved_time"
+                ]
+              }
+            ],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [
+              "S05A:evidence mismatch",
+              "S05A:evidence mismatch"
+            ],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "extraction_decisions": {
+            "denominator": 3,
+            "source_tp": 0,
+            "source_fp": 6,
+            "source_fn": 3,
+            "field_errors": [
+              {
+                "gold_id": "S05-C01",
+                "claim_id": "S05A-1",
+                "fields": [
+                  "governing_evidence"
+                ]
+              },
+              {
+                "gold_id": "S05-C02",
+                "claim_id": "S05A-3",
+                "fields": [
+                  "governing_evidence"
+                ]
+              },
+              {
+                "gold_id": "S05-C03",
+                "claim_id": "S05B-1",
+                "fields": [
+                  "time",
+                  "governing_evidence"
+                ]
+              }
+            ],
+            "uncertainty_or_time_errors": 3,
+            "unsupported_additions": [
+              {
+                "claim_id": "S05B-2",
+                "kind": "unmatched_assertion"
+              }
+            ],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 4,
+            "local_eligible": 0,
+            "holds": [
+              {
+                "claim_id": "S05A-1",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "producer_output_invalid",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "S05A-3",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "producer_output_invalid",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "S05B-1",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "producer_output_invalid",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "S05B-2",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "producer_output_invalid",
+                  "unresolved_time",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              }
+            ],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [
+              "S05A:evidence mismatch",
+              "S05A:evidence mismatch"
+            ],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          }
+        },
+        "raw_extraction_grade": {
+          "denominator": 3,
+          "source_tp": 0,
+          "source_fp": 6,
+          "source_fn": 3,
+          "field_errors": [],
+          "uncertainty_or_time_errors": 0,
+          "unsupported_additions": [],
+          "unproved_external_additions": [],
+          "convention_credits": [],
+          "source_contract_projection_mismatches": 0,
+          "literal_team_field_coverage": {
+            "gold_nonnull": 0,
+            "explicit_literal_matches": 0
+          },
+          "correction": null,
+          "held": 0,
+          "local_eligible": 0,
+          "holds": [],
+          "published": 0,
+          "owner_publication_readiness": null,
+          "world_truth": null,
+          "errors": [
+            "S05A:evidence mismatch",
+            "S05A:evidence mismatch",
+            "S05A:evidence mismatch",
+            "S05A:evidence mismatch",
+            "S05B:evidence mismatch",
+            "S05B:evidence out of bounds"
+          ],
+          "missing_records": [],
+          "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+        },
+        "alignment_audit": [
+          {
+            "record_id": "S05A",
+            "audit": [
+              {
+                "index": 0,
+                "action": "reanchored",
+                "reason": "unique_exact_source_quote",
+                "beforeEvidence": {
+                  "end": 43,
+                  "start": 0,
+                  "text": "Joonas Korpisalo (lower body) is out"
+                },
+                "afterEvidence": {
+                  "start": 0,
+                  "end": 36,
+                  "text": "Joonas Korpisalo (lower body) is out"
+                }
+              },
+              {
+                "index": 1,
+                "action": "held",
+                "reason": "exact_quote_ambiguous"
+              },
+              {
+                "index": 2,
+                "action": "reanchored",
+                "reason": "unique_exact_source_quote",
+                "beforeEvidence": {
+                  "end": 85,
+                  "start": 47,
+                  "text": "Joe Veleno (lower body) is out"
+                },
+                "afterEvidence": {
+                  "start": 57,
+                  "end": 87,
+                  "text": "Joe Veleno (lower body) is out"
+                }
+              },
+              {
+                "index": 3,
+                "action": "held",
+                "reason": "exact_quote_ambiguous"
+              }
+            ]
+          },
+          {
+            "record_id": "S05B",
+            "audit": [
+              {
+                "index": 0,
+                "action": "reanchored",
+                "reason": "unique_exact_source_quote",
+                "beforeEvidence": {
+                  "end": 68,
+                  "start": 0,
+                  "text": "Igor Shesterkin will be out for the rest of the season"
+                },
+                "afterEvidence": {
+                  "start": 0,
+                  "end": 54,
+                  "text": "Igor Shesterkin will be out for the rest of the season"
+                }
+              },
+              {
+                "index": 1,
+                "action": "reanchored",
+                "reason": "unique_exact_source_quote",
+                "beforeEvidence": {
+                  "end": 92,
+                  "start": 69,
+                  "text": "with his lower body injury"
+                },
+                "afterEvidence": {
+                  "start": 55,
+                  "end": 81,
+                  "text": "with his lower body injury"
+                }
+              }
+            ]
+          }
+        ],
+        "evaluation_only": true
+      },
+      {
+        "group_id": "S06",
+        "arms": {
+          "rules": {
+            "denominator": 1,
+            "source_tp": 0,
+            "source_fp": 0,
+            "source_fn": 1,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 0,
+            "local_eligible": 0,
+            "holds": [],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "rules_decisions": {
+            "denominator": 1,
+            "source_tp": 0,
+            "source_fp": 0,
+            "source_fn": 1,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 0,
+            "local_eligible": 0,
+            "holds": [],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "extraction": {
+            "denominator": 1,
+            "source_tp": 0,
+            "source_fp": 0,
+            "source_fn": 1,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 0,
+            "local_eligible": 0,
+            "holds": [],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [
+              "missing_output"
+            ],
+            "missing_records": [
+              "S06"
+            ],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "extraction_decisions": {
+            "denominator": 1,
+            "source_tp": 0,
+            "source_fp": 0,
+            "source_fn": 1,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 0,
+            "local_eligible": 0,
+            "holds": [],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [
+              "missing_output"
+            ],
+            "missing_records": [
+              "S06"
+            ],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          }
+        },
+        "raw_extraction_grade": {
+          "denominator": 1,
+          "source_tp": 0,
+          "source_fp": 0,
+          "source_fn": 1,
+          "field_errors": [],
+          "uncertainty_or_time_errors": 0,
+          "unsupported_additions": [],
+          "unproved_external_additions": [],
+          "convention_credits": [],
+          "source_contract_projection_mismatches": 0,
+          "literal_team_field_coverage": {
+            "gold_nonnull": 0,
+            "explicit_literal_matches": 0
+          },
+          "correction": null,
+          "held": 0,
+          "local_eligible": 0,
+          "holds": [],
+          "published": 0,
+          "owner_publication_readiness": null,
+          "world_truth": null,
+          "errors": [
+            "missing_output"
+          ],
+          "missing_records": [
+            "S06"
+          ],
+          "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+        },
+        "alignment_audit": [],
+        "evaluation_only": true
+      },
+      {
+        "group_id": "S07",
+        "arms": {
+          "rules": {
+            "denominator": 4,
+            "source_tp": 0,
+            "source_fp": 2,
+            "source_fn": 4,
+            "field_errors": [
+              {
+                "gold_id": "S07-C01",
+                "claim_id": "rules-x:2108961406007570942-0",
+                "fields": [
+                  "value"
+                ]
+              },
+              {
+                "gold_id": "S07-C03",
+                "claim_id": "rules-x:2108961406007570942-1",
+                "fields": [
+                  "value",
+                  "time"
+                ]
+              }
+            ],
+            "uncertainty_or_time_errors": 1,
+            "unsupported_additions": [
+              {
+                "claim_id": "rules-x:2108961406007570942-0",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2108961406007570942-1",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "time"
+                ]
+              }
+            ],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 2,
+            "local_eligible": 0,
+            "holds": [
+              {
+                "claim_id": "rules-x:2108961406007570942-0",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "governing_qualification"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2108961406007570942-1",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "governing_qualification"
+                ]
+              }
+            ],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "rules_decisions": {
+            "denominator": 4,
+            "source_tp": 0,
+            "source_fp": 2,
+            "source_fn": 4,
+            "field_errors": [
+              {
+                "gold_id": "S07-C01",
+                "claim_id": "rules-x:2108961406007570942-0",
+                "fields": [
+                  "value"
+                ]
+              },
+              {
+                "gold_id": "S07-C03",
+                "claim_id": "rules-x:2108961406007570942-1",
+                "fields": [
+                  "value",
+                  "time"
+                ]
+              }
+            ],
+            "uncertainty_or_time_errors": 1,
+            "unsupported_additions": [
+              {
+                "claim_id": "rules-x:2108961406007570942-0",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2108961406007570942-1",
+                "kind": "declared_field_mismatch",
+                "fields": [
+                  "value",
+                  "time"
+                ]
+              }
+            ],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 2,
+            "local_eligible": 0,
+            "holds": [
+              {
+                "claim_id": "rules-x:2108961406007570942-0",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "governing_qualification",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2108961406007570942-1",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "governing_qualification",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              }
+            ],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "extraction": {
+            "denominator": 4,
+            "source_tp": 0,
+            "source_fp": 0,
+            "source_fn": 4,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 0,
+            "local_eligible": 0,
+            "holds": [],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [
+              "missing_output"
+            ],
+            "missing_records": [
+              "S07"
+            ],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "extraction_decisions": {
+            "denominator": 4,
+            "source_tp": 0,
+            "source_fp": 0,
+            "source_fn": 4,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 0,
+            "local_eligible": 0,
+            "holds": [],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [
+              "missing_output"
+            ],
+            "missing_records": [
+              "S07"
+            ],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          }
+        },
+        "raw_extraction_grade": {
+          "denominator": 4,
+          "source_tp": 0,
+          "source_fp": 0,
+          "source_fn": 4,
+          "field_errors": [],
+          "uncertainty_or_time_errors": 0,
+          "unsupported_additions": [],
+          "unproved_external_additions": [],
+          "convention_credits": [],
+          "source_contract_projection_mismatches": 0,
+          "literal_team_field_coverage": {
+            "gold_nonnull": 0,
+            "explicit_literal_matches": 0
+          },
+          "correction": null,
+          "held": 0,
+          "local_eligible": 0,
+          "holds": [],
+          "published": 0,
+          "owner_publication_readiness": null,
+          "world_truth": null,
+          "errors": [
+            "missing_output"
+          ],
+          "missing_records": [
+            "S07"
+          ],
+          "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+        },
+        "alignment_audit": [],
+        "evaluation_only": true
+      },
+      {
+        "group_id": "S08",
+        "arms": {
+          "rules": {
+            "denominator": 19,
+            "source_tp": 18,
+            "source_fp": 0,
+            "source_fn": 1,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 19,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 18,
+            "local_eligible": 0,
+            "holds": [
+              {
+                "claim_id": "rules-x:2109051291372777568-0",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-1",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-2",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-3",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-4",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-5",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-6",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-7",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-8",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-9",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-10",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-11",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-12",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-13",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-14",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-15",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-16",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-17",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved"
+                ]
+              }
+            ],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "rules_decisions": {
+            "denominator": 19,
+            "source_tp": 18,
+            "source_fp": 0,
+            "source_fn": 1,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 19,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 18,
+            "local_eligible": 0,
+            "holds": [
+              {
+                "claim_id": "rules-x:2109051291372777568-0",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-1",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-2",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-3",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-4",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-5",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-6",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-7",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-8",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-9",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-10",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-11",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-12",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-13",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-14",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-15",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-16",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              },
+              {
+                "claim_id": "rules-x:2109051291372777568-17",
+                "holds": [
+                  "source_time_identity_unverified",
+                  "game_binding_unverified",
+                  "unit_or_prior_slot_context_unproved",
+                  "whole_set_verifier_unknown_or_unsupported"
+                ]
+              }
+            ],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "extraction": {
+            "denominator": 19,
+            "source_tp": 0,
+            "source_fp": 0,
+            "source_fn": 19,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 19,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 0,
+            "local_eligible": 0,
+            "holds": [],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [
+              "missing_output"
+            ],
+            "missing_records": [
+              "S08"
+            ],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "extraction_decisions": {
+            "denominator": 19,
+            "source_tp": 0,
+            "source_fp": 0,
+            "source_fn": 19,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 19,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 0,
+            "local_eligible": 0,
+            "holds": [],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [
+              "missing_output"
+            ],
+            "missing_records": [
+              "S08"
+            ],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          }
+        },
+        "raw_extraction_grade": {
+          "denominator": 19,
+          "source_tp": 0,
+          "source_fp": 0,
+          "source_fn": 19,
+          "field_errors": [],
+          "uncertainty_or_time_errors": 0,
+          "unsupported_additions": [],
+          "unproved_external_additions": [],
+          "convention_credits": [],
+          "source_contract_projection_mismatches": 0,
+          "literal_team_field_coverage": {
+            "gold_nonnull": 19,
+            "explicit_literal_matches": 0
+          },
+          "correction": null,
+          "held": 0,
+          "local_eligible": 0,
+          "holds": [],
+          "published": 0,
+          "owner_publication_readiness": null,
+          "world_truth": null,
+          "errors": [
+            "missing_output"
+          ],
+          "missing_records": [
+            "S08"
+          ],
+          "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+        },
+        "alignment_audit": [],
+        "evaluation_only": true
+      },
+      {
+        "group_id": "S09",
+        "arms": {
+          "rules": {
+            "denominator": 1,
+            "source_tp": 0,
+            "source_fp": 0,
+            "source_fn": 1,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 0,
+            "local_eligible": 0,
+            "holds": [],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "rules_decisions": {
+            "denominator": 1,
+            "source_tp": 0,
+            "source_fp": 0,
+            "source_fn": 1,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 0,
+            "local_eligible": 0,
+            "holds": [],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "extraction": {
+            "denominator": 1,
+            "source_tp": 0,
+            "source_fp": 0,
+            "source_fn": 1,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 0,
+            "local_eligible": 0,
+            "holds": [],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [
+              "missing_output"
+            ],
+            "missing_records": [
+              "S09"
+            ],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "extraction_decisions": {
+            "denominator": 1,
+            "source_tp": 0,
+            "source_fp": 0,
+            "source_fn": 1,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": null,
+            "held": 0,
+            "local_eligible": 0,
+            "holds": [],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [
+              "missing_output"
+            ],
+            "missing_records": [
+              "S09"
+            ],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          }
+        },
+        "raw_extraction_grade": {
+          "denominator": 1,
+          "source_tp": 0,
+          "source_fp": 0,
+          "source_fn": 1,
+          "field_errors": [],
+          "uncertainty_or_time_errors": 0,
+          "unsupported_additions": [],
+          "unproved_external_additions": [],
+          "convention_credits": [],
+          "source_contract_projection_mismatches": 0,
+          "literal_team_field_coverage": {
+            "gold_nonnull": 0,
+            "explicit_literal_matches": 0
+          },
+          "correction": null,
+          "held": 0,
+          "local_eligible": 0,
+          "holds": [],
+          "published": 0,
+          "owner_publication_readiness": null,
+          "world_truth": null,
+          "errors": [
+            "missing_output"
+          ],
+          "missing_records": [
+            "S09"
+          ],
+          "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+        },
+        "alignment_audit": [],
+        "evaluation_only": true
+      },
+      {
+        "group_id": "S10",
+        "arms": {
+          "rules": {
+            "denominator": 2,
+            "source_tp": 0,
+            "source_fp": 0,
+            "source_fn": 2,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": {
+              "both_sources_retained": true,
+              "revision_present": false,
+              "no_regular_pp_update_and_prior_retraction": false,
+              "interpretation_states": [],
+              "active_regular_pp_proposals": 0,
+              "native_retraction_dispatched": false
+            },
+            "held": 0,
+            "local_eligible": 0,
+            "holds": [],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "rules_decisions": {
+            "denominator": 2,
+            "source_tp": 0,
+            "source_fp": 0,
+            "source_fn": 2,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": {
+              "both_sources_retained": true,
+              "revision_present": false,
+              "no_regular_pp_update_and_prior_retraction": false,
+              "interpretation_states": [],
+              "active_regular_pp_proposals": 0,
+              "native_retraction_dispatched": false
+            },
+            "held": 0,
+            "local_eligible": 0,
+            "holds": [],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [],
+            "missing_records": [],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "extraction": {
+            "denominator": 2,
+            "source_tp": 0,
+            "source_fp": 0,
+            "source_fn": 2,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": {
+              "both_sources_retained": false,
+              "revision_present": false,
+              "no_regular_pp_update_and_prior_retraction": false,
+              "interpretation_states": [],
+              "active_regular_pp_proposals": 0,
+              "native_retraction_dispatched": false
+            },
+            "held": 0,
+            "local_eligible": 0,
+            "holds": [],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [
+              "missing_output"
+            ],
+            "missing_records": [
+              "S10A",
+              "S10B"
+            ],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          },
+          "extraction_decisions": {
+            "denominator": 2,
+            "source_tp": 0,
+            "source_fp": 0,
+            "source_fn": 2,
+            "field_errors": [],
+            "uncertainty_or_time_errors": 0,
+            "unsupported_additions": [],
+            "unproved_external_additions": [],
+            "convention_credits": [],
+            "source_contract_projection_mismatches": 0,
+            "literal_team_field_coverage": {
+              "gold_nonnull": 0,
+              "explicit_literal_matches": 0
+            },
+            "correction": {
+              "both_sources_retained": false,
+              "revision_present": false,
+              "no_regular_pp_update_and_prior_retraction": false,
+              "interpretation_states": [],
+              "active_regular_pp_proposals": 0,
+              "native_retraction_dispatched": false
+            },
+            "held": 0,
+            "local_eligible": 0,
+            "holds": [],
+            "published": 0,
+            "owner_publication_readiness": null,
+            "world_truth": null,
+            "errors": [
+              "missing_output"
+            ],
+            "missing_records": [
+              "S10A",
+              "S10B"
+            ],
+            "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+          }
+        },
+        "raw_extraction_grade": {
+          "denominator": 2,
+          "source_tp": 0,
+          "source_fp": 0,
+          "source_fn": 2,
+          "field_errors": [],
+          "uncertainty_or_time_errors": 0,
+          "unsupported_additions": [],
+          "unproved_external_additions": [],
+          "convention_credits": [],
+          "source_contract_projection_mismatches": 0,
+          "literal_team_field_coverage": {
+            "gold_nonnull": 0,
+            "explicit_literal_matches": 0
+          },
+          "correction": {
+            "both_sources_retained": false,
+            "revision_present": false,
+            "no_regular_pp_update_and_prior_retraction": false,
+            "interpretation_states": [],
+            "active_regular_pp_proposals": 0,
+            "native_retraction_dispatched": false
+          },
+          "held": 0,
+          "local_eligible": 0,
+          "holds": [],
+          "published": 0,
+          "owner_publication_readiness": null,
+          "world_truth": null,
+          "errors": [
+            "missing_output"
+          ],
+          "missing_records": [
+            "S10A",
+            "S10B"
+          ],
+          "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+        },
+        "alignment_audit": [],
+        "evaluation_only": true
+      }
+    ],
+    "totals": {
+      "rules": {
+        "denominator": 50,
+        "source_tp": 19,
+        "source_fp": 5,
+        "source_fn": 31,
+        "held": 24,
+        "local_eligible": 0,
+        "published": 0,
+        "source_precision": 0.7916666666666666,
+        "source_recall": 0.38,
+        "macro_family_recall": 0.19473684210526315
+      },
+      "rules_decisions": {
+        "denominator": 50,
+        "source_tp": 19,
+        "source_fp": 5,
+        "source_fn": 31,
+        "held": 24,
+        "local_eligible": 0,
+        "published": 0,
+        "source_precision": 0.7916666666666666,
+        "source_recall": 0.38,
+        "macro_family_recall": 0.19473684210526315
+      },
+      "extraction": {
+        "denominator": 50,
+        "source_tp": 0,
+        "source_fp": 25,
+        "source_fn": 50,
+        "held": 23,
+        "local_eligible": 0,
+        "published": 0,
+        "source_precision": 0.0,
+        "source_recall": 0.0,
+        "macro_family_recall": 0.0
+      },
+      "extraction_decisions": {
+        "denominator": 50,
+        "source_tp": 0,
+        "source_fp": 25,
+        "source_fn": 50,
+        "held": 23,
+        "local_eligible": 0,
+        "published": 0,
+        "source_precision": 0.0,
+        "source_recall": 0.0,
+        "macro_family_recall": 0.0
+      }
+    },
+    "provider_calls": 0,
+    "publication_performed": false,
+    "limitation": "Exposed development benchmark; strict lexical scorer, no independent truth, calibration or production result."
+  },
+  "coverage": {
+    "groups_denominator": 10,
+    "source_unit_denominator": 50,
+    "paired_groups": 4,
+    "extractions_received": 5,
+    "one_invalid_family_retained": "S05",
+    "verifier_pairs_received": 4
+  },
+  "no_missing_output_is_a_measured_negative": true
+}

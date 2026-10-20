@@ -1,0 +1,454 @@
+diff --git a/web/__tests__/pages/start-chart.test.tsx b/web/__tests__/pages/start-chart.test.tsx
+index 5f8519b4f..ab6579759 100644
+--- a/web/__tests__/pages/start-chart.test.tsx
++++ b/web/__tests__/pages/start-chart.test.tsx
+@@ -1,8 +1,9 @@
+ import React from "react";
+ import { selectTeamFormGames, summarizeTeamForm } from "lib/projections/startChartTeamForm";
+-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
++import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ import { buildBoardValidationDisclosure } from "lib/projections/starterBoardValidation";
++import { boardGoalieForecast, parseBoardScoringRequest } from "lib/projections/starterBoardScoring";
+ 
+ const swrState = vi.hoisted(() => ({
+   data: null as any,
+@@ -1020,6 +1021,8 @@ describe("StartChartPage", () => {
+     expect(screen.getByText("No games found.")).toBeTruthy();
+     expect(screen.getByRole("status", { name: "Starter Board status" }).textContent).toContain("No scheduled games");
+     expect(screen.getByText("No eligible same-season slate exists.")).toBeTruthy();
++    expect(screen.queryAllByText("No players match this position and filter set.")).toHaveLength(0);
++    expect(screen.getAllByText("No scheduled games.")).toHaveLength(5);
+ 
+     swrState.data = {
+       ...buildApiData(),
+@@ -1048,6 +1051,94 @@ describe("StartChartPage", () => {
+     ).toBeTruthy();
+     expect(screen.getByText("No player projections found.")).toBeTruthy();
+     expect(screen.getAllByText("Goalie TBD")).toHaveLength(2);
++    expect(screen.getByText("No C projections available for this slate.")).toBeTruthy();
++    expect(screen.queryAllByText("No players match this position and filter set.")).toHaveLength(0);
++  });
++
++  it("keeps probability ranks when goalie fantasy points are unavailable", () => {
++    swrState.data = { ...buildApiData(), players: [player({ positions: ["G"], name: "Probability goalie",
++      proj_fantasy_points: null, start_probability: 0.8, position_ranks: { G: 1 } })] };
++    render(<StartChartPage />);
++    const row = screen.getByRole("link", { name: "Probability goalie" }).closest("li")!;
++    expect(row.querySelector('[class*="playerRank"]')?.textContent).toBe("1");
++    fireEvent.change(screen.getByLabelText("Goalie order"), { target: { value: "fantasy" } });
++    expect(row.querySelector('[class*="playerRank"]')?.textContent).toBe("—");
++    fireEvent.change(screen.getByLabelText("Goalie order"), { target: { value: "start_probability" } });
++    expect(row.querySelector('[class*="playerRank"]')?.textContent).toBe("1");
++  });
++
++  it("renders a published skater and goalie revision using its scoring profile and eligibility", () => {
++    const revision = { gameId: 1001, revisionId: "fixture-revision-1", runId: "fixture-run-1",
++      decisionAsOf: "2026-02-07T15:00:00Z", publishedAt: "2026-02-07T16:00:00Z",
++      inputCutoff: "2026-02-07T14:55:00Z", calculatedAt: "2026-02-07T15:30:00Z", codeVersion: "fixture-code-1", modelMode: "daily" };
++    swrState.data = { ...buildApiData(), contractVersion: 2, gameRevisions: [revision],
++      projectionRunId: revision.runId,
++      sourceStatus: { ...readySourceStatus, projection: { ...readySourceStatus.projection, runId: revision.runId } },
++      newsStatus: { available: true, pendingGames: 0, freshnessBreachedGames: 0, unresolvedConflicts: 0 },
++      scoringProfile: { ...parseBoardScoringRequest({ profile: { skater: { GOALS: 2 }, goalie: { SAVES_GOALIE: 1 } } }), id: "fixture-profile" },
++      players: [player({ row_key: "fixture-run-1:1001:8478402:1", positions: ["C", "LW"], forecast: {
++        conditioning: "conditional_playing", participationProbability: null, probabilityStatus: "missing",
++        conditional: { GOALS: 2, SHOTS_ON_GOAL: 3 }, expected: null, distributionStatus: "means_only_unvalidated", evidence: [], conflicts: [],
++      } }), player({ player_id: 9001, row_key: "fixture-run-1:1001:9001:1", name: "Revision goalie", positions: ["G"],
++        start_probability: 0.75, forecast: boardGoalieForecast({ startingProbability: 0.75,
++          conditional: { SAVES_GOALIE: 20 } }) })] };
++    render(<StartChartPage />);
++    const skater = screen.getAllByRole("link", { name: "Nick Suzuki" })[0].closest("li")!;
++    const goalie = screen.getByRole("link", { name: "Revision goalie" }).closest("li")!;
++    expect(within(skater).getByText("4.00")).toBeTruthy();
++    expect(within(skater).getByText("FP if playing")).toBeTruthy();
++    expect(within(skater).getByText("2.0 / — / 3.0")).toBeTruthy();
++    expect(within(goalie).getByText("15.00")).toBeTruthy();
++    expect(within(goalie).getByText("Expected saves").nextElementSibling?.textContent).toBe("15.0");
++    expect(screen.getAllByRole("link", { name: "Nick Suzuki" })).toHaveLength(2);
++    for (const row of [skater, goalie]) {
++      expect(row.getAttribute("data-board-revision")).toBe(revision.revisionId);
++      expect(row.getAttribute("data-board-run")).toBe(revision.runId);
++      expect(within(row).getByText(/Game 1001 · Revision fixture-revision-1 · Run fixture-run-1 · Code fixture-code-1/)).toBeTruthy();
++    }
++    expect(screen.getByRole("status", { name: "Starter Board status" }).textContent).toContain("Published slate");
++    expect(screen.queryByText("Up to date")).toBeNull();
++    expect((document.querySelector('input[name="skater.GOALS"]') as HTMLInputElement).value).toBe("2");
++    fireEvent.change(screen.getByLabelText("Compare"), { target: { value: "categories" } });
++    expect(within(skater).getByText("SHOTS ON GOAL if playing")).toBeTruthy();
++    expect(within(skater).getByText("3.00")).toBeTruthy();
++    fireEvent.change(screen.getByLabelText("Compare"), { target: { value: "points" } });
++    expect(within(skater).getByText("4.00")).toBeTruthy();
++  });
++
++  it("shows missing scoring inputs and does not call a zero-probability goalie confirmed out", () => {
++    swrState.data = { ...buildApiData(), contractVersion: 2,
++      scoringProfile: { ...parseBoardScoringRequest({ profile: { skater: { GOALS: 1 }, goalie: { SAVES_GOALIE: 1 } } }), id: "missing-profile" },
++      players: [player({ positions: ["G"], name: "Nonstarting goalie", start_probability: 0,
++        forecast: boardGoalieForecast({ startingProbability: 0, conditional: { GOALS_AGAINST_GOALIE: 2 } }) })] };
++    render(<StartChartPage />);
++    expect(screen.queryByText("Confirmed out")).toBeNull();
++    expect(screen.getByText("Unavailable scoring inputs: SAVES GOALIE.")).toBeTruthy();
++    expect(screen.getByText("Game revision lineage unavailable.")).toBeTruthy();
++  });
++
++  it("filters by game identity even when two games have the same teams", () => {
++    swrState.data = { ...buildApiData(),
++      games: [1001, 1002].map(id => ({ id, date: "2026-02-07", startTime: null,
++        homeTeamId: 10, awayTeamId: 8, homeAbbrev: "TOR", awayAbbrev: "MTL", homeGoalies: [], awayGoalies: [] })),
++      players: [player(), player({ row_key: "second-game", game_id: 1002, name: "Second game player" })] };
++    render(<StartChartPage />);
++    fireEvent.click(screen.getAllByRole("button", { name: "MTL at TOR; apply game filter" })[0]);
++    expect(screen.getByRole("link", { name: "Nick Suzuki" })).toBeTruthy();
++    expect(screen.queryByRole("link", { name: "Second game player" })).toBeNull();
++    fireEvent.change(screen.getByLabelText("Player"), { target: { value: "no match" } });
++    expect(screen.getByText("No players match this position and filter set.")).toBeTruthy();
++  });
++
++  it("labels a cached publication truthfully when a refresh fails and hides rankings", () => {
++    swrState.data = { ...buildApiData(), contractVersion: 2, players: [player()] };
++    const view = render(<StartChartPage />);
++    expect(screen.getByRole("link", { name: "Nick Suzuki" })).toBeTruthy();
++    swrState.error = new Error("refresh unavailable");
++    view.rerender(<StartChartPage />);
++    expect(screen.getByText("Last successful publication · refresh failed")).toBeTruthy();
++    expect(screen.queryByRole("link", { name: "Nick Suzuki" })).toBeNull();
++    expect(screen.getByRole("alert").textContent).toContain("refresh unavailable");
+   });
+ 
+   it("reveals all ranked rows and resets the position limit when filters change", () => {
+diff --git a/web/e2e/start-chart.spec.ts b/web/e2e/start-chart.spec.ts
+index 3151946e0..8ad3164ac 100644
+--- a/web/e2e/start-chart.spec.ts
++++ b/web/e2e/start-chart.spec.ts
+@@ -1,7 +1,7 @@
+ import { expect, test, type Locator, type Page } from "@playwright/test";
+ import { writeFile } from "node:fs/promises";
+ import { loadEnvConfig } from "@next/env";
+-import { boardGoalieForecast } from "../lib/projections/starterBoardScoring";
++import { boardGoalieForecast, parseBoardScoringRequest } from "../lib/projections/starterBoardScoring";
+ import { buildBoardValidationDisclosure } from "../lib/projections/starterBoardValidation";
+ import { installDraftProAuthenticatedFixtures } from "./draft-pro-fixtures";
+ import { defaultWorkspace } from "../lib/rosterScheduleOptimizer/workspace";
+@@ -452,6 +452,8 @@ test.describe("/start-chart", () => {
+       mode = "partial";
+       await page.keyboard.press("Enter");
+       await expect(page.getByText("No player projections found.")).toBeVisible();
++      await expect(page.getByText("No C projections available for this slate.")).toBeAttached();
++      await expect(page.getByText("No players match this position and filter set.")).toHaveCount(0);
+       await expect(status).toContainText("Upcoming slate");
+       const upcomingAccessibility = await status.ariaSnapshot();
+       await captureTextColors("partial-upcoming", status.locator("strong, :scope > span"));
+@@ -466,6 +468,7 @@ test.describe("/start-chart", () => {
+       mode = "empty";
+       await page.getByLabel("Date", { exact: true }).fill("2026-02-10");
+       await expect(page.getByText("No games found.")).toBeVisible();
++      await expect(page.getByText("No players match this position and filter set.")).toHaveCount(0);
+       await expect(status).toContainText("No scheduled games");
+       await captureTextColors("empty", status.locator("strong, :scope > span"));
+       await captureTextColors("empty-message", page.getByRole("status").filter({ hasText: "No games found." }).locator("strong, span"));
+@@ -685,6 +688,10 @@ test.describe("/start-chart", () => {
+         start_probability: probability, forecast: boardGoalieForecast({ startingProbability: probability,
+           conditional: { SHOTS_AGAINST_GOALIE: saves + 2, SAVES_GOALIE: saves, GOALS_AGAINST_GOALIE: 2, WINS_GOALIE: 0.5, SHUTOUTS_GOALIE: 0.1 } }),
+       });
++      const participatingSkater = skater(3, 1, 4);
++      const participatingForecast = { ...participatingSkater.forecast, conditioning: "unconditional",
++        participationProbability: 1, probabilityStatus: "confirmed_evidence",
++        expected: participatingSkater.forecast.conditional };
+       await page.setViewportSize({ width, height: 900 });
+       await page.route("**/api/v1/start-chart?**", async (route) => {
+         forecastRequests += 1;
+@@ -692,8 +699,11 @@ test.describe("/start-chart", () => {
+           validation: width === 390 ? buildBoardValidationDisclosure({ startedOn: "2026-10-01", liveRegularSlates: 24 }, "2026-10-31")
+             : { status: "awaiting_prospective_evidence" },
+           gameRevisions: [{ gameId: 1001, revisionId: "00000000-0000-4000-8000-000000000001", runId: "run-e2e",
+-            decisionAsOf: "2026-02-07T15:00:00Z", publishedAt: "2026-02-07T16:00:00Z" }],
+-          players: [skater(1, 2, 1), skater(2, 0, 8), goalie(1, 0.8, 15), goalie(2, 0.6, 35)],
++            decisionAsOf: "2026-02-07T15:00:00Z", publishedAt: "2026-02-07T16:00:00Z", codeVersion: "fixture-code-v1" }],
++          scoringProfile: { ...parseBoardScoringRequest({ profile: {
++            skater: { GOALS: 2, SHOTS_ON_GOAL: 0.1 }, goalie: { SAVES_GOALIE: 1 },
++          } }), id: "fixture-published-weights" },
++          players: [skater(1, 2, 1), skater(2, 0, 8), { ...participatingSkater, forecast: participatingForecast }, goalie(1, 0.8, 15), goalie(2, 0.6, 35)],
+           newsStatus: { available: true, pendingGames: 0, freshnessBreachedGames: 0, unresolvedConflicts: 0, oldestAcceptedAt: null },
+         } });
+       });
+@@ -710,25 +720,40 @@ test.describe("/start-chart", () => {
+       const cPanel = page.locator("#start-chart-panel-C");
+       await expect(cPanel.locator("ol > li").first()).toContainText("C Player 1");
+       await expect(cPanel.locator("ol > li").first()).toContainText("FP if playing");
++      await expect(cPanel.locator("ol > li").first()).toContainText("4.10");
++      await expect(cPanel.locator("ol > li").first()).toHaveAttribute("data-board-revision", "00000000-0000-4000-8000-000000000001");
++      await expect(cPanel.locator("ol > li").first()).toHaveAttribute("data-board-run", "run-e2e");
++      const participatingRow = cPanel.locator("ol > li").filter({ has: page.getByRole("link", { name: "C Player 3", exact: true }) });
++      await expect(participatingRow).toContainText("2.40");
++      await expect(participatingRow.getByText("FP", { exact: true })).toBeVisible();
++      await expect(participatingRow.getByText("FP if playing", { exact: true })).toHaveCount(0);
++      await expect(participatingRow).toHaveAttribute("data-board-revision", "00000000-0000-4000-8000-000000000001");
+       await page.getByLabel("Compare", { exact: true }).selectOption("categories");
+       await expect(cPanel.locator("ol > li").first()).toContainText("C Player 2");
++      await expect(cPanel.locator("ol > li").first()).toContainText("SHOTS ON GOAL if playing");
+       await page.getByLabel("Compare", { exact: true }).selectOption("points");
+       await page.getByText("More Filters", { exact: true }).click();
+       await page.getByText("Scoring profile · customize points", { exact: true }).click();
++      await expect(page.locator('input[name="skater.GOALS"]')).toHaveValue("2");
+       await page.locator('input[name="skater.GOALS"]').fill("0");
+       await page.locator('input[name="skater.SHOTS_ON_GOAL"]').fill("1");
+       await page.getByRole("button", { name: "Apply scoring" }).click();
+       await expect(cPanel.locator("ol > li").first()).toContainText("C Player 2");
+       await cPanel.getByText("Projection details and evidence", { exact: true }).first().click();
+       await expect(cPanel.getByText("Participation probability unavailable. This is not an unconditional expectation.").first()).toBeVisible();
++      await expect(cPanel.getByText(/Game 1001 · Revision .* · Run run-e2e · Code fixture-code-v1/).first()).toBeVisible();
++      await expect(cPanel.getByText("0.0 / 0.0 / 8.0").first()).toBeVisible();
+       await expect(cPanel.getByText(/Season-opening prior: 20 previous-season games/).first()).toBeVisible();
+       await expect(cPanel.getByText(/Starting weights are uncalibrated/).first()).toBeVisible();
+       await page.getByLabel("Goalie order").selectOption("fantasy");
+       if (width < 1200) await page.getByRole("tab", { name: /^G 2$/ }).click();
+       const gPanel = page.locator("#start-chart-panel-G");
+       await expect(gPanel.locator("ol > li").first()).toContainText("G Player 2");
++      await expect(gPanel.locator("ol > li").first()).toContainText("21.00");
++      await expect(gPanel.locator("ol > li").first()).toHaveAttribute("data-board-revision", "00000000-0000-4000-8000-000000000001");
+       await page.getByLabel("Goalie order").selectOption("start_probability");
+       await expect(gPanel.locator("ol > li").first()).toContainText("G Player 1");
++      await expect(gPanel.locator('ol > li [class*="playerRank"]').first()).toHaveText("1");
+       expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+       await page.screenshot({ path: testInfo.outputPath("starter-board.png"), fullPage: true });
+       if (width === 1440) {
+diff --git a/web/pages/start-chart.tsx b/web/pages/start-chart.tsx
+index 5eb086b3e..fbdb23edd 100644
+--- a/web/pages/start-chart.tsx
++++ b/web/pages/start-chart.tsx
+@@ -354,7 +354,7 @@ export default function StartChartPage() {
+   const [ownershipMax, setOwnershipMax] = useState(100);
+   const [selectedGameId, setSelectedGameId] = useState<number | null>(null);
+   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+-  const [scoring, setScoring] = useState<BoardScoringRequest>(() => parseBoardScoringRequest({}));
++  const [selectedScoring, setScoring] = useState<BoardScoringRequest>(() => parseBoardScoringRequest({}));
+   const [scoringTouched, setScoringTouched] = useState(false);
+   const [scoringError, setScoringError] = useState<string | null>(null);
+   const [activePosition, setActivePosition] =
+@@ -414,12 +414,23 @@ export default function StartChartPage() {
+     fetcher,
+     { refreshInterval: 30_000, dedupingInterval: 5_000, revalidateOnFocus: true },
+   );
++  const scoring = !scoringTouched && publishedData?.scoringProfile
++    ? publishedData.scoringProfile : selectedScoring;
+   const data = useMemo(() => {
+     if (!publishedData || (!scoringTouched && publishedData.contractVersion !== 2)) return publishedData;
+     return { ...publishedData, ...scoreStarterBoardPayload({ ...publishedData,
+-      players: publishedData.players.map((player) => ({ ...player,
+-        forecast: player.forecast ?? (player.positions.includes("G") ? null : boardSkaterForecast(player, null)),
+-      })),
++      players: publishedData.players.map((player) => {
++        const forecast = player.forecast ?? (player.positions.includes("G") ? null : boardSkaterForecast(player, null));
++        const stats = forecast?.expected ?? forecast?.conditional ?? forecast?.legacy;
++        return { ...player, forecast,
++          ...(stats ? {
++            proj_goals: stats.GOALS ?? null, proj_assists: stats.ASSISTS ?? null,
++            proj_shots: stats.SHOTS_ON_GOAL ?? null, proj_pp_points: stats.PP_POINTS ?? null,
++            proj_hits: stats.HITS ?? null, proj_blocks: stats.BLOCKED_SHOTS ?? null,
++            proj_pim: stats.PENALTY_MINUTES ?? null, proj_toi_minutes: stats.TIME_ON_ICE_PER_GAME ?? null,
++          } : {}),
++        };
++      }),
+     }, scoring) } as StartChartResponse;
+   }, [publishedData, scoring, scoringTouched]);
+   const { ref: chartGraphicRef, size: chartSize } = useMeasuredChart(
+@@ -479,12 +490,6 @@ export default function StartChartPage() {
+     setPositionLimits({ C: INITIAL_POSITION_LIMIT, LW: INITIAL_POSITION_LIMIT, RW: INITIAL_POSITION_LIMIT, D: INITIAL_POSITION_LIMIT, G: INITIAL_POSITION_LIMIT });
+   }, [date, search, ownershipMax, selectedGameId, selectedTeam, scoring]);
+ 
+-  const allowedGameTeamIds = useMemo(() => {
+-    if (!selectedGameId) return null;
+-    const game = data?.games.find((candidate) => candidate.id === selectedGameId);
+-    return game ? new Set([game.homeTeamId, game.awayTeamId]) : null;
+-  }, [data?.games, selectedGameId]);
+-
+   const gamesById = useMemo(
+     () => new Map((data?.games ?? []).map((game) => [game.id, game] as const)),
+     [data?.games],
+@@ -495,15 +500,13 @@ export default function StartChartPage() {
+     return (data?.players ?? []).filter((player) => {
+       const passesSearch =
+         !normalizedSearch || player.name.toLowerCase().includes(normalizedSearch);
+-      const passesGame = allowedGameTeamIds
+-        ? player.team_id != null && allowedGameTeamIds.has(player.team_id)
+-        : true;
++      const passesGame = selectedGameId == null || player.game_id === selectedGameId;
+       const passesTeam = selectedTeam
+         ? player.team_abbrev === selectedTeam || String(player.team_id) === selectedTeam
+         : true;
+       return passesSearch && passesGame && passesTeam;
+     });
+-  }, [allowedGameTeamIds, data?.players, search, selectedTeam]);
++  }, [selectedGameId, data?.players, search, selectedTeam]);
+ 
+   const unknownOwnershipExcluded = useMemo(
+     () =>
+@@ -533,7 +536,9 @@ export default function StartChartPage() {
+       POSITION_ORDER.map((position) => [position, []]),
+     );
+     for (const player of filteredPlayers) {
+-      const score = scoring.mode === "categories" ? player.boardScore?.categoryValue : player.proj_fantasy_points;
++      const score = scoring.mode === "categories" ? player.boardScore?.categoryValue
++        : player.positions.includes("G") && (scoring.goalieSort === "start_probability" || (!scoringTouched && data?.contractVersion !== 2))
++          ? player.start_probability : player.proj_fantasy_points;
+       const rankedPlayer = typeof score === "number" && Number.isFinite(score)
+         ? player
+         : { ...player, position_ranks: {} };
+@@ -553,7 +558,7 @@ export default function StartChartPage() {
+       );
+     }
+     return result;
+-  }, [filteredPlayers, scoring.mode]);
++  }, [filteredPlayers, scoring.mode, scoring.goalieSort, scoringTouched, data?.contractVersion]);
+ 
+   useEffect(() => {
+     if (validQueryPosition || !data?.players.length) return;
+@@ -651,9 +656,10 @@ export default function StartChartPage() {
+             ? "Retains the selected team; date, position and mode reset."
+             : "Opens the destination's default view."}`,
+   }));
+-  const fantasyScoringDescription = formatStartChartFantasyScoringContract(
+-    data?.fantasyScoringContract ?? START_CHART_FANTASY_SCORING_CONTRACT,
+-  );
++  const fantasyScoringDescription = scoringTouched || data?.contractVersion === 2
++    ? (["skater", "goalie"] as const).map((population) => `${population}: ${Object.entries(scoring.profile[population])
++      .filter(([, weight]) => weight !== 0).map(([key, weight]) => `${key.replaceAll("_", " ")} × ${weight}`).join(" + ") || "all weights zero"}`).join("; ")
++    : formatStartChartFantasyScoringContract(data?.fantasyScoringContract ?? START_CHART_FANTASY_SCORING_CONTRACT);
+   const [formCount, setFormCount] = useState(10);
+   const goalForm = summarizeTeamForm(data?.recentGoals, formCount);
+   const hasGoalForm = goalForm.some((team) => team.games > 0);
+@@ -705,18 +711,18 @@ export default function StartChartPage() {
+         </div>
+         <dl className={styles.provenanceSummary}>
+           <div><dt>Model</dt><dd title={data?.sourceStatus.projection.modelVersion ?? undefined}>{data?.sourceStatus.projection.modelVersion ?? "Unavailable"}</dd></div>
+-          <div><dt>Scoring</dt><dd title={fantasyScoringDescription}>{scoringTouched ? scoring.mode === "categories" ? "Category comparison" : "Selected points weights" : data?.fantasyScoringContract?.label ?? "Unavailable"}</dd></div>
++          <div><dt>Scoring</dt><dd title={fantasyScoringDescription}>{scoringTouched || data?.contractVersion === 2 ? scoring.mode === "categories" ? "Category comparison" : scoringTouched ? "Selected points weights" : "Published points weights" : data?.fantasyScoringContract?.label ?? "Unavailable"}</dd></div>
+           <div><dt>Run</dt><dd title={data?.projectionRunId ?? undefined}>{publicationTime(data?.sourceStatus.projection.updatedAt)}</dd></div>
+           <div><dt>Input</dt><dd title={data?.sourceStatus.projection.inputVersion ?? undefined}>{data?.sourceStatus.projection.inputVersion ?? "Unverified"}</dd></div>
+         </dl>
+         <div className={`${styles.headerStatus} ${isFallback || isPartial || isDegraded ? styles.statusAmber : ""}`} role="status" aria-label="Starter Board status">
+-          <strong><span aria-hidden="true">{isFallback || isPartial || isDegraded ? "◷" : "◉"}</span> {error ? "Unavailable" : !data ? "Loading" : data.serving.mode === "no_games" ? "No scheduled games" : isFallback ? fallbackStatus : isPartial || isDegraded || data.newsStatus?.freshnessBreachedGames || data.newsStatus?.unresolvedConflicts ? "Review coverage" : data.newsStatus?.available === false ? "News unavailable" : data.newsStatus?.pendingGames ? "Refreshing" : data.newsStatus?.available && data.serving.mode === "exact" && data.requestedDate === data.resolvedDate && data.resolvedDate === easternDate() && data.sourceStatus.projection.updatedAt ? "Up to date" : "Published slate"}</strong>
++          <strong><span aria-hidden="true">{isFallback || isPartial || isDegraded ? "◷" : "◉"}</span> {error ? "Unavailable" : !data ? "Loading" : data.serving.mode === "no_games" ? "No scheduled games" : isFallback ? fallbackStatus : isPartial || isDegraded || data.newsStatus?.freshnessBreachedGames || data.newsStatus?.unresolvedConflicts ? "Review coverage" : data.newsStatus?.available === false ? "News unavailable" : data.newsStatus?.pendingGames ? "Refreshing" : "Published slate"}</strong>
+           <span>Page refresh · 30 seconds</span>
+         </div>
+         <details className={styles.mobileProvenance}>
+           <summary>Run details</summary>
+           <p>Requested {data?.requestedDate ?? date} · Resolved {data?.resolvedDate ?? "Unavailable"}</p>
+-          <p>Model {data?.sourceStatus?.projection?.modelVersion ?? "Unavailable"} · Scoring {scoringTouched ? scoring.mode : data?.fantasyScoringContract?.label ?? "Unavailable"}</p>
++          <p>Model {data?.sourceStatus?.projection?.modelVersion ?? "Unavailable"} · Scoring {scoringTouched || data?.contractVersion === 2 ? scoring.mode : data?.fantasyScoringContract?.label ?? "Unavailable"}</p>
+           <p>Run {data?.projectionRunId ?? "Unavailable"} · Input {data?.sourceStatus?.projection?.inputVersion ?? "Unverified"}</p>
+         </details>
+       </header>
+@@ -762,7 +768,7 @@ export default function StartChartPage() {
+ 
+       {data?.contractVersion === 2 ? <div className={styles.statusBanner} aria-label="Slate news freshness"
+         data-board-revisions={JSON.stringify((data.gameRevisions ?? []).map((revision) => revision.revisionId))}>
+-        <strong>{data.newsStatus?.available === false ? "News freshness unavailable" : data.newsStatus?.pendingGames ? `${data.newsStatus.pendingGames} games refreshing` : "Latest published projections"}</strong>
++        <strong>{error ? "Last successful publication · refresh failed" : data.newsStatus?.available === false ? "News freshness unavailable" : data.newsStatus?.pendingGames ? `${data.newsStatus.pendingGames} games refreshing` : "Latest published projections"}</strong>
+         <span>{data.sourceStatus.projection.updatedAt ? `Published ${data.sourceStatus.projection.updatedAt}` : "Publication pending"} · refreshes every 30 seconds</span>
+         {data.newsStatus?.freshnessBreachedGames ? <span role="status">Five-minute update target exceeded for {data.newsStatus.freshnessBreachedGames} games. Showing the last successful projections.</span> : null}
+         {data.newsStatus?.unresolvedConflicts ? <span>{data.newsStatus.unresolvedConflicts} unresolved news conflicts</span> : null}
+@@ -895,7 +901,7 @@ export default function StartChartPage() {
+             </div>
+             <details id="board-settings" className={styles.scoringEditor}>
+               <summary>Scoring profile · customize points</summary>
+-              <form onSubmit={(event) => {
++              <form key={JSON.stringify(scoring.profile)} onSubmit={(event) => {
+                 event.preventDefault();
+                 const values = new FormData(event.currentTarget);
+                 const profile = Object.fromEntries((["skater", "goalie"] as const).map((population) => [population,
+@@ -906,9 +912,9 @@ export default function StartChartPage() {
+               }}>
+                 {(["skater", "goalie"] as const).map((population) => <fieldset key={population}>
+                   <legend>{population === "skater" ? "Skaters" : "Goalies"}</legend>
+-                  {Object.entries(DEFAULT_BOARD_SCORING[population]).map(([key, weight]) => <label key={key}>
++                  {Object.keys(DEFAULT_BOARD_SCORING[population]).map((key) => <label key={key}>
+                     {key.replaceAll("_", " ")}
+-                    <input name={`${population}.${key}`} type="number" step="any" min={-100} max={100} required defaultValue={weight} />
++                    <input name={`${population}.${key}`} type="number" step="any" min={-100} max={100} required defaultValue={scoring.profile[population][key] ?? 0} />
+                   </label>)}
+                 </fieldset>)}
+                 <button type="submit" className={styles.loadMore}>Apply scoring</button>
+@@ -1030,12 +1036,17 @@ export default function StartChartPage() {
+                 </div>
+               ) : fullList.length === 0 ? (
+                 <div className={styles.emptyState}>
+-                  No players match this position and filter set.
++                  {data?.serving.mode === "no_games" ? "No scheduled games."
++                    : !data?.players.some((player) => player.positions.includes(position))
++                      ? `No ${position} projections available for this slate.`
++                      : "No players match this position and filter set."}
+                 </div>
+               ) : (
+                 <ol className={styles.cardList}>
+                   {visibleList.map((player) => {
+                     const game = gamesById.get(player.game_id);
++                    const revisions = data?.gameRevisions?.filter((revision) => revision.gameId === player.game_id) ?? [];
++                    const revision = revisions.length === 1 ? revisions[0] : null;
+                     const opponentGoalie = game
+                       ? player.team_id === game.homeTeamId
+                         ? (game.awayGoalies[0] ?? null)
+@@ -1067,7 +1078,8 @@ export default function StartChartPage() {
+                         )
+                       : null;
+                     return (
+-                      <li className={styles.card} key={`${position}-${player.row_key}`}>
++                      <li className={styles.card} key={`${position}-${player.row_key}`}
++                        data-board-revision={revision?.revisionId} data-board-run={revision?.runId}>
+                         <div className={styles.playerIdentity}>
+                           <span className={styles.playerRank}>{player.position_ranks[position] ?? "—"}</span>
+                           <BoardImage sources={buildPlayerHeadshotSources(`https://assets.nhle.com/mugs/nhl/latest/${player.player_id}.png`, player.player_id)} label={`${player.name} headshot`} className={styles.playerHeadshot} />
+@@ -1083,7 +1095,7 @@ export default function StartChartPage() {
+                           </Link>
+                           <div className={styles.primaryProjection}>
+                             <strong>{formatNumber(scoring.mode === "categories" ? player.boardScore?.categoryValue : player.proj_fantasy_points, 2)}</strong>
+-                            <span>{scoring.mode === "categories" ? scoring.category?.replaceAll("_", " ") ?? "Category" : player.forecast?.conditioning === "conditional_playing" ? "FP if playing" : position === "G" ? "Expected FP" : "FP"}</span>
++                            <span>{scoring.mode === "categories" ? `${scoring.category?.replaceAll("_", " ") ?? "Category"}${player.forecast?.conditioning === "conditional_playing" ? " if playing" : ""}` : player.forecast?.conditioning === "conditional_playing" ? "FP if playing" : position === "G" ? "Expected FP" : "FP"}</span>
+                           </div>
+                           <div className={styles.meta}>
+                             <span>
+@@ -1110,7 +1122,7 @@ export default function StartChartPage() {
+                           {position !== "G" ? <span>{player.games_remaining_week == null ? "Games —" : `${player.games_remaining_week} GM`}</span> : null}
+                           {position === "G" ? <span title="Goalie start probability">{formatPercent(player.start_probability)} {player.confirmed_status ? "confirmed" : player.start_probability == null ? "start unknown" : "projected"}</span>
+                             : player.context?.unit_tier ? <span className={styles.positionBadge} title={player.context.pp_share != null ? `PP share ${formatPercent(player.context.pp_share)}` : undefined}>{player.context.unit_tier}</span> : null}
+-                          {player.forecast?.participationProbability === 0 ? <span>Confirmed out</span> : null}
++                          {position !== "G" && player.forecast?.participationProbability === 0 && player.forecast.probabilityStatus === "confirmed_evidence" ? <span>Confirmed out</span> : null}
+                         </div>
+                         <StarterBoardPlayerDetails
+                           className={styles.playerDetails}
+@@ -1118,6 +1130,13 @@ export default function StartChartPage() {
+                           positions={player.positions}
+                           date={data?.resolvedDate ?? data?.dateUsed ?? date}
+                         >
++                        {data?.contractVersion === 2 ? <p>
++                          {revision ? `Game ${player.game_id} · Revision ${revision.revisionId} · Run ${revision.runId} · Code ${revision.codeVersion ?? "unavailable"} · Published ${publicationTime(revision.publishedAt)}`
++                            : "Game revision lineage unavailable."}
++                        </p> : null}
++                        {player.boardScore?.missingCategories.length ? <p>
++                          Unavailable scoring inputs: {player.boardScore.missingCategories.join(", ").replaceAll("_", " ")}.
++                        </p> : null}
+                         <div className={styles.statsContainer}>
+                           {position === "G" ? (
+                             <>
+@@ -1152,7 +1171,7 @@ export default function StartChartPage() {
+ 
+                         {player.forecast ? <div className={styles.uncertainty}>
+                           {position === "G" ? `Start ${formatPercent(player.forecast.participationProbability)}`
+-                            : player.forecast.participationProbability === 0 ? "Confirmed out"
++                            : player.forecast.participationProbability === 0 && player.forecast.probabilityStatus === "confirmed_evidence" ? "Confirmed out"
+                             : player.forecast.participationProbability == null ? "Participation unknown" : `Plays ${formatPercent(player.forecast.participationProbability)}`}
+                           {player.boardScore?.change != null ? ` · ${player.boardScore.change >= 0 ? "+" : ""}${formatNumber(player.boardScore.change, 2)} since prior revision` : ""}
+                         </div> : null}
+@@ -1404,6 +1423,11 @@ export default function StartChartPage() {
+           <summary>Source coverage and provenance</summary>
+           <p>Requested {data.requestedDate} · Resolved {data.resolvedDate} · Model {data.sourceStatus.projection.modelVersion ?? "Unavailable"} · Run {data.projectionRunId ?? "Unavailable"} · Published {publicationTime(data.sourceStatus.projection.updatedAt)}</p>
+           <p>Polling every 30 seconds does not establish publication freshness. Pending or failed model-run status is unavailable unless supplied by a run receipt.</p>
++          <p>{data.coverage.renderedRows}/{data.coverage.projectionRows} projection rows · {data.coverage.slateGames} slate games · {data.gameRevisions?.length ?? 0} published game revisions.</p>
++          {data.gameRevisions?.map((revision) => <p key={`${revision.gameId}:${revision.revisionId}`}>
++            Game {revision.gameId} · Revision {revision.revisionId} · Run {revision.runId} · Code {revision.codeVersion ?? "unavailable"}
++            {" · "}Input cutoff {revision.inputCutoff ?? "unavailable"} · Calculated {revision.calculatedAt ?? "unavailable"} · Published {revision.publishedAt}
++          </p>)}
+           <dl>
+             <SourceRow
+               label="FORGE projections"

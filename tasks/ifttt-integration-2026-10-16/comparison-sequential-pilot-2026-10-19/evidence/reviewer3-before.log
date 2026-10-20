@@ -1,0 +1,44 @@
+test_clearance_seals_extraction_request_caps_before_loading_key (test_independent.IndependentBinding.test_clearance_seals_extraction_request_caps_before_loading_key) ... FAIL
+test_escaped_json_secret_echo_cannot_enter_durable_artifacts (test_independent.IndependentBinding.test_escaped_json_secret_echo_cannot_enter_durable_artifacts) ... FAIL
+test_request_id_secret_echo_cannot_enter_durable_artifacts (test_independent.IndependentBinding.test_request_id_secret_echo_cannot_enter_durable_artifacts) ... FAIL
+
+======================================================================
+FAIL: test_clearance_seals_extraction_request_caps_before_loading_key (test_independent.IndependentBinding.test_clearance_seals_extraction_request_caps_before_loading_key)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/ifttt-live-binding-review-20261019-_77mj427/workspace/tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/test_independent.py", line 45, in test_clearance_seals_extraction_request_caps_before_loading_key
+    loaded.assert_not_called()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/mock.py", line 938, in assert_not_called
+    raise AssertionError(msg)
+AssertionError: Expected 'mock' to not have been called. Called 1 times.
+Calls: [call()].
+
+======================================================================
+FAIL: test_escaped_json_secret_echo_cannot_enter_durable_artifacts (test_independent.IndependentBinding.test_escaped_json_secret_echo_cannot_enter_durable_artifacts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/ifttt-live-binding-review-20261019-_77mj427/workspace/tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/test_independent.py", line 35, in test_escaped_json_secret_echo_cannot_enter_durable_artifacts
+    def test_escaped_json_secret_echo_cannot_enter_durable_artifacts(self):self.secret_case('escaped_body')
+                                                                           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/private/tmp/ifttt-live-binding-review-20261019-_77mj427/workspace/tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/test_independent.py", line 34, in secret_case
+    self.assertFalse(token in attempt or token in stored,'Decoded reply/header must not persist a supplied credential')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false : Decoded reply/header must not persist a supplied credential
+
+======================================================================
+FAIL: test_request_id_secret_echo_cannot_enter_durable_artifacts (test_independent.IndependentBinding.test_request_id_secret_echo_cannot_enter_durable_artifacts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/ifttt-live-binding-review-20261019-_77mj427/workspace/tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/test_independent.py", line 36, in test_request_id_secret_echo_cannot_enter_durable_artifacts
+    def test_request_id_secret_echo_cannot_enter_durable_artifacts(self):self.secret_case('header')
+                                                                         ~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/private/tmp/ifttt-live-binding-review-20261019-_77mj427/workspace/tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/test_independent.py", line 34, in secret_case
+    self.assertFalse(token in attempt or token in stored,'Decoded reply/header must not persist a supplied credential')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false : Decoded reply/header must not persist a supplied credential
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.014s
+
+FAILED (failures=3)

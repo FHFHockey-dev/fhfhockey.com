@@ -122,7 +122,13 @@ export const ROLLING_ROW_SELECT_CLAUSE =
       family: "weighted_rate",
       canonicalField: "blocks_per_60_all",
       legacyField: "blocks_per_60_avg_all"
-    })
+    }),
+    // Window exposure and three-season event/TOI totals for hit and block shrinkage.
+    "toi_seconds_total_last5",
+    "hits_per_60_hits_3ya",
+    "hits_per_60_toi_seconds_3ya",
+    "blocks_per_60_blocks_3ya",
+    "blocks_per_60_toi_seconds_3ya"
   ].join(",");
 
 function normalizeWgoToiToSeconds(value: number | null | undefined): number | null {
@@ -167,7 +173,7 @@ export class SkaterRollingReadIncompleteError extends Error {
 /** Return the complete bounded history or reject; never expose a capped/partial prefix. */
 export async function fetchRollingRows(
   playerIds: number[],
-  strengthState: "ev" | "pp",
+  strengthState: "ev" | "pp" | "all",
   cutoffDate: string,
   db = supabase
 ): Promise<RollingRow[]> {
@@ -179,7 +185,7 @@ export async function fetchRollingRows(
     && new Date(value).toISOString().slice(0, 10) === value;
   const ids = [...new Set(playerIds)].sort((a, b) => a - b);
   if (ids.length > 500 || ids.some(id => !Number.isSafeInteger(id) || id <= 0)
-    || (strengthState !== "ev" && strengthState !== "pp") || !validDate(cutoffDate)) {
+    || !["ev", "pp", "all"].includes(strengthState) || !validDate(cutoffDate)) {
     throw new SkaterRollingReadIncompleteError("invalid_scope");
   }
   const oneYearAgo = new Date(
@@ -284,7 +290,8 @@ export async function fetchRollingRows(
       }
       if (supportSeen.has(key(support))) throw new SkaterRollingReadIncompleteError("duplicate_row");
       supportSeen.add(key(support));
-      if (Object.prototype.hasOwnProperty.call(support.support_payload, "alignedCountSupport")) {
+      // Aligned NST count support exists only for split-strength rows.
+      if (strengthState !== "all" && Object.prototype.hasOwnProperty.call(support.support_payload, "alignedCountSupport")) {
         matched.aligned_count_support = readAlignedCountSupport(support.support_payload.alignedCountSupport, {
           playerId: matched.player_id, strengthState,
           anchor: { gameId: matched.game_id, gameDate: matched.game_date, seasonId: matched.season },

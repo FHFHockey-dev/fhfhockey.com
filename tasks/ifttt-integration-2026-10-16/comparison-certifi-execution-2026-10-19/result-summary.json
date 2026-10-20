@@ -1,0 +1,53 @@
+{
+  "status": "completed provider extraction; stopped on output validation",
+  "verdict": "inconclusive_incomplete_single_development_family",
+  "providerCalls": {
+    "responses": 1,
+    "decisions": 0
+  },
+  "providerMetadata": {
+    "httpStatus": 200,
+    "requestId": "req_e88237c0754740fda3e3859709a2bb2a",
+    "responseId": "resp_09185bc38b898135016ad685fc0b3887d19ba9fc19ab28f9b0",
+    "reportedUsage": {
+      "input_tokens": 877,
+      "output_tokens": 248,
+      "total_tokens": 1125,
+      "input_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0
+      },
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    }
+  },
+  "latencyMs": 3971,
+  "outputClaims": 2,
+  "rejectedEvidenceSpans": 2,
+  "sourceSpanRepairsApplied": false,
+  "provisionalRawSemanticFieldMatches": 20,
+  "provisionalRawSemanticFieldsGraded": 20,
+  "strictAdmittedClaims": 0,
+  "nativeEligible": false,
+  "conservativeNewChargeCeilingUsd": "0.000256988",
+  "originalUnknownReservationUsd": "0.2543948",
+  "priorTlsRetryReconciledChargeUsd": "0",
+  "aggregateExposureUsd": "0.254651788",
+  "unreservedUsd": "0.265348212",
+  "totalCapUsd": "0.52",
+  "aggregateInvoiceSpend": "unknown because first attempt remains unresolved; new charge is a published-usage ceiling",
+  "originalRowsAndReconciliationUnchanged": true,
+  "originalDatabaseBytesUnchanged": true,
+  "executedInputsMatched": 21,
+  "offlineCasesPassed": 59,
+  "aggregateLedgerSha256": "2da989c4526fdc0316af78242c9a0fc3d766607e363d88863d65aca7d3a627ce",
+  "aggregateSnapshot": "aggregate-budget-after.sqlite",
+  "activeAggregateLedger": "tasks/ifttt-integration-2026-10-16/comparison-retry-execution-2026-10-19/aggregate-budget.sqlite",
+  "afterValidationStopProviderCalls": 0,
+  "automaticRetries": 0,
+  "newFamilies": 0,
+  "extraPaidGrading": 0,
+  "newIndependentReview": false,
+  "nextBoundedTask": "Offline source-span/subject-binding handling against the retained response; no further provider request authorized by this attempt"
+}

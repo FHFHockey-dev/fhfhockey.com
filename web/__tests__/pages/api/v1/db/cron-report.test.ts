@@ -5,6 +5,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 const {
   cronJobReportSelectMock,
   cronJobAuditSelectMock,
+  cronJobAuditHistorySelectMock,
+  adminAdmissionMock,
   cronJobAuditInsertMock,
   resendSendMock,
   readFileMock,
@@ -13,6 +15,8 @@ const {
 } = vi.hoisted(() => ({
   cronJobReportSelectMock: vi.fn(),
   cronJobAuditSelectMock: vi.fn(),
+  cronJobAuditHistorySelectMock: vi.fn(),
+  adminAdmissionMock: vi.fn(() => true),
   cronJobAuditInsertMock: vi.fn(),
   resendSendMock: vi.fn(),
   readFileMock: vi.fn(),
@@ -25,15 +29,20 @@ function reportQuery(mock: ReturnType<typeof vi.fn>, args: unknown[], cron = fal
   let from = 0;
   let to = 499;
   const bounds: Record<string, string> = {};
+  let statuses: string[] | null = null;
   const query = {
     gte: (field: string, value: string) => { bounds.since = value; bounds.field = field; return query; },
     lte: (_field: string, value: string) => { bounds.until = value; return query; },
+    in: (_field: string, values: string[]) => { statuses = values; return query; },
     order: vi.fn(() => query),
     range: (start: number, end: number) => { from = start; to = end; return query; },
     abortSignal: async () => {
-      const response = await mock(...args);
+      const response = statuses
+        ? await cronJobAuditHistorySelectMock(...args, { ...bounds, statuses, from, to })
+        : await mock(...args);
       const rows = (response.data ?? []).map((row: any, index: number) => cron ? { runid: index + 1, ...row } : row)
-        .filter((row: any) => row[bounds.field] >= bounds.since && row[bounds.field] <= bounds.until);
+        .filter((row: any) => row[bounds.field] >= bounds.since && row[bounds.field] <= bounds.until &&
+          (!statuses || statuses.includes(row.status)));
       return { ...response, data: rows.slice(from, to + 1), count: response.count === undefined ? rows.length : response.count };
     },
   };
@@ -89,7 +98,8 @@ vi.mock("lib/cron/nhlOffSeason", () => ({
 }));
 
 vi.mock("utils/adminOnlyMiddleware", () => ({
-  default: (handler: unknown) => handler,
+  default: (handler: any) => (req: any, res: any) => adminAdmissionMock()
+    ? handler(req, res) : res.status(401).json({ success: false, message: "Unauthorized." }),
 }));
 
 import handler from "../../../../../pages/api/v1/db/cron-report";
@@ -114,6 +124,79 @@ function createMockRes() {
 }
 
 describe("/api/v1/db/cron-report", () => {
+  it("rejects admission before audit, telemetry, or email work", async () => {
+    adminAdmissionMock.mockReturnValue(false);
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(res.statusCode).toBe(401);
+    expect(cronJobAuditInsertMock).not.toHaveBeenCalled();
+    expect(cronJobReportSelectMock).not.toHaveBeenCalled();
+    expect(cronJobAuditSelectMock).not.toHaveBeenCalled();
+    expect(cronJobAuditHistorySelectMock).not.toHaveBeenCalled();
+    expect(resendSendMock).not.toHaveBeenCalled();
+  });
+
+  it("reads paginated success history beyond 24h without borrowing another query or method", async () => {
+    readFileMock.mockResolvedValue(`SELECT cron.schedule('h3','0 12 * * *',$$select net.http_post(url:='https://fhfhockey.com/api/v1/game-predictions/forecast?horizonDays=3&mode=daily');$$);`);
+    cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{
+      job_name: "h3", run_time: "2026-03-20T12:01:00.000Z", status: "failure",
+      details: { method: "POST", url: "/api/v1/game-predictions/forecast?horizonDays=3&mode=daily", error: "failed" },
+    }], error: null });
+    const otherSuccesses = Array.from({ length: 1000 }, (_, index) => ({
+      job_name: `other-${index}`, run_time: "2026-03-18T12:00:00.000Z", status: "success",
+      details: { method: index % 2 ? "POST" : "GET", url: index % 2
+        ? "/api/v1/game-predictions/forecast?horizonDays=1&mode=daily"
+        : "/api/v1/game-predictions/forecast?horizonDays=3&mode=daily" },
+    }));
+    cronJobAuditHistorySelectMock.mockResolvedValue({ data: [...otherSuccesses, {
+      job_name: "h3-old-name", run_time: "2026-03-17T12:00:00.000Z", status: "success",
+      details: { method: "POST", url: "/api/v1/game-predictions/forecast?mode=daily&horizonDays=3" },
+    }], error: null });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    const row = cronAuditEmailMock.mock.calls.at(-1)?.[0].audits.find((entry: any) => entry.jobName === "h3");
+    expect(row.lastKnownSuccessDisplay).toContain("2026-03-17T12:00:00.000Z");
+    expect(res.body.sources.successHistory).toMatchObject({ complete: true, pages: 2, verificationPages: 2, expectedCount: 1001 });
+    expect(cronJobAuditHistorySelectMock).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({
+      since: "2026-02-18T12:10:00.000Z", until: "2026-03-19T12:10:00.000Z", from: 1000, to: 1999,
+    }));
+    expect(res.body.counts).toMatchObject({ auditRuns: 1, auditFailures: 1, auditSuccesses: 0 });
+  });
+
+  it("retains observed successes with incomplete labels and never claims complete global history", async () => {
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{
+      job_name: "run-forge-projection-v2", run_time: "2026-03-20T12:00:00.000Z", status: "failure",
+      details: { method: "POST", url: "/api/v1/db/run-projection-v2", error: "failed" },
+    }], error: null });
+    const rows = Array.from({ length: 9000 }, (_, index) => ({
+      job_name: `older-${index}`, run_time: "2026-03-18T12:00:00.000Z", status: "success",
+      details: { method: "POST", url: "/api/v1/db/run-projection-v2" },
+    }));
+    cronJobAuditHistorySelectMock.mockResolvedValue({ data: rows, error: null });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(res.body.sources.successHistory).toMatchObject({ complete: false, pages: 8, expectedCount: 9000 });
+    expect(res.body.successHistory.complete).toBe(false);
+    const props = cronAuditEmailMock.mock.calls.at(-1)?.[0];
+    expect(props.audits[0].lastKnownSuccessDisplay).toContain("latest unverified; success-history lookup incomplete");
+    expect(props.totalsComplete).toBe(true);
+    expect(res.body.counts.auditRuns).toBe(1);
+  });
+
+  it("keeps missing historical evidence unknown when the lookup is unavailable", async () => {
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{
+      job_name: "run-forge-projection-v2", run_time: "2026-03-20T12:00:00.000Z", status: "failure",
+      details: { method: "POST", url: "/api/v1/db/run-projection-v2", error: "failed" },
+    }], error: null });
+    cronJobAuditHistorySelectMock.mockResolvedValue({ data: null, error: { message: "statement timeout" } });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(res.body.successHistory).toMatchObject({ complete: false, error: "statement timeout" });
+    expect(cronAuditEmailMock.mock.calls.at(-1)?.[0].audits[0].lastKnownSuccessDisplay).toBeNull();
+    expect(res.body.totalsComplete).toBe(true);
+  });
+
   it("keeps historical static bottleneck context out of a fresh successful execution explanation", async () => {
     readFileMock.mockResolvedValue("SELECT cron.schedule('update-season-stats-current-season','0 12 * * *',$$select net.http_get(url:='https://fhfhockey.com/api/v1/db/update-season-stats');$$);");
     cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
@@ -134,6 +217,8 @@ describe("/api/v1/db/cron-report", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    adminAdmissionMock.mockReturnValue(true);
+    cronJobAuditHistorySelectMock.mockResolvedValue({ data: [], error: null });
     vi.stubGlobal("AbortSignal", { timeout: vi.fn(() => new AbortController().signal) });
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-03-20T12:10:00.000Z"));

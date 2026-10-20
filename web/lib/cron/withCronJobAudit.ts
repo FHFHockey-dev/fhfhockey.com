@@ -231,6 +231,9 @@ export function withCronJobAudit(
     jobName?: string;
     includeFinalAuditReceipt?: boolean;
     recordRowMetrics?: boolean;
+    // Limit persisted response data to safe primitive summary fields. The API
+    // response and outcome inference still use the complete handler result.
+    responsePreviewKeys?: readonly string[];
   }
 ): (req: any, res: any) => Promise<void> {
   return async (req: NextApiRequest, res: NextApiResponse) => {
@@ -328,7 +331,11 @@ export function withCronJobAudit(
 
     let finalAuditStatus: "persisted" | "failed" = "persisted";
 
-    const responsePreview = safeJson(capturedBody, 4000);
+    const auditBody = opts?.responsePreviewKeys == null
+      ? capturedBody
+      : outcomeFields(capturedBody, opts.responsePreviewKeys.filter((key) =>
+          Object.prototype.hasOwnProperty.call(capturedBody ?? {}, key)));
+    const responsePreview = safeJson(auditBody, 4000);
 
     const row: CronAuditRow = {
       job_name: jobName,
@@ -354,11 +361,13 @@ export function withCronJobAudit(
           : null,
         error:
           thrown != null
-            ? ((thrown as any)?.message ?? safeJson(thrown, 2000))
+            ? opts?.responsePreviewKeys != null
+              ? "Handler failed."
+              : ((thrown as any)?.message ?? safeJson(thrown, 2000))
             : null,
         response: responsePreview,
         responseTruncated: responsePreview?.endsWith("…") ?? false,
-        responseOutcome: responseOutcome(capturedBody),
+        responseOutcome: responseOutcome(auditBody),
       },
     };
 

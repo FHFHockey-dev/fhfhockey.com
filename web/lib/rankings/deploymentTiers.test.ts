@@ -1,13 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { buildContextualRankingsSurfacesMock, rangeCalls, supabaseFromMock } = vi.hoisted(() => {
+const { buildContextualRankingsSurfacesMock, rangeCalls, supabaseFromMock, pagingFixture } = vi.hoisted(() => {
   type QueryState = {
     table: string;
+    from?: number;
+    to?: number;
     selectFields: string | null;
     filters: Record<string, unknown>;
     orders: Array<{ key: string; ascending: boolean }>;
   };
   const rangeCalls: QueryState[] = [];
+  const pagingFixture = { enabled: false, omitPlayerOrder: false };
+
 
   function rollingSpecialRows(strength: unknown) {
     const base = {
@@ -46,6 +50,24 @@ const { buildContextualRankingsSurfacesMock, rangeCalls, supabaseFromMock } = vi
   }
 
   function resolveQuery(state: QueryState) {
+    if (pagingFixture.enabled && state.table === "rolling_player_game_metrics" && state.selectFields !== "game_date") {
+      const rows = state.filters.strength_state === "pp"
+        ? Array.from({ length: 1001 }, (_, index) => ({
+          ...rollingSpecialRows("pp")[0], player_id: index + 1,
+          team_id: state.filters.team_id ?? 1,
+        }))
+        : [];
+      const uniquelyOrdered = !pagingFixture.omitPlayerOrder && state.orders.some((order) => order.key === "player_id");
+      if (!uniquelyOrdered && state.from) rows.reverse();
+      return { data: rows.slice(state.from ?? 0, (state.to ?? rows.length - 1) + 1), error: null };
+    }
+    if (pagingFixture.enabled && state.table === "players") {
+      const ids = state.filters.id as number[];
+      return { data: ids.slice(state.from ?? 0, (state.to ?? ids.length - 1) + 1).map((id) => ({ id, fullName: `Special ${id}`, position: "C", team_id: 1, image_url: null })), error: null };
+    }
+    if (state.table === "games" && pagingFixture.enabled) {
+      return { data: [{ date: "2026-04-16" }], error: null };
+    }
     if (state.table === "games") {
       return { data: [{ date: "2026-04-16" }, { date: "2026-04-15" }], error: null };
     }
@@ -110,7 +132,9 @@ const { buildContextualRankingsSurfacesMock, rangeCalls, supabaseFromMock } = vi
       limit() {
         return Promise.resolve(resolveQuery(state));
       },
-      range() {
+      range(from: number, to: number) {
+        state.from = from;
+        state.to = to;
         rangeCalls.push(state);
         return query;
       },
@@ -127,6 +151,7 @@ const { buildContextualRankingsSurfacesMock, rangeCalls, supabaseFromMock } = vi
   return {
     buildContextualRankingsSurfacesMock: vi.fn(),
     rangeCalls,
+    pagingFixture,
     supabaseFromMock: vi.fn((table: string) => createQuery(table)),
   };
 });
@@ -211,6 +236,8 @@ describe("deploymentTiers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     rangeCalls.length = 0;
+    pagingFixture.enabled = false;
+    pagingFixture.omitPlayerOrder = false;
     buildContextualRankingsSurfacesMock.mockImplementation(
       async (request: ContextualRankingsRequest, metricKeys: string[]) => {
         const surfaces = new Map();
@@ -346,6 +373,25 @@ describe("deploymentTiers", () => {
       name: "Player 1",
       percentile: 90,
     });
+  });
+
+  it("retains every special-team player across tied snapshot pages", async () => {
+    pagingFixture.enabled = true;
+    const request = (team: string) => parseDeploymentTiersRequest({
+      entity: "skaters", season: "20252026", window: "season", position: "all",
+      strength: "5v5", min_gp: "1", min_toi: "300", metrics: "goals_per_60", team,
+    });
+    // Distinct team keys isolate both runs from the snapshot cache.
+    const response = await buildDeploymentTiersSurface(request("901"));
+    const pp1 = response.sections.find((section) => section.key === "power_play")?.buckets.find((bucket) => bucket.key === "PP1");
+    expect(pp1?.playerCount).toBe(1001);
+    expect(pp1?.sourceState).toBe("available");
+    const ppPages = rangeCalls.filter((call) => call.table === "rolling_player_game_metrics" && call.selectFields !== "game_date" && call.filters.strength_state === "pp");
+    expect(ppPages.map((call) => [call.from, call.to])).toEqual([[0, 999], [1000, 1999]]);
+
+    pagingFixture.omitPlayerOrder = true;
+    const unstable = await buildDeploymentTiersSurface(request("902"));
+    expect(unstable.sections.find((section) => section.key === "power_play")?.buckets.find((bucket) => bucket.key === "PP1")?.playerCount).toBe(1000);
   });
 
   it("pages exact-snapshot rolling rows by the unique player key", async () => {

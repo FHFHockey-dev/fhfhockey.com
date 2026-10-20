@@ -1,0 +1,143 @@
+{
+  "record_id": "0001-owner-S01-S03",
+  "packet_sha256": "55d2c5b3b9b3b09910928c2e801d26f6305d12316d82efeefbbfe046e5c131dd",
+  "raw_annotation_file": "raw-human.txt",
+  "raw_annotation_sha256": "ceae8188fde8b7c50286c14c93c05b646839f20b367b56956230e2fde03adf6e",
+  "source_human_message_id": "Sentinel_dd16c76325ec8191a7075ab20d95ceec",
+  "raw_human_separate_from_normalization": true,
+  "normalization_status": "interpretation of owner annotations only; not replacement labels, independent verification, scoring, or adjudicated source truth",
+  "claims": [
+    {
+      "assertion_authority": "owner supplied; not independent verification",
+      "canonical_player_id": null,
+      "canonical_team_id": null,
+      "evidence_quotation_provided": false,
+      "independent_real_world_verification": "ungraded",
+      "publication_readiness": "ungraded",
+      "separate_actionability_grade": "not explicitly supplied",
+      "sample_id": "S01",
+      "subject_as_human_supplied": "Ilya Sorokin",
+      "team_as_human_supplied": "New York Islanders",
+      "normalized_human_interpretation": {
+        "role_category": "owner_confirmed_starter"
+      },
+      "human_certainty_text": "100% certainty",
+      "certainty_interpretation": "Owner confirmed-starter category only; not calibrated probability.",
+      "calibrated_probability": null
+    },
+    {
+      "assertion_authority": "owner supplied; not independent verification",
+      "canonical_player_id": null,
+      "canonical_team_id": null,
+      "evidence_quotation_provided": false,
+      "independent_real_world_verification": "ungraded",
+      "publication_readiness": "ungraded",
+      "separate_actionability_grade": "not explicitly supplied",
+      "sample_id": "S01",
+      "subject_as_human_supplied": "Anthony Stolarz",
+      "team_as_human_supplied": "Toronto Maple Leafs",
+      "normalized_human_interpretation": {
+        "role_category": "owner_confirmed_starter"
+      },
+      "human_certainty_text": "100% certainty",
+      "certainty_interpretation": "Owner confirmed-starter category only; not calibrated probability.",
+      "calibrated_probability": null
+    },
+    {
+      "assertion_authority": "owner supplied; not independent verification",
+      "canonical_player_id": null,
+      "canonical_team_id": null,
+      "evidence_quotation_provided": false,
+      "independent_real_world_verification": "ungraded",
+      "publication_readiness": "ungraded",
+      "separate_actionability_grade": "not explicitly supplied",
+      "sample_id": "S02",
+      "subject_as_human_supplied": "Jake Sanderson",
+      "team_as_human_supplied": null,
+      "normalized_human_interpretation": {
+        "health": "still injured",
+        "practice_attendance": "did not join teammates"
+      },
+      "pending_inference": {
+        "human_text": "unlikely to return in the next 1-2 games",
+        "status": "pending clarification",
+        "explicit_source_fact": false,
+        "expected_model_output": null,
+        "analyst_note_policy": null,
+        "pending_question": "Should the owner inference be expected model output or a separate analyst note? Await the owner answer for this field only.",
+        "source_context_to_preserve": "The source also says the organization is hopeful he will play this weekend."
+      }
+    },
+    {
+      "assertion_authority": "owner supplied; not independent verification",
+      "canonical_player_id": null,
+      "canonical_team_id": null,
+      "evidence_quotation_provided": false,
+      "independent_real_world_verification": "ungraded",
+      "publication_readiness": "ungraded",
+      "separate_actionability_grade": "not explicitly supplied",
+      "sample_id": "S02",
+      "subject_as_human_supplied": "Andre Burakovsky",
+      "team_as_human_supplied": null,
+      "normalized_human_interpretation": {
+        "health": "still injured",
+        "return_proximity": "not close to returning"
+      }
+    },
+    {
+      "assertion_authority": "owner supplied; not independent verification",
+      "canonical_player_id": null,
+      "canonical_team_id": null,
+      "evidence_quotation_provided": false,
+      "independent_real_world_verification": "ungraded",
+      "publication_readiness": "ungraded",
+      "separate_actionability_grade": "not explicitly supplied",
+      "sample_id": "S02",
+      "subject_as_human_supplied": "Warren Foegele",
+      "team_as_human_supplied": null,
+      "normalized_human_interpretation": {
+        "availability": "questionable; potential to play",
+        "role_observation": "has been skating on the first line"
+      }
+    },
+    {
+      "assertion_authority": "owner supplied; not independent verification",
+      "canonical_player_id": null,
+      "canonical_team_id": null,
+      "evidence_quotation_provided": false,
+      "independent_real_world_verification": "ungraded",
+      "publication_readiness": "ungraded",
+      "separate_actionability_grade": "not explicitly supplied",
+      "sample_id": "S03",
+      "subject_as_human_supplied": "Leevi Meriläinen",
+      "team_as_human_supplied": "Vancouver",
+      "normalized_human_interpretation": {
+        "role_category": "owner_confirmed_starter",
+        "opponent_as_human_supplied": "devils"
+      },
+      "human_certainty_text": "100% certainty",
+      "certainty_interpretation": "Owner confirmed-starter category only; not calibrated probability.",
+      "calibrated_probability": null,
+      "normalization_note": "Raw wording Conformed is preserved verbatim; its normalized category reflects the owner confirmed-starter usage, without editing the raw annotation."
+    }
+  ],
+  "sample_status": {
+    "S01": "human annotation received; quotation and separate truth/publication grades not supplied",
+    "S02": "human annotation received; Sanderson inference field pending clarification only",
+    "S03": "human annotation received; quotation and separate truth/publication grades not supplied",
+    "S04": "not yet graded",
+    "S05": "not yet graded",
+    "S06": "not yet graded",
+    "S07": "not yet graded",
+    "S08": "not yet graded",
+    "S09": "not yet graded",
+    "S10": "not yet graded"
+  },
+  "restrictions": [
+    "Do not turn 100% into a calibrated probability.",
+    "Do not treat supplied names, teams or identity assertions as independent verification.",
+    "Do not infer publication readiness or independent real-world verification.",
+    "Do not treat Sanderson next 1–2-game inference as explicit source fact or settled expected output.",
+    "Do not reveal model outputs while grading continues."
+  ]
+}

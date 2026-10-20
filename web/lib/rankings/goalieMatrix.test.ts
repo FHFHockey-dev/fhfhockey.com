@@ -1,15 +1,33 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { supabaseFromMock, rangeCalls } = vi.hoisted(() => {
+const { supabaseFromMock, rangeCalls, pagingFixture } = vi.hoisted(() => {
   type QueryState = {
     table: string;
+    from?: number;
+    to?: number;
     orders: Array<{ key: string; ascending: boolean }>;
   };
   const rangeCalls: QueryState[] = [];
+  const pagingFixture = {
+    rows: {} as Record<string, Record<string, any>[]>,
+    omitOrder: null as string | null,
+  };
+
+  function resolvePage(state: QueryState) {
+    const orders = state.orders.filter((order) => order.key !== pagingFixture.omitOrder);
+    const data = [...(pagingFixture.rows[state.table] ?? [])].sort((left, right) => {
+      for (const { key, ascending } of orders) {
+        if (left[key] === right[key]) continue;
+        return (left[key] < right[key] ? -1 : 1) * (ascending ? 1 : -1);
+      }
+      // A legal backend plan change reverses unresolved ties on later pages.
+      return state.from ? right.fixtureIndex - left.fixtureIndex : left.fixtureIndex - right.fixtureIndex;
+    });
+    return { data: state.from == null ? data : data.slice(state.from, state.to! + 1), error: null };
+  }
 
   function createQuery(table: string) {
     const state: QueryState = { table, orders: [] };
-    const result = { data: [] as unknown[], error: null };
     const query: Record<string, unknown> = {};
     for (const method of ["select", "eq", "gte", "lte", "in", "limit"]) {
       query[method] = () => query;
@@ -18,7 +36,9 @@ const { supabaseFromMock, rangeCalls } = vi.hoisted(() => {
       state.orders.push({ key, ascending: options?.ascending ?? true });
       return query;
     };
-    query.range = () => {
+    query.range = (from: number, to: number) => {
+      state.from = from;
+      state.to = to;
       rangeCalls.push(state);
       return query;
     };
@@ -28,9 +48,9 @@ const { supabaseFromMock, rangeCalls } = vi.hoisted(() => {
         error: null,
       });
     query.then = (
-      resolve: (value: typeof result) => unknown,
+      resolve: (value: ReturnType<typeof resolvePage>) => unknown,
       reject?: (reason: unknown) => unknown,
-    ) => Promise.resolve(result).then(resolve, reject);
+    ) => Promise.resolve(resolvePage(state)).then(resolve, reject);
     return query;
   }
 
@@ -38,6 +58,7 @@ const { supabaseFromMock, rangeCalls } = vi.hoisted(() => {
 
   return {
     rangeCalls,
+    pagingFixture,
     supabaseFromMock: vi.fn((table: string) => createQuery(table)),
   };
 });
@@ -460,7 +481,29 @@ describe("goalieMatrix", () => {
   describe("paged source reads", () => {
     beforeEach(() => {
       rangeCalls.length = 0;
+      pagingFixture.rows = {};
+      pagingFixture.omitOrder = null;
       clearGoalieMatrixSurfaceCachesForTests();
+    });
+
+    it("retains every goalie across a tied-date 1,000-row boundary", async () => {
+      pagingFixture.rows.goalie_stats_unified = Array.from({ length: 1001 }, (_, index) => ({
+        fixtureIndex: index, player_id: index + 1, player_name: `Goalie ${index + 1}`,
+        date: "2026-04-16", season_id: 20252026, team_id: 1,
+        games_played: 1, games_started: 1, saves: 29, goals_against: 1,
+        shots_against: 30, time_on_ice: 3600,
+      }));
+      const request = parseGoalieMatrixRequest({ season: "20252026", window: "season" });
+      const response = await buildGoalieMatrixSurface(request);
+      expect(response.meta.totalRankedRows).toBe(1001);
+      expect(response.rows.find((row) => row.entity.id === 1)?.sample.gamesPlayed).toBe(1);
+      expect(rangeCalls.filter((call) => call.table === "goalie_stats_unified").map((call) => [call.from, call.to])).toEqual([[0, 999], [1000, 1999]]);
+
+      pagingFixture.omitOrder = "player_id";
+      clearGoalieMatrixSurfaceCachesForTests();
+      const unstable = await buildGoalieMatrixSurface(request);
+      expect(unstable.meta.totalRankedRows).toBe(1000);
+      expect(unstable.rows.find((row) => row.entity.id === 1)?.sample.gamesPlayed).toBe(2);
     });
 
     it("orders every paged source read by a unique key", async () => {

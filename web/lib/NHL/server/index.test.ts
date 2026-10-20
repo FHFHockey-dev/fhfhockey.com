@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   get: vi.fn(),
   restGet: vi.fn(),
   updatePlayer: vi.fn(),
+  serverFrom: vi.fn(),
 }));
 
 vi.mock("lib/supabase/public-client", () => ({
@@ -16,7 +17,7 @@ vi.mock("lib/supabase/public-client", () => ({
 }));
 
 vi.mock("lib/supabase/server", () => ({
-  default: {},
+  default: { from: mocks.serverFrom },
 }));
 
 vi.mock("lib/NHL/base", () => ({
@@ -31,6 +32,7 @@ vi.mock("pages/api/v1/db/update-player/[playerId]", () => ({
 import {
   getCurrentSeason,
   getLatestStartedSeasonForDate,
+  getPlayer,
   getSchedule,
   getSeasonById,
   getTeams,
@@ -156,6 +158,89 @@ function createTeamsQuery(args: {
   });
   return query;
 }
+
+describe("getPlayer", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function createPlayerQuery(data: unknown) {
+    const query = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      order: vi.fn(),
+      limit: vi.fn(),
+      maybeSingle: vi.fn(),
+      throwOnError: vi.fn().mockResolvedValue({ data }),
+    };
+    query.select.mockReturnValue(query);
+    query.eq.mockReturnValue(query);
+    query.order.mockReturnValue(query);
+    query.limit.mockReturnValue(query);
+    query.maybeSingle.mockReturnValue(query);
+    mocks.from.mockReturnValue(query);
+    return query;
+  }
+
+  function expectNoHydration() {
+    expect(mocks.get).not.toHaveBeenCalled();
+    expect(mocks.restGet).not.toHaveBeenCalled();
+    expect(mocks.updatePlayer).not.toHaveBeenCalled();
+    expect(mocks.serverFrom).not.toHaveBeenCalled();
+  }
+
+  it("rejects repeated cache misses without provider hydration or privileged writes", async () => {
+    const query = createPlayerQuery(null);
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await expect(getPlayer(123)).rejects.toThrow("Unable to find the player. 123");
+    }
+
+    expect(mocks.from).toHaveBeenCalledTimes(3);
+    expect(mocks.from).toHaveBeenCalledWith("rosters");
+    expect(query.throwOnError).toHaveBeenCalledTimes(3);
+    expectNoHydration();
+  });
+
+  it("preserves the current-roster lookup and player response on a cache hit", async () => {
+    const player = { id: 123, fullName: "Fixture Player", birthDate: "2000-01-01" };
+    const query = createPlayerQuery({
+      teamId: 1,
+      sweaterNumber: 9,
+      players: player,
+      teams: { name: "Fixture Team", abbreviation: "NJD" },
+    });
+
+    await expect(getPlayer(123)).resolves.toEqual({
+      ...player,
+      teamId: 1,
+      sweaterNumber: 9,
+      teamName: "Fixture Team",
+      teamAbbreviation: "NJD",
+      age: expect.any(Number),
+    });
+    expect(mocks.from).toHaveBeenCalledOnce();
+    expect(mocks.from).toHaveBeenCalledWith("rosters");
+    expect(query.select).toHaveBeenCalledWith(
+      "teamId, sweaterNumber, players(*), teams(name,abbreviation)",
+    );
+    expect(query.eq.mock.calls).toEqual([["playerId", 123], ["is_current", true]]);
+    expect(query.order).toHaveBeenCalledWith("seasonId", { ascending: false });
+    expect(query.limit).toHaveBeenCalledWith(1);
+    expect(query.maybeSingle).toHaveBeenCalledOnce();
+    expect(query.throwOnError).toHaveBeenCalledOnce();
+    expectNoHydration();
+  });
+
+  it("propagates database read failures without attempting hydration", async () => {
+    const query = createPlayerQuery(null);
+    const readError = new Error("Fixture read failure");
+    query.throwOnError.mockRejectedValue(readError);
+
+    await expect(getPlayer(123)).rejects.toBe(readError);
+    expectNoHydration();
+  });
+});
 
 describe("getTeams", () => {
   beforeEach(() => {

@@ -1,0 +1,6544 @@
+{
+  "arm_mapping": {
+    "extraction": "Arm-A",
+    "extraction_decisions": "Arm-B",
+    "rules_decisions": "Arm-C",
+    "rules": "Arm-D"
+  },
+  "proposal_mapping": {
+    "S01-P001": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "c1",
+        "record_id": "S01",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "c1",
+        "record_id": "S01",
+        "index": 0
+      }
+    ],
+    "S01-P002": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "c2",
+        "record_id": "S01",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "c2",
+        "record_id": "S01",
+        "index": 1
+      }
+    ],
+    "S01-P003": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "c1",
+        "record_id": "S01",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "c1",
+        "record_id": "S01",
+        "index": 0
+      },
+      {
+        "arm": "extraction",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c1",
+        "record_id": "S01",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c1",
+        "record_id": "S01",
+        "index": 0
+      }
+    ],
+    "S01-P004": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "c2",
+        "record_id": "S01",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "c2",
+        "record_id": "S01",
+        "index": 1
+      },
+      {
+        "arm": "extraction",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c2",
+        "record_id": "S01",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c2",
+        "record_id": "S01",
+        "index": 1
+      }
+    ],
+    "S02-P001": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "1",
+        "record_id": "S02",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "1",
+        "record_id": "S02",
+        "index": 0
+      }
+    ],
+    "S02-P002": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "2",
+        "record_id": "S02",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "2",
+        "record_id": "S02",
+        "index": 1
+      }
+    ],
+    "S02-P003": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "3",
+        "record_id": "S02",
+        "index": 2
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "3",
+        "record_id": "S02",
+        "index": 2
+      }
+    ],
+    "S02-P004": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "4",
+        "record_id": "S02",
+        "index": 3
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "4",
+        "record_id": "S02",
+        "index": 3
+      }
+    ],
+    "S02-P005": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "5",
+        "record_id": "S02",
+        "index": 4
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "5",
+        "record_id": "S02",
+        "index": 4
+      }
+    ],
+    "S02-P006": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "1",
+        "record_id": "S02",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "1",
+        "record_id": "S02",
+        "index": 0
+      },
+      {
+        "arm": "extraction",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "1",
+        "record_id": "S02",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "1",
+        "record_id": "S02",
+        "index": 0
+      }
+    ],
+    "S02-P007": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "2",
+        "record_id": "S02",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "2",
+        "record_id": "S02",
+        "index": 1
+      },
+      {
+        "arm": "extraction",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "2",
+        "record_id": "S02",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "2",
+        "record_id": "S02",
+        "index": 1
+      }
+    ],
+    "S02-P008": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "3",
+        "record_id": "S02",
+        "index": 2
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "3",
+        "record_id": "S02",
+        "index": 2
+      },
+      {
+        "arm": "extraction",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "3",
+        "record_id": "S02",
+        "index": 2
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "3",
+        "record_id": "S02",
+        "index": 2
+      }
+    ],
+    "S02-P009": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "4",
+        "record_id": "S02",
+        "index": 3
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "4",
+        "record_id": "S02",
+        "index": 3
+      },
+      {
+        "arm": "extraction",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "4",
+        "record_id": "S02",
+        "index": 3
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "4",
+        "record_id": "S02",
+        "index": 3
+      }
+    ],
+    "S02-P010": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "5",
+        "record_id": "S02",
+        "index": 4
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "5",
+        "record_id": "S02",
+        "index": 4
+      },
+      {
+        "arm": "extraction",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "5",
+        "record_id": "S02",
+        "index": 4
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "5",
+        "record_id": "S02",
+        "index": 4
+      }
+    ],
+    "S03-P001": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2108996072647573721-0",
+        "record_id": "S03",
+        "index": 0
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2108996072647573721-0",
+        "record_id": "S03",
+        "index": 0
+      }
+    ],
+    "S03-P002": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "S03-1",
+        "record_id": "S03",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "S03-1",
+        "record_id": "S03",
+        "index": 0
+      }
+    ],
+    "S03-P003": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "S03-1",
+        "record_id": "S03",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "S03-1",
+        "record_id": "S03",
+        "index": 0
+      },
+      {
+        "arm": "extraction",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "S03-1",
+        "record_id": "S03",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "S03-1",
+        "record_id": "S03",
+        "index": 0
+      }
+    ],
+    "S04-P001": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "c1",
+        "record_id": "S04",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "c1",
+        "record_id": "S04",
+        "index": 0
+      }
+    ],
+    "S04-P002": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "c2",
+        "record_id": "S04",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "c2",
+        "record_id": "S04",
+        "index": 1
+      }
+    ],
+    "S04-P003": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "c3",
+        "record_id": "S04",
+        "index": 2
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "c3",
+        "record_id": "S04",
+        "index": 2
+      }
+    ],
+    "S04-P004": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "c4",
+        "record_id": "S04",
+        "index": 3
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "c4",
+        "record_id": "S04",
+        "index": 3
+      }
+    ],
+    "S04-P005": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "c5",
+        "record_id": "S04",
+        "index": 4
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "c5",
+        "record_id": "S04",
+        "index": 4
+      }
+    ],
+    "S04-P006": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "c6",
+        "record_id": "S04",
+        "index": 5
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "c6",
+        "record_id": "S04",
+        "index": 5
+      }
+    ],
+    "S04-P007": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "c7",
+        "record_id": "S04",
+        "index": 6
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "c7",
+        "record_id": "S04",
+        "index": 6
+      }
+    ],
+    "S04-P008": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "c8",
+        "record_id": "S04",
+        "index": 7
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "c8",
+        "record_id": "S04",
+        "index": 7
+      }
+    ],
+    "S04-P009": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "c9",
+        "record_id": "S04",
+        "index": 8
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "c9",
+        "record_id": "S04",
+        "index": 8
+      }
+    ],
+    "S04-P010": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "c10",
+        "record_id": "S04",
+        "index": 9
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "c10",
+        "record_id": "S04",
+        "index": 9
+      }
+    ],
+    "S04-P011": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "c11",
+        "record_id": "S04",
+        "index": 10
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "c11",
+        "record_id": "S04",
+        "index": 10
+      }
+    ],
+    "S04-P012": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "c1",
+        "record_id": "S04",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "c1",
+        "record_id": "S04",
+        "index": 0
+      },
+      {
+        "arm": "extraction",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c1",
+        "record_id": "S04",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c1",
+        "record_id": "S04",
+        "index": 0
+      }
+    ],
+    "S04-P013": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "c2",
+        "record_id": "S04",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "c2",
+        "record_id": "S04",
+        "index": 1
+      },
+      {
+        "arm": "extraction",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c2",
+        "record_id": "S04",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c2",
+        "record_id": "S04",
+        "index": 1
+      }
+    ],
+    "S04-P014": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "c3",
+        "record_id": "S04",
+        "index": 2
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "c3",
+        "record_id": "S04",
+        "index": 2
+      },
+      {
+        "arm": "extraction",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c3",
+        "record_id": "S04",
+        "index": 2
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c3",
+        "record_id": "S04",
+        "index": 2
+      }
+    ],
+    "S04-P015": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "c4",
+        "record_id": "S04",
+        "index": 3
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "c4",
+        "record_id": "S04",
+        "index": 3
+      },
+      {
+        "arm": "extraction",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c4",
+        "record_id": "S04",
+        "index": 3
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c4",
+        "record_id": "S04",
+        "index": 3
+      }
+    ],
+    "S04-P016": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "c5",
+        "record_id": "S04",
+        "index": 4
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "c5",
+        "record_id": "S04",
+        "index": 4
+      },
+      {
+        "arm": "extraction",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c5",
+        "record_id": "S04",
+        "index": 4
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c5",
+        "record_id": "S04",
+        "index": 4
+      }
+    ],
+    "S04-P017": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "c6",
+        "record_id": "S04",
+        "index": 5
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "c6",
+        "record_id": "S04",
+        "index": 5
+      },
+      {
+        "arm": "extraction",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c6",
+        "record_id": "S04",
+        "index": 5
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c6",
+        "record_id": "S04",
+        "index": 5
+      }
+    ],
+    "S04-P018": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "c7",
+        "record_id": "S04",
+        "index": 6
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "c7",
+        "record_id": "S04",
+        "index": 6
+      },
+      {
+        "arm": "extraction",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c7",
+        "record_id": "S04",
+        "index": 6
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c7",
+        "record_id": "S04",
+        "index": 6
+      }
+    ],
+    "S04-P019": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "c8",
+        "record_id": "S04",
+        "index": 7
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "c8",
+        "record_id": "S04",
+        "index": 7
+      },
+      {
+        "arm": "extraction",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c8",
+        "record_id": "S04",
+        "index": 7
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c8",
+        "record_id": "S04",
+        "index": 7
+      }
+    ],
+    "S04-P020": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "c9",
+        "record_id": "S04",
+        "index": 8
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "c9",
+        "record_id": "S04",
+        "index": 8
+      },
+      {
+        "arm": "extraction",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c9",
+        "record_id": "S04",
+        "index": 8
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c9",
+        "record_id": "S04",
+        "index": 8
+      }
+    ],
+    "S04-P021": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "c10",
+        "record_id": "S04",
+        "index": 9
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "c10",
+        "record_id": "S04",
+        "index": 9
+      },
+      {
+        "arm": "extraction",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c10",
+        "record_id": "S04",
+        "index": 9
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c10",
+        "record_id": "S04",
+        "index": 9
+      }
+    ],
+    "S04-P022": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "c11",
+        "record_id": "S04",
+        "index": 10
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "c11",
+        "record_id": "S04",
+        "index": 10
+      },
+      {
+        "arm": "extraction",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c11",
+        "record_id": "S04",
+        "index": 10
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "frozen_unique_quote_v1",
+        "original_id": "c11",
+        "record_id": "S04",
+        "index": 10
+      }
+    ],
+    "S05-P001": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2108958442983686184-0",
+        "record_id": "S05A",
+        "index": 0
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2108958442983686184-0",
+        "record_id": "S05A",
+        "index": 0
+      }
+    ],
+    "S05-P002": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2108958442983686184-1",
+        "record_id": "S05A",
+        "index": 1
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2108958442983686184-1",
+        "record_id": "S05A",
+        "index": 1
+      }
+    ],
+    "S05-P003": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2108957630253113386-0",
+        "record_id": "S05B",
+        "index": 0
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2108957630253113386-0",
+        "record_id": "S05B",
+        "index": 0
+      }
+    ],
+    "S05-P004": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "S05A-1",
+        "record_id": "S05A",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "S05A-1",
+        "record_id": "S05A",
+        "index": 0
+      }
+    ],
+    "S05-P005": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "S05A-2",
+        "record_id": "S05A",
+        "index": 1
+      },
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "S05A-2",
+        "record_id": "S05A",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "S05A-2",
+        "record_id": "S05A",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "S05A-2",
+        "record_id": "S05A",
+        "index": 1
+      }
+    ],
+    "S05-P006": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "S05A-3",
+        "record_id": "S05A",
+        "index": 2
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "S05A-3",
+        "record_id": "S05A",
+        "index": 2
+      }
+    ],
+    "S05-P007": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "S05A-4",
+        "record_id": "S05A",
+        "index": 3
+      },
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "S05A-4",
+        "record_id": "S05A",
+        "index": 3
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "S05A-4",
+        "record_id": "S05A",
+        "index": 3
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "S05A-4",
+        "record_id": "S05A",
+        "index": 3
+      }
+    ],
+    "S05-P008": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "S05B-1",
+        "record_id": "S05B",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "S05B-1",
+        "record_id": "S05B",
+        "index": 0
+      }
+    ],
+    "S05-P009": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "S05B-2",
+        "record_id": "S05B",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "S05B-2",
+        "record_id": "S05B",
+        "index": 1
+      }
+    ],
+    "S05-P010": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "S05A-1",
+        "record_id": "S05A",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "S05A-1",
+        "record_id": "S05A",
+        "index": 0
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2_saved_response",
+        "original_id": "S05A-1",
+        "record_id": "S05A",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2_saved_response",
+        "original_id": "S05A-1",
+        "record_id": "S05A",
+        "index": 0
+      }
+    ],
+    "S05-P011": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "S05A-3",
+        "record_id": "S05A",
+        "index": 2
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "S05A-3",
+        "record_id": "S05A",
+        "index": 2
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2_saved_response",
+        "original_id": "S05A-3",
+        "record_id": "S05A",
+        "index": 2
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2_saved_response",
+        "original_id": "S05A-3",
+        "record_id": "S05A",
+        "index": 2
+      }
+    ],
+    "S05-P012": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "S05B-1",
+        "record_id": "S05B",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "S05B-1",
+        "record_id": "S05B",
+        "index": 0
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2_saved_response",
+        "original_id": "S05B-1",
+        "record_id": "S05B",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2_saved_response",
+        "original_id": "S05B-1",
+        "record_id": "S05B",
+        "index": 0
+      }
+    ],
+    "S05-P013": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "S05B-2",
+        "record_id": "S05B",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "S05B-2",
+        "record_id": "S05B",
+        "index": 1
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2_saved_response",
+        "original_id": "S05B-2",
+        "record_id": "S05B",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2_saved_response",
+        "original_id": "S05B-2",
+        "record_id": "S05B",
+        "index": 1
+      }
+    ],
+    "S06-P001": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "c1",
+        "record_id": "S06",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "c1",
+        "record_id": "S06",
+        "index": 0
+      }
+    ],
+    "S06-P002": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "c1",
+        "record_id": "S06",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "c1",
+        "record_id": "S06",
+        "index": 0
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "c1",
+        "record_id": "S06",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "c1",
+        "record_id": "S06",
+        "index": 0
+      }
+    ],
+    "S07-P001": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2108961406007570942-0",
+        "record_id": "S07",
+        "index": 0
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2108961406007570942-0",
+        "record_id": "S07",
+        "index": 0
+      }
+    ],
+    "S07-P002": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2108961406007570942-1",
+        "record_id": "S07",
+        "index": 1
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2108961406007570942-1",
+        "record_id": "S07",
+        "index": 1
+      }
+    ],
+    "S07-P003": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "S07-1",
+        "record_id": "S07",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "S07-1",
+        "record_id": "S07",
+        "index": 0
+      }
+    ],
+    "S07-P004": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "S07-2",
+        "record_id": "S07",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "S07-2",
+        "record_id": "S07",
+        "index": 1
+      }
+    ],
+    "S07-P005": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "S07-1",
+        "record_id": "S07",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "S07-1",
+        "record_id": "S07",
+        "index": 0
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "S07-1",
+        "record_id": "S07",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "S07-1",
+        "record_id": "S07",
+        "index": 0
+      }
+    ],
+    "S07-P006": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "S07-2",
+        "record_id": "S07",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "S07-2",
+        "record_id": "S07",
+        "index": 1
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "S07-2",
+        "record_id": "S07",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "S07-2",
+        "record_id": "S07",
+        "index": 1
+      }
+    ],
+    "S08-P001": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-0",
+        "record_id": "S08",
+        "index": 0
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-0",
+        "record_id": "S08",
+        "index": 0
+      }
+    ],
+    "S08-P002": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-1",
+        "record_id": "S08",
+        "index": 1
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-1",
+        "record_id": "S08",
+        "index": 1
+      }
+    ],
+    "S08-P003": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-2",
+        "record_id": "S08",
+        "index": 2
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-2",
+        "record_id": "S08",
+        "index": 2
+      }
+    ],
+    "S08-P004": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-3",
+        "record_id": "S08",
+        "index": 3
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-3",
+        "record_id": "S08",
+        "index": 3
+      }
+    ],
+    "S08-P005": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-4",
+        "record_id": "S08",
+        "index": 4
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-4",
+        "record_id": "S08",
+        "index": 4
+      }
+    ],
+    "S08-P006": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-5",
+        "record_id": "S08",
+        "index": 5
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-5",
+        "record_id": "S08",
+        "index": 5
+      }
+    ],
+    "S08-P007": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-6",
+        "record_id": "S08",
+        "index": 6
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-6",
+        "record_id": "S08",
+        "index": 6
+      }
+    ],
+    "S08-P008": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-7",
+        "record_id": "S08",
+        "index": 7
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-7",
+        "record_id": "S08",
+        "index": 7
+      }
+    ],
+    "S08-P009": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-8",
+        "record_id": "S08",
+        "index": 8
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-8",
+        "record_id": "S08",
+        "index": 8
+      }
+    ],
+    "S08-P010": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-9",
+        "record_id": "S08",
+        "index": 9
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-9",
+        "record_id": "S08",
+        "index": 9
+      }
+    ],
+    "S08-P011": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-10",
+        "record_id": "S08",
+        "index": 10
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-10",
+        "record_id": "S08",
+        "index": 10
+      }
+    ],
+    "S08-P012": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-11",
+        "record_id": "S08",
+        "index": 11
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-11",
+        "record_id": "S08",
+        "index": 11
+      }
+    ],
+    "S08-P013": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-12",
+        "record_id": "S08",
+        "index": 12
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-12",
+        "record_id": "S08",
+        "index": 12
+      }
+    ],
+    "S08-P014": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-13",
+        "record_id": "S08",
+        "index": 13
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-13",
+        "record_id": "S08",
+        "index": 13
+      }
+    ],
+    "S08-P015": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-14",
+        "record_id": "S08",
+        "index": 14
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-14",
+        "record_id": "S08",
+        "index": 14
+      }
+    ],
+    "S08-P016": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-15",
+        "record_id": "S08",
+        "index": 15
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-15",
+        "record_id": "S08",
+        "index": 15
+      }
+    ],
+    "S08-P017": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-16",
+        "record_id": "S08",
+        "index": 16
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-16",
+        "record_id": "S08",
+        "index": 16
+      }
+    ],
+    "S08-P018": [
+      {
+        "arm": "rules",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-17",
+        "record_id": "S08",
+        "index": 17
+      },
+      {
+        "arm": "rules_decisions",
+        "variant": "raw",
+        "original_id": "rules-x:2109051291372777568-17",
+        "record_id": "S08",
+        "index": 17
+      }
+    ],
+    "S08-P019": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "1",
+        "record_id": "S08",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "1",
+        "record_id": "S08",
+        "index": 0
+      }
+    ],
+    "S08-P020": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "2",
+        "record_id": "S08",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "2",
+        "record_id": "S08",
+        "index": 1
+      }
+    ],
+    "S08-P021": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "3",
+        "record_id": "S08",
+        "index": 2
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "3",
+        "record_id": "S08",
+        "index": 2
+      }
+    ],
+    "S08-P022": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "4",
+        "record_id": "S08",
+        "index": 3
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "4",
+        "record_id": "S08",
+        "index": 3
+      }
+    ],
+    "S08-P023": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "5",
+        "record_id": "S08",
+        "index": 4
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "5",
+        "record_id": "S08",
+        "index": 4
+      }
+    ],
+    "S08-P024": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "6",
+        "record_id": "S08",
+        "index": 5
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "6",
+        "record_id": "S08",
+        "index": 5
+      }
+    ],
+    "S08-P025": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "7",
+        "record_id": "S08",
+        "index": 6
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "7",
+        "record_id": "S08",
+        "index": 6
+      }
+    ],
+    "S08-P026": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "8",
+        "record_id": "S08",
+        "index": 7
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "8",
+        "record_id": "S08",
+        "index": 7
+      }
+    ],
+    "S08-P027": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "9",
+        "record_id": "S08",
+        "index": 8
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "9",
+        "record_id": "S08",
+        "index": 8
+      }
+    ],
+    "S08-P028": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "10",
+        "record_id": "S08",
+        "index": 9
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "10",
+        "record_id": "S08",
+        "index": 9
+      }
+    ],
+    "S08-P029": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "11",
+        "record_id": "S08",
+        "index": 10
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "11",
+        "record_id": "S08",
+        "index": 10
+      }
+    ],
+    "S08-P030": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "12",
+        "record_id": "S08",
+        "index": 11
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "12",
+        "record_id": "S08",
+        "index": 11
+      }
+    ],
+    "S08-P031": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "13",
+        "record_id": "S08",
+        "index": 12
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "13",
+        "record_id": "S08",
+        "index": 12
+      }
+    ],
+    "S08-P032": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "14",
+        "record_id": "S08",
+        "index": 13
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "14",
+        "record_id": "S08",
+        "index": 13
+      }
+    ],
+    "S08-P033": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "15",
+        "record_id": "S08",
+        "index": 14
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "15",
+        "record_id": "S08",
+        "index": 14
+      }
+    ],
+    "S08-P034": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "16",
+        "record_id": "S08",
+        "index": 15
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "16",
+        "record_id": "S08",
+        "index": 15
+      }
+    ],
+    "S08-P035": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "17",
+        "record_id": "S08",
+        "index": 16
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "17",
+        "record_id": "S08",
+        "index": 16
+      }
+    ],
+    "S08-P036": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "18",
+        "record_id": "S08",
+        "index": 17
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "18",
+        "record_id": "S08",
+        "index": 17
+      }
+    ],
+    "S08-P037": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "19",
+        "record_id": "S08",
+        "index": 18
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "19",
+        "record_id": "S08",
+        "index": 18
+      }
+    ],
+    "S08-P038": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "1",
+        "record_id": "S08",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "1",
+        "record_id": "S08",
+        "index": 0
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "1",
+        "record_id": "S08",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "1",
+        "record_id": "S08",
+        "index": 0
+      }
+    ],
+    "S08-P039": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "2",
+        "record_id": "S08",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "2",
+        "record_id": "S08",
+        "index": 1
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "2",
+        "record_id": "S08",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "2",
+        "record_id": "S08",
+        "index": 1
+      }
+    ],
+    "S08-P040": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "3",
+        "record_id": "S08",
+        "index": 2
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "3",
+        "record_id": "S08",
+        "index": 2
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "3",
+        "record_id": "S08",
+        "index": 2
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "3",
+        "record_id": "S08",
+        "index": 2
+      }
+    ],
+    "S08-P041": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "4",
+        "record_id": "S08",
+        "index": 3
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "4",
+        "record_id": "S08",
+        "index": 3
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "4",
+        "record_id": "S08",
+        "index": 3
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "4",
+        "record_id": "S08",
+        "index": 3
+      }
+    ],
+    "S08-P042": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "5",
+        "record_id": "S08",
+        "index": 4
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "5",
+        "record_id": "S08",
+        "index": 4
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "5",
+        "record_id": "S08",
+        "index": 4
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "5",
+        "record_id": "S08",
+        "index": 4
+      }
+    ],
+    "S08-P043": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "6",
+        "record_id": "S08",
+        "index": 5
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "6",
+        "record_id": "S08",
+        "index": 5
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "6",
+        "record_id": "S08",
+        "index": 5
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "6",
+        "record_id": "S08",
+        "index": 5
+      }
+    ],
+    "S08-P044": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "7",
+        "record_id": "S08",
+        "index": 6
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "7",
+        "record_id": "S08",
+        "index": 6
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "7",
+        "record_id": "S08",
+        "index": 6
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "7",
+        "record_id": "S08",
+        "index": 6
+      }
+    ],
+    "S08-P045": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "8",
+        "record_id": "S08",
+        "index": 7
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "8",
+        "record_id": "S08",
+        "index": 7
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "8",
+        "record_id": "S08",
+        "index": 7
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "8",
+        "record_id": "S08",
+        "index": 7
+      }
+    ],
+    "S08-P046": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "9",
+        "record_id": "S08",
+        "index": 8
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "9",
+        "record_id": "S08",
+        "index": 8
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "9",
+        "record_id": "S08",
+        "index": 8
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "9",
+        "record_id": "S08",
+        "index": 8
+      }
+    ],
+    "S08-P047": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "10",
+        "record_id": "S08",
+        "index": 9
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "10",
+        "record_id": "S08",
+        "index": 9
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "10",
+        "record_id": "S08",
+        "index": 9
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "10",
+        "record_id": "S08",
+        "index": 9
+      }
+    ],
+    "S08-P048": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "11",
+        "record_id": "S08",
+        "index": 10
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "11",
+        "record_id": "S08",
+        "index": 10
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "11",
+        "record_id": "S08",
+        "index": 10
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "11",
+        "record_id": "S08",
+        "index": 10
+      }
+    ],
+    "S08-P049": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "12",
+        "record_id": "S08",
+        "index": 11
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "12",
+        "record_id": "S08",
+        "index": 11
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "12",
+        "record_id": "S08",
+        "index": 11
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "12",
+        "record_id": "S08",
+        "index": 11
+      }
+    ],
+    "S08-P050": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "13",
+        "record_id": "S08",
+        "index": 12
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "13",
+        "record_id": "S08",
+        "index": 12
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "13",
+        "record_id": "S08",
+        "index": 12
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "13",
+        "record_id": "S08",
+        "index": 12
+      }
+    ],
+    "S08-P051": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "14",
+        "record_id": "S08",
+        "index": 13
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "14",
+        "record_id": "S08",
+        "index": 13
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "14",
+        "record_id": "S08",
+        "index": 13
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "14",
+        "record_id": "S08",
+        "index": 13
+      }
+    ],
+    "S08-P052": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "15",
+        "record_id": "S08",
+        "index": 14
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "15",
+        "record_id": "S08",
+        "index": 14
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "15",
+        "record_id": "S08",
+        "index": 14
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "15",
+        "record_id": "S08",
+        "index": 14
+      }
+    ],
+    "S08-P053": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "16",
+        "record_id": "S08",
+        "index": 15
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "16",
+        "record_id": "S08",
+        "index": 15
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "16",
+        "record_id": "S08",
+        "index": 15
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "16",
+        "record_id": "S08",
+        "index": 15
+      }
+    ],
+    "S08-P054": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "17",
+        "record_id": "S08",
+        "index": 16
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "17",
+        "record_id": "S08",
+        "index": 16
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "17",
+        "record_id": "S08",
+        "index": 16
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "17",
+        "record_id": "S08",
+        "index": 16
+      }
+    ],
+    "S08-P055": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "18",
+        "record_id": "S08",
+        "index": 17
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "18",
+        "record_id": "S08",
+        "index": 17
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "18",
+        "record_id": "S08",
+        "index": 17
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "18",
+        "record_id": "S08",
+        "index": 17
+      }
+    ],
+    "S08-P056": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "19",
+        "record_id": "S08",
+        "index": 18
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "19",
+        "record_id": "S08",
+        "index": 18
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "19",
+        "record_id": "S08",
+        "index": 18
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "19",
+        "record_id": "S08",
+        "index": 18
+      }
+    ],
+    "S09-P001": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "c1",
+        "record_id": "S09",
+        "index": 0
+      },
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "c1",
+        "record_id": "S09",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "c1",
+        "record_id": "S09",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "c1",
+        "record_id": "S09",
+        "index": 0
+      },
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "c1",
+        "record_id": "S09",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2",
+        "original_id": "c1",
+        "record_id": "S09",
+        "index": 0
+      }
+    ],
+    "S10-P001": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "S10A-1",
+        "record_id": "S10A",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "S10A-1",
+        "record_id": "S10A",
+        "index": 0
+      }
+    ],
+    "S10-P002": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "S10B-1",
+        "record_id": "S10B",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "S10B-1",
+        "record_id": "S10B",
+        "index": 0
+      }
+    ],
+    "S10-P003": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": "S10B-2",
+        "record_id": "S10B",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": "S10B-2",
+        "record_id": "S10B",
+        "index": 1
+      }
+    ],
+    "S10-P004": [
+      {
+        "arm": "extraction",
+        "variant": "raw",
+        "original_id": null,
+        "record_id": "S10B",
+        "index": 0
+      },
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": null,
+        "record_id": "S10B",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "raw",
+        "original_id": null,
+        "record_id": "S10B",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": null,
+        "record_id": "S10B",
+        "index": 0
+      }
+    ],
+    "S10-P005": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "S10A-1",
+        "record_id": "S10A",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "S10A-1",
+        "record_id": "S10A",
+        "index": 0
+      },
+      {
+        "arm": "extraction",
+        "variant": "unique_quote_revision_v3_saved_response",
+        "original_id": "S10A-1",
+        "record_id": "S10A",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "unique_quote_revision_v3_saved_response",
+        "original_id": "S10A-1",
+        "record_id": "S10A",
+        "index": 0
+      }
+    ],
+    "S10-P006": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "S10B-1",
+        "record_id": "S10B",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "S10B-1",
+        "record_id": "S10B",
+        "index": 0
+      },
+      {
+        "arm": "extraction",
+        "variant": "unique_quote_revision_v3_saved_response",
+        "original_id": "S10B-1",
+        "record_id": "S10B",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "unique_quote_revision_v3_saved_response",
+        "original_id": "S10B-1",
+        "record_id": "S10B",
+        "index": 0
+      }
+    ],
+    "S10-P007": [
+      {
+        "arm": "extraction",
+        "variant": "aligned",
+        "original_id": "S10B-2",
+        "record_id": "S10B",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "aligned",
+        "original_id": "S10B-2",
+        "record_id": "S10B",
+        "index": 1
+      },
+      {
+        "arm": "extraction",
+        "variant": "unique_quote_revision_v3_saved_response",
+        "original_id": "S10B-2",
+        "record_id": "S10B",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "unique_quote_revision_v3_saved_response",
+        "original_id": "S10B-2",
+        "record_id": "S10B",
+        "index": 1
+      }
+    ],
+    "S05-P014": [
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2_saved_response",
+        "original_id": "S05A-2",
+        "record_id": "S05A",
+        "index": 1
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2_saved_response",
+        "original_id": "S05A-2",
+        "record_id": "S05A",
+        "index": 1
+      }
+    ],
+    "S05-P015": [
+      {
+        "arm": "extraction",
+        "variant": "subject_adjacent_parenthesis_v2_saved_response",
+        "original_id": "S05A-4",
+        "record_id": "S05A",
+        "index": 3
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "subject_adjacent_parenthesis_v2_saved_response",
+        "original_id": "S05A-4",
+        "record_id": "S05A",
+        "index": 3
+      }
+    ],
+    "S10-P008": [
+      {
+        "arm": "extraction",
+        "variant": "unique_quote_revision_v3_saved_response",
+        "original_id": null,
+        "record_id": "S10B",
+        "index": 0
+      },
+      {
+        "arm": "extraction_decisions",
+        "variant": "unique_quote_revision_v3_saved_response",
+        "original_id": null,
+        "record_id": "S10B",
+        "index": 0
+      }
+    ]
+  },
+  "raw_outputs": {
+    "rules": {
+      "S01": {
+        "records": [
+          {
+            "record_id": "S01",
+            "material": false,
+            "claims": [],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      },
+      "S02": {
+        "records": [
+          {
+            "record_id": "S02",
+            "material": false,
+            "claims": [],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      },
+      "S03": {
+        "records": [
+          {
+            "record_id": "S03",
+            "material": true,
+            "claims": [
+              {
+                "id": "rules-x:2108996072647573721-0",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2108996072647573721",
+                "source_author": "@ThomasDrance",
+                "player": "Leevi Meriläinen",
+                "event": "starter",
+                "value": "starter",
+                "role": "goalie",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "Saturday",
+                "condition": null,
+                "evidence": {
+                  "start": 0,
+                  "end": 98,
+                  "text": "Leevi Meriläinen leads the #Canucks into the ice Saturday in Newark. He’ll get the start @ Devils."
+                }
+              }
+            ],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      },
+      "S04": {
+        "records": [
+          {
+            "record_id": "S04",
+            "material": false,
+            "claims": [],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      },
+      "S05": {
+        "records": [
+          {
+            "record_id": "S05A",
+            "material": true,
+            "claims": [
+              {
+                "id": "rules-x:2108958442983686184-0",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2108958442983686184",
+                "source_author": "@drosennhl",
+                "player": "Joonas Korpisalo",
+                "event": "availability",
+                "value": "out",
+                "role": null,
+                "polarity": "negative",
+                "certainty": "asserted",
+                "time": "today",
+                "condition": null,
+                "evidence": {
+                  "start": 0,
+                  "end": 56,
+                  "text": "Joonas Korpisalo (lower body) is out 4 weeks from today."
+                }
+              },
+              {
+                "id": "rules-x:2108958442983686184-1",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2108958442983686184",
+                "source_author": "@drosennhl",
+                "player": "Joe Veleno",
+                "event": "availability",
+                "value": "out",
+                "role": null,
+                "polarity": "negative",
+                "certainty": "asserted",
+                "time": null,
+                "condition": null,
+                "evidence": {
+                  "start": 57,
+                  "end": 101,
+                  "text": "Joe Veleno (lower body) is out 3-3.5 months."
+                }
+              }
+            ],
+            "overflow": false
+          },
+          {
+            "record_id": "S05B",
+            "material": true,
+            "claims": [
+              {
+                "id": "rules-x:2108957630253113386-0",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2108957630253113386",
+                "source_author": "@drosennhl",
+                "player": "Igor Shesterkin",
+                "event": "availability",
+                "value": "out",
+                "role": null,
+                "polarity": "negative",
+                "certainty": "asserted",
+                "time": null,
+                "condition": null,
+                "evidence": {
+                  "start": 0,
+                  "end": 82,
+                  "text": "Igor Shesterkin will be out for the rest of the season with his lower body injury."
+                }
+              }
+            ],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      },
+      "S06": {
+        "records": [
+          {
+            "record_id": "S06",
+            "material": false,
+            "claims": [],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      },
+      "S07": {
+        "records": [
+          {
+            "record_id": "S07",
+            "material": true,
+            "claims": [
+              {
+                "id": "rules-x:2108961406007570942-0",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2108961406007570942",
+                "source_author": "@sammisilber",
+                "player": "Pierre-Luc Dubois",
+                "event": "availability",
+                "value": "uncertain",
+                "role": null,
+                "polarity": "positive",
+                "certainty": "tentative",
+                "time": "tomorrow",
+                "condition": null,
+                "evidence": {
+                  "start": 0,
+                  "end": 84,
+                  "text": "Carbery said it’s too early to tell whether Pierre-Luc Dubois will suit up tomorrow."
+                }
+              },
+              {
+                "id": "rules-x:2108961406007570942-1",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2108961406007570942",
+                "source_author": "@sammisilber",
+                "player": "Matt Roy",
+                "event": "availability",
+                "value": "uncertain",
+                "role": null,
+                "polarity": "positive",
+                "certainty": "tentative",
+                "time": "today",
+                "condition": null,
+                "evidence": {
+                  "start": 85,
+                  "end": 136,
+                  "text": "Matt Roy skated again today and remains day-to-day."
+                }
+              }
+            ],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      },
+      "S08": {
+        "records": [
+          {
+            "record_id": "S08",
+            "material": true,
+            "claims": [
+              {
+                "id": "rules-x:2109051291372777568-0",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "William Carrier",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 81,
+                  "end": 107,
+                  "text": "Carrier - Aho - Svechnikov"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-1",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Sebastian Aho",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 81,
+                  "end": 107,
+                  "text": "Carrier - Aho - Svechnikov"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-2",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Andrei Svechnikov",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 81,
+                  "end": 107,
+                  "text": "Carrier - Aho - Svechnikov"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-3",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Taylor Hall",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 108,
+                  "end": 132,
+                  "text": "Hall - Stankoven - Blake"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-4",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Logan Stankoven",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 108,
+                  "end": 132,
+                  "text": "Hall - Stankoven - Blake"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-5",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Jackson Blake",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 108,
+                  "end": 132,
+                  "text": "Hall - Stankoven - Blake"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-6",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Nikolaj Ehlers",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 133,
+                  "end": 159,
+                  "text": "Ehlers - Staal - Martinook"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-7",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Jordan Staal",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 133,
+                  "end": 159,
+                  "text": "Ehlers - Staal - Martinook"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-8",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Jordan Martinook",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 133,
+                  "end": 159,
+                  "text": "Ehlers - Staal - Martinook"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-9",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Eric Robinson",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 160,
+                  "end": 193,
+                  "text": "Robinson - Jankowski - Kotkaniemi"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-10",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Mark Jankowski",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 160,
+                  "end": 193,
+                  "text": "Robinson - Jankowski - Kotkaniemi"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-11",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Jesperi Kotkaniemi",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 160,
+                  "end": 193,
+                  "text": "Robinson - Jankowski - Kotkaniemi"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-12",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Jaccob Slavin",
+                "event": "line",
+                "value": "member",
+                "role": "es_defense",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 194,
+                  "end": 212,
+                  "text": "Slavin - Chatfield"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-13",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Jalen Chatfield",
+                "event": "line",
+                "value": "member",
+                "role": "es_defense",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 194,
+                  "end": 212,
+                  "text": "Slavin - Chatfield"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-14",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "K'Andre Miller",
+                "event": "line",
+                "value": "member",
+                "role": "es_defense",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 213,
+                  "end": 228,
+                  "text": "Miller - Walker"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-15",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Sean Walker",
+                "event": "line",
+                "value": "member",
+                "role": "es_defense",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 213,
+                  "end": 228,
+                  "text": "Miller - Walker"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-16",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Shayne Gostisbehere",
+                "event": "line",
+                "value": "member",
+                "role": "es_defense",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 229,
+                  "end": 250,
+                  "text": "Gostisbehere - Reilly"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-17",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Mike Reilly",
+                "event": "line",
+                "value": "member",
+                "role": "es_defense",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 229,
+                  "end": 250,
+                  "text": "Gostisbehere - Reilly"
+                }
+              }
+            ],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      },
+      "S09": {
+        "records": [
+          {
+            "record_id": "S09",
+            "material": false,
+            "claims": [],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      },
+      "S10": {
+        "records": [
+          {
+            "record_id": "S10A",
+            "material": false,
+            "claims": [],
+            "overflow": false
+          },
+          {
+            "record_id": "S10B",
+            "material": false,
+            "claims": [],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      }
+    },
+    "rules_decisions": {
+      "S01": {
+        "records": [
+          {
+            "record_id": "S01",
+            "material": false,
+            "claims": [],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      },
+      "S02": {
+        "records": [
+          {
+            "record_id": "S02",
+            "material": false,
+            "claims": [],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      },
+      "S03": {
+        "records": [
+          {
+            "record_id": "S03",
+            "material": true,
+            "claims": [
+              {
+                "id": "rules-x:2108996072647573721-0",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2108996072647573721",
+                "source_author": "@ThomasDrance",
+                "player": "Leevi Meriläinen",
+                "event": "starter",
+                "value": "starter",
+                "role": "goalie",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "Saturday",
+                "condition": null,
+                "evidence": {
+                  "start": 0,
+                  "end": 98,
+                  "text": "Leevi Meriläinen leads the #Canucks into the ice Saturday in Newark. He’ll get the start @ Devils."
+                }
+              }
+            ],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      },
+      "S04": {
+        "records": [
+          {
+            "record_id": "S04",
+            "material": false,
+            "claims": [],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      },
+      "S05": {
+        "records": [
+          {
+            "record_id": "S05A",
+            "material": true,
+            "claims": [
+              {
+                "id": "rules-x:2108958442983686184-0",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2108958442983686184",
+                "source_author": "@drosennhl",
+                "player": "Joonas Korpisalo",
+                "event": "availability",
+                "value": "out",
+                "role": null,
+                "polarity": "negative",
+                "certainty": "asserted",
+                "time": "today",
+                "condition": null,
+                "evidence": {
+                  "start": 0,
+                  "end": 56,
+                  "text": "Joonas Korpisalo (lower body) is out 4 weeks from today."
+                }
+              },
+              {
+                "id": "rules-x:2108958442983686184-1",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2108958442983686184",
+                "source_author": "@drosennhl",
+                "player": "Joe Veleno",
+                "event": "availability",
+                "value": "out",
+                "role": null,
+                "polarity": "negative",
+                "certainty": "asserted",
+                "time": null,
+                "condition": null,
+                "evidence": {
+                  "start": 57,
+                  "end": 101,
+                  "text": "Joe Veleno (lower body) is out 3-3.5 months."
+                }
+              }
+            ],
+            "overflow": false
+          },
+          {
+            "record_id": "S05B",
+            "material": true,
+            "claims": [
+              {
+                "id": "rules-x:2108957630253113386-0",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2108957630253113386",
+                "source_author": "@drosennhl",
+                "player": "Igor Shesterkin",
+                "event": "availability",
+                "value": "out",
+                "role": null,
+                "polarity": "negative",
+                "certainty": "asserted",
+                "time": null,
+                "condition": null,
+                "evidence": {
+                  "start": 0,
+                  "end": 82,
+                  "text": "Igor Shesterkin will be out for the rest of the season with his lower body injury."
+                }
+              }
+            ],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      },
+      "S06": {
+        "records": [
+          {
+            "record_id": "S06",
+            "material": false,
+            "claims": [],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      },
+      "S07": {
+        "records": [
+          {
+            "record_id": "S07",
+            "material": true,
+            "claims": [
+              {
+                "id": "rules-x:2108961406007570942-0",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2108961406007570942",
+                "source_author": "@sammisilber",
+                "player": "Pierre-Luc Dubois",
+                "event": "availability",
+                "value": "uncertain",
+                "role": null,
+                "polarity": "positive",
+                "certainty": "tentative",
+                "time": "tomorrow",
+                "condition": null,
+                "evidence": {
+                  "start": 0,
+                  "end": 84,
+                  "text": "Carbery said it’s too early to tell whether Pierre-Luc Dubois will suit up tomorrow."
+                }
+              },
+              {
+                "id": "rules-x:2108961406007570942-1",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2108961406007570942",
+                "source_author": "@sammisilber",
+                "player": "Matt Roy",
+                "event": "availability",
+                "value": "uncertain",
+                "role": null,
+                "polarity": "positive",
+                "certainty": "tentative",
+                "time": "today",
+                "condition": null,
+                "evidence": {
+                  "start": 85,
+                  "end": 136,
+                  "text": "Matt Roy skated again today and remains day-to-day."
+                }
+              }
+            ],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      },
+      "S08": {
+        "records": [
+          {
+            "record_id": "S08",
+            "material": true,
+            "claims": [
+              {
+                "id": "rules-x:2109051291372777568-0",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "William Carrier",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 81,
+                  "end": 107,
+                  "text": "Carrier - Aho - Svechnikov"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-1",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Sebastian Aho",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 81,
+                  "end": 107,
+                  "text": "Carrier - Aho - Svechnikov"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-2",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Andrei Svechnikov",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 81,
+                  "end": 107,
+                  "text": "Carrier - Aho - Svechnikov"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-3",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Taylor Hall",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 108,
+                  "end": 132,
+                  "text": "Hall - Stankoven - Blake"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-4",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Logan Stankoven",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 108,
+                  "end": 132,
+                  "text": "Hall - Stankoven - Blake"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-5",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Jackson Blake",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 108,
+                  "end": 132,
+                  "text": "Hall - Stankoven - Blake"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-6",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Nikolaj Ehlers",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 133,
+                  "end": 159,
+                  "text": "Ehlers - Staal - Martinook"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-7",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Jordan Staal",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 133,
+                  "end": 159,
+                  "text": "Ehlers - Staal - Martinook"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-8",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Jordan Martinook",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 133,
+                  "end": 159,
+                  "text": "Ehlers - Staal - Martinook"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-9",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Eric Robinson",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 160,
+                  "end": 193,
+                  "text": "Robinson - Jankowski - Kotkaniemi"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-10",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Mark Jankowski",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 160,
+                  "end": 193,
+                  "text": "Robinson - Jankowski - Kotkaniemi"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-11",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Jesperi Kotkaniemi",
+                "event": "line",
+                "value": "member",
+                "role": "es_forward",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 160,
+                  "end": 193,
+                  "text": "Robinson - Jankowski - Kotkaniemi"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-12",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Jaccob Slavin",
+                "event": "line",
+                "value": "member",
+                "role": "es_defense",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 194,
+                  "end": 212,
+                  "text": "Slavin - Chatfield"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-13",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Jalen Chatfield",
+                "event": "line",
+                "value": "member",
+                "role": "es_defense",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 194,
+                  "end": 212,
+                  "text": "Slavin - Chatfield"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-14",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "K'Andre Miller",
+                "event": "line",
+                "value": "member",
+                "role": "es_defense",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 213,
+                  "end": 228,
+                  "text": "Miller - Walker"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-15",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Sean Walker",
+                "event": "line",
+                "value": "member",
+                "role": "es_defense",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 213,
+                  "end": 228,
+                  "text": "Miller - Walker"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-16",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Shayne Gostisbehere",
+                "event": "line",
+                "value": "member",
+                "role": "es_defense",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 229,
+                  "end": 250,
+                  "text": "Gostisbehere - Reilly"
+                }
+              },
+              {
+                "id": "rules-x:2109051291372777568-17",
+                "player_id": null,
+                "team": null,
+                "source_id": "x:2109051291372777568",
+                "source_author": "@WaltRuff",
+                "player": "Mike Reilly",
+                "event": "line",
+                "value": "member",
+                "role": "es_defense",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": "tonight",
+                "condition": null,
+                "evidence": {
+                  "start": 229,
+                  "end": 250,
+                  "text": "Gostisbehere - Reilly"
+                }
+              }
+            ],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      },
+      "S09": {
+        "records": [
+          {
+            "record_id": "S09",
+            "material": false,
+            "claims": [],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      },
+      "S10": {
+        "records": [
+          {
+            "record_id": "S10A",
+            "material": false,
+            "claims": [],
+            "overflow": false
+          },
+          {
+            "record_id": "S10B",
+            "material": false,
+            "claims": [],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      }
+    },
+    "extraction": {
+      "S01": {
+        "records": [
+          {
+            "claims": [
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "attendance",
+                "evidence": {
+                  "end": 59,
+                  "start": 0,
+                  "text": "Ilya Sorokin leads the Islanders out for warmups at Scotiabank Arena."
+                },
+                "id": "c1",
+                "player": "Ilya Sorokin",
+                "player_id": null,
+                "polarity": "positive",
+                "role": null,
+                "source_author": "@ethan_sears",
+                "source_id": "x:2105434001074962845",
+                "team": "Islanders",
+                "time": "warmups",
+                "value": "leads the Islanders out for warmups"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "starter",
+                "evidence": {
+                  "end": 92,
+                  "start": 60,
+                  "text": "Anthony Stolarz for the Leafs."
+                },
+                "id": "c2",
+                "player": "Anthony Stolarz",
+                "player_id": null,
+                "polarity": "positive",
+                "role": null,
+                "source_author": "@ethan_sears",
+                "source_id": "x:2105434001074962845",
+                "team": "Leafs",
+                "time": null,
+                "value": "for the Leafs"
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S01"
+          }
+        ],
+        "revisions": []
+      },
+      "S02": {
+        "records": [
+          {
+            "claims": [
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "availability",
+                "evidence": {
+                  "end": 53,
+                  "start": 0,
+                  "text": "Sanderson skated before main practice today but didn't join his teammates."
+                },
+                "id": "1",
+                "player": "Sanderson",
+                "player_id": null,
+                "polarity": "positive",
+                "role": null,
+                "source_author": "@GraemeNichols",
+                "source_id": "x:2105343573784928457",
+                "team": null,
+                "time": "today",
+                "value": "skated before main practice but did not join teammates"
+              },
+              {
+                "certainty": "tentative",
+                "condition": null,
+                "event": "availability",
+                "evidence": {
+                  "end": 110,
+                  "start": 54,
+                  "text": "org is hopeful he will play this weekend."
+                },
+                "id": "2",
+                "player": "Sanderson",
+                "player_id": null,
+                "polarity": "positive",
+                "role": null,
+                "source_author": "@GraemeNichols",
+                "source_id": "x:2105343573784928457",
+                "team": null,
+                "time": "this weekend",
+                "value": "organization is hopeful he will play"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "availability",
+                "evidence": {
+                  "end": 163,
+                  "start": 111,
+                  "text": "Burakovsky isn't close to returning (upper body)."
+                },
+                "id": "3",
+                "player": "Burakovsky",
+                "player_id": null,
+                "polarity": "negative",
+                "role": null,
+                "source_author": "@GraemeNichols",
+                "source_id": "x:2105343573784928457",
+                "team": null,
+                "time": null,
+                "value": "isn't close to returning; upper-body issue"
+              },
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 214,
+                  "start": 164,
+                  "text": "Foegele took rushes on the 1st line for second consecutive day."
+                },
+                "id": "4",
+                "player": "Foegele",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "1st line",
+                "source_author": "@GraemeNichols",
+                "source_id": "x:2105343573784928457",
+                "team": null,
+                "time": "second consecutive day",
+                "value": "took rushes on the 1st line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "availability",
+                "evidence": {
+                  "end": 250,
+                  "start": 215,
+                  "text": "No decision has been made on his availability."
+                },
+                "id": "5",
+                "player": "Foegele",
+                "player_id": null,
+                "polarity": "negative",
+                "role": null,
+                "source_author": "@GraemeNichols",
+                "source_id": "x:2105343573784928457",
+                "team": null,
+                "time": null,
+                "value": "no decision has been made on availability"
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S02"
+          }
+        ],
+        "revisions": []
+      },
+      "S03": {
+        "records": [
+          {
+            "claims": [
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "starter",
+                "evidence": {
+                  "end": 86,
+                  "start": 68,
+                  "text": "He’ll get the start"
+                },
+                "id": "S03-1",
+                "player": "Leevi Meriläinen",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "starter",
+                "source_author": "@ThomasDrance",
+                "source_id": "x:2108996072647573721",
+                "team": "#Canucks",
+                "time": "Saturday in Newark; @ Devils",
+                "value": "will start"
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S03"
+          }
+        ],
+        "revisions": []
+      },
+      "S04": {
+        "records": [
+          {
+            "claims": [
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 71,
+                  "start": 25,
+                  "text": "power play groups same as yesterday"
+                },
+                "id": "c1",
+                "player": "Misa",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "net front",
+                "source_author": "@Sheng_Peng",
+                "source_id": "x:2105364132128240008",
+                "team": null,
+                "time": "same as yesterday",
+                "value": "doing some net front"
+              },
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 131,
+                  "start": 85,
+                  "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+                },
+                "id": "c2",
+                "player": "Cagnoni",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "PP1",
+                "source_author": "@Sheng_Peng",
+                "source_id": "x:2105364132128240008",
+                "team": null,
+                "time": null,
+                "value": "listed in PP1"
+              },
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 131,
+                  "start": 85,
+                  "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+                },
+                "id": "c3",
+                "player": "Celebrini",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "PP1",
+                "source_author": "@Sheng_Peng",
+                "source_id": "x:2105364132128240008",
+                "team": null,
+                "time": null,
+                "value": "listed in PP1"
+              },
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 131,
+                  "start": 85,
+                  "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+                },
+                "id": "c4",
+                "player": "Smith",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "PP1",
+                "source_author": "@Sheng_Peng",
+                "source_id": "x:2105364132128240008",
+                "team": null,
+                "time": null,
+                "value": "listed in PP1"
+              },
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 131,
+                  "start": 85,
+                  "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+                },
+                "id": "c5",
+                "player": "Chernyshov",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "PP1",
+                "source_author": "@Sheng_Peng",
+                "source_id": "x:2105364132128240008",
+                "team": null,
+                "time": null,
+                "value": "listed in PP1"
+              },
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 131,
+                  "start": 85,
+                  "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+                },
+                "id": "c6",
+                "player": "Wennberg",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "PP1",
+                "source_author": "@Sheng_Peng",
+                "source_id": "x:2105364132128240008",
+                "team": null,
+                "time": null,
+                "value": "listed in PP1"
+              },
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 176,
+                  "start": 137,
+                  "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+                },
+                "id": "c7",
+                "player": "Orlov",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "PP2",
+                "source_author": "@Sheng_Peng",
+                "source_id": "x:2105364132128240008",
+                "team": null,
+                "time": null,
+                "value": "listed in PP2"
+              },
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 176,
+                  "start": 137,
+                  "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+                },
+                "id": "c8",
+                "player": "Misa",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "PP2",
+                "source_author": "@Sheng_Peng",
+                "source_id": "x:2105364132128240008",
+                "team": null,
+                "time": null,
+                "value": "listed in PP2"
+              },
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 176,
+                  "start": 137,
+                  "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+                },
+                "id": "c9",
+                "player": "Stenberg",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "PP2",
+                "source_author": "@Sheng_Peng",
+                "source_id": "x:2105364132128240008",
+                "team": null,
+                "time": null,
+                "value": "listed in PP2"
+              },
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 176,
+                  "start": 137,
+                  "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+                },
+                "id": "c10",
+                "player": "Toffoli",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "PP2",
+                "source_author": "@Sheng_Peng",
+                "source_id": "x:2105364132128240008",
+                "team": null,
+                "time": null,
+                "value": "listed in PP2"
+              },
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 176,
+                  "start": 137,
+                  "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+                },
+                "id": "c11",
+                "player": "Marchment",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "PP2",
+                "source_author": "@Sheng_Peng",
+                "source_id": "x:2105364132128240008",
+                "team": null,
+                "time": null,
+                "value": "listed in PP2"
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S04"
+          }
+        ],
+        "revisions": []
+      },
+      "S05": {
+        "records": [
+          {
+            "claims": [
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "availability",
+                "evidence": {
+                  "end": 43,
+                  "start": 0,
+                  "text": "Joonas Korpisalo (lower body) is out"
+                },
+                "id": "S05A-1",
+                "player": "Joonas Korpisalo",
+                "player_id": null,
+                "polarity": "negative",
+                "role": null,
+                "source_author": "@drosennhl",
+                "source_id": "x:2108958442983686184",
+                "team": null,
+                "time": "4 weeks from today",
+                "value": "out"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "injury",
+                "evidence": {
+                  "end": 42,
+                  "start": 18,
+                  "text": "(lower body)"
+                },
+                "id": "S05A-2",
+                "player": "Joonas Korpisalo",
+                "player_id": null,
+                "polarity": "positive",
+                "role": null,
+                "source_author": "@drosennhl",
+                "source_id": "x:2108958442983686184",
+                "team": null,
+                "time": null,
+                "value": "lower body injury"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "availability",
+                "evidence": {
+                  "end": 85,
+                  "start": 47,
+                  "text": "Joe Veleno (lower body) is out"
+                },
+                "id": "S05A-3",
+                "player": "Joe Veleno",
+                "player_id": null,
+                "polarity": "negative",
+                "role": null,
+                "source_author": "@drosennhl",
+                "source_id": "x:2108958442983686184",
+                "team": null,
+                "time": "3-3.5 months",
+                "value": "out"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "injury",
+                "evidence": {
+                  "end": 68,
+                  "start": 57,
+                  "text": "(lower body)"
+                },
+                "id": "S05A-4",
+                "player": "Joe Veleno",
+                "player_id": null,
+                "polarity": "positive",
+                "role": null,
+                "source_author": "@drosennhl",
+                "source_id": "x:2108958442983686184",
+                "team": null,
+                "time": null,
+                "value": "lower body injury"
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S05A"
+          },
+          {
+            "claims": [
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "availability",
+                "evidence": {
+                  "end": 68,
+                  "start": 0,
+                  "text": "Igor Shesterkin will be out for the rest of the season"
+                },
+                "id": "S05B-1",
+                "player": "Igor Shesterkin",
+                "player_id": null,
+                "polarity": "negative",
+                "role": null,
+                "source_author": "@drosennhl",
+                "source_id": "x:2108957630253113386",
+                "team": null,
+                "time": "for the rest of the season",
+                "value": "out"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "injury",
+                "evidence": {
+                  "end": 92,
+                  "start": 69,
+                  "text": "with his lower body injury"
+                },
+                "id": "S05B-2",
+                "player": "Igor Shesterkin",
+                "player_id": null,
+                "polarity": "positive",
+                "role": null,
+                "source_author": "@drosennhl",
+                "source_id": "x:2108957630253113386",
+                "team": null,
+                "time": null,
+                "value": "lower body injury"
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S05B"
+          }
+        ],
+        "revisions": []
+      },
+      "S08": {
+        "records": [
+          {
+            "claims": [
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 157,
+                  "start": 140,
+                  "text": "Carrier - Aho - Svechnikov"
+                },
+                "id": "1",
+                "player": "Carrier",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 157,
+                  "start": 140,
+                  "text": "Carrier - Aho - Svechnikov"
+                },
+                "id": "2",
+                "player": "Aho",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 157,
+                  "start": 140,
+                  "text": "Carrier - Aho - Svechnikov"
+                },
+                "id": "3",
+                "player": "Svechnikov",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 179,
+                  "start": 158,
+                  "text": "Hall - Stankoven - Blake"
+                },
+                "id": "4",
+                "player": "Hall",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 179,
+                  "start": 158,
+                  "text": "Hall - Stankoven - Blake"
+                },
+                "id": "5",
+                "player": "Stankoven",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 179,
+                  "start": 158,
+                  "text": "Hall - Stankoven - Blake"
+                },
+                "id": "6",
+                "player": "Blake",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 207,
+                  "start": 180,
+                  "text": "Ehlers - Staal - Martinook"
+                },
+                "id": "7",
+                "player": "Ehlers",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 207,
+                  "start": 180,
+                  "text": "Ehlers - Staal - Martinook"
+                },
+                "id": "8",
+                "player": "Staal",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 207,
+                  "start": 180,
+                  "text": "Ehlers - Staal - Martinook"
+                },
+                "id": "9",
+                "player": "Martinook",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 238,
+                  "start": 208,
+                  "text": "Robinson - Jankowski - Kotkaniemi"
+                },
+                "id": "10",
+                "player": "Robinson",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 238,
+                  "start": 208,
+                  "text": "Robinson - Jankowski - Kotkaniemi"
+                },
+                "id": "11",
+                "player": "Jankowski",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 238,
+                  "start": 208,
+                  "text": "Robinson - Jankowski - Kotkaniemi"
+                },
+                "id": "12",
+                "player": "Kotkaniemi",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 252,
+                  "start": 239,
+                  "text": "Slavin - Chatfield"
+                },
+                "id": "13",
+                "player": "Slavin",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 252,
+                  "start": 239,
+                  "text": "Slavin - Chatfield"
+                },
+                "id": "14",
+                "player": "Chatfield",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 265,
+                  "start": 253,
+                  "text": "Miller - Walker"
+                },
+                "id": "15",
+                "player": "Miller",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 265,
+                  "start": 253,
+                  "text": "Miller - Walker"
+                },
+                "id": "16",
+                "player": "Walker",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 284,
+                  "start": 266,
+                  "text": "Gostisbehere - Reilly"
+                },
+                "id": "17",
+                "player": "Gostisbehere",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 284,
+                  "start": 266,
+                  "text": "Gostisbehere - Reilly"
+                },
+                "id": "18",
+                "player": "Reilly",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "starter",
+                "evidence": {
+                  "end": 289,
+                  "start": 285,
+                  "text": "Bussi"
+                },
+                "id": "19",
+                "player": "Bussi",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "starter",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed as goalie"
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S08"
+          }
+        ],
+        "revisions": []
+      },
+      "S06": {
+        "records": [
+          {
+            "claims": [
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 59,
+                  "start": 0,
+                  "text": "Podkolzin will take RNH’s spot on the first unit powerplay"
+                },
+                "id": "c1",
+                "player": "Podkolzin",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "first unit",
+                "source_author": "@JasonGregor",
+                "source_id": "x:2104971594632454155",
+                "team": null,
+                "time": null,
+                "value": "will take RNH’s spot"
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S06"
+          }
+        ],
+        "revisions": []
+      },
+      "S07": {
+        "records": [
+          {
+            "claims": [
+              {
+                "certainty": "tentative",
+                "condition": null,
+                "event": "availability",
+                "evidence": {
+                  "end": 91,
+                  "start": 13,
+                  "text": "it’s too early to tell whether Pierre-Luc Dubois will suit up tomorrow"
+                },
+                "id": "S07-1",
+                "player": "Pierre-Luc Dubois",
+                "player_id": null,
+                "polarity": "positive",
+                "role": null,
+                "source_author": "@sammisilber",
+                "source_id": "x:2108961406007570942",
+                "team": null,
+                "time": "tomorrow",
+                "value": "Whether he will suit up is too early to tell"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "availability",
+                "evidence": {
+                  "end": 128,
+                  "start": 93,
+                  "text": "Matt Roy skated again today and remains day-to-day"
+                },
+                "id": "S07-2",
+                "player": "Matt Roy",
+                "player_id": null,
+                "polarity": "positive",
+                "role": null,
+                "source_author": "@sammisilber",
+                "source_id": "x:2108961406007570942",
+                "team": null,
+                "time": "today",
+                "value": "Skated again; remains day-to-day"
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S07"
+          }
+        ],
+        "revisions": []
+      },
+      "S09": {
+        "records": [
+          {
+            "claims": [
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "starter",
+                "evidence": {
+                  "end": 48,
+                  "start": 0,
+                  "text": "Carter Hart is the first goaltender off the ice."
+                },
+                "id": "c1",
+                "player": "Carter Hart",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "goaltender",
+                "source_author": "@h_kirk6",
+                "source_id": "x:2105000115090100612",
+                "team": null,
+                "time": null,
+                "value": "first goaltender off the ice"
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S09"
+          }
+        ],
+        "revisions": []
+      },
+      "S10": {
+        "records": [
+          {
+            "claims": [
+              {
+                "certainty": "tentative",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 64,
+                  "start": 0,
+                  "text": "Might be much ado about nothing, but Olofsson is taking PP1 reps with Marner up top."
+                },
+                "id": "S10A-1",
+                "player": "Olofsson",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "PP1",
+                "source_author": "@DannyWebster21",
+                "source_id": "x:2104644558701351383",
+                "team": null,
+                "time": null,
+                "value": "taking PP1 reps with Marner up top"
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S10A"
+          },
+          {
+            "claims": [
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "correction",
+                "evidence": {
+                  "end": 73,
+                  "start": 0,
+                  "text": "Turns out this was, in fact, much ado about nothing."
+                },
+                "id": "S10B-1",
+                "player": "Olofsson",
+                "player_id": null,
+                "polarity": "negative",
+                "role": "PP1",
+                "source_author": "@DannyWebster21",
+                "source_id": "x:2104672698786013556",
+                "team": null,
+                "time": null,
+                "value": "The earlier report that Olofsson was taking PP1 reps with Marner up top was much ado about nothing."
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 105,
+                  "start": 75,
+                  "text": "This was a 5-on-3 drill."
+                },
+                "id": "S10B-2",
+                "player": "Olofsson",
+                "player_id": null,
+                "polarity": "negative",
+                "role": "PP1",
+                "source_author": "@DannyWebster21",
+                "source_id": "x:2104672698786013556",
+                "team": null,
+                "time": null,
+                "value": "The PP1-rep observation referred to a 5-on-3 drill, not a PP1 line assignment."
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S10B"
+          }
+        ],
+        "revisions": [
+          {
+            "evidence": {
+              "end": 73,
+              "start": 0,
+              "text": "Turns out this was, in fact, much ado about nothing."
+            },
+            "from_record_id": "S10A",
+            "kind": "retracts",
+            "target_event": "Olofsson taking PP1 reps with Marner up top",
+            "to_record_id": "S10B"
+          }
+        ]
+      }
+    },
+    "extraction_decisions": {
+      "S01": {
+        "records": [
+          {
+            "claims": [
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "attendance",
+                "evidence": {
+                  "end": 59,
+                  "start": 0,
+                  "text": "Ilya Sorokin leads the Islanders out for warmups at Scotiabank Arena."
+                },
+                "id": "c1",
+                "player": "Ilya Sorokin",
+                "player_id": null,
+                "polarity": "positive",
+                "role": null,
+                "source_author": "@ethan_sears",
+                "source_id": "x:2105434001074962845",
+                "team": "Islanders",
+                "time": "warmups",
+                "value": "leads the Islanders out for warmups"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "starter",
+                "evidence": {
+                  "end": 92,
+                  "start": 60,
+                  "text": "Anthony Stolarz for the Leafs."
+                },
+                "id": "c2",
+                "player": "Anthony Stolarz",
+                "player_id": null,
+                "polarity": "positive",
+                "role": null,
+                "source_author": "@ethan_sears",
+                "source_id": "x:2105434001074962845",
+                "team": "Leafs",
+                "time": null,
+                "value": "for the Leafs"
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S01"
+          }
+        ],
+        "revisions": []
+      },
+      "S02": {
+        "records": [
+          {
+            "claims": [
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "availability",
+                "evidence": {
+                  "end": 53,
+                  "start": 0,
+                  "text": "Sanderson skated before main practice today but didn't join his teammates."
+                },
+                "id": "1",
+                "player": "Sanderson",
+                "player_id": null,
+                "polarity": "positive",
+                "role": null,
+                "source_author": "@GraemeNichols",
+                "source_id": "x:2105343573784928457",
+                "team": null,
+                "time": "today",
+                "value": "skated before main practice but did not join teammates"
+              },
+              {
+                "certainty": "tentative",
+                "condition": null,
+                "event": "availability",
+                "evidence": {
+                  "end": 110,
+                  "start": 54,
+                  "text": "org is hopeful he will play this weekend."
+                },
+                "id": "2",
+                "player": "Sanderson",
+                "player_id": null,
+                "polarity": "positive",
+                "role": null,
+                "source_author": "@GraemeNichols",
+                "source_id": "x:2105343573784928457",
+                "team": null,
+                "time": "this weekend",
+                "value": "organization is hopeful he will play"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "availability",
+                "evidence": {
+                  "end": 163,
+                  "start": 111,
+                  "text": "Burakovsky isn't close to returning (upper body)."
+                },
+                "id": "3",
+                "player": "Burakovsky",
+                "player_id": null,
+                "polarity": "negative",
+                "role": null,
+                "source_author": "@GraemeNichols",
+                "source_id": "x:2105343573784928457",
+                "team": null,
+                "time": null,
+                "value": "isn't close to returning; upper-body issue"
+              },
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 214,
+                  "start": 164,
+                  "text": "Foegele took rushes on the 1st line for second consecutive day."
+                },
+                "id": "4",
+                "player": "Foegele",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "1st line",
+                "source_author": "@GraemeNichols",
+                "source_id": "x:2105343573784928457",
+                "team": null,
+                "time": "second consecutive day",
+                "value": "took rushes on the 1st line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "availability",
+                "evidence": {
+                  "end": 250,
+                  "start": 215,
+                  "text": "No decision has been made on his availability."
+                },
+                "id": "5",
+                "player": "Foegele",
+                "player_id": null,
+                "polarity": "negative",
+                "role": null,
+                "source_author": "@GraemeNichols",
+                "source_id": "x:2105343573784928457",
+                "team": null,
+                "time": null,
+                "value": "no decision has been made on availability"
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S02"
+          }
+        ],
+        "revisions": []
+      },
+      "S03": {
+        "records": [
+          {
+            "claims": [
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "starter",
+                "evidence": {
+                  "end": 86,
+                  "start": 68,
+                  "text": "He’ll get the start"
+                },
+                "id": "S03-1",
+                "player": "Leevi Meriläinen",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "starter",
+                "source_author": "@ThomasDrance",
+                "source_id": "x:2108996072647573721",
+                "team": "#Canucks",
+                "time": "Saturday in Newark; @ Devils",
+                "value": "will start"
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S03"
+          }
+        ],
+        "revisions": []
+      },
+      "S04": {
+        "records": [
+          {
+            "claims": [
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 71,
+                  "start": 25,
+                  "text": "power play groups same as yesterday"
+                },
+                "id": "c1",
+                "player": "Misa",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "net front",
+                "source_author": "@Sheng_Peng",
+                "source_id": "x:2105364132128240008",
+                "team": null,
+                "time": "same as yesterday",
+                "value": "doing some net front"
+              },
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 131,
+                  "start": 85,
+                  "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+                },
+                "id": "c2",
+                "player": "Cagnoni",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "PP1",
+                "source_author": "@Sheng_Peng",
+                "source_id": "x:2105364132128240008",
+                "team": null,
+                "time": null,
+                "value": "listed in PP1"
+              },
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 131,
+                  "start": 85,
+                  "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+                },
+                "id": "c3",
+                "player": "Celebrini",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "PP1",
+                "source_author": "@Sheng_Peng",
+                "source_id": "x:2105364132128240008",
+                "team": null,
+                "time": null,
+                "value": "listed in PP1"
+              },
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 131,
+                  "start": 85,
+                  "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+                },
+                "id": "c4",
+                "player": "Smith",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "PP1",
+                "source_author": "@Sheng_Peng",
+                "source_id": "x:2105364132128240008",
+                "team": null,
+                "time": null,
+                "value": "listed in PP1"
+              },
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 131,
+                  "start": 85,
+                  "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+                },
+                "id": "c5",
+                "player": "Chernyshov",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "PP1",
+                "source_author": "@Sheng_Peng",
+                "source_id": "x:2105364132128240008",
+                "team": null,
+                "time": null,
+                "value": "listed in PP1"
+              },
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 131,
+                  "start": 85,
+                  "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+                },
+                "id": "c6",
+                "player": "Wennberg",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "PP1",
+                "source_author": "@Sheng_Peng",
+                "source_id": "x:2105364132128240008",
+                "team": null,
+                "time": null,
+                "value": "listed in PP1"
+              },
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 176,
+                  "start": 137,
+                  "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+                },
+                "id": "c7",
+                "player": "Orlov",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "PP2",
+                "source_author": "@Sheng_Peng",
+                "source_id": "x:2105364132128240008",
+                "team": null,
+                "time": null,
+                "value": "listed in PP2"
+              },
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 176,
+                  "start": 137,
+                  "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+                },
+                "id": "c8",
+                "player": "Misa",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "PP2",
+                "source_author": "@Sheng_Peng",
+                "source_id": "x:2105364132128240008",
+                "team": null,
+                "time": null,
+                "value": "listed in PP2"
+              },
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 176,
+                  "start": 137,
+                  "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+                },
+                "id": "c9",
+                "player": "Stenberg",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "PP2",
+                "source_author": "@Sheng_Peng",
+                "source_id": "x:2105364132128240008",
+                "team": null,
+                "time": null,
+                "value": "listed in PP2"
+              },
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 176,
+                  "start": 137,
+                  "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+                },
+                "id": "c10",
+                "player": "Toffoli",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "PP2",
+                "source_author": "@Sheng_Peng",
+                "source_id": "x:2105364132128240008",
+                "team": null,
+                "time": null,
+                "value": "listed in PP2"
+              },
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 176,
+                  "start": 137,
+                  "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+                },
+                "id": "c11",
+                "player": "Marchment",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "PP2",
+                "source_author": "@Sheng_Peng",
+                "source_id": "x:2105364132128240008",
+                "team": null,
+                "time": null,
+                "value": "listed in PP2"
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S04"
+          }
+        ],
+        "revisions": []
+      },
+      "S05": {
+        "records": [
+          {
+            "claims": [
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "availability",
+                "evidence": {
+                  "end": 43,
+                  "start": 0,
+                  "text": "Joonas Korpisalo (lower body) is out"
+                },
+                "id": "S05A-1",
+                "player": "Joonas Korpisalo",
+                "player_id": null,
+                "polarity": "negative",
+                "role": null,
+                "source_author": "@drosennhl",
+                "source_id": "x:2108958442983686184",
+                "team": null,
+                "time": "4 weeks from today",
+                "value": "out"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "injury",
+                "evidence": {
+                  "end": 42,
+                  "start": 18,
+                  "text": "(lower body)"
+                },
+                "id": "S05A-2",
+                "player": "Joonas Korpisalo",
+                "player_id": null,
+                "polarity": "positive",
+                "role": null,
+                "source_author": "@drosennhl",
+                "source_id": "x:2108958442983686184",
+                "team": null,
+                "time": null,
+                "value": "lower body injury"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "availability",
+                "evidence": {
+                  "end": 85,
+                  "start": 47,
+                  "text": "Joe Veleno (lower body) is out"
+                },
+                "id": "S05A-3",
+                "player": "Joe Veleno",
+                "player_id": null,
+                "polarity": "negative",
+                "role": null,
+                "source_author": "@drosennhl",
+                "source_id": "x:2108958442983686184",
+                "team": null,
+                "time": "3-3.5 months",
+                "value": "out"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "injury",
+                "evidence": {
+                  "end": 68,
+                  "start": 57,
+                  "text": "(lower body)"
+                },
+                "id": "S05A-4",
+                "player": "Joe Veleno",
+                "player_id": null,
+                "polarity": "positive",
+                "role": null,
+                "source_author": "@drosennhl",
+                "source_id": "x:2108958442983686184",
+                "team": null,
+                "time": null,
+                "value": "lower body injury"
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S05A"
+          },
+          {
+            "claims": [
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "availability",
+                "evidence": {
+                  "end": 68,
+                  "start": 0,
+                  "text": "Igor Shesterkin will be out for the rest of the season"
+                },
+                "id": "S05B-1",
+                "player": "Igor Shesterkin",
+                "player_id": null,
+                "polarity": "negative",
+                "role": null,
+                "source_author": "@drosennhl",
+                "source_id": "x:2108957630253113386",
+                "team": null,
+                "time": "for the rest of the season",
+                "value": "out"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "injury",
+                "evidence": {
+                  "end": 92,
+                  "start": 69,
+                  "text": "with his lower body injury"
+                },
+                "id": "S05B-2",
+                "player": "Igor Shesterkin",
+                "player_id": null,
+                "polarity": "positive",
+                "role": null,
+                "source_author": "@drosennhl",
+                "source_id": "x:2108957630253113386",
+                "team": null,
+                "time": null,
+                "value": "lower body injury"
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S05B"
+          }
+        ],
+        "revisions": []
+      },
+      "S08": {
+        "records": [
+          {
+            "claims": [
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 157,
+                  "start": 140,
+                  "text": "Carrier - Aho - Svechnikov"
+                },
+                "id": "1",
+                "player": "Carrier",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 157,
+                  "start": 140,
+                  "text": "Carrier - Aho - Svechnikov"
+                },
+                "id": "2",
+                "player": "Aho",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 157,
+                  "start": 140,
+                  "text": "Carrier - Aho - Svechnikov"
+                },
+                "id": "3",
+                "player": "Svechnikov",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 179,
+                  "start": 158,
+                  "text": "Hall - Stankoven - Blake"
+                },
+                "id": "4",
+                "player": "Hall",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 179,
+                  "start": 158,
+                  "text": "Hall - Stankoven - Blake"
+                },
+                "id": "5",
+                "player": "Stankoven",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 179,
+                  "start": 158,
+                  "text": "Hall - Stankoven - Blake"
+                },
+                "id": "6",
+                "player": "Blake",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 207,
+                  "start": 180,
+                  "text": "Ehlers - Staal - Martinook"
+                },
+                "id": "7",
+                "player": "Ehlers",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 207,
+                  "start": 180,
+                  "text": "Ehlers - Staal - Martinook"
+                },
+                "id": "8",
+                "player": "Staal",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 207,
+                  "start": 180,
+                  "text": "Ehlers - Staal - Martinook"
+                },
+                "id": "9",
+                "player": "Martinook",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 238,
+                  "start": 208,
+                  "text": "Robinson - Jankowski - Kotkaniemi"
+                },
+                "id": "10",
+                "player": "Robinson",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 238,
+                  "start": 208,
+                  "text": "Robinson - Jankowski - Kotkaniemi"
+                },
+                "id": "11",
+                "player": "Jankowski",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 238,
+                  "start": 208,
+                  "text": "Robinson - Jankowski - Kotkaniemi"
+                },
+                "id": "12",
+                "player": "Kotkaniemi",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 252,
+                  "start": 239,
+                  "text": "Slavin - Chatfield"
+                },
+                "id": "13",
+                "player": "Slavin",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 252,
+                  "start": 239,
+                  "text": "Slavin - Chatfield"
+                },
+                "id": "14",
+                "player": "Chatfield",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 265,
+                  "start": 253,
+                  "text": "Miller - Walker"
+                },
+                "id": "15",
+                "player": "Miller",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 265,
+                  "start": 253,
+                  "text": "Miller - Walker"
+                },
+                "id": "16",
+                "player": "Walker",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 284,
+                  "start": 266,
+                  "text": "Gostisbehere - Reilly"
+                },
+                "id": "17",
+                "player": "Gostisbehere",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 284,
+                  "start": 266,
+                  "text": "Gostisbehere - Reilly"
+                },
+                "id": "18",
+                "player": "Reilly",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "line",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed together on a line"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "starter",
+                "evidence": {
+                  "end": 289,
+                  "start": 285,
+                  "text": "Bussi"
+                },
+                "id": "19",
+                "player": "Bussi",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "starter",
+                "source_author": "@WaltRuff",
+                "source_id": "x:2109051291372777568",
+                "team": null,
+                "time": "tonight",
+                "value": "listed as goalie"
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S08"
+          }
+        ],
+        "revisions": []
+      },
+      "S06": {
+        "records": [
+          {
+            "claims": [
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 59,
+                  "start": 0,
+                  "text": "Podkolzin will take RNH’s spot on the first unit powerplay"
+                },
+                "id": "c1",
+                "player": "Podkolzin",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "first unit",
+                "source_author": "@JasonGregor",
+                "source_id": "x:2104971594632454155",
+                "team": null,
+                "time": null,
+                "value": "will take RNH’s spot"
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S06"
+          }
+        ],
+        "revisions": []
+      },
+      "S07": {
+        "records": [
+          {
+            "claims": [
+              {
+                "certainty": "tentative",
+                "condition": null,
+                "event": "availability",
+                "evidence": {
+                  "end": 91,
+                  "start": 13,
+                  "text": "it’s too early to tell whether Pierre-Luc Dubois will suit up tomorrow"
+                },
+                "id": "S07-1",
+                "player": "Pierre-Luc Dubois",
+                "player_id": null,
+                "polarity": "positive",
+                "role": null,
+                "source_author": "@sammisilber",
+                "source_id": "x:2108961406007570942",
+                "team": null,
+                "time": "tomorrow",
+                "value": "Whether he will suit up is too early to tell"
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "availability",
+                "evidence": {
+                  "end": 128,
+                  "start": 93,
+                  "text": "Matt Roy skated again today and remains day-to-day"
+                },
+                "id": "S07-2",
+                "player": "Matt Roy",
+                "player_id": null,
+                "polarity": "positive",
+                "role": null,
+                "source_author": "@sammisilber",
+                "source_id": "x:2108961406007570942",
+                "team": null,
+                "time": "today",
+                "value": "Skated again; remains day-to-day"
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S07"
+          }
+        ],
+        "revisions": []
+      },
+      "S09": {
+        "records": [
+          {
+            "claims": [
+              {
+                "certainty": "observation",
+                "condition": null,
+                "event": "starter",
+                "evidence": {
+                  "end": 48,
+                  "start": 0,
+                  "text": "Carter Hart is the first goaltender off the ice."
+                },
+                "id": "c1",
+                "player": "Carter Hart",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "goaltender",
+                "source_author": "@h_kirk6",
+                "source_id": "x:2105000115090100612",
+                "team": null,
+                "time": null,
+                "value": "first goaltender off the ice"
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S09"
+          }
+        ],
+        "revisions": []
+      },
+      "S10": {
+        "records": [
+          {
+            "claims": [
+              {
+                "certainty": "tentative",
+                "condition": null,
+                "event": "pp",
+                "evidence": {
+                  "end": 64,
+                  "start": 0,
+                  "text": "Might be much ado about nothing, but Olofsson is taking PP1 reps with Marner up top."
+                },
+                "id": "S10A-1",
+                "player": "Olofsson",
+                "player_id": null,
+                "polarity": "positive",
+                "role": "PP1",
+                "source_author": "@DannyWebster21",
+                "source_id": "x:2104644558701351383",
+                "team": null,
+                "time": null,
+                "value": "taking PP1 reps with Marner up top"
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S10A"
+          },
+          {
+            "claims": [
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "correction",
+                "evidence": {
+                  "end": 73,
+                  "start": 0,
+                  "text": "Turns out this was, in fact, much ado about nothing."
+                },
+                "id": "S10B-1",
+                "player": "Olofsson",
+                "player_id": null,
+                "polarity": "negative",
+                "role": "PP1",
+                "source_author": "@DannyWebster21",
+                "source_id": "x:2104672698786013556",
+                "team": null,
+                "time": null,
+                "value": "The earlier report that Olofsson was taking PP1 reps with Marner up top was much ado about nothing."
+              },
+              {
+                "certainty": "asserted",
+                "condition": null,
+                "event": "line",
+                "evidence": {
+                  "end": 105,
+                  "start": 75,
+                  "text": "This was a 5-on-3 drill."
+                },
+                "id": "S10B-2",
+                "player": "Olofsson",
+                "player_id": null,
+                "polarity": "negative",
+                "role": "PP1",
+                "source_author": "@DannyWebster21",
+                "source_id": "x:2104672698786013556",
+                "team": null,
+                "time": null,
+                "value": "The PP1-rep observation referred to a 5-on-3 drill, not a PP1 line assignment."
+              }
+            ],
+            "material": true,
+            "overflow": false,
+            "record_id": "S10B"
+          }
+        ],
+        "revisions": [
+          {
+            "evidence": {
+              "end": 73,
+              "start": 0,
+              "text": "Turns out this was, in fact, much ado about nothing."
+            },
+            "from_record_id": "S10A",
+            "kind": "retracts",
+            "target_event": "Olofsson taking PP1 reps with Marner up top",
+            "to_record_id": "S10B"
+          }
+        ]
+      }
+    }
+  },
+  "verifier_columns": {
+    "S01": {
+      "rules_decisions": {
+        "whole_set_status": "scored",
+        "probability_uncalibrated": 0.96,
+        "threshold_supported": true,
+        "human_source_supported_set": null,
+        "source_adjudicated_correctness": null,
+        "per_claim_confidence": null,
+        "independent_corroboration": false
+      },
+      "extraction_decisions": {
+        "whole_set_status": "scored",
+        "probability_uncalibrated": 0.26,
+        "threshold_supported": false,
+        "human_source_supported_set": null,
+        "source_adjudicated_correctness": null,
+        "per_claim_confidence": null,
+        "independent_corroboration": false
+      }
+    },
+    "S02": {
+      "rules_decisions": {
+        "whole_set_status": "scored",
+        "probability_uncalibrated": 1.0,
+        "threshold_supported": true,
+        "human_source_supported_set": null,
+        "source_adjudicated_correctness": null,
+        "per_claim_confidence": null,
+        "independent_corroboration": false
+      },
+      "extraction_decisions": {
+        "whole_set_status": "scored",
+        "probability_uncalibrated": 0.97,
+        "threshold_supported": true,
+        "human_source_supported_set": null,
+        "source_adjudicated_correctness": null,
+        "per_claim_confidence": null,
+        "independent_corroboration": false
+      }
+    },
+    "S03": {
+      "rules_decisions": {
+        "whole_set_status": "scored",
+        "probability_uncalibrated": 0.88,
+        "threshold_supported": false,
+        "human_source_supported_set": null,
+        "source_adjudicated_correctness": null,
+        "per_claim_confidence": null,
+        "independent_corroboration": false
+      },
+      "extraction_decisions": {
+        "whole_set_status": "scored",
+        "probability_uncalibrated": 0.95,
+        "threshold_supported": true,
+        "human_source_supported_set": null,
+        "source_adjudicated_correctness": null,
+        "per_claim_confidence": null,
+        "independent_corroboration": false
+      }
+    },
+    "S04": {
+      "rules_decisions": {
+        "whole_set_status": "scored",
+        "probability_uncalibrated": 1.0,
+        "threshold_supported": true,
+        "human_source_supported_set": null,
+        "source_adjudicated_correctness": null,
+        "per_claim_confidence": null,
+        "independent_corroboration": false
+      },
+      "extraction_decisions": {
+        "whole_set_status": "scored",
+        "probability_uncalibrated": 0.94,
+        "threshold_supported": false,
+        "human_source_supported_set": null,
+        "source_adjudicated_correctness": null,
+        "per_claim_confidence": null,
+        "independent_corroboration": false
+      }
+    },
+    "S05": {
+      "rules_decisions": {
+        "whole_set_status": "scored",
+        "probability_uncalibrated": 0.74,
+        "threshold_supported": false,
+        "human_source_supported_set": null,
+        "source_adjudicated_correctness": null,
+        "per_claim_confidence": null,
+        "independent_corroboration": false
+      },
+      "extraction_decisions": {
+        "whole_set_status": "scored",
+        "probability_uncalibrated": 0.55,
+        "threshold_supported": false,
+        "human_source_supported_set": null,
+        "source_adjudicated_correctness": null,
+        "per_claim_confidence": null,
+        "independent_corroboration": false
+      }
+    },
+    "S06": {
+      "rules_decisions": {
+        "whole_set_status": "scored",
+        "probability_uncalibrated": 1.0,
+        "threshold_supported": true,
+        "human_source_supported_set": null,
+        "source_adjudicated_correctness": null,
+        "per_claim_confidence": null,
+        "independent_corroboration": false
+      },
+      "extraction_decisions": {
+        "whole_set_status": "scored",
+        "probability_uncalibrated": 0.7,
+        "threshold_supported": false,
+        "human_source_supported_set": null,
+        "source_adjudicated_correctness": null,
+        "per_claim_confidence": null,
+        "independent_corroboration": false
+      }
+    },
+    "S07": {
+      "rules_decisions": {
+        "whole_set_status": "scored",
+        "probability_uncalibrated": 0.7,
+        "threshold_supported": false,
+        "human_source_supported_set": null,
+        "source_adjudicated_correctness": null,
+        "per_claim_confidence": null,
+        "independent_corroboration": false
+      },
+      "extraction_decisions": {
+        "whole_set_status": "scored",
+        "probability_uncalibrated": 0.59,
+        "threshold_supported": false,
+        "human_source_supported_set": null,
+        "source_adjudicated_correctness": null,
+        "per_claim_confidence": null,
+        "independent_corroboration": false
+      }
+    },
+    "S08": {
+      "rules_decisions": {
+        "whole_set_status": "scored",
+        "probability_uncalibrated": 0.85,
+        "threshold_supported": false,
+        "human_source_supported_set": null,
+        "source_adjudicated_correctness": null,
+        "per_claim_confidence": null,
+        "independent_corroboration": false
+      },
+      "extraction_decisions": {
+        "whole_set_status": "scored",
+        "probability_uncalibrated": 0.96,
+        "threshold_supported": true,
+        "human_source_supported_set": null,
+        "source_adjudicated_correctness": null,
+        "per_claim_confidence": null,
+        "independent_corroboration": false
+      }
+    },
+    "S09": {
+      "rules_decisions": {
+        "whole_set_status": "scored",
+        "probability_uncalibrated": 1.0,
+        "threshold_supported": true,
+        "human_source_supported_set": null,
+        "source_adjudicated_correctness": null,
+        "per_claim_confidence": null,
+        "independent_corroboration": false
+      },
+      "extraction_decisions": {
+        "whole_set_status": "scored",
+        "probability_uncalibrated": 0.98,
+        "threshold_supported": true,
+        "human_source_supported_set": null,
+        "source_adjudicated_correctness": null,
+        "per_claim_confidence": null,
+        "independent_corroboration": false
+      }
+    },
+    "S10": {
+      "rules_decisions": {
+        "whole_set_status": "scored",
+        "probability_uncalibrated": 0.99,
+        "threshold_supported": true,
+        "human_source_supported_set": null,
+        "source_adjudicated_correctness": null,
+        "per_claim_confidence": null,
+        "independent_corroboration": false
+      },
+      "extraction_decisions": {
+        "whole_set_status": "scored",
+        "probability_uncalibrated": 0.53,
+        "threshold_supported": false,
+        "human_source_supported_set": null,
+        "source_adjudicated_correctness": null,
+        "per_claim_confidence": null,
+        "independent_corroboration": false
+      }
+    }
+  },
+  "blinding_seed": 134863884388393814002945644303618567825,
+  "raw_outputs_unchanged": true
+}

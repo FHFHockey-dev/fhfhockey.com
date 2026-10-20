@@ -1,0 +1,44 @@
+{
+  "status": "offline_diagnostic_fix; paused",
+  "checkedAt": "2026-10-19T20:13:20.276083+00:00",
+  "changedFiles": [
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-sequential-pilot-2026-10-19/pilot.py",
+      "beforeSha256": "640db83c58c2045c65f2935d69fe63e7d75ea23402bef8a994b27cf9354daba9",
+      "sha256": "51636d9806da64a5315e5f4e9c9340fc15e677d89dc8450187126e88bdb43a8a",
+      "bytes": 27618,
+      "addedLines": 114,
+      "removedLines": 21
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-sequential-pilot-2026-10-19/test_pilot.py",
+      "beforeSha256": "a106d6d7200f91d1252cfa8ad571bd12f0d23c488102824e5d5e3884b63c09af",
+      "sha256": "6a4200f819b8e1353ecdcbe0a8fcc858f8185a96ce671167c8e322bed4c6a96b",
+      "bytes": 25174,
+      "addedLines": 149,
+      "removedLines": 1
+    }
+  ],
+  "cases": {
+    "newDiagnostics": 15,
+    "existingOwner": 25,
+    "unchangedReviewer": 3,
+    "totalPassed": 43,
+    "failed": 0
+  },
+  "unchangedExecutionInputs": 12,
+  "unchangedPriorPilotArtifactsExcludingTwoOwnedSourceChanges": 19,
+  "originalRunArtifactsUnchanged": 9,
+  "originalBudgetSha256": "ac28e83814ed20381b3cfee8049bfdc580dfc556f98ca1da33c70f0897015c44",
+  "originalBudgetBytesUnchanged": true,
+  "reservedNanoUsd": 254394800,
+  "actualNanoUsd": null,
+  "originalAttemptState": "uncertain",
+  "newProviderCalls": 0,
+  "realKeyReads": 0,
+  "reservationReleases": 0,
+  "retries": 0,
+  "currentExecutionClearance": "old manifest/clearance intentionally unchanged; new runner hash is not authorized by it",
+  "accountEvidence": "pending via parent",
+  "independentReviewOfNewPatch": "not performed; original reviewer regressions rerun byte-identically by owner"
+}

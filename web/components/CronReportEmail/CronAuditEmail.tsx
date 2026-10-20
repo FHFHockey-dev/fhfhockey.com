@@ -40,6 +40,7 @@ interface CronAuditEmailProps {
   untilDate?: string;
   totalsComplete?: boolean;
   fetchErrors?: string[];
+  successHistory?: { since: string; until: string; complete: boolean; error: string | null };
   summary: {
     scheduledJobs?: number;
     jobsOkLast?: number;
@@ -70,10 +71,15 @@ const skipped = (row: AuditEntry) => (row.missingObservationWarnings ?? []).some
 const missing = (row: AuditEntry) => row.status === "unknown" && (row.missingObservationWarnings ?? []).some((warning) => warning.includes("No cron or audit observation matched"));
 const nearLimit = (row: AuditEntry) => isNearRepositoryLimit(row.durationMs, row.repositoryLimitMs ?? null) || isNearRepositoryLimit(row.durationMs, row.runtimeBudgetMs ?? null);
 const priority = (row: AuditEntry) => row.status === "failure" ? 0 : nearLimit(row) ? 1 : row.status === "unknown" || skipped(row) || (row.failedRows ?? 0) > 0 ? 2 : row.status === "disabled" ? 3 : 4;
+const section = (row: AuditEntry) => row.status === "failure" ? "failure"
+  : missing(row) ? "missing"
+  : skipped(row) ? "partial"
+  : row.status === "unknown" || row.status === "disabled" || (row.missingObservationWarnings ?? []).length > 0 ? "gap"
+  : (row.failedRows ?? 0) > 0 || (row.failedOperations ?? 0) > 0 || nearLimit(row) ? "partial" : "success";
 const clean = (text: string) => text.replace(/\s+/g, " ").trim();
 const concise = (text: string) => clean(text).length > 220 ? `${clean(text).slice(0, 219)}…` : clean(text);
 
-export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDate, untilDate, totalsComplete = true, fetchErrors = [], summary }) => {
+export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDate, untilDate, totalsComplete = true, fetchErrors = [], successHistory, summary }) => {
   const rows = audits.map((row, index) => ({ row, index })).sort((a, b) => priority(a.row) - priority(b.row) || a.index - b.index).map(({ row }) => row);
   const globalWarnings = Array.from(new Set([
     ...fetchErrors,
@@ -116,13 +122,18 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDat
           {details.map((detail, index) => <div key={index} style={{ fontSize: 13, color: row.status === "failure" ? "#991B1B" : "#4B5563", marginTop: 4 }}>{row.status === "failure" ? clean(detail) : concise(detail)}</div>)}
           {row.failedRowSamples.length > 0 ? <div style={{ ...muted, marginTop: 4 }}>Evidence: {row.failedRowSamples.slice(0, 2).map(concise).join("; ")}</div> : null}
           {row.status === "failure" ? <div style={{ ...muted, marginTop: 6 }}><a href="https://vercel.com/fhfhockeydevs-projects/fhfhockey/logs" style={{ color: "#1D4ED8" }}>Inspect execution logs (sign in)</a>{" · Use the route and UTC time above."}</div> : null}
-          {row.status === "failure" && row.lastKnownSuccessDisplay ? <div style={muted}>Last recorded success: {row.lastKnownSuccessDisplay}</div> : null}
+          {row.status === "failure" ? <div style={muted}>Last recorded success: {row.lastKnownSuccessDisplay ?? "Unknown; no matching success observed in the reported lookback."}</div> : null}
           </div>
         </td></tr>;
       })}
     </tbody></table>;
-  const attention = rows.filter((row) => priority(row) < 2);
-  const other = rows.filter((row) => priority(row) >= 2);
+  const groups = [
+    { key: "failure", title: "Critical failures" },
+    { key: "missing", title: "Missing required jobs" },
+    { key: "gap", title: "Audit gaps / unknown / disabled" },
+    { key: "partial", title: "Partial successes / skipped results / runtime warnings" },
+    { key: "success", title: "Successful jobs" },
+  ].map((group) => ({ ...group, jobs: rows.filter((row) => section(row) === group.key) }));
   const hasFailures = summary.auditFailures > 0 || (summary.cronFailures ?? 0) > 0;
   const headline = hasFailures ? "Failures need attention." : rows.length === 0 ? "Execution health is unknown." : !totalsComplete ? "Coverage needs attention." : rows.some((row) => priority(row) < 4) ? "A few jobs need a look." : "Runs look healthy.";
 
@@ -143,15 +154,12 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDat
       <div style={{ fontSize: 12, marginTop: 4 }}>Known failures remain visible. Missing receipts do not establish success.</div>
     </div> : null}
     {(summary.omittedFailureObservations ?? 0) > 0 ? <p style={{ color: "#991B1B", fontSize: 13 }}>{summary.omittedFailureObservations} additional failed observations are omitted from the compact detail list. All observed failure receipts remain in the counts.</p> : null}
-    {attention.length > 0 ? <>
-      <h2 style={{ fontSize: 17, margin: "24px 0 12px" }}>Needs attention</h2>
-      {renderJobs(attention, false)}
-    </> : null}
-    {other.length > 0 ? <>
-      <h2 style={{ fontSize: 17, margin: "24px 0 4px" }}>Other job results</h2>
-      <div style={{ ...muted, marginBottom: 12 }}>Every remaining job, including healthy and skipped runs.</div>
-      {renderJobs(other, true)}
-    </> : null}
+    {groups.map((group) => <div key={group.key}>
+      <h2 style={{ fontSize: 17, margin: "24px 0 12px" }}>{group.title}</h2>
+      {group.key === "success"
+        ? <p style={muted}>{group.jobs.length} healthy job{group.jobs.length === 1 ? "" : "s"}; individual successful receipts omitted. Exceptions are listed above.</p>
+        : group.jobs.length > 0 ? renderJobs(group.jobs, group.key !== "failure") : <p style={muted}>None observed.</p>}
+    </div>)}
     {rows.length === 0 ? <p>No job observations available.</p> : null}
     <div style={{ ...muted, borderTop: "1px solid #D9DDD4", paddingTop: 18, marginTop: 20 }}>
       <strong style={{ color: "#30372B" }}>Coverage &amp; metric notes</strong>
@@ -166,6 +174,7 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDat
       </div>
       <div style={{ marginTop: 6 }}>Unknown = evidence unavailable; N/A = metric does not apply; 0 = verified zero.</div>
       <div style={{ marginTop: 6 }}>UTC window: {sinceDate}{untilDate ? ` through ${untilDate}` : ""}</div>
+      {successHistory ? <div style={{ marginTop: 6 }}>Success history lookback: {successHistory.since} through {successHistory.until}. {successHistory.complete ? "Bounded audit lookup completed; no match means unknown, not never succeeded." : "Lookup incomplete; latest success is unverified. Observed successes are retained."}{successHistory.error ? ` ${concise(successHistory.error)}` : ""}</div> : null}
       <div style={{ marginTop: 6 }}>Counts describe observations during collection; mutable cron history is not a transactional snapshot.</div>
     </div>
   </div>;

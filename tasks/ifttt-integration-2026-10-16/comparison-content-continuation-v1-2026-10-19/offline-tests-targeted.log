@@ -1,0 +1,28 @@
+test_known_usage_content_failures_continue_independent_records (test_continuation.LedgerTests.test_known_usage_content_failures_continue_independent_records) ... ERROR
+test_usage_above_a_reduced_server_cap_is_never_settled_as_safe (test_continuation.LedgerTests.test_usage_above_a_reduced_server_cap_is_never_settled_as_safe) ... ok
+
+======================================================================
+ERROR: test_known_usage_content_failures_continue_independent_records (test_continuation.LedgerTests.test_known_usage_content_failures_continue_independent_records)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-content-continuation-v1-2026-10-19/test_continuation.py", line 121, in test_known_usage_content_failures_continue_independent_records
+    result,fake=self.run_case('content')
+                ~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-content-continuation-v1-2026-10-19/test_continuation.py", line 110, in run_case
+    result=c.run(self.path,PLAN,auth(),transport=fake,credential_loader=self.loader,output=self.root/mode)
+  File "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-content-continuation-v1-2026-10-19/continuation.py", line 137, in run
+    ledger = Ledger(path, plan, auth); records = []; key = None; status = 'in_progress'; failure = None
+  File "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-content-continuation-v1-2026-10-19/continuation.py", line 40, in __init__
+    authority(plan, path, auth); pins(plan); self.plan = plan
+                                 ~~~~^^^^^^
+  File "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-content-continuation-v1-2026-10-19/continuation.py", line 24, in pins
+    for path, value in plan['runtime_pins'].items(): p.require(sha(path) == value, 'continuation pin drift')
+                                                     ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-offline-preflight-v1-2026-10-19/preflight.py", line 43, in require
+    raise ValueError(message)
+ValueError: continuation pin drift
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.008s
+
+FAILED (errors=1)

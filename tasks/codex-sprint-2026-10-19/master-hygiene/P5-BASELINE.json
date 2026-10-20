@@ -1,0 +1,16 @@
+{
+  "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md": {
+    "sha256": "957f10fb5becb2ce27feab8ff2436172c6abf052eeb3f7675c2d740a30a125f4",
+    "checkbox_counts": {
+      "open": 185,
+      "checked": 5117
+    }
+  },
+  "tasks/TASKS/rules/generate-tasks.mdc": {
+    "sha256": "d683bb43a04c7ec580d2c4e28312d98d56b0e96202a5557dcf1cae2b52c088f8",
+    "checkbox_counts": {
+      "open": 6,
+      "checked": 0
+    }
+  }
+}

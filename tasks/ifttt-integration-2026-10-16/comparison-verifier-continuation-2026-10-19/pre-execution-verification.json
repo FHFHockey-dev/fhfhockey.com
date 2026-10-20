@@ -1,0 +1,12 @@
+{
+  "checkedAt": "2026-10-19T21:31:51.840227+00:00",
+  "manifestSha256": "4165e22e8422ee4d3acbca5043cc0db7367d608eb87e56c747105279bed34e2d",
+  "authorizationSha256": "9e6a3ae139934489b843274d8c56ac435b6c7c863314c8cc9d4b45ce3b7e2370",
+  "boundFiles": 28,
+  "newOfflineControlsPassed": 13,
+  "reviewedAnchorTestsPreviouslyPassed": 20,
+  "baselineLedgerSha256": "2da989c4526fdc0316af78242c9a0fc3d766607e363d88863d65aca7d3a627ce",
+  "keyRead": false,
+  "providerCalls": 0,
+  "firstFullExposureNanoUsd": 485651788
+}

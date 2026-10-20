@@ -1,0 +1,34 @@
+{
+  "pythonExecutable": "/Library/Frameworks/Python.framework/Versions/3.13/bin/python3",
+  "pythonVersion": "3.13.0 (v3.13.0:60403a5409f, Oct  7 2024, 00:37:40) [Clang 15.0.0 (clang-1500.3.9.4)]",
+  "openssl": "OpenSSL 3.0.15 3 Sep 2024",
+  "defaultPaths": {
+    "cafile": null,
+    "capath": null,
+    "openssl_cafile_env": "SSL_CERT_FILE",
+    "openssl_cafile": "/Library/Frameworks/Python.framework/Versions/3.13/etc/openssl/cert.pem",
+    "openssl_capath_env": "SSL_CERT_DIR",
+    "openssl_capath": "/Library/Frameworks/Python.framework/Versions/3.13/etc/openssl/certs"
+  },
+  "defaultCertStats": {
+    "x509": 0,
+    "crl": 0,
+    "x509_ca": 0
+  },
+  "defaultHostnameCheck": true,
+  "defaultVerifyMode": "CERT_REQUIRED",
+  "certifiBundle": "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/certifi/cacert.pem",
+  "certifiBundleExists": true,
+  "certifiBundleSha256": "94edeb66e91774fcae93a05650914e29096259a5c7e871a1f65d461ab5201b47",
+  "certifiContextCertStats": {
+    "x509": 151,
+    "crl": 0,
+    "x509_ca": 151
+  },
+  "certifiHostnameCheck": true,
+  "certifiVerifyMode": "CERT_REQUIRED",
+  "certifiMinTLS": "TLSv1_2",
+  "handshakesPerformed": 0,
+  "networkCalls": 0,
+  "globalOrPersistentTrustChanges": false
+}

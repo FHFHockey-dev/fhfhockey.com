@@ -46,6 +46,9 @@ import {
   toGoalieRestSplitBucket,
   type StarterContextForTest
 } from "./run-forge-projections";
+import { computeSkaterPhysicalEventRates } from "./calculators/skater-adjustments";
+import { SKATER_PHYSICAL_RATE_PRIORS } from "./constants/projection-weights";
+import type { RollingRow } from "./types/run-forge-projections.types";
 
 function buildContext(
   overrides?: Partial<StarterContextForTest>
@@ -778,6 +781,82 @@ describe("skater small-sample shrinkage adjustments", () => {
     expect(result.sampleWeight).toBeGreaterThan(0.6);
     expect(result.isLowSample).toBe(false);
     expect(result.usedCallupFallback).toBe(false);
+  });
+});
+
+describe("skater physical event rates", () => {
+  // Invented all-strength rows: 110 window minutes and 5000 three-season minutes.
+  const allRow = (overrides: Partial<RollingRow> = {}): RollingRow => ({
+    game_id: 2026020100, season: 20262027, player_id: 7, strength_state: "all", game_date: "2026-10-13",
+    toi_seconds_avg_last5: 1320, toi_seconds_avg_all: null, sog_per_60_last5: null, sog_per_60_all: null,
+    sog_per_60_avg_last5: null, sog_per_60_avg_all: null, goals_total_last5: null, shots_total_last5: null,
+    assists_total_last5: null, goals_total_all: null, shots_total_all: null, assists_total_all: null,
+    hits_per_60_last5: 0, hits_per_60_all: null, blocks_per_60_last5: 0, blocks_per_60_all: null,
+    hits_per_60_avg_last5: null, hits_per_60_avg_all: null, blocks_per_60_avg_last5: null, blocks_per_60_avg_all: null,
+    toi_seconds_total_last5: 6600, hits_per_60_hits_3ya: 220, hits_per_60_toi_seconds_3ya: 300000,
+    blocks_per_60_blocks_3ya: 380, blocks_per_60_toi_seconds_3ya: 300000,
+    ...overrides,
+  });
+  const hitsWeight = 110 / (110 + 120);
+  const blocksWeight = 110 / (110 + 1000);
+
+  it("keeps a thin window of zero hits and blocks from zeroing an established defenseman", () => {
+    const rates = computeSkaterPhysicalEventRates({ all: allRow(), position: "D", esPpToiSeconds: 1200 });
+    expect(rates.hitsRecentWeight).toBeCloseTo(hitsWeight, 12);
+    expect(rates.blocksRecentWeight).toBeCloseTo(blocksWeight, 12);
+    expect(rates.hitsPer60).toBeCloseTo((1 - hitsWeight) * (220 * 60 + 50 * 3.2) / 5050, 12);
+    expect(rates.blocksPer60).toBeCloseTo((1 - blocksWeight) * (380 * 60 + 300 * 4.4) / 5300, 12);
+    expect(rates.blocksPer60).toBeGreaterThan(3);
+  });
+
+  it("uses the position prior, not zero, when there is no all-strength row or history", () => {
+    expect(computeSkaterPhysicalEventRates({ all: undefined, position: "D", esPpToiSeconds: 1200 }))
+      .toEqual({ hitsPer60: SKATER_PHYSICAL_RATE_PRIORS.D.hitsPer60, blocksPer60: SKATER_PHYSICAL_RATE_PRIORS.D.blocksPer60,
+        hitsRecentWeight: 0, blocksRecentWeight: 0, toiMultiplier: 1 });
+    const forward = computeSkaterPhysicalEventRates({ all: undefined, position: "C", esPpToiSeconds: 1000 });
+    expect(forward).toMatchObject(SKATER_PHYSICAL_RATE_PRIORS.F);
+    expect(forward.blocksPer60).toBeLessThan(SKATER_PHYSICAL_RATE_PRIORS.D.blocksPer60);
+    const noHistory = computeSkaterPhysicalEventRates({ position: "D", esPpToiSeconds: 1200, all: allRow({
+      hits_per_60_last5: null, hits_per_60_hits_3ya: null, hits_per_60_toi_seconds_3ya: null }) });
+    expect(noHistory.hitsPer60).toBe(SKATER_PHYSICAL_RATE_PRIORS.D.hitsPer60);
+  });
+
+  it("shrinks a short rookie history toward the prior and lets a genuine non-hitter stay near zero", () => {
+    const rookie = computeSkaterPhysicalEventRates({ position: "L", esPpToiSeconds: 1000, all: allRow({
+      hits_per_60_hits_3ya: 0, hits_per_60_toi_seconds_3ya: 7560 }) });
+    expect(rookie.hitsPer60).toBeCloseTo((1 - hitsWeight) * (50 * 4.9) / (126 + 50), 12);
+    const nonHitter = computeSkaterPhysicalEventRates({ position: "L", esPpToiSeconds: 1000, all: allRow({ hits_per_60_hits_3ya: 0 }) });
+    expect(nonHitter.hitsPer60).toBeGreaterThan(0);
+    expect(nonHitter.hitsPer60).toBeLessThan(0.3);
+  });
+
+  it("weights the recent rate by the minutes its window covers and reads the legacy rate when canonical is missing", () => {
+    const short = computeSkaterPhysicalEventRates({ position: "C", esPpToiSeconds: 1000, all: allRow({ hits_per_60_last5: 9 }) });
+    const long = computeSkaterPhysicalEventRates({ position: "C", esPpToiSeconds: 1000,
+      all: allRow({ hits_per_60_last5: 9, toi_seconds_total_last5: 60000 }) });
+    expect(long.hitsRecentWeight).toBeGreaterThan(short.hitsRecentWeight);
+    expect(long.hitsPer60).toBeGreaterThan(short.hitsPer60);
+    expect(long.hitsPer60).toBeLessThan(9);
+    const legacy = computeSkaterPhysicalEventRates({ position: "C", esPpToiSeconds: 1000,
+      all: allRow({ hits_per_60_last5: null, hits_per_60_avg_last5: 9 }) });
+    expect(legacy.hitsPer60).toBeCloseTo(short.hitsPer60, 12);
+  });
+
+  it("adds bounded PK time and never returns negative or non-finite rates", () => {
+    expect(computeSkaterPhysicalEventRates({ all: allRow(), position: "D", esPpToiSeconds: 1200 }).toiMultiplier).toBeCloseTo(1.1, 12);
+    expect(computeSkaterPhysicalEventRates({ all: allRow(), position: "D", esPpToiSeconds: 600 }).toiMultiplier).toBe(1.3);
+    expect(computeSkaterPhysicalEventRates({ all: allRow(), position: "D", esPpToiSeconds: 1500 }).toiMultiplier).toBe(1);
+    expect(computeSkaterPhysicalEventRates({ all: allRow({ toi_seconds_avg_last5: null }), position: "D", esPpToiSeconds: 1200 }).toiMultiplier).toBe(1);
+    const malformed = computeSkaterPhysicalEventRates({ position: "D", esPpToiSeconds: 0, all: allRow({
+      hits_per_60_last5: Number.NaN, blocks_per_60_last5: -2, toi_seconds_total_last5: -60,
+      hits_per_60_hits_3ya: -5, blocks_per_60_toi_seconds_3ya: Number.POSITIVE_INFINITY }) });
+    for (const value of Object.values(malformed)) {
+      expect(Number.isFinite(value)).toBe(true);
+      expect(value).toBeGreaterThanOrEqual(0);
+    }
+    expect(malformed).toMatchObject({ hitsPer60: SKATER_PHYSICAL_RATE_PRIORS.D.hitsPer60,
+      blocksPer60: SKATER_PHYSICAL_RATE_PRIORS.D.blocksPer60, hitsRecentWeight: 0, blocksRecentWeight: 0,
+      toiMultiplier: 1 });
   });
 });
 

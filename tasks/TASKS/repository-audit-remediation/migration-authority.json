@@ -871,6 +871,16 @@
       "migrationClass": "feature",
       "rolloutGate": "Drafted 2026-10-19 for the projection HTML shift-report fallback (TJ approved building it). Additive: capture_projection_raw_source_snapshots_v1 keeps its name, signature, defaults and grants; the shift envelope source may now be 'json-api' or 'htmlreports', and every row-identity, lock, collision and head check is unchanged, so JSON captures behave identically. Apply before the fallback code; hosted apply needs TJ's separate explicit approval and no migration command was run.",
       "stateEvidence": "Production ledger version 20261019172842 name accept_html_report_projection_shift_snapshots (applied 2026-10-19 by explicit user approval, immediately after 20261011115124). Read-only preflight: hosted body equalled the 20261011115124 base; post-apply prosrc md5 4750518d... equals this file's body; grants, SECURITY INVOKER and function settings unchanged; session lock_timeout back to 0. Only change: the accepted shift-payload source set widens to json-api and htmlreports. Local body equals applied body apart from BEGIN/COMMIT and SET LOCAL. Local source only; no hosted ledger or apply receipt. Disposable PostgreSQL harness evidence is recorded in tasks/artifacts/shift-charts-scope-2026-10-19/HTML-FALLBACK-BUILD.md."
+    },
+    {
+      "order": 87,
+      "path": "supabase/migrations/20261019211444_opponent_skater_allowed_by_position.sql",
+      "sha256": "70c8fe8ca884da8a4686eac99c289bb82f253fc18d367b65349ee56697afbdfe",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Drafted 2026-10-19 at TJ's request by session local_08a0bf1c: materialized view public.opponent_skater_allowed_by_position (regular-season points and shots allowed to F vs D per opponent, current and last season; service_role select only) plus fhfh_internal.register_opponent_allowed_refresh_cron(), which the migration does not call. Hosted apply and cron registration are separate explicit approvals. The register function schedules the refresh at 09:42 UTC ('42 9 * * *'), clear of the */5, */10, */20 and */25 jobs that fire at 09:40.",
+      "stateEvidence": "Production ledger version 20261019211444 name opponent_skater_allowed_by_position (applied 2026-10-19 by explicit TJ approval via session local_08a0bf1c; file renamed from its draft timestamp 20261019213000 to the ledger version). Chef read-only readback: it is the only ledger row after 20261019172842; materialized view has 128 rows; SELECT for service_role only (anon/authenticated false); fhfh_internal.register_opponent_allowed_refresh_cron() was called once by approval and cron.job 'opponent-skater-allowed-refresh' is active at '42 9 * * *'. IFTTT SQL6-SQL8 drafts take orders 88-90 when added."
     }
   ],
   "sourceExtensionApproval": {

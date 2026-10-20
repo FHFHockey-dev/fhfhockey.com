@@ -1,0 +1,7 @@
+{
+  "authorization_sha256": "3c9a248abefe7ecde7a7e801f654cd2b9fc4d8d57e0f0a9ccaf218808a2fbc4f",
+  "execution_manifest_sha256": "1b039d626675592f9b31e16fbf6e043ac5bcec6977a96c7f12f1c081a4c4acf5",
+  "baseline_ledger_sha256": "19c48ae3244bf65ec1d293ca95a1f66f3f1e6b2f03c2d530d3e44d2b99caea52",
+  "maximum_calls": 17,
+  "retry": false
+}

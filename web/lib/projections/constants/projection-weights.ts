@@ -84,6 +84,20 @@ export const SKATER_SMALL_SAMPLE_TOI_SECONDS_SCALE = 900;
 export const SKATER_SMALL_SAMPLE_SHOTS_SCALE = 45;
 export const SKATER_SMALL_SAMPLE_LOW_WEIGHT_THRESHOLD = 0.45;
 export const SKATER_SMALL_SAMPLE_CALLUP_WEIGHT_THRESHOLD = 0.22;
+// All-situation hits/blocks per 60. Priors are the 2024-25 + 2025-26 league
+// position rates (WGO). Minute scales were fitted 2026-10-19 by Poisson deviance
+// on games 6-30 of 2024-25 and 2025-26, as of the previous game: hits follow the
+// recent window, blocks the three-season baseline.
+export const SKATER_PHYSICAL_RATE_PRIORS = {
+  F: { hitsPer60: 4.9, blocksPer60: 2.1 },
+  D: { hitsPer60: 3.2, blocksPer60: 4.4 },
+} as const;
+/** Three-season minutes that weigh as much as the position prior. */
+export const SKATER_PHYSICAL_PRIOR_MINUTES = { hits: 50, blocks: 300 } as const;
+/** Baseline minutes the last-5 window is blended against. */
+export const SKATER_PHYSICAL_RECENT_SHRINK_MINUTES = { hits: 120, blocks: 1000 } as const;
+/** Cap on all-situation over ES+PP TOI when adding PK time (2025-26 last-5 p99 is about 1.3). */
+export const SKATER_PHYSICAL_TOI_RATIO_MAX = 1.3;
 export const SKATER_TEAMMATE_ASSIST_ES_MIN_MULTIPLIER = 0.82;
 export const SKATER_TEAMMATE_ASSIST_ES_MAX_MULTIPLIER = 1.2;
 export const SKATER_TEAMMATE_ASSIST_PP_MIN_MULTIPLIER = 0.8;

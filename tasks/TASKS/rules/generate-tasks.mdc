@@ -44,6 +44,8 @@ To guide an AI assistant in creating a detailed, step-by-step task list in Markd
 
 ## Output Format
 
+**2026-10-19 template classification:** The six example rows below are non-actionable reference-template examples. Their checked historical-only dispositions record administrative classification, not implementation; generated task lists must use unchecked boxes for actual unfinished work.
+
 The generated task list *must* follow this structure:
 
 ```markdown
@@ -63,10 +65,10 @@ The generated task list *must* follow this structure:
 
 ## Tasks
 
-- [ ] 1.0 Parent Task Title
-  - [ ] 1.1 [Sub-task description 1.1]
-  - [ ] 1.2 [Sub-task description 1.2]
-- [ ] 2.0 Parent Task Title
-  - [ ] 2.1 [Sub-task description 2.1]
-- [ ] 3.0 Parent Task Title
+- [x] 1.0 Parent Task Title *(Historical-only disposition 2026-10-19: non-actionable reference-template example; checked for administrative classification, not implementation.)*
+  - [x] 1.1 [Sub-task description 1.1] *(Historical-only disposition 2026-10-19: non-actionable reference-template example; checked for administrative classification, not implementation.)*
+  - [x] 1.2 [Sub-task description 1.2] *(Historical-only disposition 2026-10-19: non-actionable reference-template example; checked for administrative classification, not implementation.)*
+- [x] 2.0 Parent Task Title *(Historical-only disposition 2026-10-19: non-actionable reference-template example; checked for administrative classification, not implementation.)*
+  - [x] 2.1 [Sub-task description 2.1] *(Historical-only disposition 2026-10-19: non-actionable reference-template example; checked for administrative classification, not implementation.)*
+- [x] 3.0 Parent Task Title *(Historical-only disposition 2026-10-19: non-actionable reference-template example; checked for administrative classification, not implementation.)*
 ```

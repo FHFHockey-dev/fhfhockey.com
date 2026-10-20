@@ -339,6 +339,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any), {
   jobName: "/api/v1/db/update-team-ctpi-daily",
-});
+}));

@@ -13,6 +13,7 @@ const producer = vi.hoisted(() => ({
   roster: (teamId: number) => Array.from({ length: 18 }, (_, index) => teamId * 100 + index + 1),
   ppLine: { goalsPp: 0.1114, assistsPp: 0.2 },
   countsAvailable: true,
+  rollingStrengths: [] as string[],
   playerWrites: vi.fn(async (rows: unknown[]) => rows.length),
   teamWrites: vi.fn(async (_row: unknown) => 1),
 }));
@@ -30,8 +31,12 @@ vi.mock("./queries/line-combo-queries", () => ({ fetchRecentTeamLineCombinations
 }] }));
 vi.mock("./queries/skater-queries", () => ({
   fetchCurrentRosterPlayerIds: async (teamId: number) => producer.roster(teamId),
-  fetchRollingRows: async (ids: number[], strength: "ev" | "pp") => producer.countsAvailable ? ids.map(id => {
+  fetchRollingRows: async (ids: number[], strength: "ev" | "pp" | "all") => (producer.rollingStrengths.push(strength), producer.countsAvailable) ? ids.map(id => {
     const game = { id: 2026020001, date: "2026-10-06", seasonId: 20262027 };
+    // All-strength rows carry NHL-backed hit/block rates and no aligned NST count support.
+    if (strength === "all") return { player_id: id, game_id: game.id, game_date: game.date, season: game.seasonId, strength_state: strength,
+      toi_seconds_avg_last5: 1100, toi_seconds_total_last5: 5500, hits_per_60_last5: 0, blocks_per_60_last5: 0,
+      hits_per_60_hits_3ya: 120, hits_per_60_toi_seconds_3ya: 200000, blocks_per_60_blocks_3ya: 60, blocks_per_60_toi_seconds_3ya: 200000 };
     const support = createAlignedCountSupportBuilder({ playerId: id, strengthState: strength,
       sourceTable: strength === "ev" ? "nst_gamelog_es_counts" : "nst_gamelog_pp_counts", startDate: game.date,
       canonicalGames: [game], countsRows: [{ id, player_id: id, date_scraped: game.date, season: game.seasonId, goals: 1, shots: 8, total_assists: 1 }],
@@ -317,6 +322,7 @@ describe("native skater-stage accounting integration", () => {
     producer.teamWrites.mockClear();
     producer.ppLine = { goalsPp: fixture.goalsPp, assistsPp: fixture.assistsPp };
     producer.countsAvailable = fixture.countsAvailable !== false;
+    producer.rollingStrengths.length = 0;
     const asOfDate = "2026-10-07";
     const cached = <T>(value: T) => new Map([10, 11].map(teamId => [`${teamId}:${asOfDate}`, value]));
     const teamGoalsByTeamId = new Map<number, number>();
@@ -346,6 +352,9 @@ describe("native skater-stage accounting integration", () => {
         conflicts: [{ gameId: 2026020002, teamId: 10, playerId: 1018, dimension: "pp", evidenceIds: ["synthetic-pp-conflict"] }] },
     });
     expect(result).toEqual({ timedOut: false, playerRowsUpserted: 36, teamRowsUpserted: 2 });
+    const reads = (strength: string) => producer.rollingStrengths.filter(value => value === strength).length;
+    expect(reads("all")).toBeGreaterThanOrEqual(2);
+    expect(reads("all")).toBe(reads("ev"));
     expect(producer.playerWrites).toHaveBeenCalledTimes(2);
     const added = producer.playerWrites.mock.calls[0][0].find((row: any) => row.player_id === 1018) as any;
     expect(added.uncertainty.model.skater_selection).toMatchObject({ participation_probability: 1, participation_reason: null });

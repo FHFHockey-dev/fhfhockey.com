@@ -1,0 +1,8 @@
+{
+  "exitCode": 0,
+  "durationMs": 109,
+  "providerCalls": 0,
+  "credentialReads": 0,
+  "ledgerWrites": 0,
+  "scope": "new exact-source adapter and authentic retained-response offline evaluation"
+}

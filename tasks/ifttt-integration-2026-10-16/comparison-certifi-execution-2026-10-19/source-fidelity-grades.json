@@ -1,0 +1,510 @@
+{
+  "labelStatus": {
+    "kind": "provisional_ai",
+    "author": "agent projection of independently source-read annotations; reviewed source spans",
+    "human_adjudication": false,
+    "empirical_ground_truth": false
+  },
+  "sourceFamily": "original-x-2108233461026726263",
+  "goldClaimsInDenominator": 2,
+  "rules_only": {
+    "status": "previously captured exact rules projection, graded offline",
+    "grade": {
+      "tp": 0,
+      "fp": 1,
+      "fn": 2,
+      "proposal_precision": 0.0,
+      "proposal_recall": 0.0,
+      "eligible_precision": null,
+      "eligible_actionable_recall": 0.0,
+      "hallucinations": 0,
+      "unsafe_acceptance": 0,
+      "usable_source_updates": 0,
+      "usable_world_updates": null,
+      "world_truth": "ungraded_without_independent_asof_evidence",
+      "missed_actionable": 2,
+      "actionable_gold": 2,
+      "predictions": 1,
+      "accepted": 0,
+      "held": 1,
+      "relevant": true,
+      "relevance_correct": true,
+      "ungradable_fields": 4,
+      "errors": [],
+      "field_accuracy": {
+        "player": {
+          "correct": 1,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 0.5
+        },
+        "team": {
+          "correct": 0,
+          "total": 1,
+          "gold_nonnull": 1,
+          "predicted_nonnull": 0,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": null,
+          "recall": 0.0
+        },
+        "role": {
+          "correct": 0,
+          "total": 1,
+          "gold_nonnull": 1,
+          "predicted_nonnull": 0,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": null,
+          "recall": 0.0
+        },
+        "event": {
+          "correct": 1,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 0.5
+        },
+        "value": {
+          "correct": 0,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "polarity": {
+          "correct": 0,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "certainty": {
+          "correct": 1,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 0.5
+        },
+        "time": {
+          "correct": 0,
+          "total": 2,
+          "gold_nonnull": 1,
+          "predicted_nonnull": 0,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": null,
+          "recall": 0.0
+        },
+        "condition": {
+          "correct": 1,
+          "total": 2,
+          "gold_nonnull": 0,
+          "predicted_nonnull": 0,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": null,
+          "recall": null
+        },
+        "source_id": {
+          "correct": 1,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 0.5
+        },
+        "source_author": {
+          "correct": 1,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 1,
+          "correct_nonnull": 1,
+          "unmatched_nonnull": 0,
+          "precision": 1.0,
+          "recall": 0.5
+        }
+      },
+      "taxonomy": [
+        {
+          "type": "field_error",
+          "fields": [
+            "value",
+            "polarity",
+            "time"
+          ],
+          "gold": "lindgren-provisional-2",
+          "predicted": "rules-x:2108233461026726263-0"
+        }
+      ],
+      "field_precision_policy": "matched_gold_gradable_fields_only; unmatched assertions counted separately"
+    }
+  },
+  "extraction_only": {
+    "status": "API returned; strict source evidence rejected",
+    "rawProposedClaims": 2,
+    "rejectedClaims": 2,
+    "normalizationErrors": [
+      "evidence mismatch",
+      "evidence mismatch"
+    ],
+    "admittedSubsetGrade": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 2,
+      "proposal_precision": null,
+      "proposal_recall": 0.0,
+      "eligible_precision": null,
+      "eligible_actionable_recall": 0.0,
+      "hallucinations": 0,
+      "unsafe_acceptance": 0,
+      "usable_source_updates": 0,
+      "usable_world_updates": null,
+      "world_truth": "ungraded_without_independent_asof_evidence",
+      "missed_actionable": 2,
+      "actionable_gold": 2,
+      "predictions": 0,
+      "accepted": 0,
+      "held": 0,
+      "relevant": true,
+      "relevance_correct": true,
+      "ungradable_fields": 4,
+      "errors": [
+        "evidence mismatch",
+        "evidence mismatch"
+      ],
+      "field_accuracy": {
+        "player": {
+          "correct": 0,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 0,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": null,
+          "recall": 0.0
+        },
+        "team": {
+          "correct": 0,
+          "total": 1,
+          "gold_nonnull": 1,
+          "predicted_nonnull": 0,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": null,
+          "recall": 0.0
+        },
+        "role": {
+          "correct": 0,
+          "total": 1,
+          "gold_nonnull": 1,
+          "predicted_nonnull": 0,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": null,
+          "recall": 0.0
+        },
+        "event": {
+          "correct": 0,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 0,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": null,
+          "recall": 0.0
+        },
+        "value": {
+          "correct": 0,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 0,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": null,
+          "recall": 0.0
+        },
+        "polarity": {
+          "correct": 0,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 0,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": null,
+          "recall": 0.0
+        },
+        "certainty": {
+          "correct": 0,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 0,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": null,
+          "recall": 0.0
+        },
+        "time": {
+          "correct": 0,
+          "total": 2,
+          "gold_nonnull": 1,
+          "predicted_nonnull": 0,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": null,
+          "recall": 0.0
+        },
+        "condition": {
+          "correct": 0,
+          "total": 2,
+          "gold_nonnull": 0,
+          "predicted_nonnull": 0,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": null,
+          "recall": null
+        },
+        "source_id": {
+          "correct": 0,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 0,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": null,
+          "recall": 0.0
+        },
+        "source_author": {
+          "correct": 0,
+          "total": 2,
+          "gold_nonnull": 2,
+          "predicted_nonnull": 0,
+          "correct_nonnull": 0,
+          "unmatched_nonnull": 0,
+          "precision": null,
+          "recall": 0.0
+        }
+      },
+      "taxonomy": [],
+      "field_precision_policy": "matched_gold_gradable_fields_only; unmatched assertions counted separately"
+    }
+  },
+  "rules_decisions": {
+    "status": "not_run",
+    "grade": null
+  },
+  "extraction_decisions": {
+    "status": "not_run",
+    "grade": null
+  },
+  "rawSemanticFieldMatchesDiagnosticOnly": [
+    {
+      "proposalId": "1",
+      "goldId": "lindgren-provisional-1",
+      "purpose": "raw semantic-field diagnosis only; not strict TP/acceptance",
+      "fields": [
+        {
+          "field": "player",
+          "expected": "Ryan Lindgren",
+          "proposed": "Ryan Lindgren",
+          "matches": true
+        },
+        {
+          "field": "team",
+          "expected": "#SeaKraken",
+          "proposed": "#SeaKraken",
+          "matches": true
+        },
+        {
+          "field": "role",
+          "expected": "defenseman",
+          "proposed": "defenseman",
+          "matches": true
+        },
+        {
+          "field": "event",
+          "expected": "injury",
+          "proposed": "injury",
+          "matches": true
+        },
+        {
+          "field": "value",
+          "expected": "injured_reserve",
+          "proposed": "injured_reserve",
+          "matches": true
+        },
+        {
+          "field": "polarity",
+          "expected": "positive",
+          "proposed": "positive",
+          "matches": true
+        },
+        {
+          "field": "certainty",
+          "expected": "asserted",
+          "proposed": "asserted",
+          "matches": true
+        },
+        {
+          "field": "time",
+          "expected": null,
+          "proposed": null,
+          "matches": true
+        },
+        {
+          "field": "condition",
+          "expected": null,
+          "proposed": null,
+          "matches": true
+        },
+        {
+          "field": "source_id",
+          "expected": "x:2108233461026726263",
+          "proposed": "x:2108233461026726263",
+          "matches": true
+        },
+        {
+          "field": "source_author",
+          "expected": "SeattleKrakenPR",
+          "proposed": "SeattleKrakenPR",
+          "matches": true
+        }
+      ],
+      "matchingFields": 11,
+      "gradedFields": 11,
+      "ungradedFields": [
+        "player_id"
+      ]
+    },
+    {
+      "proposalId": "2",
+      "goldId": "lindgren-provisional-2",
+      "purpose": "raw semantic-field diagnosis only; not strict TP/acceptance",
+      "fields": [
+        {
+          "field": "player",
+          "expected": "Ryan Lindgren",
+          "proposed": "Ryan Lindgren",
+          "matches": true
+        },
+        {
+          "field": "event",
+          "expected": "availability",
+          "proposed": "availability",
+          "matches": true
+        },
+        {
+          "field": "value",
+          "expected": "out; cause=upper-body injury",
+          "proposed": "out; cause=upper-body injury",
+          "matches": true
+        },
+        {
+          "field": "polarity",
+          "expected": "positive",
+          "proposed": "positive",
+          "matches": true
+        },
+        {
+          "field": "certainty",
+          "expected": "asserted",
+          "proposed": "asserted",
+          "matches": true
+        },
+        {
+          "field": "time",
+          "expected": "approximately 4-6 weeks",
+          "proposed": "approximately 4-6 weeks",
+          "matches": true
+        },
+        {
+          "field": "condition",
+          "expected": null,
+          "proposed": null,
+          "matches": true
+        },
+        {
+          "field": "source_id",
+          "expected": "x:2108233461026726263",
+          "proposed": "x:2108233461026726263",
+          "matches": true
+        },
+        {
+          "field": "source_author",
+          "expected": "SeattleKrakenPR",
+          "proposed": "SeattleKrakenPR",
+          "matches": true
+        }
+      ],
+      "matchingFields": 9,
+      "gradedFields": 9,
+      "ungradedFields": [
+        "team",
+        "role",
+        "player_id"
+      ]
+    }
+  ],
+  "sourceSpanAudit": [
+    {
+      "proposalId": "1",
+      "originalProposedEvidence": {
+        "end": 70,
+        "start": 0,
+        "text": "The #SeaKraken have placed defenseman Ryan Lindgren on injured reserve."
+      },
+      "actualSourceSliceAtProposedOffsets": "The #SeaKraken have placed defenseman Ryan Lindgren on injured reserve",
+      "sliceMatchesQuotedText": false,
+      "literalQuoteOccurrencesDiagnosticOnly": [
+        {
+          "start": 0,
+          "end": 71
+        }
+      ],
+      "namedPlayerPresentInQuotedEvidence": true,
+      "alignmentOrRepairApplied": false,
+      "playerIdWasPopulated": true,
+      "playerIdNote": "Contrary to pilot null-ID instruction; canonical identity truth remains ungraded"
+    },
+    {
+      "proposalId": "2",
+      "originalProposedEvidence": {
+        "end": 126,
+        "start": 71,
+        "text": "He will miss approximately 4-6 weeks due to an upper-body injury."
+      },
+      "actualSourceSliceAtProposedOffsets": " He will miss approximately 4-6 weeks due to an upper-b",
+      "sliceMatchesQuotedText": false,
+      "literalQuoteOccurrencesDiagnosticOnly": [
+        {
+          "start": 72,
+          "end": 137
+        }
+      ],
+      "namedPlayerPresentInQuotedEvidence": false,
+      "alignmentOrRepairApplied": false,
+      "playerIdWasPopulated": true,
+      "playerIdNote": "Contrary to pilot null-ID instruction; canonical identity truth remains ungraded"
+    }
+  ],
+  "verdict": "inconclusive; one exposed historical family and incomplete arms",
+  "nativeEligible": false
+}

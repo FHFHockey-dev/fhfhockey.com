@@ -1,0 +1,48 @@
+{
+  "scope": "Bounded official-documentation review only; provider API not called",
+  "tokenCounting": {
+    "url": "https://developers.openai.com/api/docs/guides/token-counting",
+    "verified": [
+      "Counts the model input including request formatting; tools/schemas must be included.",
+      "Output token limit covers visible and non-visible generated tokens."
+    ],
+    "notEstablished": [
+      "Free versus billable count requests, or a per-call/token rate for counting.",
+      "This existing project's/key's endpoint permission."
+    ],
+    "quote": "returns the exact count the model will receive"
+  },
+  "endpointSpec": {
+    "source": "OpenAI Developer Docs get_openapi_spec",
+    "endpoint": "POST https://api.openai.com/v1/responses/input_tokens",
+    "responseFields": [
+      "object=response.input_tokens",
+      "input_tokens"
+    ],
+    "exampleAuthentication": "Authorization: Bearer existing API key",
+    "billingDeclarationPresent": false,
+    "schema": "TokenCountsBody reference returned; no standalone resolved schema"
+  },
+  "pricing": {
+    "url": "https://developers.openai.com/api/docs/pricing",
+    "model": "gpt-6-luna",
+    "usdPerMillion": {
+      "shortInput": ".10",
+      "shortCacheWrite": ".125",
+      "shortOutput": ".50",
+      "longInput": ".20",
+      "longCacheWrite": ".25",
+      "longOutput": ".75"
+    },
+    "tokenCountEndpointRateFound": false
+  },
+  "spendingExample": {
+    "url": "https://developers.openai.com/cookbook/articles/per_run_spending_controller_responses_api",
+    "verified": "Demonstrates input_tokens.count before reserving a Responses call; explicitly fictional sample prices and no invoice guarantee.",
+    "usedAsCurrentPricing": false
+  },
+  "lookupLimits": [
+    "Count API reference markdown fetch returned404; general web open exceeded4MiB; exact endpoint OpenAPI and dedicated counting guide were subsequently retrieved.",
+    "Targeted official free/billing searches and pricing review did not establish a count-endpoint charge. Absence of a price row is not proof of zero cost."
+  ]
+}

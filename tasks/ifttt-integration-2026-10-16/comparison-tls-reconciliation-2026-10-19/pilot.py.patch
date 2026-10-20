@@ -1,0 +1,28 @@
+--- before/pilot.py
++++ candidate/pilot.py
+@@ -11,6 +11,7 @@
+ from fractions import Fraction
+ from pathlib import Path
+ from urllib import request, error
++import certifi
+ 
+ HERE=Path(__file__).resolve().parent
+ REPO=HERE.parents[2]
+@@ -252,7 +253,7 @@
+         basic_limits(endpoint,sealed.as_dict())
+         # Fixed HTTPS destination and verified TLS; no proxy, redirects or retries.
+         stage='construct'
+-        opener=request.build_opener(request.ProxyHandler({}),request.HTTPSHandler(context=ssl.create_default_context()),NoRedirect())
++        opener=request.build_opener(request.ProxyHandler({}),request.HTTPSHandler(context=ssl.create_default_context(cafile=certifi.where())),NoRedirect())
+         req=request.Request('https://api.openai.com/v1/'+endpoint,data=sealed.wire,method='POST',
+                             headers={'Authorization':'Bearer '+key,'Content-Type':'application/json'})
+         stage='open';opened=True
+@@ -302,7 +303,7 @@
+     return [Path(__file__),HERE/'amendment.json',BASE/'comparison.py',BASE/'claim-schema.json',BASE/'rules-adapter.ts',
+             POLICY/'pilot-rules.json',POLICY/'pilot-extraction-request.json',POLICY/'pilot-extraction-prompt.txt',RULES_OUTPUT,
+             *[REPO/'web/lib/sources'/n for n in ('tweetPlayerEvents.ts','tweetInterpretation.ts','playerIdentity.ts')],
+-            REPO/'web/lib/supabase/pagination.ts']
++            REPO/'web/lib/supabase/pagination.ts',Path(certifi.__file__),Path(certifi.core.__file__),Path(certifi.where())]
+ 
+ 
+ def manifest_document():

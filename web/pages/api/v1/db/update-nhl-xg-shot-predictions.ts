@@ -588,9 +588,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default withCronJobAudit(adminOnly(withXgExecutionLeaseApi(handler, {
+export default adminOnly(withCronJobAudit(withXgExecutionLeaseApi(handler, {
   leaseKey: "xg:shot-predictions",
   ttlSeconds: 1800
-}) as any), {
+}) as any, {
   jobName: "update-nhl-xg-shot-predictions"
-});
+}));

@@ -1,0 +1,38 @@
+{
+  "version": "matched-denominator-source-fidelity-v1",
+  "denominators": {
+    "groups": 10,
+    "source_records": 12,
+    "source_units": 50,
+    "by_group": {
+      "S01": 2,
+      "S02": 6,
+      "S03": 1,
+      "S04": 11,
+      "S05": 3,
+      "S06": 1,
+      "S07": 4,
+      "S08": 19,
+      "S09": 1,
+      "S10": 2
+    }
+  },
+  "rules": [
+    "All four arms share exact group inputs, context, field masks and 50 source-unit denominator; preserve missing groups/units on refusal, schema error, overflow, budget stop or unsupported producer shape. Provider inputs contain sources/context/proposals only, never benchmark answers or raw owner annotations.",
+    "Match by literal subject/relationship, predicate, state, modality, time/qualifiers and source/evidence. Freeze deterministic normalizations and composite-event matching before a run. Do not use string similarity or a paid judge to award semantic credit.",
+    "A source row with multiple players may be expanded only by a frozen lossless projection; do not double count a PP replacement relation or duplicate relay.",
+    "Observed evidence and approved hockey-category projections are separate score columns. A confirmed/projected projection must retain its qualifying evidence; do not treat source-independent inference as an observed fact.",
+    "Count omitted facts, wrong predicates/subjects and boundary/schema/span failures separately from unsupported additions and strengthened certainty/duration.",
+    "Report uncertainty/negation/conditions, injury causes, literal durations and source attribution retention. Canonical IDs/world truth are masked; unsupported asserted external bindings are counted separately as unproved additions, not validated false world facts.",
+    "Report S10 predecessor evidence preservation, correction relation and final no-regular-PP/retraction state separately; no credit for deleting the exchange.",
+    "Report raw model extraction and explicitly quote-aligned output separately. Exact-quote realignment may change anchors only, not meaning, uncertainty or fields.",
+    "Decisions uses one whole-set source-support question per producer/group, threshold 0.95, holding the set on low/unknown/refusal. Empty sets use relevance, never vacuous support. It cannot invent missing claims, clear preexisting holds, certify identity or repair prose.",
+    "Compute extraction TP/FP/FN on raw proposals and proposal precision/recall after held suppression separately. Withheld correct source claims remain extraction credit, but not usable/published updates.",
+    "Always show source-supported, held, locally eligible and actually published separately. Owner publication/world-truth fields remain ungraded; actual publication is not performed. False-release/hold tests use explicit protocol prerequisites, not fabricated human readiness labels.",
+    "Report per-group and micro totals; macro averaging across ten family groups prevents 19 lineup units from dominating. Do not present forty arm executions as forty independent examples.",
+    "Report billed tokens including reasoning/cache details, usage-priced ceiling and actual HTTP latency per real call; local parser/normalization latency separately. Shared extraction charged once; reused responses get no new-call latency or new-charge attribution."
+  ],
+  "world_truth_and_publication_scoring": null,
+  "benchmark_peeking": "Known development exposure. Freeze producer prompts/versions before scored execution; no answer-driven tuning, retries or selective reruns during it.",
+  "implementation_status": "Policy frozen; full ten-group multi-record projector and deterministic matcher are offline preflight work, not yet implemented or independently reviewed."
+}

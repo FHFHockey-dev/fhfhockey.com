@@ -47,6 +47,11 @@ export type RollingRow = {
   hits_per_60_avg_all: number | null;
   blocks_per_60_avg_last5: number | null;
   blocks_per_60_avg_all: number | null;
+  toi_seconds_total_last5?: number | null;
+  hits_per_60_hits_3ya?: number | null;
+  hits_per_60_toi_seconds_3ya?: number | null;
+  blocks_per_60_blocks_3ya?: number | null;
+  blocks_per_60_toi_seconds_3ya?: number | null;
 };
 
 export type RosterEventRow = {

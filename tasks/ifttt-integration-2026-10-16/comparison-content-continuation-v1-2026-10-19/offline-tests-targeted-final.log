@@ -1,0 +1,24 @@
+test_known_usage_content_failures_continue_independent_records (test_continuation.LedgerTests.test_known_usage_content_failures_continue_independent_records) ... {"charge_ceiling_nano_usd":110,"content_held":false,"group":"S05","kind":"rules_decisions","settled_stage":0}
+{"charge_ceiling_nano_usd":110,"content_held":false,"group":"S05","kind":"extraction_decisions","settled_stage":1}
+{"charge_ceiling_nano_usd":688,"content_held":true,"group":"S08","kind":"extraction","settled_stage":2}
+{"charge_ceiling_nano_usd":110,"content_held":false,"group":"S08","kind":"rules_decisions","settled_stage":3}
+{"charge_ceiling_nano_usd":110,"content_held":true,"group":"S08","kind":"extraction_decisions","settled_stage":4}
+{"charge_ceiling_nano_usd":688,"content_held":true,"group":"S06","kind":"extraction","settled_stage":5}
+{"charge_ceiling_nano_usd":110,"content_held":false,"group":"S06","kind":"rules_decisions","settled_stage":6}
+{"charge_ceiling_nano_usd":110,"content_held":true,"group":"S06","kind":"extraction_decisions","settled_stage":7}
+{"charge_ceiling_nano_usd":688,"content_held":true,"group":"S07","kind":"extraction","settled_stage":8}
+{"charge_ceiling_nano_usd":110,"content_held":false,"group":"S07","kind":"rules_decisions","settled_stage":9}
+{"charge_ceiling_nano_usd":110,"content_held":true,"group":"S07","kind":"extraction_decisions","settled_stage":10}
+{"charge_ceiling_nano_usd":688,"content_held":true,"group":"S09","kind":"extraction","settled_stage":11}
+{"charge_ceiling_nano_usd":110,"content_held":false,"group":"S09","kind":"rules_decisions","settled_stage":12}
+{"charge_ceiling_nano_usd":110,"content_held":true,"group":"S09","kind":"extraction_decisions","settled_stage":13}
+{"charge_ceiling_nano_usd":688,"content_held":true,"group":"S10","kind":"extraction","settled_stage":14}
+{"charge_ceiling_nano_usd":110,"content_held":false,"group":"S10","kind":"rules_decisions","settled_stage":15}
+{"charge_ceiling_nano_usd":110,"content_held":true,"group":"S10","kind":"extraction_decisions","settled_stage":16}
+ok
+test_usage_above_a_reduced_server_cap_is_never_settled_as_safe (test_continuation.LedgerTests.test_usage_above_a_reduced_server_cap_is_never_settled_as_safe) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.249s
+
+OK

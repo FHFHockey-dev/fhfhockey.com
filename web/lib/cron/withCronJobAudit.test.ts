@@ -308,6 +308,57 @@ describe("withCronJobAudit", () => {
     expect(row.details.failedRows).toBeNull();
   });
 
+  it("limits opted-in audit previews to own primitive fields without changing the API or status inference", async () => {
+    const body = Object.assign(Object.create({ inherited: "private-inherited-value" }), {
+      success: false,
+      attempted: 2,
+      failed: 1,
+      results: [{ userId: "private-user-id", error: "private-provider-error" }],
+      unavailableCount: Number.NaN,
+    });
+    const wrapped = withCronJobAudit(
+      async (_req, res) => res.json(body),
+      {
+        jobName: "bounded-provider-summary",
+        recordRowMetrics: false,
+        responsePreviewKeys: ["attempted", "failed", "results", "inherited", "unavailableCount"],
+      }
+    );
+    const res = createMockRes();
+
+    await wrapped(createMockReq(), res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toBe(body);
+    expect(insertMock).toHaveBeenCalledTimes(1);
+    const row = insertMock.mock.calls[0][0];
+    expect(row.status).toBe("failure");
+    expect(row.rows_affected).toBeNull();
+    expect(JSON.parse(row.details.response)).toEqual({ attempted: 2, failed: 1 });
+    expect(row.details.responseOutcome).toEqual({});
+    expect(JSON.stringify(row)).not.toContain("private-");
+  });
+
+  it("uses a fixed audit error for opted-in previews while preserving thrown-response behavior", async () => {
+    const wrapped = withCronJobAudit(
+      async () => { throw new Error("private-provider-error"); },
+      { jobName: "bounded-provider-throw", responsePreviewKeys: ["success"] }
+    );
+    const res = createMockRes();
+
+    await wrapped(createMockReq(), res);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body.error).toBe("private-provider-error");
+    expect(insertMock).toHaveBeenCalledTimes(1);
+    const row = insertMock.mock.calls[0][0];
+    expect(row.status).toBe("failure");
+    expect(row.details.error).toBe("Handler failed.");
+    expect(JSON.parse(row.details.response)).toEqual({ success: false });
+    expect(row.details.responseOutcome).toEqual({ success: false });
+    expect(JSON.stringify(row)).not.toContain("private-provider-error");
+  });
+
   it("surfaces a resolved Supabase audit insert error", async () => {
     const consoleErrorSpy = vi
       .spyOn(console, "error")

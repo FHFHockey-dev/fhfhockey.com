@@ -1,0 +1,55 @@
+{
+  "record_id": "0002-goalie-context-timing-v2",
+  "source_human_message_id": "Sentinel_d1f3ec3be1148191b8aedc35f96f3385",
+  "raw_message_file": "raw-owner-adjudication.txt",
+  "authority": "Direct owner adjudication relayed as trusted transcript evidence by the parent thread.",
+  "parent_thread_id": "01a15411-3560-7632-8d31-1dd2447ba00e",
+  "outcomes": [
+    {
+      "proposal_id": "S01-P004",
+      "subject": "Anthony Stolarz",
+      "question_outcome": "resolved_expected_domain_category",
+      "expected_domain_classification": "confirmed_starter",
+      "basis": "Owner explicitly classifies Stolarz as confirmed in the shared qualifying warmup context of S01.",
+      "applies_to_shared_warmup_context": true,
+      "new_canonical_game_or_clock_verification": false,
+      "separate_full_output_correctness_grade": null
+    },
+    {
+      "proposal_id": "S08-P056",
+      "subject": "Bussi",
+      "question_outcome": "conditional_context_unverified",
+      "current_safe_domain_classification": "projected_starter",
+      "context_resolution": "unresolved",
+      "owner_practice_assumption_is_verified_fact": false,
+      "practice_context_verified": false,
+      "source_says_tonight": true,
+      "retained_original_publication": "2026-10-10T22:39:46.798Z",
+      "publication_basis": "Snowflake-derived from retained matching original post ID, not separately observed.",
+      "retained_receipt": "2026-10-11T12:28:57.785302+00:00",
+      "verified_game_binding": false,
+      "verified_game_start_time": false,
+      "confirmed_from_current_retained_context": false,
+      "conditional_rule": "Practice listing: projected. A game-specific lineup near verified game time may classify confirmed under the revised product rule. Unknown context remains projected/unresolved.",
+      "separate_full_output_correctness_grade": null
+    },
+    {
+      "proposal_id": "S09-P001",
+      "subject": "Carter Hart",
+      "question_outcome": "resolved_expected_domain_category",
+      "expected_domain_classification": "projected_starter",
+      "basis": "Owner explicitly states first off the ice = projected. Retain the observed evidence separately.",
+      "confirmed_starter": false,
+      "new_canonical_game_or_clock_verification": false,
+      "separate_full_output_correctness_grade": null
+    }
+  ],
+  "prior_S01_P003_owner_classification_error_preserved": true,
+  "product_classification_is_calibrated_probability": false,
+  "independent_proof_of_actual_start": false,
+  "canonical_binding_verified": false,
+  "publication_readiness": null,
+  "raw_outputs_or_benchmark_rewritten": false,
+  "model_rerun_performed": false,
+  "implementation_change_made": false
+}

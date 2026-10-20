@@ -1,0 +1,99 @@
+{
+  "version": "tls-certifi-and-reviewed-zero-settlement-v1",
+  "owned": [
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-sequential-pilot-2026-10-19/pilot.py",
+      "sha256": "f51cad6f6dc67feed2b988c2451c92be216b34bd8c2269eef8d982e3b492913b",
+      "beforeSha256": "51636d9806da64a5315e5f4e9c9340fc15e677d89dc8450187126e88bdb43a8a"
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-sequential-pilot-2026-10-19/test_pilot.py",
+      "sha256": "46df0c358ce040362a7b8880db44b1a7052e93366f1780d0b5d9b4fa05dd8241",
+      "beforeSha256": "6a4200f819b8e1353ecdcbe0a8fcc858f8185a96ce671167c8e322bed4c6a96b"
+    }
+  ],
+  "files": [
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-sequential-pilot-2026-10-19/pilot.py",
+      "sha256": "f51cad6f6dc67feed2b988c2451c92be216b34bd8c2269eef8d982e3b492913b"
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-sequential-pilot-2026-10-19/amendment.json",
+      "sha256": "3573b0886f00ee0ac7a50c9df1ac02f4eddb44929d51754b4a70fa4908093c82"
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-preflight-2026-10-19/comparison.py",
+      "sha256": "a6f8ac8f8c32c9530e4790a582a89d7f10e8805249c472e3f92c047d11b78a26"
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-preflight-2026-10-19/claim-schema.json",
+      "sha256": "fbff7c3e6061738a2b314ae924fddd42bf29399679f45214ff22b3a93f834b2f"
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-preflight-2026-10-19/rules-adapter.ts",
+      "sha256": "91e29a670ab63f39d7841ae0b2c8659d564eda5608e45fb0531d5220351f7881"
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-pilot-rules-2026-10-19/pilot-rules.json",
+      "sha256": "7f5c16e26fb1802d375950308bffb6e14950b57f4f89fa48e9761c9e56cd0d51"
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-pilot-rules-2026-10-19/pilot-extraction-request.json",
+      "sha256": "2e3581b2e3d7f402dc1a3bf43c3240d4ad733af84b7c0254e95ebce59286ad95"
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-pilot-rules-2026-10-19/pilot-extraction-prompt.txt",
+      "sha256": "654fb86127fee0a1dbc38f06e0ea0834b762699301843f327bd9147facd65ffd"
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/evidence/actual-lindgren-rules.json",
+      "sha256": "dbf6114c10a5c80a6e02431c0684ad051f9c490661a687e897c8cd57f7914cc5"
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/web/lib/sources/tweetPlayerEvents.ts",
+      "sha256": "14c421d37506f33df08cac5914e30c38a578b2588ae46f3c6e461b70efadc88c"
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/web/lib/sources/tweetInterpretation.ts",
+      "sha256": "a72e39f1c9bea27297ad67b475d1f8d62cf082e70ede613835eff339bded0c55"
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/web/lib/sources/playerIdentity.ts",
+      "sha256": "af843bd6df9ec932ff67bdfd08dba337224d133ac87b1fe94113e0f5ec75bcb4"
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/web/lib/supabase/pagination.ts",
+      "sha256": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660"
+    },
+    {
+      "path": "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/certifi/__init__.py",
+      "sha256": "a7f19866b8d4c0f0548692e5099a066f49a2281292a83032642e43bc8baa6c74"
+    },
+    {
+      "path": "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/certifi/core.py",
+      "sha256": "a910c31725d52704c1fc49a81a9a5a5d4fd1f6a099be197e133c4f32e5779d30"
+    },
+    {
+      "path": "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/certifi/cacert.pem",
+      "sha256": "94edeb66e91774fcae93a05650914e29096259a5c7e871a1f65d461ab5201b47"
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-sequential-pilot-2026-10-19/test_pilot.py",
+      "sha256": "46df0c358ce040362a7b8880db44b1a7052e93366f1780d0b5d9b4fa05dd8241"
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-tls-reconciliation-2026-10-19/reconciliation.py",
+      "sha256": "c44a198b2716a0af39abc49cec016bdcff3a456bb3af20e430ed89c3732524c5"
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-tls-reconciliation-2026-10-19/test_reconciliation.py",
+      "sha256": "b3b5aabca0b827e3f7e423adb9732c239e6f8798a0e39ba153888c136a1155cb"
+    }
+  ],
+  "certifiProvenanceSha256": "6911a8a02a31ee2b9346e71f8d96a000f87b9c7e84dee7c185f482a8aeb6d266",
+  "originalLedgerSha256": "ac28e83814ed20381b3cfee8049bfdc580dfc556f98ca1da33c70f0897015c44",
+  "aggregateLedgerAfterSha256": "3665ac2cb6506264ba9119e29356a193eda270477ba5c055b6edb88c3b8b5824",
+  "beforeAggregateSha256": "a3d98e15e73b9a58f2312d33153c15bf1b30711f0f80f48a16a83d05eb64e361",
+  "originalExecutedManifestSha256": "f1e452f1a7737a1fb5fc831ed78138a3d9d445867886005418be3315d8b9a968",
+  "newProviderExecutionAuthorized": false
+}

@@ -1,4 +1,4 @@
-import supabase from "lib/supabase";
+import supabase from "lib/supabase/public-client";
 import type { Database } from "lib/supabase/database-generated.types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 

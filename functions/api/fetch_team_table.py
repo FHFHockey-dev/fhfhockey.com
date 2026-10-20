@@ -5,6 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 import argparse
 import os
+import secrets
 from dataclasses import dataclass
 from flask import Flask, request, jsonify
 from typing import Any, Dict, Tuple
@@ -21,6 +22,29 @@ except Exception:  # pragma: no cover
 class TeamTableResult:
     payload: Dict[str, Any]
     status_code: int
+
+
+def require_team_table_caller() -> TeamTableResult | None:
+    """Authenticate HTTP callers without loading provider or local env files."""
+    expected = (os.environ.get("NST_TEAM_TABLE_SECRET") or "").strip()
+    if not expected or not all(0x21 <= ord(char) <= 0x7E for char in expected):
+        return _error_result(
+            {"debug": {}, "data": []},
+            code="caller_auth_unavailable",
+            message="Team table caller authentication is not configured.",
+            status_code=503,
+        )
+    supplied = request.headers.get("Authorization", "")
+    if not secrets.compare_digest(
+        supplied.encode("utf-8"), f"Bearer {expected}".encode("utf-8")
+    ):
+        return _error_result(
+            {"debug": {}, "data": []},
+            code="caller_unauthorized",
+            message="Unauthorized team table caller.",
+            status_code=401,
+        )
+    return None
 
 
 def _error_result(
@@ -250,6 +274,10 @@ def _get_current_and_last_season_ids() -> Tuple[str, str]:
 
 
 def _handle_fetch_team_table_request():
+    denied = require_team_table_caller()
+    if denied is not None:
+        return jsonify(denied.payload), denied.status_code
+
     # Accept explicit query params; if missing, derive from DB seasons
     from_season = request.args.get('from_season')
     thru_season = request.args.get('thru_season')
@@ -263,16 +291,16 @@ def _handle_fetch_team_table_request():
     fd = request.args.get('fd', '')
     td = request.args.get('td', '')
 
+    if not sit or not rate:
+        result = missing_required_parameters_result()
+        return jsonify(result.payload), result.status_code
+
     # Fill season defaults dynamically
     if not from_season or not thru_season:
         current_sid, last_sid = _get_current_and_last_season_ids()
         # If only one is missing, use current for that one; leave explicit ones intact
         from_season = from_season or current_sid
         thru_season = thru_season or current_sid
-
-    if not sit or not rate:
-        result = missing_required_parameters_result()
-        return jsonify(result.payload), result.status_code
 
     result = fetch_team_table(
     from_season=from_season,

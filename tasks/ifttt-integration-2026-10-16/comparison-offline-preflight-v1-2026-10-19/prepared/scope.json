@@ -1,0 +1,516 @@
+{
+  "mode": "offline_fixture_only",
+  "maximum_requests": 30,
+  "groups": [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S10"
+  ],
+  "input_hashes": {
+    "S01": "e03340d5fb563e27ea45bae3e26f5efd53bccd3deeabdd854d17c160f9242d5e",
+    "S02": "bad046ae6e290f985e15db615bc81e24454a7d69842476cd1bf072376c3f93e3",
+    "S03": "52e8eccb7f61492f3e153b3928e985ec55bcba03a0f502b415b50d17ae14dd9d",
+    "S04": "0ef7ae6bd507f491d2d18e1ebe5a9d3b27c6699714f67c8f004271dc172b8606",
+    "S05": "81a9b0f1d38b3757893e699783ab9eec96062119875e47ec5333809c6c078455",
+    "S06": "61ca7a9315fa056f0b28912c899fe0408d4b22f3446f61721f068e3e4aa7f4d2",
+    "S07": "655b4bd4901a3b41c27dfa51eec6fcee01e956b45d89a3f205ed66143321bad1",
+    "S08": "fb0c348753fa2b65b43133b76c9f28f72449c02fcbc3b36037aa6dc2ae670621",
+    "S09": "6db6d97ea8180c5affdbc7060a85eb7f97b2078e390d93a4f1b76623ce601b04",
+    "S10": "ef2661cfcb01929f6dfe4695a0ed5fe582e2d07adab8859e31c3af874838187e"
+  },
+  "envelopes": {
+    "S01": {
+      "protocol": "multi-record-source-comparison-v1",
+      "group_id": "S01",
+      "records": [
+        {
+          "record_id": "S01",
+          "original_id": "2105434001074962845",
+          "text": "Ilya Sorokin leads the Islanders out for warmups at Scotiabank Arena. Anthony Stolarz for the Leafs.",
+          "text_sha256": "acfb5ddb91bfaba34b5fbc3cce4e75e0286fbb179cb933ee5f49dba808895bc2",
+          "author": "@ethan_sears",
+          "url": "https://x.com/ethan_sears/status/2105434001074962845",
+          "published_at": "2026-09-30T23:05:57.000Z",
+          "publication_basis": "Retained browser observation of the original article time element; not newly checked.",
+          "received_at": "2026-09-30T23:17:40.673936+00:00",
+          "receipt_basis": "Retained matching-text relay ingestion receipt; original receipt time unknown. The text join is not new original-to-relay authentication.",
+          "identity_hints": []
+        }
+      ],
+      "retained_relations": [],
+      "context": {
+        "status": "retained_source_only; roster hints unverified; no canonical IDs or game bindings",
+        "independent_evidence": []
+      }
+    },
+    "S02": {
+      "protocol": "multi-record-source-comparison-v1",
+      "group_id": "S02",
+      "records": [
+        {
+          "record_id": "S02",
+          "original_id": "2105343573784928457",
+          "text": "Sanderson skated before main practice today but didn't join his teammates. org is hopeful he will play this weekend. Burakovsky isn't close to returning (upper body). Foegele took rushes on the 1st line for second consecutive day. No decision has been made on his availability.",
+          "text_sha256": "ac219e9ad4e153172f4055033b281244e120bfe8fb16c4960135f533a8f53522",
+          "author": "@GraemeNichols",
+          "url": "https://x.com/GraemeNichols/status/2105343573784928457",
+          "published_at": "2026-09-30T17:06:38.000Z",
+          "publication_basis": "Retained browser observation of the original article time element; not newly checked.",
+          "received_at": "2026-09-30T18:58:37.184924+00:00",
+          "receipt_basis": "Retained matching-text relay ingestion receipt; original receipt time unknown. The text join is not new original-to-relay authentication.",
+          "identity_hints": []
+        }
+      ],
+      "retained_relations": [],
+      "context": {
+        "status": "retained_source_only; roster hints unverified; no canonical IDs or game bindings",
+        "independent_evidence": []
+      }
+    },
+    "S03": {
+      "protocol": "multi-record-source-comparison-v1",
+      "group_id": "S03",
+      "records": [
+        {
+          "record_id": "S03",
+          "original_id": "2108996072647573721",
+          "text": "Leevi Meriläinen leads the #Canucks into the ice Saturday in Newark. He’ll get the start @ Devils.",
+          "text_sha256": "92399fe517fbea14d91a765dab09c584fdf2a9a913f05f3136032638b9cdd5e0",
+          "author": "@ThomasDrance",
+          "url": "https://x.com/ThomasDrance/status/2108996072647573721",
+          "published_at": "2026-10-10T19:00:21.628Z",
+          "publication_basis": "Snowflake-derived from the retained matching original post ID; not a separately observed publication clock.",
+          "received_at": "2026-10-11T12:28:57.359595+00:00",
+          "receipt_basis": "Retained ingestion receipt for this post.",
+          "identity_hints": [
+            {
+              "local_symbol": "local-1",
+              "fullName": "Leevi Meriläinen",
+              "lastName": "Meriläinen",
+              "position": "G",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            }
+          ]
+        }
+      ],
+      "retained_relations": [],
+      "context": {
+        "status": "retained_source_only; roster hints unverified; no canonical IDs or game bindings",
+        "independent_evidence": []
+      }
+    },
+    "S04": {
+      "protocol": "multi-record-source-comparison-v1",
+      "group_id": "S04",
+      "records": [
+        {
+          "record_id": "S04",
+          "original_id": "2105364132128240008",
+          "text": "#SJSharks power play groups same as yesterday, but one wrinkle, see Misa doing some net front, which he did last year...  \n\nPP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg \n\nPP2: Orlov-Misa-Stenberg-Toffoli-Marchment",
+          "text_sha256": "67c5e015065e538719eeccde66139d8debca0c27d157d405da77a5681c1cf655",
+          "author": "@Sheng_Peng",
+          "url": "https://x.com/Sheng_Peng/status/2105364132128240008",
+          "published_at": "2026-09-30T18:28:19.000Z",
+          "publication_basis": "Retained browser observation of the original article time element; not newly checked.",
+          "received_at": "2026-09-30T18:40:40.937455+00:00",
+          "receipt_basis": "Retained relay ingestion receipt; original receipt time unknown.",
+          "identity_hints": []
+        }
+      ],
+      "retained_relations": [],
+      "context": {
+        "status": "retained_source_only; roster hints unverified; no canonical IDs or game bindings",
+        "independent_evidence": []
+      }
+    },
+    "S05": {
+      "protocol": "multi-record-source-comparison-v1",
+      "group_id": "S05",
+      "records": [
+        {
+          "record_id": "S05A",
+          "original_id": "2108958442983686184",
+          "text": "Joonas Korpisalo (lower body) is out 4 weeks from today. Joe Veleno (lower body) is out 3-3.5 months.",
+          "text_sha256": "acfd94546aaa932b4909086e0ac44c527d08ae674f074223620a84c7f18a6d7c",
+          "author": "@drosennhl",
+          "url": "https://x.com/drosennhl/status/2108958442983686184",
+          "published_at": "2026-10-10T16:30:50.017Z",
+          "publication_basis": "Snowflake-derived from the retained matching original post ID; not a separately observed publication clock.",
+          "received_at": "2026-10-11T12:28:57.297049+00:00",
+          "receipt_basis": "Retained ingestion receipt for this post.",
+          "identity_hints": [
+            {
+              "local_symbol": "local-1",
+              "fullName": "Joonas Korpisalo",
+              "lastName": "Korpisalo",
+              "position": "G",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            },
+            {
+              "local_symbol": "local-2",
+              "fullName": "Joe Veleno",
+              "lastName": "Veleno",
+              "position": "C",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            }
+          ]
+        },
+        {
+          "record_id": "S05B",
+          "original_id": "2108957630253113386",
+          "text": "Igor Shesterkin will be out for the rest of the season with his lower body injury.",
+          "text_sha256": "425fab0de15d4059b5e2b618d22ce5ae046634a737ab3d2da8ee916463757492",
+          "author": "@drosennhl",
+          "url": "https://x.com/drosennhl/status/2108957630253113386",
+          "published_at": "2026-10-10T16:27:36.247Z",
+          "publication_basis": "Snowflake-derived from the retained matching original post ID; not a separately observed publication clock.",
+          "received_at": "2026-10-11T12:28:57.695448+00:00",
+          "receipt_basis": "Retained ingestion receipt for this post.",
+          "identity_hints": [
+            {
+              "local_symbol": "local-1",
+              "fullName": "Igor Shesterkin",
+              "lastName": "Shesterkin",
+              "position": "G",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            }
+          ]
+        }
+      ],
+      "retained_relations": [],
+      "context": {
+        "status": "retained_source_only; roster hints unverified; no canonical IDs or game bindings",
+        "independent_evidence": []
+      }
+    },
+    "S06": {
+      "protocol": "multi-record-source-comparison-v1",
+      "group_id": "S06",
+      "records": [
+        {
+          "record_id": "S06",
+          "original_id": "2104971594632454155",
+          "text": "Podkolzin will take RNH’s spot on the first unit powerplay… via Babcock.",
+          "text_sha256": "860b1c32b2f653225eb2a88463efdb984b91244ae58b8d9d6a300a049a0cc2ee",
+          "author": "@JasonGregor",
+          "url": "https://x.com/JasonGregor/status/2104971594632454155",
+          "published_at": "2026-09-29T16:28:31.000Z",
+          "publication_basis": "Retained browser observation of the original article time element; not newly checked.",
+          "received_at": "2026-09-29T17:00:52.374726+00:00",
+          "receipt_basis": "Retained relay ingestion receipt; original receipt time unknown.",
+          "identity_hints": []
+        }
+      ],
+      "retained_relations": [],
+      "context": {
+        "status": "retained_source_only; roster hints unverified; no canonical IDs or game bindings",
+        "independent_evidence": []
+      }
+    },
+    "S07": {
+      "protocol": "multi-record-source-comparison-v1",
+      "group_id": "S07",
+      "records": [
+        {
+          "record_id": "S07",
+          "original_id": "2108961406007570942",
+          "text": "Carbery said it’s too early to tell whether Pierre-Luc Dubois will suit up tomorrow. Matt Roy skated again today and remains day-to-day. Team monitoring if it needs a recall",
+          "text_sha256": "b7357e8938e104a97418e922366c0bed6cef176c6d4bca5324a1bdaa8c0c0898",
+          "author": "@sammisilber",
+          "url": "https://x.com/sammisilber/status/2108961406007570942",
+          "published_at": "2026-10-10T16:42:36.457Z",
+          "publication_basis": "Snowflake-derived from the retained matching original post ID; not a separately observed publication clock.",
+          "received_at": "2026-10-11T12:28:57.020953+00:00",
+          "receipt_basis": "Retained ingestion receipt for this post.",
+          "identity_hints": [
+            {
+              "local_symbol": "local-1",
+              "fullName": "Matt Roy",
+              "lastName": "Roy",
+              "position": "D",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            },
+            {
+              "local_symbol": "local-2",
+              "fullName": "Pierre-Luc Dubois",
+              "lastName": "Dubois",
+              "position": "C",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            }
+          ]
+        }
+      ],
+      "retained_relations": [],
+      "context": {
+        "status": "retained_source_only; roster hints unverified; no canonical IDs or game bindings",
+        "independent_evidence": []
+      }
+    },
+    "S08": {
+      "protocol": "multi-record-source-comparison-v1",
+      "group_id": "S08",
+      "records": [
+        {
+          "record_id": "S08",
+          "original_id": "2109051291372777568",
+          "text": "The #Canes try for a fourth win in a row tonight as they take on the Blackhawks.\nCarrier - Aho - Svechnikov\nHall - Stankoven - Blake\nEhlers - Staal - Martinook\nRobinson - Jankowski - Kotkaniemi\nSlavin - Chatfield\nMiller - Walker\nGostisbehere - Reilly\nBussi pic.twitter.com/iVLdaOV5Ir",
+          "text_sha256": "1af523cd9908c0a54e552c243373d1e7204ed4589b37eeddb2e2f8a52f37ee06",
+          "author": "@WaltRuff",
+          "url": "https://x.com/WaltRuff/status/2109051291372777568",
+          "published_at": "2026-10-10T22:39:46.798Z",
+          "publication_basis": "Snowflake-derived from the retained matching original post ID; not a separately observed publication clock.",
+          "received_at": "2026-10-11T12:28:57.785302+00:00",
+          "receipt_basis": "Retained ingestion receipt for this post.",
+          "identity_hints": [
+            {
+              "local_symbol": "local-1",
+              "fullName": "Jordan Staal",
+              "lastName": "Staal",
+              "position": "C",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            },
+            {
+              "local_symbol": "local-2",
+              "fullName": "Taylor Hall",
+              "lastName": "Hall",
+              "position": "L",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            },
+            {
+              "local_symbol": "local-3",
+              "fullName": "Mike Reilly",
+              "lastName": "Reilly",
+              "position": "D",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            },
+            {
+              "local_symbol": "local-4",
+              "fullName": "Mark Jankowski",
+              "lastName": "Jankowski",
+              "position": "L",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            },
+            {
+              "local_symbol": "local-5",
+              "fullName": "Shayne Gostisbehere",
+              "lastName": "Gostisbehere",
+              "position": "D",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            },
+            {
+              "local_symbol": "local-6",
+              "fullName": "Jordan Martinook",
+              "lastName": "Martinook",
+              "position": "L",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            },
+            {
+              "local_symbol": "local-7",
+              "fullName": "Jaccob Slavin",
+              "lastName": "Slavin",
+              "position": "D",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            },
+            {
+              "local_symbol": "local-8",
+              "fullName": "William Carrier",
+              "lastName": "Carrier",
+              "position": "L",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            },
+            {
+              "local_symbol": "local-9",
+              "fullName": "Nikolaj Ehlers",
+              "lastName": "Ehlers",
+              "position": "L",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            },
+            {
+              "local_symbol": "local-10",
+              "fullName": "Sebastian Aho",
+              "lastName": "Aho",
+              "position": "C",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            },
+            {
+              "local_symbol": "local-11",
+              "fullName": "Jalen Chatfield",
+              "lastName": "Chatfield",
+              "position": "D",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            },
+            {
+              "local_symbol": "local-12",
+              "fullName": "Sean Walker",
+              "lastName": "Walker",
+              "position": "D",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            },
+            {
+              "local_symbol": "local-13",
+              "fullName": "Eric Robinson",
+              "lastName": "Robinson",
+              "position": "L",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            },
+            {
+              "local_symbol": "local-14",
+              "fullName": "K'Andre Miller",
+              "lastName": "Miller",
+              "position": "D",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            },
+            {
+              "local_symbol": "local-15",
+              "fullName": "Jesperi Kotkaniemi",
+              "lastName": "Kotkaniemi",
+              "position": "C",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            },
+            {
+              "local_symbol": "local-16",
+              "fullName": "Andrei Svechnikov",
+              "lastName": "Svechnikov",
+              "position": "R",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            },
+            {
+              "local_symbol": "local-17",
+              "fullName": "Logan Stankoven",
+              "lastName": "Stankoven",
+              "position": "C",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            },
+            {
+              "local_symbol": "local-18",
+              "fullName": "Jackson Blake",
+              "lastName": "Blake",
+              "position": "R",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            },
+            {
+              "local_symbol": "local-19",
+              "fullName": "Brandon Bussi",
+              "lastName": "Bussi",
+              "position": "G",
+              "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+            }
+          ]
+        }
+      ],
+      "retained_relations": [],
+      "context": {
+        "status": "retained_source_only; roster hints unverified; no canonical IDs or game bindings",
+        "independent_evidence": []
+      }
+    },
+    "S09": {
+      "protocol": "multi-record-source-comparison-v1",
+      "group_id": "S09",
+      "records": [
+        {
+          "record_id": "S09",
+          "original_id": "2105000115090100612",
+          "text": "Carter Hart is the first goaltender off the ice.",
+          "text_sha256": "65dda8dca7ce84e90bdfa54588468e4657b0932ae883b27af024fef354afa4f1",
+          "author": "@h_kirk6",
+          "url": "https://x.com/h_kirk6/status/2105000115090100612",
+          "published_at": "2026-09-29T18:21:51.000Z",
+          "publication_basis": "Retained browser observation of the original article time element; not newly checked.",
+          "received_at": "2026-09-29T18:27:36.491805+00:00",
+          "receipt_basis": "Retained relay ingestion receipt; original receipt time unknown.",
+          "identity_hints": []
+        }
+      ],
+      "retained_relations": [],
+      "context": {
+        "status": "retained_source_only; roster hints unverified; no canonical IDs or game bindings",
+        "independent_evidence": []
+      }
+    },
+    "S10": {
+      "protocol": "multi-record-source-comparison-v1",
+      "group_id": "S10",
+      "records": [
+        {
+          "record_id": "S10A",
+          "original_id": "2104644558701351383",
+          "text": "Might be much ado about nothing, but Olofsson is taking PP1 reps with Marner up top.",
+          "text_sha256": "eb7c67b031637df6598408b4eb0a718b3638ef0ccd69f85c9835413fe00c3372",
+          "author": "@DannyWebster21",
+          "url": "https://x.com/DannyWebster21/status/2104644558701351383",
+          "published_at": "2026-09-28T18:48:59.000Z",
+          "publication_basis": "Retained browser observation of the article time element; not newly checked.",
+          "received_at": null,
+          "receipt_basis": "Unknown.",
+          "identity_hints": []
+        },
+        {
+          "record_id": "S10B",
+          "original_id": "2104672698786013556",
+          "text": "Turns out this was, in fact, much ado about nothing.\n\nThis was a 5-on-3 drill. At ease.",
+          "text_sha256": "46e33b9db7ffed9a686fca2634595df4b1b0b60acfc2673aea865da63f3d610c",
+          "author": "@DannyWebster21",
+          "url": "https://x.com/DannyWebster21/status/2104672698786013556",
+          "published_at": "2026-09-28T20:40:48.000Z",
+          "publication_basis": "Retained browser observation of the article time element; not newly checked.",
+          "received_at": "2026-09-28T20:50:23.060892+00:00",
+          "receipt_basis": "Retained relay ingestion receipt; original receipt time unknown.",
+          "identity_hints": []
+        }
+      ],
+      "retained_relations": [
+        {
+          "from": "S10B",
+          "relation": "quotes",
+          "to": "S10A"
+        }
+      ],
+      "context": {
+        "status": "retained_source_only; roster hints unverified; no canonical IDs or game bindings",
+        "independent_evidence": []
+      }
+    }
+  },
+  "producer_pins_hash": "8bd3a9b9217dca7c607ac12bfa42b41a83bed8d80356e92d597111d604847828",
+  "extraction_request_hashes": {
+    "S01": "f976e8d0f54f1e34b67ea7a5d36e6c026b61b650de8fc2f61d4d7a1ae790e086",
+    "S02": "29e4537c223c4a7f72f83fdff4199f975e8f9c8a01ea05a4ed7af11ac8247cd9",
+    "S03": "ab12bc7e4cf60930db0d9ee1de36b047f175761a2b7eb6323f01778d9d2a90f0",
+    "S04": "6e84e14b3bf39efe085e4363918783aa52a711ae6138868ee32354b434198fea",
+    "S05": "05aa6a100ab77fc229e8b2cc2d47ed129b95d9be5ba37de2e035849ad5df95d5",
+    "S06": "125f85835eb4fe63db25f8ab1391a343e29f75662855d0043760b4ce7dddf979",
+    "S07": "2dfb19061eb65921dd5a5ca04650d5341e3057360aea9e24a055fc36116fdd9a",
+    "S08": "766d08bd9dc3abb985c059011696f4c570be1573e5b515429b27744a72f5113f",
+    "S09": "19e6fa8affd5533fc343f168d683c0064ba323eb143c84a05db03f37bee49402",
+    "S10": "3d8c25aaf5bdc5a4e0cf7811ff2894b69a6351f29e1ba53a7c34f9292076c198"
+  },
+  "decision_question_hashes": [
+    "e2f9fd8ddf332b21aed3fcfb135cdb27292ee93f80b500f143947aa0c38e9e95",
+    "bc1b9df3ce47ea0810557befb014bc16fe9073e1c9d26b6fa44bdaa75c3d8dfa"
+  ],
+  "rules_proposal_hashes": {
+    "S01": "ab4df2ce276d68dca8055e3ba0e5125faca6b205d080aec8724d456bc6afc748",
+    "S02": "ab4df2ce276d68dca8055e3ba0e5125faca6b205d080aec8724d456bc6afc748",
+    "S03": "61a59b0c388f20a550f076ad0189b81cf50c46c23ec166c4469e62a0e8cffe1d",
+    "S04": "ab4df2ce276d68dca8055e3ba0e5125faca6b205d080aec8724d456bc6afc748",
+    "S05": "9854c3da6a8b6aa1e4b12d5105030732bb1658bec46d4a9aa18c806fb002588c",
+    "S06": "ab4df2ce276d68dca8055e3ba0e5125faca6b205d080aec8724d456bc6afc748",
+    "S07": "edecfd6fc2d4c6fba3fdf73e9fef8d2628c811f2607139d6e9e92d01885a90ea",
+    "S08": "158e09c7a6179924d2bd7039c1e81df4d922ac9f0d2823504a396bfe42371bbc",
+    "S09": "ab4df2ce276d68dca8055e3ba0e5125faca6b205d080aec8724d456bc6afc748",
+    "S10": "ab4df2ce276d68dca8055e3ba0e5125faca6b205d080aec8724d456bc6afc748"
+  },
+  "rules_artifact_sha256": "6ef7df9d3527c35e41f754d2212d8aa4f9243fcf0c1cf8ef7e0bf04010331d9d",
+  "original_rows_hash": "28dd1eed7b91cad818f44243cd64620fb67d1d54d32c0e1cd646d8bc31207137",
+  "original_full_rows_hash": "90f921880fa230aa9b278ff3fe86f152dd70d9bef7786d10ace8f7115f7c0a97",
+  "canonical_live_ledger_hash": "8b9574da4b587e756cb177360b97cb7af6d410e59686d0c5a2953d5bfa20db1a",
+  "paid_execution_authorized": false
+}

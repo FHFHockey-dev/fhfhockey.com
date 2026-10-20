@@ -1,0 +1,15 @@
+test_mixed_gradability_does_not_penalize_ungradable_predictions (test_independent.IndependentMasks.test_mixed_gradability_does_not_penalize_ungradable_predictions) ... FAIL
+
+======================================================================
+FAIL: test_mixed_gradability_does_not_penalize_ungradable_predictions (test_independent.IndependentMasks.test_mixed_gradability_does_not_penalize_ungradable_predictions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-pilot-rules-2026-10-19/harness/test_independent.py", line 13, in test_mixed_gradability_does_not_penalize_ungradable_predictions
+    self.assertEqual(result['field_accuracy']['team']['precision'],1.0,'Ungradable matched fields must not enter precision denominator')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0.5 != 1.0 : Ungradable matched fields must not enter precision denominator
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (failures=1)

@@ -1,0 +1,50 @@
+{
+  "record_id": "0003-owner-S07-S10",
+  "source_human_message_id": "Sentinel_3919d444da3c8191b6f006a252786b52",
+  "recorded_at_utc": "2026-10-19T21:59:16.966825+00:00",
+  "recorded_at_basis": "Local artifact creation time, not original human message time.",
+  "packet_sha256": "55d2c5b3b9b3b09910928c2e801d26f6305d12316d82efeefbbfe046e5c131dd",
+  "previous_annotation_record": {
+    "path": "annotations/0002-owner-S04-S06",
+    "receipt_sha256": "8bfa55a6361c010ce4dc0172ff56983f5c19f1b27f98cd3dec93d0b76efb3f05"
+  },
+  "append_only_policy": "Create-only numbered records. Preserve existing files; future clarification/adjudication must be a new linked record. No tamper-proof filesystem claim.",
+  "samples_received": [
+    "S07",
+    "S08",
+    "S09",
+    "S10"
+  ],
+  "all_ten_groups_annotated": true,
+  "adjudicated_benchmark_finalized": false,
+  "pending": "Parent bundled owner clarification; adjudication, truth and publication fields incomplete.",
+  "files": {
+    "raw-human.txt": "ee1843692c8954acd971e0b818b4806cce36bcc2d57dd4318f9c5501e6b2e717",
+    "normalized-interpretation.json": "ad85ec329815855c2c730b36f23d4cb78f4fedf342833530434989a528a3c9a8",
+    "assistant-adjudication-proposals.json": "2ad9ae0349d54e760398912f688deb5b781dd6ca4e915930c372ffebdb5b5ca7"
+  },
+  "prior_annotation_files_sha256": {
+    "annotations/0001-owner-S01-S03/raw-human.txt": "ceae8188fde8b7c50286c14c93c05b646839f20b367b56956230e2fde03adf6e",
+    "annotations/0001-owner-S01-S03/normalized-interpretation.json": "06d3f0c9da86abe0685218abe503fdab7d5eb0f71bebae7162d904775ad79ab8",
+    "annotations/0001-owner-S01-S03/receipt.json": "cdd50cf8028be1329d7162cb1e26a5d22a94dcc221e607745d624a563d19d4b8",
+    "annotations/0002-owner-S04-S06/raw-human.txt": "8efcefb31cec80468669281920fdf9cd0a72429ec8c7cc701b1e42d8431eb1a2",
+    "annotations/0002-owner-S04-S06/normalized-interpretation.json": "4f9102aeb1870cae18389fa385445db6aee0bf0e13099cfc9f7c18e1e5b72485",
+    "annotations/0002-owner-S04-S06/assistant-adjudication-proposals.json": "1d4a471587c908bae0e6e0f441712988f8b7d33b2f33fe275ddfff194c076253",
+    "annotations/0002-owner-S04-S06/receipt.json": "8bfa55a6361c010ce4dc0172ff56983f5c19f1b27f98cd3dec93d0b76efb3f05"
+  },
+  "prior_packet_files_sha256": {
+    "PACKET.md": "55d2c5b3b9b3b09910928c2e801d26f6305d12316d82efeefbbfe046e5c131dd",
+    "build_packet.py": "5e2e2284322a6e18616f2c42024657161bbca999a419f3693fce5383bc9ddd8c",
+    "retained-source-records.json": "bc5864f66c72450edf56f67a8d56ada37ecfc9c17e120db240bab91d0fc220eb",
+    "verify_packet.py": "639568e6371c9f981b64c6467468092b0951d5ecc034e7d440064ea72a1d407c",
+    "CHECKPOINT.md": "2cfda50bc94938c89ef78a34779026c05075a43d467df36d296542fbb907954f",
+    "manifest.json": "540bf76c658c514e16365b8ac0d07a0419c503ac6d5be0843deb1259c40a9469",
+    "verification.json": "db627ca6a6b70c45bc1413a00756cf31e540446e3f00996839b10160ea024c88",
+    "private-source-map.json": "90ced8c630ae5e39431b7433fe613c3a4f76670d0bff54c99d98efeef2fc09b0",
+    "REPLY-TEMPLATE.md": "07b547ad3d088697d2fd735211acbba3696eaa34fca4f313840ed02339b6de76"
+  },
+  "external_calls": 0,
+  "provider_spend": 0,
+  "production_actions": 0,
+  "implementation_changes": 0
+}

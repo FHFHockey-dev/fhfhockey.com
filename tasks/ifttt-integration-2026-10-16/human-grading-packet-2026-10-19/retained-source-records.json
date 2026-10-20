@@ -1,0 +1,275 @@
+[
+  {
+    "sample_id": "S01",
+    "records": [
+      {
+        "text": "Ilya Sorokin leads the Islanders out for warmups at Scotiabank Arena. Anthony Stolarz for the Leafs.",
+        "url": "https://x.com/ethan_sears/status/2105434001074962845",
+        "author": "@ethan_sears",
+        "publication": "2026-09-30T23:05:57.000Z",
+        "publication_basis": "Retained browser observation of the original article time element; not newly checked.",
+        "receipt": "2026-09-30T23:17:40.673936+00:00",
+        "receipt_basis": "Retained matching-text relay ingestion receipt; original receipt time unknown. The text join is not new original-to-relay authentication.",
+        "source_path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-browser-source-evidence.json",
+        "pointer": "/originals/1",
+        "original_id": "2105434001074962845",
+        "relay_ids": [
+          "2105434836500680857"
+        ],
+        "receipt_pointer": "/events/9",
+        "receipt_source_path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+        "relay_url": "https://x.com/GameDayGoalies/status/2105434836500680857",
+        "sample_record_id": "S01",
+        "text_sha256": "acfb5ddb91bfaba34b5fbc3cce4e75e0286fbb179cb933ee5f49dba808895bc2"
+      }
+    ],
+    "context_note": null
+  },
+  {
+    "sample_id": "S02",
+    "records": [
+      {
+        "text": "Sanderson skated before main practice today but didn't join his teammates. org is hopeful he will play this weekend. Burakovsky isn't close to returning (upper body). Foegele took rushes on the 1st line for second consecutive day. No decision has been made on his availability.",
+        "url": "https://x.com/GraemeNichols/status/2105343573784928457",
+        "author": "@GraemeNichols",
+        "publication": "2026-09-30T17:06:38.000Z",
+        "publication_basis": "Retained browser observation of the original article time element; not newly checked.",
+        "receipt": "2026-09-30T18:58:37.184924+00:00",
+        "receipt_basis": "Retained matching-text relay ingestion receipt; original receipt time unknown. The text join is not new original-to-relay authentication.",
+        "source_path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-browser-source-evidence.json",
+        "pointer": "/originals/0",
+        "original_id": "2105343573784928457",
+        "relay_ids": [
+          "2105370362964004937"
+        ],
+        "receipt_pointer": "/events/6",
+        "receipt_source_path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+        "relay_url": "https://x.com/GameDayNewsNHL/status/2105370362964004937",
+        "sample_record_id": "S02",
+        "text_sha256": "ac219e9ad4e153172f4055033b281244e120bfe8fb16c4960135f533a8f53522"
+      }
+    ],
+    "context_note": null
+  },
+  {
+    "sample_id": "S03",
+    "records": [
+      {
+        "text": "Leevi Meriläinen leads the #Canucks into the ice Saturday in Newark. He’ll get the start @ Devils.",
+        "url": "https://x.com/ThomasDrance/status/2108996072647573721",
+        "author": "@ThomasDrance",
+        "publication": "2026-10-10T19:00:21.628Z",
+        "publication_basis": "Snowflake-derived from the retained matching original post ID; not a separately observed publication clock.",
+        "receipt": "2026-10-11T12:28:57.359595+00:00",
+        "receipt_basis": "Retained ingestion receipt for this post.",
+        "source_path": "web/lib/sources/fixtures/october11TroublesomeTweets.json",
+        "pointer": "/records/3",
+        "original_id": "2108996072647573721",
+        "relay_ids": [],
+        "sample_record_id": "S03",
+        "text_sha256": "92399fe517fbea14d91a765dab09c584fdf2a9a913f05f3136032638b9cdd5e0"
+      }
+    ],
+    "context_note": null
+  },
+  {
+    "sample_id": "S04",
+    "records": [
+      {
+        "text": "#SJSharks power play groups same as yesterday, but one wrinkle, see Misa doing some net front, which he did last year...  \n\nPP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg \n\nPP2: Orlov-Misa-Stenberg-Toffoli-Marchment",
+        "url": "https://x.com/Sheng_Peng/status/2105364132128240008",
+        "author": "@Sheng_Peng",
+        "publication": "2026-09-30T18:28:19.000Z",
+        "publication_basis": "Retained browser observation of the original article time element; not newly checked.",
+        "receipt": "2026-09-30T18:40:40.937455+00:00",
+        "receipt_basis": "Retained relay ingestion receipt; original receipt time unknown.",
+        "source_path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-browser-source-evidence.json",
+        "pointer": "/additionalOriginals/2",
+        "original_id": "2105364132128240008",
+        "relay_ids": [
+          "2105366758089695718"
+        ],
+        "receipt_pointer": "/events/5",
+        "receipt_source_path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+        "relay_url": "https://x.com/GameDayLines/status/2105366758089695718",
+        "sample_record_id": "S04",
+        "text_sha256": "67c5e015065e538719eeccde66139d8debca0c27d157d405da77a5681c1cf655"
+      }
+    ],
+    "context_note": null
+  },
+  {
+    "sample_id": "S05",
+    "records": [
+      {
+        "text": "Joonas Korpisalo (lower body) is out 4 weeks from today. Joe Veleno (lower body) is out 3-3.5 months.",
+        "url": "https://x.com/drosennhl/status/2108958442983686184",
+        "author": "@drosennhl",
+        "publication": "2026-10-10T16:30:50.017Z",
+        "publication_basis": "Snowflake-derived from the retained matching original post ID; not a separately observed publication clock.",
+        "receipt": "2026-10-11T12:28:57.297049+00:00",
+        "receipt_basis": "Retained ingestion receipt for this post.",
+        "source_path": "web/lib/sources/fixtures/october11TroublesomeTweets.json",
+        "pointer": "/records/4",
+        "original_id": "2108958442983686184",
+        "relay_ids": [],
+        "sample_record_id": "S05A",
+        "text_sha256": "acfd94546aaa932b4909086e0ac44c527d08ae674f074223620a84c7f18a6d7c"
+      },
+      {
+        "text": "Igor Shesterkin will be out for the rest of the season with his lower body injury.",
+        "url": "https://x.com/drosennhl/status/2108957630253113386",
+        "author": "@drosennhl",
+        "publication": "2026-10-10T16:27:36.247Z",
+        "publication_basis": "Snowflake-derived from the retained matching original post ID; not a separately observed publication clock.",
+        "receipt": "2026-10-11T12:28:57.695448+00:00",
+        "receipt_basis": "Retained ingestion receipt for this post.",
+        "source_path": "web/lib/sources/fixtures/october11TroublesomeTweets.json",
+        "pointer": "/records/5",
+        "original_id": "2108957630253113386",
+        "relay_ids": [],
+        "sample_record_id": "S05B",
+        "text_sha256": "425fab0de15d4059b5e2b618d22ce5ae046634a737ab3d2da8ee916463757492"
+      }
+    ],
+    "context_note": null
+  },
+  {
+    "sample_id": "S06",
+    "records": [
+      {
+        "text": "Podkolzin will take RNH’s spot on the first unit powerplay… via Babcock.",
+        "url": "https://x.com/JasonGregor/status/2104971594632454155",
+        "author": "@JasonGregor",
+        "publication": "2026-09-29T16:28:31.000Z",
+        "publication_basis": "Retained browser observation of the original article time element; not newly checked.",
+        "receipt": "2026-09-29T17:00:52.374726+00:00",
+        "receipt_basis": "Retained relay ingestion receipt; original receipt time unknown.",
+        "source_path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-browser-source-evidence.json",
+        "pointer": "/additionalOriginals/0",
+        "original_id": "2104971594632454155",
+        "relay_ids": [
+          "2104977788142850499"
+        ],
+        "receipt_pointer": "/events/2",
+        "receipt_source_path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+        "relay_url": "https://x.com/GameDayLines/status/2104977788142850499",
+        "sample_record_id": "S06",
+        "text_sha256": "860b1c32b2f653225eb2a88463efdb984b91244ae58b8d9d6a300a049a0cc2ee"
+      }
+    ],
+    "context_note": null
+  },
+  {
+    "sample_id": "S07",
+    "records": [
+      {
+        "text": "Carbery said it’s too early to tell whether Pierre-Luc Dubois will suit up tomorrow. Matt Roy skated again today and remains day-to-day. Team monitoring if it needs a recall",
+        "url": "https://x.com/sammisilber/status/2108961406007570942",
+        "author": "@sammisilber",
+        "publication": "2026-10-10T16:42:36.457Z",
+        "publication_basis": "Snowflake-derived from the retained matching original post ID; not a separately observed publication clock.",
+        "receipt": "2026-10-11T12:28:57.020953+00:00",
+        "receipt_basis": "Retained ingestion receipt for this post.",
+        "source_path": "web/lib/sources/fixtures/october11TroublesomeTweets.json",
+        "pointer": "/records/2",
+        "original_id": "2108961406007570942",
+        "relay_ids": [],
+        "sample_record_id": "S07",
+        "text_sha256": "b7357e8938e104a97418e922366c0bed6cef176c6d4bca5324a1bdaa8c0c0898"
+      }
+    ],
+    "context_note": null
+  },
+  {
+    "sample_id": "S08",
+    "records": [
+      {
+        "text": "The #Canes try for a fourth win in a row tonight as they take on the Blackhawks.\nCarrier - Aho - Svechnikov\nHall - Stankoven - Blake\nEhlers - Staal - Martinook\nRobinson - Jankowski - Kotkaniemi\nSlavin - Chatfield\nMiller - Walker\nGostisbehere - Reilly\nBussi pic.twitter.com/iVLdaOV5Ir",
+        "url": "https://x.com/WaltRuff/status/2109051291372777568",
+        "author": "@WaltRuff",
+        "publication": "2026-10-10T22:39:46.798Z",
+        "publication_basis": "Snowflake-derived from the retained matching original post ID; not a separately observed publication clock.",
+        "receipt": "2026-10-11T12:28:57.785302+00:00",
+        "receipt_basis": "Retained ingestion receipt for this post.",
+        "source_path": "web/lib/sources/fixtures/october11TroublesomeTweets.json",
+        "pointer": "/records/6",
+        "original_id": "2109051291372777568",
+        "relay_ids": [],
+        "sample_record_id": "S08",
+        "text_sha256": "1af523cd9908c0a54e552c243373d1e7204ed4589b37eeddb2e2f8a52f37ee06"
+      }
+    ],
+    "context_note": null
+  },
+  {
+    "sample_id": "S09",
+    "records": [
+      {
+        "text": "Carter Hart is the first goaltender off the ice.",
+        "url": "https://x.com/h_kirk6/status/2105000115090100612",
+        "author": "@h_kirk6",
+        "publication": "2026-09-29T18:21:51.000Z",
+        "publication_basis": "Retained browser observation of the original article time element; not newly checked.",
+        "receipt": "2026-09-29T18:27:36.491805+00:00",
+        "receipt_basis": "Retained relay ingestion receipt; original receipt time unknown.",
+        "source_path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-browser-source-evidence.json",
+        "pointer": "/additionalOriginals/6",
+        "original_id": "2105000115090100612",
+        "relay_ids": [
+          "2105000410809512101"
+        ],
+        "receipt_pointer": "/events/3",
+        "receipt_source_path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+        "relay_url": "https://x.com/GameDayGoalies/status/2105000410809512101",
+        "sample_record_id": "S09",
+        "text_sha256": "65dda8dca7ce84e90bdfa54588468e4657b0932ae883b27af024fef354afa4f1"
+      }
+    ],
+    "context_note": null
+  },
+  {
+    "sample_id": "S10",
+    "records": [
+      {
+        "text": "Might be much ado about nothing, but Olofsson is taking PP1 reps with Marner up top.",
+        "url": "https://x.com/DannyWebster21/status/2104644558701351383",
+        "author": "@DannyWebster21",
+        "publication": "2026-09-28T18:48:59.000Z",
+        "publication_basis": "Retained browser observation of the article time element; not newly checked.",
+        "receipt": null,
+        "receipt_basis": "Unknown.",
+        "source_path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-browser-source-evidence.json",
+        "pointer": "/correctionChain/quotedPredecessorText",
+        "original_id": "2104644558701351383",
+        "relay_ids": [],
+        "receipt_pointer": null,
+        "receipt_source_path": null,
+        "relay_url": null,
+        "sample_record_id": "S10A",
+        "text_sha256": "eb7c67b031637df6598408b4eb0a718b3638ef0ccd69f85c9835413fe00c3372"
+      },
+      {
+        "text": "Turns out this was, in fact, much ado about nothing.\n\nThis was a 5-on-3 drill. At ease.",
+        "url": "https://x.com/DannyWebster21/status/2104672698786013556",
+        "author": "@DannyWebster21",
+        "publication": "2026-09-28T20:40:48.000Z",
+        "publication_basis": "Retained browser observation of the article time element; not newly checked.",
+        "receipt": "2026-09-28T20:50:23.060892+00:00",
+        "receipt_basis": "Retained relay ingestion receipt; original receipt time unknown.",
+        "source_path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-browser-source-evidence.json",
+        "pointer": "/correctionChain/originalText",
+        "original_id": "2104672698786013556",
+        "relay_ids": [
+          "2104672980634886326"
+        ],
+        "receipt_pointer": "/events/1",
+        "receipt_source_path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+        "relay_url": "https://x.com/GameDayLines/status/2104672980634886326",
+        "sample_record_id": "S10B",
+        "text_sha256": "46e33b9db7ffed9a686fca2634595df4b1b0b60acfc2673aea865da63f3d610c"
+      }
+    ],
+    "context_note": "The retained browser record shows post B quoting post A. Read both together."
+  }
+]

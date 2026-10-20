@@ -1,0 +1,36 @@
+{
+  "status": "stopped_priced_output_error",
+  "new_calls": 13,
+  "responses": 5,
+  "decisions": 8,
+  "all_new_attempts_settled": true,
+  "new_uncertain_reservations": 0,
+  "new_usage_charge_ceiling_nano_usd": 3096446,
+  "original_unknown_nano_usd": 254394800,
+  "known_successful_charge_ceilings_total_nano_usd": 3509524,
+  "aggregate_exposure_nano_usd": 257904324,
+  "peak_reserved_exposure_nano_usd": 517636461,
+  "cap_nano_usd": 520000000,
+  "headroom_nano_usd": 262095676,
+  "prior_attempts_reconciliations_cap_block_and_authorizations_unchanged": true,
+  "complete_paired_groups": [
+    "S01",
+    "S02",
+    "S03",
+    "S04"
+  ],
+  "partial_group": "S05",
+  "unattempted_groups": [
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S10"
+  ],
+  "stop_reason": "S05 completed Response has wrong original spans; two invalid lower-body excerpts repeat within S05A and cannot be uniquely reanchored. Four other claims reanchor; frozen whole-family validity still fails. No source interpretation or anchor policy changed.",
+  "new_pass_authorization_consumed": true,
+  "automatic_retry_or_resume": false,
+  "original_five_attempt_rows_preserved": true,
+  "ledger_sha256": "19c48ae3244bf65ec1d293ca95a1f66f3f1e6b2f03c2d530d3e44d2b99caea52",
+  "cost_kind": "Conservative usage-priced ceiling, not final invoice; aggregate actual bill remains unknown because the original attempt remains reserved."
+}

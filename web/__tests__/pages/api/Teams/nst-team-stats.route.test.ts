@@ -1,12 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { state, getCurrentSeasonMock, fetchMock } = vi.hoisted(() => ({
+const { state, getCurrentSeasonMock, fetchMock, offSeasonAdmissionMock } = vi.hoisted(() => ({
   state: {
     latestDate: "2026-10-07",
     setupMs: 0,
     fetchMs: 0,
     requestStarts: [] as number[],
     failureCode: "missing_key",
+    failureStatus: 503,
     upsertMs: {} as Record<string, number>,
     emptyCurrent: false,
     failureScope: "" as "" | "date" | "current",
@@ -15,10 +16,14 @@ const { state, getCurrentSeasonMock, fetchMock } = vi.hoisted(() => ({
   },
   getCurrentSeasonMock: vi.fn(),
   fetchMock: vi.fn(),
+  offSeasonAdmissionMock: vi.fn(),
 }));
 
 vi.mock("utils/adminOnlyMiddleware", () => ({ default: (handler: unknown) => handler }));
-vi.mock("lib/cron/nhlOffSeason", () => ({ withNhlOffSeasonSkip: (handler: unknown) => handler }));
+vi.mock("lib/cron/nhlOffSeason", () => ({ withNhlOffSeasonSkip: (handler: any) => (...args: any[]) => {
+  offSeasonAdmissionMock();
+  return handler(...args);
+} }));
 vi.mock("lib/cron/withCronJobAudit", () => ({ withCronJobAudit: (handler: unknown) => handler }));
 vi.mock("lib/NHL/server", () => ({ getCurrentSeason: getCurrentSeasonMock }));
 
@@ -92,6 +97,7 @@ const lastRequests = () => requests().filter((url) => !url.searchParams.has("fd"
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.stubEnv("NST_TEAM_TABLE_SECRET", "test-team-table-secret");
   vi.useFakeTimers();
   vi.setSystemTime(NOW);
   state.latestDate = "2026-10-07";
@@ -99,6 +105,7 @@ beforeEach(() => {
   state.fetchMs = 0;
   state.requestStarts = [];
   state.failureCode = "missing_key";
+  state.failureStatus = 503;
   state.upsertMs = {};
   state.emptyCurrent = false;
   state.failureScope = "";
@@ -119,7 +126,7 @@ beforeEach(() => {
     const failed = state.failureScope === "date" ? params.has("fd") : state.failureScope === "current" && current;
     return {
       ok: !failed,
-      status: failed ? 503 : 200,
+      status: failed ? state.failureStatus : 200,
       text: async () => JSON.stringify(failed ? { error: { code: state.failureCode } } : {
         data: state.emptyCurrent && current ? [] : [{ ...sourceRow, situation: params.get("sit") }],
       }),
@@ -127,9 +134,44 @@ beforeEach(() => {
   });
 });
 
-afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 
 describe("NST team stats current-season refresh", () => {
+  it.each([undefined, "", " \t\n", "two words", "invalid\nsecret"])("rejects missing/invalid caller config %s before season or source work", async (secret) => {
+    vi.stubEnv("NST_TEAM_TABLE_SECRET", secret);
+    const res = await run();
+    expect(res.statusCode).toBe(503);
+    expect(res.body).toMatchObject({ success: false, code: "caller_auth_unavailable" });
+    expect(offSeasonAdmissionMock).not.toHaveBeenCalled();
+    expect(getCurrentSeasonMock).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(state.upserts).toEqual([]);
+  });
+
+  it("sends the shared credential only in server request headers", async () => {
+    const res = await run();
+    expect(fetchMock).toHaveBeenCalled();
+    for (const [url, options] of fetchMock.mock.calls) {
+      expect(options).toMatchObject({ headers: { Authorization: "Bearer test-team-table-secret" } });
+      expect(options.signal).toBeInstanceOf(AbortSignal);
+      expect(url).not.toContain("test-team-table-secret");
+    }
+    expect(JSON.stringify(res.body)).not.toContain("test-team-table-secret");
+    expect(JSON.stringify(vi.mocked(console.log).mock.calls)).not.toContain("test-team-table-secret");
+    expect(JSON.stringify(vi.mocked(console.error).mock.calls)).not.toContain("test-team-table-secret");
+  });
+
+  it.each([["caller_unauthorized", 401], ["caller_auth_unavailable", 503]] as const)("stops on downstream caller code %s after one failed request", async (code, status) => {
+    state.failureScope = "current";
+    state.failureCode = code;
+    state.failureStatus = status;
+    const res = await run();
+    expect(res.statusCode).toBe(503);
+    expect(res.body).toMatchObject({ success: false, failedRequests: 1, processedDates: [], remainingDates: ["2026-10-08", "2026-10-09"] });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(state.upserts).toEqual([]);
+  });
+
   it("refreshes the current season for the October 9 yesterday/today backlog without refreshing last season", async () => {
     const res = await run();
     expect(res.statusCode).toBe(200);

@@ -1,0 +1,239 @@
+diff --git a/web/lib/projections/ingest/physicalShiftIntervalAssessment.ts b/web/lib/projections/ingest/physicalShiftIntervalAssessment.ts
+new file mode 100644
+index 000000000..900e92874
+--- /dev/null
++++ b/web/lib/projections/ingest/physicalShiftIntervalAssessment.ts
+@@ -0,0 +1,38 @@
++import { sha256CanonicalJson } from "../materializationFingerprint";
++import { buildProjectionGamecenterNormalizationScope } from "./gamecenterNormalization";
++import { groupPhysicalShiftIntervals } from "./physicalShiftIntervals";
++import type { PbpResponse } from "./pbp";
++import { buildShiftRelationshipStrengthSegments, buildShiftStrengthUpserts, type NhleShiftChartsRawPayload } from "./shifts";
++
++export const PHYSICAL_SHIFT_ASSESSMENT_VERSION = "physical-shift-interval-assessment-v1";
++
++/** No RPC/model/admission: shared candidate used to review complete local effects. */
++export function assessPhysicalShiftIntervalCandidate(args: {
++  gameId: number; pbp: PbpResponse; shiftPayload: NhleShiftChartsRawPayload;
++}) {
++  if (args.shiftPayload.source !== "json-api" || !Array.isArray(args.shiftPayload.data) ||
++    args.shiftPayload.total !== args.shiftPayload.data.length) {
++    throw new Error("Incomplete physical shift candidate raw scope");
++  }
++  const grouping = groupPhysicalShiftIntervals(args.gameId, args.shiftPayload.data);
++  // Normalized source remains all raw IDs. Logical grouping is a separate versioned
++  // artifact; it is never persisted under the deployed parser/materializer labels.
++  const normalization = buildProjectionGamecenterNormalizationScope(args);
++  const strengthRows = buildShiftStrengthUpserts(args.gameId, args.pbp, grouping.calculationRows,
++    "1970-01-01T00:00:00.000Z");
++  const relationshipSegments = buildShiftRelationshipStrengthSegments(args.gameId, args.pbp, grouping.calculationRows);
++  const fingerprints = {
++    normalization: sha256CanonicalJson({ roster: normalization.rosterRows,
++      events: normalization.eventRows, shifts: normalization.shiftRows }),
++    strength: sha256CanonicalJson(strengthRows),
++    relationships: sha256CanonicalJson(relationshipSegments),
++  };
++  return { version: PHYSICAL_SHIFT_ASSESSMENT_VERSION, runtimeAdmission: false as const,
++    grouping, normalization, strengthRows, relationshipSegments, fingerprints,
++    candidateFingerprint: sha256CanonicalJson({ version: PHYSICAL_SHIFT_ASSESSMENT_VERSION,
++      groupingFingerprint: grouping.groupingFingerprint,
++      normalizationParserFingerprint: normalization.parserFingerprint,
++      normalizationMaterializerVersion: normalization.materializerVersion, fingerprints }),
++    remainingGates: ["independent_complete_source_parity", "strength_definition_parity",
++      "derived_and_selected_window_effects", "versioned_runtime_contract_integration", "runtime_admission"] };
++}
+diff --git a/web/lib/projections/ingest/physicalShiftIntervals.ts b/web/lib/projections/ingest/physicalShiftIntervals.ts
+new file mode 100644
+index 000000000..95e789543
+--- /dev/null
++++ b/web/lib/projections/ingest/physicalShiftIntervals.ts
+@@ -0,0 +1,93 @@
++import { sha256CanonicalJson } from "../materializationFingerprint";
++import { parseStrictShiftClock } from "../shiftChartCompleteness";
++import type { NhleShiftRow } from "./shifts";
++
++export const PHYSICAL_SHIFT_GROUPING_VERSION = "nhl-physical-shift-intervals-v1";
++
++export type PhysicalShiftGroup = {
++  logicalId: string;
++  memberFingerprint: string;
++  interval: {
++    gameId: number; playerId: number; teamId: number; period: number;
++    typeCode: 517; startTime: string; endTime: string; duration: string;
++  };
++  members: NhleShiftRow[];
++  calculationShiftNumber: number;
++};
++
++/** Local candidate only: raw records and provider sequence numbers remain evidence. */
++export function groupPhysicalShiftIntervals(gameId: number, source: readonly NhleShiftRow[]) {
++  if (!Number.isSafeInteger(gameId) || gameId <= 0 || source.length > 20_000) {
++    throw new Error("Invalid physical shift grouping scope");
++  }
++  // JSON source records are copied in full, including provider fields absent from the TS type.
++  const rawRows: NhleShiftRow[] = JSON.parse(JSON.stringify(source));
++  const ids = new Set<number>();
++  const grouped = new Map<string, { interval: PhysicalShiftGroup["interval"]; members: NhleShiftRow[] }>();
++  for (const row of rawRows) {
++    if (row.gameId !== gameId || !Number.isSafeInteger(row.id) || row.id! <= 0 || ids.has(row.id!) ||
++      !Number.isSafeInteger(row.playerId) || !Number.isSafeInteger(row.teamId) ||
++      !Number.isSafeInteger(row.period) || row.period < 0 ||
++      !Number.isSafeInteger(row.shiftNumber) || row.shiftNumber < 0 ||
++      !Number.isSafeInteger(row.typeCode) || typeof row.startTime !== "string" || typeof row.endTime !== "string") {
++      throw new Error("Invalid or duplicate immutable physical shift source identity");
++    }
++    ids.add(row.id!);
++    if (row.typeCode !== 517) continue;
++    const start = parseStrictShiftClock(row.startTime);
++    const end = parseStrictShiftClock(row.endTime);
++    const duration = parseStrictShiftClock(row.duration);
++    if (row.playerId <= 0 || row.teamId <= 0 || row.period <= 0 ||
++      start == null || end == null || duration == null || duration <= 0 ||
++      (end !== 0 && (end <= start || end - start !== duration))) {
++      throw new Error("Invalid physical shift clock or duration");
++    }
++    // Exact source clock strings are part of this deliberately narrow policy.
++    // Played-end sentinels and period bounds are still checked by the strict builders.
++    const interval: PhysicalShiftGroup["interval"] = {
++      gameId, playerId: row.playerId, teamId: row.teamId, period: row.period,
++      typeCode: 517, startTime: row.startTime, endTime: row.endTime, duration: row.duration!,
++    };
++    const logicalId = sha256CanonicalJson({ version: PHYSICAL_SHIFT_GROUPING_VERSION, interval });
++    const group = grouped.get(logicalId) ?? { interval, members: [] };
++    if (group.members.some(member => member.teamAbbrev !== row.teamAbbrev ||
++      member.firstName !== row.firstName || member.lastName !== row.lastName)) {
++      throw new Error("Contradictory metadata within a physical shift group");
++    }
++    group.members.push(row);
++    grouped.set(logicalId, group);
++  }
++  rawRows.sort((a, b) => a.id! - b.id!);
++  const ordered = [...grouped.entries()].sort(([, a], [, b]) =>
++    a.interval.playerId - b.interval.playerId || a.interval.period - b.interval.period ||
++    parseStrictShiftClock(a.interval.startTime)! - parseStrictShiftClock(b.interval.startTime)! ||
++    parseStrictShiftClock(a.interval.endTime)! - parseStrictShiftClock(b.interval.endTime)! ||
++    a.interval.teamId - b.interval.teamId ||
++    a.interval.startTime.localeCompare(b.interval.startTime) || a.interval.endTime.localeCompare(b.interval.endTime) ||
++    a.interval.duration.localeCompare(b.interval.duration));
++  const sequence = new Map<string, number>();
++  const groups: PhysicalShiftGroup[] = ordered.map(([logicalId, group]) => {
++    const key = `${group.interval.playerId}:${group.interval.period}`;
++    const calculationShiftNumber = (sequence.get(key) ?? 0) + 1;
++    sequence.set(key, calculationShiftNumber);
++    const members = group.members.sort((a, b) => a.id! - b.id!);
++    return { logicalId, interval: group.interval, members, calculationShiftNumber,
++      memberFingerprint: sha256CanonicalJson({ version: PHYSICAL_SHIFT_GROUPING_VERSION, logicalId, members }) };
++  });
++  // Construct logical carriers, never select a winning raw ID/sequence. Metadata is
++  // shared by every validated member. Synthetic sequence is scoped to player/period.
++  const calculationRows: NhleShiftRow[] = groups.map(group => ({
++    ...group.interval, teamAbbrev: group.members[0].teamAbbrev,
++    firstName: group.members[0].firstName, lastName: group.members[0].lastName,
++    shiftNumber: group.calculationShiftNumber,
++  }));
++  const nonIntervalRows = rawRows.filter(row => row.typeCode !== 517);
++  calculationRows.push(...nonIntervalRows);
++  const rawMemberFingerprint = sha256CanonicalJson(rawRows);
++  const groupingFingerprint = sha256CanonicalJson({ version: PHYSICAL_SHIFT_GROUPING_VERSION,
++    gameId, rawMemberFingerprint, groups, nonIntervalRows });
++  return { version: PHYSICAL_SHIFT_GROUPING_VERSION, gameId, rawRows, groups, calculationRows,
++    rawMemberFingerprint, groupingFingerprint, rawRowCount: rawRows.length,
++    logicalIntervalCount: groups.length, nonIntervalCount: nonIntervalRows.length,
++    calculationRowCount: calculationRows.length };
++}
+diff --git a/web/lib/projections/ingest/shifts.test.ts b/web/lib/projections/ingest/shifts.test.ts
+index 3abfa6bed..5f69e419e 100644
+--- a/web/lib/projections/ingest/shifts.test.ts
++++ b/web/lib/projections/ingest/shifts.test.ts
+@@ -33,9 +33,91 @@ import {
+ } from "./shifts";
+ import validGame from "./__fixtures__/2026020018-valid-full-game.json";
+ import failingGame from "./__fixtures__/2026020019-shift-conflicts.json";
++import { groupPhysicalShiftIntervals, PHYSICAL_SHIFT_GROUPING_VERSION } from "./physicalShiftIntervals";
++import { assessPhysicalShiftIntervalCandidate } from "./physicalShiftIntervalAssessment";
+ 
+ const GAME_ID = 2025020001;
+ 
++describe("versioned local physical-interval candidate", () => {
++  const raw = () => validGame.shiftPayload.data as NhleShiftRow[];
++  const duplicate = (rows: NhleShiftRow[]) => ({ ...rows.find(row => row.typeCode === 517)!,
++    id: 999999999, shiftNumber: 999 });
++
++  it("preserves every raw member while generating one deterministic logical carrier", () => {
++    const rows = raw();
++    const added = { ...duplicate(rows), providerNote: { retained: true } };
++    const mixed = [...rows, added, { ...added, id: 999999998, shiftNumber: rows[0].shiftNumber }];
++    const before = JSON.stringify(mixed);
++    const grouped = groupPhysicalShiftIntervals(validGame.pbp.id, mixed);
++    expect(JSON.stringify(mixed)).toBe(before);
++    expect(grouped).toEqual(groupPhysicalShiftIntervals(validGame.pbp.id, [...mixed].reverse()));
++    expect(grouped.version).toBe(PHYSICAL_SHIFT_GROUPING_VERSION);
++    expect(grouped.rawRowCount).toBe(mixed.length);
++    expect(grouped.calculationRowCount).toBe(groupPhysicalShiftIntervals(validGame.pbp.id, rows).calculationRowCount);
++    const group = grouped.groups.find(g => g.members.some(member => member.id === added.id))!;
++    expect(group.members).toHaveLength(3);
++    expect(group.members.find(member => member.id === added.id)).toMatchObject({ providerNote: { retained: true } });
++    expect(grouped.calculationRows.filter(row => row.typeCode === 517).every(row => row.id === undefined)).toBe(true);
++    expect(group.logicalId).toMatch(/^[a-f0-9]{64}$/);
++    expect(group.memberFingerprint).toMatch(/^[a-f0-9]{64}$/);
++  });
++
++  it("binds member identity and full metadata without changing logical physical identity", () => {
++    const rows = raw();
++    const a = groupPhysicalShiftIntervals(validGame.pbp.id, [...rows, duplicate(rows)]);
++    const b = groupPhysicalShiftIntervals(validGame.pbp.id, [...rows, { ...duplicate(rows), id: 999999998 }]);
++    expect(a.groups.map(g => g.logicalId)).toEqual(b.groups.map(g => g.logicalId));
++    expect(a.groupingFingerprint).not.toBe(b.groupingFingerprint);
++    expect(a.rawMemberFingerprint).not.toBe(b.rawMemberFingerprint);
++    expect(a.calculationRows).toEqual(b.calculationRows);
++    expect(() => groupPhysicalShiftIntervals(validGame.pbp.id, [...rows, { ...duplicate(rows), firstName: "Conflict" }])).toThrow(/Contradictory metadata/);
++  });
++
++  it("preserves non517 rows individually, including distinct IDs with equal metadata", () => {
++    const rows = raw();
++    const event = { ...duplicate(rows), typeCode: 999 };
++    const grouped = groupPhysicalShiftIntervals(validGame.pbp.id, [...rows, event, { ...event, id: 999999998 }]);
++    expect(grouped.calculationRows).toContainEqual(event);
++    expect(grouped.calculationRows).toContainEqual({ ...event, id: 999999998 });
++    expect(grouped.rawRows).toHaveLength(rows.length + 2);
++  });
++
++  it("rejects missing/duplicate raw IDs, wrong game and unequal durations", () => {
++    const rows = raw();
++    for (const changed of [{ id: undefined }, { id: rows[0].id }, { gameId: validGame.pbp.id + 1 }, { duration: "00:01" }]) {
++      expect(() => groupPhysicalShiftIntervals(validGame.pbp.id, [...rows, { ...duplicate(rows), ...changed }])).toThrow();
++    }
++  });
++
++  it("reuses unchanged full-scope builders and normalization without granting admission", () => {
++    const rows = raw();
++    const run = (data: NhleShiftRow[]) => assessPhysicalShiftIntervalCandidate({ gameId: validGame.pbp.id,
++      pbp: validGame.pbp, shiftPayload: { source: "json-api", total: data.length, data } });
++    const baseline = run(rows), candidate = run([...rows, duplicate(rows)]);
++    expect(candidate.runtimeAdmission).toBe(false);
++    expect(candidate.strengthRows).toEqual(baseline.strengthRows);
++    expect(candidate.relationshipSegments).toEqual(baseline.relationshipSegments);
++    expect(candidate.normalization.shiftRows).toHaveLength(rows.length + 1);
++    expect(candidate.candidateFingerprint).not.toBe(baseline.candidateFingerprint);
++    const reordered = run([...rows, duplicate(rows)].reverse());
++    expect(candidate.grouping).toEqual(reordered.grouping);
++    expect(candidate.fingerprints.strength).toBe(reordered.fingerprints.strength);
++    expect(candidate.fingerprints.relationships).toBe(reordered.fingerprints.relationships);
++    // Raw payload array order remains part of the original capture/hash contract.
++    expect(candidate.normalization.shiftPayloadHash).not.toBe(reordered.normalization.shiftPayloadHash);
++    expect(() => buildShiftStrengthUpserts(validGame.pbp.id, validGame.pbp, [...rows, duplicate(rows)])).toThrow(/Overlapping/);
++  });
++
++  it("keeps partial overlaps and zero-end defects held by strict full-game checks", () => {
++    const rows = raw(), anchor = rows.find(row => row.typeCode === 517)!;
++    const changed = { ...duplicate(rows), startTime: anchor.startTime, endTime: "00:00", duration: "00:01" };
++    expect(() => assessPhysicalShiftIntervalCandidate({ gameId: validGame.pbp.id, pbp: validGame.pbp,
++      shiftPayload: { source: "json-api", total: rows.length + 1, data: [...rows, changed] } })).toThrow();
++    expect(() => assessPhysicalShiftIntervalCandidate({ gameId: failingGame.pbp.id, pbp: failingGame.pbp,
++      shiftPayload: { source: "json-api", total: failingGame.shiftRows.length, data: failingGame.shiftRows } })).toThrow();
++  });
++});
++
+ type TestPbp = Parameters<typeof buildShiftStrengthUpserts>[1];
+ type TestPlay = TestPbp["plays"][number];
+ 

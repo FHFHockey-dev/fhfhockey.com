@@ -1,0 +1,699 @@
+{
+  "reconstruction": {
+    "groups": 10,
+    "records": 12,
+    "same_envelopes_requests_seals": true
+  },
+  "probes": [
+    {
+      "name": "harmless out-to-unavailable paraphrase",
+      "normalized_errors": [],
+      "grade": {
+        "denominator": 3,
+        "source_tp": 2,
+        "source_fp": 1,
+        "source_fn": 1,
+        "field_errors": [
+          {
+            "gold_id": "S05-C02",
+            "claim_id": "synthetic-S05-C02",
+            "fields": [
+              "value"
+            ]
+          }
+        ],
+        "uncertainty_or_time_errors": 0,
+        "unsupported_additions": [
+          {
+            "claim_id": "synthetic-S05-C02",
+            "kind": "declared_field_mismatch",
+            "fields": [
+              "value"
+            ]
+          }
+        ],
+        "unproved_external_additions": [],
+        "convention_credits": [],
+        "source_contract_projection_mismatches": 0,
+        "literal_team_field_coverage": {
+          "gold_nonnull": 0,
+          "explicit_literal_matches": 0
+        },
+        "correction": null,
+        "held": 3,
+        "local_eligible": 0,
+        "holds": [
+          {
+            "claim_id": "synthetic-S05-C01",
+            "holds": [
+              "source_time_identity_unverified",
+              "game_binding_unverified"
+            ]
+          },
+          {
+            "claim_id": "synthetic-S05-C02",
+            "holds": [
+              "source_time_identity_unverified",
+              "game_binding_unverified"
+            ]
+          },
+          {
+            "claim_id": "synthetic-S05-C03",
+            "holds": [
+              "source_time_identity_unverified",
+              "game_binding_unverified"
+            ]
+          }
+        ],
+        "published": 0,
+        "owner_publication_readiness": null,
+        "world_truth": null,
+        "errors": [],
+        "missing_records": [],
+        "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+      },
+      "body": {
+        "records": [
+          {
+            "record_id": "S05A",
+            "material": true,
+            "claims": [
+              {
+                "id": "synthetic-S05-C01",
+                "player": "Joonas Korpisalo",
+                "player_id": null,
+                "team": null,
+                "role": null,
+                "event": "injury_availability",
+                "value": "out",
+                "polarity": "negative",
+                "certainty": "asserted",
+                "time": "4 weeks from today",
+                "condition": null,
+                "source_id": "x:2108958442983686184",
+                "source_author": "@drosennhl",
+                "evidence": {
+                  "start": 0,
+                  "end": 56,
+                  "text": "Joonas Korpisalo (lower body) is out 4 weeks from today."
+                }
+              },
+              {
+                "id": "synthetic-S05-C02",
+                "player": "Joe Veleno",
+                "player_id": null,
+                "team": null,
+                "role": null,
+                "event": "injury_availability",
+                "value": "unavailable",
+                "polarity": "negative",
+                "certainty": "asserted",
+                "time": "3-3.5 months",
+                "condition": null,
+                "source_id": "x:2108958442983686184",
+                "source_author": "@drosennhl",
+                "evidence": {
+                  "start": 57,
+                  "end": 101,
+                  "text": "Joe Veleno (lower body) is out 3-3.5 months."
+                }
+              }
+            ],
+            "overflow": false
+          },
+          {
+            "record_id": "S05B",
+            "material": true,
+            "claims": [
+              {
+                "id": "synthetic-S05-C03",
+                "player": "Igor Shesterkin",
+                "player_id": null,
+                "team": null,
+                "role": null,
+                "event": "injury_availability",
+                "value": "out",
+                "polarity": "negative",
+                "certainty": "asserted",
+                "time": "rest of the season",
+                "condition": null,
+                "source_id": "x:2108957630253113386",
+                "source_author": "@drosennhl",
+                "evidence": {
+                  "start": 0,
+                  "end": 82,
+                  "text": "Igor Shesterkin will be out for the rest of the season with his lower body injury."
+                }
+              }
+            ],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      }
+    },
+    {
+      "name": "factual duration 3-to-3.5 becomes 3.3-to-5 months",
+      "normalized_errors": [],
+      "grade": {
+        "denominator": 3,
+        "source_tp": 3,
+        "source_fp": 0,
+        "source_fn": 0,
+        "field_errors": [],
+        "uncertainty_or_time_errors": 0,
+        "unsupported_additions": [],
+        "unproved_external_additions": [],
+        "convention_credits": [],
+        "source_contract_projection_mismatches": 0,
+        "literal_team_field_coverage": {
+          "gold_nonnull": 0,
+          "explicit_literal_matches": 0
+        },
+        "correction": null,
+        "held": 3,
+        "local_eligible": 0,
+        "holds": [
+          {
+            "claim_id": "synthetic-S05-C01",
+            "holds": [
+              "source_time_identity_unverified",
+              "game_binding_unverified"
+            ]
+          },
+          {
+            "claim_id": "synthetic-S05-C02",
+            "holds": [
+              "source_time_identity_unverified",
+              "game_binding_unverified"
+            ]
+          },
+          {
+            "claim_id": "synthetic-S05-C03",
+            "holds": [
+              "source_time_identity_unverified",
+              "game_binding_unverified"
+            ]
+          }
+        ],
+        "published": 0,
+        "owner_publication_readiness": null,
+        "world_truth": null,
+        "errors": [],
+        "missing_records": [],
+        "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+      },
+      "body": {
+        "records": [
+          {
+            "record_id": "S05A",
+            "material": true,
+            "claims": [
+              {
+                "id": "synthetic-S05-C01",
+                "player": "Joonas Korpisalo",
+                "player_id": null,
+                "team": null,
+                "role": null,
+                "event": "injury_availability",
+                "value": "out",
+                "polarity": "negative",
+                "certainty": "asserted",
+                "time": "4 weeks from today",
+                "condition": null,
+                "source_id": "x:2108958442983686184",
+                "source_author": "@drosennhl",
+                "evidence": {
+                  "start": 0,
+                  "end": 56,
+                  "text": "Joonas Korpisalo (lower body) is out 4 weeks from today."
+                }
+              },
+              {
+                "id": "synthetic-S05-C02",
+                "player": "Joe Veleno",
+                "player_id": null,
+                "team": null,
+                "role": null,
+                "event": "injury_availability",
+                "value": "out",
+                "polarity": "negative",
+                "certainty": "asserted",
+                "time": "3.3-5 months",
+                "condition": null,
+                "source_id": "x:2108958442983686184",
+                "source_author": "@drosennhl",
+                "evidence": {
+                  "start": 57,
+                  "end": 101,
+                  "text": "Joe Veleno (lower body) is out 3-3.5 months."
+                }
+              }
+            ],
+            "overflow": false
+          },
+          {
+            "record_id": "S05B",
+            "material": true,
+            "claims": [
+              {
+                "id": "synthetic-S05-C03",
+                "player": "Igor Shesterkin",
+                "player_id": null,
+                "team": null,
+                "role": null,
+                "event": "injury_availability",
+                "value": "out",
+                "polarity": "negative",
+                "certainty": "asserted",
+                "time": "rest of the season",
+                "condition": null,
+                "source_id": "x:2108957630253113386",
+                "source_author": "@drosennhl",
+                "evidence": {
+                  "start": 0,
+                  "end": 82,
+                  "text": "Igor Shesterkin will be out for the rest of the season with his lower body injury."
+                }
+              }
+            ],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      }
+    },
+    {
+      "name": "clear stronger duration at-least remains detected",
+      "normalized_errors": [],
+      "grade": {
+        "denominator": 3,
+        "source_tp": 2,
+        "source_fp": 1,
+        "source_fn": 1,
+        "field_errors": [
+          {
+            "gold_id": "S05-C01",
+            "claim_id": "synthetic-S05-C01",
+            "fields": [
+              "time"
+            ]
+          }
+        ],
+        "uncertainty_or_time_errors": 1,
+        "unsupported_additions": [],
+        "unproved_external_additions": [],
+        "convention_credits": [],
+        "source_contract_projection_mismatches": 0,
+        "literal_team_field_coverage": {
+          "gold_nonnull": 0,
+          "explicit_literal_matches": 0
+        },
+        "correction": null,
+        "held": 3,
+        "local_eligible": 0,
+        "holds": [
+          {
+            "claim_id": "synthetic-S05-C01",
+            "holds": [
+              "source_time_identity_unverified",
+              "game_binding_unverified"
+            ]
+          },
+          {
+            "claim_id": "synthetic-S05-C02",
+            "holds": [
+              "source_time_identity_unverified",
+              "game_binding_unverified"
+            ]
+          },
+          {
+            "claim_id": "synthetic-S05-C03",
+            "holds": [
+              "source_time_identity_unverified",
+              "game_binding_unverified"
+            ]
+          }
+        ],
+        "published": 0,
+        "owner_publication_readiness": null,
+        "world_truth": null,
+        "errors": [],
+        "missing_records": [],
+        "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+      },
+      "body": {
+        "records": [
+          {
+            "record_id": "S05A",
+            "material": true,
+            "claims": [
+              {
+                "id": "synthetic-S05-C01",
+                "player": "Joonas Korpisalo",
+                "player_id": null,
+                "team": null,
+                "role": null,
+                "event": "injury_availability",
+                "value": "out",
+                "polarity": "negative",
+                "certainty": "asserted",
+                "time": "at least 4 weeks from today",
+                "condition": null,
+                "source_id": "x:2108958442983686184",
+                "source_author": "@drosennhl",
+                "evidence": {
+                  "start": 0,
+                  "end": 56,
+                  "text": "Joonas Korpisalo (lower body) is out 4 weeks from today."
+                }
+              },
+              {
+                "id": "synthetic-S05-C02",
+                "player": "Joe Veleno",
+                "player_id": null,
+                "team": null,
+                "role": null,
+                "event": "injury_availability",
+                "value": "out",
+                "polarity": "negative",
+                "certainty": "asserted",
+                "time": "3-3.5 months",
+                "condition": null,
+                "source_id": "x:2108958442983686184",
+                "source_author": "@drosennhl",
+                "evidence": {
+                  "start": 57,
+                  "end": 101,
+                  "text": "Joe Veleno (lower body) is out 3-3.5 months."
+                }
+              }
+            ],
+            "overflow": false
+          },
+          {
+            "record_id": "S05B",
+            "material": true,
+            "claims": [
+              {
+                "id": "synthetic-S05-C03",
+                "player": "Igor Shesterkin",
+                "player_id": null,
+                "team": null,
+                "role": null,
+                "event": "injury_availability",
+                "value": "out",
+                "polarity": "negative",
+                "certainty": "asserted",
+                "time": "rest of the season",
+                "condition": null,
+                "source_id": "x:2108957630253113386",
+                "source_author": "@drosennhl",
+                "evidence": {
+                  "start": 0,
+                  "end": 82,
+                  "text": "Igor Shesterkin will be out for the rest of the season with his lower body injury."
+                }
+              }
+            ],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      }
+    },
+    {
+      "name": "invented goalkeeper role on Joe Veleno",
+      "normalized_errors": [],
+      "grade": {
+        "denominator": 3,
+        "source_tp": 3,
+        "source_fp": 0,
+        "source_fn": 0,
+        "field_errors": [],
+        "uncertainty_or_time_errors": 0,
+        "unsupported_additions": [],
+        "unproved_external_additions": [],
+        "convention_credits": [],
+        "source_contract_projection_mismatches": 0,
+        "literal_team_field_coverage": {
+          "gold_nonnull": 0,
+          "explicit_literal_matches": 0
+        },
+        "correction": null,
+        "held": 3,
+        "local_eligible": 0,
+        "holds": [
+          {
+            "claim_id": "synthetic-S05-C01",
+            "holds": [
+              "source_time_identity_unverified",
+              "game_binding_unverified"
+            ]
+          },
+          {
+            "claim_id": "synthetic-S05-C02",
+            "holds": [
+              "source_time_identity_unverified",
+              "game_binding_unverified"
+            ]
+          },
+          {
+            "claim_id": "synthetic-S05-C03",
+            "holds": [
+              "source_time_identity_unverified",
+              "game_binding_unverified"
+            ]
+          }
+        ],
+        "published": 0,
+        "owner_publication_readiness": null,
+        "world_truth": null,
+        "errors": [],
+        "missing_records": [],
+        "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+      },
+      "body": {
+        "records": [
+          {
+            "record_id": "S05A",
+            "material": true,
+            "claims": [
+              {
+                "id": "synthetic-S05-C01",
+                "player": "Joonas Korpisalo",
+                "player_id": null,
+                "team": null,
+                "role": null,
+                "event": "injury_availability",
+                "value": "out",
+                "polarity": "negative",
+                "certainty": "asserted",
+                "time": "4 weeks from today",
+                "condition": null,
+                "source_id": "x:2108958442983686184",
+                "source_author": "@drosennhl",
+                "evidence": {
+                  "start": 0,
+                  "end": 56,
+                  "text": "Joonas Korpisalo (lower body) is out 4 weeks from today."
+                }
+              },
+              {
+                "id": "synthetic-S05-C02",
+                "player": "Joe Veleno",
+                "player_id": null,
+                "team": null,
+                "role": "starting_goaltender",
+                "event": "injury_availability",
+                "value": "out",
+                "polarity": "negative",
+                "certainty": "asserted",
+                "time": "3-3.5 months",
+                "condition": null,
+                "source_id": "x:2108958442983686184",
+                "source_author": "@drosennhl",
+                "evidence": {
+                  "start": 57,
+                  "end": 101,
+                  "text": "Joe Veleno (lower body) is out 3-3.5 months."
+                }
+              }
+            ],
+            "overflow": false
+          },
+          {
+            "record_id": "S05B",
+            "material": true,
+            "claims": [
+              {
+                "id": "synthetic-S05-C03",
+                "player": "Igor Shesterkin",
+                "player_id": null,
+                "team": null,
+                "role": null,
+                "event": "injury_availability",
+                "value": "out",
+                "polarity": "negative",
+                "certainty": "asserted",
+                "time": "rest of the season",
+                "condition": null,
+                "source_id": "x:2108957630253113386",
+                "source_author": "@drosennhl",
+                "evidence": {
+                  "start": 0,
+                  "end": 82,
+                  "text": "Igor Shesterkin will be out for the rest of the season with his lower body injury."
+                }
+              }
+            ],
+            "overflow": false
+          }
+        ],
+        "revisions": []
+      }
+    },
+    {
+      "name": "different drill reference",
+      "normalized_errors": [],
+      "grade": {
+        "denominator": 2,
+        "source_tp": 2,
+        "source_fp": 0,
+        "source_fn": 0,
+        "field_errors": [],
+        "uncertainty_or_time_errors": 0,
+        "unsupported_additions": [],
+        "unproved_external_additions": [],
+        "convention_credits": [],
+        "source_contract_projection_mismatches": 0,
+        "literal_team_field_coverage": {
+          "gold_nonnull": 0,
+          "explicit_literal_matches": 0
+        },
+        "correction": {
+          "both_sources_retained": true,
+          "revision_present": true,
+          "no_regular_pp_update_and_prior_retraction": true,
+          "interpretation_states": [
+            {
+              "record_id": "S10A",
+              "claim_id": "synthetic-S10-C01",
+              "regular_pp_active": false,
+              "status": "retained"
+            },
+            {
+              "record_id": "S10B",
+              "claim_id": "synthetic-S10-C02",
+              "regular_pp_active": false,
+              "status": "retained"
+            }
+          ],
+          "active_regular_pp_proposals": 0,
+          "native_retraction_dispatched": false
+        },
+        "held": 2,
+        "local_eligible": 0,
+        "holds": [
+          {
+            "claim_id": "synthetic-S10-C01",
+            "holds": [
+              "source_time_identity_unverified",
+              "game_binding_unverified",
+              "governing_qualification",
+              "unresolved_time"
+            ]
+          },
+          {
+            "claim_id": "synthetic-S10-C02",
+            "holds": [
+              "source_time_identity_unverified",
+              "game_binding_unverified",
+              "unresolved_time"
+            ]
+          }
+        ],
+        "published": 0,
+        "owner_publication_readiness": null,
+        "world_truth": null,
+        "errors": [],
+        "missing_records": [],
+        "matching_policy": "strict frozen lexical contract, no semantic judge; unsupported paraphrases remain field errors"
+      },
+      "body": {
+        "records": [
+          {
+            "record_id": "S10A",
+            "material": true,
+            "claims": [
+              {
+                "id": "synthetic-S10-C01",
+                "player": "Olofsson",
+                "player_id": null,
+                "team": null,
+                "role": null,
+                "event": "reported_drill_reps",
+                "value": "PP1_reps_with_Marner_up_top",
+                "polarity": "positive",
+                "certainty": "tentative",
+                "time": null,
+                "condition": null,
+                "source_id": "x:2104644558701351383",
+                "source_author": "@DannyWebster21",
+                "evidence": {
+                  "start": 0,
+                  "end": 84,
+                  "text": "Might be much ado about nothing, but Olofsson is taking PP1 reps with Marner up top."
+                }
+              }
+            ],
+            "overflow": false
+          },
+          {
+            "record_id": "S10B",
+            "material": true,
+            "claims": [
+              {
+                "id": "synthetic-S10-C02",
+                "player": "a different drill",
+                "player_id": null,
+                "team": null,
+                "role": null,
+                "event": "clarification",
+                "value": "5_on_3_drill",
+                "polarity": "positive",
+                "certainty": "asserted",
+                "time": null,
+                "condition": null,
+                "source_id": "x:2104672698786013556",
+                "source_author": "@DannyWebster21",
+                "evidence": {
+                  "start": 54,
+                  "end": 87,
+                  "text": "This was a 5-on-3 drill. At ease."
+                }
+              }
+            ],
+            "overflow": false
+          }
+        ],
+        "revisions": [
+          {
+            "from_record_id": "S10A",
+            "to_record_id": "S10B",
+            "kind": "clarifies",
+            "target_event": "pp",
+            "evidence": {
+              "start": 54,
+              "end": 87,
+              "text": "This was a 5-on-3 drill. At ease."
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "correction_raw_retained": true,
+  "missing_model_denominator": 50,
+  "paid_calls": 0
+}

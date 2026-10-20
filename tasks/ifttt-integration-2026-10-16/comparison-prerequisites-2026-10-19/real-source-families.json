@@ -1,0 +1,76 @@
+{
+  "version": "retained-real-development-v1",
+  "provenance": {
+    "path": "web/lib/sources/fixtures/october11TroublesomeTweets.json",
+    "sha256": "77442752b800a46e74cbedc370871758c5dc9e4c2dadf4dcc826178cc6753f0c",
+    "retained_manifest": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/HANDOFF-MANIFEST.json",
+    "retained_manifest_sha256": "2eecda70e9ca0b6b03b229684ef7fb953dbfcc1b2fe94c3968bacfd04b656f9b",
+    "source_basis_as_retained": "Exact original official oEmbed text; original matching ID verified; DB time-valid identities retained; private tests do not publish evidence",
+    "fresh_authenticity_check": false
+  },
+  "families": [
+    {
+      "family_id": "original-x-2108233461026726263",
+      "split": "development",
+      "exposure": "historical discovery; not untouched holdout",
+      "known_aliases": [
+        "2108233461026726263",
+        "https://x.com/SeattleKrakenPR/status/2108233461026726263"
+      ],
+      "complete_family_inventory": false,
+      "source": {
+        "tweetId": "2108233461026726263",
+        "url": "https://x.com/SeattleKrakenPR/status/2108233461026726263",
+        "text": "The #SeaKraken have placed defenseman Ryan Lindgren on injured reserve. He will miss approximately 4-6 weeks due to an upper-body injury.",
+        "publishedAt": "2026-10-08T16:30:00.849Z",
+        "publicationBasis": "snowflake_from_verified_matching_original_oembed_id",
+        "receivedAt": "2026-10-11T12:28:57.014463+00:00"
+      },
+      "author_as_retained_url": "SeattleKrakenPR",
+      "text_sha256_utf8": "b80cb185658443ec93ec68252a06a14283c05900ba6b324e83e9c507d095b771",
+      "external_identity_team_game_truth": "ungraded; retained roster candidates are deliberately not used as truth"
+    },
+    {
+      "family_id": "original-x-2108957630253113386",
+      "split": "development",
+      "exposure": "historical discovery; not untouched holdout",
+      "known_aliases": [
+        "2108957630253113386",
+        "https://x.com/drosennhl/status/2108957630253113386"
+      ],
+      "complete_family_inventory": false,
+      "source": {
+        "tweetId": "2108957630253113386",
+        "url": "https://x.com/drosennhl/status/2108957630253113386",
+        "text": "Igor Shesterkin will be out for the rest of the season with his lower body injury.",
+        "publishedAt": "2026-10-10T16:27:36.247Z",
+        "publicationBasis": "snowflake_from_verified_matching_original_oembed_id",
+        "receivedAt": "2026-10-11T12:28:57.695448+00:00"
+      },
+      "author_as_retained_url": "drosennhl",
+      "text_sha256_utf8": "425fab0de15d4059b5e2b618d22ce5ae046634a737ab3d2da8ee916463757492",
+      "external_identity_team_game_truth": "ungraded; retained roster candidates are deliberately not used as truth"
+    },
+    {
+      "family_id": "original-x-2108961406007570942",
+      "split": "development",
+      "exposure": "historical discovery; not untouched holdout",
+      "known_aliases": [
+        "2108961406007570942",
+        "https://x.com/sammisilber/status/2108961406007570942"
+      ],
+      "complete_family_inventory": false,
+      "source": {
+        "tweetId": "2108961406007570942",
+        "url": "https://x.com/sammisilber/status/2108961406007570942",
+        "text": "Carbery said it’s too early to tell whether Pierre-Luc Dubois will suit up tomorrow. Matt Roy skated again today and remains day-to-day. Team monitoring if it needs a recall",
+        "publishedAt": "2026-10-10T16:42:36.457Z",
+        "publicationBasis": "snowflake_from_verified_matching_original_oembed_id",
+        "receivedAt": "2026-10-11T12:28:57.020953+00:00"
+      },
+      "author_as_retained_url": "sammisilber",
+      "text_sha256_utf8": "b7357e8938e104a97418e922366c0bed6cef176c6d4bca5324a1bdaa8c0c0898",
+      "external_identity_team_game_truth": "ungraded; retained roster candidates are deliberately not used as truth"
+    }
+  ]
+}

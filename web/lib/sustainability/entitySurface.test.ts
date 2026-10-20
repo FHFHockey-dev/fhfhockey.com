@@ -7,11 +7,10 @@ import {
 } from "./entitySurface";
 
 describe("entitySurface", () => {
-  it("derives the legacy expectation state from raw score thresholds", () => {
-    expect(deriveLegacyExpectationState(1.2)).toBe("overperforming");
-    expect(deriveLegacyExpectationState(-1.2)).toBe("underperforming");
-    expect(deriveLegacyExpectationState(0.1)).toBe("stable");
-  });
+  it.each([1.2, -1.2, 0.75, -0.75, 0.1, 0, null, undefined, NaN, Infinity, -Infinity])(
+    "does not infer observed-vs-expected performance from raw process index %s",
+    (value) => expect(deriveLegacyExpectationState(value)).toBe("unavailable"),
+  );
 
   it("extracts the strongest numeric component signals first", () => {
     const reasons = extractReasonHighlights({

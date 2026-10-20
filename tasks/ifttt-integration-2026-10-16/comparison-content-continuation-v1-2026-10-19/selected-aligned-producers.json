@@ -1,0 +1,1168 @@
+{
+  "S01": {
+    "records": [
+      {
+        "claims": [
+          {
+            "certainty": "observation",
+            "condition": null,
+            "event": "attendance",
+            "evidence": {
+              "start": 0,
+              "end": 69,
+              "text": "Ilya Sorokin leads the Islanders out for warmups at Scotiabank Arena."
+            },
+            "id": "c1",
+            "player": "Ilya Sorokin",
+            "player_id": null,
+            "polarity": "positive",
+            "role": null,
+            "source_author": "@ethan_sears",
+            "source_id": "x:2105434001074962845",
+            "team": "Islanders",
+            "time": "warmups",
+            "value": "leads the Islanders out for warmups"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "starter",
+            "evidence": {
+              "start": 70,
+              "end": 100,
+              "text": "Anthony Stolarz for the Leafs."
+            },
+            "id": "c2",
+            "player": "Anthony Stolarz",
+            "player_id": null,
+            "polarity": "positive",
+            "role": null,
+            "source_author": "@ethan_sears",
+            "source_id": "x:2105434001074962845",
+            "team": "Leafs",
+            "time": null,
+            "value": "for the Leafs"
+          }
+        ],
+        "material": true,
+        "overflow": false,
+        "record_id": "S01"
+      }
+    ],
+    "revisions": []
+  },
+  "S02": {
+    "records": [
+      {
+        "claims": [
+          {
+            "certainty": "observation",
+            "condition": null,
+            "event": "availability",
+            "evidence": {
+              "start": 0,
+              "end": 74,
+              "text": "Sanderson skated before main practice today but didn't join his teammates."
+            },
+            "id": "1",
+            "player": "Sanderson",
+            "player_id": null,
+            "polarity": "positive",
+            "role": null,
+            "source_author": "@GraemeNichols",
+            "source_id": "x:2105343573784928457",
+            "team": null,
+            "time": "today",
+            "value": "skated before main practice but did not join teammates"
+          },
+          {
+            "certainty": "tentative",
+            "condition": null,
+            "event": "availability",
+            "evidence": {
+              "start": 75,
+              "end": 116,
+              "text": "org is hopeful he will play this weekend."
+            },
+            "id": "2",
+            "player": "Sanderson",
+            "player_id": null,
+            "polarity": "positive",
+            "role": null,
+            "source_author": "@GraemeNichols",
+            "source_id": "x:2105343573784928457",
+            "team": null,
+            "time": "this weekend",
+            "value": "organization is hopeful he will play"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "availability",
+            "evidence": {
+              "start": 117,
+              "end": 166,
+              "text": "Burakovsky isn't close to returning (upper body)."
+            },
+            "id": "3",
+            "player": "Burakovsky",
+            "player_id": null,
+            "polarity": "negative",
+            "role": null,
+            "source_author": "@GraemeNichols",
+            "source_id": "x:2105343573784928457",
+            "team": null,
+            "time": null,
+            "value": "isn't close to returning; upper-body issue"
+          },
+          {
+            "certainty": "observation",
+            "condition": null,
+            "event": "line",
+            "evidence": {
+              "start": 167,
+              "end": 230,
+              "text": "Foegele took rushes on the 1st line for second consecutive day."
+            },
+            "id": "4",
+            "player": "Foegele",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "1st line",
+            "source_author": "@GraemeNichols",
+            "source_id": "x:2105343573784928457",
+            "team": null,
+            "time": "second consecutive day",
+            "value": "took rushes on the 1st line"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "availability",
+            "evidence": {
+              "start": 231,
+              "end": 277,
+              "text": "No decision has been made on his availability."
+            },
+            "id": "5",
+            "player": "Foegele",
+            "player_id": null,
+            "polarity": "negative",
+            "role": null,
+            "source_author": "@GraemeNichols",
+            "source_id": "x:2105343573784928457",
+            "team": null,
+            "time": null,
+            "value": "no decision has been made on availability"
+          }
+        ],
+        "material": true,
+        "overflow": false,
+        "record_id": "S02"
+      }
+    ],
+    "revisions": []
+  },
+  "S03": {
+    "records": [
+      {
+        "claims": [
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "starter",
+            "evidence": {
+              "start": 69,
+              "end": 88,
+              "text": "He’ll get the start"
+            },
+            "id": "S03-1",
+            "player": "Leevi Meriläinen",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "starter",
+            "source_author": "@ThomasDrance",
+            "source_id": "x:2108996072647573721",
+            "team": "#Canucks",
+            "time": "Saturday in Newark; @ Devils",
+            "value": "will start"
+          }
+        ],
+        "material": true,
+        "overflow": false,
+        "record_id": "S03"
+      }
+    ],
+    "revisions": []
+  },
+  "S04": {
+    "records": [
+      {
+        "claims": [
+          {
+            "certainty": "observation",
+            "condition": null,
+            "event": "pp",
+            "evidence": {
+              "start": 10,
+              "end": 45,
+              "text": "power play groups same as yesterday"
+            },
+            "id": "c1",
+            "player": "Misa",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "net front",
+            "source_author": "@Sheng_Peng",
+            "source_id": "x:2105364132128240008",
+            "team": null,
+            "time": "same as yesterday",
+            "value": "doing some net front"
+          },
+          {
+            "certainty": "observation",
+            "condition": null,
+            "event": "pp",
+            "evidence": {
+              "start": 124,
+              "end": 172,
+              "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+            },
+            "id": "c2",
+            "player": "Cagnoni",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "PP1",
+            "source_author": "@Sheng_Peng",
+            "source_id": "x:2105364132128240008",
+            "team": null,
+            "time": null,
+            "value": "listed in PP1"
+          },
+          {
+            "certainty": "observation",
+            "condition": null,
+            "event": "pp",
+            "evidence": {
+              "start": 124,
+              "end": 172,
+              "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+            },
+            "id": "c3",
+            "player": "Celebrini",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "PP1",
+            "source_author": "@Sheng_Peng",
+            "source_id": "x:2105364132128240008",
+            "team": null,
+            "time": null,
+            "value": "listed in PP1"
+          },
+          {
+            "certainty": "observation",
+            "condition": null,
+            "event": "pp",
+            "evidence": {
+              "start": 124,
+              "end": 172,
+              "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+            },
+            "id": "c4",
+            "player": "Smith",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "PP1",
+            "source_author": "@Sheng_Peng",
+            "source_id": "x:2105364132128240008",
+            "team": null,
+            "time": null,
+            "value": "listed in PP1"
+          },
+          {
+            "certainty": "observation",
+            "condition": null,
+            "event": "pp",
+            "evidence": {
+              "start": 124,
+              "end": 172,
+              "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+            },
+            "id": "c5",
+            "player": "Chernyshov",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "PP1",
+            "source_author": "@Sheng_Peng",
+            "source_id": "x:2105364132128240008",
+            "team": null,
+            "time": null,
+            "value": "listed in PP1"
+          },
+          {
+            "certainty": "observation",
+            "condition": null,
+            "event": "pp",
+            "evidence": {
+              "start": 124,
+              "end": 172,
+              "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+            },
+            "id": "c6",
+            "player": "Wennberg",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "PP1",
+            "source_author": "@Sheng_Peng",
+            "source_id": "x:2105364132128240008",
+            "team": null,
+            "time": null,
+            "value": "listed in PP1"
+          },
+          {
+            "certainty": "observation",
+            "condition": null,
+            "event": "pp",
+            "evidence": {
+              "start": 175,
+              "end": 217,
+              "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+            },
+            "id": "c7",
+            "player": "Orlov",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "PP2",
+            "source_author": "@Sheng_Peng",
+            "source_id": "x:2105364132128240008",
+            "team": null,
+            "time": null,
+            "value": "listed in PP2"
+          },
+          {
+            "certainty": "observation",
+            "condition": null,
+            "event": "pp",
+            "evidence": {
+              "start": 175,
+              "end": 217,
+              "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+            },
+            "id": "c8",
+            "player": "Misa",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "PP2",
+            "source_author": "@Sheng_Peng",
+            "source_id": "x:2105364132128240008",
+            "team": null,
+            "time": null,
+            "value": "listed in PP2"
+          },
+          {
+            "certainty": "observation",
+            "condition": null,
+            "event": "pp",
+            "evidence": {
+              "start": 175,
+              "end": 217,
+              "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+            },
+            "id": "c9",
+            "player": "Stenberg",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "PP2",
+            "source_author": "@Sheng_Peng",
+            "source_id": "x:2105364132128240008",
+            "team": null,
+            "time": null,
+            "value": "listed in PP2"
+          },
+          {
+            "certainty": "observation",
+            "condition": null,
+            "event": "pp",
+            "evidence": {
+              "start": 175,
+              "end": 217,
+              "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+            },
+            "id": "c10",
+            "player": "Toffoli",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "PP2",
+            "source_author": "@Sheng_Peng",
+            "source_id": "x:2105364132128240008",
+            "team": null,
+            "time": null,
+            "value": "listed in PP2"
+          },
+          {
+            "certainty": "observation",
+            "condition": null,
+            "event": "pp",
+            "evidence": {
+              "start": 175,
+              "end": 217,
+              "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+            },
+            "id": "c11",
+            "player": "Marchment",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "PP2",
+            "source_author": "@Sheng_Peng",
+            "source_id": "x:2105364132128240008",
+            "team": null,
+            "time": null,
+            "value": "listed in PP2"
+          }
+        ],
+        "material": true,
+        "overflow": false,
+        "record_id": "S04"
+      }
+    ],
+    "revisions": []
+  },
+  "S05": {
+    "records": [
+      {
+        "claims": [
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "availability",
+            "evidence": {
+              "start": 0,
+              "end": 36,
+              "text": "Joonas Korpisalo (lower body) is out"
+            },
+            "id": "S05A-1",
+            "player": "Joonas Korpisalo",
+            "player_id": null,
+            "polarity": "negative",
+            "role": null,
+            "source_author": "@drosennhl",
+            "source_id": "x:2108958442983686184",
+            "team": null,
+            "time": "4 weeks from today",
+            "value": "out"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "injury",
+            "evidence": {
+              "start": 17,
+              "end": 29,
+              "text": "(lower body)"
+            },
+            "id": "S05A-2",
+            "player": "Joonas Korpisalo",
+            "player_id": null,
+            "polarity": "positive",
+            "role": null,
+            "source_author": "@drosennhl",
+            "source_id": "x:2108958442983686184",
+            "team": null,
+            "time": null,
+            "value": "lower body injury"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "availability",
+            "evidence": {
+              "start": 57,
+              "end": 87,
+              "text": "Joe Veleno (lower body) is out"
+            },
+            "id": "S05A-3",
+            "player": "Joe Veleno",
+            "player_id": null,
+            "polarity": "negative",
+            "role": null,
+            "source_author": "@drosennhl",
+            "source_id": "x:2108958442983686184",
+            "team": null,
+            "time": "3-3.5 months",
+            "value": "out"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "injury",
+            "evidence": {
+              "start": 68,
+              "end": 80,
+              "text": "(lower body)"
+            },
+            "id": "S05A-4",
+            "player": "Joe Veleno",
+            "player_id": null,
+            "polarity": "positive",
+            "role": null,
+            "source_author": "@drosennhl",
+            "source_id": "x:2108958442983686184",
+            "team": null,
+            "time": null,
+            "value": "lower body injury"
+          }
+        ],
+        "material": true,
+        "overflow": false,
+        "record_id": "S05A"
+      },
+      {
+        "claims": [
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "availability",
+            "evidence": {
+              "start": 0,
+              "end": 54,
+              "text": "Igor Shesterkin will be out for the rest of the season"
+            },
+            "id": "S05B-1",
+            "player": "Igor Shesterkin",
+            "player_id": null,
+            "polarity": "negative",
+            "role": null,
+            "source_author": "@drosennhl",
+            "source_id": "x:2108957630253113386",
+            "team": null,
+            "time": "for the rest of the season",
+            "value": "out"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "injury",
+            "evidence": {
+              "start": 55,
+              "end": 81,
+              "text": "with his lower body injury"
+            },
+            "id": "S05B-2",
+            "player": "Igor Shesterkin",
+            "player_id": null,
+            "polarity": "positive",
+            "role": null,
+            "source_author": "@drosennhl",
+            "source_id": "x:2108957630253113386",
+            "team": null,
+            "time": null,
+            "value": "lower body injury"
+          }
+        ],
+        "material": true,
+        "overflow": false,
+        "record_id": "S05B"
+      }
+    ],
+    "revisions": []
+  },
+  "S08": {
+    "records": [
+      {
+        "claims": [
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "line",
+            "evidence": {
+              "start": 81,
+              "end": 107,
+              "text": "Carrier - Aho - Svechnikov"
+            },
+            "id": "1",
+            "player": "Carrier",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "line",
+            "source_author": "@WaltRuff",
+            "source_id": "x:2109051291372777568",
+            "team": null,
+            "time": "tonight",
+            "value": "listed together on a line"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "line",
+            "evidence": {
+              "start": 81,
+              "end": 107,
+              "text": "Carrier - Aho - Svechnikov"
+            },
+            "id": "2",
+            "player": "Aho",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "line",
+            "source_author": "@WaltRuff",
+            "source_id": "x:2109051291372777568",
+            "team": null,
+            "time": "tonight",
+            "value": "listed together on a line"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "line",
+            "evidence": {
+              "start": 81,
+              "end": 107,
+              "text": "Carrier - Aho - Svechnikov"
+            },
+            "id": "3",
+            "player": "Svechnikov",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "line",
+            "source_author": "@WaltRuff",
+            "source_id": "x:2109051291372777568",
+            "team": null,
+            "time": "tonight",
+            "value": "listed together on a line"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "line",
+            "evidence": {
+              "start": 108,
+              "end": 132,
+              "text": "Hall - Stankoven - Blake"
+            },
+            "id": "4",
+            "player": "Hall",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "line",
+            "source_author": "@WaltRuff",
+            "source_id": "x:2109051291372777568",
+            "team": null,
+            "time": "tonight",
+            "value": "listed together on a line"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "line",
+            "evidence": {
+              "start": 108,
+              "end": 132,
+              "text": "Hall - Stankoven - Blake"
+            },
+            "id": "5",
+            "player": "Stankoven",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "line",
+            "source_author": "@WaltRuff",
+            "source_id": "x:2109051291372777568",
+            "team": null,
+            "time": "tonight",
+            "value": "listed together on a line"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "line",
+            "evidence": {
+              "start": 108,
+              "end": 132,
+              "text": "Hall - Stankoven - Blake"
+            },
+            "id": "6",
+            "player": "Blake",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "line",
+            "source_author": "@WaltRuff",
+            "source_id": "x:2109051291372777568",
+            "team": null,
+            "time": "tonight",
+            "value": "listed together on a line"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "line",
+            "evidence": {
+              "start": 133,
+              "end": 159,
+              "text": "Ehlers - Staal - Martinook"
+            },
+            "id": "7",
+            "player": "Ehlers",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "line",
+            "source_author": "@WaltRuff",
+            "source_id": "x:2109051291372777568",
+            "team": null,
+            "time": "tonight",
+            "value": "listed together on a line"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "line",
+            "evidence": {
+              "start": 133,
+              "end": 159,
+              "text": "Ehlers - Staal - Martinook"
+            },
+            "id": "8",
+            "player": "Staal",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "line",
+            "source_author": "@WaltRuff",
+            "source_id": "x:2109051291372777568",
+            "team": null,
+            "time": "tonight",
+            "value": "listed together on a line"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "line",
+            "evidence": {
+              "start": 133,
+              "end": 159,
+              "text": "Ehlers - Staal - Martinook"
+            },
+            "id": "9",
+            "player": "Martinook",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "line",
+            "source_author": "@WaltRuff",
+            "source_id": "x:2109051291372777568",
+            "team": null,
+            "time": "tonight",
+            "value": "listed together on a line"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "line",
+            "evidence": {
+              "start": 160,
+              "end": 193,
+              "text": "Robinson - Jankowski - Kotkaniemi"
+            },
+            "id": "10",
+            "player": "Robinson",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "line",
+            "source_author": "@WaltRuff",
+            "source_id": "x:2109051291372777568",
+            "team": null,
+            "time": "tonight",
+            "value": "listed together on a line"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "line",
+            "evidence": {
+              "start": 160,
+              "end": 193,
+              "text": "Robinson - Jankowski - Kotkaniemi"
+            },
+            "id": "11",
+            "player": "Jankowski",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "line",
+            "source_author": "@WaltRuff",
+            "source_id": "x:2109051291372777568",
+            "team": null,
+            "time": "tonight",
+            "value": "listed together on a line"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "line",
+            "evidence": {
+              "start": 160,
+              "end": 193,
+              "text": "Robinson - Jankowski - Kotkaniemi"
+            },
+            "id": "12",
+            "player": "Kotkaniemi",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "line",
+            "source_author": "@WaltRuff",
+            "source_id": "x:2109051291372777568",
+            "team": null,
+            "time": "tonight",
+            "value": "listed together on a line"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "line",
+            "evidence": {
+              "start": 194,
+              "end": 212,
+              "text": "Slavin - Chatfield"
+            },
+            "id": "13",
+            "player": "Slavin",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "line",
+            "source_author": "@WaltRuff",
+            "source_id": "x:2109051291372777568",
+            "team": null,
+            "time": "tonight",
+            "value": "listed together on a line"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "line",
+            "evidence": {
+              "start": 194,
+              "end": 212,
+              "text": "Slavin - Chatfield"
+            },
+            "id": "14",
+            "player": "Chatfield",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "line",
+            "source_author": "@WaltRuff",
+            "source_id": "x:2109051291372777568",
+            "team": null,
+            "time": "tonight",
+            "value": "listed together on a line"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "line",
+            "evidence": {
+              "start": 213,
+              "end": 228,
+              "text": "Miller - Walker"
+            },
+            "id": "15",
+            "player": "Miller",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "line",
+            "source_author": "@WaltRuff",
+            "source_id": "x:2109051291372777568",
+            "team": null,
+            "time": "tonight",
+            "value": "listed together on a line"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "line",
+            "evidence": {
+              "start": 213,
+              "end": 228,
+              "text": "Miller - Walker"
+            },
+            "id": "16",
+            "player": "Walker",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "line",
+            "source_author": "@WaltRuff",
+            "source_id": "x:2109051291372777568",
+            "team": null,
+            "time": "tonight",
+            "value": "listed together on a line"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "line",
+            "evidence": {
+              "start": 229,
+              "end": 250,
+              "text": "Gostisbehere - Reilly"
+            },
+            "id": "17",
+            "player": "Gostisbehere",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "line",
+            "source_author": "@WaltRuff",
+            "source_id": "x:2109051291372777568",
+            "team": null,
+            "time": "tonight",
+            "value": "listed together on a line"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "line",
+            "evidence": {
+              "start": 229,
+              "end": 250,
+              "text": "Gostisbehere - Reilly"
+            },
+            "id": "18",
+            "player": "Reilly",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "line",
+            "source_author": "@WaltRuff",
+            "source_id": "x:2109051291372777568",
+            "team": null,
+            "time": "tonight",
+            "value": "listed together on a line"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "starter",
+            "evidence": {
+              "start": 251,
+              "end": 256,
+              "text": "Bussi"
+            },
+            "id": "19",
+            "player": "Bussi",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "starter",
+            "source_author": "@WaltRuff",
+            "source_id": "x:2109051291372777568",
+            "team": null,
+            "time": "tonight",
+            "value": "listed as goalie"
+          }
+        ],
+        "material": true,
+        "overflow": false,
+        "record_id": "S08"
+      }
+    ],
+    "revisions": []
+  },
+  "S06": {
+    "records": [
+      {
+        "claims": [
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "pp",
+            "evidence": {
+              "start": 0,
+              "end": 58,
+              "text": "Podkolzin will take RNH’s spot on the first unit powerplay"
+            },
+            "id": "c1",
+            "player": "Podkolzin",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "first unit",
+            "source_author": "@JasonGregor",
+            "source_id": "x:2104971594632454155",
+            "team": null,
+            "time": null,
+            "value": "will take RNH’s spot"
+          }
+        ],
+        "material": true,
+        "overflow": false,
+        "record_id": "S06"
+      }
+    ],
+    "revisions": []
+  },
+  "S07": {
+    "records": [
+      {
+        "claims": [
+          {
+            "certainty": "tentative",
+            "condition": null,
+            "event": "availability",
+            "evidence": {
+              "start": 13,
+              "end": 83,
+              "text": "it’s too early to tell whether Pierre-Luc Dubois will suit up tomorrow"
+            },
+            "id": "S07-1",
+            "player": "Pierre-Luc Dubois",
+            "player_id": null,
+            "polarity": "positive",
+            "role": null,
+            "source_author": "@sammisilber",
+            "source_id": "x:2108961406007570942",
+            "team": null,
+            "time": "tomorrow",
+            "value": "Whether he will suit up is too early to tell"
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "availability",
+            "evidence": {
+              "start": 85,
+              "end": 135,
+              "text": "Matt Roy skated again today and remains day-to-day"
+            },
+            "id": "S07-2",
+            "player": "Matt Roy",
+            "player_id": null,
+            "polarity": "positive",
+            "role": null,
+            "source_author": "@sammisilber",
+            "source_id": "x:2108961406007570942",
+            "team": null,
+            "time": "today",
+            "value": "Skated again; remains day-to-day"
+          }
+        ],
+        "material": true,
+        "overflow": false,
+        "record_id": "S07"
+      }
+    ],
+    "revisions": []
+  },
+  "S09": {
+    "records": [
+      {
+        "claims": [
+          {
+            "certainty": "observation",
+            "condition": null,
+            "event": "starter",
+            "evidence": {
+              "end": 48,
+              "start": 0,
+              "text": "Carter Hart is the first goaltender off the ice."
+            },
+            "id": "c1",
+            "player": "Carter Hart",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "goaltender",
+            "source_author": "@h_kirk6",
+            "source_id": "x:2105000115090100612",
+            "team": null,
+            "time": null,
+            "value": "first goaltender off the ice"
+          }
+        ],
+        "material": true,
+        "overflow": false,
+        "record_id": "S09"
+      }
+    ],
+    "revisions": []
+  },
+  "S10": {
+    "records": [
+      {
+        "claims": [
+          {
+            "certainty": "tentative",
+            "condition": null,
+            "event": "pp",
+            "evidence": {
+              "start": 0,
+              "end": 84,
+              "text": "Might be much ado about nothing, but Olofsson is taking PP1 reps with Marner up top."
+            },
+            "id": "S10A-1",
+            "player": "Olofsson",
+            "player_id": null,
+            "polarity": "positive",
+            "role": "PP1",
+            "source_author": "@DannyWebster21",
+            "source_id": "x:2104644558701351383",
+            "team": null,
+            "time": null,
+            "value": "taking PP1 reps with Marner up top"
+          }
+        ],
+        "material": true,
+        "overflow": false,
+        "record_id": "S10A"
+      },
+      {
+        "claims": [
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "correction",
+            "evidence": {
+              "start": 0,
+              "end": 52,
+              "text": "Turns out this was, in fact, much ado about nothing."
+            },
+            "id": "S10B-1",
+            "player": "Olofsson",
+            "player_id": null,
+            "polarity": "negative",
+            "role": "PP1",
+            "source_author": "@DannyWebster21",
+            "source_id": "x:2104672698786013556",
+            "team": null,
+            "time": null,
+            "value": "The earlier report that Olofsson was taking PP1 reps with Marner up top was much ado about nothing."
+          },
+          {
+            "certainty": "asserted",
+            "condition": null,
+            "event": "line",
+            "evidence": {
+              "start": 54,
+              "end": 78,
+              "text": "This was a 5-on-3 drill."
+            },
+            "id": "S10B-2",
+            "player": "Olofsson",
+            "player_id": null,
+            "polarity": "negative",
+            "role": "PP1",
+            "source_author": "@DannyWebster21",
+            "source_id": "x:2104672698786013556",
+            "team": null,
+            "time": null,
+            "value": "The PP1-rep observation referred to a 5-on-3 drill, not a PP1 line assignment."
+          }
+        ],
+        "material": true,
+        "overflow": false,
+        "record_id": "S10B"
+      }
+    ],
+    "revisions": [
+      {
+        "evidence": {
+          "start": 0,
+          "end": 52,
+          "text": "Turns out this was, in fact, much ado about nothing."
+        },
+        "from_record_id": "S10A",
+        "kind": "retracts",
+        "target_event": "Olofsson taking PP1 reps with Marner up top",
+        "to_record_id": "S10B"
+      }
+    ]
+  }
+}

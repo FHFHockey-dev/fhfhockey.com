@@ -9,7 +9,7 @@ import adminOnly from "utils/adminOnlyMiddleware";
 import getPowerPlayBlocks, { Block } from "utils/getPowerPlayBlocks"; // Adjust the import path as necessary
 import { extractPowerPlayDetails, PowerPlay } from "utils/extractPPDetails"; // Import the new function
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(async (req, res) => {
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async (req, res) => {
   const { supabase } = req;
 
   // Correctly extract gameId from req.query

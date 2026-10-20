@@ -1,0 +1,11 @@
+{
+  "exitCode": 0,
+  "durationMs": 627,
+  "attemptControls": 13,
+  "diagnosticTlsCases": 18,
+  "priorOwnerCases": 25,
+  "unchangedReviewerCases": 3,
+  "providerCalls": 0,
+  "realKeyReads": 0,
+  "databaseMutations": "disposable copies of reconciled baseline only"
+}

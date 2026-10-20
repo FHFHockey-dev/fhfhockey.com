@@ -1,0 +1,122 @@
+{
+  "S01": {
+    "protocol": "multi-record-source-comparison-v1",
+    "endpoint": "responses",
+    "group_id": "S01",
+    "input_hash": "e03340d5fb563e27ea45bae3e26f5efd53bccd3deeabdd854d17c160f9242d5e",
+    "request_hash": "f976e8d0f54f1e34b67ea7a5d36e6c026b61b650de8fc2f61d4d7a1ae790e086",
+    "wire_sha256": "f976e8d0f54f1e34b67ea7a5d36e6c026b61b650de8fc2f61d4d7a1ae790e086",
+    "wire_bytes": 6174,
+    "producer_pins_hash": "8bd3a9b9217dca7c607ac12bfa42b41a83bed8d80356e92d597111d604847828",
+    "postprocessing_policy": "strict-raw-v1",
+    "model": "gpt-6-luna"
+  },
+  "S02": {
+    "protocol": "multi-record-source-comparison-v1",
+    "endpoint": "responses",
+    "group_id": "S02",
+    "input_hash": "bad046ae6e290f985e15db615bc81e24454a7d69842476cd1bf072376c3f93e3",
+    "request_hash": "29e4537c223c4a7f72f83fdff4199f975e8f9c8a01ea05a4ed7af11ac8247cd9",
+    "wire_sha256": "29e4537c223c4a7f72f83fdff4199f975e8f9c8a01ea05a4ed7af11ac8247cd9",
+    "wire_bytes": 6355,
+    "producer_pins_hash": "8bd3a9b9217dca7c607ac12bfa42b41a83bed8d80356e92d597111d604847828",
+    "postprocessing_policy": "strict-raw-v1",
+    "model": "gpt-6-luna"
+  },
+  "S03": {
+    "protocol": "multi-record-source-comparison-v1",
+    "endpoint": "responses",
+    "group_id": "S03",
+    "input_hash": "52e8eccb7f61492f3e153b3928e985ec55bcba03a0f502b415b50d17ae14dd9d",
+    "request_hash": "ab12bc7e4cf60930db0d9ee1de36b047f175761a2b7eb6323f01778d9d2a90f0",
+    "wire_sha256": "ab12bc7e4cf60930db0d9ee1de36b047f175761a2b7eb6323f01778d9d2a90f0",
+    "wire_bytes": 6297,
+    "producer_pins_hash": "8bd3a9b9217dca7c607ac12bfa42b41a83bed8d80356e92d597111d604847828",
+    "postprocessing_policy": "strict-raw-v1",
+    "model": "gpt-6-luna"
+  },
+  "S04": {
+    "protocol": "multi-record-source-comparison-v1",
+    "endpoint": "responses",
+    "group_id": "S04",
+    "input_hash": "0ef7ae6bd507f491d2d18e1ebe5a9d3b27c6699714f67c8f004271dc172b8606",
+    "request_hash": "6e84e14b3bf39efe085e4363918783aa52a711ae6138868ee32354b434198fea",
+    "wire_sha256": "6e84e14b3bf39efe085e4363918783aa52a711ae6138868ee32354b434198fea",
+    "wire_bytes": 6224,
+    "producer_pins_hash": "8bd3a9b9217dca7c607ac12bfa42b41a83bed8d80356e92d597111d604847828",
+    "postprocessing_policy": "strict-raw-v1",
+    "model": "gpt-6-luna"
+  },
+  "S05": {
+    "protocol": "multi-record-source-comparison-v1",
+    "endpoint": "responses",
+    "group_id": "S05",
+    "input_hash": "81a9b0f1d38b3757893e699783ab9eec96062119875e47ec5333809c6c078455",
+    "request_hash": "05aa6a100ab77fc229e8b2cc2d47ed129b95d9be5ba37de2e035849ad5df95d5",
+    "wire_sha256": "05aa6a100ab77fc229e8b2cc2d47ed129b95d9be5ba37de2e035849ad5df95d5",
+    "wire_bytes": 7341,
+    "producer_pins_hash": "8bd3a9b9217dca7c607ac12bfa42b41a83bed8d80356e92d597111d604847828",
+    "postprocessing_policy": "strict-raw-v1",
+    "model": "gpt-6-luna"
+  },
+  "S06": {
+    "protocol": "multi-record-source-comparison-v1",
+    "endpoint": "responses",
+    "group_id": "S06",
+    "input_hash": "61ca7a9315fa056f0b28912c899fe0408d4b22f3446f61721f068e3e4aa7f4d2",
+    "request_hash": "125f85835eb4fe63db25f8ab1391a343e29f75662855d0043760b4ce7dddf979",
+    "wire_sha256": "125f85835eb4fe63db25f8ab1391a343e29f75662855d0043760b4ce7dddf979",
+    "wire_bytes": 6077,
+    "producer_pins_hash": "8bd3a9b9217dca7c607ac12bfa42b41a83bed8d80356e92d597111d604847828",
+    "postprocessing_policy": "strict-raw-v1",
+    "model": "gpt-6-luna"
+  },
+  "S07": {
+    "protocol": "multi-record-source-comparison-v1",
+    "endpoint": "responses",
+    "group_id": "S07",
+    "input_hash": "655b4bd4901a3b41c27dfa51eec6fcee01e956b45d89a3f205ed66143321bad1",
+    "request_hash": "2dfb19061eb65921dd5a5ca04650d5341e3057360aea9e24a055fc36116fdd9a",
+    "wire_sha256": "2dfb19061eb65921dd5a5ca04650d5341e3057360aea9e24a055fc36116fdd9a",
+    "wire_bytes": 6542,
+    "producer_pins_hash": "8bd3a9b9217dca7c607ac12bfa42b41a83bed8d80356e92d597111d604847828",
+    "postprocessing_policy": "strict-raw-v1",
+    "model": "gpt-6-luna"
+  },
+  "S08": {
+    "protocol": "multi-record-source-comparison-v1",
+    "endpoint": "responses",
+    "group_id": "S08",
+    "input_hash": "fb0c348753fa2b65b43133b76c9f28f72449c02fcbc3b36037aa6dc2ae670621",
+    "request_hash": "766d08bd9dc3abb985c059011696f4c570be1573e5b515429b27744a72f5113f",
+    "wire_sha256": "766d08bd9dc3abb985c059011696f4c570be1573e5b515429b27744a72f5113f",
+    "wire_bytes": 9877,
+    "producer_pins_hash": "8bd3a9b9217dca7c607ac12bfa42b41a83bed8d80356e92d597111d604847828",
+    "postprocessing_policy": "strict-raw-v1",
+    "model": "gpt-6-luna"
+  },
+  "S09": {
+    "protocol": "multi-record-source-comparison-v1",
+    "endpoint": "responses",
+    "group_id": "S09",
+    "input_hash": "6db6d97ea8180c5affdbc7060a85eb7f97b2078e390d93a4f1b76623ce601b04",
+    "request_hash": "19e6fa8affd5533fc343f168d683c0064ba323eb143c84a05db03f37bee49402",
+    "wire_sha256": "19e6fa8affd5533fc343f168d683c0064ba323eb143c84a05db03f37bee49402",
+    "wire_bytes": 6041,
+    "producer_pins_hash": "8bd3a9b9217dca7c607ac12bfa42b41a83bed8d80356e92d597111d604847828",
+    "postprocessing_policy": "strict-raw-v1",
+    "model": "gpt-6-luna"
+  },
+  "S10": {
+    "protocol": "multi-record-source-comparison-v1",
+    "endpoint": "responses",
+    "group_id": "S10",
+    "input_hash": "ef2661cfcb01929f6dfe4695a0ed5fe582e2d07adab8859e31c3af874838187e",
+    "request_hash": "3d8c25aaf5bdc5a4e0cf7811ff2894b69a6351f29e1ba53a7c34f9292076c198",
+    "wire_sha256": "3d8c25aaf5bdc5a4e0cf7811ff2894b69a6351f29e1ba53a7c34f9292076c198",
+    "wire_bytes": 6743,
+    "producer_pins_hash": "8bd3a9b9217dca7c607ac12bfa42b41a83bed8d80356e92d597111d604847828",
+    "postprocessing_policy": "strict-raw-v1",
+    "model": "gpt-6-luna"
+  }
+}

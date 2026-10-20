@@ -1,8 +1,9 @@
-import supabase from "lib/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "lib/supabase/database-generated.types";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 
 export async function fetchAllGameLogRows(
-  supabaseClient: typeof supabase,
+  supabaseClient: SupabaseClient<Database>,
   table: any,
   idField: string,
   playerIdNum: number,

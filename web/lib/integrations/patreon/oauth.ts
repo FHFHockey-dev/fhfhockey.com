@@ -12,6 +12,7 @@ import {
 const PATREON_AUTHORIZATION_URL = "https://www.patreon.com/oauth2/authorize";
 const PATREON_TOKEN_URL = "https://www.patreon.com/api/oauth2/token";
 const PATREON_IDENTITY_URL = "https://www.patreon.com/api/oauth2/v2/identity";
+const PATREON_RETURN_ORIGIN = "https://patreon-return.invalid";
 
 type PatreonOAuthStatePayload = {
   userId: string;
@@ -99,12 +100,23 @@ function getRequestOrigin(req: NextApiRequest) {
 export function sanitizePatreonNextPath(next: string | string[] | undefined) {
   const candidate = Array.isArray(next) ? next[0] : next;
   if (
-    !candidate ||
+    typeof candidate !== "string" ||
     !candidate.startsWith("/") ||
     candidate.startsWith("//") ||
     candidate.includes("\\") ||
-    /[\r\n]/.test(candidate)
+    /[\u0000-\u001f\u007f]/.test(candidate)
   ) {
+    return PATREON_CONNECT_DEFAULT_NEXT;
+  }
+  try {
+    const parsed = new URL(candidate, PATREON_RETURN_ORIGIN);
+    if (
+      parsed.origin !== PATREON_RETURN_ORIGIN ||
+      parsed.pathname.startsWith("//")
+    ) {
+      return PATREON_CONNECT_DEFAULT_NEXT;
+    }
+  } catch {
     return PATREON_CONNECT_DEFAULT_NEXT;
   }
   return candidate;
@@ -394,8 +406,8 @@ export function buildPatreonAccountRedirect(
   status: "connected" | "disconnected" | "error",
   message?: string,
 ) {
-  const params = new URLSearchParams({ patreon_status: status });
-  if (message) params.set("patreon_message", message);
-  const separator = next.includes("?") ? "&" : "?";
-  return `${sanitizePatreonNextPath(next)}${separator}${params}`;
+  const url = new URL(sanitizePatreonNextPath(next), PATREON_RETURN_ORIGIN);
+  url.searchParams.set("patreon_status", status);
+  if (message) url.searchParams.set("patreon_message", message);
+  return `${url.pathname}${url.search}${url.hash}`;
 }

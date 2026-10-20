@@ -339,6 +339,54 @@ describe("/underlying-stats landing page", () => {
     ]);
   });
 
+  it("opens and closes real metric explanations independently through their focusable summaries", () => {
+    render(
+      <TeamPowerRankingsPage
+        availableDates={["2026-04-05"]}
+        routeStatus={routeStatus}
+        initialSnapshot={buildSnapshot([buildRating("TOR", { offRating: 110 })])}
+      />
+    );
+
+    const table = screen.getByRole("table", { name: "Detailed team table" });
+    const row = within(table).getAllByRole("row")[1]!;
+    const power = within(row).getByText("Power Score").closest("details")!;
+    const offense = within(row).getByText("Offense").closest("details")!;
+    const powerSummary = power.querySelector("summary")!;
+    const offenseSummary = offense.querySelector("summary")!;
+
+    expect(power.open).toBe(false);
+    expect(offense.open).toBe(false);
+    expect(powerSummary.textContent).toMatch(/\d/);
+    expect(offenseSummary.textContent).toBe("110.0i");
+    powerSummary.focus();
+    expect(document.activeElement).toBe(powerSummary);
+
+    fireEvent.click(powerSummary);
+    expect(power.open).toBe(true);
+    expect(offense.open).toBe(false);
+    expect(within(power).getByText(
+      "Power Score averages offense, defense, and pace, then adds a small PP/PK tier bonus."
+    )).toBeTruthy();
+    expect(within(power).getByText("Offense: 110.0")).toBeTruthy();
+
+    offenseSummary.focus();
+    expect(document.activeElement).toBe(offenseSummary);
+    fireEvent.click(offenseSummary);
+    expect(offense.open).toBe(true);
+    expect(power.open).toBe(true);
+    expect(within(offense).getByText(
+      "Higher is better. Formula: 70% xGF/60, 20% SF/60, 10% GF/60."
+    )).toBeTruthy();
+    expect(within(offense).getByText(/xGF\/60: 3\.10 vs league 3\.10/)).toBeTruthy();
+
+    fireEvent.click(powerSummary);
+    expect(power.open).toBe(false);
+    expect(offense.open).toBe(true);
+    fireEvent.click(offenseSummary);
+    expect(offense.open).toBe(false);
+  });
+
   it("keeps the populated quadrant map out of server markup before mounting it on the client", async () => {
     const pageProps = {
       availableDates: ["2026-04-05"],

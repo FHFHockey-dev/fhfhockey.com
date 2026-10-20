@@ -1,0 +1,130 @@
+{
+  "record_id": "0003-owner-S07-S10",
+  "packet_sha256": "55d2c5b3b9b3b09910928c2e801d26f6305d12316d82efeefbbfe046e5c131dd",
+  "source_human_message_id": "Sentinel_3919d444da3c8191b6f006a252786b52",
+  "raw_annotation_file": "raw-human.txt",
+  "raw_annotation_sha256": "ee1843692c8954acd971e0b818b4806cce36bcc2d57dd4318f9c5501e6b2e717",
+  "raw_human_separate_from_normalization": true,
+  "normalization_status": "Assistant organization of owner answers only. Not owner-approved corrections, adjudicated gold, independent source/world verification or model scoring.",
+  "samples": [
+    {
+      "assertion_authority": "owner supplied; not independent verification",
+      "canonical_player_ids": null,
+      "canonical_team_id": null,
+      "independent_real_world_verification": "ungraded",
+      "publication_readiness": "ungraded",
+      "separate_actionability_grade": "not separately supplied",
+      "sample_id": "S07",
+      "claims": [
+        {
+          "subject_as_human_supplied": "PLD (Pierre Luc Dubois)",
+          "availability_as_human_supplied": "questionable"
+        },
+        {
+          "subject_as_human_supplied": "Matt Roy",
+          "status_as_human_supplied": "DTD",
+          "owner_explanation": "injured and status can change from day to day"
+        }
+      ],
+      "team_as_human_supplied": null
+    },
+    {
+      "assertion_authority": "owner supplied; not independent verification",
+      "canonical_player_ids": null,
+      "canonical_team_id": null,
+      "independent_real_world_verification": "ungraded",
+      "publication_readiness": "ungraded",
+      "separate_actionability_grade": "not separately supplied",
+      "sample_id": "S08",
+      "team_as_human_supplied": "Carolina Hurricanes",
+      "forward_rows_as_human_supplied": [
+        "Carrier, Aho, Svechnikov are Lw/C/RW on line 1",
+        "Hall, Stankoven, Blake same on L2",
+        "Ehlers, Staal, Martinook L3",
+        "Robinson, Jankowski, Kotkaniemi L4"
+      ],
+      "defense_rows_as_human_supplied": [
+        "Slavin, Chatfield are LD and RD on pairing 1",
+        "Miller, Walker, ",
+        "Gostisbehere, Reilly"
+      ],
+      "goalie_as_human_supplied": {
+        "subject": "Bussi",
+        "label": "Projected Goalie"
+      },
+      "human_timing_rule": {
+        "within_an_hour_of_game": "confirmed",
+        "day_before_or_morning_of_greater_than_one_hour": "projected",
+        "scope": "Not clarified whether rule applies only to goalie or whole lineup.",
+        "approval_status": "owner statement retained; assistant distinction pending bundled clarification",
+        "applied_to_any_model_or_source_output": false
+      },
+      "position_or_fantasy_eligibility_verified": false,
+      "positional_order_note": "Listed wording preserved; no independent positional eligibility or canonical identity assigned."
+    },
+    {
+      "assertion_authority": "owner supplied; not independent verification",
+      "canonical_player_ids": null,
+      "canonical_team_id": null,
+      "independent_real_world_verification": "ungraded",
+      "publication_readiness": "ungraded",
+      "separate_actionability_grade": "not separately supplied",
+      "sample_id": "S09",
+      "subject_as_human_supplied": "Carter Hart",
+      "team_as_human_supplied": "Vegas Golden Knights",
+      "normalized_human_interpretation": {
+        "role": "projected starter",
+        "timing": "next game"
+      },
+      "roster_or_schedule_binding_verified": false
+    },
+    {
+      "assertion_authority": "owner supplied; not independent verification",
+      "canonical_player_ids": null,
+      "canonical_team_id": null,
+      "independent_real_world_verification": "ungraded",
+      "publication_readiness": "ungraded",
+      "separate_actionability_grade": "not separately supplied",
+      "sample_id": "S10",
+      "normalized_human_interpretation": {
+        "owner_disposition": "essentially ignore; inconsequential",
+        "owner_reason": "5-on-3 drill is not a regular power play"
+      },
+      "correction_or_retraction_policy": "Not adjudicated; assistant proposal separate.",
+      "prior_proposals_deleted": false
+    }
+  ],
+  "annotation_coverage": {
+    "all_ten_groups_have_owner_annotations": true,
+    "groups": [
+      "S01",
+      "S02",
+      "S03",
+      "S04",
+      "S05",
+      "S06",
+      "S07",
+      "S08",
+      "S09",
+      "S10"
+    ],
+    "owner_annotation_record_count": 3,
+    "adjudicated_benchmark_finalized": false,
+    "complete_human_gold": false,
+    "publication_judgments_complete": false,
+    "independent_world_verification_complete": false,
+    "evidence_quote_requirements_complete": false
+  },
+  "parent_bundled_clarification": {
+    "status": "awaiting owner answer",
+    "new_assistant_proposals_file": "assistant-adjudication-proposals.json",
+    "new_proposals_owner_approved": false,
+    "earlier_records_unchanged": true,
+    "earlier_pending_fields_preserved": [
+      "Sanderson next 1–2-game estimate as analyst inference versus expected model output",
+      "Korpisalo reported 4-week duration versus owner at-least wording",
+      "Shesterkin rest-of-season/lower-body wording versus entire-season owner wording"
+    ],
+    "no_silent_adjudication": true
+  }
+}

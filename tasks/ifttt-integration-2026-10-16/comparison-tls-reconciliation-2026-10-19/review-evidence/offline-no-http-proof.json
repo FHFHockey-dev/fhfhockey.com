@@ -1,0 +1,16 @@
+{
+  "scope": "offline source-path control; not a reconstruction of remote packets",
+  "trace": [
+    "http.send.enter_connect_before_write",
+    "socket.create_connection_mock:('api.openai.com', 443)",
+    "tls.wrap_socket:api.openai.com",
+    "socket.close",
+    "URLError:SSLCertVerificationError:20"
+  ],
+  "applicationWriteCalls": 0,
+  "applicationBytesSent": 0,
+  "realNetworkCalls": 0,
+  "realCredentialReads": 0,
+  "proxyEnabled": false,
+  "retryOrRedirectObserved": false
+}

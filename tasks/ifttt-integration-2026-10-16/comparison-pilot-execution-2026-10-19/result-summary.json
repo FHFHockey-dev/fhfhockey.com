@@ -1,0 +1,37 @@
+{
+  "status": "executed_guarded_incomplete",
+  "verdict": "inconclusive",
+  "currentAuthorization": "exact-payload and destination approved; initial denial resolved before actual execution",
+  "family": "original-x-2108233461026726263",
+  "goldClaimsRetained": 2,
+  "transportAttempts": {
+    "responses": 1,
+    "decisions": 0
+  },
+  "usableProviderResponses": 0,
+  "reportedUsage": null,
+  "actualSpendUsd": null,
+  "capUsd": "0.26",
+  "retainedReservationUsd": "0.2543948",
+  "unreservedUsd": "0.0056052",
+  "knownSettledChargeCeilingsUsd": "0",
+  "billingOutcome": "uncertain",
+  "providerReceipt": "uncertain",
+  "blockReason": "unknown billed outcome",
+  "underlyingFailureSubtype": "not retained",
+  "persistentLedger": "tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/experiment-state/budget.sqlite",
+  "retriesAfterUncertainOutcome": 0,
+  "rulesOnlyOfflineGrade": {
+    "tp": 0,
+    "fp": 1,
+    "fn": 2,
+    "held": 1,
+    "hallucinations": 0
+  },
+  "modelArmsGraded": false,
+  "nativeEligible": false,
+  "newProductionActions": 0,
+  "sourceManifestSha256": "541a3d34a4a4861405cfdedd78ce256600191a3fdb8863ba9f14dce31942da79",
+  "executionManifestSha256": "6f34fe79654f4d3c69eb4082fa1aeafa8d70c3aa7c6ac5651e291a5bf0e27f3b",
+  "nextBoundary": "Reconcile original uncertain outcome before any replay; preserve budget; reviewed safe diagnostic correction before a changed execution plan"
+}

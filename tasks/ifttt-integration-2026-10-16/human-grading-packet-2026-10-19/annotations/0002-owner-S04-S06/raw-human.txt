@@ -1,0 +1,17 @@
+S04: 
+
+San Jose Power Play 1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg
+PP2: Orlov-Misa-Stenberg-Toffoli-Marchment both confirmed practice lines. 
+
+Misa doing net-front just means he's in a specific position on the second power play. 
+
+S05A
+
+Joonas Korpisalo = injured (Lower body injury or LBI) for at least 4 weeks or until next update
+Joe Veleno - LBI - 3-3.5 months out, he is injured
+
+S05B
+
+Igor Shesterkin out for the entire 2026-27 season. 
+
+S06 = Vasily Podkolzin will occupy whatever spot RNH (Ryan Nugent Hopkins) previously occupied on the power play. From memory I know this to be PP1, but we'll need to teach the model to swap RNH out, and swap Podkolzin in. 

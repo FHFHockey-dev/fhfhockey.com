@@ -17,9 +17,7 @@ import {
 import supabase from "lib/supabase/public-client";
 import { activeTeamAbbreviations, teamsInfo } from "lib/teamsInfo";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
-import supabaseServer from "lib/supabase/server";
 import type { Database, Tables } from "lib/supabase/database-generated.types";
-import { updatePlayer } from "pages/api/v1/db/update-player/[playerId]";
 
 function buildStaticTeamsFallback(): Team[] {
   return (
@@ -113,7 +111,6 @@ export async function getPlayer(id: number): Promise<Player> {
     .maybeSingle()
     .throwOnError();
   if (data === null) {
-    await updatePlayer(id, supabaseServer);
     throw new Error("Unable to find the player. " + id);
   }
   return {

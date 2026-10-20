@@ -1,0 +1,8 @@
+{
+  "authorization_sha256": "97c707f599d296e02c871b0fa30c7ff6cfd0c7dac87a081a2c4eda2addce0aa6",
+  "reviewed_manifest_sha256": "17e92b736e9557adada234f7ac84f3156ed97fab2f573ff4906d008bb177c458",
+  "baseline_ledger_sha256": "8b9574da4b587e756cb177360b97cb7af6d410e59686d0c5a2953d5bfa20db1a",
+  "executor_sha256": "14fc2a1651be0682cadfb12ec6fcebdc09868abd8a9cb8c3656f70e50d9a8ba6",
+  "maximum_calls": 30,
+  "automatic_retries": 0
+}

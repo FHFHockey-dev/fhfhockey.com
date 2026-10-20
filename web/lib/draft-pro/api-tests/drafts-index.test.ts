@@ -1,3 +1,4 @@
+import { DraftProRequestError } from "lib/draft-pro/requestError";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const auth = vi.hoisted(() => vi.fn());
@@ -5,12 +6,15 @@ const access = vi.hoisted(() => vi.fn());
 const requireCapability = vi.hoisted(() => vi.fn());
 const list = vi.hoisted(() => vi.fn());
 const commit = vi.hoisted(() => vi.fn());
+const read = vi.hoisted(() => vi.fn());
+const mutate = vi.hoisted(() => vi.fn());
 vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: auth }));
 vi.mock("lib/draft-pro/features", () => ({ getDraftProFeatureFlags: () => ({ saved_drafts: true }) }));
 vi.mock("lib/draft-pro/server", () => ({ loadDraftProAccess: access, requireDraftProServerCapability: requireCapability }));
-vi.mock("lib/draft-pro/savedDraftsServer", () => ({ listSavedDrafts: list, commitSavedDraft: commit }));
+vi.mock("lib/draft-pro/savedDraftsServer", () => ({ listSavedDrafts: list, commitSavedDraft: commit, readSavedDraft: read, mutateSavedDraft: mutate }));
 
 import handler from "../../../pages/api/v1/account/draft-pro/drafts";
+import itemHandler from "../../../pages/api/v1/account/draft-pro/drafts/[id]";
 
 const response = () => {
   const value: any = { statusCode: 0 };
@@ -27,7 +31,7 @@ describe("saved drafts route", () => {
   });
 
   it("requires the server capability before a cloud save", async () => {
-    requireCapability.mockImplementation(() => { const error: any = new Error("No access"); error.statusCode = 403; error.code = "no_active_grant"; throw error; });
+    requireCapability.mockImplementation(() => { throw new DraftProRequestError(403, "No access", "no_active_grant"); });
     const res = response(); await handler({ method: "POST", headers: {}, body: valid } as any, res);
     expect(res.statusCode).toBe(403); expect(commit).not.toHaveBeenCalled();
   });
@@ -54,4 +58,19 @@ describe("saved drafts route", () => {
     const res = response(); await handler({ method: "POST", headers: {}, body: withoutAttemptKey } as any, res);
     expect(res.statusCode).toBe(400); expect(commit).not.toHaveBeenCalled();
   });
+
+  it.each([403, 503])("sanitizes backend status %s on saved-draft list and detail", async (statusCode) => {
+    const dependencyError = Object.assign(new Error("synthetic-private-relation-detail"), { statusCode, code: "synthetic-backend-code" });
+    list.mockRejectedValueOnce(dependencyError);
+    read.mockRejectedValueOnce(dependencyError);
+    for (const route of [handler, itemHandler]) {
+      const res = response();
+      await route({ method: "GET", headers: {}, query: { id: "00000000-0000-4000-8000-000000000001" } } as any, res);
+      expect(res.statusCode).toBe(500);
+      expect(res.body).toEqual({ error: { code: "saved_drafts_unavailable", message: "Saved Drafts are unavailable. Your local draft is unchanged." } });
+      expect(JSON.stringify(res.body)).not.toContain("synthetic-private");
+      expect(JSON.stringify(res.body)).not.toContain("synthetic-backend");
+    }
+  });
+
 });

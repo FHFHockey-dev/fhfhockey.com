@@ -1,0 +1,11 @@
+{
+  "exitCode": 0,
+  "durationMs": 303,
+  "ownerExistingCases": 25,
+  "newDiagnosticCases": 15,
+  "unchangedOriginalReviewerCases": 3,
+  "reviewerCaseSha256": "e8b1e40ed454b49bba9dde0c0e5dd7e74962454e33a27695a1f0aa7c9e7850f4",
+  "realKeyRead": false,
+  "providerCalls": 0,
+  "scope": "focused local pilot suite plus unchanged three synthetic reviewer regressions"
+}

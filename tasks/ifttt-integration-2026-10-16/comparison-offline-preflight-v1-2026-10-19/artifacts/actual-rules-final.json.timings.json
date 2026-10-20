@@ -1,0 +1,52 @@
+{
+  "S01": {
+    "local_parser_ms": 2.7962079999999787,
+    "provider_calls": 0,
+    "kind": "observed local pure parser; no HTTP latency"
+  },
+  "S02": {
+    "local_parser_ms": 0.8956250000000239,
+    "provider_calls": 0,
+    "kind": "observed local pure parser; no HTTP latency"
+  },
+  "S03": {
+    "local_parser_ms": 5.882541000000003,
+    "provider_calls": 0,
+    "kind": "observed local pure parser; no HTTP latency"
+  },
+  "S04": {
+    "local_parser_ms": 0.961624999999998,
+    "provider_calls": 0,
+    "kind": "observed local pure parser; no HTTP latency"
+  },
+  "S05": {
+    "local_parser_ms": 15.74562499999999,
+    "provider_calls": 0,
+    "kind": "observed local pure parser; no HTTP latency"
+  },
+  "S06": {
+    "local_parser_ms": 0.3269999999999982,
+    "provider_calls": 0,
+    "kind": "observed local pure parser; no HTTP latency"
+  },
+  "S07": {
+    "local_parser_ms": 4.863207999999986,
+    "provider_calls": 0,
+    "kind": "observed local pure parser; no HTTP latency"
+  },
+  "S08": {
+    "local_parser_ms": 14.499666999999988,
+    "provider_calls": 0,
+    "kind": "observed local pure parser; no HTTP latency"
+  },
+  "S09": {
+    "local_parser_ms": 0.09258299999999053,
+    "provider_calls": 0,
+    "kind": "observed local pure parser; no HTTP latency"
+  },
+  "S10": {
+    "local_parser_ms": 0.1834169999999915,
+    "provider_calls": 0,
+    "kind": "observed local pure parser; no HTTP latency"
+  }
+}

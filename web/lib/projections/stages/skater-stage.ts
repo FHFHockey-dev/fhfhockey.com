@@ -247,6 +247,7 @@ import { createRun, finalizeRun } from "../queries/run-lifecycle-queries";
 import {
   computeSkaterOnIceContextAdjustments,
   computeSkaterOpponentGoalieContextAdjustments,
+  computeSkaterPhysicalEventRates,
   computeSkaterRestScheduleAdjustments,
   computeSkaterSampleShrinkageAdjustments,
   computeSkaterShotQualityAdjustments,
@@ -1471,6 +1472,12 @@ export async function runPerGameSkaterStage(args: {
       "pp",
       asOfDate,
     );
+    // Hits and blocks only: the all-strength row keeps NHL counts where NST is missing.
+    let allLatest = pickLatestByPlayer(await fetchRollingRows(
+      teamPositionFilteredSkaterIds,
+      "all",
+      asOfDate,
+    ));
     let evLatest = pickLatestByPlayer(evRows);
     let ppLatest = pickLatestByPlayer(ppRows);
     let latestMetricDateByPlayerId = new Map<number, string>();
@@ -1600,6 +1607,11 @@ export async function runPerGameSkaterStage(args: {
           "pp",
           asOfDate,
         );
+        allLatest = pickLatestByPlayer(await fetchRollingRows(
+          teamPositionFilteredSkaterIds,
+          "all",
+          asOfDate,
+        ));
         evLatest = pickLatestByPlayer(evRows);
         ppLatest = pickLatestByPlayer(ppRows);
         latestMetricDateByPlayerId = new Map<number, string>();
@@ -1888,6 +1900,7 @@ export async function runPerGameSkaterStage(args: {
         assistRatePp: number;
         hitsRate: number;
         blocksRate: number;
+        physicalToiMultiplier: number;
         roleTag: SkaterRoleTag | null;
         roleContinuity: SkaterRoleContinuitySummary | null;
         roleStabilityMultiplier: number;
@@ -2123,36 +2136,11 @@ export async function runPerGameSkaterStage(args: {
       const sogPer60Ev = boundedUsage.sogPer60Es;
       const sogPer60Pp = ppUsage.sogPer60Pp;
 
-      const hitsPer60 = safeNumber(
-        resolveNullableCompatibilityValue(
-          "weighted_rate",
-          ev?.hits_per_60_last5,
-          ev?.hits_per_60_avg_last5,
-        ),
-        safeNumber(
-          resolveNullableCompatibilityValue(
-            "weighted_rate",
-            ev?.hits_per_60_all,
-            ev?.hits_per_60_avg_all,
-          ),
-          1,
-        ),
-      );
-      const blocksPer60 = safeNumber(
-        resolveNullableCompatibilityValue(
-          "weighted_rate",
-          ev?.blocks_per_60_last5,
-          ev?.blocks_per_60_avg_last5,
-        ),
-        safeNumber(
-          resolveNullableCompatibilityValue(
-            "weighted_rate",
-            ev?.blocks_per_60_all,
-            ev?.blocks_per_60_avg_all,
-          ),
-          0.5,
-        ),
-      );
+      const physicalRates = computeSkaterPhysicalEventRates({
+        all: allLatest.get(playerId),
+        position: playerMetaById.get(playerId)?.position ?? null,
+        esPpToiSeconds: toiEs + toiPp,
+      });
 
       const shotsEs = computeShotsFromRate(boundedToiEs, sogPer60Ev);
       const shotsPp = computeShotsFromRate(boundedToiPp, sogPer60Pp);
@@ -2257,8 +2245,9 @@ export async function runPerGameSkaterStage(args: {
         goalRatePp: clamp(goalRatePp * trendGoalMultiplier, 0.04, 0.45),
         assistRateEs: clamp(assistRateEs * trendAssistMultiplier, 0.2, 1.7),
         assistRatePp: clamp(assistRatePp * trendAssistMultiplier, 0.3, 2),
-        hitsRate: hitsPer60,
-        blocksRate: blocksPer60,
+        hitsRate: physicalRates.hitsPer60,
+        blocksRate: physicalRates.blocksPer60,
+        physicalToiMultiplier: physicalRates.toiMultiplier,
         roleTag,
         roleContinuity,
         roleStabilityMultiplier,
@@ -2652,9 +2641,10 @@ export async function runPerGameSkaterStage(args: {
       let assistsEs = selectedSkaterStatLine.assistsEs;
       let assistsPp = selectedSkaterStatLine.assistsPp;
 
-      const totalToiMinutes = (p.toiEs + p.toiPp) / 60;
-      let projHits = (totalToiMinutes / 60) * p.hitsRate;
-      let projBlocks = (totalToiMinutes / 60) * p.blocksRate;
+      // Hits and blocks are all-situation rates, so they use ES+PP TOI plus recent PK share.
+      const physicalToiMinutes = ((p.toiEs + p.toiPp) * p.physicalToiMultiplier) / 60;
+      let projHits = (physicalToiMinutes / 60) * p.hitsRate;
+      let projBlocks = (physicalToiMinutes / 60) * p.blocksRate;
       const seasonPrior = bootstrap.get(playerId);
       const seasonLine = seasonPrior ? bootstrapSkaterLine({ goalsEs, goalsPp, assistsEs, assistsPp,
         shotsEs, shotsPp, hits: projHits, blocks: projBlocks }, seasonPrior, {

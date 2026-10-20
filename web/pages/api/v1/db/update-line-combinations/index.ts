@@ -5,7 +5,11 @@ import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import { getCurrentSeason } from "lib/NHL/server";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { SupabaseClient } from "@supabase/supabase-js";
+import type { NextApiRequest, NextApiResponse } from "next";
+import type { Database } from "lib/supabase/database-generated.types";
 import { updateLineCombos } from "./[id]";
+
+type AuthorizedRequest = NextApiRequest & { supabase: SupabaseClient<Database> };
 
 type LineRepairMode = "recent_gap" | "historical_backfill";
 
@@ -155,7 +159,7 @@ async function listHistoricalGamesByIds(args: {
   return (data ?? []) as HistoricalGameRow[];
 }
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(async (req, res) => {
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async (req: AuthorizedRequest, res: NextApiResponse) => {
   const supabase = req.supabase;
   const repairMode = parseRepairMode(req.query.repairMode);
   const count = parsePositiveCount(req.query.count, 5);

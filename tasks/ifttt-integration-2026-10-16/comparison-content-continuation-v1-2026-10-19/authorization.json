@@ -1,0 +1,26 @@
+{
+  "authority": "owner-bounded-comparison-continuation",
+  "approved": true,
+  "owner_messages": [
+    "Sentinel_ebb4741523d08191a5c1758e396d6513",
+    "Sentinel_310f334b9f788191b3953303dbe16e1d"
+  ],
+  "owner_statements": [
+    "Do what is most useful. You've barely spent $0.01 of the allocation for testing",
+    "Feel free to do a paid test or two so long as it is justified"
+  ],
+  "earlier_exact_payload_approval": "Sentinel_f2ed42c53adc8191a74da983ab5205a7",
+  "plan_hash": "719b79467104b8ef226a92e6324f6b8f6ffa2a6dea900551d9c8dda86b40e69f",
+  "execution_manifest_sha256": "1b039d626675592f9b31e16fbf6e043ac5bcec6977a96c7f12f1c081a4c4acf5",
+  "maximum_calls": 17,
+  "cap_nano_usd": 520000000,
+  "preserve_unknown_nano_usd": 254394800,
+  "destinations": [
+    "https://api.openai.com/v1/responses",
+    "https://api.openai.com/v1/decisions"
+  ],
+  "ordinary_billing_assumptions_accepted": true,
+  "scope": "One justified missing-output continuation after offline saved-response anchoring diagnosis. No S01-S04 regeneration, no new S05 extraction, no automatic retries, no production changes.",
+  "new_adapter": "exact-subject-adjacent-parenthesis-v2",
+  "hypothesis_file_sha256": "dbcefcf4a8cd2d1dd4cd74642c9c496eec8c8c47ff3cc8f951bc4de8c9bbea6a"
+}

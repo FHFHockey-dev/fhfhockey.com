@@ -1,0 +1,372 @@
+{
+  "purpose": "Only unresolved output-encoding judgments, not regrading every row.",
+  "items": [
+    {
+      "source": {
+        "protocol": "multi-record-source-comparison-v1",
+        "group_id": "S01",
+        "records": [
+          {
+            "record_id": "S01",
+            "original_id": "2105434001074962845",
+            "text": "Ilya Sorokin leads the Islanders out for warmups at Scotiabank Arena. Anthony Stolarz for the Leafs.",
+            "text_sha256": "acfb5ddb91bfaba34b5fbc3cce4e75e0286fbb179cb933ee5f49dba808895bc2",
+            "author": "@ethan_sears",
+            "url": "https://x.com/ethan_sears/status/2105434001074962845",
+            "published_at": "2026-09-30T23:05:57.000Z",
+            "publication_basis": "Retained browser observation of the original article time element; not newly checked.",
+            "received_at": "2026-09-30T23:17:40.673936+00:00",
+            "receipt_basis": "Retained matching-text relay ingestion receipt; original receipt time unknown. The text join is not new original-to-relay authentication.",
+            "identity_hints": []
+          }
+        ],
+        "retained_relations": [],
+        "context": {
+          "status": "retained_source_only; roster hints unverified; no canonical IDs or game bindings",
+          "independent_evidence": []
+        }
+      },
+      "proposal": {
+        "proposal_id": "S01-P004",
+        "kind": "claim",
+        "record_id": "S01",
+        "asserted_fields_exact": {
+          "certainty": "asserted",
+          "condition": null,
+          "event": "starter",
+          "evidence": {
+            "start": 70,
+            "end": 100,
+            "text": "Anthony Stolarz for the Leafs."
+          },
+          "player": "Anthony Stolarz",
+          "player_id": null,
+          "polarity": "positive",
+          "role": null,
+          "source_author": "@ethan_sears",
+          "source_id": "x:2105434001074962845",
+          "team": "Leafs",
+          "time": null,
+          "value": "for the Leafs"
+        },
+        "appearances": [
+          {
+            "neutral_arm": "Arm-A",
+            "variant": "aligned"
+          },
+          {
+            "neutral_arm": "Arm-B",
+            "variant": "aligned"
+          },
+          {
+            "neutral_arm": "Arm-A",
+            "variant": "frozen_unique_quote_v1"
+          },
+          {
+            "neutral_arm": "Arm-B",
+            "variant": "frozen_unique_quote_v1"
+          }
+        ],
+        "human_verdict": null,
+        "error_categories": [],
+        "source_quote": null,
+        "reason": null
+      },
+      "owner_verdict": null,
+      "question": "What normalized goalie category does this encoding express in the intended contract? Mark supported/equivalent, classification/qualification error, or unresolved. This is not a real-world verification question."
+    },
+    {
+      "source": {
+        "protocol": "multi-record-source-comparison-v1",
+        "group_id": "S08",
+        "records": [
+          {
+            "record_id": "S08",
+            "original_id": "2109051291372777568",
+            "text": "The #Canes try for a fourth win in a row tonight as they take on the Blackhawks.\nCarrier - Aho - Svechnikov\nHall - Stankoven - Blake\nEhlers - Staal - Martinook\nRobinson - Jankowski - Kotkaniemi\nSlavin - Chatfield\nMiller - Walker\nGostisbehere - Reilly\nBussi pic.twitter.com/iVLdaOV5Ir",
+            "text_sha256": "1af523cd9908c0a54e552c243373d1e7204ed4589b37eeddb2e2f8a52f37ee06",
+            "author": "@WaltRuff",
+            "url": "https://x.com/WaltRuff/status/2109051291372777568",
+            "published_at": "2026-10-10T22:39:46.798Z",
+            "publication_basis": "Snowflake-derived from the retained matching original post ID; not a separately observed publication clock.",
+            "received_at": "2026-10-11T12:28:57.785302+00:00",
+            "receipt_basis": "Retained ingestion receipt for this post.",
+            "identity_hints": [
+              {
+                "local_symbol": "local-1",
+                "fullName": "Jordan Staal",
+                "lastName": "Staal",
+                "position": "C",
+                "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+              },
+              {
+                "local_symbol": "local-2",
+                "fullName": "Taylor Hall",
+                "lastName": "Hall",
+                "position": "L",
+                "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+              },
+              {
+                "local_symbol": "local-3",
+                "fullName": "Mike Reilly",
+                "lastName": "Reilly",
+                "position": "D",
+                "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+              },
+              {
+                "local_symbol": "local-4",
+                "fullName": "Mark Jankowski",
+                "lastName": "Jankowski",
+                "position": "L",
+                "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+              },
+              {
+                "local_symbol": "local-5",
+                "fullName": "Shayne Gostisbehere",
+                "lastName": "Gostisbehere",
+                "position": "D",
+                "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+              },
+              {
+                "local_symbol": "local-6",
+                "fullName": "Jordan Martinook",
+                "lastName": "Martinook",
+                "position": "L",
+                "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+              },
+              {
+                "local_symbol": "local-7",
+                "fullName": "Jaccob Slavin",
+                "lastName": "Slavin",
+                "position": "D",
+                "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+              },
+              {
+                "local_symbol": "local-8",
+                "fullName": "William Carrier",
+                "lastName": "Carrier",
+                "position": "L",
+                "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+              },
+              {
+                "local_symbol": "local-9",
+                "fullName": "Nikolaj Ehlers",
+                "lastName": "Ehlers",
+                "position": "L",
+                "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+              },
+              {
+                "local_symbol": "local-10",
+                "fullName": "Sebastian Aho",
+                "lastName": "Aho",
+                "position": "C",
+                "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+              },
+              {
+                "local_symbol": "local-11",
+                "fullName": "Jalen Chatfield",
+                "lastName": "Chatfield",
+                "position": "D",
+                "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+              },
+              {
+                "local_symbol": "local-12",
+                "fullName": "Sean Walker",
+                "lastName": "Walker",
+                "position": "D",
+                "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+              },
+              {
+                "local_symbol": "local-13",
+                "fullName": "Eric Robinson",
+                "lastName": "Robinson",
+                "position": "L",
+                "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+              },
+              {
+                "local_symbol": "local-14",
+                "fullName": "K'Andre Miller",
+                "lastName": "Miller",
+                "position": "D",
+                "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+              },
+              {
+                "local_symbol": "local-15",
+                "fullName": "Jesperi Kotkaniemi",
+                "lastName": "Kotkaniemi",
+                "position": "C",
+                "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+              },
+              {
+                "local_symbol": "local-16",
+                "fullName": "Andrei Svechnikov",
+                "lastName": "Svechnikov",
+                "position": "R",
+                "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+              },
+              {
+                "local_symbol": "local-17",
+                "fullName": "Logan Stankoven",
+                "lastName": "Stankoven",
+                "position": "C",
+                "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+              },
+              {
+                "local_symbol": "local-18",
+                "fullName": "Jackson Blake",
+                "lastName": "Blake",
+                "position": "R",
+                "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+              },
+              {
+                "local_symbol": "local-19",
+                "fullName": "Brandon Bussi",
+                "lastName": "Bussi",
+                "position": "G",
+                "verification": "retained_hint_not_independent_identity_or_eligibility_proof"
+              }
+            ]
+          }
+        ],
+        "retained_relations": [],
+        "context": {
+          "status": "retained_source_only; roster hints unverified; no canonical IDs or game bindings",
+          "independent_evidence": []
+        }
+      },
+      "proposal": {
+        "proposal_id": "S08-P056",
+        "kind": "claim",
+        "record_id": "S08",
+        "asserted_fields_exact": {
+          "certainty": "asserted",
+          "condition": null,
+          "event": "starter",
+          "evidence": {
+            "start": 251,
+            "end": 256,
+            "text": "Bussi"
+          },
+          "player": "Bussi",
+          "player_id": null,
+          "polarity": "positive",
+          "role": "starter",
+          "source_author": "@WaltRuff",
+          "source_id": "x:2109051291372777568",
+          "team": null,
+          "time": "tonight",
+          "value": "listed as goalie"
+        },
+        "appearances": [
+          {
+            "neutral_arm": "Arm-A",
+            "variant": "aligned"
+          },
+          {
+            "neutral_arm": "Arm-B",
+            "variant": "aligned"
+          },
+          {
+            "neutral_arm": "Arm-A",
+            "variant": "subject_adjacent_parenthesis_v2"
+          },
+          {
+            "neutral_arm": "Arm-B",
+            "variant": "subject_adjacent_parenthesis_v2"
+          }
+        ],
+        "human_verdict": null,
+        "error_categories": [],
+        "source_quote": null,
+        "reason": null
+      },
+      "owner_verdict": null,
+      "question": "What normalized goalie category does this encoding express in the intended contract? Mark supported/equivalent, classification/qualification error, or unresolved. This is not a real-world verification question."
+    },
+    {
+      "source": {
+        "protocol": "multi-record-source-comparison-v1",
+        "group_id": "S09",
+        "records": [
+          {
+            "record_id": "S09",
+            "original_id": "2105000115090100612",
+            "text": "Carter Hart is the first goaltender off the ice.",
+            "text_sha256": "65dda8dca7ce84e90bdfa54588468e4657b0932ae883b27af024fef354afa4f1",
+            "author": "@h_kirk6",
+            "url": "https://x.com/h_kirk6/status/2105000115090100612",
+            "published_at": "2026-09-29T18:21:51.000Z",
+            "publication_basis": "Retained browser observation of the original article time element; not newly checked.",
+            "received_at": "2026-09-29T18:27:36.491805+00:00",
+            "receipt_basis": "Retained relay ingestion receipt; original receipt time unknown.",
+            "identity_hints": []
+          }
+        ],
+        "retained_relations": [],
+        "context": {
+          "status": "retained_source_only; roster hints unverified; no canonical IDs or game bindings",
+          "independent_evidence": []
+        }
+      },
+      "proposal": {
+        "proposal_id": "S09-P001",
+        "kind": "claim",
+        "record_id": "S09",
+        "asserted_fields_exact": {
+          "certainty": "observation",
+          "condition": null,
+          "event": "starter",
+          "evidence": {
+            "end": 48,
+            "start": 0,
+            "text": "Carter Hart is the first goaltender off the ice."
+          },
+          "player": "Carter Hart",
+          "player_id": null,
+          "polarity": "positive",
+          "role": "goaltender",
+          "source_author": "@h_kirk6",
+          "source_id": "x:2105000115090100612",
+          "team": null,
+          "time": null,
+          "value": "first goaltender off the ice"
+        },
+        "appearances": [
+          {
+            "neutral_arm": "Arm-A",
+            "variant": "raw"
+          },
+          {
+            "neutral_arm": "Arm-A",
+            "variant": "aligned"
+          },
+          {
+            "neutral_arm": "Arm-B",
+            "variant": "raw"
+          },
+          {
+            "neutral_arm": "Arm-B",
+            "variant": "aligned"
+          },
+          {
+            "neutral_arm": "Arm-A",
+            "variant": "subject_adjacent_parenthesis_v2"
+          },
+          {
+            "neutral_arm": "Arm-B",
+            "variant": "subject_adjacent_parenthesis_v2"
+          }
+        ],
+        "human_verdict": null,
+        "error_categories": [],
+        "source_quote": null,
+        "reason": null
+      },
+      "owner_verdict": null,
+      "question": "What normalized goalie category does this encoding express in the intended contract? Mark supported/equivalent, classification/qualification error, or unresolved. This is not a real-world verification question."
+    }
+  ],
+  "P003_owner_classification_error_preserved_separately": true,
+  "P004_not_inferred_approved": true,
+  "arm_mapping_hidden": true
+}

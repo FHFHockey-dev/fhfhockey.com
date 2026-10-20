@@ -1,0 +1,57 @@
+{
+  "inspection": "Presence/nonempty metadata only; no credential values copied or printed",
+  "process_relevant_names": {},
+  "files": [
+    {
+      "path": ".env",
+      "exists": true,
+      "relevant_names_nonempty": {}
+    },
+    {
+      "path": ".env.local",
+      "exists": true,
+      "relevant_names_nonempty": {}
+    },
+    {
+      "path": ".env.mcp",
+      "exists": false,
+      "relevant_names_nonempty": {}
+    },
+    {
+      "path": "web/.env",
+      "exists": false,
+      "relevant_names_nonempty": {}
+    },
+    {
+      "path": "web/.env.local",
+      "exists": true,
+      "relevant_names_nonempty": {}
+    },
+    {
+      "path": "web/.env.mcp",
+      "exists": true,
+      "relevant_names_nonempty": {}
+    },
+    {
+      "path": "functions/.env",
+      "exists": true,
+      "relevant_names_nonempty": {}
+    },
+    {
+      "path": "functions/.env.local",
+      "exists": true,
+      "relevant_names_nonempty": {}
+    },
+    {
+      "path": "webhooks/.env",
+      "exists": false,
+      "relevant_names_nonempty": {}
+    }
+  ],
+  "credential_values_returned": false,
+  "credentials_created_or_configured": false,
+  "provider_call_attempted": false,
+  "unsearched": "Keychain, browser cookies, OAuth/session stores, personal vaults and other task configuration. No approval-requiring credential retrieval was attempted.",
+  "files_checked": 9,
+  "files_existing": 6
+}

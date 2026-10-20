@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DraftProRequestError } from "./requestError";
 import { isInvertedCategory } from "lib/scoring/categoryScores";
 import { draftProSnapshotSchema, type DraftProSnapshot } from "./contracts";
 import { player, projection } from "./scenariosContract";
@@ -74,7 +75,7 @@ export function buildScenarioReportInput(input: ScenarioInput): ReportInput {
 
 const numericRecord = z.record(z.string(), z.number().finite());
 const snapshotShape = z.object({ settings: z.object({ draftSettings: z.object({ teamCount: z.number().int().min(1).max(40), rosterConfig: z.record(z.string(), z.number().int().min(0).max(40)), leagueType: z.enum(["points", "categories"]), scoringCategories: numericRecord, categoryWeights: numericRecord.optional() }).passthrough() }).passthrough(), team: z.object({ myTeamId: z.string().min(1) }).passthrough(), picks: z.array(z.object({ playerId: z.string().min(1), teamId: z.string().min(1), pickNumber: z.number().int().positive() }).passthrough()), keepers: z.array(z.object({ playerId: z.string().min(1), teamId: z.string().min(1) }).passthrough()), sourceWeights: z.object({ skater: z.record(z.string(), z.object({ isSelected: z.boolean(), weight: z.number().finite().min(0).max(2) })), goalie: z.record(z.string(), z.object({ isSelected: z.boolean(), weight: z.number().finite().min(0).max(2) })), goaliePointValues: numericRecord }).passthrough() }).passthrough();
-const reportError = (message: string, statusCode = 409) => Object.assign(new Error(message), { statusCode, code: "saved_input_mismatch" });
+const reportError = (message: string, statusCode = 409) => new DraftProRequestError(statusCode, message, "saved_input_mismatch");
 export function assertReportSnapshotMatch(snapshotValue: unknown, input: ReportInput, requireCompleted: boolean) {
   const snapshot = snapshotShape.parse(draftProSnapshotSchema.parse(snapshotValue));
   const settings = snapshot.settings.draftSettings; const teamId = snapshot.team.myTeamId;

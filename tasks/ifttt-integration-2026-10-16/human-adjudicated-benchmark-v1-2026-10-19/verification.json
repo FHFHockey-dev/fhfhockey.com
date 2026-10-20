@@ -1,0 +1,11 @@
+{
+  "groups": 10,
+  "source_records": 12,
+  "source_units": 50,
+  "boundary_checks": "passed",
+  "status": "passed",
+  "benchmark_sha256": "a0ee294d19555ed92cebb886765f040ca5ad0bb1761ba3815281e921ea7da876",
+  "preserved_prior_files": 20,
+  "source_and_ledger_hashes_unchanged": true,
+  "comparison_executed": false
+}

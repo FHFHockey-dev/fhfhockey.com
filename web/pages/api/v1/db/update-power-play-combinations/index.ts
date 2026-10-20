@@ -57,7 +57,7 @@ async function listGamesByIds(args: {
   return (data ?? []) as GameRow[];
 }
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(async (req, res) => {
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async (req, res) => {
   const { supabase } = req;
   const gameIds = parseGameIdsParam(req.query.gameIds);
   const startDate =

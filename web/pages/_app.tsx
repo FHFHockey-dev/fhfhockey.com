@@ -26,9 +26,32 @@ const SnackbarProvider = dynamic(() =>
 );
 const SNACKBAR_ROUTE = /^\/(db(\/|$)|auth$)/;
 
+function isCredentialTelemetryUrl(url: string) {
+  try {
+    const { pathname } = new URL(url, "https://telemetry.invalid");
+    return /^\/auth\/(callback|reset-password)\/?$/.test(pathname);
+  } catch {
+    return false;
+  }
+}
+
+function isCredentialLocation() {
+  return typeof window !== "undefined" && isCredentialTelemetryUrl(window.location.pathname);
+}
+
+// SDK scripts can outlive their React components after client navigation.
+// Keep this filter independent of the page that originally installed it.
+function filterCredentialTelemetry<T extends { url: string; route?: string }>(event: T): T | null {
+  return isCredentialTelemetryUrl(event.url) ||
+    (event.route !== undefined && isCredentialTelemetryUrl(event.route)) ||
+    isCredentialLocation() ? null : event;
+}
+
 function MyApp({ Component, pageProps, router }: AppProps) {
   const noindex = isNoindexPath(router.pathname);
   const canonical = noindex ? undefined : canonicalUrl(router.asPath);
+  const suppressTelemetry = isCredentialTelemetryUrl(router.pathname) ||
+    isCredentialTelemetryUrl(router.asPath) || isCredentialLocation();
 
   const AppContent = (
     <Layout>
@@ -93,8 +116,12 @@ function MyApp({ Component, pageProps, router }: AppProps) {
   return (
     <>
       <AuthProvider>{AppContent}</AuthProvider>
-      <Analytics />
-      <SpeedInsights />
+      {!suppressTelemetry && (
+        <>
+          <Analytics beforeSend={filterCredentialTelemetry} />
+          <SpeedInsights beforeSend={filterCredentialTelemetry} />
+        </>
+      )}
     </>
   );
 }

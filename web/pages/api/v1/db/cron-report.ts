@@ -35,6 +35,9 @@ const supabase = createClient(
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
 const REPORT_WINDOW_MS = 24 * 60 * 60 * 1000;
+const SUCCESS_HISTORY_WINDOW_MS = 30 * REPORT_WINDOW_MS;
+const SUCCESS_HISTORY_MAX_PAGES = 8;
+const SUCCESS_HISTORY_BUDGET_MS = 15_000;
 // Repository policy, not proof of a deployed override. Leave time after reads
 // for assembly/rendering, email acceptance and the outer audit/response.
 // These are reserved headroom, not independently enforced phase timeouts.
@@ -1450,21 +1453,22 @@ function buildRunDigestFromCron(
 
 function auditSuccessKey(candidate: {
   jobName: string;
+  method: string | null;
   routePath: string | null;
   route: string | null;
 }): string {
-  return candidate.route ? `route:${canonicalRoute(candidate.route)}` : `name:${candidate.jobName}`;
+  return `${candidate.method?.toUpperCase() ?? "UNKNOWN"}:${candidate.route ? `route:${canonicalRoute(candidate.route)}` : `name:${candidate.jobName}`}`;
 }
 
-function buildLastKnownSuccessMap(auditRows: AuditRow[]): Map<string, string> {
+function buildLastKnownSuccessMap(auditRows: AuditRow[], complete: boolean): Map<string, string> {
   const successes = auditRows
     .filter((row) => classifyAuditStatus(row) === "success")
     .sort((a, b) => Date.parse(b.time) - Date.parse(a.time));
   const result = new Map<string, string>();
 
   for (const row of successes) {
-    const display = formatReportTime(row.time);
-    const key = auditSuccessKey({ jobName: row.jobName, route: row.parsed.route, routePath: row.parsed.routePath });
+    const display = `${formatReportTime(row.time)}${complete ? "" : " (latest unverified; success-history lookup incomplete)"}`;
+    const key = auditSuccessKey({ jobName: row.jobName, method: row.parsed.method, route: row.parsed.route, routePath: row.parsed.routePath });
     if (!result.has(key)) result.set(key, display);
   }
 
@@ -1475,6 +1479,7 @@ function findLastKnownSuccessDisplay(
   successMap: Map<string, string>,
   candidate: {
     jobName: string;
+    method: string | null;
     route: string | null;
     routePath: string | null;
   }
@@ -1630,7 +1635,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     .order("status", { ascending: true }).order("rows_affected", { ascending: true })
     .order("details", { ascending: true }).range(from, to)
     .abortSignal(signal), reportRowIdentity, REPORT_PAGE_SIZE, 40, sourceBudgetMs, sourceOptions);
-  const sourceElapsedMs = Date.now() - now.getTime();
   const runs = runSource.rows;
   const audits = auditSource.rows;
   const runErr = runSource.error;
@@ -1663,7 +1667,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   const seasonWindow = await seasonWindowPromise;
-  const auditRows: AuditRow[] = audits.map((row: any) => {
+  const toAuditRow = (row: any): AuditRow => {
     const auditRow = {
       id: `audit:${reportRowIdentity(row)}`,
       jobName: String(row.job_name ?? ""),
@@ -1677,8 +1681,33 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       parsed: parseAuditDetails(row.details),
     };
     return { ...auditRow, expectedWorkWarning: expectedWorkWarning(auditRow, seasonWindow) };
-  });
-  const lastKnownSuccessMap = buildLastKnownSuccessMap(auditRows);
+  };
+  const auditRows = audits.map(toAuditRow);
+  // Historical receipts explain failures only; never add them to recent health,
+  // write counts, schedule assignments, or the 24-hour telemetry denominator.
+  const needsSuccessHistory = auditRows.some((row) => classifyAuditStatus(row) === "failure") ||
+    runs.some((row) => normalizeStatus(row.status) === "failure");
+  const successHistorySince = needsSuccessHistory
+    ? new Date(now.getTime() - SUCCESS_HISTORY_WINDOW_MS).toISOString() : since;
+  const successHistorySource = needsSuccessHistory ? await readReportSource<any>((from, to, signal) => supabase
+    .from("cron_job_audit")
+    .select("job_name, run_time, rows_affected, status, details", { count: "exact" })
+    .gte("run_time", successHistorySince).lte("run_time", since)
+    .in("status", ["success", "succeeded", "ok", "passed"])
+    .order("run_time", { ascending: false }).order("job_name", { ascending: true })
+    .order("status", { ascending: true }).order("rows_affected", { ascending: true })
+    .order("details", { ascending: true }).range(from, to)
+    .abortSignal(signal), reportRowIdentity, REPORT_PAGE_SIZE,
+    SUCCESS_HISTORY_MAX_PAGES, SUCCESS_HISTORY_BUDGET_MS, sourceOptions) : null;
+  const successHistory = {
+    since: successHistorySince, until,
+    complete: auditSource.complete && (successHistorySource?.complete ?? true),
+    error: sanitizeErrorMessage(successHistorySource?.error ?? auditSource.error),
+  };
+  const lastKnownSuccessMap = buildLastKnownSuccessMap([
+    ...auditRows, ...(successHistorySource?.rows ?? []).map(toAuditRow),
+  ], successHistory.complete);
+  const sourceElapsedMs = Date.now() - now.getTime();
   const auditGapGraceStartedAt =
     auditRows
       .filter((row) => row.jobName === "daily-cron-report")
@@ -1844,6 +1873,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         lastKnownSuccessMap,
         {
           jobName: job.name,
+          method: job.method,
           route: job.route,
           routePath,
         }
@@ -2044,6 +2074,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         row,
         findLastKnownSuccessDisplay(lastKnownSuccessMap, {
           jobName: row.jobName,
+          method: row.parsed.method,
           route: row.parsed.route,
           routePath: row.parsed.routePath,
         })
@@ -2056,6 +2087,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         row,
         findLastKnownSuccessDisplay(lastKnownSuccessMap, {
           jobName: row.jobName,
+          method: row.method,
           route: row.route,
           routePath: row.routePath,
         })
@@ -2078,6 +2110,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         row,
         findLastKnownSuccessDisplay(lastKnownSuccessMap, {
           jobName: row.jobName,
+          method: row.parsed.method,
           route: row.parsed.route,
           routePath: row.parsed.routePath,
         })
@@ -2302,6 +2335,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           untilDate: until,
           totalsComplete: runSource.complete && auditSource.complete,
           fetchErrors: errors,
+          successHistory,
           summary: {
             scheduledJobs: counts.scheduledJobs,
             jobsOkLast: counts.jobsOkLast,
@@ -2401,7 +2435,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     sources: {
       cron: { ...runSource, rows: undefined, error: sanitizeErrorMessage(runSource.error) },
       audit: { ...auditSource, rows: undefined, error: sanitizeErrorMessage(auditSource.error) },
+      successHistory: successHistorySource ? { ...successHistorySource, rows: undefined, error: sanitizeErrorMessage(successHistorySource.error) } : null,
     },
+    successHistory,
     totalsComplete: runSource.complete && auditSource.complete,
     countScope: "observed",
     rowMetricScope: "Confirmed writes in latest scheduled receipts; partial coverage, never generic affected/attempted counts",
@@ -2418,10 +2454,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   });
 }
 
-export default withCronJobAudit(adminOnly(handler as any), {
+export default adminOnly(withCronJobAudit(handler, {
   jobName: "daily-cron-report",
   // The report is an observability response, not a row-producing writer.
   // Do not infer its nested warning counts as rows affected by the report
   // itself; that creates a self-reinforcing partial-failure entry.
   recordRowMetrics: false,
-});
+}) as any);

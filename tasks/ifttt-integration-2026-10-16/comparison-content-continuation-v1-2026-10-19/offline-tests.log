@@ -1,0 +1,60 @@
+test_duplicate_subject_and_wrong_source_identity_cannot_be_disambiguated (test_continuation.AnchorTests.test_duplicate_subject_and_wrong_source_identity_cannot_be_disambiguated) ... ok
+test_nonadjacent_repeated_quote_stays_held_but_other_record_continues (test_continuation.AnchorTests.test_nonadjacent_repeated_quote_stays_held_but_other_record_continues) ... ok
+test_nonparenthetical_ambiguous_or_missing_quote_is_not_repaired (test_continuation.AnchorTests.test_nonparenthetical_ambiguous_or_missing_quote_is_not_repaired) ... ok
+test_real_saved_s05_has_six_valid_claims_without_changing_any_semantics (test_continuation.AnchorTests.test_real_saved_s05_has_six_valid_claims_without_changing_any_semantics) ... ok
+test_supplementary_unicode_uses_utf16_offsets (test_continuation.AnchorTests.test_supplementary_unicode_uses_utf16_offsets) ... ok
+test_unparseable_content_uses_relevance_without_claiming_completeness (test_continuation.AnchorTests.test_unparseable_content_uses_relevance_without_claiming_completeness) ... ok
+test_valid_existing_span_is_never_reassigned_by_the_new_policy (test_continuation.AnchorTests.test_valid_existing_span_is_never_reassigned_by_the_new_policy) ... ok
+test_caps_are_real_server_limits_and_prompts_unchanged (test_continuation.LedgerTests.test_caps_are_real_server_limits_and_prompts_unchanged) ... ok
+test_known_usage_content_failures_continue_independent_records (test_continuation.LedgerTests.test_known_usage_content_failures_continue_independent_records) ... {"charge_ceiling_nano_usd":110,"content_held":false,"group":"S05","kind":"rules_decisions","settled_stage":0}
+{"charge_ceiling_nano_usd":110,"content_held":false,"group":"S05","kind":"extraction_decisions","settled_stage":1}
+{"charge_ceiling_nano_usd":688,"content_held":true,"group":"S08","kind":"extraction","settled_stage":2}
+{"charge_ceiling_nano_usd":110,"content_held":false,"group":"S08","kind":"rules_decisions","settled_stage":3}
+{"charge_ceiling_nano_usd":110,"content_held":true,"group":"S08","kind":"extraction_decisions","settled_stage":4}
+{"charge_ceiling_nano_usd":688,"content_held":true,"group":"S06","kind":"extraction","settled_stage":5}
+{"charge_ceiling_nano_usd":110,"content_held":false,"group":"S06","kind":"rules_decisions","settled_stage":6}
+{"charge_ceiling_nano_usd":110,"content_held":true,"group":"S06","kind":"extraction_decisions","settled_stage":7}
+{"charge_ceiling_nano_usd":688,"content_held":true,"group":"S07","kind":"extraction","settled_stage":8}
+{"charge_ceiling_nano_usd":110,"content_held":false,"group":"S07","kind":"rules_decisions","settled_stage":9}
+{"charge_ceiling_nano_usd":110,"content_held":true,"group":"S07","kind":"extraction_decisions","settled_stage":10}
+{"charge_ceiling_nano_usd":688,"content_held":true,"group":"S09","kind":"extraction","settled_stage":11}
+{"charge_ceiling_nano_usd":110,"content_held":false,"group":"S09","kind":"rules_decisions","settled_stage":12}
+{"charge_ceiling_nano_usd":110,"content_held":true,"group":"S09","kind":"extraction_decisions","settled_stage":13}
+{"charge_ceiling_nano_usd":688,"content_held":true,"group":"S10","kind":"extraction","settled_stage":14}
+{"charge_ceiling_nano_usd":110,"content_held":false,"group":"S10","kind":"rules_decisions","settled_stage":15}
+{"charge_ceiling_nano_usd":110,"content_held":true,"group":"S10","kind":"extraction_decisions","settled_stage":16}
+FAIL
+test_no_live_mutation_under_test_authority_and_no_duplicate_reserve (test_continuation.LedgerTests.test_no_live_mutation_under_test_authority_and_no_duplicate_reserve) ... ok
+test_one_missing_output_pass_is_seventeen_calls_and_never_regenerates_s05 (test_continuation.LedgerTests.test_one_missing_output_pass_is_seventeen_calls_and_never_regenerates_s05) ... {"charge_ceiling_nano_usd":110,"content_held":false,"group":"S05","kind":"rules_decisions","settled_stage":0}
+{"charge_ceiling_nano_usd":110,"content_held":false,"group":"S05","kind":"extraction_decisions","settled_stage":1}
+{"charge_ceiling_nano_usd":688,"content_held":false,"group":"S08","kind":"extraction","settled_stage":2}
+{"charge_ceiling_nano_usd":110,"content_held":false,"group":"S08","kind":"rules_decisions","settled_stage":3}
+{"charge_ceiling_nano_usd":110,"content_held":false,"group":"S08","kind":"extraction_decisions","settled_stage":4}
+{"charge_ceiling_nano_usd":688,"content_held":false,"group":"S06","kind":"extraction","settled_stage":5}
+{"charge_ceiling_nano_usd":110,"content_held":false,"group":"S06","kind":"rules_decisions","settled_stage":6}
+{"charge_ceiling_nano_usd":110,"content_held":false,"group":"S06","kind":"extraction_decisions","settled_stage":7}
+{"charge_ceiling_nano_usd":688,"content_held":false,"group":"S07","kind":"extraction","settled_stage":8}
+{"charge_ceiling_nano_usd":110,"content_held":false,"group":"S07","kind":"rules_decisions","settled_stage":9}
+{"charge_ceiling_nano_usd":110,"content_held":false,"group":"S07","kind":"extraction_decisions","settled_stage":10}
+{"charge_ceiling_nano_usd":688,"content_held":false,"group":"S09","kind":"extraction","settled_stage":11}
+{"charge_ceiling_nano_usd":110,"content_held":false,"group":"S09","kind":"rules_decisions","settled_stage":12}
+{"charge_ceiling_nano_usd":110,"content_held":false,"group":"S09","kind":"extraction_decisions","settled_stage":13}
+{"charge_ceiling_nano_usd":688,"content_held":false,"group":"S10","kind":"extraction","settled_stage":14}
+{"charge_ceiling_nano_usd":110,"content_held":false,"group":"S10","kind":"rules_decisions","settled_stage":15}
+{"charge_ceiling_nano_usd":110,"content_held":false,"group":"S10","kind":"extraction_decisions","settled_stage":16}
+ok
+test_unknown_transport_and_usage_stop_and_keep_full_reservation (test_continuation.LedgerTests.test_unknown_transport_and_usage_stop_and_keep_full_reservation) ... ok
+
+======================================================================
+FAIL: test_known_usage_content_failures_continue_independent_records (test_continuation.LedgerTests.test_known_usage_content_failures_continue_independent_records)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-content-continuation-v1-2026-10-19/test_continuation.py", line 124, in test_known_usage_content_failures_continue_independent_records
+    self.assertTrue(all(r[6]=='settled' for r in result['ledger']['attempts'] if r[0].startswith(c.PREFIX)))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.619s
+
+FAILED (failures=1)

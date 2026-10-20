@@ -1,0 +1,11 @@
+{
+  "exitCode": 0,
+  "durationMs": 521,
+  "reconciliationCases": 5,
+  "currentDiagnosticTlsCases": 18,
+  "priorOwnerCases": 25,
+  "unchangedReviewerCases": 3,
+  "providerCalls": 0,
+  "realKeyReads": 0,
+  "databaseMutations": "disposable before-image copies only"
+}

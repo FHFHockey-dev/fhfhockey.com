@@ -1,0 +1,45 @@
+{
+  "cap_nano_usd": 520000000,
+  "exposure_nano_usd": 254651788,
+  "known_nano_usd": 256988,
+  "blocked": "unknown billed outcome",
+  "attempts": [
+    [
+      "lindgren-0",
+      "lindgren-sequential-one-question",
+      "responses",
+      "089b0f5245e08c54157766093a75e9904ce78b7baac77052ec52669e0e8d1086",
+      254394800,
+      "uncertain",
+      null,
+      "RuntimeError",
+      "2026-10-19T19:58:29.421635+00:00",
+      "2026-10-19T19:58:29.512656+00:00"
+    ],
+    [
+      "lindgren-approved-retry-0",
+      "user-approved-single-retry",
+      "responses",
+      "089b0f5245e08c54157766093a75e9904ce78b7baac77052ec52669e0e8d1086",
+      254394800,
+      "settled",
+      0,
+      "PilotFailure",
+      "2026-10-19T20:34:17.908769+00:00",
+      "2026-10-19T20:34:18.044736+00:00"
+    ],
+    [
+      "lindgren-certifi-attempt-0",
+      "user-approved-single-retry",
+      "responses",
+      "089b0f5245e08c54157766093a75e9904ce78b7baac77052ec52669e0e8d1086",
+      254394800,
+      "settled",
+      256988,
+      null,
+      "2026-10-19T21:04:59.174220+00:00",
+      "2026-10-19T21:05:03.146401+00:00"
+    ]
+  ],
+  "original_unresolved_reservation_nano_usd": 254394800
+}

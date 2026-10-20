@@ -129,6 +129,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default withCronJobAudit(adminOnly(handler as any), {
+export default adminOnly(withCronJobAudit(handler as any, {
   jobName: "register-nhl-xg-model",
-});
+}));

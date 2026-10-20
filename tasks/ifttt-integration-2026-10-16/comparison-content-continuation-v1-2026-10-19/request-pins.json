@@ -1,0 +1,27 @@
+{
+  "S08": {
+    "request_hash": "766d08bd9dc3abb985c059011696f4c570be1573e5b515429b27744a72f5113f",
+    "wire_sha256": "766d08bd9dc3abb985c059011696f4c570be1573e5b515429b27744a72f5113f",
+    "max_output_tokens": 8192
+  },
+  "S06": {
+    "request_hash": "d52734ebf8bf38bd4abc3a7ff359830c5516058e4a1cad0605acc85b42f5f34d",
+    "wire_sha256": "d52734ebf8bf38bd4abc3a7ff359830c5516058e4a1cad0605acc85b42f5f34d",
+    "max_output_tokens": 4096
+  },
+  "S07": {
+    "request_hash": "ab880f44a5bdf98c64c815c0ca9596999a58b801d515beb67c8db9ccc2cc3bd7",
+    "wire_sha256": "ab880f44a5bdf98c64c815c0ca9596999a58b801d515beb67c8db9ccc2cc3bd7",
+    "max_output_tokens": 4096
+  },
+  "S09": {
+    "request_hash": "4d4aac1adc008f30661a6f5ecd882bbd697701f8afebd5ceb264b67e8c5715eb",
+    "wire_sha256": "4d4aac1adc008f30661a6f5ecd882bbd697701f8afebd5ceb264b67e8c5715eb",
+    "max_output_tokens": 2048
+  },
+  "S10": {
+    "request_hash": "fd4ad10a3f5056dd93aa88f9362679b7add4986b6195fe35dc413c4073e59e1b",
+    "wire_sha256": "fd4ad10a3f5056dd93aa88f9362679b7add4986b6195fe35dc413c4073e59e1b",
+    "max_output_tokens": 4096
+  }
+}

@@ -1,0 +1,1593 @@
+{
+  "version": "human-reviewed-assistant-adjudicated-development-v1",
+  "status": "frozen",
+  "packet_sha256": "55d2c5b3b9b3b09910928c2e801d26f6305d12316d82efeefbbfe046e5c131dd",
+  "approval_evidence": "approval-evidence.json",
+  "label_provenance": "Human reviewed ten source groups. Assistant supplied explicit source-unit inventory/evidence and applied approved distinctions. This does not mean the owner independently graded every derived field.",
+  "split": "previously_exposed_historical_development",
+  "untouched_holdout": false,
+  "groups_count": 10,
+  "source_record_count": 12,
+  "source_claim_unit_count": 50,
+  "claim_counts": {
+    "S01": 2,
+    "S02": 6,
+    "S03": 1,
+    "S04": 11,
+    "S05": 3,
+    "S06": 1,
+    "S07": 4,
+    "S08": 19,
+    "S09": 1,
+    "S10": 2
+  },
+  "groups": [
+    {
+      "sample_id": "S01",
+      "source_records": [
+        "S01"
+      ],
+      "owner_annotation_records": [
+        "0001-owner-S01-S03"
+      ],
+      "observed_source_claims": [
+        {
+          "id": "S01-C01",
+          "subject_literal": "Ilya Sorokin",
+          "event": "warmup_goaltender",
+          "value": "leads_out_for_warmups",
+          "polarity": "positive",
+          "modality": "observation",
+          "time_literal": null,
+          "team_literal": "Islanders",
+          "qualifiers": [],
+          "evidence": {
+            "record_id": "S01",
+            "quote": "Ilya Sorokin leads the Islanders out for warmups at Scotiabank Arena.",
+            "utf16_start": 0,
+            "utf16_end": 69
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        },
+        {
+          "id": "S01-C02",
+          "subject_literal": "Anthony Stolarz",
+          "event": "warmup_goaltender",
+          "value": "for_Leafs_in_warmup_context",
+          "polarity": "positive",
+          "modality": "observation",
+          "time_literal": null,
+          "team_literal": "Leafs",
+          "qualifiers": [
+            "Elliptical continuation of the preceding warmup sentence; retain full post context."
+          ],
+          "evidence": {
+            "record_id": "S01",
+            "quote": "Anthony Stolarz for the Leafs.",
+            "utf16_start": 70,
+            "utf16_end": 100
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        }
+      ],
+      "hockey_parsing_conventions": [
+        {
+          "rule": "The owner classifies both qualifying warmup reports as confirmed starters. Preserve the warmup evidence basis; 100% is this category, never a calibrated probability.",
+          "authority": "owner_reviewed_assistant_adjudicated",
+          "semantic_projection": {
+            "category": "confirmed_starter",
+            "subjects": [
+              "Ilya Sorokin",
+              "Anthony Stolarz"
+            ]
+          }
+        }
+      ],
+      "analyst_inferences": [],
+      "context_binding_prerequisites": [
+        "Canonical roster/team identities and the actual game remain unverified. Owner city/team expansions are supplied context, not independent verification."
+      ],
+      "independent_world_truth": null,
+      "owner_publication_readiness": null,
+      "production_publishable": null
+    },
+    {
+      "sample_id": "S02",
+      "source_records": [
+        "S02"
+      ],
+      "owner_annotation_records": [
+        "0001-owner-S01-S03"
+      ],
+      "observed_source_claims": [
+        {
+          "id": "S02-C01",
+          "subject_literal": "Sanderson",
+          "event": "practice_attendance",
+          "value": "skated_before_main_practice",
+          "polarity": "positive",
+          "modality": "observation",
+          "time_literal": "today",
+          "team_literal": null,
+          "qualifiers": [],
+          "evidence": {
+            "record_id": "S02",
+            "quote": "Sanderson skated before main practice today but didn't join his teammates.",
+            "utf16_start": 0,
+            "utf16_end": 74
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        },
+        {
+          "id": "S02-C02",
+          "subject_literal": "Sanderson",
+          "event": "practice_attendance",
+          "value": "did_not_join_teammates",
+          "polarity": "negative",
+          "modality": "observation",
+          "time_literal": "today",
+          "team_literal": null,
+          "qualifiers": [],
+          "evidence": {
+            "record_id": "S02",
+            "quote": "Sanderson skated before main practice today but didn't join his teammates.",
+            "utf16_start": 0,
+            "utf16_end": 74
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        },
+        {
+          "id": "S02-C03",
+          "subject_literal": "Sanderson",
+          "event": "availability",
+          "value": "organization_hopeful_he_will_play",
+          "polarity": "positive",
+          "modality": "tentative",
+          "time_literal": "this weekend",
+          "team_literal": null,
+          "qualifiers": [
+            "Hope is not selection or medical clearance.",
+            "Subject uses the retained preceding Sanderson sentence, not an isolated pronoun."
+          ],
+          "evidence": {
+            "record_id": "S02",
+            "quote": "org is hopeful he will play this weekend.",
+            "utf16_start": 75,
+            "utf16_end": 116
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        },
+        {
+          "id": "S02-C04",
+          "subject_literal": "Burakovsky",
+          "event": "return_availability",
+          "value": "not_close_to_returning",
+          "polarity": "negative",
+          "modality": "reported",
+          "time_literal": null,
+          "team_literal": null,
+          "qualifiers": [
+            "upper body; retain the injury-related return context"
+          ],
+          "evidence": {
+            "record_id": "S02",
+            "quote": "Burakovsky isn't close to returning (upper body).",
+            "utf16_start": 117,
+            "utf16_end": 166
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        },
+        {
+          "id": "S02-C05",
+          "subject_literal": "Foegele",
+          "event": "practice_role",
+          "value": "first_line_rushes",
+          "polarity": "positive",
+          "modality": "observation",
+          "time_literal": "second consecutive day",
+          "team_literal": null,
+          "qualifiers": [],
+          "evidence": {
+            "record_id": "S02",
+            "quote": "Foegele took rushes on the 1st line for second consecutive day.",
+            "utf16_start": 167,
+            "utf16_end": 230
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        },
+        {
+          "id": "S02-C06",
+          "subject_literal": "Foegele",
+          "event": "availability",
+          "value": "no_decision",
+          "polarity": "positive",
+          "modality": "unresolved",
+          "time_literal": null,
+          "team_literal": null,
+          "qualifiers": [
+            "Subject uses the preceding Foegele sentence; first-line practice is not game selection."
+          ],
+          "evidence": {
+            "record_id": "S02",
+            "quote": "No decision has been made on his availability.",
+            "utf16_start": 231,
+            "utf16_end": 277
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        }
+      ],
+      "hockey_parsing_conventions": [
+        {
+          "rule": "Owner questionable/potential-to-play is an availability category for Foegele; retain the explicit no-decision state and practice observation separately.",
+          "authority": "owner_reviewed_assistant_adjudicated"
+        }
+      ],
+      "analyst_inferences": [
+        {
+          "text": "Sanderson unlikely to return in the next 1–2 games.",
+          "explicit_source_fact": false,
+          "authority": "owner_estimate; approved_as_analyst_inference",
+          "expected_source_extraction": false,
+          "mandatory_context": "The organization is also hopeful he will play this weekend."
+        },
+        {
+          "text": "Sanderson still injured is owner-supplied health context; the supplied sentence explicitly establishes skating/absence and hope, not a diagnosed injury.",
+          "explicit_source_fact": false,
+          "authority": "owner_supplied_context",
+          "independently_verified": false,
+          "expected_source_extraction": false
+        }
+      ],
+      "context_binding_prerequisites": [
+        "Full-name expansions Jake/Andre/Warren are owner supplied. No source-time roster IDs, game count or confirmed return date is verified."
+      ],
+      "independent_world_truth": null,
+      "owner_publication_readiness": null,
+      "production_publishable": null
+    },
+    {
+      "sample_id": "S03",
+      "source_records": [
+        "S03"
+      ],
+      "owner_annotation_records": [
+        "0001-owner-S01-S03"
+      ],
+      "observed_source_claims": [
+        {
+          "id": "S03-C01",
+          "subject_literal": "Leevi Meriläinen",
+          "event": "goalie_start",
+          "value": "will_start",
+          "polarity": "positive",
+          "modality": "reported",
+          "time_literal": "Saturday",
+          "team_literal": "#Canucks",
+          "qualifiers": [
+            "opponent literal: Devils; place literal: Newark"
+          ],
+          "evidence": {
+            "record_id": "S03",
+            "quote": "Leevi Meriläinen leads the #Canucks into the ice Saturday in Newark. He’ll get the start @ Devils.",
+            "utf16_start": 0,
+            "utf16_end": 98
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        }
+      ],
+      "hockey_parsing_conventions": [
+        {
+          "rule": "Explicit will-get-the-start supports the owner confirmed-starter category; 100% is categorical, not calibrated probability.",
+          "authority": "owner_reviewed_assistant_adjudicated"
+        }
+      ],
+      "analyst_inferences": [],
+      "context_binding_prerequisites": [
+        "Vancouver is an owner-supplied team expansion; canonical player/team/game identities are not independently verified."
+      ],
+      "independent_world_truth": null,
+      "owner_publication_readiness": null,
+      "production_publishable": null
+    },
+    {
+      "sample_id": "S04",
+      "source_records": [
+        "S04"
+      ],
+      "owner_annotation_records": [
+        "0002-owner-S04-S06"
+      ],
+      "observed_source_claims": [
+        {
+          "id": "S04-C01",
+          "subject_literal": "Cagnoni",
+          "event": "pp_group_membership",
+          "value": "PP1",
+          "polarity": "positive",
+          "modality": "observation",
+          "time_literal": "same as yesterday",
+          "team_literal": "#SJSharks",
+          "qualifiers": [
+            "Observed/practice grouping; do not promote to a permanent role or confirmed game lineup."
+          ],
+          "evidence": {
+            "record_id": "S04",
+            "quote": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg ",
+            "utf16_start": 124,
+            "utf16_end": 173
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        },
+        {
+          "id": "S04-C02",
+          "subject_literal": "Celebrini",
+          "event": "pp_group_membership",
+          "value": "PP1",
+          "polarity": "positive",
+          "modality": "observation",
+          "time_literal": "same as yesterday",
+          "team_literal": "#SJSharks",
+          "qualifiers": [
+            "Observed/practice grouping; do not promote to a permanent role or confirmed game lineup."
+          ],
+          "evidence": {
+            "record_id": "S04",
+            "quote": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg ",
+            "utf16_start": 124,
+            "utf16_end": 173
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        },
+        {
+          "id": "S04-C03",
+          "subject_literal": "Smith",
+          "event": "pp_group_membership",
+          "value": "PP1",
+          "polarity": "positive",
+          "modality": "observation",
+          "time_literal": "same as yesterday",
+          "team_literal": "#SJSharks",
+          "qualifiers": [
+            "Observed/practice grouping; do not promote to a permanent role or confirmed game lineup."
+          ],
+          "evidence": {
+            "record_id": "S04",
+            "quote": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg ",
+            "utf16_start": 124,
+            "utf16_end": 173
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        },
+        {
+          "id": "S04-C04",
+          "subject_literal": "Chernyshov",
+          "event": "pp_group_membership",
+          "value": "PP1",
+          "polarity": "positive",
+          "modality": "observation",
+          "time_literal": "same as yesterday",
+          "team_literal": "#SJSharks",
+          "qualifiers": [
+            "Observed/practice grouping; do not promote to a permanent role or confirmed game lineup."
+          ],
+          "evidence": {
+            "record_id": "S04",
+            "quote": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg ",
+            "utf16_start": 124,
+            "utf16_end": 173
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        },
+        {
+          "id": "S04-C05",
+          "subject_literal": "Wennberg",
+          "event": "pp_group_membership",
+          "value": "PP1",
+          "polarity": "positive",
+          "modality": "observation",
+          "time_literal": "same as yesterday",
+          "team_literal": "#SJSharks",
+          "qualifiers": [
+            "Observed/practice grouping; do not promote to a permanent role or confirmed game lineup."
+          ],
+          "evidence": {
+            "record_id": "S04",
+            "quote": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg ",
+            "utf16_start": 124,
+            "utf16_end": 173
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        },
+        {
+          "id": "S04-C06",
+          "subject_literal": "Orlov",
+          "event": "pp_group_membership",
+          "value": "PP2",
+          "polarity": "positive",
+          "modality": "observation",
+          "time_literal": "same as yesterday",
+          "team_literal": "#SJSharks",
+          "qualifiers": [
+            "Observed/practice grouping; do not promote to a permanent role or confirmed game lineup."
+          ],
+          "evidence": {
+            "record_id": "S04",
+            "quote": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment",
+            "utf16_start": 175,
+            "utf16_end": 217
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        },
+        {
+          "id": "S04-C07",
+          "subject_literal": "Misa",
+          "event": "pp_group_membership",
+          "value": "PP2",
+          "polarity": "positive",
+          "modality": "observation",
+          "time_literal": "same as yesterday",
+          "team_literal": "#SJSharks",
+          "qualifiers": [
+            "Observed/practice grouping; do not promote to a permanent role or confirmed game lineup."
+          ],
+          "evidence": {
+            "record_id": "S04",
+            "quote": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment",
+            "utf16_start": 175,
+            "utf16_end": 217
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        },
+        {
+          "id": "S04-C08",
+          "subject_literal": "Stenberg",
+          "event": "pp_group_membership",
+          "value": "PP2",
+          "polarity": "positive",
+          "modality": "observation",
+          "time_literal": "same as yesterday",
+          "team_literal": "#SJSharks",
+          "qualifiers": [
+            "Observed/practice grouping; do not promote to a permanent role or confirmed game lineup."
+          ],
+          "evidence": {
+            "record_id": "S04",
+            "quote": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment",
+            "utf16_start": 175,
+            "utf16_end": 217
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        },
+        {
+          "id": "S04-C09",
+          "subject_literal": "Toffoli",
+          "event": "pp_group_membership",
+          "value": "PP2",
+          "polarity": "positive",
+          "modality": "observation",
+          "time_literal": "same as yesterday",
+          "team_literal": "#SJSharks",
+          "qualifiers": [
+            "Observed/practice grouping; do not promote to a permanent role or confirmed game lineup."
+          ],
+          "evidence": {
+            "record_id": "S04",
+            "quote": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment",
+            "utf16_start": 175,
+            "utf16_end": 217
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        },
+        {
+          "id": "S04-C10",
+          "subject_literal": "Marchment",
+          "event": "pp_group_membership",
+          "value": "PP2",
+          "polarity": "positive",
+          "modality": "observation",
+          "time_literal": "same as yesterday",
+          "team_literal": "#SJSharks",
+          "qualifiers": [
+            "Observed/practice grouping; do not promote to a permanent role or confirmed game lineup."
+          ],
+          "evidence": {
+            "record_id": "S04",
+            "quote": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment",
+            "utf16_start": 175,
+            "utf16_end": 217
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        },
+        {
+          "id": "S04-C11",
+          "subject_literal": "Misa",
+          "event": "practice_role",
+          "value": "some_net_front",
+          "polarity": "positive",
+          "modality": "observation",
+          "time_literal": null,
+          "team_literal": null,
+          "qualifiers": [
+            "some; historical comparison last year; not permanent assignment"
+          ],
+          "evidence": {
+            "record_id": "S04",
+            "quote": "see Misa doing some net front, which he did last year...",
+            "utf16_start": 64,
+            "utf16_end": 120
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        }
+      ],
+      "hockey_parsing_conventions": [
+        {
+          "rule": "Owner confirmed practice lines means the reported practice PP groups, not confirmed game selection. Misa net-front remains a specific observed role within PP2.",
+          "authority": "owner_reviewed_assistant_adjudicated"
+        }
+      ],
+      "analyst_inferences": [],
+      "context_binding_prerequisites": [
+        "No exact practice date, canonical player roster, game, PP positional slots or eligibility is authenticated from this post alone."
+      ],
+      "independent_world_truth": null,
+      "owner_publication_readiness": null,
+      "production_publishable": null
+    },
+    {
+      "sample_id": "S05",
+      "source_records": [
+        "S05A",
+        "S05B"
+      ],
+      "owner_annotation_records": [
+        "0002-owner-S04-S06"
+      ],
+      "observed_source_claims": [
+        {
+          "id": "S05-C01",
+          "subject_literal": "Joonas Korpisalo",
+          "event": "injury_availability",
+          "value": "out",
+          "polarity": "negative",
+          "modality": "reported",
+          "time_literal": "4 weeks from today",
+          "team_literal": null,
+          "qualifiers": [
+            "lower body",
+            "No at-least strengthening or until-next-update endpoint."
+          ],
+          "evidence": {
+            "record_id": "S05A",
+            "quote": "Joonas Korpisalo (lower body) is out 4 weeks from today.",
+            "utf16_start": 0,
+            "utf16_end": 56
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        },
+        {
+          "id": "S05-C02",
+          "subject_literal": "Joe Veleno",
+          "event": "injury_availability",
+          "value": "out",
+          "polarity": "negative",
+          "modality": "reported",
+          "time_literal": "3-3.5 months",
+          "team_literal": null,
+          "qualifiers": [
+            "lower body"
+          ],
+          "evidence": {
+            "record_id": "S05A",
+            "quote": "Joe Veleno (lower body) is out 3-3.5 months.",
+            "utf16_start": 57,
+            "utf16_end": 101
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        },
+        {
+          "id": "S05-C03",
+          "subject_literal": "Igor Shesterkin",
+          "event": "injury_availability",
+          "value": "out",
+          "polarity": "negative",
+          "modality": "reported",
+          "time_literal": "rest of the season",
+          "team_literal": null,
+          "qualifiers": [
+            "lower body injury",
+            "Not a retroactive absence for the entire season."
+          ],
+          "evidence": {
+            "record_id": "S05B",
+            "quote": "Igor Shesterkin will be out for the rest of the season with his lower body injury.",
+            "utf16_start": 0,
+            "utf16_end": 82
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        }
+      ],
+      "hockey_parsing_conventions": [],
+      "analyst_inferences": [
+        {
+          "text": "Owner season label 2026-27 is contextual identification, not explicit source wording or an independently verified canonical season.",
+          "explicit_source_fact": false,
+          "authority": "owner_supplied_context",
+          "expected_source_extraction": false
+        }
+      ],
+      "context_binding_prerequisites": [
+        "Do not invent an exact return date, season ID, team, game or medical clearance. The publication clock anchors reported wording; it does not verify world truth."
+      ],
+      "independent_world_truth": null,
+      "owner_publication_readiness": null,
+      "production_publishable": null
+    },
+    {
+      "sample_id": "S06",
+      "source_records": [
+        "S06"
+      ],
+      "owner_annotation_records": [
+        "0002-owner-S04-S06"
+      ],
+      "observed_source_claims": [
+        {
+          "id": "S06-C01",
+          "subject_literal": "Podkolzin",
+          "event": "pp_replacement",
+          "value": "takes_RNH_spot_on_first_unit",
+          "polarity": "positive",
+          "modality": "reported",
+          "time_literal": null,
+          "team_literal": null,
+          "qualifiers": [
+            "outgoing subject literal: RNH",
+            "first unit explicit",
+            "via Babcock source attribution"
+          ],
+          "evidence": {
+            "record_id": "S06",
+            "quote": "Podkolzin will take RNH’s spot on the first unit powerplay… via Babcock.",
+            "utf16_start": 0,
+            "utf16_end": 72
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null,
+          "related_subject_literal": "RNH"
+        }
+      ],
+      "hockey_parsing_conventions": [
+        {
+          "rule": "One replacement relation links incoming Podkolzin to outgoing RNH on PP1. Paired in/out projections are one update, not independent double credit.",
+          "authority": "owner_reviewed_assistant_adjudicated"
+        }
+      ],
+      "analyst_inferences": [
+        {
+          "text": "Vasily Podkolzin and Ryan Nugent Hopkins are human-supplied name expansions, not independent canonical identity validation.",
+          "explicit_source_fact": false,
+          "authority": "owner_supplied_context",
+          "expected_source_extraction": false
+        }
+      ],
+      "context_binding_prerequisites": [
+        "The exact previous PP positional slot requires a retained prior lineup. Source-attributed replacement support is product intent only; no implementation or dispatch is authorized."
+      ],
+      "independent_world_truth": null,
+      "owner_publication_readiness": null,
+      "production_publishable": null
+    },
+    {
+      "sample_id": "S07",
+      "source_records": [
+        "S07"
+      ],
+      "owner_annotation_records": [
+        "0003-owner-S07-S10"
+      ],
+      "observed_source_claims": [
+        {
+          "id": "S07-C01",
+          "subject_literal": "Pierre-Luc Dubois",
+          "event": "availability",
+          "value": "too_early_to_tell_if_will_suit_up",
+          "polarity": "positive",
+          "modality": "unresolved",
+          "time_literal": "tomorrow",
+          "team_literal": null,
+          "qualifiers": [
+            "reported by Carbery; neither IN nor OUT is established"
+          ],
+          "evidence": {
+            "record_id": "S07",
+            "quote": "Carbery said it’s too early to tell whether Pierre-Luc Dubois will suit up tomorrow.",
+            "utf16_start": 0,
+            "utf16_end": 84
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        },
+        {
+          "id": "S07-C02",
+          "subject_literal": "Matt Roy",
+          "event": "practice_attendance",
+          "value": "skated_again",
+          "polarity": "positive",
+          "modality": "observation",
+          "time_literal": "today",
+          "team_literal": null,
+          "qualifiers": [],
+          "evidence": {
+            "record_id": "S07",
+            "quote": "Matt Roy skated again today and remains day-to-day.",
+            "utf16_start": 85,
+            "utf16_end": 136
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        },
+        {
+          "id": "S07-C03",
+          "subject_literal": "Matt Roy",
+          "event": "injury_status",
+          "value": "day_to_day",
+          "polarity": "positive",
+          "modality": "unresolved",
+          "time_literal": null,
+          "team_literal": null,
+          "qualifiers": [
+            "attendance is distinct from recovery, clearance and selection"
+          ],
+          "evidence": {
+            "record_id": "S07",
+            "quote": "Matt Roy skated again today and remains day-to-day.",
+            "utf16_start": 85,
+            "utf16_end": 136
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        },
+        {
+          "id": "S07-C04",
+          "subject_literal": "unspecified team",
+          "event": "possible_recall_need",
+          "value": "monitoring_if_needed",
+          "polarity": "positive",
+          "modality": "conditional",
+          "time_literal": null,
+          "team_literal": null,
+          "qualifiers": [
+            "team-only statement; not a completed recall or a named recalled player"
+          ],
+          "evidence": {
+            "record_id": "S07",
+            "quote": "Team monitoring if it needs a recall",
+            "utf16_start": 137,
+            "utf16_end": 173
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        }
+      ],
+      "hockey_parsing_conventions": [
+        {
+          "rule": "Owner questionable for PLD preserves unresolved availability. DTD denotes the reported day-to-day injury status; it is not a specific diagnosed injury or game decision.",
+          "authority": "owner_reviewed_assistant_adjudicated"
+        }
+      ],
+      "analyst_inferences": [],
+      "context_binding_prerequisites": [
+        "The source does not name the team. Do not infer Capitals identity or a game/recall transaction from names alone."
+      ],
+      "independent_world_truth": null,
+      "owner_publication_readiness": null,
+      "production_publishable": null
+    },
+    {
+      "sample_id": "S08",
+      "source_records": [
+        "S08"
+      ],
+      "owner_annotation_records": [
+        "0003-owner-S07-S10"
+      ],
+      "observed_source_claims": [
+        {
+          "id": "S08-C01",
+          "subject_literal": "Carrier",
+          "event": "lineup_row_membership",
+          "value": "Carrier - Aho - Svechnikov",
+          "polarity": "positive",
+          "modality": "listing",
+          "time_literal": "tonight",
+          "team_literal": "#Canes",
+          "qualifiers": [
+            "Source row membership; position/line numbering projection is a separate hockey convention."
+          ],
+          "evidence": {
+            "record_id": "S08",
+            "quote": "Carrier - Aho - Svechnikov",
+            "utf16_start": 81,
+            "utf16_end": 107
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null,
+          "source_row_ordinal": 1
+        },
+        {
+          "id": "S08-C02",
+          "subject_literal": "Aho",
+          "event": "lineup_row_membership",
+          "value": "Carrier - Aho - Svechnikov",
+          "polarity": "positive",
+          "modality": "listing",
+          "time_literal": "tonight",
+          "team_literal": "#Canes",
+          "qualifiers": [
+            "Source row membership; position/line numbering projection is a separate hockey convention."
+          ],
+          "evidence": {
+            "record_id": "S08",
+            "quote": "Carrier - Aho - Svechnikov",
+            "utf16_start": 81,
+            "utf16_end": 107
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null,
+          "source_row_ordinal": 1
+        },
+        {
+          "id": "S08-C03",
+          "subject_literal": "Svechnikov",
+          "event": "lineup_row_membership",
+          "value": "Carrier - Aho - Svechnikov",
+          "polarity": "positive",
+          "modality": "listing",
+          "time_literal": "tonight",
+          "team_literal": "#Canes",
+          "qualifiers": [
+            "Source row membership; position/line numbering projection is a separate hockey convention."
+          ],
+          "evidence": {
+            "record_id": "S08",
+            "quote": "Carrier - Aho - Svechnikov",
+            "utf16_start": 81,
+            "utf16_end": 107
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null,
+          "source_row_ordinal": 1
+        },
+        {
+          "id": "S08-C04",
+          "subject_literal": "Hall",
+          "event": "lineup_row_membership",
+          "value": "Hall - Stankoven - Blake",
+          "polarity": "positive",
+          "modality": "listing",
+          "time_literal": "tonight",
+          "team_literal": "#Canes",
+          "qualifiers": [
+            "Source row membership; position/line numbering projection is a separate hockey convention."
+          ],
+          "evidence": {
+            "record_id": "S08",
+            "quote": "Hall - Stankoven - Blake",
+            "utf16_start": 108,
+            "utf16_end": 132
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null,
+          "source_row_ordinal": 2
+        },
+        {
+          "id": "S08-C05",
+          "subject_literal": "Stankoven",
+          "event": "lineup_row_membership",
+          "value": "Hall - Stankoven - Blake",
+          "polarity": "positive",
+          "modality": "listing",
+          "time_literal": "tonight",
+          "team_literal": "#Canes",
+          "qualifiers": [
+            "Source row membership; position/line numbering projection is a separate hockey convention."
+          ],
+          "evidence": {
+            "record_id": "S08",
+            "quote": "Hall - Stankoven - Blake",
+            "utf16_start": 108,
+            "utf16_end": 132
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null,
+          "source_row_ordinal": 2
+        },
+        {
+          "id": "S08-C06",
+          "subject_literal": "Blake",
+          "event": "lineup_row_membership",
+          "value": "Hall - Stankoven - Blake",
+          "polarity": "positive",
+          "modality": "listing",
+          "time_literal": "tonight",
+          "team_literal": "#Canes",
+          "qualifiers": [
+            "Source row membership; position/line numbering projection is a separate hockey convention."
+          ],
+          "evidence": {
+            "record_id": "S08",
+            "quote": "Hall - Stankoven - Blake",
+            "utf16_start": 108,
+            "utf16_end": 132
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null,
+          "source_row_ordinal": 2
+        },
+        {
+          "id": "S08-C07",
+          "subject_literal": "Ehlers",
+          "event": "lineup_row_membership",
+          "value": "Ehlers - Staal - Martinook",
+          "polarity": "positive",
+          "modality": "listing",
+          "time_literal": "tonight",
+          "team_literal": "#Canes",
+          "qualifiers": [
+            "Source row membership; position/line numbering projection is a separate hockey convention."
+          ],
+          "evidence": {
+            "record_id": "S08",
+            "quote": "Ehlers - Staal - Martinook",
+            "utf16_start": 133,
+            "utf16_end": 159
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null,
+          "source_row_ordinal": 3
+        },
+        {
+          "id": "S08-C08",
+          "subject_literal": "Staal",
+          "event": "lineup_row_membership",
+          "value": "Ehlers - Staal - Martinook",
+          "polarity": "positive",
+          "modality": "listing",
+          "time_literal": "tonight",
+          "team_literal": "#Canes",
+          "qualifiers": [
+            "Source row membership; position/line numbering projection is a separate hockey convention."
+          ],
+          "evidence": {
+            "record_id": "S08",
+            "quote": "Ehlers - Staal - Martinook",
+            "utf16_start": 133,
+            "utf16_end": 159
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null,
+          "source_row_ordinal": 3
+        },
+        {
+          "id": "S08-C09",
+          "subject_literal": "Martinook",
+          "event": "lineup_row_membership",
+          "value": "Ehlers - Staal - Martinook",
+          "polarity": "positive",
+          "modality": "listing",
+          "time_literal": "tonight",
+          "team_literal": "#Canes",
+          "qualifiers": [
+            "Source row membership; position/line numbering projection is a separate hockey convention."
+          ],
+          "evidence": {
+            "record_id": "S08",
+            "quote": "Ehlers - Staal - Martinook",
+            "utf16_start": 133,
+            "utf16_end": 159
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null,
+          "source_row_ordinal": 3
+        },
+        {
+          "id": "S08-C10",
+          "subject_literal": "Robinson",
+          "event": "lineup_row_membership",
+          "value": "Robinson - Jankowski - Kotkaniemi",
+          "polarity": "positive",
+          "modality": "listing",
+          "time_literal": "tonight",
+          "team_literal": "#Canes",
+          "qualifiers": [
+            "Source row membership; position/line numbering projection is a separate hockey convention."
+          ],
+          "evidence": {
+            "record_id": "S08",
+            "quote": "Robinson - Jankowski - Kotkaniemi",
+            "utf16_start": 160,
+            "utf16_end": 193
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null,
+          "source_row_ordinal": 4
+        },
+        {
+          "id": "S08-C11",
+          "subject_literal": "Jankowski",
+          "event": "lineup_row_membership",
+          "value": "Robinson - Jankowski - Kotkaniemi",
+          "polarity": "positive",
+          "modality": "listing",
+          "time_literal": "tonight",
+          "team_literal": "#Canes",
+          "qualifiers": [
+            "Source row membership; position/line numbering projection is a separate hockey convention."
+          ],
+          "evidence": {
+            "record_id": "S08",
+            "quote": "Robinson - Jankowski - Kotkaniemi",
+            "utf16_start": 160,
+            "utf16_end": 193
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null,
+          "source_row_ordinal": 4
+        },
+        {
+          "id": "S08-C12",
+          "subject_literal": "Kotkaniemi",
+          "event": "lineup_row_membership",
+          "value": "Robinson - Jankowski - Kotkaniemi",
+          "polarity": "positive",
+          "modality": "listing",
+          "time_literal": "tonight",
+          "team_literal": "#Canes",
+          "qualifiers": [
+            "Source row membership; position/line numbering projection is a separate hockey convention."
+          ],
+          "evidence": {
+            "record_id": "S08",
+            "quote": "Robinson - Jankowski - Kotkaniemi",
+            "utf16_start": 160,
+            "utf16_end": 193
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null,
+          "source_row_ordinal": 4
+        },
+        {
+          "id": "S08-C13",
+          "subject_literal": "Slavin",
+          "event": "lineup_row_membership",
+          "value": "Slavin - Chatfield",
+          "polarity": "positive",
+          "modality": "listing",
+          "time_literal": "tonight",
+          "team_literal": "#Canes",
+          "qualifiers": [
+            "Source row membership; position/line numbering projection is a separate hockey convention."
+          ],
+          "evidence": {
+            "record_id": "S08",
+            "quote": "Slavin - Chatfield",
+            "utf16_start": 194,
+            "utf16_end": 212
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null,
+          "source_row_ordinal": 5
+        },
+        {
+          "id": "S08-C14",
+          "subject_literal": "Chatfield",
+          "event": "lineup_row_membership",
+          "value": "Slavin - Chatfield",
+          "polarity": "positive",
+          "modality": "listing",
+          "time_literal": "tonight",
+          "team_literal": "#Canes",
+          "qualifiers": [
+            "Source row membership; position/line numbering projection is a separate hockey convention."
+          ],
+          "evidence": {
+            "record_id": "S08",
+            "quote": "Slavin - Chatfield",
+            "utf16_start": 194,
+            "utf16_end": 212
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null,
+          "source_row_ordinal": 5
+        },
+        {
+          "id": "S08-C15",
+          "subject_literal": "Miller",
+          "event": "lineup_row_membership",
+          "value": "Miller - Walker",
+          "polarity": "positive",
+          "modality": "listing",
+          "time_literal": "tonight",
+          "team_literal": "#Canes",
+          "qualifiers": [
+            "Source row membership; position/line numbering projection is a separate hockey convention."
+          ],
+          "evidence": {
+            "record_id": "S08",
+            "quote": "Miller - Walker",
+            "utf16_start": 213,
+            "utf16_end": 228
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null,
+          "source_row_ordinal": 6
+        },
+        {
+          "id": "S08-C16",
+          "subject_literal": "Walker",
+          "event": "lineup_row_membership",
+          "value": "Miller - Walker",
+          "polarity": "positive",
+          "modality": "listing",
+          "time_literal": "tonight",
+          "team_literal": "#Canes",
+          "qualifiers": [
+            "Source row membership; position/line numbering projection is a separate hockey convention."
+          ],
+          "evidence": {
+            "record_id": "S08",
+            "quote": "Miller - Walker",
+            "utf16_start": 213,
+            "utf16_end": 228
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null,
+          "source_row_ordinal": 6
+        },
+        {
+          "id": "S08-C17",
+          "subject_literal": "Gostisbehere",
+          "event": "lineup_row_membership",
+          "value": "Gostisbehere - Reilly",
+          "polarity": "positive",
+          "modality": "listing",
+          "time_literal": "tonight",
+          "team_literal": "#Canes",
+          "qualifiers": [
+            "Source row membership; position/line numbering projection is a separate hockey convention."
+          ],
+          "evidence": {
+            "record_id": "S08",
+            "quote": "Gostisbehere - Reilly",
+            "utf16_start": 229,
+            "utf16_end": 250
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null,
+          "source_row_ordinal": 7
+        },
+        {
+          "id": "S08-C18",
+          "subject_literal": "Reilly",
+          "event": "lineup_row_membership",
+          "value": "Gostisbehere - Reilly",
+          "polarity": "positive",
+          "modality": "listing",
+          "time_literal": "tonight",
+          "team_literal": "#Canes",
+          "qualifiers": [
+            "Source row membership; position/line numbering projection is a separate hockey convention."
+          ],
+          "evidence": {
+            "record_id": "S08",
+            "quote": "Gostisbehere - Reilly",
+            "utf16_start": 229,
+            "utf16_end": 250
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null,
+          "source_row_ordinal": 7
+        },
+        {
+          "id": "S08-C19",
+          "subject_literal": "Bussi",
+          "event": "lineup_name_listing",
+          "value": "listed_after_skater_rows",
+          "polarity": "positive",
+          "modality": "listing",
+          "time_literal": "tonight",
+          "team_literal": "#Canes",
+          "qualifiers": [
+            "opponent literal: Blackhawks; no explicit starter confirmation in the supplied text"
+          ],
+          "evidence": {
+            "record_id": "S08",
+            "quote": "Bussi pic.twitter.com/iVLdaOV5Ir",
+            "utf16_start": 251,
+            "utf16_end": 283
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        }
+      ],
+      "hockey_parsing_conventions": [
+        {
+          "rule": "Rows 1–4 can be read as lines 1–4 with left-to-right LW/C/RW, rows 5–7 as pairs 1–3 with LD/RD. This is a parsing convention, not verified player eligibility.",
+          "authority": "owner_reviewed_assistant_adjudicated",
+          "forward_rows": [
+            [
+              "Carrier",
+              "Aho",
+              "Svechnikov"
+            ],
+            [
+              "Hall",
+              "Stankoven",
+              "Blake"
+            ],
+            [
+              "Ehlers",
+              "Staal",
+              "Martinook"
+            ],
+            [
+              "Robinson",
+              "Jankowski",
+              "Kotkaniemi"
+            ]
+          ],
+          "defense_rows": [
+            [
+              "Slavin",
+              "Chatfield"
+            ],
+            [
+              "Miller",
+              "Walker"
+            ],
+            [
+              "Gostisbehere",
+              "Reilly"
+            ]
+          ]
+        },
+        {
+          "rule": "The owner projected-goalie category for Bussi remains projected. A one-hour clock threshold alone never promotes it to confirmed; require explicit starter or qualifying warmup evidence.",
+          "authority": "owner_reviewed_assistant_adjudicated",
+          "confirmation_rule": {
+            "timing_alone_sufficient": false,
+            "category_from_current_input": "projected",
+            "new_evidence_required_for_confirmation": [
+              "explicit_starter_report",
+              "qualifying_warmup_evidence"
+            ]
+          }
+        }
+      ],
+      "analyst_inferences": [
+        {
+          "text": "The owner one-hour cutoff is a proposed product policy; it is not evidence establishing confirmation.",
+          "explicit_source_fact": false,
+          "authority": "owner_product_rule_reclassified_by_approved_distinction",
+          "adopted_for_confirmation": false
+        }
+      ],
+      "context_binding_prerequisites": [
+        "No game start clock or date/game binding is supplied. No canonical player eligibility, goalie confirmation or independent Carolina identity verification is established."
+      ],
+      "independent_world_truth": null,
+      "owner_publication_readiness": null,
+      "production_publishable": null
+    },
+    {
+      "sample_id": "S09",
+      "source_records": [
+        "S09"
+      ],
+      "owner_annotation_records": [
+        "0003-owner-S07-S10"
+      ],
+      "observed_source_claims": [
+        {
+          "id": "S09-C01",
+          "subject_literal": "Carter Hart",
+          "event": "goalie_practice_observation",
+          "value": "first_goaltender_off_ice",
+          "polarity": "positive",
+          "modality": "observation",
+          "time_literal": null,
+          "team_literal": null,
+          "qualifiers": [],
+          "evidence": {
+            "record_id": "S09",
+            "quote": "Carter Hart is the first goaltender off the ice.",
+            "utf16_start": 0,
+            "utf16_end": 48
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        }
+      ],
+      "hockey_parsing_conventions": [
+        {
+          "rule": "First-off supports a projected-start category, with the observation basis retained. It does not support a confirmed-start category.",
+          "authority": "owner_reviewed_assistant_adjudicated",
+          "semantic_projection": {
+            "category": "projected_starter",
+            "confirmed": false,
+            "game_binding_verified": false
+          }
+        }
+      ],
+      "analyst_inferences": [
+        {
+          "text": "Vegas Golden Knights team membership and next-game target were human supplied; neither appears in the source.",
+          "explicit_source_fact": false,
+          "authority": "owner_supplied_context",
+          "expected_source_extraction": false
+        }
+      ],
+      "context_binding_prerequisites": [
+        "Source-time roster and schedule evidence is required before binding Vegas or the next game."
+      ],
+      "independent_world_truth": null,
+      "owner_publication_readiness": null,
+      "production_publishable": null
+    },
+    {
+      "sample_id": "S10",
+      "source_records": [
+        "S10A",
+        "S10B"
+      ],
+      "owner_annotation_records": [
+        "0003-owner-S07-S10"
+      ],
+      "observed_source_claims": [
+        {
+          "id": "S10-C01",
+          "subject_literal": "Olofsson",
+          "event": "reported_drill_reps",
+          "value": "PP1_reps_with_Marner_up_top",
+          "polarity": "positive",
+          "modality": "tentative",
+          "time_literal": null,
+          "team_literal": null,
+          "qualifiers": [
+            "Might be much ado about nothing; retain predecessor as immutable evidence."
+          ],
+          "evidence": {
+            "record_id": "S10A",
+            "quote": "Might be much ado about nothing, but Olofsson is taking PP1 reps with Marner up top.",
+            "utf16_start": 0,
+            "utf16_end": 84
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null,
+          "related_subject_literal": "Marner"
+        },
+        {
+          "id": "S10-C02",
+          "subject_literal": "the drill referenced in S10A",
+          "event": "clarification",
+          "value": "5_on_3_drill",
+          "polarity": "positive",
+          "modality": "reported",
+          "time_literal": null,
+          "team_literal": null,
+          "qualifiers": [
+            "B quotes A according to the retained browser record."
+          ],
+          "evidence": {
+            "record_id": "S10B",
+            "quote": "This was a 5-on-3 drill. At ease.",
+            "utf16_start": 54,
+            "utf16_end": 87
+          },
+          "label_authority": "assistant_adjudicated_from_source",
+          "canonical_player_id": null,
+          "canonical_team_id": null,
+          "canonical_game_id": null,
+          "canonical_season_id": null
+        }
+      ],
+      "hockey_parsing_conventions": [
+        {
+          "rule": "Final state is no regular-PP change. Retain the correction relationship and retract/supersede any regular-PP proposal derived from A; do not erase A or B.",
+          "authority": "owner_reviewed_assistant_adjudicated",
+          "final_state": {
+            "regular_pp_update": false,
+            "retain_both_sources": true,
+            "retract_or_supersede_A_regular_PP_proposal": true
+          }
+        }
+      ],
+      "analyst_inferences": [],
+      "context_binding_prerequisites": [
+        "No actual prior action is asserted. Retraction is a benchmark state transition, not authorization for live compensation."
+      ],
+      "independent_world_truth": null,
+      "owner_publication_readiness": null,
+      "production_publishable": null
+    }
+  ],
+  "source_records_file": "evaluation-inputs.json",
+  "global_masks": {
+    "canonical_ids": "ungraded",
+    "independent_world_truth": "ungraded",
+    "owner_publication_readiness": "ungraded",
+    "production_delivery": "ungraded"
+  },
+  "calibrated_starter_probability": null,
+  "source_coverage_limit": "Purposeful small historical sample; no authentic future accuracy, world truth, complete media/thread evidence or production result claimed."
+}

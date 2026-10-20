@@ -1,0 +1,18 @@
+test_changed_approval_or_request_hash_cannot_reset_history (test_verifier.VerifierSafety.test_changed_approval_or_request_hash_cannot_reset_history) ... ok
+test_concurrent_first_reservation_has_one_winner (test_verifier.VerifierSafety.test_concurrent_first_reservation_has_one_winner) ... ok
+test_exact_second_call_boundary_includes_unknown_and_known_prior_cost (test_verifier.VerifierSafety.test_exact_second_call_boundary_includes_unknown_and_known_prior_cost) ... ok
+test_expensive_first_settlement_refuses_second_full_reservation (test_verifier.VerifierSafety.test_expensive_first_settlement_refuses_second_full_reservation) ... ok
+test_invalid_answer_after_known_usage_is_charged_and_stops (test_verifier.VerifierSafety.test_invalid_answer_after_known_usage_is_charged_and_stops) ... ok
+test_missing_usage_stops_and_preserves_safe_status_and_request_id (test_verifier.VerifierSafety.test_missing_usage_stops_and_preserves_safe_status_and_request_id) ... ok
+test_one_nano_over_boundary_refuses_before_second_send (test_verifier.VerifierSafety.test_one_nano_over_boundary_refuses_before_second_send) ... ok
+test_refusal_adds_hold_and_never_promotes (test_verifier.VerifierSafety.test_refusal_adds_hold_and_never_promotes) ... ok
+test_requests_are_two_one_question_checks_without_gold_or_extraction (test_verifier.VerifierSafety.test_requests_are_two_one_question_checks_without_gold_or_extraction) ... ok
+test_two_sequential_known_calls_complete_without_clearing_holds (test_verifier.VerifierSafety.test_two_sequential_known_calls_complete_without_clearing_holds) ... ok
+test_unknown_first_result_stops_second_and_retains_full_reservation (test_verifier.VerifierSafety.test_unknown_first_result_stops_second_and_retains_full_reservation) ... ok
+test_verifier_cannot_clear_hold_or_change_claim (test_verifier.VerifierSafety.test_verifier_cannot_clear_hold_or_change_claim) ... ok
+test_verify_rejects_resealed_changed_question_before_dispatch (test_verifier.VerifierSafety.test_verify_rejects_resealed_changed_question_before_dispatch) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.100s
+
+OK

@@ -1,0 +1,52 @@
+{
+  "version": "guarded-incomplete-execution-evidence-v1",
+  "createdAt": "2026-10-19T20:01:34.630065+00:00",
+  "files": [
+    {
+      "path": "RESULT.md",
+      "sha256": "92066b6d1ce512e6092262937f0c77665c83a70ca628f406f3df1de962a09eb4",
+      "bytes": 5358
+    },
+    {
+      "path": "execution-blocker.json",
+      "sha256": "56a67943f4217b40d344e402870cfe497cdb7b255302e7345b791391d4aa25ac",
+      "bytes": 898
+    },
+    {
+      "path": "parent-clearance.json",
+      "sha256": "9c4d9d6fd6cace0e702d1a65bae51cfeb21ca09abc20f4936475f28ed8a1ae6c",
+      "bytes": 1093
+    },
+    {
+      "path": "payload-authorization.json",
+      "sha256": "0dcb11c70150224b835e037bd6cfa4098de523ffbf7bf0e9001bd51c7c60d474",
+      "bytes": 595
+    },
+    {
+      "path": "post-run-integrity.json",
+      "sha256": "a8439f4676817ac505f58189eea65ef0e5b87d1042feba8f2a9b18ad74771412",
+      "bytes": 513
+    },
+    {
+      "path": "result-summary.json",
+      "sha256": "963a56bfc67182b25943cff44dbc70ff4e8dda53892b378a37f90dba3d033e40",
+      "bytes": 1417
+    },
+    {
+      "path": "rules-only-offline-grade.json",
+      "sha256": "a1d53b61bc0b9c72894792084eb3ddf311dceb67aa0c622bc4707b7eb3442880",
+      "bytes": 3798
+    },
+    {
+      "path": "run-01/final-ledger.json",
+      "sha256": "3560abd97698e3e6cc58895c8d7492ebf75d48f00a8ab2d8fac3bcb4ed132321",
+      "bytes": 468
+    },
+    {
+      "path": "run-01/stopped-partial-pair.json",
+      "sha256": "a22f93f3a602973e2d513dda4d7ba73e6dda0c13c09af89519aa7dbf43d26b52",
+      "bytes": 828
+    }
+  ],
+  "scope": "Execution evidence only; persistent SQLite ledger retained separately at fixed budget path"
+}

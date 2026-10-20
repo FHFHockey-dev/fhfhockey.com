@@ -570,5 +570,25 @@ export async function buildEntityMetricRankingSurfaces(
     ),
   ]);
 
-  return new Map(buildEntries(playersById, teamsById));
+  return new Map(unhydrated.map(([metricKey, surface]) => [metricKey, {
+    ...surface,
+    rankings: surface.rankings.map((row) => {
+      const player = playersById.get(row.entity.id);
+      const team = row.team.id == null ? null : teamsById.get(row.team.id);
+      return {
+        ...row,
+        entity: {
+          ...row.entity,
+          name: player?.fullName ?? null,
+          position: player?.position ?? null,
+          imageUrl: player?.image_url ?? null,
+        },
+        team: {
+          ...row.team,
+          abbreviation: team?.abbreviation ?? null,
+          name: team?.name ?? null,
+        },
+      };
+    }),
+  }]));
 }

@@ -1,0 +1,15 @@
+# Paired comparison result (complete before any conclusion)
+
+- Run/status; frozen source/prompt/schema/code/config/split/label manifest hashes; exact model returned/tier/account rate evidence; original/source-time context cutoff; reviewer report.
+- Data provenance: complete original families/posts per split and stratum; prior exposure; source-adjudicated vs provisional vs synthetic labels; full-post adjudication counts, disputes, exclusions/ungradable fields and missing clocks/context. Source support and independent hockey truth reported separately.
+- Calls by endpoint/arm/split: planned/reserved/sent/settled/uncertain/unsent/failed/refused/malformed/overflow; all pilots/schema/count/retries included; incomplete pairs retained. Which rules implementation/projection and output policy actually executed.
+- Cost: hard ceiling $0.26; rate/bound proof; cumulative known charges, outstanding reservations and uncertain maximum; actual/conditional separately; applicable fees; reason for any stop. No usage-derived release without authoritative accounting.
+- Per arm raw proposals: TP/FP/FN, P/R, unmatched/duplicate assertions, field P/R/correct-total for player/team/role/time/source and explicit external ungradable denominators; relevant/zero-claim/missing-claim counts.
+- Per arm final eligible outputs: unsafe acceptance and exact error classes, usable source updates, actionable misses/recall, holds/abstention/coverage, independently verified world updates or ungraded. Distinguish a correct negative from no answer.
+- Per stratum and split: families/posts, each numerator/denominator, failures/unknowns. No selective removal of failed paid calls from comparison.
+- Paired holdout: family-weight differences and 95% cluster intervals; discordance table (both correct, left only, right only, neither); raw sample size/rare-error limits. No use of development/pilot results as untouched holdout.
+- Latency distributions (include failed/timeout durations separately), actual cost per supported eligible update (undefined for zero updates), error/refusal samples and source-bound false positives/negatives.
+- Immutable redacted request/reply/error references, request hashes, API request IDs, reservation IDs, created/sent/received/settled clocks, usage including cache/non-visible tokens, model/tier and source/label hashes. Never retain authentication headers or key material. Source text itself remains complete controlled research evidence.
+- Decision: bounded source-fidelity advantage / tradeoff / inconclusive, applying frozen harm/coverage/cost policy. Explain remaining external-truth, calibration, tiny-sample and future-performance limits. Luna plus Luna is correlated assistance.
+
+Current checkpoint: **offline controls only, $0 spent, no empirical ranking**. Real intake/labels, enforceable Decisions complete-input bound, authorized account/schema/rates and paid usage/audit transport are unresolved. Parent independent acceptance is pending. No provider call is denied, pending or uncertain because none was attempted.

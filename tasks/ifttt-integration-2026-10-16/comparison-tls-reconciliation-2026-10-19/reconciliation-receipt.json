@@ -1,0 +1,31 @@
+{
+  "attemptId": "lindgren-approved-retry-0",
+  "classification": "reviewed_pre_http_tls_authentication_failure",
+  "authority": "Explicit parent01a15411-3560-7632-8d31-1dd2447ba00e reconciliation instruction",
+  "reviewPath": "/Users/tim/Code/fhfhockey.com/tasks/ifttt-integration-2026-10-16/comparison-tls-reconciliation-2026-10-19/review-evidence/REVIEW.md",
+  "reviewSha256": "1288818392cd4a7677b08b2258b81eae264e278a3f04b041118f48a6499fe99a",
+  "beforeDatabaseSha256": "a3d98e15e73b9a58f2312d33153c15bf1b30711f0f80f48a16a83d05eb64e361",
+  "beforeRowSha256": "3818fe4e77abb39cda122d40da4de140b3b6b88e6c0e1bb3a27ee51765af14e4",
+  "afterRowSha256": "fd7107b2bbf5b9f2a9531bf03bd29fa273dc3d500d24dd8251253fbf2de9878d",
+  "changes": {
+    "state": {
+      "before": "uncertain",
+      "after": "settled"
+    },
+    "actualNanoUsd": {
+      "before": null,
+      "after": 0
+    }
+  },
+  "releasedReservationNanoUsd": 254394800,
+  "beforeExposureNanoUsd": 508789600,
+  "afterExposureNanoUsd": 254394800,
+  "capNanoUsd": 520000000,
+  "unreservedNanoUsd": 265605200,
+  "originalAttemptRowSha256": "a8a7f0fc0bc04e136b29b61572e2705ed09b479775755b7ec55a9c6317c09a98",
+  "originalUnknownReservationNanoUsd": 254394800,
+  "originalFailurePayloadAndClocksUnchanged": true,
+  "reportedUsageInvented": false,
+  "reconciledAt": "2026-10-19T20:47:08.837031+00:00",
+  "newAttemptAuthorized": false
+}

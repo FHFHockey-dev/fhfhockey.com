@@ -1,0 +1,14 @@
+{
+  "retained_fixture_sha256": "77442752b800a46e74cbedc370871758c5dc9e4c2dadf4dcc826178cc6753f0c",
+  "families": 3,
+  "provisional_text_claims": 7,
+  "complete_text_families_for_provisional_development": 3,
+  "independently_authenticated_world_truth_families": 0,
+  "untouched_holdout_families": 0,
+  "primary_pilot_family": "original-x-2108233461026726263",
+  "primary_pilot_claims": 2,
+  "tiny_request_serialized_utf8_bytes": 869,
+  "exact_span_checks": "all seven manual quotes found uniquely and retained as exact UTF-16 spans",
+  "paid_calls": 0,
+  "paid_spend_usd": "0.00"
+}

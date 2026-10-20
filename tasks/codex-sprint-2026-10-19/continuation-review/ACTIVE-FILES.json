@@ -1,0 +1,1780 @@
+{
+  "scope": "Cumulative reviewed checkpoint; execution blocked by repeated external/owner gates, not completion/stop",
+  "goalStatus": "blocked",
+  "inventoryStartedAt": "2026-10-20T00:41:39.200267+00:00",
+  "inventoryFinishedAt": "2026-10-20T00:41:39.443453+00:00",
+  "head": "0654fafc4d5c9e7c72cf5bfdd8030af9abe458e3",
+  "branch": "octoberBranch",
+  "files": [
+    {
+      "path": "functions/api/fetch_team_table.py",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "8c0090dec39aeb6c36a7608d1090e3ca94cf70f16779d9f422fe00843e1db148"
+    },
+    {
+      "path": "functions/api/index.py",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "e5eb968e2052b7fc16abfa59eea7eb018038dbe0c93c6de36cab9b19f560f374"
+    },
+    {
+      "path": "functions/tests/test_fetch_team_table_contract.py",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "887c2740a31a013a9c936d2aa1f8c8b5b6638f76a8f9f3605e30076c943800ca"
+    },
+    {
+      "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "ac0dd1f3f04d6a2b441a2f34ced68709e2090bc6a545d3461f2d89300aedd151"
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-ecosystem-alignment-audit.md",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "2c32a40f688304dd2c7cba9b2460575d25bf6d86038bd7e0e9c579dd6cc95c42"
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-post-alignment-gap-audit.md",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "f7455649134bfb415ccb6ce5d3eb06d1ec88e7d9931ffbc5e6ed1edc8fd467a2"
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "97e857115518a7c92dde1922f398cf2b3cee1838c1fbc3234c1a975959489572"
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "6991c42129c8c9c2375dddf34fe335eb7f6d5d23a93a1bd9e70ccf3151b6e925"
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/tasks-prd-nst-api-audit-and-migration.md",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "6125fcba20456d11522b389c995327779b96eae9f4ce7d82f04f2e2947f79d4f"
+    },
+    {
+      "path": "tasks/TASKS/nhl-game-prediction-model/tasks-prd-game-prediction-accuracy-improvement.md",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "e2f1b7c2c804d37e1d0702650d3cc7a210557c405d3ec1463e383f9f21330d92"
+    },
+    {
+      "path": "tasks/TASKS/rules/generate-tasks.mdc",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "507fa461dd41180d1d04ca0e2ca40b96a037e91a4f473e6d069026e566b4b19f"
+    },
+    {
+      "path": "tasks/TASKS/sko-charts/tasks-prd-sko-charts.md",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "e83f3d110165bf1003833a6ea81b8b450c842a3a333d6249cd940a63db237bb1"
+    },
+    {
+      "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "4458ec50593056026baa680ee997932d25fe5ee9ea03e44732cbd9ef7fa4caaa"
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-prd-rolling-player-metrics-remediation.md",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "d61030899141516660d082597dc3858d9d635dbce90f4c4293ac17306879422a"
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-barometer.md",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "672025f32a41613265f97ff57683e49725fd00121b9de3ecf8ed07ccf633cc5e"
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-team-underlying-stats-landing-page.md",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "6357e8c7317244509dd2e0c71c058f29bb9716345ef96a4288d214e28e484786"
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-underlying-stats-landing-page.md",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "e44d0f220cc8d10d095af2b634232760c4fb8fa513bcae598599cfe35760511f"
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-underlying-stats-power-rankings-roadmap.md",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "024aa9c8f30f908a491ddf72093714fd121a2bb67d09b9f51feb3f1790d37b6b"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/REGISTER.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "70db18f354ea8110520ab34e30afe1f5479372fec732010e34a561126b0bfcfa"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/STATUS-CHECK.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "faac4948e51caeb71bf038acac8f8ad620704b2d9b8f5b3ab3444f69f46af605"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-api-errors/HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "1069b1694366d18ee34ba0383fe69723be9800d79171f9ef68629a2a7d4e20c3"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-api-errors/OWNERSHIP.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "729005ba20a806935dd85debd7ed49c59c6aa2ca589837dad6dda28b21130774"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-api-errors/R-APIERR-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "e322768e6b1d9e9c0eecff7d13e6b31d075e15bf9a77e263bdf77eeab3413a64"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-cost/R-COST-HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "d6bd43715339f94700df626d1ff2c3e968280f59f579d3a7f96ed21f7e9c0f19"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-cost/R-COST-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "77a8ee169db26dbe438a3faebc099ff188a02a241d6826dadc7cc84b972db36f"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-cost/reader-cost-after.json",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "a71f043b39d415927c8f7da1ab8096f35f3114aa69c6da9c3dbc35c88f436540"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-cost/reader-cost-baseline.json",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "39aa9281f28262ec923458851780c9eea407bd5f4b3268b2083220250d7b3afc"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-cost/reader-cost-chef.json",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "4ad8c9e92746ee6a3e15ec3efbc5e6e8dc1d768ba29877ff68707afc0cc8659e"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-cost/reader-cost-results.json",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "e3dd923b6c7a7bfb27b08d87abb0fd00ff21e998dca4799b13a014345895b2da"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-cost/reader-cost.cjs",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "dd355a92d457df3c404b4bbfbd996469e7420214abaad0107b42d1e4650e4492"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/ACTIVE-CHECKPOINT.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "1748e227ba3abb74c9e1c5cd02b040da1faddd06ea14788f85b777009dc9d56a"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/ACTIVE-FILES.json",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": null
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-COMMENTS-PROPOSAL.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "272cfd6dec90d7ef2d5a23efdd9f10002ce057ced807ab083119f028d38b77f0"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-CREDENTIALS-PROPOSAL.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "e154bbdd62968d7eb2013bd9b7dad5b7268914aa8bd951c720d80e5dbddc194c"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-CRON-FLOOR-PROPOSAL.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "9bceec2d49b83ce96de30a28991504a1d3ee3e9d5695f1327e4aff8501ad4279"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-CRON-FLOOR-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "5bf7a319262c47071d124cdc81096e723c8ee2e07402c99901fbbe01b54cfd85"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-HEALTH-HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "4009ae136811288947089ea320075054e16d7190cac50b169fabcb845b684acd"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-HEALTH-PROPOSAL.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "0aa3ad05be2e3ae7d31cd5416bd81268da81f9238fce8871f69213fbaaa1836a"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-HEALTH-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "0a1b579fdcd1a52f6312725075aa966f03d9dc77cbef3c1d0be5fcccc39e638c"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-NEXT-CANDIDATES.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "8ffda4df14b74737d5cf61b2e33ff92cc785a49f211c39cdcfe48e97febc36e7"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-OPEN-LOCAL-PARTS.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "192ef4e0e5e29ddf62eed98fd90ee7fbc03d836c33932b8a4600e27160c23f51"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-OVERLAY-PROPOSAL.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "1757c5604f17a7f843def472383e4fdebfa6eb14deea85ab49cfc1dbb85f0e2e"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-OVERLAY-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "e5f6f1e092b0efcfef7e27e4d81598c1cdd009095aa5bd9242ff8bc900aac3ed"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-POLICY-REVIEW.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "ce8884ceb1bef4bc4f5394ce87ca486b583b3aae5398b687ffa8c9cc9c9dd692"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-PROVIDER-CRON-AUDIT-HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "ff58a8fdb9a0d15330290a4cda00f042e254536012054c2c5c3bb1d57dbe14d2"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-PROVIDER-CRON-AUDIT-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "be9eb138ecaf81f4fbeef62ab7a41a60d470326a00f1c49c68b15b8d5848ef45"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-PYTHON-HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "f79434e631c8727a840a18030cf9b6967ac1fe08048eee9f7bb577c237f219d6"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-PYTHON-PROPOSAL.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "2e824b384c7d21024fc309d270a61d3bb75d281587ff551888eeb752626b98cb"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-PYTHON-REVIEW.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "f254bd6c65d411fcd9ce3b8862812ea482dc2a95b42a8e52e4646833ccb544f6"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-PYTHON-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "d9af7e50f39e9ec4ee4f71c578f0fb14e76e7f653fa9e6250c58bef1e722b04c"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-RECEIPTS.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "4bd572d4d018581c95ce5f5dcf3b2a01cd85a8bd0aca52e804d3e02d4a39d405"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-SCORE-HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "a249f36f38f1ac469e8dce2d78673eeab8a93d000c12865c672bbe4f0108f067"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-SCORE-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "a7e6e66a9a3b5ec355c96a728c061b7cb615415f0f249d4388a49f7fcae30a2c"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-SECURITY-MATRIX.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "35a4ffe308ada5d9706dd61fe5b60eeab09ecaa15e02f5e7af9259994efb70bd"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-VERCEL-GATE-HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "4a741f92fbfef2ab09b23c95dc42b9db5ec5b215bd9fe1c724f61b6f3e164ae9"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-VERCEL-GATE-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "cc691a1a93089b23926701a050af07e73f346681b367e2746c0cc0f8ca504a0d"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-semantics/HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "95807327f0b3f908fbaf4c696453fe69de7541fc6cbf4c19b4ff0762aef7f548"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-semantics/R-BADGE-HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "8e4844562d2ea1ba4f7b6e6c3b2820eb79af6925fdbdb421c05309147d4f4666"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-semantics/R-BADGE-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "a626bb50633fe3313316f738c764183d5a5e9f6ce79ee7365ba497a990315bfd"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-semantics/R-FLAGS-PROPOSAL.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "0f9b66d08d3e80dad14a8784a51c177f0435346364cedcb85b13c94a766e6192"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-semantics/R-FLAGS-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "c8eb690a5cd624ed3e76b49a2f33189cca8e485f4e7526c569dc9f704886c8ac"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-telemetry/HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "e50bfa1da040add97f952b092186c81df86d0050777692fee8f1e7c4f555ba0b"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-telemetry/OWNERSHIP.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "2b8d06a1a7f238d743d6fe6f78c8d5bcfcec81dcf1e68c92d657207d13c7642b"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-telemetry/R-TELEMETRY-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "8a45cbbe228d21cb06430517c69cc93a5f1f09eca1cc1221831e1460d61c0d3f"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/cron-c0076/DIAGNOSIS.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "3370f00dc70724edbc7ca51c05de85e80aa117a5b6aa9488f28962d14f617578"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/cron-c0076/P6-HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "a36656a6a01f2eb3a97a602df398328b622b12f4e5578ee71f2811ef3f2d79e2"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/cron-c0076/P6-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "58280dd5f70d6acd32688f7133e7d11ef08fa66cbcc688f282c8cbba2db16835"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/cron-c0076/regression-after.log",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "6237f21393ad2f0172c6248bbf8e29fc0b645f8c5788f4d09a8d0191eaf9ad0a"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/cron-c0076/regression-before.log",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "c2712e4e178123af5550eb5020d8bb2e1d6079cfedd566988eea22cf8c13e804"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/cron-c0076/unchanged-contract-tests.log",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "4c2814890c8d874479021d46a2d0aa45eb33eed2c364c2e85bfb0284ab2fe033"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/cron-email/C-EMAIL-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "6d821be8421f9eae38197788c624474bf0b261afafd85e8fd7ec326a2d413fde"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/cron-email/HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "8d7fb3b22fbabcd2ec8c5aa19c258ebc311f09004df4c033fcb52c3b44639fec"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/inventory/BRANCH-WORKTREE-INVENTORY.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "b760fa122f42dba70d66fa4c90252fdc63c4bb40383a120bb9f0a1802b06d792"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/inventory/P1-HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "626a726afb502bd3e5b7923b6179c8de3289a64ac13917be2a742983f0707300"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/inventory/P1-RECHECK.json",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "6120d4931416c81cf4a49c9a7a3edbe9fa6b771c2fdff46173bde6261cebd783"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/inventory/P1-RECHECK.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "d9336b5791dad379246f1b083374773bdc98a4c0c8ab5bab1c89bad556055b9c"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/inventory/P1-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "f250d679c9e19432ae0e0b0b99f28ffd4fac5d27cbb090c8108f54766a23a998"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/inventory/P3-HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "7958ac8fe2efe7ab88a2069d86cdb62af3345f3e4407a857ea11b745c02a0e39"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/inventory/P3-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "0d1de809633de397ee7ac829a9e8aca86a423d29e840392dc7969587fa258a94"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/inventory/P4-2331cc1.patch.txt",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "1cb5ba7f34acd325f40ce06b1e590d7a468d00ab7ed75d5eafdf586eccb3916d"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/inventory/P4-76d507e.patch.txt",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "196d7d47c836c1812cf4d144b2822ef1caa71d5ddb291254110d9924e88bc1d6"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/inventory/P4-894fe7ea.patch.txt",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "2f9f2e4548848074f582369e8e40f0b9a6f5e27656d43d33a4c7109cd9ec0eeb"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/inventory/P4-8b6332.patch.txt",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "449978df44294657a5cbb747df30de415f8e5dde1b601337bef856a76db80370"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/inventory/P4-9592e2e6.patch.txt",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "f16ae6c7794d8764e039beec2d9d93da094a18c06a67a68692c51a9cab837d5e"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/inventory/P4-EVIDENCE.json",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "c9d75f075cea57c4cab8daccf97360e7ade90ef73ca7d670d05db4b2208d06ef"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/inventory/P4-FSCK.txt",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "d9405835ade29efc5c25a7e21a1d8cda122a34d37b59435a9bb3f825cb5a9db7"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/inventory/P4-HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "494589c2172cf92d0151ae493f1ff138bd565e0ac9c63fe0c4a3dc4d357050ef"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/inventory/P4-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "f76affcf352a49836b78de9cfc3ff1187777306e597c24b6bff9aae00b8e430f"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/inventory/SIDE-BRANCH-SALVAGE.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "f4a93b898fcc6fbdd83cac8d4f9abc4f21a6bc797552e64531b6e14660bca15c"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/inventory/UNRELEASED-PATH-LEDGER.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "253c73cf443daad686ed59fc5d424efd27cc47bdeb460116a251b08580e85e53"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/master-hygiene/P5-BASELINE.json",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "dc05267a9f25e3596404041fc689777f85f739d455a516a44402b396e5c8283d"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/master-hygiene/P5-HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "fd41d5e97cb81767882e0b01251f2e9e88592d98ee9e88d96510f0474a19479e"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/master-hygiene/P5-REMOVED-LINES.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "ec583b837c69d54c546c9d107f6aa54ec46b2802e40f75a2e1cc31e559bfdefa"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/master-hygiene/P5-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "3be13aa2f10a1d0b6796befa56ffab590afbe82a6b86bb9dca5f6372d0fe98b9"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/master-hygiene/P5-VERIFICATION.json",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "304c2fb7700da6bf72e59034909cf7d5fa314973c4e379b9ab1449659386f17f"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/master-local/C-PAGING-HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "682be5e70b8696166f77ba2c0678a2c13d5923d0f9f685a5e6d5a75eabe77a2c"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/master-local/C-PAGING-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "fe8ed0fb0a7c0f90641d0ff849bbc7c1b1a25a4034b276303e3493c4dfea00e1"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/master-local/C-POPOVER-HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "7aff9679383caf04539aabe857827a7ea12ca42e4089215d6d56fd82b2d8a136"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/master-local/C-POPOVER-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "7b2d712b6c3cac6beec67781d595aa39b19472c1dee51496c97f08e5297943d6"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/master-local/C-RECONCILE-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "f0aa1129b8eae070103a9ba76cddd0d396cc748310cd04e91b5d482e65cd3fe1"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/master-local/C-RECONCILE.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "0cd09a689207ace4267eccf156560b0ec2a8f130ef1149f9089ca7527e04965e"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/master-local/FINAL-FILES.json",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "327d4d68f3f11d43014b7268d554261f96f1d220ef290a810c459ca2f04617e1"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/master-local/FINAL-RECEIPT.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "7c619cc847add897a57f0a8fc0e65e93fe450ed3bcd7bf66a5f9202373c3c466"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/master-local/MASTER-RECONCILIATION.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "77e611c0c7a0cee164561e7a31cac3d53019c46e98cf795b0597e07426dc7c92"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security-cron-auth/BASELINE.json",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "4f81834935fc9afe40a977fd50bb78755d4253617ee0938e9b24a2c593d4f283"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security-cron-auth/C-F2-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "5b013b3ee44dcc6860832c4c28c6ca709b2a10e417b8e60d3fc26433500e0f6f"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security-cron-auth/CHEF-SOURCE-CHECK.json",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "cc5f4ac68143141a7b067f418422944949b9b8e4ba4593875335a6b85732ff0c"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security-cron-auth/HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "5e612aab2ad3745771b5ea76e441dff5525587a054ab714415cb4904f2d381b0"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security-cron-auth/OWNERSHIP.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "b91f45cf07b1e8d43a82c50996b058e9121b37eb9c08fcf051610f2463f8da2d"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security-cron-auth/SOURCE-CHECK.json",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "f3bb2df7cc78dc44d61cf2db2c6a2c3cd7bc373de5da05a9d488c42e573a9ce2"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security-operator/C-OPERATOR-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "3a6ef7a0bc81d458a4482771c89f60a645c2b1c3e0cd51e95c1de0174e3ef631"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security-operator/HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "9102c04b8686432d238e64b34b1c05be85e8737d46460985e7b66f6020d31a07"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security-patreon/C-PATREON-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "ccc3cad3950bdeb2e65625d9fc9539dbb39f2b21e8cafefc1905eac52f051c08"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security-patreon/HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "f2c2ba189e6438603b40a6df147a63279251370046b1e7dc9fb55e006b3ba9b7"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security-player/C-F1-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "0dd7693f18eecb85fc11c4fae7540e067c232c17920d9578809a020a55fbd064"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security-player/HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "f2c0604a39ac98ed0fbdfe78d400dc2a22bb8318b1fb827ea61126f61ee9f650"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security/API-ROUTE-INVENTORY.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "708d1acc5566b5af7a9967d3f23201023f2d57489977e7c99f9e85265e78fef5"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security/AUTH-API-REVIEW.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "7b8dccc8201568ca2d41287cbbf2817ed3a2af0be16a5c9069ec03e988336fe8"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security/MANIFEST.sha256",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "8c0a32decd0f8381a8bf648299684dcd6f0ecf756128d5cb1456adf0c1804d04"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security/P8-HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "741bc9c066ff3cd280dbacc84128a09d6eaa3ca5e89d5d0ba40ec06b270d7f90"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security/P8-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "5fc6a0339d2c683bd11b4cbb869c86920a4280522ae45b3b1d603e1569fbf11e"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security/auth-location-test.txt",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "bcb12c9f09822a453342d411f63181899ed3f3cedd79d823c870b1d1c666749c"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security/browser-deps.cjs",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "0de34ac524b45b2ef0f2e3ecb09ec5b4b1e16a84ff30d1d1a92c4345c31f7f9f"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security/browser-reachability.json",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "36bd18e3257c402e1fad2338f5f50bde21afdbdd637cab7fca2a7b2e2183a9e2"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security/effect-sites.json",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "3a42df94f59f43fa978d6c6db613d5ac2f30ed491436c811e237797cd08e8fa6"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security/finalize-inventory.py",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "e40987959e1ce5e64009eb8ec5a23293bcab4c8b4a1b8251c9f38b9912c94dad"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security/inventory.cjs",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "6f498808d38a77b74af980a69965336ab5a1a8192292985513c29df2e727e5fe"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security/patreon-return-fixture.cjs",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "7368edf946adf5dee4633a60d5f7e568bd5b4467e02cdc0cdc41094c86cdedf3"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security/patreon-return-fixture.json",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "5174196525c9816a44ed827750fe896fa41174b9d2c74166aad37cdf353d6b96"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security/reachability.cjs",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "326690878b975df08d3bdd917997893e6eac519469e31d9f5f8f03a216bb7852"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security/resolved-helper-closures.json",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "7ee8fbc1f2c0010159df0e5069696699b41dce955a27359f81b37c35ba102979"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security/route-classifications.json",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "a3bbae4b7708b163011ca93220a6762d92cb7745f074450985037c557b873064"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security/source-hash-verification.json",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "8a43a89594c2e1848d6107114c1a30e6f083b966cc9eea324a1cd2494df2e5b7"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security/source-inventory.json",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "ebca5fc18680f49aac795913ec981aef57b3003ac416d5d7497010c6bcd94447"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/sko-vudu/P2-HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "5b531c82d3780b0397b3b5ba1c0a967632bc34b9d71a677469567fd022769911"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/sko-vudu/P2-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "29bdcc9c4952d233737d92e9268b0854523b4c910d2c531dcd96251a9c5fd23c"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/sko-vudu/PHASE0-CONTRACT.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "c2c9fc753cb08aa441ad805b44620ee078068d3c33ef1023f45dd625cd7368aa"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/sko-vudu/PLAN-EXCERPTS.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "7d47fd0f8c3139139eedddcf0a07e03704b4da6031fbb0d03ca0e3cacc9bbbed"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/sustainability/ARTIFACT-HASHES.txt",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "4e87d5578b123150b41ecc803b04f06a2ba14a89c9aa2d5b519043379474ac89"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/sustainability/FOCUSED-TESTS.log",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "c487e0810733d10c2cafa090d90217e5988184fed200bc644b7674212f4735e8"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/sustainability/HISTORY-GATE-TEST.log",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "c71ab446e10ce738adf3289cf49c5820fc440054a7e8f498eeb091d83099f783"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/sustainability/INPUT-HASHES.txt",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "bc4f86ecd4554d4f135c260c7be8d93b1886c0f6ac3062f9f6110e408c462eec"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/sustainability/P7-HANDOFF.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "01f9e2d035b5beff8ff25db4d9facc1970a852d27af9caa7a69a2d5fb5213904"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/sustainability/P7-TICKET.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "78d6b6bae07f76f547d25a5c447d4fed1df6024019de348ffa0a904760517a95"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/sustainability/RECEIPTS-PLAN.md",
+      "action": "created",
+      "kind": "lane-or-control-artifact",
+      "sha256": "bfaa5025e56435d28f16f9759ef7355030273b14ce2aba00c7c70cac03171b1d"
+    },
+    {
+      "path": "web/__tests__/components/CronReportEmail/CronAuditEmail.test.tsx",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "d27aa6d7b50bbcf9d01a1a4bd601f0eb8a96c2fcb04ff8a0a5c3a6608d4e9ff9"
+    },
+    {
+      "path": "web/__tests__/pages/_app.test.tsx",
+      "action": "created",
+      "kind": "source-or-document",
+      "sha256": "c4bb9e2778c016414ac93a40657bb642aac5f374d1e90ba980be22dc2417d49d"
+    },
+    {
+      "path": "web/__tests__/pages/api/Teams/nst-team-stats.route.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "8d0dcbed55b5196b09d1102c1faeff6d25265bb4d74c327ddf261aeb282427cd"
+    },
+    {
+      "path": "web/__tests__/pages/api/fetch_team_table.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "1dc5e05affe8590937c6d4dc4274d62ba189ccc1e0325337389625f8c00774eb"
+    },
+    {
+      "path": "web/__tests__/pages/api/internal/espn-sync.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "6d9899c2a1f64ee504538b745b04f718e5148cfcbbfa1c0aefe5d91cfad2473e"
+    },
+    {
+      "path": "web/__tests__/pages/api/internal/fantrax-sync.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "495fbc4195c0674da34b481f1e542d22a22710bbd3587224a54c9a3b4ddccfb1"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "7423cdb3e16eca7014ee34a116d22580aca54f564c16cab9be6c9f4ea2ce4979"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/cron-auth-boundaries.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "896ab1f666b52cb937001697a2463bacc66e9ead7aa9afafcd31454b53d63c25"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/cron-report.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "a19fc21947c5425a24f4cd2d0e5c047cc7897f2301a087052dce1e9c127e4995"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-nst-team-daily.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "7fe485da054eb72f9446a3eaf1d0a5f940b6cafd251914b65a369bbc534284b2"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/sustainability/player-read.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "8838042f7ebb2dfd7d4605654b4c2864fe07897d2e5ac6f60b7e314d331bf8c2"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/sustainability/rebuild-score.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "fd6c425defb993048121b95a4a91bd3cc56dfdd367b552f6b60c625cf21141b9"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/trends/player-trends.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "706036c82f5d97d886e5b78fca310b26480a97db6aed3c14bcedb3fb36417bc7"
+    },
+    {
+      "path": "web/__tests__/pages/trendsSandbox.test.tsx",
+      "action": "created",
+      "kind": "source-or-document",
+      "sha256": "b529443335ff1d722a061fbc637bf172c79d3aead1cc2997f7a2dc7a1c804678"
+    },
+    {
+      "path": "web/__tests__/pages/underlying-stats/index.test.tsx",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "f2a88569674019e0f6c5fe405a6314edf4273947310b53e43f1b959cf35b1ac9"
+    },
+    {
+      "path": "web/components/CronReportEmail/CronAuditEmail.tsx",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "fa5771ded122cc59a9d664620c08bc0c5a13d7df31c3226fe54807e9afe243a0"
+    },
+    {
+      "path": "web/components/sustainability/SustainabilityBadge.tsx",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "c0298c279f400ac15331f40783b095071511c6b3b21ae68f3f15b4831944123c"
+    },
+    {
+      "path": "web/components/sustainability/SustainabilityUi.test.tsx",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "5ce2702a67eb4b5bfce04d7e9eb2122278b3a5e2ddfcbdd7a186b700a3c5402e"
+    },
+    {
+      "path": "web/lib/NHL/server/index.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "643833212b7772fd4f15db3e2d2595fbb11a3f2bd56fdc6e77ab15be3798f34e"
+    },
+    {
+      "path": "web/lib/NHL/server/index.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "0499ac3f3fdedb228efdd2091d2c93b6e79ef35b8fa56328ed60b7201fc3d435"
+    },
+    {
+      "path": "web/lib/cron/cronAuditCoverage.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "754a0df900b7cabd573838b4d229857ae63d83361e6ad94ad6a7f7ea084706b3"
+    },
+    {
+      "path": "web/lib/cron/nstTeamStatsOutcome.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "3d7eafdebb950ed43fd377c1fa317d5e81e3d88d7c620ce922f7536cc8fd22eb"
+    },
+    {
+      "path": "web/lib/cron/nstTeamStatsOutcome.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "52963cdfb7822c53a3b8290b1d59cd0bc0c2ee206e727353b4f86cb846e0faab"
+    },
+    {
+      "path": "web/lib/cron/withCronJobAudit.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "2422e4eaa57075184e2e3c2ba295a416b04cc3863e76eb9e538aec0503e1a4d5"
+    },
+    {
+      "path": "web/lib/cron/withCronJobAudit.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "3b0805f3aabbf8060f2ab89f8542f58dd8b58ea5fd044434dfbb6536295c563e"
+    },
+    {
+      "path": "web/lib/draft-pro/api-tests/drafts-index.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "ce207a788ac6117ddd5e9b732acb756d32708c92756f9f5ba7b8404685030238"
+    },
+    {
+      "path": "web/lib/draft-pro/api-tests/private-import-route.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "875d3b0a1478b9f4bb85a61c61e5755056af656f6ccf05c92836dcbcc41efdb5"
+    },
+    {
+      "path": "web/lib/draft-pro/api-tests/reports.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "7139c80e550120a527bb60aeedf83c46791b8f5dbbf42194670a28bb623c9fe6"
+    },
+    {
+      "path": "web/lib/draft-pro/api-tests/scenarios.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "0dd82f15a3940a6b0b003d05cfc7f226117d080f71a8e1d971efc76f3025fba6"
+    },
+    {
+      "path": "web/lib/draft-pro/reports.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "ecfc709cebeaa151e3965d43b3bba987fe0250fce6dd97f9d284325de91fcc0d"
+    },
+    {
+      "path": "web/lib/integrations/patreon/oauth.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "860fac0c4cbc85b19a7f4a8fdfcbfa49bc1de8b43991fd9117eb3a966c1ec315"
+    },
+    {
+      "path": "web/lib/integrations/patreon/oauth.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "ede33e20f277fc2ef1b3e5fb995e295eb8a46b7e7523c054f3cdf70e225dd1fd"
+    },
+    {
+      "path": "web/lib/power-ratings.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "ebca31d193f829ec01157452fc70c0d5ee77fa6877a6f103e006475e1399298c"
+    },
+    {
+      "path": "web/lib/predictions/legacyQuarantine.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "99bc7651e4b34a011264701a46f50c7b9285da6fcfed9c8a31b1b7150e43d47a"
+    },
+    {
+      "path": "web/lib/rankings/deploymentTiers.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "1a1b90379ff95804c6f0ce032a3f50fb64a8b4fdb9ff68bd010f8d26f90de54f"
+    },
+    {
+      "path": "web/lib/rankings/entityMetricRankingReader.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "a402c6d814442f2a4cf0474cad632d64ecd1c2ae89a330e5c28c6acff96fa6e5"
+    },
+    {
+      "path": "web/lib/rankings/entityMetricRankingReader.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "bc84655c3558467e4cf8dc5cec9d9f3face5b4be22bc90fb8666ef31d541afa6"
+    },
+    {
+      "path": "web/lib/rankings/goalieMatrix.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "51a6a00dc2557975570d2392862d7ba071ea7cd1c950a53020271c546979d2ca"
+    },
+    {
+      "path": "web/lib/rankings/teamMatrix.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "b740b2ae1a241cc4e96d322b4a56590532cbda235634cbaa3d98f3657a1fe1c5"
+    },
+    {
+      "path": "web/lib/sko/gap.test.ts",
+      "action": "created",
+      "kind": "source-or-document",
+      "sha256": "3cc39295db378b2ccf53771b952f3d8ff10b2bd60c254047c6d849f40efd0be3"
+    },
+    {
+      "path": "web/lib/sko/gap.ts",
+      "action": "created",
+      "kind": "source-or-document",
+      "sha256": "a7447d66b99d89207d5d7c4e1330a7bb4475414c79beb05596c58f891bf197a3"
+    },
+    {
+      "path": "web/lib/sustainability/data.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "fe36df2c99749922d809ab41a23822a5a14cbd92ab8785640523c9e28827f87a"
+    },
+    {
+      "path": "web/lib/sustainability/entitySurface.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "c6e8f72e7c17f9cfdd36a24f8eddbd6686970919fe43d9f555f37f5f5a71302a"
+    },
+    {
+      "path": "web/lib/sustainability/entitySurface.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "1a97f8c591eab7db47e4103265c8f036152924ab990c1bd9fc656e76e60240da"
+    },
+    {
+      "path": "web/lib/sustainability/entitySurfaceServer.test.ts",
+      "action": "created",
+      "kind": "source-or-document",
+      "sha256": "5ff078c9dd299ba129dfb8a72a88f79b4a5aeb785e5d6b1968f851d89de5c0bd"
+    },
+    {
+      "path": "web/lib/sustainability/entitySurfaceServer.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "602138fb367b9f1b26236bb0855fee826bc7ca66ff17b2129448a7202ef25c6f"
+    },
+    {
+      "path": "web/lib/sustainability/health.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "1d8ce3809a7e5bf7e71f42bdb070da90b23129bf4d6e7656b29f28f94d89d005"
+    },
+    {
+      "path": "web/lib/sustainability/health.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "0dfb893d4c4052ef7dcdf6623061860ce9199f5665d6200e4c5262d30fbadcc2"
+    },
+    {
+      "path": "web/lib/sustainability/read.test.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "c0bf08424e8d10d2bb57836d1b78a3f3724373658f050f4b13c0496b47f27c31"
+    },
+    {
+      "path": "web/lib/sustainability/read.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "21a5c8a311e8da297c2fa9e1ee347ccbe30fd041c913755b3b0c76aae0b89592"
+    },
+    {
+      "path": "web/pages/_app.tsx",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "930f0761a9d01f877f94dffae2c1ca8b224ed0362e7a28cad0054d0c22484d19"
+    },
+    {
+      "path": "web/pages/api/Teams/nst-team-stats.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "93189097463995f6c3bf770a4c4f1ab897c5725b3e3af77971e6acac1f7987e3"
+    },
+    {
+      "path": "web/pages/api/fetch_team_table.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "2c422eb7ee26a0965eb889c62ab901eff9bb0b22ab1f778ac498113dcfc7cfbf"
+    },
+    {
+      "path": "web/pages/api/internal/espn-sync.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "f57c6a825fc70895da1b3ca799a63656c0c7615614a5326cb48fb67537a0fa14"
+    },
+    {
+      "path": "web/pages/api/internal/fantrax-sync.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "6e1685d0564616c5d83e60c65d677a105b5e9d2c5c4ea5c3df866f9a5fa90b9a"
+    },
+    {
+      "path": "web/pages/api/internal/patreon-reconcile.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "8cb1373b5b994e1acadf7e26cd5f906142c36ab2d287a51f8bed64aa34a892e2"
+    },
+    {
+      "path": "web/pages/api/v1/account/draft-pro/drafts/[id].ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "92491db5907133840c47ef220a49d116f03002e0ad5ff565ae08c9d63af7d837"
+    },
+    {
+      "path": "web/pages/api/v1/account/draft-pro/drafts/[id]/imports/[importId].ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "abf6a7bd0185199b24a167f868290fe61afae55fd245ffea41f5d63179311b56"
+    },
+    {
+      "path": "web/pages/api/v1/account/draft-pro/drafts/index.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "feaadc96f5da857976f59b7d0b1fad404c796d762f809a8f81b56969a8bba531"
+    },
+    {
+      "path": "web/pages/api/v1/account/draft-pro/reports/[id].ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "1eac217e246c63693a46eb7cae7de081723d4ffbbf07a697cebb6561d3be0a29"
+    },
+    {
+      "path": "web/pages/api/v1/account/draft-pro/reports/index.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "4c4dad34ccf57a446da953bf58a62671fb7c8a3734569f072ed16af7d826cfc8"
+    },
+    {
+      "path": "web/pages/api/v1/account/draft-pro/scenarios/[id].ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "3c1176aea2316e2518397a1624b6fe6a5ae7d9760fa139dbbe641242f8b34d2a"
+    },
+    {
+      "path": "web/pages/api/v1/account/draft-pro/scenarios/index.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "d17dbd9041b38642942cc0eadb6dab6244e831185360255c11c64011d6dceb1c"
+    },
+    {
+      "path": "web/pages/api/v1/db/audit-nhl-ppt-replay-coverage.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "0a9c8b4d382e8874947e90ebdec09f5bb6dab8bf425f846164e6cafde87670e1"
+    },
+    {
+      "path": "web/pages/api/v1/db/backfill-goalie-underlying-season.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "2d50d246e77da6174b74a8835e5d027d2bc1c12ed44c9c78a35ea72f383847ee"
+    },
+    {
+      "path": "web/pages/api/v1/db/backfill-player-underlying-season.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "60941ff55e77cef60dbe9f6bdae9ecf547f5c8b9632e9a9ed5dce6a568734e45"
+    },
+    {
+      "path": "web/pages/api/v1/db/backfill-team-underlying-season.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "e230fabbf2a340b1474b2f96cd08324f5feac566f1c2273506c84f7c8b2adf7a"
+    },
+    {
+      "path": "web/pages/api/v1/db/calculate-wigo-stats.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "69014f862d3a3013827cc1fff2e5335d0609da2e4cb02621bc4a964580d7e0ec"
+    },
+    {
+      "path": "web/pages/api/v1/db/catch-up-goalie-underlying.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "03203f91f6af2faee0631f329111e2477eb3c9bdeaed35d3ad50cfde3dec0f69"
+    },
+    {
+      "path": "web/pages/api/v1/db/catch-up-player-underlying.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "bb8a3df5102c4c5461fca04409296f16a1fcebfd351f90490f427fb1c5040414"
+    },
+    {
+      "path": "web/pages/api/v1/db/catch-up-team-underlying.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "f3ad1f80591c5fc5fd2091b741bfc9d6773b2df09d6fd96f82d3bd6a677e03ad"
+    },
+    {
+      "path": "web/pages/api/v1/db/cron-report.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "0f187f533b7b4d08fcdc3a2cf8d455b7568a10d9a78a2e92e7b48445cd29ebfb"
+    },
+    {
+      "path": "web/pages/api/v1/db/cron/update-stats-cron.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "6632a3a231e6d99bf5e429335788234b6820cfd6d35a1155a385244b12fbf901"
+    },
+    {
+      "path": "web/pages/api/v1/db/draft-ranker-health.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "2ca0be1a8e50591c24d0ef766bc13e3789dd154f758131167241ef14e7c2dee5"
+    },
+    {
+      "path": "web/pages/api/v1/db/powerPlayTimeFrame.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "83a4331ced9dcd69e3f2e7446b94b99ceaa4e52968219956e919ba074c54cdaa"
+    },
+    {
+      "path": "web/pages/api/v1/db/refresh-draft-ranker-community.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "4523c4197e77f50f800926c84966590ad5b266a18162ea8c57f926cb48c3e632"
+    },
+    {
+      "path": "web/pages/api/v1/db/refresh-draft-ranker-discovery.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "73b0eff48ab3841a2e61520c84d955379931eab0d5a55274a8fa5cd0988f05cc"
+    },
+    {
+      "path": "web/pages/api/v1/db/register-nhl-xg-model.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "76b7dc863bcecbdb76a656df60d01cd6bc0a94012fdfc89fbfb2a51507731a3b"
+    },
+    {
+      "path": "web/pages/api/v1/db/run-fetch-wgo-data.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "657b1a98b85b483a75b411822724501359d74f819d3b68dc88932fb8dd5f9718"
+    },
+    {
+      "path": "web/pages/api/v1/db/sustainability/rebuild-baselines.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "f2f520a55957f47b9827fdc5cf2d95ac481cbe6697172d942570565c52238231"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-PbP.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "5cd4bdbc588d396ab91f4a05ef394260cb3d2c5b7e5f20212696d3f10c48d5d4"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-entity-metric-rankings.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "f2a186ea2fb1d49f6d5a8d131f4ee18d7d22a7ca76e94be19f80886f1890816c"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-games.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "671c2e12456ce5390380272007ef148d2bd8c42beec4bde16a1c044b67c63901"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-goalie-underlying-stats.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "ec242cf14c83a8ec8e9939819cc2d037ca90a4b283f0fff91eb74a78cb3d60b0"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-goalie-underlying-summaries.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "f2951808e7617c16191a2a37e50f4bed57669c1709bc944371ffd47c3dd8d993"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-line-combinations/[id].ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "0efc3fe33f77d327af9ccb097625ece7821fbc938a2e1748629da8e418cac115"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-line-combinations/index.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "997896eb74b05f054402048e0bf1fb190f0b6375a8e0b0dfa5f2e784765c412e"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-lineup-deployment-tallies.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "b24167dc68a6e91e5b0a4218aa0dca119dffb27e194a7213b1b6459765d1343e"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-market-prices.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "1072c1eba8fb19772fc80ff4786a9ac16ee65427fad2e92216fba506a52752da"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-edge-stats.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "f23721a71a166883fa4ba280ce2ec3a9e20e0fa6622aa0abd065030f6366c5d3"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-play-by-play.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "78be7a8c17e75e77bb3e5e9f6566b8762da1986689de418cb04447fb84d391f4"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-shift-charts.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "156da5b2b99868d4d039b796aa5190b2ec64ddfcd104cd0de2904642b67da80f"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-xg-aggregates.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "b876769ee8d1f94bb51b06bccbb6076837092298b2548c756bbc120ee66bab06"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-xg-shot-predictions.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "555bc676b180d3b1a5d5bd799db0dbba0a47b0f8c5bfbd77040802bdf6f3dc93"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhlscraper-contracts.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "b1e3404bed8846d113718e648a3b012396e487934de7846086d58c9bf12a37a4"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-current-season.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "01cb818ffa53d4e30fcd594c7cc3ba84d95cfef021dd7873f8f5d037cf67db12"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-goalies.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "aeaddea4bd81b246e08ac176468915c1378a4be20dc907ffffd0207df019520e"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-team-daily.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "786601b6e8b1586fd6003af98025162674b710635180cfad9da2e5002b999d9c"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-player-impact-ratings.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "d76a4ae518e9048dfa8171d4077feaa63c06516852a744512dd5f4d0f436d4f2"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-player-trend-metrics.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "0bc2e85776bcfd9b603259333517bec3bf662a7ace706b2fa70359476a0d8594"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-player-underlying-stats.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "9342e3b00688f4d0c6ff6bf95a2ad66197c6770d33d701eed6f08c6d8d62838d"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-player-underlying-summaries.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "e87a8eb5cceb305bf9115754ccd386c75921cc6ff5e37067f1ef204531433249"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-player/[playerId].ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "296204b91d978d9d074ed57083c1a3b0bdbd075728bbea27c5c04fec2a472d30"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-players.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "37d522de50e9f060148cf8f2f2613f799b5675a709bc0e285186733c9b420d42"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-power-play-combinations/[gameId].ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "8c702065650099873efdb74967cb7ea648a310092b50c1f11d895cf192469ee3"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-power-play-combinations/index.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "14a459c34cf47867012de4eefe86eb7e9eb8758d85ae7fc831dbbe90ae58d8be"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-rolling-games.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "9b52f3e0053bb562729e5ddd2b6211920c8b6233e4ee11a7682334fdb5ff03b3"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-season-stats.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "0f1f32281bf7be17c16770ec2eb33345e2a742a347e9a442d93157dd9c666354"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-seasons.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "56cc24eea821952f2155ea2972209e5f80d46d3e11b880141e7dbe5df4ccde38"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-shifts.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "865077cb645a8366edb4352d07531c264c8e406d7331e800d64742d078c93e0d"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-skater-composite-ratings.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "6c79c199a648fe101992e37c3de71d52fedab8773f8c424e0ab6a7cb1cd53245"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-sko-stats.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "a24656c35b3ad5c646c24ee2139cc4aceb66e3c30dd3e7fe35dfd28942eca718"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-standings-details/index.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "7392a00af4f8c9abb44ddee40deb35f168dd76945fb3f56de500d6e0d28273c4"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-stats/[gameId].ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "bef48906227b6bc417c0009af8dac7d9439d9a517341c33c42e48591cf8d1b8c"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-team-ctpi-daily.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "03a310525d41b5933dab7cedf9a1005b4cd9feec39fdabfd39c0471d0372ab98"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-team-power-ratings.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "59e73eaaf30ee5c5affbca1b4275dc99aa62fa6a0b7c2df1ae7227f7d69a396a"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-team-sos.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "8e48f8e2cdae155f509558fa2cfdd1abb56320a5761d175f37d77eb0f0668d1e"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-team-unit-toi.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "9d1b9d2a04306bc94b2ed9211d17534e50650d58a9b0dc41ef2b727fc07fae4c"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-team-yearly-summary.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "d781c99c9c166f6ef276f583ff2c618d89bb5562310673f0fffdad865975c25e"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-wgo-averages.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "d5898943c8a34d603b7fc3576b6497495fecefaeec036ec60367c74ddc7c3241"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-wgo-goalie-totals.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "85f457d25a453a9acd8475b0c9a1284101bd0000239c4abe40755ca05743b190"
+    },
+    {
+      "path": "web/pages/api/v1/db/upsert-csv.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "29b769a325932485748c1865421cda771811e8290565bf47ab7cf764db1c177f"
+    },
+    {
+      "path": "web/pages/api/v1/game-predictions/accuracy-loop.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "0d03ab046bce5c8239f3bb8af1111eb0bf4db2a6994814028c7ea55fb20545ea"
+    },
+    {
+      "path": "web/pages/api/v1/game-predictions/backfill-feature-snapshots.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "01d540273f6c5632754b060fadbd5d01fddd2e725a915a1fc6cac3f7fe1c5783"
+    },
+    {
+      "path": "web/pages/api/v1/game-predictions/backtest-ablation.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "27e790b39f6b0d73e8b23ac41ab265c61ac88561cbb0eb33d46e09073e48b092"
+    },
+    {
+      "path": "web/pages/api/v1/game-predictions/backtest.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "869ffb6f81a290c43644d317ff1c25fcdb606a9e1df020d5bfcdf248c957bbc4"
+    },
+    {
+      "path": "web/pages/api/v1/game-predictions/feature-signal-analysis.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "a75310407b574487f80713397e98f3db1ef6f080f68ada9725309290e4515cdd"
+    },
+    {
+      "path": "web/pages/api/v1/game-predictions/forecast.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "d40712e02b9b3ba097e0cd7dea3a98e6aed6b98a52f0abe6b4753aec7a1facb1"
+    },
+    {
+      "path": "web/pages/api/v1/game-predictions/generate.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "a63d55bb72803a536b57a781586355cfc4707896ea23c83451d6e24290237c0b"
+    },
+    {
+      "path": "web/pages/api/v1/game-predictions/import-market-odds.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "02aeecd2854e9d57d76873e99faf57b4910e798d0b30f8e90d984291f82bdc75"
+    },
+    {
+      "path": "web/pages/api/v1/game-predictions/ingest-espn-odds.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "d74eeae404a9e4a3964b6f1fe92b0871e9bcb7eac0bcb8352f9df94d8eda617b"
+    },
+    {
+      "path": "web/pages/api/v1/game-predictions/promote-model-version.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "2fea72c2149b23ed9b8b44b4b66ade05ec154e868ee15642b330f267eeb50210"
+    },
+    {
+      "path": "web/pages/api/v1/game-predictions/score.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "048e5ee5965c1c6e6c5a17da0b744bea090b497a6e6ce0d0afb34cbc8d30a714"
+    },
+    {
+      "path": "web/pages/api/v1/sustainability/leaderboard.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "c6bcc9b7f872e30f56d46fc70f4b1c8b5850d268b31f2497b7692e9f1641ec87"
+    },
+    {
+      "path": "web/pages/api/v1/sustainability/player/[playerId].ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "b9eb4be2a3a81462a228afe6da9fc545d2619f2568ec37e382a9a58efda06667"
+    },
+    {
+      "path": "web/pages/api/v1/sustainability/process-recompute-queue.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "020e436cf5267e2ff60fbb2863ba86b2289a24e6d8782dd3ad41e7c714774ed3"
+    },
+    {
+      "path": "web/pages/api/v1/sustainability/rebuild-priors.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "598a684cc388a9156bb8bc90a4ed030fafd1f4d97b983b102c707f0c04ae89b7"
+    },
+    {
+      "path": "web/pages/api/v1/sustainability/rebuild-score.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "6fddaeed41db6e5bf632d302606ffe57e76f5c8dcaef4a5259ec4d657e97859e"
+    },
+    {
+      "path": "web/pages/api/v1/sustainability/rebuild-trend-bands.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "aa0680d2459e0f30c6edc4987f8a40443293f55eb7dc503c25cee1564b64c256"
+    },
+    {
+      "path": "web/pages/api/v1/sustainability/rebuild-window-z.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "0dffa59bc819f47f07603732a66ef841d91a36d24639226518496c43995dd401"
+    },
+    {
+      "path": "web/pages/api/v1/sustainability/upcoming/[playerId].ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "88f53cf1432005d3edefc45417e1f91483b37ddf42840ace9441830703f8112e"
+    },
+    {
+      "path": "web/pages/api/v1/trends/player-trends.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "2c8fe56d566407437460d734bcf6a6fc0435b6321ccceee6ff7ed51f40820d51"
+    },
+    {
+      "path": "web/pages/trendsSandbox.tsx",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "640c3e1b994befeed26bd4d805a54bf99c9f5709787ca1cc7d2b81bd8c003381"
+    },
+    {
+      "path": "web/utils/stats/nhlStatsFetch.ts",
+      "action": "modified",
+      "kind": "source-or-document",
+      "sha256": "c19b14b685211569822c9d249c9d29e0933e3f000cda0a0668bb00d78276fddd"
+    }
+  ],
+  "retained": 289,
+  "created": 132,
+  "modified": 157,
+  "sourceOrDocumentFiles": 162,
+  "laneOrControlArtifacts": 127,
+  "createdSourceFiles": 5,
+  "allOwnedSourcePathsUncommitted": true,
+  "focusedTestsThisActiveContinuation": 354,
+  "focusedFilesThisActiveContinuation": 24,
+  "master": {
+    "checked": 5142,
+    "total": 5307,
+    "open": 165,
+    "importedChecked": 5029,
+    "importedTotal": 5135,
+    "importedOpen": 106
+  },
+  "removedIntermediates": [
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security/route-summaries.txt",
+      "action": "created-then-removed-in-original-P8",
+      "sha256": null
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security/reachable-effects.txt",
+      "action": "created-then-removed-in-original-P8",
+      "sha256": null
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security/reachable-calls.json",
+      "action": "created-then-removed-in-original-P8",
+      "sha256": null
+    }
+  ],
+  "selfDigestRule": "Only ACTIVE-FILES.json has null digest to avoid recursive hashing",
+  "limits": "Owned-path capture; subsequent changes require refresh. Not whole-checkout ownership or release/hosted/provider/empirical acceptance."
+}

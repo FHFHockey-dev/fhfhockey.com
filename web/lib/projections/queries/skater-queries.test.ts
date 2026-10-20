@@ -291,6 +291,20 @@ describe("counted rolling skater history", () => {
     expect(await fetchRollingRows([7], "pp", "2026-10-07")).toEqual(source);
     expect(db.queries[0].eq).toHaveBeenCalledWith("strength_state", "pp");
   });
+  it("reads the all-strength scope with pruned three-season hit and block totals but no aligned NST support", async () => {
+    const source = rows(1).map(row => ({ ...row, strength_state: "all", toi_seconds_total_last5: 6600 }));
+    const support = [{ ...source[0], payload_schema_version: 1, support_payload: { alignedCountSupport: null,
+      historicalCompatibility: { hits_per_60_hits_3ya: 220, hits_per_60_toi_seconds_3ya: 300000,
+        blocks_per_60_blocks_3ya: 380, blocks_per_60_toi_seconds_3ya: 300000 } } }];
+    const db = fixture(source, [], support);
+    const [row] = await fetchRollingRows([7], "all", "2026-10-07");
+    expect(db.queries[0].eq).toHaveBeenCalledWith("strength_state", "all");
+    expect(row).toMatchObject({ strength_state: "all", toi_seconds_total_last5: 6600, hits_per_60_hits_3ya: 220,
+      hits_per_60_toi_seconds_3ya: 300000, blocks_per_60_blocks_3ya: 380, blocks_per_60_toi_seconds_3ya: 300000 });
+    expect(row).not.toHaveProperty("aligned_count_support");
+    for (const field of ["toi_seconds_total_last5", "hits_per_60_hits_3ya", "hits_per_60_toi_seconds_3ya",
+      "blocks_per_60_blocks_3ya", "blocks_per_60_toi_seconds_3ya"]) expect(ROLLING_ROW_SELECT_CLAUSE.split(",")).toContain(field);
+  });
   it.each([null, undefined, -1, 1.5, NaN, "1"])("rejects unproved exact count %s", async count => {
     fixture(rows(1), [{ count }]);
     await expect(fetch()).rejects.toMatchObject({ status: "incomplete", reason: "invalid_count" });

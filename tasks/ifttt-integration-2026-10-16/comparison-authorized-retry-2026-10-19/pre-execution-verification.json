@@ -1,0 +1,14 @@
+{
+  "checkedAt": "2026-10-19T20:34:01.160408+00:00",
+  "manifestSha256": "f1e452f1a7737a1fb5fc831ed78138a3d9d445867886005418be3315d8b9a968",
+  "authorizationSha256": "f0dddf30a65445868fe45b001033224fd8adfb9fdace38001be1925f8413b238",
+  "boundFiles": 17,
+  "offlineCasesPassed": 55,
+  "originalBudgetSha256": "ac28e83814ed20381b3cfee8049bfdc580dfc556f98ca1da33c70f0897015c44",
+  "existingRetryOutput": false,
+  "keyRead": false,
+  "providerCalls": 0,
+  "exposureWithBothExtractionReservationsNanoUsd": 508789600,
+  "capNanoUsd": 520000000,
+  "aggregateDecisionsAdmissionPriorNewChargeCeilingNanoUsd": 34605200
+}

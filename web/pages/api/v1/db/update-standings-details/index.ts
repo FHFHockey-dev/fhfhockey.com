@@ -20,7 +20,7 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(async function handler(
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async function handler(
   req: NextApiRequest & { supabase?: SupabaseClient },
   res: NextApiResponse
 ) {

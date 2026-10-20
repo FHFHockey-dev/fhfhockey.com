@@ -121,9 +121,9 @@ export async function refreshDraftRankerDiscoveryHandler(
   }
 }
 
-export default withCronJobAudit(
-  adminOnly(refreshDraftRankerDiscoveryHandler as any),
+export default adminOnly(withCronJobAudit(
+  refreshDraftRankerDiscoveryHandler as any,
   {
     jobName: "refresh-draft-ranker-discovery",
   },
-);
+));

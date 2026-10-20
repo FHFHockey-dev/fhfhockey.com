@@ -1,0 +1,10 @@
+{
+  "extends": "../decisions-pure-integration-2026-10-19/tsconfig.json",
+  "include": [
+    "../../../web/next-bootstrap.d.ts",
+    "../../../web/yahoo-fantasy.d.ts",
+    "./rules-adapter.ts",
+    "./rules-adapter.test.ts"
+  ],
+  "compilerOptions": {"incremental":false}
+}

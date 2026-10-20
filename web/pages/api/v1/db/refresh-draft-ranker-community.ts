@@ -150,9 +150,9 @@ export async function refreshDraftRankerCommunityHandler(
   }
 }
 
-export default withCronJobAudit(
-  adminOnly(refreshDraftRankerCommunityHandler as any),
+export default adminOnly(withCronJobAudit(
+  refreshDraftRankerCommunityHandler as any,
   {
     jobName: "refresh-draft-ranker-community",
   },
-);
+));

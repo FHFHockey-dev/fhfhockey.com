@@ -1,0 +1,27 @@
+{
+  "status": "blocked_before_paid_clearance",
+  "providerCredentialLocationVerified": true,
+  "authenticationUntested": true,
+  "paidCalls": 0,
+  "spendUsd": "0.00",
+  "bindingTests": 19,
+  "actualRulesProposals": 1,
+  "materializedRulesDecisionQuestions": 3,
+  "materializedRulesDecisionRequestBytes": 3398,
+  "broadModelDecisionMaxInputConditional": 922000,
+  "oneDecisionConservativeNanoUsd": 202840000,
+  "twoDecisionsConservativeNanoUsd": 405680000,
+  "aggregateCapNanoUsd": 260000000,
+  "completeBundleFitsBroadCeiling": false,
+  "remaining": [
+    "Independent acceptance of new binding.",
+    "Verified sufficiently tight complete billed Decisions input bound and account/rate/fee applicability.",
+    "Final parent clearance; no clearance file or billing-proof attestation shipped."
+  ],
+  "operationsDeniedPendingOrUncertain": [],
+  "notes": [
+    "15 initial binding cases had two shared-test-fixture alias errors; corrected deep-copy isolation, then15pass; later19casespass with transport and partial-result guards.",
+    "Initial vite-node root resolution failed locally; changed task-only root/allow configuration and absolute entry; successful rerun emitted actual rules JSON under network denial.",
+    "No frozen application or accepted pilot/grader file modified."
+  ]
+}

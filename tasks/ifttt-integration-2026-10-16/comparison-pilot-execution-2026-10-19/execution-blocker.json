@@ -1,0 +1,19 @@
+{
+  "action": "Execute reviewed single-family sequential pilot",
+  "targets": [
+    "https://api.openai.com/v1/responses",
+    "https://api.openai.com/v1/decisions"
+  ],
+  "executionStatus": "denied_before_process_creation",
+  "denialSource": "automatic approval review",
+  "reason": "Paid external requests transmit retained source data; reviewer found direct user authorization of this payload and destination insufficient.",
+  "paidCalls": 0,
+  "keyLoadedByRunner": false,
+  "budgetStateExists": false,
+  "outputRunExists": false,
+  "sourceManifestSha256": "541a3d34a4a4861405cfdedd78ce256600191a3fdb8863ba9f14dce31942da79",
+  "executionManifestSha256": "6f34fe79654f4d3c69eb4082fa1aeafa8d70c3aa7c6ac5651e291a5bf0e27f3b",
+  "approvalQuestion": "Explicit user authorization requested for the exact retained payload/context and OpenAI endpoints.",
+  "retryPerformed": false,
+  "spendUsd": "0.00"
+}

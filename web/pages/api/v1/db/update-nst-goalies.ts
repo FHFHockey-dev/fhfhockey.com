@@ -883,4 +883,4 @@ async function getLatestDateSupabase(): Promise<string | null> {
   return latestDate;
 }
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)));
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any)));

@@ -1,0 +1,54 @@
+--- /dev/null
++++ tasks/ifttt-integration-2026-10-16/comparison-source-anchoring-2026-10-19/evaluate.py
+@@ -0,0 +1,51 @@
++"""Re-evaluate retained authentic inputs offline; no HTTP or key loader."""
++import json
++from pathlib import Path
++from anchors import align_proposals
++from comparison import digest, grade, normalize, qualify
++
++ROOT=Path(__file__).resolve().parents[1]
++
++
++def evaluate():
++    retained=ROOT/'comparison-certifi-execution-2026-10-19'
++    record=json.loads((retained/'run-01/attempt-0.json').read_text())
++    prior=json.loads((retained/'source-fidelity-grades.json').read_text())
++    profile=json.loads((ROOT/'comparison-pilot-rules-2026-10-19/pilot-rules.json').read_text())
++    source=profile['source'];labels=profile['labels']
++    transmitted=json.loads(record['request']['input'])
++    if (transmitted['text'],transmitted['source_id'],transmitted['author']) != (source['text'],source['source_id'],source['author']):
++        raise ValueError('retained/transmitted source mismatch')
++    proposals=json.loads(record['response']['output'][0]['content'][0]['text'])
++    rules=json.loads((ROOT/'comparison-live-binding-2026-10-19/evidence/actual-lindgren-rules.json').read_text())
++    runs={}
++    for arm,body in [('rules_only',rules),('extraction_only',proposals)]:
++        original=normalize(source,body)
++        original_grade=grade(source,labels,qualify(source,original),original['material'],original['errors'])
++        aligned=align_proposals(source,body);normalized=aligned['normalization']
++        # Do not silently drop an unresolved claim and advance a partial batch.
++        rows=qualify(source,normalized) if aligned['allAnchorsValid'] else []
++        corrected_grade=grade(source,labels,rows,normalized['material'],normalized['errors'])
++        runs[arm]={'authenticInput':True,'originalProposalHash':digest(body),'correctedProposalHash':digest(aligned['body']),
++                   'originalGrade':original_grade,'correctedGrade':corrected_grade,'correctedQualification':rows,
++                   'alignment':aligned,'sourceAnchorCorrectionOnly':True,'originalModelSuccessClaimed':False}
++    if runs['rules_only']['originalGrade'] != prior['rules_only']['grade']:
++        raise ValueError('original rules grade changed')
++    if runs['extraction_only']['originalGrade'] != prior['extraction_only']['admittedSubsetGrade']:
++        raise ValueError('original extraction grade changed')
++    for arm in ['rules_decisions','extraction_decisions']:
++        runs[arm]={'authenticInput':False,'status':'not_run','grade':None,
++                   'reason':'No authentic Decisions response was obtained; no scores are synthesized.'}
++    text=source['text']
++    return {'scope':'offline explicit postprocessing of retained development response',
++            'diagnosis':{'sourceEqualsTransmittedText':True,'asciiOnly':text.isascii(),
++                         'unicodeCodepoints':len(text),'utf16Units':len(text.encode('utf-16-le'))//2,
++                         'utf8Bytes':len(text.encode('utf-8')),'cause':'Model supplied incorrect numeric offsets relative to the contracted source text; strict UTF-16 adapter rejected correctly.',
++                         'internalModelReason':'unknown; no internal counting method is inferred'},
++            'sourceFamily':source['family_id'],'labelProvenance':labels['provenance'],'goldClaimsInDenominator':len(labels['claims']),
++            'arms':runs,'verdict':'inconclusive_single_exposed_family_missing_verifier_responses',
++            'nativeEligible':False,'providerCalls':0,'credentialReads':0,'ledgerWrites':0}
++
++
++if __name__=='__main__':
++    print(json.dumps(evaluate(),indent=2))

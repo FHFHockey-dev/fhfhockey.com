@@ -1,4 +1,5 @@
 import { readAlignedCountSupport } from "lib/rollingPlayerCountSupport";
+import { resolveNullableCompatibilityValue } from "lib/rollingPlayerMetricCompatibility";
 import type { RollingRow } from "../types/run-forge-projections.types";
 import {
   GOALIE_GSAA_PRIOR_MAX_ABS,
@@ -15,6 +16,10 @@ import {
   SKATER_OPP_GOALIE_ASSIST_MIN_MULTIPLIER,
   SKATER_OPP_GOALIE_GOAL_MAX_MULTIPLIER,
   SKATER_OPP_GOALIE_GOAL_MIN_MULTIPLIER,
+  SKATER_PHYSICAL_PRIOR_MINUTES,
+  SKATER_PHYSICAL_RATE_PRIORS,
+  SKATER_PHYSICAL_RECENT_SHRINK_MINUTES,
+  SKATER_PHYSICAL_TOI_RATIO_MAX,
   SKATER_REST_ASSIST_MAX_MULTIPLIER,
   SKATER_REST_ASSIST_MIN_MULTIPLIER,
   SKATER_REST_GOAL_MAX_MULTIPLIER,
@@ -429,6 +434,57 @@ export function computeSkaterSampleShrinkageAdjustments(args: {
     usedCallupFallback: sampleWeight < SKATER_SMALL_SAMPLE_CALLUP_WEIGHT_THRESHOLD,
     evidenceToiSeconds: Number(evidenceToiSeconds.toFixed(3)),
     evidenceShots: Number(evidenceShots.toFixed(3))
+  };
+}
+
+/**
+ * All-situation hits and blocks per 60 from the all-strength rolling row, which
+ * falls back to official NHL counts where NST logs are missing. The last-5 rate
+ * is blended toward a three-season baseline shrunk to a position prior, so a
+ * thin window of zeros lowers a line instead of zeroing it.
+ */
+export function computeSkaterPhysicalEventRates(args: {
+  all: RollingRow | undefined;
+  position: string | null | undefined;
+  esPpToiSeconds: number;
+}): {
+  hitsPer60: number;
+  blocksPer60: number;
+  hitsRecentWeight: number;
+  blocksRecentWeight: number;
+  toiMultiplier: number;
+} {
+  const row = args.all;
+  const prior = SKATER_PHYSICAL_RATE_PRIORS[args.position === "D" ? "D" : "F"];
+  const recentMinutes = Math.max(0, finiteOrNull(row?.toi_seconds_total_last5) ?? 0) / 60;
+  const hitsRecentWeight = recentMinutes / (recentMinutes + SKATER_PHYSICAL_RECENT_SHRINK_MINUTES.hits);
+  const blocksRecentWeight = recentMinutes / (recentMinutes + SKATER_PHYSICAL_RECENT_SHRINK_MINUTES.blocks);
+  const blend = (recent: number | null | undefined, events3ya: number | null | undefined,
+    toiSeconds3ya: number | null | undefined, priorPer60: number, priorMinutes: number, recentWeight: number) => {
+    const events = finiteOrNull(events3ya);
+    const historyMinutes = Math.max(0, finiteOrNull(toiSeconds3ya) ?? 0) / 60;
+    const baseline = events != null && events >= 0 && historyMinutes > 0
+      ? (events * 60 + priorMinutes * priorPer60) / (historyMinutes + priorMinutes)
+      : priorPer60;
+    const recentRate = finiteOrNull(recent);
+    return recentRate != null && recentRate >= 0
+      ? recentWeight * recentRate + (1 - recentWeight) * baseline
+      : baseline;
+  };
+  const allToi = finiteOrNull(row?.toi_seconds_avg_last5);
+  return {
+    hitsPer60: blend(resolveNullableCompatibilityValue("weighted_rate", row?.hits_per_60_last5, row?.hits_per_60_avg_last5),
+      row?.hits_per_60_hits_3ya, row?.hits_per_60_toi_seconds_3ya, prior.hitsPer60,
+      SKATER_PHYSICAL_PRIOR_MINUTES.hits, hitsRecentWeight),
+    blocksPer60: blend(resolveNullableCompatibilityValue("weighted_rate", row?.blocks_per_60_last5, row?.blocks_per_60_avg_last5),
+      row?.blocks_per_60_blocks_3ya, row?.blocks_per_60_toi_seconds_3ya, prior.blocksPer60,
+      SKATER_PHYSICAL_PRIOR_MINUTES.blocks, blocksRecentWeight),
+    hitsRecentWeight,
+    blocksRecentWeight,
+    // PK time is not projected; scale ES+PP TOI by the recent all-situation share.
+    toiMultiplier: allToi != null && allToi > 0 && args.esPpToiSeconds > 0
+      ? clamp(allToi / args.esPpToiSeconds, 1, SKATER_PHYSICAL_TOI_RATIO_MAX)
+      : 1,
   };
 }
 

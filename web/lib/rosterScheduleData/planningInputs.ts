@@ -81,7 +81,7 @@ export async function pages(build: () => any, deadline: number, maximum = 15000,
   });
 }
 
-function hasScheduleCoverage(rows: Row[], query: PlanningDataQuery, now: Date): boolean {
+export function hasScheduleCoverage(rows: Row[], query: PlanningDataQuery, now: Date): boolean {
   const validDate = (value: unknown): value is string => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
     && Number.isFinite(Date.parse(value)) && new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value;
   const fresh = (row: Row) => typeof row.fetched_at === "string" && Number.isFinite(Date.parse(row.fetched_at))

@@ -1,0 +1,35 @@
+{
+  "status": "offline preflight ready for bounded review; paid blocked",
+  "checks": {
+    "python": {
+      "passed": 37,
+      "failed": 0,
+      "evidence": "evidence/python-tests-final.log"
+    },
+    "rules_ts": {
+      "passed": 18,
+      "failed": 0,
+      "evidence": "evidence/rules-tests-final.json"
+    },
+    "scoped_tsc": {
+      "exitCode": 0,
+      "evidence": "evidence/scoped-tsc.log"
+    }
+  },
+  "empiricalEligibleSources": 0,
+  "syntheticFullPostFamilies": 12,
+  "paidRequests": 0,
+  "paidUsd": "0.00",
+  "deniedActions": [],
+  "pendingProviderRequests": [],
+  "uncertainProviderOutcomes": [],
+  "independentReview": "pending parent coordination",
+  "prior64PinsUnchanged": true,
+  "runningProcesses": [],
+  "notes": [
+    "Actual rule bodies executed, all other arm replies synthetic; no empirical ranking.",
+    "Initial 34 Python and 18 rules checks passed; final 37+18 after explicit overflow, report denominators and finite-count guards. Initial rules JSON/fixtures retained.",
+    "No full compiler/build, hosted read/write, acquisition, migration, scheduler, ingestion, credentials, staging or commit.",
+    "Existing unrelated CHEF-REGISTER modification preserved."
+  ]
+}

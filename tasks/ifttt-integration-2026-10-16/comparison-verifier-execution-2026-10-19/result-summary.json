@@ -1,0 +1,151 @@
+{
+  "status": "two_sequential_decisions_completed",
+  "calls": [
+    {
+      "arm": "rules_decisions",
+      "status": "completed",
+      "httpStatus": 200,
+      "requestId": "req_006369a9cc104cafa935cd1ffaab4620",
+      "responseId": "not returned by endpoint",
+      "inputTokens": 595,
+      "outputTokens": 0,
+      "usage": {
+        "input_tokens": 595,
+        "input_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "output_tokens": 0,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 595
+      },
+      "latencyMs": 924,
+      "probability": 0.7,
+      "basePublishedUsageEstimateUsd": "5.95e-05",
+      "settledConservativeChargeCeilingNanoUsd": 65450,
+      "costFormula": "ceil(595*0.10/1000000*1.10*1000000000) nano-USD"
+    },
+    {
+      "arm": "extraction_decisions",
+      "status": "completed",
+      "httpStatus": 200,
+      "requestId": "req_abf85c4cf68040149daacf1b13784933",
+      "responseId": "not returned by endpoint",
+      "inputTokens": 824,
+      "outputTokens": 0,
+      "usage": {
+        "input_tokens": 824,
+        "input_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "output_tokens": 0,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 824
+      },
+      "latencyMs": 156,
+      "probability": 1.0,
+      "basePublishedUsageEstimateUsd": "8.24e-05",
+      "settledConservativeChargeCeilingNanoUsd": 90640,
+      "costFormula": "ceil(824*0.10/1000000*1.10*1000000000) nano-USD"
+    }
+  ],
+  "pairedSupportDifference": 0.3,
+  "differenceMeaning": "Descriptive difference between uncalibrated whole-set-support probabilities on one exposed family; not a quality-effect estimate",
+  "fourArmGrades": {
+    "rules_only": {
+      "tp": 0,
+      "fp": 1,
+      "fn": 2,
+      "held": 1,
+      "accepted": 0,
+      "usable": 0,
+      "holds": [
+        [
+          "unresolved_time"
+        ]
+      ],
+      "producer": "rules"
+    },
+    "rules_decisions": {
+      "tp": 0,
+      "fp": 1,
+      "fn": 2,
+      "held": 1,
+      "accepted": 0,
+      "usable": 0,
+      "holds": [
+        [
+          "unresolved_time",
+          "one_question_verifier_unknown_or_not_all_supported"
+        ]
+      ],
+      "producer": "rules"
+    },
+    "extraction_only": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "held": 2,
+      "accepted": 0,
+      "usable": 0,
+      "holds": [
+        [
+          "unresolved_time"
+        ],
+        [
+          "single_subject_evidence_unproved"
+        ]
+      ],
+      "producer": "retained_luna_plus_explicit_unique_quote_alignment"
+    },
+    "extraction_decisions": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "held": 2,
+      "accepted": 0,
+      "usable": 0,
+      "holds": [
+        [
+          "unresolved_time"
+        ],
+        [
+          "single_subject_evidence_unproved"
+        ]
+      ],
+      "producer": "retained_luna_plus_explicit_unique_quote_alignment"
+    }
+  },
+  "originalRawModelGradePreserved": true,
+  "fieldMasksAndProvisionalLabelsUnchanged": true,
+  "canonicalIdsIgnoredForVerifierSupport": true,
+  "nativeEligible": false,
+  "noHoldsCleared": true,
+  "newVerifierCostCeilingUsd": "0.00015609",
+  "allKnownSuccessfulCallsCeilingUsd": "0.000413078",
+  "originalUnknownReservationUsd": "0.2543948",
+  "aggregateExposureUsd": "0.254807878",
+  "unreservedUsd": "0.265192122",
+  "totalCapUsd": "0.52",
+  "aggregateInvoiceSpend": "unknown; ceilings are not final invoices",
+  "providerCalls": {
+    "decisions": 2,
+    "responses": 0
+  },
+  "automaticRetries": 0,
+  "extraPaidGrading": 0,
+  "originalExtractionAndLedgerHistoryPreserved": true,
+  "sourcePinsMatched": 28,
+  "newOfflineControlsPassed": 13,
+  "manifestSha256": "4165e22e8422ee4d3acbca5043cc0db7367d608eb87e56c747105279bed34e2d",
+  "activeAggregateSha256": "8b9574da4b587e756cb177360b97cb7af6d410e59686d0c5a2953d5bfa20db1a",
+  "activeAggregatePath": "tasks/ifttt-integration-2026-10-16/comparison-retry-execution-2026-10-19/aggregate-budget.sqlite",
+  "snapshot": "aggregate-budget-after.sqlite",
+  "verdict": "inconclusive_single_exposed_provisional_development_family",
+  "remainingWork": "IR applicability-time evidence and explicit antecedent/subject binding; authentic future evaluation before a reliable winner; no further calls authorized"
+}

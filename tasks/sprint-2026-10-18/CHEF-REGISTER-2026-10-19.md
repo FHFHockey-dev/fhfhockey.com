@@ -454,3 +454,120 @@ This was relayed by `local_08a0bf1c` at about 17:23Z. The critical path below is
     - no Fixture commits in the real repo
   - Vercel pre-check: 4/4 previews disabled, production branch `master`.
   - The expected-builds check and smoke test are pending.
+- 18:17–18:19Z: ⚠️ **Unplanned builds from the R5 push.** Expected 1 web build plus 3 CANCELED. Observed:
+  - web `dpl_AZgojz5m1YpJsrUJ4QbzTL8u2abH`: building
+  - `functions-fhfhockey` `dpl_GEC9jNekJd1LC2yJ3BWHhJCSsr4G`: **READY**, i.e. built
+  - `cms-fhfhockey` `dpl_GWCxaHu7PkSgP4v7452Unc3UsD7d`: **building**
+  - `fhfhockey.com`: CANCELED
+  - Build logs (read-only): both ran the `ignoreCommand` and went straight to `vercel build`. The command's else-branch `exit 1` fires when `VERCEL_GIT_PREVIOUS_SHA` is empty or `git cat-file -e` can't find it. Most likely Vercel's previous SHA for these projects is their last READY deployment, which is old because R2–R4 were all ignored, and it fell outside the shallow clone after today's four releases. Not proven.
+  - All 112 R5 files are under `web/`, so neither project needed to build.
+  - **Proposed fix, not applied:** in `cms/vercel.json` and `functions/vercel.json`, when the previous SHA isn't resolvable, fall back to `git fetch --deepen=50` once, or to `git diff --quiet HEAD^ HEAD ./`, instead of `exit 1`. This is a repo change, so it needs TJ.
+  - This push's READY builds reset the projects' previous SHA to `bb21d5942`, so the next release should compare cleanly.
+- 18:20:05Z: ✅ **R5 live.** Web `dpl_AZgojz5m1YpJsrUJ4QbzTL8u2abH` READY and aliased. Rollback target: R4 `dpl_6iWwUALM…`.
+  - Final deployment set: web READY, **functions READY (unplanned), cms READY (unplanned)**, fhfhockey.com CANCELED.
+  - Smoke test (3 read-only GETs):
+    - `/` 200
+    - `/api/v1/start-chart?date=2026-10-19` 200: run `8a3bb848`, `same_day`, 158 players
+    - `/api/v1/forge/players?date=2026-10-19` 200: the same run, `same_day`
+- ~18:25Z: **octoberBranch R5 sync** (requested by `local_08a0bf1c`; the push waits for TJ).
+  - Local merge `d4c7a8229`, with parents `5ae65fc13` (TJ's reconciliation) and `bb21d5942`.
+  - Tree = the octoberBranch tree plus 2 R5-only files: `web/vercel.json` (new schedule) and `projection-materialization-auth.test.ts` (off-season regex; the branch's own version failed 4 cases).
+  - The other 22 differing R5 paths keep octoberBranch's superset versions, because R5 hand-ports are subsets.
+  - Checks: auth test plus `combinedCronInventory`, 48/48 pass. Local branch is ahead of origin by 2, not pushed.
+- 18:21:53Z: **octoberBranch pushed** by `local_08a0bf1c` with TJ's approval ("Let's push, merge, sync - whatever needs to be done to proceed."): `5ae65fc13..d4c7a8229`, a fast-forward.
+  - Pre-check: 4/4 previews disabled.
+  - That session is running the no-deployment check.
+  - `bb21d5942` is an ancestor of octoberBranch.
+  - Heads-up: TJ is starting IFTTT parsing and assignment work in this checkout. The IFTTT frozen-source snapshots in `5ae65fc13` are his. Chef's sessions stay off IFTTT files.
+- ~18:40Z: **FORGE daily bridge for RSO** (TJ-approved interim; built by `local_08a0bf1c`; uncommitted, no frozen files). **Owned by that session until it reports done.** Chef's sessions stay off these files:
+  - new: `lib/rosterScheduleData/forgeDailyBridge.ts`, `lib/rosterScheduleOptimizer/lineupGaps.ts` and `components/RosterScheduleOptimizer/OptimizeLineup.tsx`, plus their tests
+  - edited: `lib/rosterScheduleData/planning.ts` (opt-in `forgeDailyBridge`; legacy source only; env `RSO_FORGE_DAILY_BRIDGE=off`), `pages/api/v1/roster-schedule-optimizer/data.ts`, `lib/integrations/yahoo/rosterPlanning.ts`, `RosterScheduleOptimizer.tsx` and its scss
+  - R6 S-1 overlap: S-1 also edits `planning.ts` and `data.ts`, so its overlay must be rebased on the bridge hunk. Native activation turns the bridge off.
+- ~18:45Z: **File claim** by `resume-forge-projection` (`local_9ebe4f4f`), for a per-game resumable FORGE v2 projection run. Chef confirmed no conflict; all files were clean.
+  - Files: `run-lifecycle-queries.ts` and test, `run-forge-projections.ts`, `run-forge-projections.types.ts`, `run-projection-v2.ts` and test, `run-rolling-forge-pipeline.ts` and test.
+  - Constraints sent: keep the A-01 207 contract, the off-season export shape, and full-slate semantics for the readers.
+- ~19:10Z: **Resumable FORGE v2 projection run, done** (`local_9ebe4f4f`, uncommitted). Release list: 8 web files (`run-lifecycle-queries.ts`, `run-forge-projections.ts` and types, `run-projection-v2.ts`, `run-rolling-forge-pipeline.ts`, plus the new resume test and 2 route tests).
+  - Chef re-ran 5 files (resume, run-projection-v2, rolling pipeline, materialization-auth, forge/players): 57/57 pass. The session reports tsc clean and ESLint clean.
+  - Behaviour: one `run_id` per date with per-game resume, lease and progress in `forge_runs.metrics.resume`. A timeout gives 207 `partial` with `resume.request`, which the audit records as "continued". A resumed run stays `full_slate`. A paused run stays `running`, which readers ignore.
+  - **Limit:** resume applies only when Starter Board capture and compute are off. E-6 shows `STARTER_BOARD_COMPUTE_ENABLED` exists in production (plain) with an unknown value, so TJ should check it before relying on resume.
+  - Release target: the next release (R6), not shipped.
+- ~19:30Z: **More RSO ownership for `local_08a0bf1c`** (TJ's RSO visual pass, uncommitted). Chef's sessions stay off these files:
+  - all of `web/components/RosterScheduleOptimizer/`: new `SlotWeekGrid.*`; edited `CandidateBrowser`, `CandidateCard` and its scss, `RosterPlayerRow`, `RosterContribution`, `TeamScheduleContext`, `OptimizeLineup` and their tests
+  - `__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx`
+  - the earlier bridge files are still theirs
+  - The bridge now adds season-rate secondary stats and IFTTT goalie news (via `loadDailyBoardEvidence`).
+- That session reports a **FORGE backfill for 10-13 to 10-18** via localhost (TJ-approved) with all 32 teams covered. Chef has not verified it.
+- **Fallback task:** a one-time task at 2026-10-20 11:15Z runs 10-20 through localhost only if the cron's projection hasn't succeeded. That session owns it. With R5 live, the 10:05–10:55Z cron chain should run first.
+- ~19:40Z: **File claim** by `daily-rso-schedule-refre` (`local_e4329c76`, started by `local_08a0bf1c`), for the B2 daily RSO schedule refresh.
+  - Files: new `pages/api/v1/db/cron/update-roster-optimizer-schedule-daily.ts` and its test; edit `lib/rosterScheduleData/planningInputs.ts` (exports `hasScheduleCoverage`).
+  - `vercel.json` stays a proposal; Chef asked for a check against the R5 schedule's collisions.
+  - The unreleased V2 route `refresh-roster-optimizer-schedule.ts` depends on unapplied DDL.
+- ~19:55Z: **FORGE triage** of 2 findings from `local_08a0bf1c`. Both are confirmed; neither is fixed.
+  1. **Inverted sign, confirmed.** In `lib/projections/calculators/team-context-adjustments.ts:85`, `teamGoalsForPctAdjustment = (teamOffenseEdge*0.3 − opponentDefenseEdge*0.24)·w`, while the mirror `opponentGoalsForPctAdjustment` adds `defenseLiabilityEdge`. So a leaky opponent defence (high xGA) lowers our expected goals.
+     - The only production consumer is `lib/projections/stages/goalie-stage.ts:356`, the goalie win context.
+     - Bounded effect: ≤0.24×0.2 = 4.8% × `sampleWeight`, clamped by `TEAM_XG_WIN_CONTEXT_MAX_PCT`.
+     - Fix: `+ opponentDefenseEdge*0.24`, plus a test. This is a model-behaviour change, so the release needs TJ.
+  2. **Ambiguous priors, confirmed.** `nhl_team_data` on 2026-10-19 has 96 rows (32 teams × 3), and no column tells them apart. Implied GP per row: about 70, about 82, and the current 6–10 (average implied 53).
+     - `fetchTeamStrengthPrior` (`team-context-queries.ts` ~198) does `.lte(date).order(date desc).limit(1)`, so it takes an arbitrary row. **Today's run `8a3bb848` may have used prior-season-scale priors** for strength context.
+     - `game-predictions/featureSources.ts` also reads the table.
+     - Only 10-19 has rows. No pg_cron job and no writer in web, functions or webhooks code; the writer is unknown (an external or one-off run today?).
+     - Fix: pick the season-to-date row deterministically (`xga/xga_per_game ≈ games_played`, the way the bridge does) or fix the writer, and find the writer.
+- ~20:15Z: **FORGE team-context fixes done** (`fix-forge-team-strength`, `local_a05ab423`, uncommitted; note in `tasks/artifacts/forge-team-context-fix-2026-10-19/NOTE.md`).
+  - Sign fixed in `team-context-adjustments.ts`, with a test.
+  - `fetchTeamStrengthPrior` picks the season-to-date row deterministically (implied GP within 1.5 of `games_played`, else null, meaning baseline) and records `rowSelection`.
+  - Vitest: 71 files, 1,402 tests pass. ESLint clean.
+  - **Root cause:** `nhl_team_data` is a VIEW (baseline migration :14118). It joins `nst_team_stats` on team only, with no season filter, so there is one row per stored NST season. It also only shows the global max standings date, so earlier-date lookups use post-date data.
+  - Proper fix: a view migration that filters to the current season. That's DDL, so it needs TJ.
+  - `featureSources.ts` doesn't query the table.
+  - Overlaps:
+    - `run-forge-projections.types.ts` is shared with `resume-forge-projection`'s uncommitted edits, so the two must be released together.
+    - The bridge's comment at ~176 is now stale (owner `local_08a0bf1c`).
+  - Release needs TJ (model behaviour).
+- ~20:30Z: **Migration 87 registered** (pending, NOT applied): `20261019213000_opponent_skater_allowed_by_position.sql`, drafted by `local_08a0bf1c` at TJ's request.
+  - Contents: a materialized view over WGO and games, plus `fhfh_internal.register_opponent_allowed_refresh_cron()`, which the migration doesn't call.
+  - **Order correction:** it takes **87**, not 90, because authority orders must be contiguous (order = index+1) and IFTTT's SQL6–8 aren't in the tree. **IFTTT moves to 88–90**, superseding the earlier "87–89" note.
+  - Authority row added (sha256 `9ccfe837…`). Baseline test counts now total 87 and pending 3; 21/21 pass. The summary line is updated.
+  - **Cron collision check:** `40 9 * * *` coincides with pg_cron `update-stats-job` (`*/20`), `player-forecasts-queue-drain` (`*/5`) and vercel `replay-player-aliases` (`*/10`). **Recommend `42 9 * * *`**, which is free. The register function's file still says `'40 9 * * *'`; its owner should change it.
+  - Apply and scheduling are separate TJ approvals.
+- BenchDays ownership noted: `components/RosterScheduleOptimizer/BenchDays.*` belongs to `local_08a0bf1c`.
+- ~20:40Z: migration 87 updated by its owner to '42 9 * * *'; authority sha256 refreshed to `70c8fe8c…` (verified against the file); baseline test 21/21. The stale bridge comment has been removed by its owner.
+- ~20:55Z: **Migration 87 applied** (by `local_08a0bf1c` with TJ's approval) → ledger `20261019211444 opponent_skater_allowed_by_position`.
+  - Chef read-only readback: it is the only row after `172842`; the view has 128 rows; SELECT for service_role only (anon and authenticated false); cron `opponent-skater-allowed-refresh` active at `42 9 * * *`.
+  - Local alignment: file renamed `20261019211444_opponent_skater_allowed_by_position.sql` (still last, so order 87 is unchanged). Authority row set to `applied` with the receipt; sha unchanged at `70c8fe8c`.
+  - Baseline counts are now applied 57 / unknown 28 / pending 2; 21/21 pass. The summary line is updated.
+  - IFTTT SQL6–8 take orders 88–90.
+- ~21:45Z: **R6 planned** (requested by `local_08a0bf1c` after TJ's "Send it" on `67e50ee4e`/`317375364`). Plan: `tasks/artifacts/release-r6-2026-10-19/PLAN.md`.
+  - **R6a (ready, awaiting TJ go):** candidate `3755308fa` on `bb21d5942`, local ref `chef/release-r6a-candidate`, 12 files (per-game resume + team-context fixes). Gate: tsc pass; focused 134/134; eslint clean; full Vitest 16 failed = pristine master's identical 16 (8317 vs 8301 passed). One candidate-only edit: the resume test uses master's `buildForgeInputProvenance()`. Expect 1 web build + 3 CANCELED.
+  - **R6b (not shippable tonight):** RSO commits need a 62-file closure (11 frozen native files, S-1). The octoberBranch `consumerRevisionAdmission` rejects runs without `external_fantasy_input_contract`, and production Start Chart imports it while no production run carries the label → Start Chart would admit nothing. With master's contracts, 23 RSO native-boundary tests and tsc fail. Recommended: ship with the FORGE v2/native rollout after 10-20 17:00Z, writer first (label), then readers/RSO; schedule cron line goes there with TJ's approval.
+  - No pushes, deploys or production requests. Vercel env checked by name only (no native head id in production).
+- ~21:41Z: **R6a released** (TJ, quoted: "Yes: push R6a candidate 3755308fa to master with the Vercel check, smoke test at most 3 GETs, then sync octoberBranch."; also relayed by `local_08a0bf1c`: "Send it (Recommended)").
+  - Pre-push: all 4 projects previewsDisabled=true, production branch master; no prior deployment of `3755308fa`; master was `bb21d5942`.
+  - Push `bb21d5942..3755308fa` at 21:41:13Z. Vercel: `dpl_6oKckqUeSncboXed24qbiNte8SJ4` fhfhockey **READY**; cms, functions, fhfhockey.com **CANCELED** (as expected; no unplanned builds).
+  - Smoke (3 sequential GETs): `/` 200, `/start-chart` 200, `/api/v1/forge/players?date=2026-10-19` 200.
+  - Sync: local merge commit `b21242f1c` (parents `317375364`, `3755308fa`) commits the 12 resume/team-context worktree files (octoberBranch keeps its label hunks). Built via temp index; worktree untouched. **Not pushed**: octoberBranch push waits for TJ.
+  - RSO: TJ chose "Port onto master (Recommended)"; `local_08a0bf1c` builds R6c on master `3755308fa` for Chef's gates.
+- ~21:59Z: **octoberBranch sync pushed** (TJ, quoted: "Yes: push octoberBranch (b21242f1c) with the Vercel check first, then confirm no deployment started.").
+  - Pre-push: 4 projects previewsDisabled=true, production branch master; remote octoberBranch was `317375364`.
+  - Local octoberBranch had moved to `ed949622d` (RSO session: "collapsible bench days, injured-player and drop fixes, goalie win estimate", 7 RSO files). Chef pushed exactly the approved SHA: `317375364..b21242f1c`. `ed949622d` stays local for its owner.
+  - Post-check 22:00Z: no new deployments (latest still R6a's 4 entries).
+- ~21:59Z: **`ed949622d` pushed by `local_08a0bf1c`** (TJ's approval, relayed: "Send it: commit the 7 RSO files … and push it together with the Chef's sync commit, with the usual Vercel check"). origin/octoberBranch `b21242f1c..ed949622d` (fast-forward); that session saw no new deployments at 22:01Z. Still uncommitted: Chef's migration-87 ledger files (authority JSON, supportedBaselineMigration.test.ts, the .sql, summary, register), the cron session's route/test/planningInputs export.
+- ~22:25Z: **R6c gate passed** (candidate `707f60e83` from `local_08a0bf1c`, RSO legacy+bridge port onto `3755308fa`, 85 files). tsc 0; eslint 0 errors; CSS pure ok; focused 887/887; full 10 failed vs master's 16, the only new one being the TeamStandingsChart load flake (passes alone). The 9 bridge tables exist with service_role SELECT. Details in `release-r6-2026-10-19/PLAN.md`. Awaiting TJ's go.
+- ~22:30Z: **R6c released** (TJ, quoted: "Yes: push R6c candidate 707f60e83 to master with the Vercel check, smoke test at most 3 GETs (RSO page, RSO data route, start-chart), then sync octoberBranch.").
+  - Pre-push: 4 projects previewsDisabled=true, production branch master; master was `3755308fa`; no prior deployment of `707f60e83`.
+  - Push `3755308fa..707f60e83` at 22:30:15Z. Vercel: `dpl_AoAH6wLNAHnb5WncvTviLrrxZrkP` fhfhockey **READY**; cms, functions, fhfhockey.com **CANCELED**.
+  - Smoke (3 sequential GETs): `/roster-schedule-optimizer` 200; RSO data `seasonId=20262027, 2026-10-19..25` 200 with 1,253 forecasts; `/start-chart` 200.
+  - Sync: local merge `8a6ac8adc` (parents `ed949622d`, `707f60e83`), tree identical to `ed949622d` (octoberBranch keeps its 8 port-edit file versions). **Not pushed**; waits for TJ.
+- ~22:40Z: **octoberBranch R6c sync pushed** (TJ, quoted: "Yes: push octoberBranch (8a6ac8adc) with the Vercel check first, then confirm no deployment started."). Pre-push: 4 projects previewsDisabled=true, production branch master; remote was `ed949622d`. Push `ed949622d..8a6ac8adc` at 22:39:57Z. Post-check 22:41Z: no new deployments (latest is R6c's 4 entries).
+- ~00:05Z (10-20): **R6d gate passed**: candidate `ccfe5e57b` on master `707f60e83`, 6 files (`a855c9fe6` lineup lock, `79d3b792f` bridge PP, `5c3be7a0f` rolling season ported). tsc 0, eslint clean, focused 1141/1141, full 9 failed vs master's 10 (`related.server` is a node_modules artifact that fails on master too). Awaiting TJ's SHA confirmation; peer relayed TJ's "I want it to keep moving, whatever that takes".
+- ~00:04Z (10-20): **R6d released** (TJ in this session, quoted: "Yes: push R6d candidate ccfe5e57b to master, check deployments, smoke test (/, /start-chart, /roster-schedule-optimizer, its data route), message local_c39098ae to start the approved recompute, and sync octoberBranch locally."; Chef held the peer-relayed approval until TJ confirmed here).
+  - Pre-push: 4 projects previewsDisabled=true, production branch master; master was `707f60e83`; no prior deployment of `ccfe5e57b`.
+  - Push `707f60e83..ccfe5e57b` at 00:04:12Z. Vercel: `dpl_DVxwCFoKPghzA1XyjNXS17HXq2Z1` fhfhockey **READY**; cms, functions, fhfhockey.com **CANCELED**.
+  - Smoke (4 sequential GETs): `/`, `/start-chart`, `/roster-schedule-optimizer` 200; RSO data (20262027, 10-20..10-26) 200, 1,283 forecasts.
+  - `local_c39098ae` told to start TJ's bounded rolling recompute (its approval; 214 players, dry-run 3 first, never truncate).
+  - Sync: local merge `605879a1b06852a4e7528e8d07d16aa29c274b10` (parents `5c3be7a0f`, `ccfe5e57b`), tree unchanged. **Not pushed**; `5c3be7a0f` itself is also unpushed. Both wait for TJ.
+- ~00:16Z (10-20): **octoberBranch R6d sync pushed** (TJ, quoted: "Yes: push octoberBranch (605879a1b) with the Vercel check first, then confirm no deployment started."). Pre-push: 4 projects previewsDisabled=true, production branch master; remote was `79d3b792f`. Push `79d3b792f..605879a1b` at 00:16:21Z, carrying `5c3be7a0f` and the sync merge. Post-check 00:17Z: no new deployments (latest are R6d's 4 entries).
+- ~00:35Z (10-20): **R6e held: superseded.** Candidate `2a74489af` (compact bridge wire, port of `0654fafc4`, 6 files on `ccfe5e57b`) is not pushed and wasn't put to TJ.
+  - Chef review: the bridge budget now counts compact bytes (≈437 B per row against 1,542 B expanded, from the R6d smoke body), so up to ≈5,700 rows ≈ 8.8 MB once expanded. Account saves PUT the expanded snapshot, and Vercel's 4.5 MB request limit applies.
+  - The owner (`local_08a0bf1c`) agreed and added two more limits: the saved-workspace GET response and the ~5 MB localStorage copy. A fix will compact rows at every snapshot boundary and keep a cap on expanded bytes; a new candidate will follow.
+  - Production stays on R6d: its 2.5 MB expanded budget trims later-week games with a visible limitation.
+  - R6e gate, for the record (passed, but held for the size issue): tsc 0; eslint 0 errors and 6 known warnings; focused 79 files 1261/1261; full 9 failed / 8779 passed, the same failures as R6d.

@@ -1,0 +1,6 @@
+{
+  "maximum_calls": 1,
+  "authorization_sha256": "3d65c2f1ac7b50628e54d431c422f9df6afff57fe25d90dff02afd132973bbc8",
+  "hypothesis_sha256": "bb9706a709e74fbb8eca26fea8d02d879e3f97371b2c7ff0859b129d2c32d2db",
+  "automatic_retry": false
+}

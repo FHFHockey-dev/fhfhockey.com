@@ -1,0 +1,68 @@
+diff --git a/web/lib/forecast-diagnostics/loader.test.ts b/web/lib/forecast-diagnostics/loader.test.ts
+index 68542af65..73c892451 100644
+--- a/web/lib/forecast-diagnostics/loader.test.ts
++++ b/web/lib/forecast-diagnostics/loader.test.ts
+@@ -1,5 +1,8 @@
+ // @vitest-environment node
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
++import { tmpdir } from "node:os";
++import { join } from "node:path";
+ 
+ const context = vi.hoisted(() => ({ client: {} as { from: (table: string) => unknown }, role: "admin", userError: false }));
+ vi.mock("lib/supabase/server", () => ({ default: context.client }));
+@@ -10,6 +13,7 @@ import { forecastDiagnosticsJson, forecastDiagnosticsMarkdown } from "./contract
+ import { projectionInputHash } from "../projections/inputCapture";
+ import { scoreTeamGoals, TEAM_GOALS_FEATURES, TEAM_GOALS_PARAMETERS, TEAM_GOALS_VERSION, type HistoricalGoalGame } from "./pairedInputs";
+ import type { FrozenPair, FrozenPairOutput } from "./frozenPairRunner";
++import * as frozenPairRunner from "./frozenPairRunner";
+ import handler, { forecastDiagnosticsHandler } from "../../pages/api/internal/forecast-diagnostics";
+ import * as loader from "./loader";
+ import { makeSyntheticDiagnosticReport } from "./fixtures";
+@@ -92,6 +96,26 @@ describe("read-only diagnostic evidence loader", () => {
+     const failed = response(); await forecastDiagnosticsHandler(request() as never, failed as never);
+     expect(failed.statusCode).toBe(503); expect(JSON.stringify(failed.body)).not.toContain("/private/missing");
+   });
++  it.each([false, true])("keeps native verification failures unavailable before returning stored reports (systems=%s)", async includeSystems => {
++    const directory = mkdtempSync(join(tmpdir(), "diagnostic-compatibility-"));
++    const packet = { scope: { gameId, cutoffAt } } as FrozenPair;
++    const original = { issuedAt: cutoffAt, inputHash: projectionInputHash(packet), forecastHash: projectionInputHash({}), forecasts: {} };
++    // Isolate the verification failure; packet acceptance is covered by the frozen-runner regressions.
++    vi.spyOn(frozenPairRunner.frozenPairSchema, "parse").mockReturnValue(packet);
++    const verify = vi.spyOn(frozenPairRunner, "frozenPairDiagnosticReport").mockImplementation(() => {
++      throw new Error("Native player accounting differs from serialized inputs");
++    });
++    try {
++      writeFileSync(join(directory, "inputs.json"), JSON.stringify(packet));
++      writeFileSync(join(directory, "original.json"), JSON.stringify(original));
++      writeFileSync(join(directory, "diagnostics.json"), "unvalidated stored report");
++      await expect(loader.loadLocalFrozenPairDiagnostics(directory, { gameId, cutoffAt }, { includeSystems })).rejects.toMatchObject({
++        status: 503,
++        message: "Retained native accounting cannot be validated by this diagnostic runtime; verify using the packet's pinned code version.",
++      });
++      expect(verify).toHaveBeenCalledOnce();
++    } finally { rmSync(directory, { recursive: true }); }
++  });
+   it("requires an explicit canonical game and timezone-qualified cutoff", () => {
+     expect(parseDiagnosticQuery({ gameId: String(gameId), cutoffAt: "2026-01-10T06:45:00-05:00" })).toEqual({ gameId, cutoffAt: "2026-01-10T11:45:00.000Z" });
+     for (const bad of [{ gameId: String(gameId) }, { gameId: [String(gameId)], cutoffAt }, { gameId: "12", cutoffAt }, { gameId: String(gameId), cutoffAt: "2026-01-10T11:45:00" }, { gameId: String(gameId), cutoffAt: "2026-02-30T11:45:00Z" }]) expect(() => parseDiagnosticQuery(bad)).toThrow(DiagnosticReadError);
+diff --git a/web/lib/forecast-diagnostics/loader.ts b/web/lib/forecast-diagnostics/loader.ts
+index 6f1e94948..9240e9d51 100644
+--- a/web/lib/forecast-diagnostics/loader.ts
++++ b/web/lib/forecast-diagnostics/loader.ts
+@@ -51,7 +51,14 @@ export async function loadLocalFrozenPairDiagnostics(directory: string, query: {
+     const original = await readJson("original.json");
+     if (original.inputHash !== projectionInputHash(packet) || original.forecastHash !== projectionInputHash(original.forecasts))
+       throw new Error("Changed original or input packet");
+-    const derived = frozenPairDiagnosticReport(packet, original.forecasts as FrozenPairOutput, original.issuedAt, false);
++    let derived: ForecastDiagnosticsReport;
++    try {
++      derived = frozenPairDiagnosticReport(packet, original.forecasts as FrozenPairOutput, original.issuedAt, false);
++    } catch (error) {
++      if (error instanceof Error && error.message === "Native player accounting differs from serialized inputs")
++        throw new DiagnosticReadError(503, "Retained native accounting cannot be validated by this diagnostic runtime; verify using the packet's pinned code version.");
++      throw error;
++    }
+     const stored = await readJson("diagnostics.json");
+     if (projectionInputHash(stored) !== projectionInputHash(derived)) throw new Error("Diagnostic report differs from preserved forecasts");
+     return options.includeSystems ? { ...stored, systems: retainedPairSystemDiagnostics(packet, original.forecasts, derived) } : stored;

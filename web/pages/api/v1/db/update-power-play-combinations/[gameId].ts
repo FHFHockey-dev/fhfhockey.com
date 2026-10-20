@@ -56,7 +56,7 @@ async function fetchTOIRawDataForPowerPlayCombinations(
   };
 }
 
-export default withCronJobAudit(adminOnly(async (req, res) => {
+export default adminOnly(withCronJobAudit(async (req, res) => {
   const { supabase } = req;
   const gameId = Number(req.query.gameId);
   if (!gameId) {

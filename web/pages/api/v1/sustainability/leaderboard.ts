@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import supabase from "lib/supabase";
+import supabase from "lib/supabase/public-client";
 import type { Database } from "lib/supabase/database-generated.types";
 import {
   getSustainabilityLeaderboardPayload,

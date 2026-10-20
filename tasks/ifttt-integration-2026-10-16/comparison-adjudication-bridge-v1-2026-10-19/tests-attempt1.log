@@ -1,0 +1,19 @@
+test_all_five_reviewer_counterexamples_remain_diagnostic_not_fact (test_bridge.AdjudicationTests.test_all_five_reviewer_counterexamples_remain_diagnostic_not_fact) ... ok
+test_neutral_sheet_preserves_assertions_and_hides_arm_identifiers (test_bridge.AdjudicationTests.test_neutral_sheet_preserves_assertions_and_hides_arm_identifiers) ... ok
+test_perfect_lexical_duration_or_role_does_not_authorize_a_winner (test_bridge.AdjudicationTests.test_perfect_lexical_duration_or_role_does_not_authorize_a_winner) ... ok
+test_verifier_columns_do_not_claim_extraction_improved (test_bridge.AdjudicationTests.test_verifier_columns_do_not_claim_extraction_improved) ... ok
+test_canonical_path_rejects_fake_or_absent_authority_without_change (test_bridge.BridgeTests.test_canonical_path_rejects_fake_or_absent_authority_without_change) ... ok
+test_changed_wire_template_or_producer_set_fails_before_key_or_send (test_bridge.BridgeTests.test_changed_wire_template_or_producer_set_fails_before_key_or_send) ... ok
+test_competing_owners_cannot_reserve_the_same_canonical_stage (test_bridge.BridgeTests.test_competing_owners_cannot_reserve_the_same_canonical_stage) ... ok
+test_conservative_budget_stop_is_before_another_send (test_bridge.BridgeTests.test_conservative_budget_stop_is_before_another_send) ... ok
+test_fake_full_thirty_calls_use_canonical_attempts_not_a_side_allowance (test_bridge.BridgeTests.test_fake_full_thirty_calls_use_canonical_attempts_not_a_side_allowance) ... ok
+test_lost_reply_retains_reservation_and_restart_never_resends (test_bridge.BridgeTests.test_lost_reply_retains_reservation_and_restart_never_resends) ... ok
+test_missing_or_bound_usage_stops_without_releasing_full_reservation (test_bridge.BridgeTests.test_missing_or_bound_usage_stops_without_releasing_full_reservation) ... ok
+test_priced_malformed_truncated_and_refused_outputs_stop_atomically (test_bridge.BridgeTests.test_priced_malformed_truncated_and_refused_outputs_stop_atomically) ... ok
+test_settlement_ack_loss_keeps_committed_response_and_does_not_resend (test_bridge.BridgeTests.test_settlement_ack_loss_keeps_committed_response_and_does_not_resend) ... ok
+test_transport_reuses_fixed_tls_host_limits_redaction_without_network (test_bridge.BridgeTests.test_transport_reuses_fixed_tls_host_limits_redaction_without_network) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.409s
+
+OK
