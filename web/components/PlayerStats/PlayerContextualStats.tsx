@@ -97,9 +97,12 @@ export function PlayerContextualStats({
               ? "neutral"
               : "negative",
       description:
-        availability.possible !== null && availability.possible > 0
+        (availability.possible !== null && availability.possible > 0
           ? `${availability.played} of ${availability.possible} possible games${availability.missed ? ` (${availability.missed} missed)` : ""}`
-          : `${availability.played} games played (schedule unavailable)`
+          : `${availability.played} games played (schedule unavailable)`) +
+        (availability.unconfirmed
+          ? ` · ${availability.unconfirmed} awaiting box score`
+          : "")
     });
 
     if (isGoalie) {

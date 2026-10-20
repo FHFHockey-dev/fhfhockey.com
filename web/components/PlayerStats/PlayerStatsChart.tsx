@@ -12,10 +12,19 @@ import {
   Filler
 } from "chart.js";
 import styles from "./PlayerStats.module.scss";
-import { formatPlayerStat, parseLocalDate } from "./playerStatsContract";
+import {
+  CHART_UNIT_META,
+  ChartUnit,
+  formatMinutes,
+  formatPlayerStat,
+  groupStatsByUnit,
+  parseLocalDate,
+  toChartValue
+} from "./playerStatsContract";
 import {
   PlayerStatsChartProps,
   CHART_COLORS,
+  GameLogEntry,
   STAT_DISPLAY_NAMES
 } from "./types";
 
@@ -30,98 +39,88 @@ ChartJS.register(
   Filler
 );
 
-export function PlayerStatsChart({
-  gameLog,
-  playoffGameLog,
-  selectedStats,
-  showRollingAverage = false,
-  title = "Performance Trends",
-  showPlayoffData = false
-}: PlayerStatsChartProps) {
-  const chartData = useMemo(() => {
-    const log = showPlayoffData && playoffGameLog ? playoffGameLog : gameLog;
+const FONT = "'Roboto Condensed', sans-serif";
+const GRID_COLOR = "rgba(156, 163, 175, 0.15)";
+const TICK_COLOR = "#9ca3af";
 
-    if (log.length === 0) return null;
+/** Axis tick and tooltip text in the panel's unit. */
+const formatForUnit = (unit: ChartUnit, value: number, stat: string) => {
+  if (unit === "toi") return formatMinutes(value);
+  if (unit === "percent") return `${value.toFixed(1)}%`;
+  return formatPlayerStat(value, stat);
+};
 
-    // Sort games by date
-    const sortedGames = [...log].sort(
-      (a, b) => String(a.date).localeCompare(String(b.date))
-    );
+const tickForUnit = (unit: ChartUnit, value: number) => {
+  if (unit === "toi") return formatMinutes(value);
+  if (unit === "percent") return `${value}%`;
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+};
 
-    const labels = sortedGames.map((game) =>
-      parseLocalDate(game.date).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric"
-      })
-    );
+type UnitChartProps = {
+  unit: ChartUnit;
+  stats: string[];
+  colorFor: (stat: string) => string;
+  games: GameLogEntry[];
+  labels: string[];
+  showRollingAverage: boolean;
+};
 
-    const datasets = selectedStats
-      .map((stat, index) => {
+function UnitChart({
+  unit,
+  stats,
+  colorFor,
+  games,
+  labels,
+  showRollingAverage
+}: UnitChartProps) {
+  const meta = CHART_UNIT_META[unit];
+
+  const data = useMemo(() => {
+    const datasets = stats.flatMap((stat) => {
+      const color = colorFor(stat);
+      const label = STAT_DISPLAY_NAMES[stat] || stat;
+      const dataset = {
+        label,
+        statKey: stat,
         // Missing values stay gaps rather than plotting as zero.
-        const data = sortedGames.map((game) =>
-          game[stat] === null || game[stat] === undefined
-            ? null
-            : Number(game[stat])
-        );
-        const color = CHART_COLORS[index % CHART_COLORS.length];
-
-        const dataset = {
-          label: STAT_DISPLAY_NAMES[stat] || stat,
-          data,
-          borderColor: color,
-          backgroundColor: `${color}15`,
-          borderWidth: 2.5,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          pointBackgroundColor: color,
-          pointBorderColor: "#1a1d21",
-          pointBorderWidth: 2,
-          pointHoverBackgroundColor: color,
-          pointHoverBorderColor: "#ffffff",
-          pointHoverBorderWidth: 2,
-          tension: 0.15,
-          fill: false
-        };
-
-        // Add rolling average if requested and available
-        if (
-          showRollingAverage &&
-          gameLog.some((game) => game[`${stat}_5game_avg`] !== undefined)
-        ) {
-          const rollingData = sortedGames.map(
-            (game) => Number(game[`${stat}_5game_avg`]) || 0
-          );
-          // Return both main dataset and rolling average
-          return [
-            dataset,
-            {
-              ...dataset,
-              label: `${STAT_DISPLAY_NAMES[stat] || stat} (5-game avg)`,
-              data: rollingData,
-              borderColor: `${color}80`,
-              backgroundColor: `${color}08`,
-              borderDash: [5, 5],
-              pointRadius: 2,
-              pointHoverRadius: 4
-            }
-          ];
+        data: games.map((game) => toChartValue(game[stat], stat)),
+        borderColor: color,
+        backgroundColor: `${color}15`,
+        borderWidth: 2.5,
+        pointRadius: 3,
+        pointHoverRadius: 6,
+        pointBackgroundColor: color,
+        pointBorderColor: "#1a1d21",
+        pointBorderWidth: 2,
+        pointHoverBackgroundColor: color,
+        pointHoverBorderColor: "#ffffff",
+        pointHoverBorderWidth: 2,
+        tension: 0.15,
+        fill: false
+      };
+      const rollingKey = `${stat}_5game_avg`;
+      if (
+        !showRollingAverage ||
+        !games.some((game) => game[rollingKey] !== undefined)
+      ) {
+        return [dataset];
+      }
+      return [
+        dataset,
+        {
+          ...dataset,
+          label: `${label} (5-game avg)`,
+          data: games.map((game) => toChartValue(game[rollingKey], stat)),
+          borderColor: `${color}80`,
+          backgroundColor: `${color}08`,
+          borderDash: [5, 5],
+          pointRadius: 2,
+          pointHoverRadius: 4
         }
-
-        return dataset;
-      })
-      .flat();
-
-    return {
-      labels,
-      datasets
-    };
-  }, [
-    gameLog,
-    playoffGameLog,
-    selectedStats,
-    showRollingAverage,
-    showPlayoffData
-  ]);
+      ];
+    });
+    return { labels, datasets };
+  }, [stats, colorFor, games, labels, showRollingAverage]);
 
   const options = useMemo(
     () => ({
@@ -132,33 +131,16 @@ export function PlayerStatsChart({
           position: "top" as const,
           align: "start" as const,
           labels: {
-            boxWidth: 14,
-            boxHeight: 14,
-            padding: 16,
+            boxWidth: 10,
+            boxHeight: 10,
+            padding: 12,
             usePointStyle: true,
             pointStyle: "circle",
-            font: {
-              size: 13,
-              family: "'Roboto Condensed', sans-serif",
-              weight: 500
-            },
-            color: "#cccccc",
-            generateLabels: (chart: any) => {
-              const original =
-                ChartJS.defaults.plugins.legend.labels.generateLabels;
-              const labels = original(chart);
-
-              return labels.map((label: any) => ({
-                ...label,
-                pointStyle: "circle",
-                radius: 6
-              }));
-            }
+            font: { size: 12, family: FONT, weight: 500 },
+            color: "#cccccc"
           }
         },
-        title: {
-          display: false
-        },
+        title: { display: false },
         tooltip: {
           mode: "index" as const,
           intersect: false,
@@ -168,120 +150,124 @@ export function PlayerStatsChart({
           borderColor: "#404040",
           borderWidth: 1,
           cornerRadius: 8,
-          padding: 16,
-          titleFont: {
-            size: 14,
-            weight: 600,
-            family: "'Roboto Condensed', sans-serif"
-          },
-          bodyFont: {
-            size: 13,
-            family: "'Roboto Condensed', sans-serif"
-          },
-          displayColors: true,
-          boxWidth: 12,
-          boxHeight: 12,
-          usePointStyle: true,
+          padding: 12,
+          titleFont: { size: 13, weight: 600, family: FONT },
+          bodyFont: { size: 12, family: FONT },
           callbacks: {
-            title: (context: any) => {
-              if (context.length === 0) return "";
-              const gameIndex = context[0].dataIndex;
-              const log =
-                showPlayoffData && playoffGameLog ? playoffGameLog : gameLog;
-              const sortedGames = [...log].sort(
-                (a, b) => String(a.date).localeCompare(String(b.date))
-              );
-              const game = sortedGames[gameIndex];
-              return parseLocalDate(game.date).toLocaleDateString("en-US", {
-                weekday: "short",
-                month: "short",
-                day: "numeric",
-                year: "numeric"
-              });
-            },
+            title: (context: any) =>
+              context.length === 0
+                ? ""
+                : parseLocalDate(games[context[0].dataIndex].date).toLocaleDateString(
+                    "en-US",
+                    { weekday: "short", month: "short", day: "numeric", year: "numeric" }
+                  ),
             label: (context: any) => {
-              const label = context.dataset.label || "";
               const value = context.parsed.y;
-
-              // Extract the stat name from the dataset label to get proper formatting
-              const statName =
-                selectedStats.find(
-                  (stat) =>
-                    (STAT_DISPLAY_NAMES[stat] || stat) ===
-                    label.replace(" (5-game avg)", "")
-                ) || label;
-
-              const formattedValue = formatPlayerStat(value, statName);
-              return `${label}: ${formattedValue}`;
-            },
-            labelColor: (context: any) => ({
-              borderColor: context.dataset.borderColor,
-              backgroundColor: context.dataset.borderColor,
-              borderWidth: 2,
-              borderRadius: 2
-            })
+              if (value === null || value === undefined) return "";
+              return `${context.dataset.label}: ${formatForUnit(
+                unit,
+                value,
+                context.dataset.statKey
+              )}`;
+            }
           }
         }
       },
       scales: {
         x: {
-          grid: {
-            color: "rgba(156, 163, 175, 0.15)",
-            drawBorder: false
-          },
+          grid: { color: GRID_COLOR, drawBorder: false },
           ticks: {
-            maxTicksLimit: 15,
-            font: {
-              size: 11,
-              family: "'Roboto Condensed', sans-serif"
-            },
-            color: "#9ca3af",
-            padding: 8
+            maxTicksLimit: 12,
+            font: { size: 11, family: FONT },
+            color: TICK_COLOR,
+            padding: 6
           },
-          border: {
-            display: false
-          }
+          border: { display: false }
         },
         y: {
           beginAtZero: true,
-          grid: {
-            color: "rgba(156, 163, 175, 0.15)",
-            drawBorder: false
+          ...(unit === "percent" ? { min: 0, max: 100 } : {}),
+          title: {
+            display: true,
+            text: meta.axis,
+            color: TICK_COLOR,
+            font: { size: 11, family: FONT }
           },
+          grid: { color: GRID_COLOR, drawBorder: false },
           ticks: {
-            font: {
-              size: 11,
-              family: "'Roboto Condensed', sans-serif"
-            },
-            color: "#9ca3af",
-            padding: 12,
-            callback: function (value: any) {
-              return typeof value === "number" ? value.toFixed(1) : value;
-            }
+            font: { size: 11, family: FONT },
+            color: TICK_COLOR,
+            padding: 8,
+            callback: (value: any) =>
+              typeof value === "number" ? tickForUnit(unit, value) : value
           },
-          border: {
-            display: false
-          }
+          border: { display: false }
         }
       },
-      interaction: {
-        mode: "index" as const,
-        intersect: false
-      },
+      interaction: { mode: "index" as const, intersect: false },
+      spanGaps: false,
       elements: {
-        point: {
-          hoverBorderWidth: 3
-        },
+        point: { hoverBorderWidth: 3 },
         line: {
           borderJoinStyle: "round" as const,
           borderCapStyle: "round" as const
         }
       }
     }),
-    [selectedStats, gameLog, playoffGameLog, showPlayoffData]
+    [unit, meta.axis, games]
   );
 
-  if (!chartData) {
+  return (
+    <section className={styles.unitPanel} aria-label={`${meta.label} chart`}>
+      <div className={styles.unitPanelHead}>
+        <h4>{meta.label}</h4>
+        <span>{meta.axis}</span>
+      </div>
+      <div className={`${styles.chartWrapper} ${styles.unitChart}`}>
+        <Line data={data as any} options={options as any} />
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Selected stats grouped by unit: counts, rates, percentages (0-100) and time
+ * on ice (minutes) each get their own labelled panel and axis.
+ */
+export function PlayerStatsChart({
+  gameLog,
+  playoffGameLog,
+  selectedStats,
+  showRollingAverage = false,
+  title = "Performance Trends",
+  showPlayoffData = false
+}: PlayerStatsChartProps) {
+  const games = useMemo(() => {
+    const log = showPlayoffData && playoffGameLog ? playoffGameLog : gameLog;
+    return [...log].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  }, [gameLog, playoffGameLog, showPlayoffData]);
+
+  const labels = useMemo(
+    () =>
+      games.map((game) =>
+        parseLocalDate(game.date).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric"
+        })
+      ),
+    [games]
+  );
+
+  const groups = useMemo(() => groupStatsByUnit(selectedStats), [selectedStats]);
+
+  // Colours follow the stat's position in the selection, as before.
+  const colorFor = useMemo(() => {
+    const index = new Map(selectedStats.map((stat, i) => [stat, i]));
+    return (stat: string) =>
+      CHART_COLORS[(index.get(stat) ?? 0) % CHART_COLORS.length];
+  }, [selectedStats]);
+
+  if (games.length === 0 || groups.length === 0) {
     return (
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
@@ -300,8 +286,18 @@ export function PlayerStatsChart({
           <span className={styles.chartSubtitle}>Playoff Data</span>
         )}
       </div>
-      <div className={styles.chartWrapper}>
-        <Line data={chartData} options={options} />
+      <div className={styles.unitPanels}>
+        {groups.map((group) => (
+          <UnitChart
+            key={group.unit}
+            unit={group.unit}
+            stats={group.stats}
+            colorFor={colorFor}
+            games={games}
+            labels={labels}
+            showRollingAverage={showRollingAverage}
+          />
+        ))}
       </div>
     </div>
   );

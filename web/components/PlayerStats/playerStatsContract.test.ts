@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   aggregateSummaryStat,
+  formatMinutes,
+  groupStatsByUnit,
+  rollingAverage,
+  toChartValue,
   computeAvailability,
   countAppearances,
   formatPlayerStat,
@@ -123,6 +127,19 @@ describe("played / missed / future denominators", () => {
     ]);
   });
 
+  it("a past game without a loaded box score is awaiting data, not an absence", () => {
+    const schedule = [
+      teamGame("2026-10-10"),
+      teamGame("2026-10-15", { isUnconfirmed: true })
+    ];
+    const split = splitTeamSchedule(schedule, asOfDate);
+    expect(split.absences.map((g) => g.date)).toEqual(["2026-10-10"]);
+    expect(split.unconfirmed.map((g) => g.date)).toEqual(["2026-10-15"]);
+    expect(
+      computeAvailability([{ date: "2026-10-12", games_played: 1 }], schedule, asOfDate)
+    ).toEqual({ played: 1, missed: 1, possible: 2, percentage: 50, unconfirmed: 1 });
+  });
+
   it("limits absences to the selected game window", () => {
     const schedule = [teamGame("2026-10-02"), teamGame("2026-10-15")];
     const { absences } = splitTeamSchedule(schedule, asOfDate, "2026-10-10");
@@ -143,7 +160,8 @@ describe("played / missed / future denominators", () => {
       played: 10,
       missed: 0,
       possible: 10,
-      percentage: 100
+      percentage: 100,
+      unconfirmed: 0
     });
   });
 
@@ -164,7 +182,7 @@ describe("played / missed / future denominators", () => {
   it("reports unavailable rather than 100% when the schedule is unknown", () => {
     expect(
       computeAvailability([{ date: "2026-10-05", games_played: 1 }], null, asOfDate)
-    ).toEqual({ played: 1, missed: null, possible: null, percentage: null });
+    ).toEqual({ played: 1, missed: null, possible: null, percentage: null, unconfirmed: null });
   });
 
   it("no games and no absences has no percentage", () => {
@@ -224,5 +242,62 @@ describe("unit-aware formatting", () => {
 
   it("unavailable stays unavailable", () => {
     expect(formatPlayerStat(null, "shooting_percentage")).toBe("-");
+  });
+});
+
+describe("chart units", () => {
+  it("splits selected stats into counts, rates, percentages and TOI", () => {
+    expect(
+      groupStatsByUnit([
+        "points",
+        "fow_percentage",
+        "toi_per_game",
+        "cf_pct",
+        "ixg_per_60",
+        "goals"
+      ])
+    ).toEqual([
+      { unit: "count", stats: ["points", "goals"] },
+      { unit: "rate", stats: ["ixg_per_60"] },
+      { unit: "percent", stats: ["fow_percentage", "cf_pct"] },
+      { unit: "toi", stats: ["toi_per_game"] }
+    ]);
+  });
+
+  it("goalie SV% is a percentage; GAA and PDO are rates", () => {
+    expect(groupStatsByUnit(["save_pct", "goals_against_avg", "pdo"])).toEqual([
+      { unit: "rate", stats: ["goals_against_avg", "pdo"] },
+      { unit: "percent", stats: ["save_pct"] }
+    ]);
+  });
+
+  it("plots percentages on a 0-100 scale and TOI in minutes", () => {
+    expect(toChartValue(0.25, "shooting_percentage")).toBeCloseTo(25);
+    expect(toChartValue(52.4, "cf_pct")).toBe(52.4);
+    expect(toChartValue(0.915, "save_pct")).toBeCloseTo(91.5);
+    expect(toChartValue(1095, "toi_per_game")).toBeCloseTo(18.25);
+    expect(toChartValue(2, "points")).toBe(2);
+    expect(toChartValue(null, "points")).toBeNull();
+  });
+
+  it("formats minutes as mm:ss", () => {
+    expect(formatMinutes(18.25)).toBe("18:15");
+    expect(formatMinutes(9.999)).toBe("10:00");
+  });
+});
+
+describe("rolling average", () => {
+  it("averages the trailing window over present values; all-missing is a gap", () => {
+    const log = [
+      { date: "1", points: 1 },
+      { date: "2", points: null },
+      { date: "3", points: 3 },
+      { date: "4", points: null },
+      { date: "5", points: null },
+      { date: "6", points: null },
+      { date: "7", points: null },
+      { date: "8", points: null }
+    ];
+    expect(rollingAverage(log, "points", 5)).toEqual([1, 1, 2, 2, 2, 3, 3, null]);
   });
 });
