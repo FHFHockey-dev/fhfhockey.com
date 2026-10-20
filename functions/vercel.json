@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "ignoreCommand": "if test -n \"$VERCEL_GIT_PREVIOUS_SHA\" && git cat-file -e \"$VERCEL_GIT_PREVIOUS_SHA^{commit}\" 2>/dev/null; then git diff --quiet \"$VERCEL_GIT_PREVIOUS_SHA\" HEAD ./; else exit 1; fi",
+  "ignoreCommand": "if test -n \"$VERCEL_GIT_PREVIOUS_SHA\" && git cat-file -e \"$VERCEL_GIT_PREVIOUS_SHA^{commit}\" 2>/dev/null; then git diff --quiet \"$VERCEL_GIT_PREVIOUS_SHA\" HEAD ./; elif test -n \"$VERCEL_GIT_PREVIOUS_SHA\" && git cat-file -e \"HEAD~1^{commit}\" 2>/dev/null; then git diff --quiet HEAD~1 HEAD ./; else exit 1; fi",
   "functions": {
     "api/**/*.py": {
       "maxDuration": 240,
