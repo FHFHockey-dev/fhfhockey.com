@@ -17,6 +17,13 @@ import {
   PlayerLineupDeploymentTally
 } from "components/PlayerStats/PlayerLineupDeploymentGrid";
 import styles from "components/PlayerStats/PlayerStats.module.scss";
+import shell from "components/PlayerStats/PlayerPageShell.module.scss";
+import { PlayerIdentityBar } from "components/PlayerStats/PlayerIdentityBar";
+import { PlayerSummaryStrip } from "components/PlayerStats/PlayerSummaryStrip";
+import {
+  PlayerStatControls,
+  TIME_FRAME_LABELS
+} from "components/PlayerStats/PlayerStatControls";
 
 // Import types from the shared types file
 import {
@@ -180,6 +187,22 @@ export default function PlayerStatsPage({
     });
   }, [filteredGameLog, selectedStats]);
 
+  const statGroups = [
+    { label: "Primary", stats: positionConfig.primary },
+    { label: "Secondary", stats: positionConfig.secondary },
+    ...(positionConfig.advanced
+      ? [{ label: "Advanced", stats: positionConfig.advanced }]
+      : [])
+  ];
+  const windowLabel =
+    timeFrame === "custom" ? "Custom" : TIME_FRAME_LABELS[timeFrame];
+  const seasonText = String(seasonId ?? "");
+  const scopeLabel = usedGameLogFallback
+    ? "Most recent games (no logs for the selected season)"
+    : /^\d{8}$/.test(seasonText)
+      ? `${seasonText.slice(0, 4)}-${seasonText.slice(6)} regular season`
+      : "Season unavailable";
+
   const handleStatToggle = (stat: string) => {
     setSelectedStats((prev) =>
       prev.includes(stat) ? prev.filter((s) => s !== stat) : [...prev, stat]
@@ -206,53 +229,14 @@ export default function PlayerStatsPage({
         description={`Detailed hockey statistics for ${player.fullName}`}
       />
 
-      <div className={styles.playerStatsPageContainer}>
-        {/* Navigation Header */}
-        <div className={styles.navigationHeader}>
-          <Link href="/stats" className={styles.backButton}>
-            <span className={styles.backIcon}>←</span>
-            Back to Stats
-          </Link>
-          <h1 className={styles.pageTitle}>Player Analytics</h1>
-          <div className={styles.searchContainer}>
-            <PlayerSearchBar />
-          </div>
-        </div>
+      <div className={shell.workspace}>
+        <PlayerIdentityBar
+          player={player}
+          teamLabel={teamLabel}
+          scopeLabel={scopeLabel}
+        />
 
-        {/* Player Header */}
-        <div className={styles.playerHeader}>
-          <div className={styles.playerImageContainer}>
-            {player.image_url && (
-              <img
-                src={player.image_url}
-                alt={player.fullName}
-                width={120}
-                height={120}
-                style={{ borderRadius: "50%" }}
-              />
-            )}
-          </div>
-          <div className={styles.playerInfo}>
-            <h1 className={styles.playerName}>{player.fullName}</h1>
-            <div className={styles.playerDetails}>
-              #{player.sweater_number || "-"} | {player.position}
-              {teamLabel && ` | ${teamLabel}`}
-              <br />
-              {player.birthCity && `${player.birthCity}`}
-              {player.birthCountry && `, ${player.birthCountry}`}
-              <br />
-              {player.heightInCentimeters && (
-                <span>Height: {player.heightInCentimeters} cm</span>
-              )}
-              {player.weightInKilograms && (
-                <span> | Weight: {player.weightInKilograms} kg</span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className={styles.tabNavigation}>
+        <nav className={shell.viewSwitch} aria-label="Player statistics views">
           {(
             [
               "overview",
@@ -264,102 +248,35 @@ export default function PlayerStatsPage({
           ).map((tab) => (
             <button
               key={tab}
+              type="button"
               onClick={() => setActiveTab(tab)}
-              className={`${styles.tabButton} ${activeTab === tab ? styles.active : ""}`}
+              className={shell.viewButton}
+              aria-pressed={activeTab === tab}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
-        </div>
+        </nav>
+
+        {activeTab !== "advanced" && activeTab !== "gamelog" && (
+          <PlayerStatControls
+            timeFrame={timeFrame}
+            onTimeFrameChange={setTimeFrame}
+            groups={statGroups}
+            selectedStats={selectedStats}
+            onToggleStat={handleStatToggle}
+          />
+        )}
 
         {/* Content Area */}
         <div className={styles.contentArea}>
           {activeTab === "overview" && (
             <>
-              {/* Controls for Overview */}
-              <div className={styles.controlsSection}>
-                <div className={styles.controlsGrid}>
-                  {/* Time Frame Selector */}
-                  <div className={styles.timeframeSelector}>
-                    <h4 className={styles.controlHeader}>Time Period</h4>
-                    <div className={styles.timeframeButtons}>
-                      {(
-                        ["season", "last10", "last20", "last30"] as TimeFrame[]
-                      ).map((frame) => (
-                        <button
-                          key={frame}
-                          onClick={() => setTimeFrame(frame)}
-                          className={`${styles.timeframeButton} ${timeFrame === frame ? styles.active : ""}`}
-                        >
-                          {frame === "season"
-                            ? "Full Season"
-                            : frame === "last10"
-                              ? "Last 10"
-                              : frame === "last20"
-                                ? "Last 20"
-                                : "Last 30"}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Stat Selector */}
-                  <div className={styles.statSelector}>
-                    <h4 className={styles.controlHeader}>Statistics</h4>
-                    <div className={styles.statCategories}>
-                      <div className={styles.statCategory}>
-                        <h4>Primary</h4>
-                        <div className={styles.statCheckboxContainer}>
-                          {positionConfig.primary.map((stat: string) => (
-                            <label key={stat} className={styles.statCheckbox}>
-                              <input
-                                type="checkbox"
-                                checked={selectedStats.includes(stat)}
-                                onChange={() => handleStatToggle(stat)}
-                              />
-                              {stat.replace(/_/g, " ").toUpperCase()}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className={styles.statCategory}>
-                        <h4>Secondary</h4>
-                        <div className={styles.statCheckboxContainer}>
-                          {positionConfig.secondary.map((stat: string) => (
-                            <label key={stat} className={styles.statCheckbox}>
-                              <input
-                                type="checkbox"
-                                checked={selectedStats.includes(stat)}
-                                onChange={() => handleStatToggle(stat)}
-                              />
-                              {stat.replace(/_/g, " ").toUpperCase()}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      {positionConfig.advanced && (
-                        <div className={styles.statCategory}>
-                          <h4>Advanced</h4>
-                          <div className={styles.statCheckboxContainer}>
-                            {positionConfig.advanced.map((stat: string) => (
-                              <label key={stat} className={styles.statCheckbox}>
-                                <input
-                                  type="checkbox"
-                                  checked={selectedStats.includes(stat)}
-                                  onChange={() => handleStatToggle(stat)}
-                                />
-                                {stat.replace(/_/g, " ").toUpperCase()}
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <PlayerSummaryStrip
+                gameLog={filteredGameLog}
+                isGoalie={isGoalie}
+                windowLabel={windowLabel}
+              />
 
               <div className={styles.overviewGrid}>
                 <div className={styles.leftColumn}>
@@ -391,10 +308,12 @@ export default function PlayerStatsPage({
                     />
                   </div>
                   {!isGoalie && lineupDeploymentTallies.length > 0 && (
-                    <PlayerLineupDeploymentGrid
-                      rows={lineupDeploymentTallies}
-                      positions={player.position ? [player.position] : undefined}
-                    />
+                    <div className={styles.deploymentPanel}>
+                      <PlayerLineupDeploymentGrid
+                        rows={lineupDeploymentTallies}
+                        positions={player.position ? [player.position] : undefined}
+                      />
+                    </div>
                   )}
                 </div>
                 <div className={styles.rightColumn}>
@@ -443,90 +362,6 @@ export default function PlayerStatsPage({
 
           {activeTab === "trends" && (
             <>
-              {/* Controls for Trends */}
-              <div className={styles.controlsSection}>
-                <div className={styles.controlsGrid}>
-                  {/* Time Frame Selector */}
-                  <div className={styles.timeframeSelector}>
-                    <h4 className={styles.controlHeader}>Time Period</h4>
-                    <div className={styles.timeframeButtons}>
-                      {(
-                        ["season", "last10", "last20", "last30"] as TimeFrame[]
-                      ).map((frame) => (
-                        <button
-                          key={frame}
-                          onClick={() => setTimeFrame(frame)}
-                          className={`${styles.timeframeButton} ${timeFrame === frame ? styles.active : ""}`}
-                        >
-                          {frame === "season"
-                            ? "Full Season"
-                            : frame === "last10"
-                              ? "Last 10"
-                              : frame === "last20"
-                                ? "Last 20"
-                                : "Last 30"}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Stat Selector */}
-                  <div className={styles.statSelector}>
-                    <h4 className={styles.controlHeader}>Statistics</h4>
-                    <div className={styles.statCategories}>
-                      <div className={styles.statCategory}>
-                        <h4>Primary</h4>
-                        <div className={styles.statCheckboxContainer}>
-                          {positionConfig.primary.map((stat: string) => (
-                            <label key={stat} className={styles.statCheckbox}>
-                              <input
-                                type="checkbox"
-                                checked={selectedStats.includes(stat)}
-                                onChange={() => handleStatToggle(stat)}
-                              />
-                              {stat.replace(/_/g, " ").toUpperCase()}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className={styles.statCategory}>
-                        <h4>Secondary</h4>
-                        <div className={styles.statCheckboxContainer}>
-                          {positionConfig.secondary.map((stat: string) => (
-                            <label key={stat} className={styles.statCheckbox}>
-                              <input
-                                type="checkbox"
-                                checked={selectedStats.includes(stat)}
-                                onChange={() => handleStatToggle(stat)}
-                              />
-                              {stat.replace(/_/g, " ").toUpperCase()}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      {positionConfig.advanced && (
-                        <div className={styles.statCategory}>
-                          <h4>Advanced</h4>
-                          <div className={styles.statCheckboxContainer}>
-                            {positionConfig.advanced.map((stat: string) => (
-                              <label key={stat} className={styles.statCheckbox}>
-                                <input
-                                  type="checkbox"
-                                  checked={selectedStats.includes(stat)}
-                                  onChange={() => handleStatToggle(stat)}
-                                />
-                                {stat.replace(/_/g, " ").toUpperCase()}
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
 
               <PlayerStatsChart
                 gameLog={processedGameLog}
@@ -548,90 +383,6 @@ export default function PlayerStatsPage({
 
           {activeTab === "calendar" && (
             <>
-              {/* Controls for Calendar */}
-              <div className={styles.controlsSection}>
-                <div className={styles.controlsGrid}>
-                  {/* Time Frame Selector */}
-                  <div className={styles.timeframeSelector}>
-                    <h4 className={styles.controlHeader}>Time Period</h4>
-                    <div className={styles.timeframeButtons}>
-                      {(
-                        ["season", "last10", "last20", "last30"] as TimeFrame[]
-                      ).map((frame) => (
-                        <button
-                          key={frame}
-                          onClick={() => setTimeFrame(frame)}
-                          className={`${styles.timeframeButton} ${timeFrame === frame ? styles.active : ""}`}
-                        >
-                          {frame === "season"
-                            ? "Full Season"
-                            : frame === "last10"
-                              ? "Last 10"
-                              : frame === "last20"
-                                ? "Last 20"
-                                : "Last 30"}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Stat Selector */}
-                  <div className={styles.statSelector}>
-                    <h4 className={styles.controlHeader}>Statistics</h4>
-                    <div className={styles.statCategories}>
-                      <div className={styles.statCategory}>
-                        <h4>Primary</h4>
-                        <div className={styles.statCheckboxContainer}>
-                          {positionConfig.primary.map((stat: string) => (
-                            <label key={stat} className={styles.statCheckbox}>
-                              <input
-                                type="checkbox"
-                                checked={selectedStats.includes(stat)}
-                                onChange={() => handleStatToggle(stat)}
-                              />
-                              {stat.replace(/_/g, " ").toUpperCase()}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className={styles.statCategory}>
-                        <h4>Secondary</h4>
-                        <div className={styles.statCheckboxContainer}>
-                          {positionConfig.secondary.map((stat: string) => (
-                            <label key={stat} className={styles.statCheckbox}>
-                              <input
-                                type="checkbox"
-                                checked={selectedStats.includes(stat)}
-                                onChange={() => handleStatToggle(stat)}
-                              />
-                              {stat.replace(/_/g, " ").toUpperCase()}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      {positionConfig.advanced && (
-                        <div className={styles.statCategory}>
-                          <h4>Advanced</h4>
-                          <div className={styles.statCheckboxContainer}>
-                            {positionConfig.advanced.map((stat: string) => (
-                              <label key={stat} className={styles.statCheckbox}>
-                                <input
-                                  type="checkbox"
-                                  checked={selectedStats.includes(stat)}
-                                  onChange={() => handleStatToggle(stat)}
-                                />
-                                {stat.replace(/_/g, " ").toUpperCase()}
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
 
               <PlayerPerformanceHeatmap
                 player={player}
