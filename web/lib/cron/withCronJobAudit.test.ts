@@ -574,7 +574,7 @@ describe("withCronJobAudit seasonal game-data classification", () => {
     nextSeasonId: null,
     resumesOn: null,
   };
-  const gate = (handler: (req: any, res: any) => unknown, window = inSeason) =>
+  const gate = (handler: (req: any, res: any) => unknown, window: NhlSeasonWindow = inSeason) =>
     withNhlOffSeasonSkip(handler, { loadWindow: async () => window });
   const insertedDetails = () => insertMock.mock.calls.at(-1)?.[0].details;
 
