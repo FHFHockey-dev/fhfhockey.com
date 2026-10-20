@@ -891,6 +891,26 @@
       "migrationClass": "feature",
       "rolloutGate": "Drafted 2026-10-20 at TJ's request (FORGE hits/blocks league-to-date rescale): read-only STABLE SECURITY INVOKER function public.forge_league_skater_physical_totals(p_season_id, p_cutoff) returning league all-situation hits, blocks and TOI by F/D for this season to date and the two prior seasons from wgo_skater_stats, every scope bounded by game date as well as season_id; EXECUTE for service_role only. FORGE falls back to constant priors if the function is absent, so code may ship first. Hosted apply needs TJ's separate explicit approval; no migration command was run.",
       "stateEvidence": "Local source only; no hosted ledger or apply receipt. Disposable PostgreSQL 17.11 harness (synthetic wgo_skater_stats with 16,041 planted 2012-dated rows labelled 20242025): applied twice cleanly; output matched a direct aggregate; planted rows excluded; an invalid season id returned four zero rows; anon was refused EXECUTE. Takes order 88, so the IFTTT SQL6-SQL8 drafts noted on order 87 move to 89-91."
+    },
+    {
+      "order": 89,
+      "path": "supabase/migrations/20261020224500_data_api_explicit_default_privileges.sql",
+      "sha256": "60e0ee8f6004d07182c6999fbe34534a2cceb9530cafbd1a0bb868b0fd5ff51c",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "security",
+      "rolloutGate": "Drafted 2026-10-20 for ticket D4 (Supabase stops auto-granting new public objects on 2026-10-30). Revokes the baseline's replayable ALTER DEFAULT PRIVILEGES for postgres in public (ALL on tables, sequences and functions to anon, authenticated and service_role) and postgres's global PUBLIC EXECUTE default on new functions. Existing objects are unchanged; every later migration must grant explicitly (the IFTTT SQL6-SQL8 drafts already do). Apply before or with 20261020224600; hosted apply needs TJ's separate explicit approval and no migration command was run.",
+      "stateEvidence": "Local source only; no hosted ledger or apply receipt. Disposable PostgreSQL 17.11 Unix-socket replay of the full ledger chain with Supabase role/extension stand-ins: tasks/artifacts/d4-grants-2026-10-20/ (harness, receipts). Takes order 89 because authority orders must be contiguous, so the IFTTT SQL6-SQL8 drafts noted on orders 87-88 move to 91-93."
+    },
+    {
+      "order": 90,
+      "path": "supabase/migrations/20261020224600_data_api_reviewed_object_grants.sql",
+      "sha256": "d6639171292547f1884c8e5f4d23be3dc2998f6e05425c5d95bdb6ce33173c0c",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "security",
+      "rolloutGate": "Drafted 2026-10-20 for ticket D4. Resets and re-grants the ACLs of the 76 reviewed tables, one identity sequence and 46 RPCs to exactly the operations traced callers use: browser access stays only on the owner-scoped provider-linkage SELECT and the deliberate public-read RSO schedule; service_role loses unused TRUNCATE/REFERENCES/TRIGGER everywhere, unused DELETE on Draft Pro/in-season/provider_sync_runs, the ALL grants on three forecast tables, and EXECUTE on the uncalled promote_player_forecast_model_atomic. Narrows privileges only; no RLS, policy or body change. Hosted apply needs TJ's separate explicit approval and no migration command was run.",
+      "stateEvidence": "Local source only; no hosted ledger or apply receipt. Disposable PostgreSQL 17.11 replay receipts and the per-grant caller list are in tasks/artifacts/d4-grants-2026-10-20/."
     }
   ],
   "sourceExtensionApproval": {
