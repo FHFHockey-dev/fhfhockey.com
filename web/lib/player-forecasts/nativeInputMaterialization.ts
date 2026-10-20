@@ -39,6 +39,8 @@ export type NativeMaterializationRequest = {
 const VERSION = "native-input-materialization-v1";
 // Retained six-policy/1,260-input inventory measured >41MB before parent packing.
 const MAX_BYTES = 64 * 1024 * 1024;
+/** Participation inputs one request may carry; the v2 driver checks it offline before binding a request. */
+export const NATIVE_MATERIALIZATION_MAX_PARTICIPATION_INPUTS = 1500;
 function packed<T>(values: T[]): T[][] {
   const groups: T[][] = []; let group: T[] = [], bytes = 2;
   for (const value of values) {
@@ -95,7 +97,7 @@ export function prepareNativeInputMaterialization(request: NativeMaterialization
     dataset_key: dataset, entity_kind: kind, entity_key: entity, source_url: sourceUrl, source_revision_key: hash(payload),
     observed_at: at, available_at: at, payload_hash: hash(payload), payload, metadata: { materializationProtocol: VERSION } });
   const parents = request.parents ?? [], required = request.requiredParents ?? [], participation = request.participationInputs ?? [];
-  if (parents.length > 1024 || required.length !== parents.length || participation.length > 1500
+  if (parents.length > 1024 || required.length !== parents.length || participation.length > NATIVE_MATERIALIZATION_MAX_PARTICIPATION_INPUTS
     || new Set(required.map(parent => parent.hash)).size !== required.length) throw new Error("Parent acquisition scope is incomplete or duplicated.");
   const parentMap = new Map(parents.map(parent => [parent.hash, parent]));
   if (parentMap.size !== parents.length) throw new Error("Ambiguous materialization parent identity.");

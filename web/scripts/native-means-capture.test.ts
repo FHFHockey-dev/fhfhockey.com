@@ -75,4 +75,24 @@ describe("native means CLI", () => {
     await expect(runNativeMeansCapture([...args.slice(0, -1), join(dir, "raised"), "--max-requests", "200"], undefined, network))
       .rejects.toThrow("raised_bound_requires_approval_ref");
   });
+
+  it("reads the forge-daily universe document and records the plan status with the assembled means (A-15, A-17)", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "native-means-")); dirs.push(dir);
+    const write = (name: string, value: unknown) => { const path = join(dir, name), body = JSON.stringify(value); writeFileSync(path, body);
+      return [path, createHash("sha256").update(body).digest("hex")]; };
+    const document = { version: "forge-daily-yahoo-universe-v1", date: "2026-10-12", seasonId: 20262027, status: "complete", ownedComplete: true, counts: { owned: 1 },
+      unmapped: [], ambiguous: [], membershipUnresolved: [], excluded: [], change: null, injury: { evidence: [] },
+      players: [{ playerId: 1, nhlPlayerId: 101, teamId: 1, class: "skater", universe: "owned", rosterRevision: "r1", yahooPlayerKey: "477.p.1" }] };
+    const [universe, universeSha] = write("universe.json", document), [cache, cacheSha] = write("cache.json", { receipts: [] }), out = join(dir, "plan");
+    const result = await runNativeMeansCapture(["plan", "--universe", universe, "--universe-sha256", universeSha, "--cache", cache, "--cache-sha256", cacheSha,
+      "--season", "20262027", "--as-of", "2026-10-12T11:00:00.000Z", "--anchor", "2026-09-29", "--out", out], () => new Date("2026-10-12T11:00:00.000Z"));
+    expect(result).toMatchObject({ status: "plan_only", planStatus: "requests_pending", requests: 2 });
+    const planBody = readFileSync(join(out, "plan.json"), "utf8"), planSha = createHash("sha256").update(planBody).digest("hex");
+    await runNativeMeansCapture(["assemble", "--universe", universe, "--universe-sha256", universeSha, "--cache", cache, "--cache-sha256", cacheSha,
+      "--plan", join(out, "plan.json"), "--plan-sha256", planSha, "--cutoff", "2026-10-12T11:00:00.000Z", "--out", join(dir, "means")], () => new Date("2026-10-12T11:00:00.000Z"));
+    expect(JSON.parse(readFileSync(join(dir, "means", "means.json"), "utf8")).plan).toMatchObject({ status: "requests_pending", pendingRequests: 2 });
+    const [owned, ownedSha] = write("incomplete.json", { ...document, ownedComplete: false });
+    await expect(runNativeMeansCapture(["plan", "--universe", owned, "--universe-sha256", ownedSha, "--cache", cache, "--cache-sha256", cacheSha,
+      "--season", "20262027", "--as-of", "2026-10-12T11:00:00.000Z", "--anchor", "2026-09-29", "--out", join(dir, "owned")])).rejects.toThrow("universe_owned_incomplete");
+  });
 });

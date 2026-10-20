@@ -10,7 +10,7 @@ import { buildRollingWindowGoalieParticipationReceipt, buildRollingWindowGoalieS
   buildRollingWindowSkaterParticipationReceipt } from "./rollingWindowParticipation";
 import { contributionBundleCandidateInputHash, contributionBundleChecksum, persistContributionBundle } from "./contributionStore";
 import { SKATER_PARTICIPATION_RELEASE_LIMITS } from "./modeledSkaterParticipationStore";
-import { nativeCadenceClosureScope, nativeCadenceInputManifest, publishObservedNativeBaselineCadence } from "./nativeBaselineCadence";
+import { nativeCadenceClosureScope, nativeCadenceInputManifest, nativeCadenceSourceManifests, publishObservedNativeBaselineCadence } from "./nativeBaselineCadence";
 import type { NativeBaselinePublicationPlan } from "./nativeBaselinePublication";
 import { playerForecastSourcePayloadHash as hash, type PlannedSourceObservation } from "./sourceSnapshot";
 import { timestampMicros } from "../projections/evidenceTime";
@@ -26,11 +26,15 @@ import { timestampMicros } from "../projections/evidenceTime";
  * review. The reviewed plan then supplies only each policy's terms (public uses and evidence reference).
  * A daily proof may leave out means-only players (no participation target). Their sources are then dropped;
  * a policy whose bundle shrank gets a new policy row under `standingApprovalRef`, scoped to that day's
- * candidate input hash, and a policy left with no sources is not issued. */
+ * candidate input hash, and a policy left with no sources is not issued.
+ * A split daily day (A-14) adds `goalieMaterialization`: `materialization` is then the skater closure, the proof is
+ * `{ skater, goalie }`, and both closures feed one plan, one cadence slot and one catalog head. */
+type MaterializationRef = { runId: string; sourceKey: string; date: string; closureScopeHash: string };
 export type NativeOutputPreparationCommand = {
   version: "native-output-preparation-v1";
   slotKey: string; dueAt: string;
-  materialization: { runId: string; sourceKey: string; date: string; closureScopeHash: string };
+  materialization: MaterializationRef;
+  goalieMaterialization?: MaterializationRef;
   games: Array<{ gameId: number; startsAt: string }>;
   requiredAcquisitionScopes: Record<string, { scopeHash: string; cutoffAt: string }>;
   /** Previously reviewed plan over the same inputs: policies, reviews, bundles and selected participation bundles. */
@@ -60,25 +64,36 @@ const DAILY_PARTICIPATION_BUNDLE_BYTES = 7 * 1024 * 1024;
 const withoutIssuance = ({ issuedAt: _issued, released: _released, ...rest }: any) => rest;
 const withoutIssuedAt = ({ issuedAt: _issued, ...rest }: any) => rest;
 
-export async function prepareNativeCadenceOutputs(command: NativeOutputPreparationCommand, proof: ClosedProof,
+export async function prepareNativeCadenceOutputs(command: NativeOutputPreparationCommand, proofs: ClosedProof | { skater: ClosedProof; goalie: ClosedProof },
   now: Date, newId: () => string = randomUUID) {
-  const { materialization: request, reviewedPlan } = command;
+  const { materialization: request, goalieMaterialization: goalieRequest, reviewedPlan } = command;
   if (command?.version !== "native-output-preparation-v1" || reviewedPlan?.version !== "native-baseline-publication-plan-v1") fail("preparation_command_required");
-  const closure = proof?.closure?.payload as any, issuedAt = now.toISOString(), seasonId = reviewedPlan.seasonId;
-  if (proof?.status !== "closed" || !closure || closure.runId !== request.runId || closure.scopeHash !== request.closureScopeHash
-    || closure.materializationHash !== proof.report.payload_hash || hash(proof.report.payload) !== proof.report.payload_hash
-    || hash(closure) !== proof.closure.payload_hash) fail("closed_materialization_proof_required");
-  // The top-level manifest is a convenience copy; bind it to the hashed report and closure.
-  if (!proof.manifest || hash(proof.manifest) !== hash((proof.report.payload as any).manifest) || closure.inputRevision !== proof.manifest.revision
-    || closure.expectedItems !== proof.manifest.expectedItems) fail("materialization_manifest_unbound");
-  const required = command.requiredAcquisitionScopes?.[request.sourceKey];
-  if (!required || required.scopeHash !== closure.acquisitionScopeHash || required.cutoffAt !== closure.inputCutoffAt) fail("acquisition_scope_mismatch");
-  if (micros(issuedAt) < micros(command.dueAt)) fail("slot_not_due");
-  if (micros(issuedAt) < micros(closure.closedAt)) fail("outputs_must_be_issued_after_closed_inputs");
-  const reported = new Map(((proof.report.payload as any).rows ?? []).map((row: any) => [row.id, row]));
-  if (new Set(proof.rows.map(row => row.id)).size !== proof.rows.length || reported.size !== proof.rows.length
-    || proof.rows.some(row => hash(row.payload) !== row.payload_hash || (reported.get(row.id) as any)?.hash !== row.payload_hash
-    || (reported.get(row.id) as any)?.dataset !== row.dataset_key)) fail("materialized_row_mismatch");
+  const split = goalieRequest !== undefined, issuedAt = now.toISOString(), seasonId = reviewedPlan.seasonId;
+  if (split !== ("skater" in (proofs ?? {}))) fail("closed_materialization_proof_required");
+  if (split && (!command.daily || goalieRequest!.date !== request.date || goalieRequest!.closureScopeHash !== request.closureScopeHash
+    || goalieRequest!.runId === request.runId || goalieRequest!.sourceKey === request.sourceKey)) fail("split_materialization_mismatch");
+  const parts = split ? [{ request, proof: (proofs as { skater: ClosedProof }).skater }, { request: goalieRequest!, proof: (proofs as { goalie: ClosedProof }).goalie }]
+    : [{ request, proof: proofs as ClosedProof }];
+  for (const { request, proof } of parts) {
+    const closure = proof?.closure?.payload as any;
+    if (proof?.status !== "closed" || !closure || closure.runId !== request.runId || closure.scopeHash !== request.closureScopeHash
+      || closure.materializationHash !== proof.report.payload_hash || hash(proof.report.payload) !== proof.report.payload_hash
+      || hash(closure) !== proof.closure.payload_hash) fail("closed_materialization_proof_required");
+    // The top-level manifest is a convenience copy; bind it to the hashed report and closure.
+    if (!proof.manifest || hash(proof.manifest) !== hash((proof.report.payload as any).manifest) || closure.inputRevision !== proof.manifest.revision
+      || closure.expectedItems !== proof.manifest.expectedItems) fail("materialization_manifest_unbound");
+    const required = command.requiredAcquisitionScopes?.[request.sourceKey];
+    if (!required || required.scopeHash !== closure.acquisitionScopeHash || required.cutoffAt !== closure.inputCutoffAt) fail("acquisition_scope_mismatch");
+    if (micros(issuedAt) < micros(command.dueAt)) fail("slot_not_due");
+    if (micros(issuedAt) < micros(closure.closedAt)) fail("outputs_must_be_issued_after_closed_inputs");
+    const reported = new Map(((proof.report.payload as any).rows ?? []).map((row: any) => [row.id, row]));
+    if (new Set(proof.rows.map(row => row.id)).size !== proof.rows.length || reported.size !== proof.rows.length
+      || proof.rows.some(row => hash(row.payload) !== row.payload_hash || (reported.get(row.id) as any)?.hash !== row.payload_hash
+      || (reported.get(row.id) as any)?.dataset !== row.dataset_key)) fail("materialized_row_mismatch");
+  }
+  // The day's last closure; split parts are disjoint by class, so their player and participation rows simply join.
+  const closure = parts.map(part => part.proof.closure.payload as any).sort((a, b) => Number(micros(b.closedAt) - micros(a.closedAt)))[0];
+  const proof = { rows: parts.flatMap(part => part.proof.rows), manifest: parts[0].proof.manifest };
   const daily = command.daily;
   if (daily && (micros(daily.expiresAt) <= micros(issuedAt) || micros(daily.expiresAt) > micros(issuedAt) + BigInt(12 * 3600 * 1000000)
     || !daily.participationOwnerApprovalRef?.trim()
@@ -245,15 +260,17 @@ export async function prepareNativeCadenceOutputs(command: NativeOutputPreparati
       { ...original.metadata, pendingIndependentReview: true }));
   }
   const plan: NativeBaselinePublicationPlan = { version: "native-baseline-publication-plan-v1", seasonId, rows };
-  if (hash(nativeCadenceInputManifest(plan)) !== hash(proof.manifest)) fail("prepared_plan_input_manifest_mismatch");
+  const inputSources = split ? { skater: request.sourceKey, goalie: goalieRequest!.sourceKey } : undefined;
+  const manifests = nativeCadenceSourceManifests({ publicationPlan: plan, inputSourceKey: request.sourceKey, inputSources });
+  if (parts.some(part => hash(manifests[part.request.sourceKey]) !== hash(part.proof.manifest))) fail("prepared_plan_input_manifest_mismatch");
   const cadenceInput: Parameters<typeof publishObservedNativeBaselineCadence>[0] = { slotKey: command.slotKey, inputSourceKey: request.sourceKey,
-    publicationPlan: plan, requiredAcquisitionScopes: command.requiredAcquisitionScopes,
-    cadence: { now, date: request.date, requiredSources: [request.sourceKey], games: command.games, previous: [],
-      sources: [{ key: request.sourceKey, date: request.date, status: "complete", revision: proof.manifest.revision,
-        completedAt: closure.closedAt, expectedItems: proof.manifest.expectedItems, completedItems: proof.manifest.expectedItems }] } };
+    ...(inputSources ? { inputSources } : {}), publicationPlan: plan, requiredAcquisitionScopes: command.requiredAcquisitionScopes,
+    cadence: { now, date: request.date, requiredSources: parts.map(part => part.request.sourceKey), games: command.games, previous: [],
+      sources: parts.map(part => ({ key: part.request.sourceKey, date: request.date, status: "complete" as const, revision: part.proof.manifest.revision,
+        completedAt: (part.proof.closure.payload as any).closedAt, expectedItems: part.proof.manifest.expectedItems, completedItems: part.proof.manifest.expectedItems })) } };
   if (nativeCadenceClosureScope(cadenceInput) !== request.closureScopeHash) fail("cadence_closure_scope_mismatch");
   return { plan, cadenceCommand: { version: "native-cadence-command-v1" as const, cadenceInput,
-    producerReceiptIds: { [request.sourceKey]: proof.closure.id }, catalogHead: null },
+    producerReceiptIds: Object.fromEntries(parts.map(part => [part.request.sourceKey, part.proof.closure.id])), catalogHead: null },
   receipt: { status: "outputs_built_pending_independent_review_and_catalog_head", issuedAt, dueAt: command.dueAt, closedAt: closure.closedAt,
     nativeInputs: inputs.length, nativeSources: fresh.size, participationEntries, nullParticipation, rows: rows.length, reviews,
     ...(daily ? { dailyExpiresAt: daily.expiresAt, [freshMeans ? "nativeInputCutoffs" : "nativeMeansFrozenAtCutoff"]: [...new Set(inputs.map(row => (row.payload as any).capturedAt))].sort(),

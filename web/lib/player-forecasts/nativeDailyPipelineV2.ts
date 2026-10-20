@@ -4,11 +4,11 @@
  * sits behind `NativeDailyV2Flags`, all off by default. */
 import { timestampMicros } from "../projections/evidenceTime";
 import { buildDailyMaterializationRequest, type HttpReceipt, type dailyScheduleBindings } from "./nativeDailyPipeline";
-import { bindNativeCadenceMaterialization } from "./nativeBaselineCadence";
+import { bindNativeCadenceMaterialization, bindNativeCadenceSplitMaterialization } from "./nativeBaselineCadence";
 import { mergeNativeMaterializationParents, type NativeDailyMeans, type NativeMeansUniverseRow } from "./nativeDailyMeansCapture";
-import type { NativeMaterializationParent, NativeMaterializationRequest } from "./nativeInputMaterialization";
+import { NATIVE_MATERIALIZATION_MAX_PARTICIPATION_INPUTS, type NativeMaterializationParent, type NativeMaterializationRequest } from "./nativeInputMaterialization";
 import { targetRosterObservationFromReceipt } from "./targetRosterObservation";
-import type { buildRollingParticipationHistories } from "./rollingParticipationFrame";
+import { rollingHistoryBoxscoreUrls, rollingHistoryScheduleUrls, type buildRollingParticipationHistories } from "./rollingParticipationFrame";
 import { buildRollingWindowGoalieParticipationReceipt, buildRollingWindowGoalieStartReceipt, buildRollingWindowSkaterParticipationReceipt,
   type RollingWindowGoalieParticipationInput, type RollingWindowGoalieStartInput, type RollingWindowSkaterParticipationInput } from "./rollingWindowParticipation";
 import { proposeYahooKnownConflicts, type buildYahooUniverse } from "./yahooUniverse";
@@ -29,9 +29,10 @@ export type NativeDailyV2Flags = { -readonly [K in keyof typeof NATIVE_DAILY_V2_
 /** The frozen-window participation methods accept cutoffs only through this instant. */
 export const FROZEN_PARTICIPATION_LAST_CUTOFF = "2026-10-27T04:00:00.000Z";
 /** Methods under the standing approval (TJ 2026-10-17, ref tj-standing-approval-2026-10-17:forge-daily): the policy
- * versions and definition hashes approved on 2026-10-16 for season 20262027, and the participation datasets. Any other
- * version or hash goes to TJ. The rolling datasets count only once their first issuance is approved (flag). */
-export const NATIVE_DAILY_APPROVED_METHODS = Object.freeze({ seasonId: 20262027,
+ * versions and definition hashes approved on 2026-10-16 for season 20262027, each policy's terms hash
+ * (`nativeDailyPolicyTerms`), and the participation datasets. Any other ref, version, hash or terms go to TJ. The rolling
+ * datasets count only once their first issuance is approved (flag). */
+export const NATIVE_DAILY_APPROVED_METHODS = Object.freeze({ seasonId: 20262027, standingApprovalRef: "tj-standing-approval-2026-10-17:forge-daily",
   policies: Object.freeze({
     "current-appearance-skater-rates-v1": "96bce3cfd0e2265feede26648139e24f5209df6f1ae98263139cc58bd7cd28ba",
     "native-prior-appearance-skater-rates-v1": "879b96c79124584f7f53ea97084b26a837648a6dd118dd82568d6224b5e66f23",
@@ -39,6 +40,14 @@ export const NATIVE_DAILY_APPROVED_METHODS = Object.freeze({ seasonId: 20262027,
     "native-goalie-appearance-volume-rates-v1": "112fe51ef56842cf62edc4be5fceb8cb2148d5c1948d0140b58a85097b698f7c",
     "native-goalie-appearance-shutout-rates-v1": "fc6c68494cb85d2f2a1604c580743f6d425665e47887cb80e45eebcc5ce80148",
     "native-goalie-appearance-summary-win-rates-v1": "e715b40bb1da52461539c67c4211208a12663d72487db914fcc67a040f9575ca" } as Record<string, string>),
+  /** Terms approved 2026-10-16 for every policy above: uses assignment, totals, comparison and conditional tie-break. */
+  policyTerms: Object.freeze({
+    "current-appearance-skater-rates-v1": "782e1d09149249f93980f5b55c1887f14fd056e14abb21be654595bd7577a011",
+    "native-prior-appearance-skater-rates-v1": "c84c66089b88666ef6e1e1b732947c0297cb255a08de206b1ca3dea1966a75ee",
+    "native-goalie-appearance-win-rates-v1": "a027a4b31325d327f9a2b5efae53b8dad6973028607aae5e9dad6d8ae2276d88",
+    "native-goalie-appearance-volume-rates-v1": "4308969c02eef8581ca12f1200dd274cd4e154ad8cf1b92bf2e5ee45c797df63",
+    "native-goalie-appearance-shutout-rates-v1": "86564535d893c780b28ab49a9216853eb371c177a7ad41d22dfc21e079d13f9f",
+    "native-goalie-appearance-summary-win-rates-v1": "e29560fdbfbdf44aabab0331edaa08e0926dddda51f0fb2df01ccafb8e7f0218" } as Record<string, string>),
   participationDatasets: Object.freeze(["skater-roster-observation-participation-bundle-v1", "goalie-roster-observation-participation-bundle-v1",
     "goalie-roster-observation-start-bundle-v1"]),
   rollingParticipationDatasets: Object.freeze(["skater-rolling-14d-participation-bundle-v1", "goalie-rolling-14d-participation-bundle-v1",
@@ -46,6 +55,7 @@ export const NATIVE_DAILY_APPROVED_METHODS = Object.freeze({ seasonId: 20262027,
 export const NATIVE_DAILY_UNIVERSE_THRESHOLDS = Object.freeze({ unresolvedCandidates: 5, addedMembers: 10 });
 const fail = (reason: string): never => { throw new Error(reason); };
 const micros = (value: string) => timestampMicros(value) ?? fail("invalid_clock");
+const nyDate = (instant: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(instant));
 type Universe = ReturnType<typeof buildYahooUniverse>;
 type RollingInput = RollingWindowSkaterParticipationInput | RollingWindowGoalieParticipationInput | RollingWindowGoalieStartInput;
 type ParticipationInput = NonNullable<NativeMaterializationRequest["participationInputs"]>[number] | RollingInput;
@@ -71,6 +81,8 @@ export function nativeDailyParticipationMethod(cutoffAt: string, flags: NativeDa
 export function nativeDailyUniverse(universe: Universe, flags: NativeDailyV2Flags) {
   if (universe?.version !== "forge-daily-yahoo-universe-v1" || !Array.isArray(universe.players) || !universe.players.length) fail("universe_required");
   if (!universe.ownedComplete) fail("universe_owned_incomplete");
+  // Without a previous universe there is no change to count, so the growth threshold cannot be enforced.
+  if (flags.universeThresholds && !universe.change) fail("universe_previous_required");
   const unresolved = universe.unmapped.length + universe.ambiguous.length + universe.membershipUnresolved.length + universe.excluded.length;
   const added = universe.change?.added?.length ?? 0;
   const exceeds = unresolved > NATIVE_DAILY_UNIVERSE_THRESHOLDS.unresolvedCandidates || added > NATIVE_DAILY_UNIVERSE_THRESHOLDS.addedMembers;
@@ -81,6 +93,35 @@ export function nativeDailyUniverse(universe: Universe, flags: NativeDailyV2Flag
     thresholds: NATIVE_DAILY_UNIVERSE_THRESHOLDS, thresholdsApplied: flags.universeThresholds, thresholdsExceeded: exceeds } };
 }
 
+/** Fresh means bound to this run: cut off on the run date, assembled from a complete capture plan, and covering every
+ * universe member (an explicitly approved ceiling may leave that many uncovered). Members without a mean stay reported. */
+export function assertFreshMeansBinding(means: { cutoffAt: string; plan?: { status?: string } | null; coverage?: Array<{ playerId: number; nhlPlayerId: number; teamId: number }> },
+  universe: NativeMeansUniverseRow[], date: string, approvedUncovered = 0) {
+  if (nyDate(means.cutoffAt) !== date) fail("means_cutoff_not_on_run_date");
+  if (means.plan?.status !== "complete") fail("means_plan_incomplete");
+  const members = new Map(universe.map(player => [player.playerId, player])), covered = new Set<number>();
+  for (const row of means.coverage ?? []) {
+    const player = members.get(row.playerId);
+    if (!player || player.nhlPlayerId !== row.nhlPlayerId || player.teamId !== row.teamId || covered.has(row.playerId)) fail("means_universe_conflict");
+    covered.add(row.playerId);
+  }
+  const uncovered = universe.filter(player => !covered.has(player.playerId)).map(player => player.playerId);
+  if (uncovered.length > approvedUncovered) fail(`means_coverage_differs_from_universe:${uncovered.length}`);
+  return { uncovered, approvedUncovered };
+}
+
+/** The materializer's participation-input bound, checked offline before the requests are bound. A day is split into a skater
+ * and a goalie materialization (A-14, TJ 2026-10-20), so the bound applies to each kind; the limit itself is unchanged. */
+export function assertParticipationMaterializationBound(inputs: Array<{ playerClass?: unknown }>) {
+  for (const playerClass of ["skater", "goalie"]) {
+    const count = inputs.filter(input => input.playerClass === playerClass).length;
+    if (count > NATIVE_MATERIALIZATION_MAX_PARTICIPATION_INPUTS) fail(`participation_inputs_exceed_materialization_bound:${playerClass}:${count}`);
+  }
+  if (inputs.some(input => input.playerClass !== "skater" && input.playerClass !== "goalie")) fail("participation_input_class_unknown");
+}
+/** Source keys of a split day's two materializations. */
+export const NATIVE_DAILY_SOURCE_KEYS = Object.freeze({ skater: "native-daily-selected-inputs-skater", goalie: "native-daily-selected-inputs-goalie" });
+
 /** Fresh known conflicts only under the approved policy hash; otherwise none are passed and the v1 carry rule applies. */
 export function nativeDailyKnownConflicts(universe: Universe, cutoffAt: string, flags: NativeDailyV2Flags, approvedPolicyHash?: string) {
   if (!flags.injuryPolicy) return undefined;
@@ -89,15 +130,36 @@ export function nativeDailyKnownConflicts(universe: Universe, cutoffAt: string, 
   return proposal.proposedKnownConflicts;
 }
 
+/** A policy's terms: what a fresh policy row carries over from its template, without the per-candidate fields. */
+export const nativeDailyPolicyTerms = (policy: any) => ({ version: policy?.version, seasonId: policy?.seasonId, policyVersion: policy?.policyVersion,
+  allowedPublicUses: Array.isArray(policy?.allowedPublicUses) ? [...policy.allowedPublicUses].sort() : null });
+
+/** The reviewed plan supplies each approved policy's terms: one policy and one review template per policy version, with
+ * the pinned terms. A duplicate would otherwise resolve to whichever row comes first. */
+export function assertFreshMeansPolicyTemplates(rows: PlannedSourceObservation[]) {
+  const approved = NATIVE_DAILY_APPROVED_METHODS, seen = new Set<string>();
+  for (const row of rows) {
+    const policyVersion = (row.payload as any)?.policyVersion;
+    if (!["baseline_evaluation_policy", "baseline_validation_review"].includes(row.entity_kind) || !approved.policies[policyVersion]) continue;
+    if (seen.has(`${row.entity_kind}:${policyVersion}`)) fail("fresh_means_policy_template_ambiguous");
+    seen.add(`${row.entity_kind}:${policyVersion}`);
+    if (row.entity_kind === "baseline_evaluation_policy" && hash(nativeDailyPolicyTerms(row.payload)) !== approved.policyTerms[policyVersion]) {
+      fail(`fresh_means_policy_terms_not_approved:${policyVersion}`);
+    }
+  }
+  return { templates: seen.size };
+}
+
 /** Method gate before anything is minted under the standing approval: every native input's definition hash, every
- * policy and bundle version, and every participation dataset must be pinned above. */
+ * policy and bundle version, every policy's terms and approval ref, and every participation dataset must be pinned above. */
 export function assertStandingApprovalMethods(plan: { seasonId: number; rows: PlannedSourceObservation[] }, flags: NativeDailyV2Flags) {
   const approved = NATIVE_DAILY_APPROVED_METHODS, datasets = [...approved.participationDatasets, ...(flags.rollingFirstIssuance ? approved.rollingParticipationDatasets : [])];
   if (plan.seasonId !== approved.seasonId) fail("method_not_in_standing_approval:season");
   for (const row of plan.rows) {
     const payload = row.payload as any;
     if (row.entity_kind === "player" && approved.policies[payload.policyVersion] !== payload.definitionHash) fail(`method_not_in_standing_approval:${payload.policyVersion}`);
-    if (row.entity_kind === "baseline_evaluation_policy" && !approved.policies[payload.policyVersion]) fail(`method_not_in_standing_approval:${payload.policyVersion}`);
+    if (row.entity_kind === "baseline_evaluation_policy" && (!approved.policies[payload.policyVersion] || payload.ownerApprovalRef !== approved.standingApprovalRef
+      || hash(nativeDailyPolicyTerms(payload)) !== approved.policyTerms[payload.policyVersion])) fail(`method_not_in_standing_approval:${payload.policyVersion}`);
     if (row.entity_kind === "seasonal_rate_bundle" && !approved.policies[payload.manifest.policyVersion]) fail(`method_not_in_standing_approval:${payload.manifest.policyVersion}`);
     if (row.entity_kind === "participation_bundle" && !datasets.includes(row.dataset_key)) fail(`method_not_in_standing_approval:${row.dataset_key}`);
   }
@@ -193,6 +255,57 @@ export function buildDailyMaterializationRequestV2(args: { acquisition: NativeMa
     participationInputs: args.participationInputs as NativeMaterializationRequest["participationInputs"], ...merged };
   return { ...bindNativeCadenceMaterialization(request, { runId: args.runId, sourceKey: args.sourceKey, date: args.date, seasonId: args.seasonId,
     games: args.games }), requestBytes: Buffer.byteLength(JSON.stringify(request)) };
+}
+
+/** The day's two bound requests (A-14): skater means and participation in one, goalie in the other. Both keep the whole
+ * universe as the acquisition roster and the same merged parents, so each closes on its own; one cadence scope binds both. */
+export function buildDailyMaterializationRequestsV2(args: Omit<Parameters<typeof buildDailyMaterializationRequestV2>[0], "runId" | "sourceKey"> & {
+  runIds: { skater: string; goalie: string } }) {
+  assertParticipationMaterializationBound(args.participationInputs);
+  if (micros(args.means.cutoffAt) > micros(args.cutoffAt)) fail("means_cutoff_after_inputs_cutoff");
+  const classOf = new Map(args.universe.map(player => [player.playerId, player.playerClass]));
+  const merged = mergeNativeMaterializationParents(args.participationParents, args.means.parents);
+  const part = (playerClass: "skater" | "goalie"): NativeMaterializationRequest => {
+    const nativeSelection = args.means.nativeSelection.filter(value => classOf.get(value.playerId) === playerClass);
+    const additionalNativeObservations = (args.means.additionalNativeObservations ?? []).filter(value => classOf.get(value.payload?.playerId) === playerClass);
+    const participationInputs = args.participationInputs.filter(input => input.playerClass === playerClass);
+    if (!nativeSelection.length && !participationInputs.length) fail(`split_materialization_part_empty:${playerClass}`);
+    return { runId: args.runIds[playerClass], sourceKey: NATIVE_DAILY_SOURCE_KEYS[playerClass], date: args.date, closureScopeHash: "",
+      acquisition: { ...args.acquisition, roster: args.universe, cutoffAt: args.cutoffAt }, nativeSelection, additionalNativeObservations,
+      participationInputs: participationInputs as NativeMaterializationRequest["participationInputs"], ...merged };
+  };
+  if (args.means.nativeSelection.some(value => !classOf.has(value.playerId))) fail("means_universe_conflict");
+  const bound = bindNativeCadenceSplitMaterialization({ skater: part("skater"), goalie: part("goalie") }, { runIds: args.runIds,
+    sourceKeys: NATIVE_DAILY_SOURCE_KEYS, date: args.date, seasonId: args.seasonId, games: args.games });
+  return { ...bound, requestBytes: { skater: Buffer.byteLength(JSON.stringify(bound.requests.skater)), goalie: Buffer.byteLength(JSON.stringify(bound.requests.goalie)) } };
+}
+
+const scheduleUrl = (date: string) => `https://api-web.nhle.com/v1/schedule/${date}`;
+/** The participation method a capture on this New York date serves (its cutoff falls on that date). */
+export const nativeDailyCaptureMethod = (date: string) =>
+  micros(`${date}T16:00:00Z`) <= micros(FROZEN_PARTICIPATION_LAST_CUTOFF) ? "frozen_window" as const : "rolling_14d" as const;
+
+/** Rolling capture plan from the universe's clubs, in fetch order: the window's weekly schedules (D-14, D-7), the final
+ * window boxscores they list for those clubs, weekly schedules from the run date, then each club's official roster
+ * (abbreviations from the captured schedules). Boxscores and rosters are planned once the schedules they need are given. */
+export function nativeDailyRollingCapturePlan(args: { universe: NativeMeansUniverseRow[]; seasonId: number; date: string; weeks: number;
+  scheduleReceipts?: HttpReceipt[] }) {
+  if (!Number.isSafeInteger(args.weeks) || args.weeks < 1 || args.weeks > 10) fail("invalid_weeks");
+  if (nativeDailyCaptureMethod(args.date) !== "rolling_14d") fail("capture_method_not_rolling");
+  const windowSchedules = rollingHistoryScheduleUrls(`${args.date}T16:00:00Z`);
+  const futureSchedules = Array.from({ length: args.weeks }, (_, index) =>
+    scheduleUrl(new Date(Date.parse(`${args.date}T12:00:00Z`) + index * 7 * 86400000).toISOString().slice(0, 10)));
+  const clubIds = [...new Set(args.universe.map(player => player.teamId))].sort((a, b) => a - b), receipts = args.scheduleReceipts ?? [];
+  const window = receipts.filter(receipt => windowSchedules.includes(receipt.url));
+  if (window.length !== windowSchedules.length) return { windowSchedules, boxscores: null, futureSchedules, rosters: null };
+  const boxscores = rollingHistoryBoxscoreUrls({ cutoffAt: window.map(receipt => receipt.capturedAt).sort((a, b) => Number(micros(a) - micros(b))).at(-1)!,
+    seasonId: args.seasonId, clubIds, scheduleReceipts: window });
+  if (futureSchedules.some(url => !receipts.some(receipt => receipt.url === url))) return { windowSchedules, boxscores, futureSchedules, rosters: null };
+  const clubs = new Map<number, string>();
+  for (const receipt of receipts) for (const day of JSON.parse(receipt.rawBody).gameWeek ?? []) for (const game of day.games ?? [])
+    for (const team of [game.homeTeam, game.awayTeam]) if (team?.id && team.abbrev) clubs.set(team.id, team.abbrev);
+  if (clubIds.some(id => !clubs.has(id))) fail("club_abbreviation_unknown");
+  return { windowSchedules, boxscores, futureSchedules, rosters: clubIds.map(id => `https://api-web.nhle.com/v1/roster/${clubs.get(id)}/${args.seasonId}`) };
 }
 
 /** Bundle-level schedule revision for fresh baseline sources: the fresh schedule originals this issuance saw. */

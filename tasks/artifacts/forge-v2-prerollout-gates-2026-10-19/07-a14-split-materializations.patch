@@ -1,0 +1,737 @@
+diff --git a/web/lib/player-forecasts/nativeBaselineCadence.ts b/web/lib/player-forecasts/nativeBaselineCadence.ts
+index 4bed141..953325d 100644
+--- a/web/lib/player-forecasts/nativeBaselineCadence.ts
++++ b/web/lib/player-forecasts/nativeBaselineCadence.ts
+@@ -19,17 +19,31 @@ const seasonForDate = (date: string) => {
+ 
+ /** The observer must count these declared immutable inputs, not elapsed time or
+  * detailed-queue success. A manifest is an identity binding, not completeness proof. */
+-export function nativeCadenceInputManifest(plan: NativeBaselinePublicationPlan) {
+-  const inputs = plan.rows.flatMap<{ key: string; hash: string; availableAt: string }>(row => {
++function nativeCadenceInputItems(plan: NativeBaselinePublicationPlan) {
++  return plan.rows.flatMap<{ key: string; hash: string; availableAt: string; playerClass: string | null }>(row => {
+     const payload = row.payload as any;
+-    if (row.entity_kind === "player") return [{ key: `${row.dataset_key}:${row.entity_key}:${payload.policyVersion ?? "legacy"}`, hash: row.payload_hash, availableAt: row.available_at }];
++    if (row.entity_kind === "player") return [{ key: `${row.dataset_key}:${row.entity_key}:${payload.policyVersion ?? "legacy"}`, hash: row.payload_hash, availableAt: row.available_at,
++      playerClass: row.dataset_key === "baseline-inputs-v1" ? "skater" : row.dataset_key === "goalie-baseline-inputs-v1" ? "goalie" : null }];
+     if (row.entity_kind === "participation_bundle") return payload.entries.map((entry: any) => ({
+       key: `${row.dataset_key}:${entry.input.scope.playerId}:${entry.input.scope.gameId}`,
+-      hash: hash(entry.input), availableAt: entry.input.cutoffAt,
++      hash: hash(entry.input), availableAt: entry.input.cutoffAt, playerClass: entry.input.playerClass ?? null,
+     }));
+     return [];
+   });
+-  return nativeInputManifest(inputs);
++}
++export function nativeCadenceInputManifest(plan: NativeBaselinePublicationPlan) {
++  return nativeInputManifest(nativeCadenceInputItems(plan).map(({ playerClass: _class, ...item }) => item));
++}
++export type NativeCadenceInputSources = { skater: string; goalie: string };
++/** The manifest each closed input source must carry. One source closes the whole plan; a split day (A-14, TJ 2026-10-20)
++ * has a skater and a goalie source, and each closes exactly its class's part. Every input belongs to exactly one part. */
++export function nativeCadenceSourceManifests(input: Pick<Parameters<typeof publishNativeBaselineCadence>[0], "publicationPlan" | "inputSourceKey" | "inputSources">) {
++  if (!input.inputSources) return { [input.inputSourceKey]: nativeCadenceInputManifest(input.publicationPlan) };
++  const { skater, goalie } = input.inputSources, items = nativeCadenceInputItems(input.publicationPlan);
++  if (!skater?.trim() || !goalie?.trim() || skater === goalie || ![skater, goalie].includes(input.inputSourceKey)
++    || items.some(item => item.playerClass !== "skater" && item.playerClass !== "goalie")) throw new Error("Native cadence input sources are invalid.");
++  const part = (playerClass: string) => nativeInputManifest(items.filter(item => item.playerClass === playerClass).map(({ playerClass: _class, ...item }) => item));
++  return { [skater]: part("skater"), [goalie]: part("goalie") };
+ }
+ 
+ /** Native publication stage for one explicit 08:00-NY or T-15 decision.
+@@ -38,6 +52,8 @@ export function nativeCadenceInputManifest(plan: NativeBaselinePublicationPlan)
+  * No legacy detailed worker or scheduler is invoked by this adapter. */
+ export async function publishNativeBaselineCadence(input: {
+   cadence: ForecastCadenceInput; slotKey: string; inputSourceKey: string;
++  /** Split day: the skater and goalie closures of one issuance (inputSourceKey is one of them). */
++  inputSources?: NativeCadenceInputSources;
+   publicationPlan: NativeBaselinePublicationPlan;
+   requiredAcquisitionScopes?: Record<string, { scopeHash: string; cutoffAt: string }>;
+ }, options: { dryRun?: boolean; approvedPackageHash?: string; db?: SupabaseClient<any>; monotonic?: () => number } = {}) {
+@@ -58,11 +74,16 @@ export async function publishNativeBaselineCadence(input: {
+   if (frozen.publicationPlan.seasonId !== seasonForDate(frozen.cadence.date)) return held(["native_target_scope_mismatch"]);
+   await validateNativeBaselinePublication(frozen.publicationPlan, now);
+   const manifest = nativeCadenceInputManifest(frozen.publicationPlan);
+-  const source = frozen.cadence.sources.find(candidate => candidate.key === frozen.inputSourceKey && candidate.date === frozen.cadence.date);
+-  if (!frozen.cadence.requiredSources.includes(frozen.inputSourceKey) || !manifest.expectedItems || !source
+-    || source.revision !== manifest.revision || source.expectedItems !== manifest.expectedItems
+-    || source.completedItems !== manifest.expectedItems || !source.completedAt || manifest.availableAt === null
+-    || Date.parse(source.completedAt) < Date.parse(manifest.availableAt)) return held(["native_input_manifest_mismatch"]);
++  let parts: Record<string, ReturnType<typeof nativeCadenceInputManifest>>;
++  try { parts = nativeCadenceSourceManifests(frozen); } catch { return held(["native_input_manifest_mismatch"]); }
++  const closed = Object.entries(parts).map(([key, part]) => ({ part, source: frozen.cadence.sources.find(candidate => candidate.key === key && candidate.date === frozen.cadence.date),
++    required: frozen.cadence.requiredSources.includes(key) }));
++  if (closed.some(({ part, source, required }) => !required || !part.expectedItems || !source
++    || source.revision !== part.revision || source.expectedItems !== part.expectedItems
++    || source.completedItems !== part.expectedItems || !source.completedAt || part.availableAt === null
++    || Date.parse(source.completedAt) < Date.parse(part.availableAt))) return held(["native_input_manifest_mismatch"]);
++  // Outputs follow the last closure of the day.
++  const source = closed.map(value => value.source!).sort((a, b) => Date.parse(b.completedAt!) - Date.parse(a.completedAt!))[0];
+   const targets: Array<{ playerId: number; nhlPlayerId: number; teamId: number; rosterRevision: string;
+     seasonId: number; gameId: number; scheduledAt: string }> = [];
+   const outputs: string[] = [];
+@@ -227,7 +248,9 @@ export async function publishJournaledNativeBaselineCadence(input: Parameters<ty
+ export function nativeCadenceClosureScope(input: Parameters<typeof publishNativeBaselineCadence>[0]) {
+   return hash({ seasonId: input.publicationPlan.seasonId, date: input.cadence.date,
+     requiredSources: input.cadence.requiredSources.slice().sort(), games: input.cadence.games.slice().sort((a, b) => a.gameId - b.gameId),
+-    requiredAcquisitionScopes: input.requiredAcquisitionScopes ?? {} });
++    requiredAcquisitionScopes: input.requiredAcquisitionScopes ?? {},
++    // Added only for a split day, so single-source scopes keep their identity.
++    ...(input.inputSources ? { inputSources: input.inputSources } : {}) });
+ }
+ /** Bind one acquired request to its New York cadence date and games before materialization.
+  * The returned scopes are what prepare/publish later require; nothing is acquired or written. */
+@@ -240,11 +263,28 @@ export function bindNativeCadenceMaterialization(request: NativeMaterializationR
+     cadence: { now: new Date(0), date: binding.date, requiredSources: [binding.sourceKey], games: binding.games, sources: [], previous: [] } });
+   return { request: bound, requiredAcquisitionScopes, closureScopeHash: bound.closureScopeHash };
+ }
++/** Bind a split day's skater and goalie requests (A-14) to one cadence scope: each keeps its own run, source key and
++ * acquisition scope, and both close under the same closure scope, which names both sources. Nothing is acquired or written. */
++export function bindNativeCadenceSplitMaterialization(requests: { skater: NativeMaterializationRequest; goalie: NativeMaterializationRequest }, binding: {
++  runIds: { skater: string; goalie: string }; sourceKeys: NativeCadenceInputSources; date: string; seasonId: number; games: Array<{ gameId: number; startsAt: string }> }) {
++  if (binding.runIds.skater === binding.runIds.goalie || binding.sourceKeys.skater === binding.sourceKeys.goalie) throw new Error("Split materialization identities must differ.");
++  const skater: NativeMaterializationRequest = { ...requests.skater, runId: binding.runIds.skater, sourceKey: binding.sourceKeys.skater, date: binding.date };
++  const goalie: NativeMaterializationRequest = { ...requests.goalie, runId: binding.runIds.goalie, sourceKey: binding.sourceKeys.goalie, date: binding.date };
++  const requiredAcquisitionScopes = Object.fromEntries([skater, goalie].map(request => [request.sourceKey,
++    { scopeHash: nativeAcquisitionScopeHash(request), cutoffAt: request.acquisition.cutoffAt }]));
++  const closureScopeHash = nativeCadenceClosureScope({ publicationPlan: { version: "native-baseline-publication-plan-v1", seasonId: binding.seasonId, rows: [] },
++    slotKey: "", inputSourceKey: binding.sourceKeys.skater, inputSources: binding.sourceKeys, requiredAcquisitionScopes,
++    cadence: { now: new Date(0), date: binding.date, requiredSources: [binding.sourceKeys.skater, binding.sourceKeys.goalie], games: binding.games, sources: [], previous: [] } });
++  skater.closureScopeHash = closureScopeHash; goalie.closureScopeHash = closureScopeHash;
++  return { requests: { skater, goalie }, requiredAcquisitionScopes, closureScopeHash, inputSources: binding.sourceKeys };
++}
+ /** Reproduce the materializer's durable original inputs before accepting closure.
+  * Neither manifest identity nor caller counts imply completion. */
+ export async function observeClosedNativeCadenceSources(input: Parameters<typeof publishNativeBaselineCadence>[0],
+   db: SupabaseClient<any>, receiptIds: Record<string, string> = {}) {
+-  const manifest = nativeCadenceInputManifest(input.publicationPlan), sources: ForecastCadenceInput["sources"] = [];
++  const sources: ForecastCadenceInput["sources"] = [];
++  let parts: Record<string, ReturnType<typeof nativeCadenceInputManifest>>;
++  try { parts = nativeCadenceSourceManifests(input); } catch { return { complete: false as const, sources, reason: "native_input_sources_invalid" }; }
+   const deadline = Date.now() + 180000;
+   if (input.cadence.requiredSources.length > NATIVE_BASELINE_CADENCE_LIMITS.sources) throw new Error("Producer receipt bound exceeded.");
+   for (const key of input.cadence.requiredSources) {
+@@ -254,19 +294,19 @@ export async function observeClosedNativeCadenceSources(input: Parameters<typeof
+       const result = await withinDeadline(Math.min(deadline, Date.now() + 8000), signal => db.from("player_forecast_source_observations")
+         .select(SOURCE_OBSERVATION_COLUMNS).eq("id", id).limit(2).abortSignal(signal));
+       const row = result.data?.[0], value = row?.payload;
+-      const required = input.requiredAcquisitionScopes?.[key];
++      const required = input.requiredAcquisitionScopes?.[key], part = parts[key];
+       if (result.error || !Array.isArray(result.data) || result.data.length !== 1 || !row || row.id !== id || Buffer.byteLength(JSON.stringify(row)) > 64 * 1024
+         || row.provider !== "fhfh" || row.dataset_key !== "native-producer-closure-v1" || row.entity_kind !== "producer_closure"
+         || row.entity_key !== `${input.cadence.date}:${key}` || row.payload_hash !== hash(value)
+         || value?.version !== "native-producer-closure-v1" || value.producerVersion !== "native-input-materialization-v1" || value.status !== "closed"
+         || !required || !/^[a-f0-9]{64}$/.test(required.scopeHash) || value.acquisitionScopeHash !== required.scopeHash
+         || value.inputCutoffAt !== required.cutoffAt
+-        || value.scopeHash !== nativeCadenceClosureScope(input) || value.inputRevision !== manifest.revision
+-        || value.expectedItems !== manifest.expectedItems || value.completedItems !== manifest.expectedItems
++        || value.scopeHash !== nativeCadenceClosureScope(input) || !part || value.inputRevision !== part.revision
++        || value.expectedItems !== part.expectedItems || value.completedItems !== part.expectedItems
+         || !/^[a-f0-9-]{36}$/.test(value.runId) || !Number.isFinite(Date.parse(value.closedAt))
+         || Date.parse(value.closedAt) > input.cadence.now.getTime() || !Number.isFinite(Date.parse(row.available_at))
+         || Date.parse(row.available_at) < Date.parse(value.closedAt) || Date.parse(row.available_at) > input.cadence.now.getTime()
+-        || Date.parse(value.closedAt) < Date.parse(manifest.availableAt ?? "") || Date.parse(row.observed_at) !== Date.parse(value.closedAt)) {
++        || Date.parse(value.closedAt) < Date.parse(part.availableAt ?? "") || Date.parse(row.observed_at) !== Date.parse(value.closedAt)) {
+         return { complete: false as const, sources, reason: `producer_closed_receipt_invalid:${key}` };
+       }
+       await verifyNativeMaterialization(db, row as PlannedSourceObservation, deadline);
+diff --git a/web/lib/player-forecasts/nativeCadenceOutputPreparation.ts b/web/lib/player-forecasts/nativeCadenceOutputPreparation.ts
+index 7c88c48..ddfa4bb 100644
+--- a/web/lib/player-forecasts/nativeCadenceOutputPreparation.ts
++++ b/web/lib/player-forecasts/nativeCadenceOutputPreparation.ts
+@@ -10,7 +10,7 @@ import { buildRollingWindowGoalieParticipationReceipt, buildRollingWindowGoalieS
+   buildRollingWindowSkaterParticipationReceipt } from "./rollingWindowParticipation";
+ import { contributionBundleCandidateInputHash, contributionBundleChecksum, persistContributionBundle } from "./contributionStore";
+ import { SKATER_PARTICIPATION_RELEASE_LIMITS } from "./modeledSkaterParticipationStore";
+-import { nativeCadenceClosureScope, nativeCadenceInputManifest, publishObservedNativeBaselineCadence } from "./nativeBaselineCadence";
++import { nativeCadenceClosureScope, nativeCadenceInputManifest, nativeCadenceSourceManifests, publishObservedNativeBaselineCadence } from "./nativeBaselineCadence";
+ import type { NativeBaselinePublicationPlan } from "./nativeBaselinePublication";
+ import { playerForecastSourcePayloadHash as hash, type PlannedSourceObservation } from "./sourceSnapshot";
+ import { timestampMicros } from "../projections/evidenceTime";
+@@ -26,11 +26,15 @@ import { timestampMicros } from "../projections/evidenceTime";
+  * review. The reviewed plan then supplies only each policy's terms (public uses and evidence reference).
+  * A daily proof may leave out means-only players (no participation target). Their sources are then dropped;
+  * a policy whose bundle shrank gets a new policy row under `standingApprovalRef`, scoped to that day's
+- * candidate input hash, and a policy left with no sources is not issued. */
++ * candidate input hash, and a policy left with no sources is not issued.
++ * A split daily day (A-14) adds `goalieMaterialization`: `materialization` is then the skater closure, the proof is
++ * `{ skater, goalie }`, and both closures feed one plan, one cadence slot and one catalog head. */
++type MaterializationRef = { runId: string; sourceKey: string; date: string; closureScopeHash: string };
+ export type NativeOutputPreparationCommand = {
+   version: "native-output-preparation-v1";
+   slotKey: string; dueAt: string;
+-  materialization: { runId: string; sourceKey: string; date: string; closureScopeHash: string };
++  materialization: MaterializationRef;
++  goalieMaterialization?: MaterializationRef;
+   games: Array<{ gameId: number; startsAt: string }>;
+   requiredAcquisitionScopes: Record<string, { scopeHash: string; cutoffAt: string }>;
+   /** Previously reviewed plan over the same inputs: policies, reviews, bundles and selected participation bundles. */
+@@ -60,25 +64,36 @@ const DAILY_PARTICIPATION_BUNDLE_BYTES = 7 * 1024 * 1024;
+ const withoutIssuance = ({ issuedAt: _issued, released: _released, ...rest }: any) => rest;
+ const withoutIssuedAt = ({ issuedAt: _issued, ...rest }: any) => rest;
+ 
+-export async function prepareNativeCadenceOutputs(command: NativeOutputPreparationCommand, proof: ClosedProof,
++export async function prepareNativeCadenceOutputs(command: NativeOutputPreparationCommand, proofs: ClosedProof | { skater: ClosedProof; goalie: ClosedProof },
+   now: Date, newId: () => string = randomUUID) {
+-  const { materialization: request, reviewedPlan } = command;
++  const { materialization: request, goalieMaterialization: goalieRequest, reviewedPlan } = command;
+   if (command?.version !== "native-output-preparation-v1" || reviewedPlan?.version !== "native-baseline-publication-plan-v1") fail("preparation_command_required");
+-  const closure = proof?.closure?.payload as any, issuedAt = now.toISOString(), seasonId = reviewedPlan.seasonId;
+-  if (proof?.status !== "closed" || !closure || closure.runId !== request.runId || closure.scopeHash !== request.closureScopeHash
+-    || closure.materializationHash !== proof.report.payload_hash || hash(proof.report.payload) !== proof.report.payload_hash
+-    || hash(closure) !== proof.closure.payload_hash) fail("closed_materialization_proof_required");
+-  // The top-level manifest is a convenience copy; bind it to the hashed report and closure.
+-  if (!proof.manifest || hash(proof.manifest) !== hash((proof.report.payload as any).manifest) || closure.inputRevision !== proof.manifest.revision
+-    || closure.expectedItems !== proof.manifest.expectedItems) fail("materialization_manifest_unbound");
+-  const required = command.requiredAcquisitionScopes?.[request.sourceKey];
+-  if (!required || required.scopeHash !== closure.acquisitionScopeHash || required.cutoffAt !== closure.inputCutoffAt) fail("acquisition_scope_mismatch");
+-  if (micros(issuedAt) < micros(command.dueAt)) fail("slot_not_due");
+-  if (micros(issuedAt) < micros(closure.closedAt)) fail("outputs_must_be_issued_after_closed_inputs");
+-  const reported = new Map(((proof.report.payload as any).rows ?? []).map((row: any) => [row.id, row]));
+-  if (new Set(proof.rows.map(row => row.id)).size !== proof.rows.length || reported.size !== proof.rows.length
+-    || proof.rows.some(row => hash(row.payload) !== row.payload_hash || (reported.get(row.id) as any)?.hash !== row.payload_hash
+-    || (reported.get(row.id) as any)?.dataset !== row.dataset_key)) fail("materialized_row_mismatch");
++  const split = goalieRequest !== undefined, issuedAt = now.toISOString(), seasonId = reviewedPlan.seasonId;
++  if (split !== ("skater" in (proofs ?? {}))) fail("closed_materialization_proof_required");
++  if (split && (!command.daily || goalieRequest!.date !== request.date || goalieRequest!.closureScopeHash !== request.closureScopeHash
++    || goalieRequest!.runId === request.runId || goalieRequest!.sourceKey === request.sourceKey)) fail("split_materialization_mismatch");
++  const parts = split ? [{ request, proof: (proofs as { skater: ClosedProof }).skater }, { request: goalieRequest!, proof: (proofs as { goalie: ClosedProof }).goalie }]
++    : [{ request, proof: proofs as ClosedProof }];
++  for (const { request, proof } of parts) {
++    const closure = proof?.closure?.payload as any;
++    if (proof?.status !== "closed" || !closure || closure.runId !== request.runId || closure.scopeHash !== request.closureScopeHash
++      || closure.materializationHash !== proof.report.payload_hash || hash(proof.report.payload) !== proof.report.payload_hash
++      || hash(closure) !== proof.closure.payload_hash) fail("closed_materialization_proof_required");
++    // The top-level manifest is a convenience copy; bind it to the hashed report and closure.
++    if (!proof.manifest || hash(proof.manifest) !== hash((proof.report.payload as any).manifest) || closure.inputRevision !== proof.manifest.revision
++      || closure.expectedItems !== proof.manifest.expectedItems) fail("materialization_manifest_unbound");
++    const required = command.requiredAcquisitionScopes?.[request.sourceKey];
++    if (!required || required.scopeHash !== closure.acquisitionScopeHash || required.cutoffAt !== closure.inputCutoffAt) fail("acquisition_scope_mismatch");
++    if (micros(issuedAt) < micros(command.dueAt)) fail("slot_not_due");
++    if (micros(issuedAt) < micros(closure.closedAt)) fail("outputs_must_be_issued_after_closed_inputs");
++    const reported = new Map(((proof.report.payload as any).rows ?? []).map((row: any) => [row.id, row]));
++    if (new Set(proof.rows.map(row => row.id)).size !== proof.rows.length || reported.size !== proof.rows.length
++      || proof.rows.some(row => hash(row.payload) !== row.payload_hash || (reported.get(row.id) as any)?.hash !== row.payload_hash
++      || (reported.get(row.id) as any)?.dataset !== row.dataset_key)) fail("materialized_row_mismatch");
++  }
++  // The day's last closure; split parts are disjoint by class, so their player and participation rows simply join.
++  const closure = parts.map(part => part.proof.closure.payload as any).sort((a, b) => Number(micros(b.closedAt) - micros(a.closedAt)))[0];
++  const proof = { rows: parts.flatMap(part => part.proof.rows), manifest: parts[0].proof.manifest };
+   const daily = command.daily;
+   if (daily && (micros(daily.expiresAt) <= micros(issuedAt) || micros(daily.expiresAt) > micros(issuedAt) + BigInt(12 * 3600 * 1000000)
+     || !daily.participationOwnerApprovalRef?.trim()
+@@ -245,15 +260,17 @@ export async function prepareNativeCadenceOutputs(command: NativeOutputPreparati
+       { ...original.metadata, pendingIndependentReview: true }));
+   }
+   const plan: NativeBaselinePublicationPlan = { version: "native-baseline-publication-plan-v1", seasonId, rows };
+-  if (hash(nativeCadenceInputManifest(plan)) !== hash(proof.manifest)) fail("prepared_plan_input_manifest_mismatch");
++  const inputSources = split ? { skater: request.sourceKey, goalie: goalieRequest!.sourceKey } : undefined;
++  const manifests = nativeCadenceSourceManifests({ publicationPlan: plan, inputSourceKey: request.sourceKey, inputSources });
++  if (parts.some(part => hash(manifests[part.request.sourceKey]) !== hash(part.proof.manifest))) fail("prepared_plan_input_manifest_mismatch");
+   const cadenceInput: Parameters<typeof publishObservedNativeBaselineCadence>[0] = { slotKey: command.slotKey, inputSourceKey: request.sourceKey,
+-    publicationPlan: plan, requiredAcquisitionScopes: command.requiredAcquisitionScopes,
+-    cadence: { now, date: request.date, requiredSources: [request.sourceKey], games: command.games, previous: [],
+-      sources: [{ key: request.sourceKey, date: request.date, status: "complete", revision: proof.manifest.revision,
+-        completedAt: closure.closedAt, expectedItems: proof.manifest.expectedItems, completedItems: proof.manifest.expectedItems }] } };
++    ...(inputSources ? { inputSources } : {}), publicationPlan: plan, requiredAcquisitionScopes: command.requiredAcquisitionScopes,
++    cadence: { now, date: request.date, requiredSources: parts.map(part => part.request.sourceKey), games: command.games, previous: [],
++      sources: parts.map(part => ({ key: part.request.sourceKey, date: request.date, status: "complete" as const, revision: part.proof.manifest.revision,
++        completedAt: (part.proof.closure.payload as any).closedAt, expectedItems: part.proof.manifest.expectedItems, completedItems: part.proof.manifest.expectedItems })) } };
+   if (nativeCadenceClosureScope(cadenceInput) !== request.closureScopeHash) fail("cadence_closure_scope_mismatch");
+   return { plan, cadenceCommand: { version: "native-cadence-command-v1" as const, cadenceInput,
+-    producerReceiptIds: { [request.sourceKey]: proof.closure.id }, catalogHead: null },
++    producerReceiptIds: Object.fromEntries(parts.map(part => [part.request.sourceKey, part.proof.closure.id])), catalogHead: null },
+   receipt: { status: "outputs_built_pending_independent_review_and_catalog_head", issuedAt, dueAt: command.dueAt, closedAt: closure.closedAt,
+     nativeInputs: inputs.length, nativeSources: fresh.size, participationEntries, nullParticipation, rows: rows.length, reviews,
+     ...(daily ? { dailyExpiresAt: daily.expiresAt, [freshMeans ? "nativeInputCutoffs" : "nativeMeansFrozenAtCutoff"]: [...new Set(inputs.map(row => (row.payload as any).capturedAt))].sort(),
+diff --git a/web/lib/player-forecasts/nativeDailyPipelineV2.test.ts b/web/lib/player-forecasts/nativeDailyPipelineV2.test.ts
+index 2ea7b11..349752a 100644
+--- a/web/lib/player-forecasts/nativeDailyPipelineV2.test.ts
++++ b/web/lib/player-forecasts/nativeDailyPipelineV2.test.ts
+@@ -5,8 +5,14 @@ import { assertFreshMeansBinding, assertFreshMeansPolicyTemplates, assertPartici
+   buildRollingDailyParticipationInputs, NATIVE_DAILY_APPROVED_METHODS, FROZEN_PARTICIPATION_LAST_CUTOFF, NATIVE_DAILY_V2_FLAGS, nativeDailyCaptureMethod, nativeDailyKnownConflicts,
+   nativeDailyNullParticipation, nativeDailyParticipationMethod, nativeDailyPolicyTerms, nativeDailyRollingCapturePlan, nativeDailyScheduleRevision, nativeDailyUniverse,
+   nativeDailyV2Flags } from "./nativeDailyPipelineV2";
+-import { NATIVE_MATERIALIZATION_MAX_PARTICIPATION_INPUTS } from "./nativeInputMaterialization";
++import { NATIVE_MATERIALIZATION_MAX_PARTICIPATION_INPUTS, prepareNativeInputMaterialization } from "./nativeInputMaterialization";
+ import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
++import { buildDailyMaterializationRequestsV2, NATIVE_DAILY_SOURCE_KEYS } from "./nativeDailyPipelineV2";
++import { buildRollingParticipationHistories } from "./rollingParticipationFrame";
++import { prepareNativeCadenceOutputs } from "./nativeCadenceOutputPreparation";
++import { nativeCadenceSourceManifests, observeClosedNativeCadenceSources, publishNativeBaselineCadence } from "./nativeBaselineCadence";
++import { applyNativeDailyReview } from "./nativeDailyPipeline";
++import { validateCadenceCommand } from "../../scripts/native-baseline-cadence";
+ import { PROPOSED_YAHOO_KNOWN_CONFLICT_POLICY_HASH } from "./yahooUniverse";
+ 
+ const off = nativeDailyV2Flags(undefined);
+@@ -47,12 +53,16 @@ describe("v2 daily composition flags and gates", () => {
+     expect(nativeDailyUniverse(universe({ change: { added: [8], removed: [] } }), { ...off, universeThresholds: true }).gate.added).toBe(1);
+   });
+ 
+-  it("stops a rolling universe over the materializer's participation bound offline (A-14)", () => {
++  it("bounds each split materialization by kind, so a 1,520-input rolling day passes and a per-kind overflow still stops (A-14)", () => {
+     expect(NATIVE_MATERIALIZATION_MAX_PARTICIPATION_INPUTS).toBe(1500);
+-    // 62 skaters x 20 games, plus 7 goalies x 20 games x (appearance + start).
+-    const rolling = Array.from({ length: 62 * 20 + 7 * 2 * 20 }, () => ({}));
+-    expect(() => assertParticipationMaterializationBound(rolling)).toThrow("participation_inputs_exceed_materialization_bound:1520");
+-    expect(() => assertParticipationMaterializationBound(rolling.slice(0, 1500))).not.toThrow();
++    // 62 skaters x 20 games, plus 7 goalies x 20 games x (appearance + start): one request each.
++    const skaters = Array.from({ length: 62 * 20 }, () => ({ playerClass: "skater" })), goalies = Array.from({ length: 7 * 2 * 20 }, () => ({ playerClass: "goalie" }));
++    expect(() => assertParticipationMaterializationBound([...skaters, ...goalies])).not.toThrow();
++    expect(() => assertParticipationMaterializationBound([...skaters, ...skaters.slice(0, 261), ...goalies]))
++      .toThrow("participation_inputs_exceed_materialization_bound:skater:1501");
++    expect(() => assertParticipationMaterializationBound([...skaters, ...Array.from({ length: 1501 }, () => ({ playerClass: "goalie" }))]))
++      .toThrow("participation_inputs_exceed_materialization_bound:goalie:1501");
++    expect(() => assertParticipationMaterializationBound([{}])).toThrow("participation_input_class_unknown");
+   });
+ 
+   it("binds fresh means to the run date, a complete plan and the whole universe (A-17)", () => {
+@@ -172,3 +182,110 @@ describe("v2 daily composition flags and gates", () => {
+     expect(nativeDailyScheduleRevision([schedule, roster])).toBe(nativeDailyScheduleRevision([schedule]));
+   });
+ });
++
++describe("A-14 split materializations: one issuance from a skater and a goalie closure", () => {
++  const date = "2026-10-15", cutoffAt = "2026-10-15T10:00:00Z", closedAt = "2026-10-15T11:30:00.000Z", issued = new Date("2026-10-15T12:00:00Z");
++  const expiresAt = "2026-10-15T22:59:59.999Z", seasonId = 20262027, approvalRef = NATIVE_DAILY_APPROVED_METHODS.standingApprovalRef;
++  const runIds = { skater: "00000000-0000-4000-8000-000000000201", goalie: "00000000-0000-4000-8000-000000000202" };
++  const body = { id: 2026020001, season: seasonId, gameDate: "2026-10-01", gameType: 2, startTimeUTC: "2026-10-01T23:00:00Z", gameState: "FINAL",
++    homeTeam: { id: 1 }, awayTeam: { id: 2 }, playerByGameStats: {
++      homeTeam: { forwards: [{ playerId: 1001, toi: "20:00", goals: 1, assists: 0, sog: 3, hits: 0, blockedShots: 0, pim: 0 }], defense: [], goalies: [{ playerId: 9003 }] },
++      awayTeam: { forwards: [{ playerId: 9001 }], defense: [], goalies: [{ playerId: 9002 }] } } };
++  const rawBody = JSON.stringify(body), sha = (value: string) => createHash("sha256").update(value).digest("hex");
++  const boxscore = { url: `https://api-web.nhle.com/v1/gamecenter/${body.id}/boxscore`, capturedAt: "2026-10-02T03:00:00Z", bodySha256: sha(rawBody), rawBody };
++  const week = (start: string) => {
++    const raw = JSON.stringify({ gameWeek: Array.from({ length: 7 }, (_, i) => {
++      const day = new Date(Date.parse(`${start}T12:00:00Z`) + i * 86400000).toISOString().slice(0, 10);
++      return { date: day, games: day === "2026-10-01" ? [{ id: body.id, season: seasonId, gameType: 2, startTimeUTC: body.startTimeUTC,
++        gameState: "OFF", gameScheduleState: "OK", homeTeam: { id: 1, abbrev: "AAA" }, awayTeam: { id: 2, abbrev: "BBB" } }] : [] };
++    }) });
++    return { url: `https://api-web.nhle.com/v1/schedule/${start}`, capturedAt: "2026-10-15T09:00:00Z", rawBody: raw, bodySha256: sha(raw) };
++  };
++  const universeRows = [...Array.from({ length: 62 }, (_, i) => ({ playerId: 100 + i, nhlPlayerId: 1001 + i, teamId: 1, rosterRevision: `r${100 + i}`, playerClass: "skater" as const })),
++    ...Array.from({ length: 7 }, (_, i) => ({ playerId: 200 + i, nhlPlayerId: 2001 + i, teamId: 1, rosterRevision: `r${200 + i}`, playerClass: "goalie" as const }))];
++  // Today's game first, then later games: every input targets the next 20 scheduled team games (25 for the overflow case).
++  const games = Array.from({ length: 25 }, (_, i) => ({ gameId: 2026020100 + i, startsAt: new Date(Date.parse("2026-10-15T23:00:00Z") + i * 2 * 86400000).toISOString() }));
++  const fixture = (perSkater = 20) => {
++    const frame = buildRollingParticipationHistories({ cutoffAt, seasonId, players: universeRows.map(({ playerId, nhlPlayerId, teamId, playerClass }) =>
++      ({ playerId, nhlPlayerId, teamId, playerClass })), scheduleReceipts: [week("2026-10-01"), week("2026-10-08")], boxscoreReceipts: [boxscore] });
++    const inputs = universeRows.flatMap(player => games.slice(0, player.playerClass === "skater" ? perSkater : 20).flatMap(game => {
++      const base = { playerClass: player.playerClass, cutoffAt, scheduleEvidence: frame.evidence, rosterEvidence: frame.evidence, targetRosterObservation: null,
++        history: frame.histories.get(player.playerId)!, scope: { playerId: player.playerId, nhlPlayerId: player.nhlPlayerId, seasonId, teamId: 1,
++          gameId: game.gameId, scheduledAt: game.startsAt, scheduleRevision: "schedule", rosterRevision: player.rosterRevision } };
++      return player.playerClass === "skater" ? [{ ...base, version: "skater-rolling-14d-participation-input-v1" }]
++        : [{ ...base, version: "goalie-rolling-14d-participation-input-v1" }, { ...base, version: "goalie-rolling-14d-start-input-v1" }];
++    })) as any[];
++    const split = buildDailyMaterializationRequestsV2({ acquisition: { seasonId, cutoffAt, games: [{ id: body.id, seasonId, date: "2026-10-01", type: 2,
++      startTime: body.startTimeUTC, homeTeamId: 1, awayTeamId: 2, endpoints: ["boxscore"] }], roster: [], receipts: [boxscore] } as any,
++    universe: universeRows, means: { cutoffAt, nativeSelection: [], additionalNativeObservations: [], parents: [] }, participationInputs: inputs,
++    participationParents: frame.parents, cutoffAt, runIds, date, seasonId, games: games.slice(0, 1) });
++    return { inputs, split };
++  };
++
++  it("splits a 62-skater, 7-goalie, 20-game day (1,520 inputs) into two bounded closures and issues it once", async () => {
++    const { inputs, split } = fixture();
++    expect(inputs).toHaveLength(1520);
++    const { skater, goalie } = split.requests;
++    expect(skater.participationInputs).toHaveLength(1240);
++    expect(goalie.participationInputs).toHaveLength(280);
++    expect([skater.sourceKey, goalie.sourceKey]).toEqual([NATIVE_DAILY_SOURCE_KEYS.skater, NATIVE_DAILY_SOURCE_KEYS.goalie]);
++    expect(skater.closureScopeHash).toBe(split.closureScopeHash);
++    expect(goalie.closureScopeHash).toBe(split.closureScopeHash);
++    // The unsplit request would exceed the materializer's bound.
++    expect(() => prepareNativeInputMaterialization({ ...skater, participationInputs: [...skater.participationInputs!, ...goalie.participationInputs!] }, closedAt))
++      .toThrow("Parent acquisition scope is incomplete or duplicated.");
++    const proofs = { skater: { status: "closed", ...prepareNativeInputMaterialization(skater, closedAt) },
++      goalie: { status: "closed", ...prepareNativeInputMaterialization(goalie, closedAt) } };
++    const command = { version: "native-output-preparation-v1" as const, slotKey: `morning:${date}`, dueAt: "2026-10-15T12:00:00.000Z",
++      materialization: { runId: skater.runId, sourceKey: skater.sourceKey, date, closureScopeHash: split.closureScopeHash },
++      goalieMaterialization: { runId: goalie.runId, sourceKey: goalie.sourceKey, date, closureScopeHash: split.closureScopeHash },
++      games: games.slice(0, 1), requiredAcquisitionScopes: split.requiredAcquisitionScopes,
++      reviewedPlan: { version: "native-baseline-publication-plan-v1" as const, seasonId, rows: [] },
++      daily: { expiresAt, participationOwnerApprovalRef: approvalRef, freshMeans: { standingApprovalRef: approvalRef, scheduleRevision: "daily-schedule:synthetic" } } };
++    let counter = 300;
++    const result = await prepareNativeCadenceOutputs(command, proofs, issued, () => `00000000-0000-4000-8000-${String(counter++).padStart(12, "0")}`);
++    expect(result.receipt).toMatchObject({ participationEntries: 1520, nativeInputs: 0 });
++    // One plan, one slot, one catalog head: both closures are required sources of the same issuance.
++    const input = result.cadenceCommand.cadenceInput;
++    expect(input.cadence.requiredSources.slice().sort()).toEqual([NATIVE_DAILY_SOURCE_KEYS.goalie, NATIVE_DAILY_SOURCE_KEYS.skater]);
++    expect(input.inputSources).toEqual({ skater: skater.sourceKey, goalie: goalie.sourceKey });
++    expect(result.cadenceCommand.producerReceiptIds).toEqual({ [skater.sourceKey]: proofs.skater.closure.id, [goalie.sourceKey]: proofs.goalie.closure.id });
++    const manifests = nativeCadenceSourceManifests(input);
++    expect(manifests[skater.sourceKey]).toEqual(proofs.skater.manifest);
++    expect(manifests[goalie.sourceKey]).toEqual(proofs.goalie.manifest);
++    const reviewed = applyNativeDailyReview(result.plan, { version: "native-daily-review-decision-v1", planHash: playerForecastSourcePayloadHash(result.plan),
++      decision: "approve", reviewRef: "synthetic-review", reviewer: "synthetic", reviewedAt: "2026-10-15T12:05:00Z", findings: [] } as any);
++    const at = new Date("2026-10-15T12:10:00Z");
++    const command2 = { ...result.cadenceCommand, cadenceInput: { ...input, publicationPlan: reviewed },
++      catalogHead: { headId: runIds.skater, expectedRevision: 0, expectedHash: null, observationId: runIds.goalie } };
++    await expect(validateCadenceCommand(command2 as any, proofs, at)).resolves.toMatchObject({ validation: { rows: reviewed.rows.length } });
++    // Either closure alone is not the issuance.
++    await expect(validateCadenceCommand(command2 as any, proofs.skater, at)).rejects.toThrow("materialization_publication_scope_mismatch");
++    await expect(validateCadenceCommand(command2 as any, { skater: proofs.skater, goalie: proofs.skater }, at)).rejects.toThrow("materialization_publication_scope_mismatch");
++    // Both closures share content-addressed parent and receipt rows; the store holds each row once.
++    const all = [...proofs.skater.rows, proofs.skater.report, proofs.skater.closure, ...proofs.goalie.rows, proofs.goalie.report, proofs.goalie.closure];
++    const shared = all.filter(row => all.filter(other => other.id === row.id).length > 1);
++    expect(shared.length).toBeGreaterThan(0);
++    expect(shared.every(row => all.filter(other => other.id === row.id).every(other => other.payload_hash === row.payload_hash))).toBe(true);
++    const stored = [...new Map(all.map(row => [row.id, row])).values()];
++    const local: any = { from() { let selected = stored.slice(); const query: any = { select: () => query, limit: (n: number) => { selected = selected.slice(0, n); return query; },
++      eq: (key: string, value: unknown) => { selected = selected.filter(row => (row as any)[key] === value); return query; }, abortSignal: () => query,
++      then: (ok: any, no: any) => Promise.resolve({ data: selected, error: null }).then(ok, no) }; return query; } };
++    const cadenceInput = { ...command2.cadenceInput, cadence: { ...command2.cadenceInput.cadence, now: at } };
++    const observed = await observeClosedNativeCadenceSources(cadenceInput, local, command2.producerReceiptIds);
++    expect(observed).toMatchObject({ complete: true, reason: null });
++    expect(observed.sources.map(source => source.key).sort()).toEqual([NATIVE_DAILY_SOURCE_KEYS.goalie, NATIVE_DAILY_SOURCE_KEYS.skater]);
++    expect(await observeClosedNativeCadenceSources(cadenceInput, local, { [skater.sourceKey]: proofs.skater.closure.id }))
++      .toMatchObject({ complete: false, reason: `producer_closed_receipt_missing:${goalie.sourceKey}` });
++    const published = await publishNativeBaselineCadence({ ...cadenceInput, cadence: { ...cadenceInput.cadence, sources: observed.sources } });
++    expect(published.status).toBe("dry_run");
++    // A closure that reports another part's revision holds the slot instead of publishing a partial day.
++    const swapped = observed.sources.map(source => ({ ...source, revision: observed.sources.find(other => other.key !== source.key)!.revision }));
++    expect(await publishNativeBaselineCadence({ ...cadenceInput, cadence: { ...cadenceInput.cadence, sources: swapped } }))
++      .toMatchObject({ status: "held", reasons: ["native_input_manifest_mismatch"] });
++  }, 120000);
++
++  it("still stops offline when one kind alone exceeds the bound", () => {
++    expect(() => fixture(25)).toThrow("participation_inputs_exceed_materialization_bound:skater:1550");
++  }, 60000);
++});
+diff --git a/web/lib/player-forecasts/nativeDailyPipelineV2.ts b/web/lib/player-forecasts/nativeDailyPipelineV2.ts
+index 64d6f03..c23bf9c 100644
+--- a/web/lib/player-forecasts/nativeDailyPipelineV2.ts
++++ b/web/lib/player-forecasts/nativeDailyPipelineV2.ts
+@@ -4,7 +4,7 @@
+  * sits behind `NativeDailyV2Flags`, all off by default. */
+ import { timestampMicros } from "../projections/evidenceTime";
+ import { buildDailyMaterializationRequest, type HttpReceipt, type dailyScheduleBindings } from "./nativeDailyPipeline";
+-import { bindNativeCadenceMaterialization } from "./nativeBaselineCadence";
++import { bindNativeCadenceMaterialization, bindNativeCadenceSplitMaterialization } from "./nativeBaselineCadence";
+ import { mergeNativeMaterializationParents, type NativeDailyMeans, type NativeMeansUniverseRow } from "./nativeDailyMeansCapture";
+ import { NATIVE_MATERIALIZATION_MAX_PARTICIPATION_INPUTS, type NativeMaterializationParent, type NativeMaterializationRequest } from "./nativeInputMaterialization";
+ import { targetRosterObservationFromReceipt } from "./targetRosterObservation";
+@@ -110,11 +110,17 @@ export function assertFreshMeansBinding(means: { cutoffAt: string; plan?: { stat
+   return { uncovered, approvedUncovered };
+ }
+ 
+-/** The materializer's participation-input bound, checked offline before a request is bound: the rolling method gives every
+- * universe member inputs, so a large universe would otherwise fail only at the hosted materialization. */
+-export function assertParticipationMaterializationBound(inputs: unknown[]) {
+-  if (inputs.length > NATIVE_MATERIALIZATION_MAX_PARTICIPATION_INPUTS) fail(`participation_inputs_exceed_materialization_bound:${inputs.length}`);
++/** The materializer's participation-input bound, checked offline before the requests are bound. A day is split into a skater
++ * and a goalie materialization (A-14, TJ 2026-10-20), so the bound applies to each kind; the limit itself is unchanged. */
++export function assertParticipationMaterializationBound(inputs: Array<{ playerClass?: unknown }>) {
++  for (const playerClass of ["skater", "goalie"]) {
++    const count = inputs.filter(input => input.playerClass === playerClass).length;
++    if (count > NATIVE_MATERIALIZATION_MAX_PARTICIPATION_INPUTS) fail(`participation_inputs_exceed_materialization_bound:${playerClass}:${count}`);
++  }
++  if (inputs.some(input => input.playerClass !== "skater" && input.playerClass !== "goalie")) fail("participation_input_class_unknown");
+ }
++/** Source keys of a split day's two materializations. */
++export const NATIVE_DAILY_SOURCE_KEYS = Object.freeze({ skater: "native-daily-selected-inputs-skater", goalie: "native-daily-selected-inputs-goalie" });
+ 
+ /** Fresh known conflicts only under the approved policy hash; otherwise none are passed and the v1 carry rule applies. */
+ export function nativeDailyKnownConflicts(universe: Universe, cutoffAt: string, flags: NativeDailyV2Flags, approvedPolicyHash?: string) {
+@@ -251,6 +257,29 @@ export function buildDailyMaterializationRequestV2(args: { acquisition: NativeMa
+     games: args.games }), requestBytes: Buffer.byteLength(JSON.stringify(request)) };
+ }
+ 
++/** The day's two bound requests (A-14): skater means and participation in one, goalie in the other. Both keep the whole
++ * universe as the acquisition roster and the same merged parents, so each closes on its own; one cadence scope binds both. */
++export function buildDailyMaterializationRequestsV2(args: Omit<Parameters<typeof buildDailyMaterializationRequestV2>[0], "runId" | "sourceKey"> & {
++  runIds: { skater: string; goalie: string } }) {
++  assertParticipationMaterializationBound(args.participationInputs);
++  if (micros(args.means.cutoffAt) > micros(args.cutoffAt)) fail("means_cutoff_after_inputs_cutoff");
++  const classOf = new Map(args.universe.map(player => [player.playerId, player.playerClass]));
++  const merged = mergeNativeMaterializationParents(args.participationParents, args.means.parents);
++  const part = (playerClass: "skater" | "goalie"): NativeMaterializationRequest => {
++    const nativeSelection = args.means.nativeSelection.filter(value => classOf.get(value.playerId) === playerClass);
++    const additionalNativeObservations = (args.means.additionalNativeObservations ?? []).filter(value => classOf.get(value.payload?.playerId) === playerClass);
++    const participationInputs = args.participationInputs.filter(input => input.playerClass === playerClass);
++    if (!nativeSelection.length && !participationInputs.length) fail(`split_materialization_part_empty:${playerClass}`);
++    return { runId: args.runIds[playerClass], sourceKey: NATIVE_DAILY_SOURCE_KEYS[playerClass], date: args.date, closureScopeHash: "",
++      acquisition: { ...args.acquisition, roster: args.universe, cutoffAt: args.cutoffAt }, nativeSelection, additionalNativeObservations,
++      participationInputs: participationInputs as NativeMaterializationRequest["participationInputs"], ...merged };
++  };
++  if (args.means.nativeSelection.some(value => !classOf.has(value.playerId))) fail("means_universe_conflict");
++  const bound = bindNativeCadenceSplitMaterialization({ skater: part("skater"), goalie: part("goalie") }, { runIds: args.runIds,
++    sourceKeys: NATIVE_DAILY_SOURCE_KEYS, date: args.date, seasonId: args.seasonId, games: args.games });
++  return { ...bound, requestBytes: { skater: Buffer.byteLength(JSON.stringify(bound.requests.skater)), goalie: Buffer.byteLength(JSON.stringify(bound.requests.goalie)) } };
++}
++
+ const scheduleUrl = (date: string) => `https://api-web.nhle.com/v1/schedule/${date}`;
+ /** The participation method a capture on this New York date serves (its cutoff falls on that date). */
+ export const nativeDailyCaptureMethod = (date: string) =>
+diff --git a/web/scripts/forge-daily-v2.test.ts b/web/scripts/forge-daily-v2.test.ts
+index 44aded3..15f7059 100644
+--- a/web/scripts/forge-daily-v2.test.ts
++++ b/web/scripts/forge-daily-v2.test.ts
+@@ -125,9 +125,9 @@ describe("inputs-v2 gates", () => {
+ });
+ 
+ describe("outputs-v2 gates (A-18)", () => {
+-  const run = (approvalRef: string, templates: unknown) => {
++  const run = (approvalRef: string, templates: unknown, command: Record<string, unknown> = {}) => {
+     const { dir, write } = files();
+-    const args = Object.entries({ command: { freshMeans: { scheduleRevision: "daily-schedule:x" } }, proof: { rows: [] }, templates })
++    const args = Object.entries({ command: { freshMeans: { scheduleRevision: "daily-schedule:x" }, ...command }, proof: { rows: [] }, templates })
+       .flatMap(([name, value]) => { const [path, sha] = write(`${name}.json`, value); return [`--${name}`, path, `--${name}-sha256`, sha]; });
+     return runForgeDailyV2("outputs-v2", [...args, "--approval-ref", approvalRef, "--max-null-participation", "100", "--out", join(dir, "out")]);
+   };
+@@ -141,4 +141,9 @@ describe("outputs-v2 gates (A-18)", () => {
+   it("refuses duplicate policy templates instead of taking the first", async () => {
+     await expect(run(NATIVE_DAILY_APPROVED_METHODS.standingApprovalRef, { rows: [policy, policy] })).rejects.toThrow("fresh_means_policy_template_ambiguous");
+   });
++
++  it("refuses a split day (A-14) without its goalie closure's proof", async () => {
++    await expect(run(NATIVE_DAILY_APPROVED_METHODS.standingApprovalRef, { rows: [policy] }, { goalieMaterialization: { runId: "g" } }))
++      .rejects.toThrow("split_materialization_proofs_required");
++  });
+ });
+diff --git a/web/scripts/forge-daily-v2.ts b/web/scripts/forge-daily-v2.ts
+index fe2568c..8b78dc3 100644
+--- a/web/scripts/forge-daily-v2.ts
++++ b/web/scripts/forge-daily-v2.ts
+@@ -2,8 +2,9 @@
+  *   capture-v2 - bounded serial NHL GETs planned for the run date's participation method (plan-only unless --execute):
+  *                v1's plan for the frozen window; for rolling, the window schedules, their final boxscores, future weeks
+  *                and the universe clubs' rosters
+- *   inputs-v2  - offline: universe + fresh means + day capture (+ retained frozen-window templates) -> bound request
+- *   outputs-v2 - offline: closed proof -> pending plan with fresh-means bundles, standing-approval policy rows and
++ *   inputs-v2  - offline: universe + fresh means + day capture (+ retained frozen-window templates) -> two bound requests,
++ *                skaters and goalies (A-14), each materialized on its own under one cadence scope
++ *   outputs-v2 - offline: both closed proofs -> one pending plan with fresh-means bundles, standing-approval policy rows and
+  *                pending reviews, plus participation bundles
+  * The universe and means stages run through `forge-daily universe` and `forge-daily means`. Nothing here fetches or
+  * writes to a database. Behaviour still awaiting TJ is behind flags (lib/player-forecasts/nativeDailyPipelineV2.ts). */
+@@ -16,7 +17,7 @@ import { collectNativeMeansOriginals } from "./native-means-capture";
+ import { buildDailyParticipationInputs, dailyExpiresAt, dailyGames, dailyScheduleBindings, excludeMeansOnlyNatives, reobserveHistoryWindow,
+   type HttpReceipt } from "../lib/player-forecasts/nativeDailyPipeline";
+ import { assertFreshMeansBinding, assertFreshMeansPolicyTemplates, assertParticipationCoverage, assertParticipationMaterializationBound,
+-  assertStandingApprovalMethods, buildDailyMaterializationRequestV2, NATIVE_DAILY_APPROVED_METHODS, nativeDailyCaptureMethod, nativeDailyRollingCapturePlan, buildRollingDailyParticipationInputs, frozenWindowParticipationParents, nativeDailyKnownConflicts,
++  assertStandingApprovalMethods, buildDailyMaterializationRequestsV2, NATIVE_DAILY_APPROVED_METHODS, NATIVE_DAILY_SOURCE_KEYS, nativeDailyCaptureMethod, nativeDailyRollingCapturePlan, buildRollingDailyParticipationInputs, frozenWindowParticipationParents, nativeDailyKnownConflicts,
+   nativeDailyNullParticipation, nativeDailyOriginalParent, nativeDailyParticipationMethod, nativeDailyScheduleRevision, nativeDailyUniverse,
+   nativeDailyV2Flags } from "../lib/player-forecasts/nativeDailyPipelineV2";
+ import { buildRollingParticipationHistories, rollingHistoryScheduleUrls } from "../lib/player-forecasts/rollingParticipationFrame";
+@@ -116,7 +117,7 @@ export async function runForgeDailyV2(stage: string, argv: string[], now = () =>
+     const method = nativeDailyParticipationMethod(cutoffAt, flags), knownConflicts = nativeDailyKnownConflicts(universe, cutoffAt, flags, args.get("--approved-injury-policy-hash"));
+     assertCaptureMatchesPlanV2({ method, capture, retained, universe: players, seasonId, date });
+     const schedules = receipts.filter(receipt => /\/v1\/schedule\//.test(receipt.url)), rosters = receipts.filter(receipt => /\/v1\/roster\//.test(receipt.url));
+-    const runId = randomUUID(), sourceKey = "native-daily-selected-inputs", yahoo = { gameKey: "477", season: String(seasonId).slice(0, 4) };
++    const runIds = { skater: randomUUID(), goalie: randomUUID() }, yahoo = { gameKey: "477", season: String(seasonId).slice(0, 4) };
+     let participation: { inputs: any[]; coverage: any[] }, participationParents: any[], acquisition = retained.acquisition, games: Array<{ gameId: number; startsAt: string }>;
+     let futureSchedules: HttpReceipt[], extra: Record<string, unknown> = {};
+     if (method === "frozen_window") {
+@@ -135,7 +136,7 @@ export async function runForgeDailyV2(stage: string, argv: string[], now = () =>
+         playerClass: player.playerClass, teamId: player.teamId, games: 0, reasons: ["no_frozen_window_template_or_identity_changed"] })));
+       games = dailyGames(bindings, date);
+       const frozen = frozenWindowParticipationParents({ retained, freshReceipts: [...rosters, ...schedules], derivedParents: [history.parent],
+-        participationInputs: participation.inputs, cutoffAt, runId, date, sourceKey, seasonId, games });
++        participationInputs: participation.inputs, cutoffAt, runId: runIds.skater, date, sourceKey: NATIVE_DAILY_SOURCE_KEYS.skater, seasonId, games });
+       participationParents = frozen.parents; acquisition = frozen.acquisition; extra = { exclusions: bindings.exclusions, droppedRetainedParents: frozen.droppedParents };
+     } else {
+       const windowUrls = rollingHistoryScheduleUrls(cutoffAt);
+@@ -156,36 +157,45 @@ export async function runForgeDailyV2(stage: string, argv: string[], now = () =>
+     const scoped = excludeMeansOnlyNatives({ acquisition: { roster: players }, nativeSelection: means.nativeSelection,
+       additionalNativeObservations: means.additionalNativeObservations } as any, participation.inputs);
+     const served = { ...means, nativeSelection: scoped.request.nativeSelection, additionalNativeObservations: scoped.request.additionalNativeObservations! };
+-    const bound = buildDailyMaterializationRequestV2({ acquisition, universe: players, means: served, participationInputs: participation.inputs,
+-      participationParents, cutoffAt, runId, date, sourceKey, seasonId, games });
++    const bound = buildDailyMaterializationRequestsV2({ acquisition, universe: players, means: served, participationInputs: participation.inputs,
++      participationParents, cutoffAt, runIds, date, seasonId, games });
+     const out = output(args.get("--out") ?? fail("missing_out"));
++    const ref = (kind: "skater" | "goalie") => ({ runId: runIds[kind], sourceKey: bound.requests[kind].sourceKey, date, closureScopeHash: bound.closureScopeHash });
+     const command = { version: "native-output-preparation-v1" as const, slotKey: `morning:${date}`, dueAt: morningDueAt(date),
+-      materialization: { runId, sourceKey, date, closureScopeHash: bound.closureScopeHash }, games, requiredAcquisitionScopes: bound.requiredAcquisitionScopes,
++      materialization: ref("skater"), goalieMaterialization: ref("goalie"), games, requiredAcquisitionScopes: bound.requiredAcquisitionScopes,
+       freshMeans: { scheduleRevision: nativeDailyScheduleRevision(futureSchedules) } };
+-    privateWrite(resolve(out, "materialization-request.json"), bound.request);
++    // Two materializations, one issuance: materialize each request, then pass both proofs to outputs-v2.
++    privateWrite(resolve(out, "materialization-request-skater.json"), bound.requests.skater);
++    privateWrite(resolve(out, "materialization-request-goalie.json"), bound.requests.goalie);
+     privateWrite(resolve(out, "preparation-command.json"), command);
+     privateWrite(resolve(out, "coverage.json"), { cutoffAt, method, flags, universe: gate, games, ...extra, means: { cutoffAt: means.cutoffAt,
+       selected: means.nativeSelection.length, coverage: means.coverage, meansOnlyExcluded: scoped.excluded, plan: means.plan, binding: meansBinding },
+       participation: participation.coverage,
+-      requestBytes: bound.requestBytes });
++      requestBytes: bound.requestBytes, participationInputs: { skater: bound.requests.skater.participationInputs!.length, goalie: bound.requests.goalie.participationInputs!.length } });
+     return { stage, status: "inputs_bound", method, cutoffAt, flags, universe: gate, nativeSelected: served.nativeSelection.length,
+       meansOnlyExcluded: scoped.excluded.length,
+-      participationInputs: participation.inputs.length, parents: bound.request.parents?.length, requestBytes: bound.requestBytes, games: games.length,
++      participationInputs: participation.inputs.length, parents: bound.requests.skater.parents?.length, requestBytes: bound.requestBytes, games: games.length,
++      materializations: { skater: bound.requests.skater.participationInputs!.length, goalie: bound.requests.goalie.participationInputs!.length },
+       dueAt: command.dueAt, networkRequests: 0, databaseWrites: 0, out };
+   }
+   if (stage === "outputs-v2") {
+-    const args = parse(argv, ["--command", "--command-sha256", "--proof", "--proof-sha256", "--templates", "--templates-sha256", "--approval-ref",
++    const args = parse(argv, ["--command", "--command-sha256", "--proof", "--proof-sha256", "--goalie-proof", "--goalie-proof-sha256", "--templates", "--templates-sha256", "--approval-ref",
+       "--max-null-participation", "--flags", "--flags-sha256", "--out"]);
+     const maxNull = Number(args.get("--max-null-participation") ?? fail("missing_max_null_participation"));
+     if (!Number.isSafeInteger(maxNull) || maxNull < 0) fail("invalid_max_null_participation");
+     const flags = nativeDailyV2Flags(optional(args, "flags")), approvalRef = args.get("--approval-ref") ?? fail("missing_approval_ref");
+     if (approvalRef !== NATIVE_DAILY_APPROVED_METHODS.standingApprovalRef) fail("standing_approval_ref_not_pinned");
+-    const { freshMeans, ...command } = input(args, "command"), proof = input(args, "proof"), templates = input(args, "templates"), issued = now();
++    const { freshMeans, ...command } = input(args, "command"), templates = input(args, "templates"), issued = now();
+     if (!freshMeans?.scheduleRevision) fail("fresh_means_command_required");
++    // A split day (A-14) needs both closures; a single-request command takes one proof, as before.
++    if (!!command.goalieMaterialization !== args.has("--goalie-proof")) fail("split_materialization_proofs_required");
++    const skaterProof = input(args, "proof"), goalieProof = command.goalieMaterialization ? input(args, "goalie-proof") : undefined;
++    const proof = goalieProof ? { skater: skaterProof, goalie: goalieProof } : skaterProof;
+     assertFreshMeansPolicyTemplates(templates.rows);
+     // The reviewed plan contributes only policy terms; its bundles and participation are not re-issued.
+     const reviewedPlan = { ...templates, rows: templates.rows.filter((row: any) => ["baseline_evaluation_policy", "baseline_validation_review"].includes(row.entity_kind)) };
+-    const participationInputs = proof.rows.filter((row: any) => row.dataset_key === "native-participation-input-v1").flatMap((row: any) => row.payload.inputs);
++    const participationInputs = [skaterProof, goalieProof].filter(Boolean).flatMap((value: any) => value.rows)
++      .filter((row: any) => row.dataset_key === "native-participation-input-v1").flatMap((row: any) => row.payload.inputs);
+     const result = await prepareNativeCadenceOutputs({ ...(command as Omit<NativeOutputPreparationCommand, "reviewedPlan" | "daily">), reviewedPlan,
+       daily: { expiresAt: dailyExpiresAt(issued.toISOString(), participationInputs, command.games), participationOwnerApprovalRef: approvalRef,
+         freshMeans: { standingApprovalRef: approvalRef, scheduleRevision: freshMeans.scheduleRevision } } }, proof, issued);
+@@ -194,7 +204,8 @@ export async function runForgeDailyV2(stage: string, argv: string[], now = () =>
+     const out = output(args.get("--out") ?? fail("missing_out"));
+     privateWrite(resolve(out, "pending-plan.json"), result.plan);
+     privateWrite(resolve(out, "pending-cadence-command.json"), result.cadenceCommand);
+-    privateWrite(resolve(out, "receipt.json"), { ...result.receipt, nulls, flags, methods, templatesSha256: args.get("--templates-sha256") });
++    privateWrite(resolve(out, "receipt.json"), { ...result.receipt, nulls, flags, methods, templatesSha256: args.get("--templates-sha256"),
++      proofSha256: { skater: args.get("--proof-sha256"), goalie: args.get("--goalie-proof-sha256") ?? null } });
+     return { stage, ...result.receipt, nulls, flags, methods, planSha256: sha(JSON.stringify(result.plan)), out };
+   }
+   return fail("stage_required");
+diff --git a/web/scripts/native-baseline-cadence.ts b/web/scripts/native-baseline-cadence.ts
+index a1efa1d..feb845c 100644
+--- a/web/scripts/native-baseline-cadence.ts
++++ b/web/scripts/native-baseline-cadence.ts
+@@ -4,7 +4,7 @@ import { appendFileSync, closeSync, constants, fstatSync, fsyncSync, mkdirSync,
+ import { createRequire } from "node:module";
+ import { resolve } from "node:path";
+ import { materializeNativeInputs, prepareNativeInputMaterialization, verifyNativeMaterialization, type NativeMaterializationRequest } from "../lib/player-forecasts/nativeInputMaterialization";
+-import { nativeCadenceClosureScope, nativeCadenceInputManifest, nativeCadenceJournalIds, publishObservedNativeBaselineCadence } from "../lib/player-forecasts/nativeBaselineCadence";
++import { nativeCadenceClosureScope, nativeCadenceInputManifest, nativeCadenceJournalIds, nativeCadenceSourceManifests, publishObservedNativeBaselineCadence } from "../lib/player-forecasts/nativeBaselineCadence";
+ import { prepareNativeCatalogObservation } from "../lib/player-forecasts/nativeCatalogHead";
+ import { prepareNativeCadenceOutputs } from "../lib/player-forecasts/nativeCadenceOutputPreparation";
+ import { validateNativeBaselinePublication } from "../lib/player-forecasts/nativeBaselinePublication";
+@@ -41,29 +41,39 @@ type PublishCommand = { version: "native-cadence-command-v1";
+   producerReceiptIds: Record<string, string>;
+   catalogHead: { headId: string; expectedRevision: number; expectedHash: string | null; observationId: string } };
+ type Proof = { status: string; rows: PlannedSourceObservation[]; report: PlannedSourceObservation; closure: PlannedSourceObservation };
++/** One closed proof, or a split day's skater and goalie proofs (A-14). */
++type Proofs = Proof | { skater: Proof; goalie: Proof };
++const proofList = (proofs: Proofs | undefined): Proof[] => !proofs ? [] : "skater" in proofs ? [proofs.skater, proofs.goalie] : [proofs];
+ 
+ /** Dry-run proof is self-consistency evidence only. Execution independently reads the durable originals. */
+-export async function validateCadenceCommand(command: PublishCommand, proof: Proof, now: Date) {
+-  if (command?.version !== "native-cadence-command-v1" || !proof || proof.status !== "closed"
+-    || !Array.isArray(proof.rows) || proof.rows.length > 318) fail("closed_materialization_proof_required");
++export async function validateCadenceCommand(command: PublishCommand, proofs: Proofs, now: Date) {
++  const list = proofList(proofs);
++  if (command?.version !== "native-cadence-command-v1" || !list.length || list.some(proof => !proof || proof.status !== "closed"
++    || !Array.isArray(proof.rows) || proof.rows.length > 318)) fail("closed_materialization_proof_required");
+   const input = structuredClone(command.cadenceInput); input.cadence.now = now;
+-  const rows = [...proof.rows, proof.report, proof.closure];
+-  const local: any = { from() { let selected = rows.slice(); const query: any = { select: () => query, limit: (n: number) => { selected = selected.slice(0, n); return query; },
+-    eq: (key: string, value: unknown) => { selected = selected.filter(row => (row as any)[key] === value); return query; }, abortSignal: () => query,
+-    then: (ok: any, no: any) => Promise.resolve({ data: selected, error: null }).then(ok, no) }; return query; } };
+-  await verifyNativeMaterialization(local, proof.closure);
+-  const closure = proof.closure.payload as any, manifest = nativeCadenceInputManifest(input.publicationPlan);
+-  const required = input.requiredAcquisitionScopes?.[closure.sourceKey ?? (proof.report.payload as any).sourceKey];
+-  if (closure.scopeHash !== nativeCadenceClosureScope(input) || closure.inputRevision !== manifest.revision
+-    || closure.expectedItems !== manifest.expectedItems || !required || required.scopeHash !== closure.acquisitionScopeHash
+-    || required.cutoffAt !== closure.inputCutoffAt
+-    || input.cadence.requiredSources.length !== 1 || input.cadence.requiredSources[0] !== (proof.report.payload as any).sourceKey
+-    || command.producerReceiptIds[(proof.report.payload as any).sourceKey] !== proof.closure.id) fail("materialization_publication_scope_mismatch");
+-  const closedAt = timestampMicros(closure.closedAt);
+-  for (const row of input.publicationPlan.rows) {
+-    const payload = row.payload as any;
+-    const issued = payload.manifest?.issuedAt ?? (row.entity_kind === "participation_bundle" ? payload.issuedAt : null);
+-    if (issued !== null && (closedAt === null || timestampMicros(issued) === null || timestampMicros(issued)! < closedAt)) fail("outputs_must_be_issued_after_closed_inputs");
++  let manifests: Record<string, ReturnType<typeof nativeCadenceInputManifest>> = {};
++  try { manifests = nativeCadenceSourceManifests(input); } catch { fail("materialization_publication_scope_mismatch"); }
++  // Every required source is closed by exactly one proof, and each proof closes exactly its own part of the plan.
++  const keys = list.map(proof => (proof.report.payload as any).sourceKey);
++  if (new Set(keys).size !== keys.length || keys.length !== Object.keys(manifests).length
++    || JSON.stringify(input.cadence.requiredSources.slice().sort()) !== JSON.stringify(keys.slice().sort())) fail("materialization_publication_scope_mismatch");
++  for (const proof of list) {
++    const rows = [...proof.rows, proof.report, proof.closure];
++    const local: any = { from() { let selected = rows.slice(); const query: any = { select: () => query, limit: (n: number) => { selected = selected.slice(0, n); return query; },
++      eq: (key: string, value: unknown) => { selected = selected.filter(row => (row as any)[key] === value); return query; }, abortSignal: () => query,
++      then: (ok: any, no: any) => Promise.resolve({ data: selected, error: null }).then(ok, no) }; return query; } };
++    await verifyNativeMaterialization(local, proof.closure);
++    const closure = proof.closure.payload as any, sourceKey = (proof.report.payload as any).sourceKey, manifest = manifests[sourceKey];
++    const required = input.requiredAcquisitionScopes?.[closure.sourceKey ?? sourceKey];
++    if (closure.scopeHash !== nativeCadenceClosureScope(input) || !manifest || closure.inputRevision !== manifest.revision
++      || closure.expectedItems !== manifest.expectedItems || !required || required.scopeHash !== closure.acquisitionScopeHash
++      || required.cutoffAt !== closure.inputCutoffAt || command.producerReceiptIds[sourceKey] !== proof.closure.id) fail("materialization_publication_scope_mismatch");
++    const closedAt = timestampMicros(closure.closedAt);
++    for (const row of input.publicationPlan.rows) {
++      const payload = row.payload as any;
++      const issued = payload.manifest?.issuedAt ?? (row.entity_kind === "participation_bundle" ? payload.issuedAt : null);
++      if (issued !== null && (closedAt === null || timestampMicros(issued) === null || timestampMicros(issued)! < closedAt)) fail("outputs_must_be_issued_after_closed_inputs");
++    }
+   }
+   const validation = await validateNativeBaselinePublication(input.publicationPlan, now);
+   return { input, validation };
+@@ -77,11 +87,12 @@ export class CadenceTransport {
+   private started: number; private writes = new Set<string>();
+   private expected = new Map<string, PlannedSourceObservation>();
+   constructor(private configuration: { materialization?: NativeMaterializationRequest; prepared?: ReturnType<typeof prepareNativeInputMaterialization>;
+-    command?: PublishCommand; proof?: Proof; selection?: PlannedSourceObservation }, private network: typeof fetch,
++    command?: PublishCommand; proof?: Proofs; selection?: PlannedSourceObservation }, private network: typeof fetch,
+     private event: (action: string, fields: Record<string, unknown>) => void, private monotonic = () => performance.now()) {
+     this.started = monotonic();
+-    for (const row of [...(configuration.prepared?.rows ?? []), ...(configuration.proof?.rows ?? []),
+-      ...(configuration.command?.cadenceInput.publicationPlan.rows ?? []), ...[configuration.proof?.report, configuration.proof?.closure, configuration.selection].filter(Boolean) as PlannedSourceObservation[]]) {
++    const proofs = proofList(configuration.proof);
++    for (const row of [...(configuration.prepared?.rows ?? []), ...proofs.flatMap(proof => proof.rows),
++      ...(configuration.command?.cadenceInput.publicationPlan.rows ?? []), ...[...proofs.flatMap(proof => [proof.report, proof.closure]), configuration.selection].filter(Boolean) as PlannedSourceObservation[]]) {
+       const old = this.expected.get(row.id); if (old && !matchesPlannedObservation(old, row)) fail("conflicting_planned_row"); this.expected.set(row.id, row);
+     }
+     if (configuration.prepared) for (const row of [configuration.prepared.report, configuration.prepared.closure]) this.expected.set(row.id, row);
+@@ -212,7 +223,8 @@ export async function runNativeCadence(argv: string[]) {
+   const [stage, ...rest] = argv; if (!["materialize", "prepare", "publish"].includes(stage)) fail("stage_required");
+   const args = new Map<string, string>();
+   for (let i = 0; i < rest.length; i += 2) {
+-    if (!["--input", "--input-sha256", "--proof", "--proof-sha256", "--out", "--execute-target", "--execute-intent", "--approved-package-hash"].includes(rest[i]) || !rest[i + 1] || args.has(rest[i])) fail("invalid_arguments");
++    if (!["--input", "--input-sha256", "--proof", "--proof-sha256", "--goalie-proof", "--goalie-proof-sha256", "--out", "--execute-target", "--execute-intent",
++      "--approved-package-hash"].includes(rest[i]) || !rest[i + 1] || args.has(rest[i])) fail("invalid_arguments");
+     args.set(rest[i], rest[i + 1]);
+   }
+   if (!args.has("--input") || !args.has("--input-sha256") || !args.has("--out")) fail("input_hash_and_private_output_required");
+@@ -221,23 +233,28 @@ export async function runNativeCadence(argv: string[]) {
+     || !execute && (args.has("--execute-intent") || args.has("--approved-package-hash"))) fail("explicit_execution_target_and_intent_required");
+   const input = boundedFile(args.get("--input")!, args.get("--input-sha256")!, stage === "publish" ? CADENCE_RUNNER_LIMITS.publishBytes : CADENCE_RUNNER_LIMITS.inputBytes);
+   const now = new Date();
++  // A split day (A-14) passes its goalie closure's proof beside the skater proof.
++  if (args.has("--goalie-proof") !== args.has("--goalie-proof-sha256") || stage === "materialize" && args.has("--goalie-proof")) fail("invalid_arguments");
++  const withGoalie = (skater: any): any => args.has("--goalie-proof")
++    ? { skater, goalie: boundedFile(args.get("--goalie-proof")!, args.get("--goalie-proof-sha256")!, CADENCE_RUNNER_LIMITS.inputBytes) } : skater;
+   if (stage === "prepare") {
+     // Offline only: no execution target, network or database client exists for this stage.
+     if (execute || !args.has("--proof") || !args.has("--proof-sha256")) fail("offline_prepare_requires_exact_closed_proof");
+-    const closed = boundedFile(args.get("--proof")!, args.get("--proof-sha256")!, CADENCE_RUNNER_LIMITS.inputBytes);
++    const closed = withGoalie(boundedFile(args.get("--proof")!, args.get("--proof-sha256")!, CADENCE_RUNNER_LIMITS.inputBytes));
+     const result = await prepareNativeCadenceOutputs(input, closed, now);
+     const output = resolve(args.get("--out")!); mkdirSync(output, { mode: 0o700 });
+     privateWrite(resolve(output, "publication-plan.json"), result.plan);
+     privateWrite(resolve(output, "cadence-command.json"), result.cadenceCommand);
+     const receipt = { stage, ...result.receipt, execute: false, inputSHA256: args.get("--input-sha256"), proofSHA256: args.get("--proof-sha256"),
++      ...(args.has("--goalie-proof") ? { goalieProofSHA256: args.get("--goalie-proof-sha256") } : {}),
+       publicEnvironmentActivation: "not_performed", output };
+     privateWrite(resolve(output, "receipt.json"), receipt); return receipt;
+-  } let prepared: ReturnType<typeof prepareNativeInputMaterialization> | undefined, proof: Proof | undefined;
++  } let prepared: ReturnType<typeof prepareNativeInputMaterialization> | undefined, proof: Proofs | undefined;
+   let command: PublishCommand | undefined, selection: PlannedSourceObservation | undefined;
+   if (stage === "materialize") prepared = prepareNativeInputMaterialization(input, now.toISOString());
+   else {
+     if (!args.has("--proof") || !args.has("--proof-sha256")) fail("exact_closed_proof_required");
+-    proof = boundedFile(args.get("--proof")!, args.get("--proof-sha256")!, CADENCE_RUNNER_LIMITS.inputBytes);
++    proof = withGoalie(boundedFile(args.get("--proof")!, args.get("--proof-sha256")!, CADENCE_RUNNER_LIMITS.inputBytes));
+     command = input;
+     const validation = await validateCadenceCommand(command!, proof!, now); command!.cadenceInput = validation.input;
+     if (execute && args.get("--approved-package-hash") !== validation.validation.packageHash) fail("exact_publication_package_required");
+@@ -246,6 +263,7 @@ export async function runNativeCadence(argv: string[]) {
+   }
+   const output = resolve(args.get("--out")!); mkdirSync(output, { mode: 0o700 });
+   privateWrite(resolve(output, "intent.json"), { stage, execute, inputSHA256: args.get("--input-sha256"), proofSHA256: args.get("--proof-sha256") ?? null,
++    goalieProofSHA256: args.get("--goalie-proof-sha256") ?? null,
+     executionIntent: args.get("--execute-intent") ?? null, target: execute ? ORIGIN : null, limits: CADENCE_RUNNER_LIMITS, recordedAt: now.toISOString() });
+   const event = (action: string, fields: Record<string, unknown>) => { const fd = openSync(resolve(output, "ledger.jsonl"), "a", 0o600);
+     try { appendFileSync(fd, JSON.stringify({ at: new Date().toISOString(), action, ...fields }) + "\n"); fsyncSync(fd); } finally { closeSync(fd); } };

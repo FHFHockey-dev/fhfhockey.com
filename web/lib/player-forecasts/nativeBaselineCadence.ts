@@ -19,17 +19,31 @@ const seasonForDate = (date: string) => {
 
 /** The observer must count these declared immutable inputs, not elapsed time or
  * detailed-queue success. A manifest is an identity binding, not completeness proof. */
-export function nativeCadenceInputManifest(plan: NativeBaselinePublicationPlan) {
-  const inputs = plan.rows.flatMap<{ key: string; hash: string; availableAt: string }>(row => {
+function nativeCadenceInputItems(plan: NativeBaselinePublicationPlan) {
+  return plan.rows.flatMap<{ key: string; hash: string; availableAt: string; playerClass: string | null }>(row => {
     const payload = row.payload as any;
-    if (row.entity_kind === "player") return [{ key: `${row.dataset_key}:${row.entity_key}:${payload.policyVersion ?? "legacy"}`, hash: row.payload_hash, availableAt: row.available_at }];
+    if (row.entity_kind === "player") return [{ key: `${row.dataset_key}:${row.entity_key}:${payload.policyVersion ?? "legacy"}`, hash: row.payload_hash, availableAt: row.available_at,
+      playerClass: row.dataset_key === "baseline-inputs-v1" ? "skater" : row.dataset_key === "goalie-baseline-inputs-v1" ? "goalie" : null }];
     if (row.entity_kind === "participation_bundle") return payload.entries.map((entry: any) => ({
       key: `${row.dataset_key}:${entry.input.scope.playerId}:${entry.input.scope.gameId}`,
-      hash: hash(entry.input), availableAt: entry.input.cutoffAt,
+      hash: hash(entry.input), availableAt: entry.input.cutoffAt, playerClass: entry.input.playerClass ?? null,
     }));
     return [];
   });
-  return nativeInputManifest(inputs);
+}
+export function nativeCadenceInputManifest(plan: NativeBaselinePublicationPlan) {
+  return nativeInputManifest(nativeCadenceInputItems(plan).map(({ playerClass: _class, ...item }) => item));
+}
+export type NativeCadenceInputSources = { skater: string; goalie: string };
+/** The manifest each closed input source must carry. One source closes the whole plan; a split day (A-14, TJ 2026-10-20)
+ * has a skater and a goalie source, and each closes exactly its class's part. Every input belongs to exactly one part. */
+export function nativeCadenceSourceManifests(input: Pick<Parameters<typeof publishNativeBaselineCadence>[0], "publicationPlan" | "inputSourceKey" | "inputSources">) {
+  if (!input.inputSources) return { [input.inputSourceKey]: nativeCadenceInputManifest(input.publicationPlan) };
+  const { skater, goalie } = input.inputSources, items = nativeCadenceInputItems(input.publicationPlan);
+  if (!skater?.trim() || !goalie?.trim() || skater === goalie || ![skater, goalie].includes(input.inputSourceKey)
+    || items.some(item => item.playerClass !== "skater" && item.playerClass !== "goalie")) throw new Error("Native cadence input sources are invalid.");
+  const part = (playerClass: string) => nativeInputManifest(items.filter(item => item.playerClass === playerClass).map(({ playerClass: _class, ...item }) => item));
+  return { [skater]: part("skater"), [goalie]: part("goalie") };
 }
 
 /** Native publication stage for one explicit 08:00-NY or T-15 decision.
@@ -38,6 +52,8 @@ export function nativeCadenceInputManifest(plan: NativeBaselinePublicationPlan) 
  * No legacy detailed worker or scheduler is invoked by this adapter. */
 export async function publishNativeBaselineCadence(input: {
   cadence: ForecastCadenceInput; slotKey: string; inputSourceKey: string;
+  /** Split day: the skater and goalie closures of one issuance (inputSourceKey is one of them). */
+  inputSources?: NativeCadenceInputSources;
   publicationPlan: NativeBaselinePublicationPlan;
   requiredAcquisitionScopes?: Record<string, { scopeHash: string; cutoffAt: string }>;
 }, options: { dryRun?: boolean; approvedPackageHash?: string; db?: SupabaseClient<any>; monotonic?: () => number } = {}) {
@@ -58,11 +74,16 @@ export async function publishNativeBaselineCadence(input: {
   if (frozen.publicationPlan.seasonId !== seasonForDate(frozen.cadence.date)) return held(["native_target_scope_mismatch"]);
   await validateNativeBaselinePublication(frozen.publicationPlan, now);
   const manifest = nativeCadenceInputManifest(frozen.publicationPlan);
-  const source = frozen.cadence.sources.find(candidate => candidate.key === frozen.inputSourceKey && candidate.date === frozen.cadence.date);
-  if (!frozen.cadence.requiredSources.includes(frozen.inputSourceKey) || !manifest.expectedItems || !source
-    || source.revision !== manifest.revision || source.expectedItems !== manifest.expectedItems
-    || source.completedItems !== manifest.expectedItems || !source.completedAt || manifest.availableAt === null
-    || Date.parse(source.completedAt) < Date.parse(manifest.availableAt)) return held(["native_input_manifest_mismatch"]);
+  let parts: Record<string, ReturnType<typeof nativeCadenceInputManifest>>;
+  try { parts = nativeCadenceSourceManifests(frozen); } catch { return held(["native_input_manifest_mismatch"]); }
+  const closed = Object.entries(parts).map(([key, part]) => ({ part, source: frozen.cadence.sources.find(candidate => candidate.key === key && candidate.date === frozen.cadence.date),
+    required: frozen.cadence.requiredSources.includes(key) }));
+  if (closed.some(({ part, source, required }) => !required || !part.expectedItems || !source
+    || source.revision !== part.revision || source.expectedItems !== part.expectedItems
+    || source.completedItems !== part.expectedItems || !source.completedAt || part.availableAt === null
+    || Date.parse(source.completedAt) < Date.parse(part.availableAt))) return held(["native_input_manifest_mismatch"]);
+  // Outputs follow the last closure of the day.
+  const source = closed.map(value => value.source!).sort((a, b) => Date.parse(b.completedAt!) - Date.parse(a.completedAt!))[0];
   const targets: Array<{ playerId: number; nhlPlayerId: number; teamId: number; rosterRevision: string;
     seasonId: number; gameId: number; scheduledAt: string }> = [];
   const outputs: string[] = [];
@@ -227,7 +248,9 @@ export async function publishJournaledNativeBaselineCadence(input: Parameters<ty
 export function nativeCadenceClosureScope(input: Parameters<typeof publishNativeBaselineCadence>[0]) {
   return hash({ seasonId: input.publicationPlan.seasonId, date: input.cadence.date,
     requiredSources: input.cadence.requiredSources.slice().sort(), games: input.cadence.games.slice().sort((a, b) => a.gameId - b.gameId),
-    requiredAcquisitionScopes: input.requiredAcquisitionScopes ?? {} });
+    requiredAcquisitionScopes: input.requiredAcquisitionScopes ?? {},
+    // Added only for a split day, so single-source scopes keep their identity.
+    ...(input.inputSources ? { inputSources: input.inputSources } : {}) });
 }
 /** Bind one acquired request to its New York cadence date and games before materialization.
  * The returned scopes are what prepare/publish later require; nothing is acquired or written. */
@@ -240,11 +263,28 @@ export function bindNativeCadenceMaterialization(request: NativeMaterializationR
     cadence: { now: new Date(0), date: binding.date, requiredSources: [binding.sourceKey], games: binding.games, sources: [], previous: [] } });
   return { request: bound, requiredAcquisitionScopes, closureScopeHash: bound.closureScopeHash };
 }
+/** Bind a split day's skater and goalie requests (A-14) to one cadence scope: each keeps its own run, source key and
+ * acquisition scope, and both close under the same closure scope, which names both sources. Nothing is acquired or written. */
+export function bindNativeCadenceSplitMaterialization(requests: { skater: NativeMaterializationRequest; goalie: NativeMaterializationRequest }, binding: {
+  runIds: { skater: string; goalie: string }; sourceKeys: NativeCadenceInputSources; date: string; seasonId: number; games: Array<{ gameId: number; startsAt: string }> }) {
+  if (binding.runIds.skater === binding.runIds.goalie || binding.sourceKeys.skater === binding.sourceKeys.goalie) throw new Error("Split materialization identities must differ.");
+  const skater: NativeMaterializationRequest = { ...requests.skater, runId: binding.runIds.skater, sourceKey: binding.sourceKeys.skater, date: binding.date };
+  const goalie: NativeMaterializationRequest = { ...requests.goalie, runId: binding.runIds.goalie, sourceKey: binding.sourceKeys.goalie, date: binding.date };
+  const requiredAcquisitionScopes = Object.fromEntries([skater, goalie].map(request => [request.sourceKey,
+    { scopeHash: nativeAcquisitionScopeHash(request), cutoffAt: request.acquisition.cutoffAt }]));
+  const closureScopeHash = nativeCadenceClosureScope({ publicationPlan: { version: "native-baseline-publication-plan-v1", seasonId: binding.seasonId, rows: [] },
+    slotKey: "", inputSourceKey: binding.sourceKeys.skater, inputSources: binding.sourceKeys, requiredAcquisitionScopes,
+    cadence: { now: new Date(0), date: binding.date, requiredSources: [binding.sourceKeys.skater, binding.sourceKeys.goalie], games: binding.games, sources: [], previous: [] } });
+  skater.closureScopeHash = closureScopeHash; goalie.closureScopeHash = closureScopeHash;
+  return { requests: { skater, goalie }, requiredAcquisitionScopes, closureScopeHash, inputSources: binding.sourceKeys };
+}
 /** Reproduce the materializer's durable original inputs before accepting closure.
  * Neither manifest identity nor caller counts imply completion. */
 export async function observeClosedNativeCadenceSources(input: Parameters<typeof publishNativeBaselineCadence>[0],
   db: SupabaseClient<any>, receiptIds: Record<string, string> = {}) {
-  const manifest = nativeCadenceInputManifest(input.publicationPlan), sources: ForecastCadenceInput["sources"] = [];
+  const sources: ForecastCadenceInput["sources"] = [];
+  let parts: Record<string, ReturnType<typeof nativeCadenceInputManifest>>;
+  try { parts = nativeCadenceSourceManifests(input); } catch { return { complete: false as const, sources, reason: "native_input_sources_invalid" }; }
   const deadline = Date.now() + 180000;
   if (input.cadence.requiredSources.length > NATIVE_BASELINE_CADENCE_LIMITS.sources) throw new Error("Producer receipt bound exceeded.");
   for (const key of input.cadence.requiredSources) {
@@ -254,19 +294,19 @@ export async function observeClosedNativeCadenceSources(input: Parameters<typeof
       const result = await withinDeadline(Math.min(deadline, Date.now() + 8000), signal => db.from("player_forecast_source_observations")
         .select(SOURCE_OBSERVATION_COLUMNS).eq("id", id).limit(2).abortSignal(signal));
       const row = result.data?.[0], value = row?.payload;
-      const required = input.requiredAcquisitionScopes?.[key];
+      const required = input.requiredAcquisitionScopes?.[key], part = parts[key];
       if (result.error || !Array.isArray(result.data) || result.data.length !== 1 || !row || row.id !== id || Buffer.byteLength(JSON.stringify(row)) > 64 * 1024
         || row.provider !== "fhfh" || row.dataset_key !== "native-producer-closure-v1" || row.entity_kind !== "producer_closure"
         || row.entity_key !== `${input.cadence.date}:${key}` || row.payload_hash !== hash(value)
         || value?.version !== "native-producer-closure-v1" || value.producerVersion !== "native-input-materialization-v1" || value.status !== "closed"
         || !required || !/^[a-f0-9]{64}$/.test(required.scopeHash) || value.acquisitionScopeHash !== required.scopeHash
         || value.inputCutoffAt !== required.cutoffAt
-        || value.scopeHash !== nativeCadenceClosureScope(input) || value.inputRevision !== manifest.revision
-        || value.expectedItems !== manifest.expectedItems || value.completedItems !== manifest.expectedItems
+        || value.scopeHash !== nativeCadenceClosureScope(input) || !part || value.inputRevision !== part.revision
+        || value.expectedItems !== part.expectedItems || value.completedItems !== part.expectedItems
         || !/^[a-f0-9-]{36}$/.test(value.runId) || !Number.isFinite(Date.parse(value.closedAt))
         || Date.parse(value.closedAt) > input.cadence.now.getTime() || !Number.isFinite(Date.parse(row.available_at))
         || Date.parse(row.available_at) < Date.parse(value.closedAt) || Date.parse(row.available_at) > input.cadence.now.getTime()
-        || Date.parse(value.closedAt) < Date.parse(manifest.availableAt ?? "") || Date.parse(row.observed_at) !== Date.parse(value.closedAt)) {
+        || Date.parse(value.closedAt) < Date.parse(part.availableAt ?? "") || Date.parse(row.observed_at) !== Date.parse(value.closedAt)) {
         return { complete: false as const, sources, reason: `producer_closed_receipt_invalid:${key}` };
       }
       await verifyNativeMaterialization(db, row as PlannedSourceObservation, deadline);

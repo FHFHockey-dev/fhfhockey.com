@@ -15,6 +15,7 @@ import { assembleNativeDailyMeans, nativeMeansUrlKind, planNativeMeansCapture, t
 import { buildNativeGoalieSummaryWinRates, dryRunGoalieContributionBundle, NATIVE_GOALIE_SHUTOUT_POLICY_VERSION,
   NATIVE_GOALIE_SUMMARY_WIN_POLICY_VERSION, NATIVE_GOALIE_VOLUME_POLICY_VERSION, NATIVE_GOALIE_WIN_POLICY_VERSION } from "../lib/player-forecasts/goalieBaselineRates";
 import type { HttpReceipt } from "../lib/player-forecasts/nativeDailyPipeline";
+import { nativeDailyUniverse, nativeDailyV2Flags } from "../lib/player-forecasts/nativeDailyPipelineV2";
 import { playerForecastSourcePayloadHash as hash } from "../lib/player-forecasts/sourceSnapshot";
 
 /** Defaults equal the 2026-10-17 approved operational bound (about 120 responses / 2 MB). */
@@ -124,7 +125,9 @@ const output = (path: string) => { const out = resolve(path); mkdirSync(out, { m
 const input = (args: Map<string, string>, name: string) => boundedFile(args.get(`--${name}`) ?? fail(`missing_${name}`),
   args.get(`--${name}-sha256`) ?? fail(`missing_${name}_sha256`), MAX_INPUT);
 const optional = (args: Map<string, string>, name: string) => args.has(`--${name}`) ? input(args, name) : undefined;
-const universeOf = (value: any): NativeMeansUniverseRow[] => Array.isArray(value) ? value : value?.universe ?? fail("universe_shape");
+/** Universe rows, or the `forge-daily universe` document itself through the same gate inputs-v2 applies (thresholds off). */
+const universeOf = (value: any): NativeMeansUniverseRow[] => Array.isArray(value) ? value
+  : value?.version === "forge-daily-yahoo-universe-v1" ? nativeDailyUniverse(value, nativeDailyV2Flags(undefined)).rows : value?.universe ?? fail("universe_shape");
 const receiptsOf = (value: any): HttpReceipt[] => Array.isArray(value?.receipts) ? value.receipts : fail("cache_shape");
 const PLAN_ARGS = ["--universe", "--universe-sha256", "--cache", "--cache-sha256", "--season", "--as-of", "--anchor",
   "--prior-games", "--prior-games-sha256", "--out"];
@@ -180,7 +183,8 @@ export async function runNativeMeansCapture(argv: string[], now = () => new Date
       priorGames: plan.assembly.priorGames, notes: plan.assembly.notes, receipts: receiptsOf(input(args, "cache")) }, now());
     const bindings = optional(args, "bindings");
     const out = output(args.get("--out") ?? fail("missing_out"));
-    privateWrite(resolve(out, "means.json"), means);
+    // inputs-v2 binds only means assembled from a complete plan, so the plan's status travels with them.
+    privateWrite(resolve(out, "means.json"), { ...means, plan: { status: plan.status, inputHash: plan.inputHash, asOf: plan.asOf, pendingRequests: plan.requests.length } });
     if (bindings) privateWrite(resolve(out, "previews.json"), await previewNativeDailyMeans(means, bindings, now()));
     return { stage, status: "means_assembled", planStatus: plan.status, ...means.stats, previews: !!bindings, networkRequests: 0, databaseWrites: 0, out };
   }

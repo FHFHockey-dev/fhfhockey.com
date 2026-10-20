@@ -4,7 +4,7 @@ import { appendFileSync, closeSync, constants, fstatSync, fsyncSync, mkdirSync, 
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import { materializeNativeInputs, prepareNativeInputMaterialization, verifyNativeMaterialization, type NativeMaterializationRequest } from "../lib/player-forecasts/nativeInputMaterialization";
-import { nativeCadenceClosureScope, nativeCadenceInputManifest, nativeCadenceJournalIds, publishObservedNativeBaselineCadence } from "../lib/player-forecasts/nativeBaselineCadence";
+import { nativeCadenceClosureScope, nativeCadenceInputManifest, nativeCadenceJournalIds, nativeCadenceSourceManifests, publishObservedNativeBaselineCadence } from "../lib/player-forecasts/nativeBaselineCadence";
 import { prepareNativeCatalogObservation } from "../lib/player-forecasts/nativeCatalogHead";
 import { prepareNativeCadenceOutputs } from "../lib/player-forecasts/nativeCadenceOutputPreparation";
 import { validateNativeBaselinePublication } from "../lib/player-forecasts/nativeBaselinePublication";
@@ -41,29 +41,39 @@ type PublishCommand = { version: "native-cadence-command-v1";
   producerReceiptIds: Record<string, string>;
   catalogHead: { headId: string; expectedRevision: number; expectedHash: string | null; observationId: string } };
 type Proof = { status: string; rows: PlannedSourceObservation[]; report: PlannedSourceObservation; closure: PlannedSourceObservation };
+/** One closed proof, or a split day's skater and goalie proofs (A-14). */
+type Proofs = Proof | { skater: Proof; goalie: Proof };
+const proofList = (proofs: Proofs | undefined): Proof[] => !proofs ? [] : "skater" in proofs ? [proofs.skater, proofs.goalie] : [proofs];
 
 /** Dry-run proof is self-consistency evidence only. Execution independently reads the durable originals. */
-export async function validateCadenceCommand(command: PublishCommand, proof: Proof, now: Date) {
-  if (command?.version !== "native-cadence-command-v1" || !proof || proof.status !== "closed"
-    || !Array.isArray(proof.rows) || proof.rows.length > 318) fail("closed_materialization_proof_required");
+export async function validateCadenceCommand(command: PublishCommand, proofs: Proofs, now: Date) {
+  const list = proofList(proofs);
+  if (command?.version !== "native-cadence-command-v1" || !list.length || list.some(proof => !proof || proof.status !== "closed"
+    || !Array.isArray(proof.rows) || proof.rows.length > 318)) fail("closed_materialization_proof_required");
   const input = structuredClone(command.cadenceInput); input.cadence.now = now;
-  const rows = [...proof.rows, proof.report, proof.closure];
-  const local: any = { from() { let selected = rows.slice(); const query: any = { select: () => query, limit: (n: number) => { selected = selected.slice(0, n); return query; },
-    eq: (key: string, value: unknown) => { selected = selected.filter(row => (row as any)[key] === value); return query; }, abortSignal: () => query,
-    then: (ok: any, no: any) => Promise.resolve({ data: selected, error: null }).then(ok, no) }; return query; } };
-  await verifyNativeMaterialization(local, proof.closure);
-  const closure = proof.closure.payload as any, manifest = nativeCadenceInputManifest(input.publicationPlan);
-  const required = input.requiredAcquisitionScopes?.[closure.sourceKey ?? (proof.report.payload as any).sourceKey];
-  if (closure.scopeHash !== nativeCadenceClosureScope(input) || closure.inputRevision !== manifest.revision
-    || closure.expectedItems !== manifest.expectedItems || !required || required.scopeHash !== closure.acquisitionScopeHash
-    || required.cutoffAt !== closure.inputCutoffAt
-    || input.cadence.requiredSources.length !== 1 || input.cadence.requiredSources[0] !== (proof.report.payload as any).sourceKey
-    || command.producerReceiptIds[(proof.report.payload as any).sourceKey] !== proof.closure.id) fail("materialization_publication_scope_mismatch");
-  const closedAt = timestampMicros(closure.closedAt);
-  for (const row of input.publicationPlan.rows) {
-    const payload = row.payload as any;
-    const issued = payload.manifest?.issuedAt ?? (row.entity_kind === "participation_bundle" ? payload.issuedAt : null);
-    if (issued !== null && (closedAt === null || timestampMicros(issued) === null || timestampMicros(issued)! < closedAt)) fail("outputs_must_be_issued_after_closed_inputs");
+  let manifests: Record<string, ReturnType<typeof nativeCadenceInputManifest>> = {};
+  try { manifests = nativeCadenceSourceManifests(input); } catch { fail("materialization_publication_scope_mismatch"); }
+  // Every required source is closed by exactly one proof, and each proof closes exactly its own part of the plan.
+  const keys = list.map(proof => (proof.report.payload as any).sourceKey);
+  if (new Set(keys).size !== keys.length || keys.length !== Object.keys(manifests).length
+    || JSON.stringify(input.cadence.requiredSources.slice().sort()) !== JSON.stringify(keys.slice().sort())) fail("materialization_publication_scope_mismatch");
+  for (const proof of list) {
+    const rows = [...proof.rows, proof.report, proof.closure];
+    const local: any = { from() { let selected = rows.slice(); const query: any = { select: () => query, limit: (n: number) => { selected = selected.slice(0, n); return query; },
+      eq: (key: string, value: unknown) => { selected = selected.filter(row => (row as any)[key] === value); return query; }, abortSignal: () => query,
+      then: (ok: any, no: any) => Promise.resolve({ data: selected, error: null }).then(ok, no) }; return query; } };
+    await verifyNativeMaterialization(local, proof.closure);
+    const closure = proof.closure.payload as any, sourceKey = (proof.report.payload as any).sourceKey, manifest = manifests[sourceKey];
+    const required = input.requiredAcquisitionScopes?.[closure.sourceKey ?? sourceKey];
+    if (closure.scopeHash !== nativeCadenceClosureScope(input) || !manifest || closure.inputRevision !== manifest.revision
+      || closure.expectedItems !== manifest.expectedItems || !required || required.scopeHash !== closure.acquisitionScopeHash
+      || required.cutoffAt !== closure.inputCutoffAt || command.producerReceiptIds[sourceKey] !== proof.closure.id) fail("materialization_publication_scope_mismatch");
+    const closedAt = timestampMicros(closure.closedAt);
+    for (const row of input.publicationPlan.rows) {
+      const payload = row.payload as any;
+      const issued = payload.manifest?.issuedAt ?? (row.entity_kind === "participation_bundle" ? payload.issuedAt : null);
+      if (issued !== null && (closedAt === null || timestampMicros(issued) === null || timestampMicros(issued)! < closedAt)) fail("outputs_must_be_issued_after_closed_inputs");
+    }
   }
   const validation = await validateNativeBaselinePublication(input.publicationPlan, now);
   return { input, validation };
@@ -77,11 +87,12 @@ export class CadenceTransport {
   private started: number; private writes = new Set<string>();
   private expected = new Map<string, PlannedSourceObservation>();
   constructor(private configuration: { materialization?: NativeMaterializationRequest; prepared?: ReturnType<typeof prepareNativeInputMaterialization>;
-    command?: PublishCommand; proof?: Proof; selection?: PlannedSourceObservation }, private network: typeof fetch,
+    command?: PublishCommand; proof?: Proofs; selection?: PlannedSourceObservation }, private network: typeof fetch,
     private event: (action: string, fields: Record<string, unknown>) => void, private monotonic = () => performance.now()) {
     this.started = monotonic();
-    for (const row of [...(configuration.prepared?.rows ?? []), ...(configuration.proof?.rows ?? []),
-      ...(configuration.command?.cadenceInput.publicationPlan.rows ?? []), ...[configuration.proof?.report, configuration.proof?.closure, configuration.selection].filter(Boolean) as PlannedSourceObservation[]]) {
+    const proofs = proofList(configuration.proof);
+    for (const row of [...(configuration.prepared?.rows ?? []), ...proofs.flatMap(proof => proof.rows),
+      ...(configuration.command?.cadenceInput.publicationPlan.rows ?? []), ...[...proofs.flatMap(proof => [proof.report, proof.closure]), configuration.selection].filter(Boolean) as PlannedSourceObservation[]]) {
       const old = this.expected.get(row.id); if (old && !matchesPlannedObservation(old, row)) fail("conflicting_planned_row"); this.expected.set(row.id, row);
     }
     if (configuration.prepared) for (const row of [configuration.prepared.report, configuration.prepared.closure]) this.expected.set(row.id, row);
@@ -212,7 +223,8 @@ export async function runNativeCadence(argv: string[]) {
   const [stage, ...rest] = argv; if (!["materialize", "prepare", "publish"].includes(stage)) fail("stage_required");
   const args = new Map<string, string>();
   for (let i = 0; i < rest.length; i += 2) {
-    if (!["--input", "--input-sha256", "--proof", "--proof-sha256", "--out", "--execute-target", "--execute-intent", "--approved-package-hash"].includes(rest[i]) || !rest[i + 1] || args.has(rest[i])) fail("invalid_arguments");
+    if (!["--input", "--input-sha256", "--proof", "--proof-sha256", "--goalie-proof", "--goalie-proof-sha256", "--out", "--execute-target", "--execute-intent",
+      "--approved-package-hash"].includes(rest[i]) || !rest[i + 1] || args.has(rest[i])) fail("invalid_arguments");
     args.set(rest[i], rest[i + 1]);
   }
   if (!args.has("--input") || !args.has("--input-sha256") || !args.has("--out")) fail("input_hash_and_private_output_required");
@@ -221,23 +233,28 @@ export async function runNativeCadence(argv: string[]) {
     || !execute && (args.has("--execute-intent") || args.has("--approved-package-hash"))) fail("explicit_execution_target_and_intent_required");
   const input = boundedFile(args.get("--input")!, args.get("--input-sha256")!, stage === "publish" ? CADENCE_RUNNER_LIMITS.publishBytes : CADENCE_RUNNER_LIMITS.inputBytes);
   const now = new Date();
+  // A split day (A-14) passes its goalie closure's proof beside the skater proof.
+  if (args.has("--goalie-proof") !== args.has("--goalie-proof-sha256") || stage === "materialize" && args.has("--goalie-proof")) fail("invalid_arguments");
+  const withGoalie = (skater: any): any => args.has("--goalie-proof")
+    ? { skater, goalie: boundedFile(args.get("--goalie-proof")!, args.get("--goalie-proof-sha256")!, CADENCE_RUNNER_LIMITS.inputBytes) } : skater;
   if (stage === "prepare") {
     // Offline only: no execution target, network or database client exists for this stage.
     if (execute || !args.has("--proof") || !args.has("--proof-sha256")) fail("offline_prepare_requires_exact_closed_proof");
-    const closed = boundedFile(args.get("--proof")!, args.get("--proof-sha256")!, CADENCE_RUNNER_LIMITS.inputBytes);
+    const closed = withGoalie(boundedFile(args.get("--proof")!, args.get("--proof-sha256")!, CADENCE_RUNNER_LIMITS.inputBytes));
     const result = await prepareNativeCadenceOutputs(input, closed, now);
     const output = resolve(args.get("--out")!); mkdirSync(output, { mode: 0o700 });
     privateWrite(resolve(output, "publication-plan.json"), result.plan);
     privateWrite(resolve(output, "cadence-command.json"), result.cadenceCommand);
     const receipt = { stage, ...result.receipt, execute: false, inputSHA256: args.get("--input-sha256"), proofSHA256: args.get("--proof-sha256"),
+      ...(args.has("--goalie-proof") ? { goalieProofSHA256: args.get("--goalie-proof-sha256") } : {}),
       publicEnvironmentActivation: "not_performed", output };
     privateWrite(resolve(output, "receipt.json"), receipt); return receipt;
-  } let prepared: ReturnType<typeof prepareNativeInputMaterialization> | undefined, proof: Proof | undefined;
+  } let prepared: ReturnType<typeof prepareNativeInputMaterialization> | undefined, proof: Proofs | undefined;
   let command: PublishCommand | undefined, selection: PlannedSourceObservation | undefined;
   if (stage === "materialize") prepared = prepareNativeInputMaterialization(input, now.toISOString());
   else {
     if (!args.has("--proof") || !args.has("--proof-sha256")) fail("exact_closed_proof_required");
-    proof = boundedFile(args.get("--proof")!, args.get("--proof-sha256")!, CADENCE_RUNNER_LIMITS.inputBytes);
+    proof = withGoalie(boundedFile(args.get("--proof")!, args.get("--proof-sha256")!, CADENCE_RUNNER_LIMITS.inputBytes));
     command = input;
     const validation = await validateCadenceCommand(command!, proof!, now); command!.cadenceInput = validation.input;
     if (execute && args.get("--approved-package-hash") !== validation.validation.packageHash) fail("exact_publication_package_required");
@@ -246,6 +263,7 @@ export async function runNativeCadence(argv: string[]) {
   }
   const output = resolve(args.get("--out")!); mkdirSync(output, { mode: 0o700 });
   privateWrite(resolve(output, "intent.json"), { stage, execute, inputSHA256: args.get("--input-sha256"), proofSHA256: args.get("--proof-sha256") ?? null,
+    goalieProofSHA256: args.get("--goalie-proof-sha256") ?? null,
     executionIntent: args.get("--execute-intent") ?? null, target: execute ? ORIGIN : null, limits: CADENCE_RUNNER_LIMITS, recordedAt: now.toISOString() });
   const event = (action: string, fields: Record<string, unknown>) => { const fd = openSync(resolve(output, "ledger.jsonl"), "a", 0o600);
     try { appendFileSync(fd, JSON.stringify({ at: new Date().toISOString(), action, ...fields }) + "\n"); fsyncSync(fd); } finally { closeSync(fd); } };

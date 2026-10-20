@@ -3,7 +3,7 @@
  *   inputs   - offline: retained request + captures -> bound materialization request and preparation command
  *   outputs  - offline: closed materialization proof -> pending daily publication plan
  *   review   - offline: independent reviewer decision -> reviewed plan and cadence command
- * v2 stages: universe (forge-daily-universe.ts), means (native-means-capture.ts), inputs-v2 and outputs-v2 (forge-daily-v2.ts).
+ * v2 stages: universe (forge-daily-universe.ts), means (native-means-capture.ts), capture-v2, inputs-v2 and outputs-v2 (forge-daily-v2.ts).
  * Materialize and publish use scripts/native-baseline-cadence.ts. Nothing here writes to a database. */
 import { createHash, randomUUID } from "node:crypto";
 import { appendFileSync, closeSync, fsyncSync, mkdirSync, openSync } from "node:fs";
@@ -180,7 +180,7 @@ export async function runForgeDaily(argv: string[], now = () => new Date()) {
   }
   if (stage === "universe") return (await import("./forge-daily-universe")).runForgeDailyUniverse(rest, now);
   if (stage === "means") return (await import("./native-means-capture")).runNativeMeansCapture(rest, now);
-  if (stage === "inputs-v2" || stage === "outputs-v2") return (await import("./forge-daily-v2")).runForgeDailyV2(stage, rest, now);
+  if (stage === "capture-v2" || stage === "inputs-v2" || stage === "outputs-v2") return (await import("./forge-daily-v2")).runForgeDailyV2(stage, rest, now);
   return fail("stage_required");
 }
 if (require.main === module) runForgeDaily(process.argv.slice(2)).then(result => console.log(JSON.stringify(result)))
