@@ -374,3 +374,30 @@ export function rollingAverage(
       : null;
   });
 }
+
+export const SEASON_INDEX_WINDOW = 5;
+
+/**
+ * "Relative to season average": each game's trailing 5-game average as a
+ * percentage of the player's season average for that stat (100 = season
+ * average). Drawn only once 5 games have been played; missing values are
+ * gaps, and a season average of 0 (or none) has no baseline.
+ */
+export function seasonIndexSeries(
+  seasonRows: DatedRow[],
+  stat: string,
+  window = SEASON_INDEX_WINDOW
+): (number | null)[] {
+  const present = seasonRows
+    .map((row) => finite(row[stat]))
+    .filter((value): value is number => value !== null);
+  const seasonAverage = present.length
+    ? present.reduce((sum, value) => sum + value, 0) / present.length
+    : null;
+  if (!seasonAverage) return seasonRows.map(() => null);
+  return rollingAverage(seasonRows, stat, window).map((average, index) =>
+    index < window - 1 || average === null
+      ? null
+      : (average / seasonAverage) * 100
+  );
+}

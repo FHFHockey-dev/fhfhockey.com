@@ -417,8 +417,12 @@ export async function runProjectionV2ForDate(
   if (!Number.isFinite(Date.parse(decisionAsOf)) || Date.parse(decisionAsOf) > Date.now()) {
     throw new Error("Projection cutoff must be a valid timestamp no later than now.");
   }
-  const { capture: captureEnabled, compute: computeEnabled } = starterBoardFlags();
-  if (computeEnabled && !captureEnabled) throw new Error("Starter Board computation requires input capture.");
+  const { capture: captureFlag, compute: computeEnabled } = starterBoardFlags();
+  if (computeEnabled && !captureFlag) throw new Error("Starter Board computation requires input capture.");
+  // FORGE captures its inputs only for Starter Board computation, which needs
+  // them. With compute off the capture flag still drives news intake, but a run
+  // takes the resumable uncaptured path and saves no input snapshot.
+  const captureEnabled = captureFlag && computeEnabled;
   // Existing full-slate FORGE jobs retain their legacy outputs and captured inputs,
   // but only explicitly scoped canary runs may publish new Starter Board revisions.
   const compute = computeEnabled && starterBoardScopeAllowed(opts?.gameIds);

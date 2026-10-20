@@ -3,7 +3,7 @@ import { resolvePlanningContributions } from "./planningContributions";
 import { inspectCalendarConsumerCoverage, parseCalendarCoverageProfile, summarizeCalendarConsumerCoverage } from "./calendarCoverage";
 import * as publicPlanning from "../rosterScheduleData/planning";
 import type { PlayerForecastCalendarScope } from "./schedule";
-import { forecastCalendarPolicy, type ContributionSource } from "./contributions";
+import { forecastCalendarPolicy, type ContributionParticipation, type ContributionSource } from "./contributions";
 import type { GameForecast, PlanningSnapshot } from "../rosterScheduleOptimizer/planningTypes";
 import { buildForgeCalendarManifest, parseForgeCalendarArgs } from "../../scripts/run-forge-calendar-local";
 
@@ -40,6 +40,117 @@ function fixture(baselines: ContributionSource[], forecasts: GameForecast[] = []
     lockedAssignments: [], realized: {}, opponent: null, evidence: {},
   };
 }
+
+function modeledParticipation(): ContributionParticipation {
+  return { playerId: 7, nhlPlayerId: 77, seasonId: 20262027, teamId: 1, gameId: 30,
+    scheduledAt: issuedContext.scheduledAt, scheduleRevision: "schedule-a", rosterRevision: "roster-a",
+    basis: "appearance", probability: 0.5, revisionId: "participation:synthetic-only", released: true,
+    allowedUses: rate.allowedUses, cutoffAt: now, issuedAt: now, expiresAt: "2026-09-29T20:00:00Z",
+    model: { version: "skater-participation-frequency-v1", event: "positive_minutes", calibration: "unavailable",
+      probabilityStatus: "uncalibrated_model", inputHash: "a".repeat(64), evidenceHashes: ["b".repeat(64)],
+      numerator: 1, denominator: 2, selectedGameIds: [10, 11], limitations: ["Synthetic model estimate; calibration unavailable."] } };
+}
+
+describe("independent modeled participation catalog", () => {
+  const nativeRate = { ...rate, policyVersion: "skater-baseline-rates-v1" };
+  it.each(["skater-participation-frequency-v1", "skater-frozen-window-appearance-frequency-v1", "skater-roster-observation-appearance-frequency-v1",
+    "skater-rolling-14d-appearance-frequency-v1"] as const)
+  ("admits current-appearance skater means with %s without weakening participation gates", version => {
+    const data = fixture([{ ...nativeRate, policyVersion: "current-appearance-skater-rates-v1" }]);
+    data.participationSources = [modeledParticipation()];
+    data.participationSources[0].model!.version = version;
+    expect(resolvePlanningContributions(data).forecasts[0].stats.GOALS).toBe(0.5);
+    for (const kind of ["missing", "basis", "revoked", "permission"]) {
+      const invalid = structuredClone(data);
+      if (kind === "missing") invalid.participationSources = [];
+      if (kind === "basis") invalid.participationSources![0].basis = "start";
+      if (kind === "revoked") invalid.participationSources![0].released = false;
+      if (kind === "permission") invalid.participationSources![0].allowedUses!.totals = false;
+      expect(resolvePlanningContributions(invalid).forecasts[0].stats.GOALS).toBeNull();
+    }
+  });
+  it.each(["native-goalie-appearance-win-rates-v1", "native-goalie-appearance-volume-rates-v1",
+    "native-goalie-appearance-shutout-rates-v1"].flatMap(policyVersion =>
+    (["goalie-appearance-frequency-v1", "goalie-frozen-window-appearance-frequency-v1", "goalie-roster-observation-appearance-frequency-v1",
+      "goalie-rolling-14d-appearance-frequency-v1"] as const)
+      .map(version => ({ policyVersion, version }))))("uses $version with $policyVersion, keeping starts separate", ({ policyVersion, version }) => {
+    const goalieRate = { ...rate, policyVersion, targetKey: policyVersion.includes("win") ? "WINS_GOALIE"
+      : policyVersion.includes("shutout") ? "SHUTOUTS_GOALIE" : "SAVES_GOALIE" };
+    const data = fixture([goalieRate]), p = modeledParticipation();
+    data.players[0].playerClass = "goalie"; data.players[0].eligiblePositions = ["G"];
+    p.model!.version = version; data.participationSources = [p];
+    const resolved = resolvePlanningContributions(data), forecast = resolved.forecasts[0];
+    expect(forecast.stats[goalieRate.targetKey]).toBe(0.5); expect(forecast.appearanceProbability).toBe(0.5);
+    expect(forecast.startProbability).toBeNull(); expect(forecast.confirmedStart).toBe(false);
+    expect(resolvePlanningContributions(JSON.parse(JSON.stringify(resolved))).forecasts).toEqual(resolved.forecasts);
+    for (const kind of ["absent", "basis", "identity", "skater", "unreleased"]) {
+      const invalid = structuredClone(data);
+      if (kind === "absent") invalid.participationSources = [];
+      if (kind === "basis") invalid.participationSources![0].basis = "start";
+      if (kind === "identity") invalid.participationSources![0].nhlPlayerId++;
+      if (kind === "skater") invalid.participationSources![0].model!.version = "skater-participation-frequency-v1";
+      if (kind === "unreleased") invalid.participationSources![0].released = false;
+      const withheld = resolvePlanningContributions(invalid).forecasts[0];
+      expect(withheld.stats[goalieRate.targetKey]).toBeNull();
+      expect(withheld.tieBreakStats?.[goalieRate.targetKey]).toBe(1);
+    }
+  });
+  it.each(["target", "issued", "cutoff", "expiry"])("withholds a one-microsecond modeled %s mismatch", kind => {
+    const data = fixture([nativeRate]), p = modeledParticipation();
+    if (kind === "target") p.scheduledAt = "2026-10-08T23:00:00.000001Z";
+    if (kind === "issued") p.issuedAt = "2026-09-29T00:00:00.000001Z";
+    if (kind === "cutoff") p.cutoffAt = "2026-09-29T00:00:00.000001Z";
+    if (kind === "expiry") p.expiresAt = "2026-09-28T23:59:59.999999Z";
+    data.participationSources = [p]; expect(resolvePlanningContributions(data).forecasts[0].stats.GOALS).toBeNull();
+  });
+  it("accepts equivalent target offsets and a positive microsecond validity interval", () => {
+    const data = fixture([nativeRate]), p = modeledParticipation();
+    p.scheduledAt = "2026-10-08T19:00:00-04:00";
+    p.cutoffAt = p.issuedAt = "2026-09-28T23:59:59.999999Z"; p.expiresAt = "2026-09-29T00:00:00.000001Z";
+    data.participationSources = [p]; expect(resolvePlanningContributions(data).forecasts[0].stats.GOALS).toBe(0.5);
+  });
+  it("reaches baseline-only totals without forging an atomic game revision, and survives retained reconstruction", () => {
+    const data = fixture([nativeRate]); data.participationSources = [modeledParticipation()];
+    const resolved = resolvePlanningContributions(data), forecast = resolved.forecasts[0];
+    expect(forecast.stats.GOALS).toBe(0.5); expect(forecast.tieBreakStats?.GOALS).toBe(1);
+    expect(forecast.appearanceProbability).toBe(0.5); expect(forecast.confirmedStart).toBe(false);
+    expect(forecast.issuedContext).toBeUndefined(); expect(forecast.revisionId).toBe(nativeRate.sourceId);
+    expect(resolvePlanningContributions(JSON.parse(JSON.stringify(resolved))).forecasts).toEqual(resolved.forecasts);
+    const revoked = resolvePlanningContributions({ ...resolved, participationSources: [] }).forecasts[0];
+    expect(revoked.stats.GOALS).toBeNull(); expect(revoked.tieBreakStats?.GOALS).toBe(1);
+    const replacement = modeledParticipation(); replacement.probability = 1; replacement.model!.numerator = 2;
+    replacement.revisionId = "participation:replacement";
+    expect(resolvePlanningContributions({ ...resolved, participationSources: [replacement] }).forecasts[0].stats.GOALS).toBe(1);
+  });
+  it.each(["expired", "wrong_game", "wrong_team", "wrong_roster", "wrong_schedule", "revoked", "duplicate", "basis", "ratio", "unknown_method"])("withholds %s modeled context while preserving conditional means", kind => {
+    const data = fixture([nativeRate]), p = modeledParticipation();
+    if (kind === "expired") p.expiresAt = now;
+    if (kind === "wrong_game") p.gameId = 31;
+    if (kind === "wrong_team") p.teamId = 2;
+    if (kind === "wrong_roster") p.rosterRevision = "other";
+    if (kind === "wrong_schedule") p.scheduleRevision = "other";
+    if (kind === "revoked") p.released = false;
+    if (kind === "basis") p.basis = "start";
+    if (kind === "ratio") p.probability = 0.8;
+    if (kind === "unknown_method") p.model!.version = "future" as never;
+    data.participationSources = kind === "duplicate" ? [p, structuredClone(p)] : [p];
+    const forecast = resolvePlanningContributions(data).forecasts[0];
+    expect(forecast.stats.GOALS).toBeNull(); expect(forecast.tieBreakStats?.GOALS).toBe(1);
+  });
+  it("honors fresh manifest revocation and per-use denial, and cannot multiply an incompatible appearance population", () => {
+    const data = fixture([nativeRate]); data.participationSources = [modeledParticipation()];
+    data.participationSources[0].allowedUses = { ...rate.allowedUses!, totals: false };
+    const forecast = resolvePlanningContributions(data).forecasts[0];
+    expect(forecast.stats.GOALS).toBeNull(); expect(forecast.assignmentStats?.GOALS).toBe(0.5);
+    data.participationSources[0].allowedUses = rate.allowedUses;
+    const resolved = resolvePlanningContributions(data);
+    resolved.forecastManifest = { version: "planning-forecasts-v1", id: "revoked", seasonId: 20262027, asOf: now,
+      scheduleRevision: "s", rosterRevision: "r", issuedRevisionIds: [], participationRevisionIds: [], baselineChecksum: null,
+      requiredOpportunities: 1, forecastedOpportunities: 0, exclusionCounts: {} };
+    expect(resolvePlanningContributions(resolved).forecasts[0].stats.GOALS).toBeNull();
+    expect(resolvePlanningContributions({ ...data, baselineSources: [rate] }).forecasts[0].stats.GOALS).toBeNull();
+  });
+});
 
 function detailed(overrides: Partial<GameForecast> = {}): GameForecast {
   return { sourceKind: "detailed", sourceWatermark: "captured-reads", issuedContext, playerId: "7", gameId: "30", stats: { GOALS: 1 },
@@ -530,6 +641,37 @@ describe("planning contribution adapter", () => {
     expect(resolvePlanningContributions(fixture([rate]), { playerIds: new Set(["other"]) }).forecasts).toEqual([]);
     expect(resolvePlanningContributions(fixture([rate]), { playerIds: new Set(["7"]) }).forecasts).toHaveLength(1);
   });
+
+  it.each(["conditional_playing", "conditional_appearance", "legacy_unclassified", undefined])(
+    "does not relabel raw %s values as unconditional when a baseline catalog is populated", conditioning => {
+      const original = detailed({ stats: { GOALS: 1000 }, conditionalStats: undefined, appearanceProbability: null,
+        conditioning: conditioning as unknown as GameForecast["conditioning"] });
+      const approved = { ...rate, sourceId: "independent-integrated-rate", basis: "per_team_game" as const,
+        mean: 3, participationIntegrated: true };
+      for (const baselines of [[{ ...rate, playerId: 8, nhlPlayerId: 88 }], [rate], [approved]]) {
+        const data = fixture(baselines, [original]);
+        const before = JSON.stringify(data);
+        const result = resolvePlanningContributions(data);
+        const forecast = result.forecasts[0];
+        expect(result.forecastInputExclusions).toContainEqual({ gameId: "30", playerId: "7",
+          reasons: ["unsupported_conditioning"] });
+        expect(forecast.contributions?.GOALS.inputs?.detailed).toBeUndefined();
+        expect(forecast.contributions?.GOALS.participationRevisionId).toBeNull();
+        if (baselines[0] === approved) {
+          expect(forecast).toMatchObject({ sourceKind: "baseline", conditioning: "unconditional",
+            stats: { GOALS: 3 }, assignmentStats: { GOALS: 3 }, revisionId: approved.sourceId });
+          expect(forecast.contributions?.GOALS.allowedUses).toMatchObject({ assignment: true, totals: true, comparison: true });
+        } else {
+          expect(forecast.stats.GOALS).toBeNull();
+          expect(forecast.assignmentStats?.GOALS).toBeNull();
+          expect(forecast.contributions?.GOALS.allowedUses).toMatchObject({ assignment: false, totals: false, comparison: false });
+          if (baselines[0] === rate) expect(forecast.tieBreakStats?.GOALS).toBe(1);
+        }
+        expect(forecast.issuedContext).toBeUndefined();
+        expect(JSON.stringify(data)).toBe(before);
+        expect(resolvePlanningContributions(result).forecasts).toEqual(result.forecasts);
+      }
+    });
 
   it("uses an independent appearance probability for a baseline-only skater target", () => {
     const pim = { ...rate, targetKey: "PENALTY_MINUTES", mean: 2 };

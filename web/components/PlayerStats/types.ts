@@ -172,6 +172,9 @@ export interface GoalieSeasonTotals extends SeasonTotals {
 // Component prop interfaces
 export interface PlayerStatsChartProps {
   gameLog: GameLogEntry[];
+  // Full-season log (ascending or not) used as the baseline for the
+  // "relative to season average" view; defaults to gameLog.
+  seasonGameLog?: GameLogEntry[];
   playoffGameLog?: GameLogEntry[];
   selectedStats: string[];
   showRollingAverage?: boolean;

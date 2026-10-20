@@ -48,7 +48,7 @@ function evaluated(data: PlanningSnapshot, selected = intent) {
   return { baseline: evaluatePlan(data, selected, "outcome", [], false), plan: evaluatePlan(data, selected, "outcome", selected.steps, false) };
 }
 function show(data: PlanningSnapshot, evaluations = evaluated(data), reviewed = true) {
-  render(<CategoryGains {...evaluations} scoring={data.rules.scoring} label="Selected plan" reviewed={reviewed} />);
+  render(<CategoryGains {...evaluations} scoring={data.rules.scoring} label="Selected plan" reviewed={reviewed} snapshot={data} />);
 }
 
 it("shows per-category gains and losses from a manager-selected startable lineup, preserving moves and reset accounting", () => {
@@ -79,17 +79,9 @@ it.each(["postponed", "cancelled", "final"] as const)("excludes a %s candidate g
   expect(screen.getAllByText(/Δ 0/)).toHaveLength(2);
 });
 
-it.each(["expired", "missing", "comparison denied", "eligibility unknown", "schedule changed", "roster changed", "opponent missing", "allowance unknown", "allowance exhausted", "too early"])("keeps %s gains unavailable", reason => {
+it.each(["allowance unknown", "allowance exhausted", "too early"])("keeps %s gains unavailable", reason => {
   const data = fixture();
   const selected = structuredClone(intent);
-  const forecast = data.forecasts.at(-1)!;
-  if (reason === "expired") forecast.expiresAt = data.context.asOf;
-  if (reason === "missing") data.forecasts.pop();
-  if (reason === "comparison denied") forecast.allowedUses!.comparison = false;
-  if (reason === "eligibility unknown") data.players[2].eligibilityVerified = false;
-  if (reason === "schedule changed") data.games.at(-1)!.scheduleRevision = "new-schedule";
-  if (reason === "roster changed") data.players[2].rosterRevision = "new-roster";
-  if (reason === "opponent missing") data.opponent = null;
   if (reason === "allowance unknown") data.rules.periods[0].remaining = null;
   if (reason === "allowance exhausted") data.rules.periods[0].remaining = 0;
   if (reason === "too early") selected.steps[0].effectiveAt = selected.steps[0].at;
@@ -97,6 +89,41 @@ it.each(["expired", "missing", "comparison denied", "eligibility unknown", "sche
   expect(screen.getByText(/Category gains unavailable/)).toBeTruthy();
   expect(screen.queryByText(/Δ/)).toBeNull();
   expect(screen.getAllByText("Change unavailable")).toHaveLength(2);
+});
+
+it.each([["expired", "missing projection for C 2026-10-07"], ["missing", "missing projection for C 2026-10-07"],
+  ["comparison denied", "comparison use not approved for C 2026-10-07"], ["eligibility unknown", "eligibility unverified for C"],
+  ["schedule changed", "missing projection for C 2026-10-07"], ["roster changed", "missing projection for C"]])("marks %s categories incomplete with the reason (W10)", (reason, text) => {
+  const data = fixture();
+  const forecast = data.forecasts.at(-1)!;
+  if (reason === "expired") forecast.expiresAt = data.context.asOf;
+  if (reason === "missing") data.forecasts.pop();
+  if (reason === "comparison denied") forecast.allowedUses!.comparison = false;
+  if (reason === "eligibility unknown") data.players[2].eligibilityVerified = false;
+  if (reason === "schedule changed") data.games.at(-1)!.scheduleRevision = "new-schedule";
+  if (reason === "roster changed") data.players[2].rosterRevision = "new-roster";
+  const evaluations = evaluated(data);
+  evaluations.plan = evaluatePlan({ ...data, lockedAssignments: [...data.lockedAssignments,
+    { date: "2026-10-07", playerId: "3", slotId: "C#1", source: "manager" }] }, intent, "outcome", intent.steps, false);
+  show(data, evaluations);
+  expect(screen.queryByText(/Δ/)).toBeNull();
+  expect(screen.getAllByText(new RegExp(`^Incomplete: ${text}`))).toHaveLength(2);
+});
+
+it("splits the swap into gains and sacrifices without an opponent scoreboard, with pooled ratio components (W8, W9, W11)", () => {
+  const data = fixture();
+  data.opponent = null;
+  data.rules.scoring.categories.push({ key: "SH%", direction: "higher", numerator: "GOALS", denominator: "SHOTS" });
+  const evaluations = evaluated(data);
+  evaluations.plan = evaluatePlan({ ...data, lockedAssignments: [...data.lockedAssignments,
+    { date: "2026-10-07", playerId: "3", slotId: "C#1", source: "manager" }] }, intent, "outcome", intent.steps, false);
+  show(data, evaluations);
+  expect(screen.getByText("No move 2 → plan 4 · Δ +2 · gain 3 / sacrifice 1 · no opponent scoreboard")).toBeTruthy();
+  expect(screen.getByText("No move 12 → plan 8 · Δ -4 · gain 2 / sacrifice 6 · no opponent scoreboard")).toBeTruthy();
+  expect(screen.getByText("No move 16.7% → plan 50.0% · Δ +33.3 pts · no opponent scoreboard")).toBeTruthy();
+  expect(screen.getByText("SH%: pooled 16.7% → 50.0% · components GOALS +2 / SHOTS -4")).toBeTruthy();
+  expect(screen.getByText(/Gains are what added players contribute on days they start; sacrifices are what dropped or displaced players no longer contribute\./)).toBeTruthy();
+  expect(screen.queryByText(/Category gains unavailable/)).toBeNull();
 });
 
 it("shows no category gain for a candidate without a compatible starting position", () => {
@@ -138,8 +165,10 @@ it("uses whole-lineup goalie ratios and keeps projected starts separate from cre
   expect(evaluations.plan.goalie).toMatchObject({ credited: 2, projected: 3, minimumSatisfied: true });
   expect(evaluations.plan.categoryResults.find(row => row.key === "SV%")?.own).toBeCloseTo(27.5 / 30);
   show(data, evaluations);
-  expect(screen.getByText("No move 0.9 → plan 0.91667 · Δ +0.016667")).toBeTruthy();
-  expect(screen.getByText("No move 4 → plan 2.5 · Δ -1.5")).toBeTruthy();
+  // Percentage ratios read as one-decimal percentages with changes in points; rate ratios such as GAA use two decimals.
+  expect(screen.getByText("No move 90.0% → plan 91.7% · Δ +1.7 pts")).toBeTruthy();
+  expect(screen.getByText("No move 4.00 → plan 2.50 · Δ -1.50")).toBeTruthy();
+  expect(screen.getByText("SV%: pooled 90.0% → 91.7% · components SAVES_GOALIE -8.5 / SHOTS_AGAINST_GOALIE -10")).toBeTruthy();
   cleanup();
   data.rules.goalieMinimum.credited = 0;
   const risky = evaluated(data);

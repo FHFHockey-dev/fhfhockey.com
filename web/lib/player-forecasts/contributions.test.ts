@@ -4,10 +4,14 @@ import { PROJECTION_SOURCES_CONFIG } from "../projectionsConfig/projectionSource
 import { BASELINE_CANDIDATE_DEFINITION_HASH, BASELINE_CANDIDATE_POLICY,
   baselineDefinitionHash, baselineProjectionSchemas } from "./baselinePolicy";
 import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
-import { baselineAppearanceFromBoxscore, baselineProjectionContentHash } from "./baselineSourceLineage";
-import { buildSkaterBaselineRates, type BaselineAppearanceInput } from "./baselineRates";
+import { baselineAppearanceFromBoxscore, baselineProjectionContentHash,
+  baselineHistoricalSources, baselineHistoricalSourceLimitations } from "./baselineSourceLineage";
+import * as contributionStore from "./contributionStore";
+import { loadNativeContributionBundle } from "./nativeContributionAdmission";
+import { buildSkaterBaselineRates, buildPriorAppearanceSkaterRates, PRIOR_APPEARANCE_POLICY_VERSION, buildCurrentAppearanceSkaterRates, CURRENT_APPEARANCE_POLICY_VERSION, type BaselineAppearanceInput } from "./baselineRates";
 import { buildBaselineBundleFromCapturedInputs, buildBaselineContributionBundle,
-  dryRunBaselineContributionBundle, dryRunCapturedBaselineBundle } from "./baselineGeneration";
+  dryRunBaselineContributionBundle, dryRunCapturedBaselineBundle, dryRunNativeSkaterBaselineBundle,
+  type NativeSkaterBaselineObservation } from "./baselineGeneration";
 import { forecastCalendarPolicy, resolveContribution, summarizeContributionCoverage,
   type ContributionGame, type ContributionSource } from "./contributions";
 import { captureCurrentSkaterBaselineInputs, persistCapturedBaselineInputs, readBounded,
@@ -33,6 +37,21 @@ const participationIdentity = { playerId: 7, nhlPlayerId: 77, seasonId: 20262027
   issuedAt: "2026-09-29T00:00:00Z" };
 
 describe("shared contribution resolver", () => {
+  it.each(["", "not-a-clock", "2026-99-99T00:00:00Z"])("withholds every source for invalid read clock %j", (now) => {
+    for (const kind of ["baseline", "detailed"] as const) {
+      for (const participationIntegrated of [false, true]) {
+        const candidate: ContributionSource = { ...source, kind, participationIntegrated,
+          basis: participationIntegrated ? "unconditional_game" : "per_appearance" };
+        const resolved = resolveContribution({ game, targetKey: "GOALS", now, [kind]: candidate });
+        expect(resolved.sourceKind).toBeNull();
+        expect(resolved.conditionalMean).toBeNull();
+        expect(resolved.unconditionalMean).toBeNull();
+        expect(resolved.sourceIds).toEqual([]);
+        expect(Object.values(resolved.allowedUses)).toEqual([false, false, false, false]);
+        expect(resolved.exclusionReasons).toContain("future_input");
+      }
+    }
+  });
   it.each([7, 14, 21])("retains the %i-day UTC policy and measures its discrete overlap boundary", (days) => {
     const policy = forecastCalendarPolicy(days);
     const baseline = { ...source, kind: "baseline" as const, sourceId: "rate", mean: 1,
@@ -115,6 +134,42 @@ describe("shared contribution resolver", () => {
       expect(resolved.allowedUses.assignment).toBe(false);
       expect(resolved.unconditionalMean).toBeNull();
     }
+  });
+
+  it("retains original source clocks while enforcing earlier catalog validity", () => {
+    const candidate = { ...source, catalogExpiresAt: "2026-10-01T00:00:00.000002Z" };
+    const original = JSON.stringify(candidate);
+    const live = resolveContribution({ game, targetKey: "GOALS", now: "2026-10-01T00:00:00.000001Z", detailed: candidate });
+    expect(live.sourceIds).toEqual([source.sourceId]);
+    expect(live.conditionalMean).toBe(2);
+    const expired = resolveContribution({ game, targetKey: "GOALS", now: candidate.catalogExpiresAt, detailed: candidate });
+    expect(expired.sourceIds).toEqual([]);
+    expect(expired.exclusionReasons).toContain("stale_source");
+    expect(JSON.stringify(candidate)).toBe(original);
+  });
+
+  it.each([null, "", "not-a-clock", "2026-02-30T00:00:00Z", "2026-10-10T00:00:00Z",
+    "2026-10-01T00:00:00Z", "2026-09-28T01:00:00Z"])("withholds invalid or elapsed catalog validity %j", catalogExpiresAt => {
+    const resolved = resolveContribution({ game, targetKey: "GOALS", now: "2026-10-01T00:00:00Z",
+      detailed: { ...source, catalogExpiresAt: catalogExpiresAt as unknown as string } });
+    expect(resolved.sourceIds).toEqual([]);
+    expect(resolved.conditionalMean).toBeNull();
+    expect(resolved.exclusionReasons).toContain("stale_source");
+  });
+
+  it("keeps the explicit summary W policy appearance-conditioned with modeled goalie participation", () => {
+    const now = "2026-10-01T00:00:00Z", baseline: ContributionSource = { ...source, kind: "baseline", gameId: undefined,
+      sourceId: "summary-win", policyVersion: "native-goalie-appearance-summary-win-rates-v1", targetKey: "WINS_GOALIE",
+      mean: 0.6, expiresAt: "2026-10-02T00:00:00Z" };
+    const participation = { ...participationIdentity, basis: "appearance" as const, probability: 0.5, revisionId: "modeled-goalie",
+      scheduledAt: game.scheduledAt, cutoffAt: now, issuedAt: now, expiresAt: "2026-10-02T00:00:00Z",
+      model: { version: "goalie-roster-observation-appearance-frequency-v1" as const, event: "positive_minutes" as const,
+        probabilityStatus: "uncalibrated_model" as const, calibration: "unavailable" as const, inputHash: "a".repeat(64),
+        evidenceHashes: ["b".repeat(64)], numerator: 1, denominator: 2, selectedGameIds: [28, 29], limitations: [] } };
+    const resolved = resolveContribution({ game, targetKey: "WINS_GOALIE", now, baseline, participation });
+    expect(resolved.conditionalMean).toBe(0.6);
+    expect(resolved.unconditionalMean).toBeCloseTo(0.3);
+    expect(resolveContribution({ game, targetKey: "WINS_GOALIE", now, baseline: { ...baseline, basis: "per_start" }, participation }).unconditionalMean).toBeNull();
   });
 
   it("tapers compatible detailed residuals once before participation", () => {
@@ -246,6 +301,73 @@ describe("skater baseline rate candidate", () => {
     expect(recentOnly.targets).toEqual([]);
   });
 
+  it("keeps prior TOI unknown without compatible appearance probability and allows its explicit modeled contract", () => {
+    const baseline: ContributionSource = { ...source, kind: "baseline", policyVersion: PRIOR_APPEARANCE_POLICY_VERSION,
+      targetKey: "TIME_ON_ICE_PER_GAME", unit: "minutes", basis: "per_appearance", mean: 20, participationIntegrated: false };
+    const now = "2026-09-29T00:00:00Z";
+    expect(resolveContribution({ game, now, targetKey: baseline.targetKey, baseline }).unconditionalMean).toBeNull();
+    const participation = { ...game, basis: "appearance" as const, probability: 0.5, released: true,
+      revisionId: "synthetic-modeled-prior", allowedUses: baseline.allowedUses, cutoffAt: now, issuedAt: now,
+      expiresAt: "2026-09-29T12:00:00Z", model: { version: "skater-participation-frequency-v1" as const,
+        event: "positive_minutes" as const, probabilityStatus: "uncalibrated_model" as const, calibration: "unavailable" as const,
+        inputHash: "a".repeat(64), evidenceHashes: ["b".repeat(64)], numerator: 1, denominator: 2,
+        selectedGameIds: [1, 2], limitations: ["Synthetic only"] } };
+    expect(resolveContribution({ game, now, targetKey: baseline.targetKey, baseline, participation }).unconditionalMean).toBe(10);
+    expect(resolveContribution({ game, now, targetKey: baseline.targetKey, baseline,
+      participation: { ...participation, basis: "start" } }).unconditionalMean).toBeNull();
+  });
+  it("adds prior native TOI from every positive receipt without changing pinned legacy output", () => {
+    const cutoffAt = "2026-10-15T11:00:00Z";
+    const input = { playerId: 7, nhlPlayerId: 77, seasonId: 20262027, cutoffAt, sourceWatermark: "synthetic", projections: [],
+      appearances: [{ gameId: 1, seasonId: 20252026, gameDate: "2025-10-10", availableAt: cutoffAt, teamId: 1,
+        regularSeason: true, targets: { GOALS: 2, TIME_ON_ICE_PER_GAME: 20 },
+        finalBoxscore: { payloadHash: "a".repeat(64), fetchedAt: "2025-10-10T10:00:00Z" } }] };
+    const before = structuredClone(input), legacy = buildSkaterBaselineRates(input);
+    expect(playerForecastSourcePayloadHash(legacy)).toBe("55be669ec25a9d5786a82ad81c870557c40eb79c9a06b33534e557c854251307");
+    const native = { ...input, appearances: input.appearances.map(row => ({ ...row,
+      finalBoxscore: { ...row.finalBoxscore, appearanceSeconds: 1200 } })) };
+    const extended = buildPriorAppearanceSkaterRates(native);
+    expect(extended.policyVersion).toBe(PRIOR_APPEARANCE_POLICY_VERSION);
+    expect(extended.targets.filter(row => row.targetKey !== "TIME_ON_ICE_PER_GAME")).toEqual(legacy.targets);
+    expect(extended.targets.find(row => row.targetKey === "TIME_ON_ICE_PER_GAME")).toMatchObject({
+      ratePerAppearance: 20, previousSeasonRate: 20, previousGameIds: [1], recentGameIds: [] });
+    expect(input).toEqual(before); expect(playerForecastSourcePayloadHash(buildSkaterBaselineRates(input))).toBe(playerForecastSourcePayloadHash(legacy));
+    const second = { ...native.appearances[0], gameId: 2, finalBoxscore: { ...native.appearances[0].finalBoxscore, appearanceSeconds: 600 } };
+    expect(buildPriorAppearanceSkaterRates({ ...native, appearances: [...native.appearances, second] }).targets
+      .find(row => row.targetKey === "TIME_ON_ICE_PER_GAME")?.ratePerAppearance).toBe(15);
+    for (const kind of ["missing", "zero", "current", "future", "duplicates", "too_many"]) {
+      const invalid = structuredClone(native);
+      if (kind === "missing") delete (invalid.appearances[0].finalBoxscore as any).appearanceSeconds;
+      if (kind === "zero") invalid.appearances[0].finalBoxscore.appearanceSeconds = 0;
+      if (kind === "current") invalid.appearances[0].seasonId = 20262027;
+      if (kind === "future") invalid.appearances[0].availableAt = "2026-10-15T11:00:01Z";
+      if (kind === "duplicates") invalid.appearances.push(structuredClone(invalid.appearances[0]));
+      if (kind === "too_many") invalid.appearances = Array.from({ length: 83 }, (_, gameId) => ({ ...invalid.appearances[0], gameId: gameId + 1 }));
+      expect(() => buildPriorAppearanceSkaterRates(invalid)).toThrow();
+    }
+  });
+  it("uses an explicit current-appearance mean without prior and keeps missing targets out of both sums", () => {
+    const cutoffAt = "2026-10-15T12:00:00Z";
+    const appearance = (gameId: number, gameDate: string, targets: BaselineAppearanceInput["targets"], seasonId = 20262027): BaselineAppearanceInput => ({
+      gameId, gameDate, targets, seasonId, teamId: 1, regularSeason: true, availableAt: cutoffAt,
+      finalBoxscore: { payloadHash: "a".repeat(64), fetchedAt: cutoffAt } });
+    const input = { playerId: 7, nhlPlayerId: 77, seasonId: 20262027, cutoffAt, sourceWatermark: "synthetic", projections: [], appearances: [
+      appearance(3, "2026-10-14", { GOALS: 0, HITS: 2 }),
+      appearance(2, "2026-10-12", { GOALS: null, HITS: 4 }),
+      appearance(1, "2026-10-10", { GOALS: 2, HITS: null }),
+      appearance(4, "2025-10-10", { GOALS: 100 }, 20252026),
+      { ...appearance(5, "2026-10-15", { GOALS: 100 }), availableAt: "2026-10-15T12:00:01Z" },
+    ] };
+    const result = buildCurrentAppearanceSkaterRates(input);
+    expect(result.policyVersion).toBe(CURRENT_APPEARANCE_POLICY_VERSION);
+    expect(result.targets.find(row => row.targetKey === "GOALS")).toMatchObject({ recentGameIds: [3, 1], previousSeasonRate: null, consensusRate: null });
+    expect(result.targets.find(row => row.targetKey === "GOALS")?.ratePerAppearance).toBeCloseTo(2 * 0.9 ** 2 / (1 + 0.9 ** 2));
+    expect(result.targets.find(row => row.targetKey === "HITS")?.ratePerAppearance).toBeCloseTo((2 + 4 * 0.9) / 1.9);
+    expect(result.missingTargetKeys).toContain("PENALTY_MINUTES");
+    expect(buildSkaterBaselineRates({ ...input, appearances: input.appearances.slice(0, 3) }).targets).toEqual([]);
+    expect(() => buildCurrentAppearanceSkaterRates({ ...input, appearances: [input.appearances[0], input.appearances[0]] })).toThrow(/unique/);
+  });
+
   it("bounds history/recent windows and shrinks a cold streak without treating missing targets as zero", () => {
     const cutoffAt = "2026-10-01T00:00:00Z";
     const result = buildSkaterBaselineRates({ playerId: 7, nhlPlayerId: 77, seasonId: 20262027,
@@ -325,7 +447,7 @@ describe("skater baseline rate candidate", () => {
         definitionHash: baselineDefinitionHash("skater", 20262027), projectionSources: [],
         sourceWatermark: "w", projections: [{ sourceId: "ag_skaters", sourceRowId: "ag",
           seasonId: 20262027, availableAt: "2026-09-27T00:00:00Z",
-          projectedAppearances: 80, totals: { GOALS: 40 } }], appearances: [] }],
+          projectedAppearances: 80, totals: { GOALS: 40, PENALTY_MINUTES: 160 } }], appearances: [] }],
     };
     const first = buildBaselineBundleFromCapturedInputs(captured);
     const second = buildBaselineBundleFromCapturedInputs(captured);
@@ -333,6 +455,7 @@ describe("skater baseline rate candidate", () => {
     expect(first.manifest.released).toBe(false);
     expect(first.manifest.reviewId).toBeNull();
     expect(first.sources[0].mean).toBe(0.5);
+    expect(first.sources.find(row => row.targetKey === "PENALTY_MINUTES")).toMatchObject({ mean: 2, unit: "minutes" });
     expect(first.sources[0].participationIntegrated).toBe(false);
     const snapshot = buildSkaterBaselineRates({ ...captured.players[0],
       seasonId: captured.seasonId, cutoffAt });
@@ -365,6 +488,255 @@ describe("skater baseline rate candidate", () => {
           availableAt: "", projectedAppearances: 80, totals: { GOALS: 40 } }],
         appearances: [] }],
     })).toThrow(/availability timestamps/);
+  });
+});
+
+describe("private native baseline composition", () => {
+  // Offline mechanics fixtures only; no genuine forecast, publication or approval evidence.
+  const cutoffAt = "2026-10-13T12:00:00Z";
+  function observation(playerId: number, nhlPlayerId: number, hits: number): NativeSkaterBaselineObservation {
+    const historicalGame = { id: 2025020001, seasonId: 20252026, date: "2026-04-01", type: 2,
+      startTime: "2026-04-01T01:00:00Z", homeTeamId: 1, awayTeamId: 2 };
+    const rawRow = { id: 1, game_id: historicalGame.id, season_id: historicalGame.seasonId,
+      payload_hash: "a".repeat(64), fetched_at: "2026-04-01T10:00:00Z", payload: {
+        id: historicalGame.id, season: historicalGame.seasonId, gameDate: historicalGame.date,
+        gameType: 2, gameState: "FINAL", homeTeam: { id: 1 }, awayTeam: { id: 2 },
+        playerByGameStats: { homeTeam: { forwards: [{ playerId: nhlPlayerId, toi: "20:00", hits }],
+          defense: [], goalies: [{ playerId: 99 }] },
+        awayTeam: { forwards: [{ playerId: 100 }], defense: [], goalies: [{ playerId: 101 }] } } } };
+    const appearance = baselineAppearanceFromBoxscore({ rawRow, game: historicalGame, nhlPlayerId,
+      teamId: 1, cutoffAt, population: "skater" })!;
+    const historicalSources = baselineHistoricalSources([{ gameId: historicalGame.id, playerId: nhlPlayerId,
+      games: historicalGame }], [{ game_id: historicalGame.id, player_id: nhlPlayerId, team_id: 1,
+      season_id: historicalGame.seasonId, game_date: historicalGame.date,
+      source_play_by_play_hash: "a".repeat(64), parser_version: 1 }], [],
+    { nhlIds: [nhlPlayerId], seasonId: 20262027, upperDate: cutoffAt.slice(0, 10) }, nhlPlayerId);
+    const payload: NativeSkaterBaselineObservation["payload"] = {
+      basis: "captured_current", capturedAt: cutoffAt, playerId, nhlPlayerId,
+      teamId: 1, rosterRevision: "roster-native", definitionHash: baselineDefinitionHash("skater", 20262027),
+      projections: [], appearances: [appearance], historicalSources,
+      limitations: [...baselineHistoricalSourceLimitations(historicalSources), "Historical population coverage is unverified."],
+    };
+    return { provider: "fhfh", dataset_key: "baseline-inputs-v1", entity_kind: "player",
+      entity_key: `20262027:${playerId}`, available_at: cutoffAt,
+      payload_hash: playerForecastSourcePayloadHash(payload), payload };
+  }
+  const args = () => ({ seasonId: 20262027, cutoffAt, issuedAt: "2026-10-13T12:01:00Z",
+    expiresAt: "2026-10-14T12:00:00Z", scheduleRevision: "schedule-native",
+    observations: [observation(7, 77, 2), observation(8, 88, 1)] });
+  const noDatabase = new Proxy({}, { get() { throw new Error("database access in native dry run"); } });
+
+  function withPPP() {
+    const input = args();
+    input.observations = input.observations.slice(0, 1);
+    const row = input.observations[0], receipt = row.payload.appearances[0].finalBoxscore as any;
+    const box = receipt.rawRow.payload;
+    Object.assign(box.playerByGameStats.homeTeam.forwards[0], { goals: 1, assists: 0, powerPlayGoals: 1 });
+    Object.assign(box.playerByGameStats.awayTeam.forwards[0], { goals: 0, assists: 0, powerPlayGoals: 0 });
+    row.payload.appearances[0] = baselineAppearanceFromBoxscore({ rawRow: receipt.rawRow, game: receipt.game,
+      nhlPlayerId: row.payload.nhlPlayerId, teamId: 1, cutoffAt: input.cutoffAt, population: "skater" })!;
+    const body = { id: receipt.game.id, season: receipt.game.seasonId, gameDate: receipt.game.date,
+      gameType: 2, gameState: "OFF", startTimeUTC: receipt.game.startTime, homeTeam: { id: 1, score: 1 },
+      awayTeam: { id: 2, score: 0 }, periodDescriptor: { number: 3, periodType: "REG" }, summary: { scoring:
+        [1, 2, 3].map(number => ({ periodDescriptor: { number, periodType: "REG", maxRegulationPeriods: 3 },
+          goals: number === 1 ? [{ eventId: 10, playerId: row.payload.nhlPlayerId, isHome: true, strength: "pp", assists: [] }] : [] })) } };
+    row.payload.derivedPowerPlayPoints = { version: "native-power-play-points-inputs-v1", landings: [{
+      rawRow: { id: 2, endpoint: "landing", game_id: body.id, season_id: body.season,
+        fetched_at: "2026-04-01T10:01:00Z", payload_hash: "b".repeat(64), payload: body },
+      contentHash: playerForecastSourcePayloadHash(body) }] };
+    row.payload_hash = playerForecastSourcePayloadHash(row.payload);
+    return input;
+  }
+
+  it("opt-in PPP composition keeps original appearances immutable and reproduces native reader values", async () => {
+    const input = withPPP(), before = JSON.stringify(input);
+    expect(input.observations[0].payload.appearances[0].targets.PP_POINTS).toBeNull();
+    const result = await dryRunNativeSkaterBaselineBundle(noDatabase as never, input);
+    expect(result.sources.find(row => row.targetKey === "PP_POINTS")).toMatchObject({ mean: 1,
+      released: false, participationIntegrated: false, sourceWatermark: input.observations[0].payload_hash });
+    expect(JSON.stringify(input)).toBe(before);
+    const approval = vi.spyOn(contributionStore, "loadApprovedContributionBundle").mockResolvedValue({
+      sources: result.sources, manifests: [], checksum: result.manifest.checksum, limitations: [],
+    });
+    try {
+      const query: any = { select: () => query, eq: () => query, in: () => query, limit: () => query,
+        then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data: input.observations, error: null }).then(resolve) };
+      const reader = await loadNativeContributionBundle({ from: () => query } as never, input.seasonId, new Date(input.issuedAt));
+      expect(reader.sources).toEqual(result.sources);
+      expect(reader.limitations).toEqual([]);
+    } finally { approval.mockRestore(); }
+  });
+
+  it("materializes opt-in PPP from an earlier immutable base capture without rewriting archived inputs", async () => {
+    const input = withPPP(), row = input.observations[0];
+    input.cutoffAt = "2026-10-13T13:00:00Z";
+    input.issuedAt = "2026-10-13T13:01:00Z";
+    row.available_at = row.payload.capturedAt = input.cutoffAt;
+    row.payload_hash = playerForecastSourcePayloadHash(row.payload);
+    const before = JSON.stringify(input);
+    const result = await dryRunNativeSkaterBaselineBundle(noDatabase as never, input);
+    expect(result.sources.find(source => source.targetKey === "PP_POINTS")).toMatchObject({ mean: 1, cutoffAt: input.cutoffAt });
+    expect(row.payload.appearances[0].availableAt).toBe("2026-10-13T12:00:00Z");
+    expect(JSON.stringify(input)).toBe(before);
+  });
+
+  it.each(["version", "missing", "duplicate", "extra game", "body changed", "content hash", "wrong player", "future", "base future"])(
+    "rejects opt-in PPP %s evidence with a recomputed outer observation hash", async problem => {
+      const input = withPPP(), row = input.observations[0], derived = row.payload.derivedPowerPlayPoints!;
+      if (problem === "version") derived.version = "unknown" as never;
+      if (problem === "missing") derived.landings = [];
+      if (problem === "duplicate") derived.landings.push(derived.landings[0]);
+      if (problem === "extra game") derived.landings[0].rawRow.game_id++;
+      if (problem === "body changed") derived.landings[0].rawRow.payload.summary.scoring[0].goals[0].strength = "ev";
+      if (problem === "content hash") derived.landings[0].contentHash = "c".repeat(64);
+      if (problem === "wrong player") derived.landings[0].rawRow.payload.summary.scoring[0].goals[0].playerId = 99;
+      if (problem === "future") derived.landings[0].rawRow.fetched_at = "2026-10-13T12:00:00.000001Z";
+      if (problem === "base future") row.payload.appearances[0].availableAt = "2026-10-13T12:00:00.000001Z";
+      if (problem === "body changed" || problem === "wrong player") {
+        derived.landings[0].contentHash = playerForecastSourcePayloadHash(derived.landings[0].rawRow.payload);
+      }
+      row.payload_hash = playerForecastSourcePayloadHash(row.payload);
+      await expect(dryRunNativeSkaterBaselineBundle(noDatabase as never, input)).rejects.toThrow(/Native PPP|Private PPP/);
+    });
+
+  it("composes two retained native rates with matching reader provenance and no writes", async () => {
+    const input = args();
+    const before = JSON.stringify(input);
+    const result = await dryRunNativeSkaterBaselineBundle(noDatabase as never, input);
+    expect(result.sources.map(row => [row.playerId, row.targetKey, row.mean])).toEqual([[7, "HITS", 2], [8, "HITS", 1]]);
+    expect(result.manifest).toMatchObject({ released: false, reviewId: null, evaluationPolicyId: null,
+      inputCutoff: cutoffAt, sourceCount: 2 });
+    expect(result.receipt).toMatchObject({ dryRun: true, snapshotId: null });
+    expect(result.sources.every(row => row.unit === "count" && row.basis === "per_appearance"
+      && !row.participationIntegrated && !row.released && !row.allowedUses)).toBe(true);
+    expect(result.sources.map(row => row.sourceWatermark)).toEqual(input.observations.map(row => row.payload_hash));
+    expect(result.sources[0].limitations).toContain("Historical population coverage is unverified.");
+    expect(JSON.stringify(input)).toBe(before);
+
+    // Approval is stubbed only to exercise the unchanged native provenance reader.
+    const approved = vi.spyOn(contributionStore, "loadApprovedContributionBundle").mockResolvedValue({
+      sources: result.sources, manifests: [], checksum: result.manifest.checksum, limitations: [],
+    });
+    try {
+      const query: any = { select: () => query, eq: () => query, in: () => query, limit: () => query,
+        then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data: input.observations, error: null }).then(resolve) };
+      const readback = await loadNativeContributionBundle({ from: () => query } as never,
+        input.seasonId, new Date(input.issuedAt));
+      expect(readback.sources).toEqual(result.sources);
+      expect(readback.limitations).toEqual([]);
+    } finally { approved.mockRestore(); }
+  });
+
+  it.each(["external", "hash", "cutoff", "identity", "boxscore", "missing history", "recent only", "duplicate"])(
+    "rejects %s inputs before any database access", async problem => {
+      const input = args();
+      const row = input.observations[0];
+      if (problem === "external") row.payload.projections.push({ sourceId: "ag_skaters", sourceRowId: "ag",
+        seasonId: input.seasonId, availableAt: cutoffAt, projectedAppearances: 80, totals: { HITS: 800 } });
+      if (problem === "hash") row.payload.appearances[0].targets.HITS = 1000;
+      if (problem === "cutoff") input.cutoffAt = "2026-10-13T13:00:00Z";
+      if (problem === "identity") row.entity_key = "20262027:9";
+      if (problem === "boxscore") row.payload.appearances[0].targets.HITS = 1000;
+      if (problem === "missing history") row.payload.appearances = [];
+      if (problem === "recent only") {
+        const appearance = row.payload.appearances[0];
+        const receipt = appearance.finalBoxscore as any;
+        receipt.game.seasonId = receipt.rawRow.season_id = receipt.rawRow.payload.season = appearance.seasonId = input.seasonId;
+        receipt.contentHash = playerForecastSourcePayloadHash(receipt.rawRow.payload);
+        const historical = row.payload.historicalSources!.games[0];
+        historical.game.seasonId = historical.roster!.season_id = input.seasonId;
+      }
+      if (problem !== "hash") row.payload_hash = playerForecastSourcePayloadHash(row.payload);
+      if (problem === "duplicate") input.observations[1] = row;
+      await expect(dryRunNativeSkaterBaselineBundle(noDatabase as never, input)).rejects.toThrow(/Native baseline|boxscore/);
+    });
+
+  it.each(["missing", "contradictory roster", "post-cutoff normalization", "missing limitations"])(
+    "rejects %s historical lineage even with a recomputed outer hash", async problem => {
+      const input = args();
+      const row = input.observations[0];
+      const lineage = row.payload.historicalSources!;
+      if (problem === "missing") row.payload.historicalSources = undefined;
+      if (problem === "contradictory roster") lineage.games[0].roster!.team_id = 2;
+      if (problem === "missing limitations") row.payload.limitations = [];
+      if (problem === "post-cutoff normalization") {
+        const historical = lineage.games[0];
+        const normalization = { game_id: historical.game.id, season_id: historical.game.seasonId,
+          game_date: historical.game.date, status: "stale", normalization_version: 1,
+          parser_version: 1, strength_version: 1, materializer_version: "fixture-v1",
+          pbp_raw_payload_id: 1, pbp_raw_snapshot_version: 1, shift_raw_payload_id: 2, shift_raw_snapshot_version: 1,
+          ...Object.fromEntries(["normalization_fingerprint", "source_fingerprint", "parser_fingerprint",
+            "pbp_raw_payload_hash", "shift_raw_payload_hash", "roster_fingerprint", "event_fingerprint", "shift_fingerprint"]
+            .map(key => [key, "a".repeat(64)])),
+          expected_roster_rows: 1, observed_roster_rows: 1, expected_event_rows: 1, observed_event_rows: 1,
+          expected_shift_rows: 1, observed_shift_rows: 1,
+          completed_at: "2026-10-13T12:00:00.000001Z", updated_at: "2026-10-13T12:00:00.000001Z" };
+        row.payload.historicalSources = baselineHistoricalSources([{ gameId: historical.game.id,
+          playerId: row.payload.nhlPlayerId, games: historical.game }], [historical.roster!], [normalization],
+        { nhlIds: [row.payload.nhlPlayerId], seasonId: input.seasonId, upperDate: cutoffAt.slice(0, 10) }, row.payload.nhlPlayerId);
+        row.payload.limitations = baselineHistoricalSourceLimitations(row.payload.historicalSources);
+      }
+      row.payload_hash = playerForecastSourcePayloadHash(row.payload);
+      await expect(dryRunNativeSkaterBaselineBundle(noDatabase as never, input)).rejects.toThrow(
+        problem === "post-cutoff normalization" ? /exceeds its capture cutoff/ : /historical.*(receipt|lineage|limitations)/);
+    });
+
+  it.each(["observation availability", "payload capture"])("rejects a one-microsecond %s mismatch", async field => {
+    const input = args();
+    const row = input.observations[0];
+    if (field === "observation availability") row.available_at = "2026-10-13T12:00:00.000001Z";
+    else {
+      row.available_at = row.payload.capturedAt = "2026-10-13T12:00:00.000001Z";
+      row.payload_hash = playerForecastSourcePayloadHash(row.payload);
+    }
+    await expect(dryRunNativeSkaterBaselineBundle(noDatabase as never, input)).rejects.toThrow(/cutoff-matched/);
+  });
+
+  it("accepts equal microsecond instants with different timezone representations", async () => {
+    const input = args();
+    input.cutoffAt = "2026-10-13T12:00:00.000001Z";
+    for (const row of input.observations) {
+      row.available_at = "2026-10-13T08:00:00.000001-04:00";
+      row.payload.capturedAt = input.cutoffAt;
+      row.payload.appearances[0].availableAt = input.cutoffAt;
+      row.payload_hash = playerForecastSourcePayloadHash(row.payload);
+    }
+    expect((await dryRunNativeSkaterBaselineBundle(noDatabase as never, input)).receipt.dryRun).toBe(true);
+  });
+
+  it("rejects a microsecond issuance clock before the original capture", async () => {
+    const input = args();
+    input.cutoffAt = "2026-10-13T12:00:00.000002Z";
+    input.issuedAt = "2026-10-13T12:00:00.000001Z";
+    for (const row of input.observations) {
+      row.available_at = row.payload.capturedAt = input.cutoffAt;
+      row.payload.appearances[0].availableAt = input.cutoffAt;
+      row.payload_hash = playerForecastSourcePayloadHash(row.payload);
+    }
+    await expect(dryRunNativeSkaterBaselineBundle(noDatabase as never, input)).rejects.toThrow(/issuance times/);
+  });
+
+  it("retains a valid microsecond issuance interval at the bundle builder without changing its clocks", () => {
+    const input = args();
+    input.issuedAt = "2026-10-13T12:00:00.000001Z";
+    input.expiresAt = "2026-10-13T08:00:00.000002-04:00";
+    const before = JSON.stringify(input);
+    const result = buildBaselineContributionBundle({ ...input,
+      snapshots: input.observations.map(row => ({ teamId: row.payload.teamId, rosterRevision: row.payload.rosterRevision,
+        snapshot: buildSkaterBaselineRates({ playerId: row.payload.playerId, nhlPlayerId: row.payload.nhlPlayerId,
+          seasonId: input.seasonId, cutoffAt: input.cutoffAt, sourceWatermark: row.payload_hash,
+          projections: [], appearances: row.payload.appearances }) })) });
+    expect(result.manifest).toMatchObject({ inputCutoff: input.cutoffAt,
+      issuedAt: input.issuedAt, expiresAt: input.expiresAt, released: false });
+    expect(result.sources.every(row => row.issuedAt === input.issuedAt && row.expiresAt === input.expiresAt)).toBe(true);
+    expect(JSON.stringify(input)).toBe(before);
+  });
+
+  it("rejects an expiry at the same microsecond issuance instant across timezones", async () => {
+    const input = args();
+    input.issuedAt = "2026-10-13T12:00:00.000001Z";
+    input.expiresAt = "2026-10-13T08:00:00.000001-04:00";
+    await expect(dryRunNativeSkaterBaselineBundle(noDatabase as never, input)).rejects.toThrow(/issuance times/);
   });
 });
 

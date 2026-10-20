@@ -6,6 +6,7 @@ import { canEligibilityOccupySlot, normalizeEligibility } from "./eligibility";
 import { expandActiveSlots } from "./slots";
 import { acquisitionEffectiveAt, buildTimeline } from "./planningTimeline";
 import { deferBenchDecisions, explainBenchDecisions, reserveBenchEvaluation, type BenchEvaluationBudget } from "./benchDecisions";
+import { dropEligible, droppedOwnership, orderDropCandidates, providerListsOut, reservedPlayerIds } from "./retention";
 import type { ContributionPlanningSnapshot, ForecastExclusionReason, ForecastOpportunityExclusion, GameForecast, PlanEvaluation, PlanIntent, PlanStep, PlanningAssignment, PlanningGame, PlanningObjective, PlanningPlayer, PlanningResult, PlanningSnapshot, ScoringCategory, StatLine } from "./planningTypes";
 
 export type PlanningSearchOptions = { maxEvaluations?: number; beamWidth?: number; maxCandidates?: number; maxSteps?: number; timeBudgetMs?: number; maxBenchEvaluations?: number };
@@ -124,6 +125,71 @@ export function playerAssignedPoints(snapshot: PlanningSnapshot, evaluation: Pla
     }
   }
   return finite(total) ? total : null;
+}
+export type CategorySwapRow = {
+  key: string; direction: ScoringCategory["direction"]; ratio: boolean; multiplier: number;
+  /** The planner's own pooled category values for the no-move lineup and the plan (realized included). */
+  before: number | null; after: number | null; delta: number | null;
+  /** Counting categories: what added or newly started players contribute, and what dropped or displaced players no longer do. */
+  gain: number | null; sacrifice: number | null;
+  /** Ratio categories: net change in each pooled component. */
+  components: { numerator: { key: string; net: number }; denominator: { key: string; net: number } } | null;
+  opponent: number | null; coverage: "known" | "incomplete"; reason: string | null;
+};
+/** Whole-swap category explanation (R8). It re-reads the planner's admitted values and forecast inputs: no new projection,
+ * no blended score, never a percentage added or subtracted. Null when the two plans can't be compared at all. */
+export function swapCategoryBreakdown(snapshot: PlanningSnapshot, baseline: PlanEvaluation, plan: PlanEvaluation): CategorySwapRow[] | null {
+  const forfeits = (evaluation: PlanEvaluation) => evaluation.goalie.risk && snapshot.rules.goalieMinimum.penalty === "lose_goalie_categories";
+  if (snapshot.rules.scoring.mode !== "categories" || !baseline.legal || !plan.legal || !baseline.budgetVerified || !plan.budgetVerified
+    || typeof baseline.comparisonEligible !== "boolean" || typeof plan.comparisonEligible !== "boolean"
+    || !baseline.forecastManifestId || baseline.forecastManifestId !== plan.forecastManifestId
+    || forfeits(baseline) || forfeits(plan) || scheduleAdmissionProblem(snapshot)) return null;
+  const players = new Map(snapshot.players.map(player => [player.id, player]));
+  const applicability = statApplicability({ ...snapshot, forecasts: [...baseline.forecastInputs ?? [], ...plan.forecastInputs ?? []] });
+  const name = (id: string) => players.get(id)?.name ?? id;
+  // Per-player assigned totals; a row with no forecast (a game under way, a locked player listed out) adds nothing, as in the planner.
+  const totals = (evaluation: PlanEvaluation) => {
+    const byPlayer = new Map<string, StatLine>(), problems = new Map<string, string>();
+    for (const row of evaluation.assignments) {
+      const forecast = evaluation.forecastInputs?.find(item => item.playerId === row.playerId && item.gameId === row.gameId);
+      const player = players.get(row.playerId);
+      if (!forecast || !player) continue;
+      const stats = byPlayer.get(row.playerId) ?? {};
+      for (const [key, value] of Object.entries(forecast.stats)) {
+        if (!applies(key, player.playerClass, applicability)) continue;
+        if (forecastAllows(forecast, key, "totals") && forecastAllows(forecast, key, "comparison") && finite(value)) stats[key] = (stats[key] ?? 0)! + value;
+        else if (!problems.has(key)) problems.set(key, `comparison use not approved for ${name(row.playerId)} ${row.date}`);
+      }
+      byPlayer.set(row.playerId, stats);
+    }
+    return { byPlayer, problems };
+  };
+  const before = totals(baseline), after = totals(plan);
+  const ids = [...new Set([...before.byPlayer.keys(), ...after.byPlayer.keys()])];
+  const net = (key: string) => ids.map(id => (after.byPlayer.get(id)?.[key] ?? 0)! - (before.byPlayer.get(id)?.[key] ?? 0)!);
+  const unresolvedReason = (keys: string[]) => {
+    for (const evaluation of [plan, baseline]) for (const issue of evaluation.recommendation?.unresolved ?? []) {
+      if (!issue.missingTargets.some(key => keys.includes(key))) continue;
+      return issue.reasons?.includes("eligibility_unverified") ? `eligibility unverified for ${name(issue.playerId)} ${issue.date}`
+        : `missing projection for ${name(issue.playerId)} ${issue.date}`;
+    }
+    return null;
+  };
+  return snapshot.rules.scoring.categories.map(category => {
+    const numerator = category.numerator ?? category.key, keys = [numerator, ...(category.denominator ? [category.denominator] : [])];
+    const own = (evaluation: PlanEvaluation) => evaluation.categoryResults.find(row => row.key === category.key);
+    const first = own(baseline)?.own ?? null, second = own(plan)?.own ?? null;
+    const reason = unresolvedReason(keys) ?? keys.map(key => after.problems.get(key) ?? before.problems.get(key)).find(Boolean) ?? null;
+    const known = finite(first) && finite(second) && !reason;
+    const multiplier = category.multiplier ?? 1;
+    const counted = (sign: 1 | -1) => net(numerator).reduce((sum, value) => sum + Math.max(0, sign * value), 0) * multiplier;
+    const sum = (key: string) => net(key).reduce((total, value) => total + value, 0);
+    return { key: category.key, direction: category.direction, ratio: !!category.denominator, multiplier,
+      before: known ? first : null, after: known ? second : null, delta: known ? second! - first! : null,
+      gain: known && !category.denominator ? counted(1) : null, sacrifice: known && !category.denominator ? counted(-1) : null,
+      components: known && category.denominator ? { numerator: { key: numerator, net: sum(numerator) }, denominator: { key: category.denominator, net: sum(category.denominator) } } : null,
+      opponent: own(plan)?.opponent ?? null, coverage: known ? "known" : "incomplete", reason: known ? null : reason ?? "projection unavailable" };
+  });
 }
 /** Candidate horizon totals are separate from incremental active-game capacity.
  * Use the same source validation, stat applicability and permissions as plans. */
@@ -503,7 +569,7 @@ const SCHEDULE_WITNESS_TTL_MS = 36 * 3600000;
 /** Schedule admission reads the schedule's own observation clock, never the forecast/planning clock it is checked against.
  * Only an observation that expired by planning time blocks. Legacy evidence without an observation time keeps the
  * completeness-only behavior (the caller notes it), and a witness newer than the planning clock cannot have expired. */
-function scheduleAdmissionProblem(snapshot: PlanningSnapshot): string | null {
+export function scheduleAdmissionProblem(snapshot: PlanningSnapshot): string | null {
   const schedule = snapshot.evidence.schedule;
   if (schedule?.completeness !== "complete") return "Planning schedule coverage is incomplete or unknown.";
   const observed = time(schedule.asOf ?? ""), planning = time(snapshot.context.asOf);
@@ -511,10 +577,6 @@ function scheduleAdmissionProblem(snapshot: PlanningSnapshot): string | null {
   const iso = (value: number) => new Date(value).toISOString();
   return `Schedule evidence observed ${iso(observed)} expired ${iso(observed + SCHEDULE_WITNESS_TTL_MS)}; planning time is ${iso(planning)}. Reload the schedule; a forecast refresh does not renew it.`;
 }
-/** Provider injury designations that mean the player won't play (day-to-day still might). */
-const OUT_INJURY_STATUSES = new Set(["IR", "IR-LT", "IR-NR", "O"]);
-/** Out per the provider: never valued in a lineup and never an automatic drop. */
-export const providerListsOut = (player: Pick<PlanningPlayer, "injury">) => !!player.injury && OUT_INJURY_STATUSES.has(player.injury.status.toUpperCase());
 function prepareEvaluation(snapshot: PlanningSnapshot, playerIds?: ReadonlySet<string>) {
   snapshot = resolvePlanningContributions(sanitizeForecastInputs(snapshot), playerIds ? { playerIds } : undefined);
   const players = new Map(snapshot.players.map(player => [player.id, player]));
@@ -1090,14 +1152,11 @@ function* extensions(snapshot: PlanningSnapshot, intent: PlanIntent, prior: Plan
     if (step.type === "drop") owned.delete(step.playerId);
   }
   const dates = [...new Set(snapshot.games.filter(game => game.status === "scheduled" && game.date >= snapshot.context.startDate && game.date <= snapshot.context.endDate && eligibleGame(game, snapshot)).map(game => game.date))].sort();
-  // Dropping a player held in IR/IR+/NA frees no active or bench spot, so it can't make room for an add. A player out
-  // injured projects nothing this week, which says nothing about his value on return, so he is never an automatic drop.
-  const reserved = new Set([...snapshot.roster.filter(entry => ["IR", "IR+", "NA"].includes(entry.position)).map(entry => entry.playerId),
-    ...prior.filter(step => step.type === "reserve").map(step => step.playerId)]);
-  const drops = snapshot.players.filter(player => owned.has(player.id) && !reserved.has(player.id) && player.canDrop === true
-    && !providerListsOut(player) && !intent.protectedPlayerIds.includes(player.id))
-    .sort((a, b) => (dropOrder?.get(a.id) ?? Infinity) - (dropOrder?.get(b.id) ?? Infinity)
-      || (a.holdValue ?? 0) - (b.holdValue ?? 0) || a.id.localeCompare(b.id));
+  // Shared retention policy: no reserve-held (frees no spot), out-injured or protected players. The caller's contribution
+  // order leads; players it doesn't rank keep the policy's ownership/holdValue/id order (a stable sort).
+  const reserved = reservedPlayerIds(snapshot.roster, prior);
+  const drops = orderDropCandidates(snapshot.players.filter(player => owned.has(player.id) && dropEligible(player, intent, reserved)), () => null)
+    .sort((a, b) => (dropOrder?.get(a.id) ?? Infinity) - (dropOrder?.get(b.id) ?? Infinity));
   const proposals: Array<{ player: PlanningPlayer; date: string; step: PlanStep }> = [];
   const useful = candidates.map(player => ({ player, dates: owned.has(player.id) ? [] : dates.filter(date => snapshot.games.some(game => game.date === date && game.teamAbbreviation === player.teamAbbreviation)) }));
   const maxDates = Math.max(0, ...useful.map(item => item.dates.length));
@@ -1179,6 +1238,10 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   });
   const fitResult = scheduleFits(snapshot, intent, noMoveAgp, timeBudgetMs === Infinity ? Infinity : Math.min(500, timeBudgetMs / 3));
   const candidates = shortlist(snapshot, intent, maxCandidates, fitResult.fits);
+  // The same drop order as the DROP chip and Best Fit: lowest no-move contribution first, ownership only on exact ties.
+  const dropOrder = new Map(orderDropCandidates(snapshot.roster.flatMap(entry => snapshot.players.find(player => player.id === entry.playerId) ?? []),
+    player => snapshot.rules.scoring.mode === "points" ? playerAssignedPoints(snapshot, noMoveOutcome, player.id)
+      : noMoveAgp.legal ? noMoveAgp.assignments.filter(row => row.playerId === player.id).length : null).map((player, index) => [player.id, index]));
   candidates.forEach(player => relevantPlayerIds.add(player.id));
   snapshot = resolvePlanningContributions(sourceSnapshot, { playerIds: relevantPlayerIds });
   const limitations = new Set<string>();
@@ -1192,6 +1255,7 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   const coverageComplete = candidates.length >= availableCount;
   if (!coverageComplete) limitations.add(`Candidate shortlist contains ${candidates.length} of ${availableCount} available players.`);
   type State = { steps: PlanStep[]; evaluation: PlanEvaluation };
+  const playersById = new Map(snapshot.players.map(player => [player.id, player]));
   const orderStates = (states: State[], preferred: PlanningObjective) => {
     const stableOrder = (a: State, b: State) => a.steps.map(step => step.id).join("|").localeCompare(b.steps.map(step => step.id).join("|"));
     const adds = (state: State) => state.steps.filter(step => step.type === "add").length;
@@ -1214,7 +1278,12 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
       group.push(index); groups.set(key, group);
     });
     for (const indices of groups.values()) {
-      const equivalent = indices.map(index => states[index]).sort((a, b) => adds(a) - adds(b) || drops(a) - drops(b) || stableOrder(a, b));
+      // Ownership (R7) orders an exact-equivalent group only when every dropped player's ownership is known: the
+      // less-rostered drop leads. One unknown leaves the group in its id order, so the order stays transitive.
+      const byOwnership = indices.every(index => !drops(states[index]) || droppedOwnership(states[index].steps, playersById) !== null);
+      const ownership = (state: State) => byOwnership ? droppedOwnership(state.steps, playersById) ?? -1 : 0;
+      const equivalent = indices.map(index => states[index]).sort((a, b) => adds(a) - adds(b) || drops(a) - drops(b)
+        || ownership(a) - ownership(b) || stableOrder(a, b));
       indices.forEach((index, offset) => { states[index] = equivalent[offset]; });
     }
   };
@@ -1231,7 +1300,7 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
       let phaseEvaluated = 0;
       for (const state of frontiers[searchObjective]) {
         if (depth > 0 && state.steps.length === 0) continue;
-        for (const addition of extensions(snapshot, intent, state.steps, candidates)) {
+        for (const addition of extensions(snapshot, intent, state.steps, candidates, dropOrder)) {
           generated++;
           const steps = [...state.steps, ...addition];
           const key = `${searchObjective}:` + steps.map(step => `${step.type}:${step.playerId}:${step.dropPlayerId ?? ""}:${step.reservePosition ?? ""}:${step.effectiveAt}`).join("|");
@@ -1274,7 +1343,7 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
     : "Search work quota exhausted; plans are best found in the evaluated search, not proven optimal.");
   if (phasePruned) limitations.add("Per-depth sampling left candidate transitions unexplored.");
   if (beamPruned) limitations.add("Beam width pruned feasible plans; search is incomplete.");
-  const depthPruned = maxSteps === 0 ? candidates.length > 0 : (["agp", "outcome"] as const).some(searchObjective => frontiers[searchObjective].slice(1).some(state => !extensions(snapshot, intent, state.steps, candidates).next().done));
+  const depthPruned = maxSteps === 0 ? candidates.length > 0 : (["agp", "outcome"] as const).some(searchObjective => frontiers[searchObjective].slice(1).some(state => !extensions(snapshot, intent, state.steps, candidates, dropOrder).next().done));
   if (depthPruned) limitations.add("Acquisition depth limit left additional sequences unexplored.");
   if (categoryMode) limitations.add("Category alternatives use projected means without calibrated joint scenarios and are not globally ranked. Presentation order is deterministic; incomparable supported tradeoffs remain available within search bounds.");
   orderStates(all, objective);

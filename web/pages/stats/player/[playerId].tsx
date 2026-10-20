@@ -334,6 +334,7 @@ export default function PlayerStatsPage({
             <PlayerAdvancedStats
               player={player}
               gameLog={filteredGameLog}
+              seasonGameLog={gameLog}
               playoffGameLog={playoffGameLog}
               selectedStats={
                 positionConfig.advanced || positionConfig.secondary
@@ -356,6 +357,7 @@ export default function PlayerStatsPage({
 
               <PlayerStatsChart
                 gameLog={processedGameLog}
+                seasonGameLog={gameLog}
                 playoffGameLog={playoffGameLog}
                 selectedStats={selectedStats}
                 showRollingAverage={showRollingAverage}

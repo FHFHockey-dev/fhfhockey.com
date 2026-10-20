@@ -12,6 +12,7 @@ import { acceptedNewsSupersedes, loadAcceptedForecastNews } from "lib/projection
 import { timestampMicros } from "lib/projections/evidenceTime";
 import { fetchBoundedNhlSchedule } from "./source";
 import { normalizeNhlGameToTeamRows } from "./normalize";
+import { unavailableForecastServingSource } from "lib/player-forecasts/forecastServingSource";
 
 const membershipCreatedAt = ["2026-09-01T00:00:00Z"];
 const rosterRevision = forgeRosterRevision({ canonicalId: 7, nhlId: 847001, seasonId: 20262027, teamId: 1, membershipCreatedAt });
@@ -120,6 +121,26 @@ describe("public RSO data boundary", () => {
   const publicQuery = { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-11" };
   const publicOptions = { now: new Date("2026-10-10T12:00:00Z"), forecastsEnabled: false };
 
+  it("keeps fresh ownership (0% included) as the value and a stale reading only as labelled last-known evidence (R7 W2)", async () => {
+    const { db, tables } = formDb([], []);
+    tables.yahoo_nhl_player_map_read = [{ nhl_player_id: 847001, yahoo_player_id: 55 }];
+    const read = async (ownership_pct: unknown, ownership_date: string) => {
+      tables.yahoo_player_ownership_daily = [{ player_key: "nhl.p.55", player_id: 55, ownership_pct, ownership_date, updated_at: "2026-10-10T06:00:00Z" }];
+      return (await loadPlanningData(db as never, publicQuery, publicOptions)).players.find(row => row.nhlId === 847001)!;
+    };
+    expect(await read(0, "2026-10-09")).toMatchObject({ ownership: 0 });
+    expect((await read(0, "2026-10-09")).ownershipEvidence).toBeUndefined();
+    expect(await read("12.5", "2026-10-09")).toMatchObject({ ownership: 12.5 });
+    // Older than three days: never a fresh value, but kept with its date for the "last known" label.
+    expect(await read(40, "2026-10-07")).toMatchObject({ ownership: null,
+      ownershipEvidence: { value: 40, observedOn: "2026-10-07", provider: "yahoo", status: "stale" } });
+    for (const [value, date] of [[null, "2026-10-09"], ["", "2026-10-09"], ["abc", "2026-10-09"], [101, "2026-10-09"], [30, "2026-10-11"]] as const) {
+      const player = await read(value, date);
+      expect(player.ownership, `${value} ${date}`).toBeNull();
+      expect(player.ownershipEvidence, `${value} ${date}`).toBeUndefined();
+    }
+  });
+
   it("serves interim FORGE daily projections to RSO callers only", async () => {
     const { db, tables } = formDb([], []);
     Object.assign(tables, {
@@ -137,6 +158,40 @@ describe("public RSO data boundary", () => {
     expect((await loadPlanningData(db as never, publicQuery, publicOptions)).forecasts).toEqual([]);
     vi.stubEnv("RSO_FORGE_DAILY_BRIDGE", "off");
     expect((await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true })).forecasts).toEqual([]);
+  });
+
+  it("stays dark until the catalog head env is set: no head read, the same reads and result as legacy (S-1)", async () => {
+    const bridgeTables = {
+      forge_runs: [{ run_id: "run-b", as_of_date: "2026-10-09", created_at: "2026-10-09T15:00:00Z", git_sha: "abc" }],
+      forge_player_projections: [{ run_id: "run-b", as_of_date: "2026-10-09", horizon_games: 1, game_id: 2026020000, player_id: 847001, team_id: 1,
+        proj_goals_es: 0.3, proj_goals_pp: 0.1, proj_assists_es: 0.4, proj_assists_pp: 0.1, proj_shots_es: 2, proj_shots_pp: 0.5,
+        proj_toi_es_seconds: 900, proj_toi_pp_seconds: 120, proj_hits: 1, proj_blocks: 0.4 }],
+      forge_goalie_projections: [], goalie_start_projections: [] };
+    const run = async (source?: NonNullable<Parameters<typeof loadPlanningData>[2]>["source"]) => {
+      const { db, tables, calls } = formDb([], []); Object.assign(tables, bridgeTables);
+      const result = await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true, ...(source ? { source } : {}) });
+      return { result, calls: calls.map(call => `${call.table}.${call.method}`), rpc: db.rpc.mock.calls.length };
+    };
+    vi.stubEnv("PLAYER_FORECAST_NATIVE_CATALOG_HEAD_ID", "");
+    const dark = await run(), legacy = await run(unavailableForecastServingSource({}));
+    expect(dark.calls.some(call => call.startsWith("native_forecast_catalog_heads."))).toBe(false);
+    expect(dark.calls).toEqual(legacy.calls);
+    expect(dark.rpc).toBe(legacy.rpc);
+    expect(dark.result).toEqual(legacy.result);
+    expect(dark.result.evidence.forecasts.source).toBe("Interim FORGE daily projections");
+    // A set but unusable head serves nothing (D-2) and reads no baselines or interim bridge.
+    vi.stubEnv("PLAYER_FORECAST_NATIVE_CATALOG_HEAD_ID", "not-a-head-id");
+    const empty = await run();
+    expect(empty.result.forecasts).toEqual([]);
+    expect(empty.result.evidence.baselines.limitations).toEqual(["native_catalog_head_unavailable_or_invalid"]);
+    expect(empty.calls.some(call => call.startsWith("forge_runs.") || call.startsWith("player_forecast_source_observations."))).toBe(false);
+    // A native head reads only its own catalog pins (none here): no legacy baseline read, no interim bridge.
+    const native = await run({ kind: "native", headId: "h", headRevision: 1, issuedAt: "2026-10-10T11:00:00Z", expiresAt: "2026-10-10T23:00:00Z", environment: {} });
+    expect(native.result.forecasts).toEqual([]);
+    expect(native.result.evidence.baselines.limitations).toEqual(["baseline_serving_disabled"]);
+    expect(native.result.participationSources).toEqual([]);
+    expect(native.result.forecastManifest).toMatchObject({ participationRevisionIds: [], participationChecksum: null });
+    expect(native.calls.some(call => call.startsWith("forge_runs."))).toBe(false);
   });
 
   function cappedInputs(options: Parameters<typeof formDb>[3] = {}) {

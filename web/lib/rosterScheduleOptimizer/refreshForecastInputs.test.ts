@@ -95,6 +95,18 @@ describe("shared forecast reload for the owned roster", () => {
     expect(stale.alternatives.every(plan => !plan.steps.length)).toBe(true);
   });
 
+  it("shows no Best Fit net games or points once the schedule witness has expired", () => {
+    const { snapshot, read, intent } = fixture();
+    snapshot.evidence.schedule = { ...snapshot.evidence.schedule!, asOf: "2026-10-11T00:30:00Z" };
+    const fresh = candidatePlanMetrics(refreshForecastInputs(snapshot, read), intent);
+    expect(fresh.candidates.flatMap(row => row.plans).some(plan => plan.netAGP !== null)).toBe(true);
+    const stale = candidatePlanMetrics(refreshForecastInputs(snapshot, { ...read, checkedAt: "2026-10-12T13:00:00Z" }), intent);
+    const plans = stale.candidates.flatMap(row => row.plans);
+    expect(plans.length).toBeGreaterThan(0);
+    expect(plans.every(plan => plan.netAGP === null && plan.netPoints === null)).toBe(true);
+    expect(stale.diagnostics.find(row => row.playerId === "3")?.reasons).toContain("Schedule evidence observed 2026-10-11T00:30:00.000Z expired 2026-10-12T12:30:00.000Z; planning time is 2026-10-12T13:00:00.000Z. Reload the schedule; a forecast refresh does not renew it.");
+  });
+
   it("keeps legacy schedule evidence without an observation time usable, with a visible note", () => {
     const { snapshot, read, intent } = fixture();
     const refreshed = refreshForecastInputs(snapshot, { ...read, checkedAt: "2026-10-14T00:00:00Z",

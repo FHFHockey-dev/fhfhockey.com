@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -19,6 +19,8 @@ import {
   formatPlayerStat,
   groupStatsByUnit,
   parseLocalDate,
+  SEASON_INDEX_WINDOW,
+  seasonIndexSeries,
   toChartValue
 } from "./playerStatsContract";
 import {
@@ -230,12 +232,162 @@ function UnitChart({
   );
 }
 
+const INDEX_AXIS = "Index (100 = season average)";
+
+type RelativeChartProps = {
+  stats: string[];
+  colorFor: (stat: string) => string;
+  games: GameLogEntry[];
+  seasonGames: GameLogEntry[];
+  labels: string[];
+};
+
+/** One unit-free panel: every stat's 5-game average indexed to its season average. */
+function RelativeChart({
+  stats,
+  colorFor,
+  games,
+  seasonGames,
+  labels
+}: RelativeChartProps) {
+  const data = useMemo(() => {
+    const datasets = stats.map((stat) => {
+      const series = seasonIndexSeries(seasonGames, stat);
+      const byDate = new Map(
+        seasonGames.map((game, index) => [String(game.date), series[index]])
+      );
+      const color = colorFor(stat);
+      return {
+        label: STAT_DISPLAY_NAMES[stat] || stat,
+        statKey: stat,
+        data: games.map((game) => byDate.get(String(game.date)) ?? null),
+        borderColor: color,
+        backgroundColor: `${color}15`,
+        borderWidth: 2.5,
+        pointRadius: 3,
+        pointHoverRadius: 6,
+        pointBackgroundColor: color,
+        pointBorderColor: "#1a1d21",
+        pointBorderWidth: 2,
+        tension: 0.15,
+        fill: false
+      };
+    });
+    return { labels, datasets };
+  }, [stats, colorFor, games, seasonGames, labels]);
+
+  const options = useMemo(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      spanGaps: false,
+      plugins: {
+        legend: {
+          position: "top" as const,
+          align: "start" as const,
+          labels: {
+            boxWidth: 10,
+            boxHeight: 10,
+            padding: 12,
+            usePointStyle: true,
+            pointStyle: "circle",
+            font: { size: 12, family: FONT, weight: 500 },
+            color: "#cccccc"
+          }
+        },
+        tooltip: {
+          mode: "index" as const,
+          intersect: false,
+          backgroundColor: "rgba(26, 29, 33, 0.95)",
+          titleColor: "#ffffff",
+          bodyColor: "#cccccc",
+          borderColor: "#404040",
+          borderWidth: 1,
+          cornerRadius: 8,
+          padding: 12,
+          titleFont: { size: 13, weight: 600, family: FONT },
+          bodyFont: { size: 12, family: FONT },
+          callbacks: {
+            title: (context: any) =>
+              context.length === 0
+                ? ""
+                : `${parseLocalDate(games[context[0].dataIndex].date).toLocaleDateString(
+                    "en-US",
+                    { weekday: "short", month: "short", day: "numeric" }
+                  )} · ${SEASON_INDEX_WINDOW}-game average vs season`,
+            label: (context: any) => {
+              const value = context.parsed.y;
+              if (value === null || value === undefined) return "";
+              return `${context.dataset.label}: ${Math.round(value)} (100 = season average)`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: GRID_COLOR, drawBorder: false },
+          ticks: {
+            maxTicksLimit: 12,
+            font: { size: 11, family: FONT },
+            color: TICK_COLOR,
+            padding: 6
+          },
+          border: { display: false }
+        },
+        y: {
+          // Centred on 100 so normal swings are visible; grows when needed.
+          beginAtZero: false,
+          suggestedMin: 50,
+          suggestedMax: 150,
+          title: {
+            display: true,
+            text: INDEX_AXIS,
+            color: TICK_COLOR,
+            font: { size: 11, family: FONT }
+          },
+          grid: {
+            // Emphasise the 100 line: the player's own season average.
+            color: (context: any) =>
+              context.tick?.value === 100 ? "rgba(229, 231, 235, 0.55)" : GRID_COLOR,
+            drawBorder: false
+          },
+          ticks: {
+            font: { size: 11, family: FONT },
+            color: TICK_COLOR,
+            padding: 8,
+            stepSize: 25
+          },
+          border: { display: false }
+        }
+      },
+      interaction: { mode: "index" as const, intersect: false }
+    }),
+    [games]
+  );
+
+  return (
+    <section className={styles.unitPanel} aria-label="Relative to season average chart">
+      <div className={styles.unitPanelHead}>
+        <h4>Relative to season average</h4>
+        <span>
+          {SEASON_INDEX_WINDOW}-game average · 100 = season average · shown
+          after {SEASON_INDEX_WINDOW} games
+        </span>
+      </div>
+      <div className={`${styles.chartWrapper} ${styles.unitChart}`}>
+        <Line data={data as any} options={options as any} />
+      </div>
+    </section>
+  );
+}
+
 /**
  * Selected stats grouped by unit: counts, rates, percentages (0-100) and time
  * on ice (minutes) each get their own labelled panel and axis.
  */
 export function PlayerStatsChart({
   gameLog,
+  seasonGameLog,
   playoffGameLog,
   selectedStats,
   showRollingAverage = false,
@@ -259,6 +411,17 @@ export function PlayerStatsChart({
   );
 
   const groups = useMemo(() => groupStatsByUnit(selectedStats), [selectedStats]);
+  const [mode, setMode] = useState<"actual" | "relative">("actual");
+
+  // Baseline for the relative view: the full regular season (or the playoff
+  // log when playoffs are shown), oldest first.
+  const seasonGames = useMemo(() => {
+    const log =
+      showPlayoffData && playoffGameLog
+        ? playoffGameLog
+        : (seasonGameLog ?? gameLog);
+    return [...log].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  }, [seasonGameLog, gameLog, playoffGameLog, showPlayoffData]);
 
   // Colours follow the stat's position in the selection, as before.
   const colorFor = useMemo(() => {
@@ -285,20 +448,52 @@ export function PlayerStatsChart({
         {showPlayoffData && playoffGameLog && (
           <span className={styles.chartSubtitle}>Playoff Data</span>
         )}
+        <div
+          className={styles.chartModeToggle}
+          role="group"
+          aria-label="Chart values"
+        >
+          <button
+            type="button"
+            className={styles.chartModeButton}
+            aria-pressed={mode === "actual"}
+            onClick={() => setMode("actual")}
+          >
+            Actual values
+          </button>
+          <button
+            type="button"
+            className={styles.chartModeButton}
+            aria-pressed={mode === "relative"}
+            onClick={() => setMode("relative")}
+          >
+            Relative to season average
+          </button>
+        </div>
       </div>
-      <div className={styles.unitPanels}>
-        {groups.map((group) => (
-          <UnitChart
-            key={group.unit}
-            unit={group.unit}
-            stats={group.stats}
-            colorFor={colorFor}
-            games={games}
-            labels={labels}
-            showRollingAverage={showRollingAverage}
-          />
-        ))}
-      </div>
+      {mode === "relative" ? (
+        <RelativeChart
+          stats={selectedStats}
+          colorFor={colorFor}
+          games={games}
+          seasonGames={seasonGames}
+          labels={labels}
+        />
+      ) : (
+        <div className={styles.unitPanels}>
+          {groups.map((group) => (
+            <UnitChart
+              key={group.unit}
+              unit={group.unit}
+              stats={group.stats}
+              colorFor={colorFor}
+              games={games}
+              labels={labels}
+              showRollingAverage={showRollingAverage}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

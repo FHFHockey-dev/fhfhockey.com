@@ -45,6 +45,21 @@ describe("/api/v1/roster-schedule-optimizer/data", () => {
     expect(rebuilt[0].limitations.at(-1)).toBe(`Interim projections were trimmed to the first ${kept} of 7200 player-games to fit the planning response; later games stay schedule-only.`);
   });
 
+  it("selects one source per request and leaves the response unchanged until the catalog head env is set (S-1)", async () => {
+    vi.stubEnv("PLAYER_FORECAST_NATIVE_CATALOG_HEAD_ID", "");
+    mocks.load.mockResolvedValue(data);
+    // The database stub has no methods: any lookup before activation would throw.
+    const dark = await request();
+    expect(dark.code).toBe(200);
+    expect(dark.body).toEqual({ success: true, data: { ...data, forecasts: [] } });
+    expect(dark.setHeader).toHaveBeenCalledWith("Cache-Control", "public, s-maxage=300, stale-while-revalidate=300");
+    expect(mocks.load.mock.calls[0][2]).toMatchObject({ forgeDailyBridge: true, source: { kind: "legacy", reason: "native_not_activated" } });
+    vi.stubEnv("PLAYER_FORECAST_NATIVE_CATALOG_HEAD_ID", "not-a-head-id");
+    const unusable = await request();
+    expect(unusable.body.forecastSource).toEqual({ kind: "empty", headRevision: null, expiresAt: null, reason: "native_catalog_head_unavailable_or_invalid" });
+    vi.unstubAllEnvs();
+  });
+
   it("refuses a range whose data cannot fit even without bridge rows, with a clear code", async () => {
     const players = Array.from({ length: 5000 }, (_, index) => ({ id: String(index + 1), nhlId: null, name: "ø".repeat(500),
       teamAbbreviation: null, eligiblePositions: [], playerClass: "skater", availability: "free_agent", ownership: null, canDrop: null,

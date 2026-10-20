@@ -134,7 +134,7 @@ export default function CandidateBrowser({ preferredSort, searchQuery, changeSea
       <button aria-pressed={sort === "points"} onClick={() => setSort("points")}>By projected points</button>
       <button aria-pressed={sort === "schedule"} onClick={() => setSort("schedule")}>By more starts</button>
     </div>}
-    {categories && <p className={styles.limitation}>Ranked by more starts. Check category gains before swapping.</p>}
+    {categories && <p className={styles.limitation}>Ranked by more starts. Each card shows the category gains and losses for the whole swap.</p>}
     {goalieBoost && <p className={styles.limitation}>Your goalie minimum may be missed, so goalies who add starts are listed first.</p>}
     {loading ? <p role="status" aria-live="polite">Comparing free agents…</p>
       : !hasEvaluatedFit && <p role="status">Rankings appear once projections and schedules load.</p>}

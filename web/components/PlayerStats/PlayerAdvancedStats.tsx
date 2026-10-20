@@ -22,6 +22,8 @@ interface PlayerInfo {
 interface PlayerAdvancedStatsProps {
   player: PlayerInfo;
   gameLog: GameLogEntry[];
+  // Full-season log: baseline for the chart's "relative to season average".
+  seasonGameLog?: GameLogEntry[];
   playoffGameLog?: GameLogEntry[];
   selectedStats: string[];
   isGoalie: boolean;
@@ -39,6 +41,7 @@ interface PlayerAdvancedStatsProps {
 export function PlayerAdvancedStats({
   player,
   gameLog,
+  seasonGameLog,
   playoffGameLog,
   selectedStats,
   isGoalie,
@@ -93,6 +96,7 @@ export function PlayerAdvancedStats({
         <div className={styles.advancedPanel}>
           <PlayerStatsChart
             gameLog={gameLog}
+            seasonGameLog={seasonGameLog}
             playoffGameLog={playoffGameLog}
             selectedStats={advancedStats}
             showRollingAverage={false}

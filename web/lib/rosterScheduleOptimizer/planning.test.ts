@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { candidateAcquisitionSteps, candidateMetrics, candidateActivePoints, candidateHorizonPoints, evaluatePlan, planRoster, scheduleFits } from "./planning";
+import { candidateAcquisitionSteps, candidateMetrics, candidateActivePoints, candidateHorizonPoints, evaluatePlan, planRoster, scheduleFits, swapCategoryBreakdown } from "./planning";
 import { comparePlanSensitivity } from "../player-forecasts/planComparison";
 import { snapshotSchema } from "../in-season/workspaceSchema";
 import { resolvePlanningContributions } from "../player-forecasts/planningContributions";
 import { explainBenchDecisions } from "./benchDecisions";
+import { candidatePlanForSort, candidatePlanMetrics, ownershipBrokeTie } from "./candidatePlanMetrics";
+import { lineupGapReport } from "./lineupGaps";
 import { acquisitionEffectiveAt, buildTimeline } from "./planningTimeline";
 import type { GameForecast, PlanIntent, PlanningPlayer, PlanningSnapshot } from "./planningTypes";
 
@@ -1803,5 +1805,123 @@ describe("games already under way", () => {
     const late = evaluatePlan(underway("2026-10-05T23:30:00Z"), intent, "agp", [], false);
     expect(late.legal).toBe(true);
     expect(today(late)).toEqual(["a@C#1:locked"]);
+  });
+});
+
+describe("one retention ordering across drop surfaces (R7)", () => {
+  const withOwnership = (data: PlanningSnapshot, owned: Record<string, number | null>) => {
+    data.players = data.players.map(row => row.id in owned ? { ...row, ownership: owned[row.id] } : row);
+    return data;
+  };
+  it("offers the same less-rostered drop on the chip, in candidate proposals and in Best Fit swaps", () => {
+    // No forecasts: every contribution is unknown, so the tie is broken by known ownership, not id.
+    const data = withOwnership(snapshot(), { a: 95, b: 5 });
+    data.forecasts = [];
+    const chip = lineupGapReport(data, intent, evaluatePlan(data, intent, "outcome", [], false)).bestDrop;
+    expect(chip).toMatchObject({ playerId: "b", caution: { level: "none", ownership: 5 } });
+    const firstDrop = [...candidateAcquisitionSteps(data, intent, data.players.find(row => row.id === "c")!)].flat().find(step => step.dropPlayerId);
+    expect(firstDrop?.dropPlayerId).toBe("b");
+    const plans = candidatePlanMetrics(data, intent).candidates.find(row => row.playerId === "c")!.plans;
+    expect(plans[0].steps.find(step => step.dropPlayerId)?.dropPlayerId).toBe("b");
+    // One unknown member: the tie falls back to holdValue/id order.
+    const unknown = withOwnership(snapshot(), { a: null, b: 5 });
+    unknown.forecasts = [];
+    expect(lineupGapReport(unknown, intent, evaluatePlan(unknown, intent, "outcome", [], false)).bestDrop).toMatchObject({ playerId: "a", caution: { level: "unknown", ownership: null } });
+  });
+
+  it("keeps and shows the less-rostered drop among exactly equivalent plans, whatever the ids", () => {
+    // a plays only 10-05 and b only 10-06, both worth 1; c plays both days for 2. Dropping a or b gains the same.
+    const equivalent = (owned: Record<string, number | null>) => {
+      const data = withOwnership(snapshot(), owned);
+      data.games = data.games.filter(game => game.id !== "A1" && game.id !== "B0");
+      data.forecasts = data.games.flatMap(game => data.players.filter(row => row.teamAbbreviation === game.teamAbbreviation)
+        .map(row => issuedForecast(data, row.id, game.id, { stats: { pts: row.id === "c" ? 2 : 1 } })));
+      return data;
+    };
+    for (const [owned, kept] of [[{ a: 95, b: 5 }, "b"], [{ a: 5, b: 95 }, "a"]] as const) {
+      const data = equivalent(owned);
+      const plans = candidatePlanMetrics(data, intent).candidates.find(row => row.playerId === "c")!.plans;
+      const best = candidatePlanForSort(plans, "points")!;
+      expect(best.steps.find(step => step.dropPlayerId)?.dropPlayerId).toBe(kept);
+      expect(ownershipBrokeTie(plans, best)).toBe(true);
+      expect(lineupGapReport(data, intent, evaluatePlan(data, intent, "outcome", [], false)).bestDrop?.playerId).toBe(kept);
+      const swaps = planRoster(data, intent).alternatives.filter(plan => plan.steps.some(step => step.dropPlayerId));
+      expect(swaps[0].steps.find(step => step.dropPlayerId)?.dropPlayerId).toBe(kept);
+    }
+    // Unknown ownership on one side: no ownership tie-break and no tie note.
+    const data = equivalent({ a: null, b: 95 });
+    const plans = candidatePlanMetrics(data, intent).candidates.find(row => row.playerId === "c")!.plans;
+    expect(ownershipBrokeTie(plans, candidatePlanForSort(plans, "points")!)).toBe(false);
+  });
+});
+
+describe("whole-swap category gains and sacrifices (R8)", () => {
+  // a plays only 10-05, b only 10-06, c (free agent) only 10-05. Adding c for a swaps the 10-05 start; b is untouched.
+  const swap = { id: "swap", type: "add" as const, playerId: "c", dropPlayerId: "a", at: "2026-10-05T00:00:00Z", effectiveAt: "2026-10-05T00:00:00Z", conditional: true, dependsOn: [] };
+  function categories(stats: Record<string, Record<string, number>> = { a: { GOALS: 1, SHOTS: 5 }, b: { GOALS: 0, SHOTS: 8 }, c: { GOALS: 2, SHOTS: 2 } }) {
+    const data = snapshot();
+    data.games = data.games.filter(game => ["A0", "B1", "C0"].includes(game.id));
+    data.forecasts = data.games.flatMap(game => data.players.filter(row => row.teamAbbreviation === game.teamAbbreviation && stats[row.id])
+      .map(row => issuedForecast(data, row.id, game.id, { stats: stats[row.id] })));
+    data.realized = { GOALS: 0, SHOTS: 0 };
+    data.rules.scoring = { mode: "categories", weights: {}, categories: [{ key: "GOALS", direction: "higher" }, { key: "SHOTS", direction: "higher" },
+      { key: "SH%", direction: "higher", numerator: "GOALS", denominator: "SHOTS" }, { key: "G2", direction: "higher", numerator: "GOALS", multiplier: 2 }] };
+    return data;
+  }
+  const pair = (data: PlanningSnapshot) => ({ baseline: evaluatePlan(data, intent, "outcome", [], false),
+    plan: evaluatePlan(data, { ...intent, steps: [swap] }, "outcome", [swap], false) });
+  const row = (rows: ReturnType<typeof swapCategoryBreakdown>, key: string) => rows!.find(item => item.key === key)!;
+
+  it("splits the whole swap into the added player's gain and the dropped player's sacrifice, without an opponent", () => {
+    const data = categories();
+    const { baseline, plan } = pair(data);
+    expect(plan).toMatchObject({ legal: true, budgetVerified: true });
+    const rows = swapCategoryBreakdown(data, baseline, plan);
+    expect(row(rows, "GOALS")).toMatchObject({ before: 1, after: 2, delta: 1, gain: 2, sacrifice: 1, coverage: "known", opponent: null, ratio: false });
+    expect(row(rows, "SHOTS")).toMatchObject({ before: 13, after: 10, delta: -3, gain: 2, sacrifice: 5, coverage: "known" });
+    // Custom multiplier scales the category, its gain and its sacrifice alike.
+    expect(row(rows, "G2")).toMatchObject({ before: 2, after: 4, delta: 2, gain: 4, sacrifice: 2 });
+    // Ratios are pooled over the whole lineup; components carry the change, never a per-player percentage.
+    expect(row(rows, "SH%")).toMatchObject({ ratio: true, gain: null, sacrifice: null,
+      components: { numerator: { key: "GOALS", net: 1 }, denominator: { key: "SHOTS", net: -3 } } });
+    expect(row(rows, "SH%").before).toBeCloseTo(1 / 13);
+    expect(row(rows, "SH%").after).toBeCloseTo(0.2);
+    // Before/after are exactly the planner's values, and counting categories reconcile.
+    for (const item of rows!) {
+      expect(item.before).toBe(baseline.categoryResults.find(result => result.key === item.key)!.own);
+      expect(item.after).toBe(plan.categoryResults.find(result => result.key === item.key)!.own);
+      if (!item.ratio) expect(item.gain! - item.sacrifice!).toBeCloseTo(item.delta!);
+    }
+  });
+
+  it("marks categories incomplete with the reason instead of zero-filling a missing projection", () => {
+    const data = categories({ a: { GOALS: 1, SHOTS: 5 }, b: { GOALS: 0, SHOTS: 8 } });
+    const rows = swapCategoryBreakdown(data, ...Object.values(pair(data)) as [ReturnType<typeof evaluatePlan>, ReturnType<typeof evaluatePlan>]);
+    expect(row(rows, "GOALS")).toMatchObject({ coverage: "incomplete", reason: "missing projection for c 2026-10-05", gain: null, sacrifice: null, delta: null });
+  });
+
+  it("is unavailable when the plans can't be compared (different manifests or an illegal plan)", () => {
+    const data = categories();
+    const { baseline, plan } = pair(data);
+    expect(swapCategoryBreakdown(data, baseline, { ...plan, forecastManifestId: "other" })).toBeNull();
+    expect(swapCategoryBreakdown(data, baseline, { ...plan, legal: false })).toBeNull();
+  });
+
+  it("carries the same breakdown on the Best Fit plan", () => {
+    const data = categories();
+    const plans = candidatePlanMetrics(data, intent).candidates.find(item => item.playerId === "c")!.plans;
+    const dropA = plans.find(plan => plan.steps.some(step => step.dropPlayerId === "a" && Date.parse(step.effectiveAt) === Date.parse(swap.effectiveAt)))!;
+    expect(dropA.categoryBreakdown?.find(item => item.key === "GOALS")).toMatchObject({ gain: 2, sacrifice: 1, delta: 1 });
+  });
+});
+
+describe("ownership provenance in saved snapshots (R7 W2)", () => {
+  it("round-trips last-known ownership evidence and still parses saves without it", () => {
+    const data = snapshot();
+    data.players[0] = { ...data.players[0], ownershipEvidence: { value: 40, observedOn: "2026-10-07", provider: "yahoo", status: "stale" } };
+    expect(snapshotSchema.parse(JSON.parse(JSON.stringify(data))).players[0].ownershipEvidence)
+      .toEqual({ value: 40, observedOn: "2026-10-07", provider: "yahoo", status: "stale" });
+    const legacy = snapshot();
+    expect(snapshotSchema.parse(JSON.parse(JSON.stringify(legacy))).players[0].ownershipEvidence).toBeUndefined();
   });
 });

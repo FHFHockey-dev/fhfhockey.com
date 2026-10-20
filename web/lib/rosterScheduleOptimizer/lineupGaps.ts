@@ -1,9 +1,9 @@
 import { candidatePlanForSort, type CandidateComparison, type CandidatePlan } from "./candidatePlanMetrics";
 import { contributionLedger } from "./contributionLedger";
-import { providerListsOut } from "./planning";
+import { dropContribution, dropEligible, orderDropCandidates, reservedPlayerIds, retentionCaution, type RetentionCaution } from "./retention";
 import { canEligibilityOccupySlot, normalizeEligibility } from "./eligibility";
 import { expandActiveSlots } from "./slots";
-import type { PlanEvaluation, PlanIntent, PlanningSnapshot } from "./planningTypes";
+import type { PlanEvaluation, PlanIntent, PlanningPlayer, PlanningSnapshot } from "./planningTypes";
 import type { ActiveSlotType } from "./types";
 
 export type LineupGap = { date: string; slot: ActiveSlotType; open: number };
@@ -12,12 +12,10 @@ export type LineupGapReport = {
   /** Active slots the no-move lineup leaves empty on dates with games still to play. */
   gaps: LineupGap[];
   openSlots: number;
-  bestDrop: { playerId: string; projectedPoints: number | null; activeGames: number | null; frees: LineupGap[] } | null;
+  bestDrop: { playerId: string; projectedPoints: number | null; activeGames: number | null; frees: LineupGap[]; caution: RetentionCaution } | null;
   adds: GapAdd[];
 };
 
-const RESERVE = new Set(["IR", "IR+", "NA"]);
-const nullsLast = (left: number | null, right: number | null) => left === right ? 0 : left === null ? 1 : right === null ? -1 : left - right;
 const descending = (left: number | null, right: number | null) => left === right ? 0 : left === null ? 1 : right === null ? -1 : right - left;
 function group(entries: Array<{ date: string; slot: ActiveSlotType }>): LineupGap[] {
   const counts = new Map<string, LineupGap>();
@@ -46,17 +44,16 @@ export function lineupGapReport(snapshot: PlanningSnapshot, intent: PlanIntent, 
   const points = snapshot.rules.scoring.mode === "points";
   const ledger = contributionLedger(snapshot, baseline, { ...intent, steps: [] });
   const players = new Map(snapshot.players.map(player => [player.id, player]));
-  const drop = snapshot.roster.filter(row => !RESERVE.has(row.position)).map(row => players.get(row.playerId))
-    // Same no-auto-drop rule as the planner: a player listed out projects nothing now, which says nothing of his value on return.
-    .filter(player => player?.canDrop === true && !providerListsOut(player) && !intent.protectedPlayerIds.includes(player.id))
-    .map(player => ({ player: player!, contribution: ledger.get(player!.id) }))
-    .sort((a, b) => nullsLast(points ? a.contribution?.projectedPoints ?? null : a.contribution?.activeGames ?? null,
-      points ? b.contribution?.projectedPoints ?? null : b.contribution?.activeGames ?? null)
-      || nullsLast(a.player.holdValue, b.player.holdValue) || a.player.id.localeCompare(b.player.id))[0];
-  const bestDrop = drop ? { playerId: drop.player.id, projectedPoints: drop.contribution?.projectedPoints ?? null,
-    activeGames: drop.contribution?.activeGames ?? null,
-    frees: group(baseline.assignments.filter(row => row.playerId === drop.player.id && playable.has(row.date) && slotType.has(row.slotId))
-      .map(row => ({ date: row.date, slot: slotType.get(row.slotId)! }))) } : null;
+  // The shared retention policy (same eligibility and order as the planner and Best Fit swaps).
+  const reserved = reservedPlayerIds(snapshot.roster);
+  const eligible = snapshot.roster.map(row => players.get(row.playerId))
+    .filter((player): player is PlanningPlayer => !!player && dropEligible(player, intent, reserved));
+  const drop = orderDropCandidates(eligible, player => dropContribution(snapshot.rules.scoring.mode, ledger.get(player.id)))[0];
+  const dropRow = drop ? ledger.get(drop.id) : undefined;
+  const bestDrop = drop ? { playerId: drop.id, projectedPoints: dropRow?.projectedPoints ?? null,
+    activeGames: dropRow?.activeGames ?? null,
+    frees: group(baseline.assignments.filter(row => row.playerId === drop.id && playable.has(row.date) && slotType.has(row.slotId))
+      .map(row => ({ date: row.date, slot: slotType.get(row.slotId)! }))), caution: retentionCaution(drop) } : null;
   const adds: GapAdd[] = [];
   for (const comparison of candidates) {
     const anyPoints = comparison.plans.some(plan => plan.netPoints !== null);

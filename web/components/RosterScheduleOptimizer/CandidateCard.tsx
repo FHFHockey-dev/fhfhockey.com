@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
-import type { CandidateComparison, CandidateDiagnostic, CandidatePlan } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
+import { ownershipBrokeTie, type CandidateComparison, type CandidateDiagnostic, type CandidatePlan } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
+import { categoryFormatter } from "lib/rosterScheduleOptimizer/categoryFormat";
+import { OWNERSHIP_TIE_NOTE, retentionCaution, retentionCautionText } from "lib/rosterScheduleOptimizer/retention";
 import type { PlanningPlayer, PlanningSnapshot, PlanStep } from "lib/rosterScheduleOptimizer/planningTypes";
 import type { CanonicalSchedule } from "./canonicalSchedule";
 import Image from "next/image";
@@ -8,6 +10,11 @@ import styles from "./CandidateCard.module.scss";
 const signed = (value: number) => `${value > 0 ? "+" : ""}${Number.isInteger(value) ? value : value.toFixed(1)}`;
 const games = (value: number) => `${signed(value)} active game${Math.abs(value) === 1 ? "" : "s"}`;
 const ACQUIRABLE = ["free_agent", "manager_available", "waivers"];
+const short = (value: number) => new Intl.NumberFormat("en-US", { maximumSignificantDigits: 3 }).format(value);
+/** W12: the whole swap's per-category change; ratios are pooled, so they carry no per-player gain or sacrifice. */
+const categoryChange = (row: NonNullable<CandidatePlan["categoryBreakdown"]>[number]) => row.coverage !== "known" || row.delta === null ? `${row.key} incomplete`
+  : row.ratio ? `${row.key} ${categoryFormatter(row, short).delta(row.delta)} (pooled)`
+    : `${row.key} ${row.delta > 0 ? "+" : ""}${short(row.delta)} (+${short(row.gain ?? 0)} / −${short(row.sacrifice ?? 0)})`;
 
 /** One plain-language reason built only from the compared numbers. */
 function reasonFor(plan: CandidatePlan, categories: boolean, drops: number): string {
@@ -34,7 +41,7 @@ export default function CandidateCard({ player, rank, plan, comparison, diagnost
   /** Player pool used to describe dropped players; falls back to the snapshot. */
   players?: PlanningPlayer[];
 }) {
-  void comparison;
+  const tieNote = plan && comparison ? ownershipBrokeTie(comparison.plans, plan) : false;
   const drops = plan?.steps.flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : []) ?? [];
   const conditional = plan?.steps.some(step => step.conditional);
   const reserves = plan?.steps.filter(step => step.type === "reserve") ?? [];
@@ -70,9 +77,11 @@ export default function CandidateCard({ player, rank, plan, comparison, diagnost
           </div>
           {drops.map(id => {
             const dropped = (players ?? snapshot?.players)?.find(row => row.id === id);
+            const { level } = retentionCaution(dropped), caution = retentionCautionText(retentionCaution(dropped));
             return <div key={id} className={styles.move}><span className={styles.drop}>DROP</span>
               <button className={styles.name} onClick={() => select(id)}>{nameOf(id)}</button>
               {dropped && <small>{dropped.teamAbbreviation ?? "—"} · {positions(dropped)}</small>}
+              {caution && <small className={styles.caution} data-caution={level}>{caution}</small>}
             </div>;
           })}
         </div>
@@ -93,6 +102,10 @@ export default function CandidateCard({ player, rank, plan, comparison, diagnost
         })}
       </div>}
       {plan && <p className={styles.reason}>{reasonFor(plan, categories, drops.length)}</p>}
+      {tieNote && <p className={styles.reason}>{OWNERSHIP_TIE_NOTE}</p>}
+      {categories && plan?.categoryBreakdown && <p className={styles.reason} aria-label="Category changes for the whole swap">
+        {plan.categoryBreakdown.map((row, index) => <span key={row.key}>{index ? " · " : ""}<span>{categoryChange(row)}</span></span>)}
+      </p>}
       {!plan && upcomingGames != null && <p className={styles.reason}>{upcomingGames} upcoming game{upcomingGames === 1 ? "" : "s"}</p>}
       {goalieBoost && plan?.netGoalieStarts != null && plan.netGoalieStarts > 0
         && <p className={styles.reason}>Helps your goalie minimum: {signed(plan.netGoalieStarts)} starts</p>}

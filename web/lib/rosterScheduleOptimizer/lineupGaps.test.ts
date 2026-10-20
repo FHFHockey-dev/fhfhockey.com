@@ -39,7 +39,8 @@ describe("lineup gap report", () => {
     expect(report.gaps).toEqual([{ date: "2026-10-05", slot: "D", open: 1 }, { date: "2026-10-06", slot: "D", open: 1 }]);
     expect(report.openSlots).toBe(2);
     // a starts only on 10-05 (b outscores him on 10-06), so he is the weakest droppable player.
-    expect(report.bestDrop).toEqual({ playerId: "a", projectedPoints: 1, activeGames: 1, frees: [{ date: "2026-10-05", slot: "C", open: 1 }] });
+    expect(report.bestDrop).toEqual({ playerId: "a", projectedPoints: 1, activeGames: 1, frees: [{ date: "2026-10-05", slot: "C", open: 1 }],
+      caution: { level: "unknown", ownership: null } });
     expect(report.adds[0]).toMatchObject({ playerId: "c", dropsBest: false,
       fills: [{ date: "2026-10-05", slot: "D" }, { date: "2026-10-06", slot: "D" }], plan: { netPoints: 3, netAGP: 2 } });
   });

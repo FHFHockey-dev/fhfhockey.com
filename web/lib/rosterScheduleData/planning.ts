@@ -7,6 +7,10 @@ export type { PlanningDataQuery } from "./planningInputs";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { playerForecastSourcePayloadHash } from "lib/player-forecasts/sourceSnapshot";
 import { loadApprovedContributionBundle } from "lib/player-forecasts/contributionStore";
+import { selectForecastServingSource, unavailableForecastServingSource, type ForecastServingSource } from "lib/player-forecasts/forecastServingSource";
+import { loadNativeContributionBundle } from "lib/player-forecasts/nativeContributionAdmission";
+import { loadRosterObservationGoalieParticipation, loadRosterObservationGoalieStarts, loadRollingWindowGoalieParticipation, loadRollingWindowGoalieStarts } from "lib/player-forecasts/modeledGoalieParticipationStore";
+import { loadRosterObservationSkaterParticipation, loadRollingWindowSkaterParticipation } from "lib/player-forecasts/modeledSkaterParticipationStore";
 import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import type { ForgeGameRevision } from "lib/projections/gameRevisions";
 import { starterBoardCanaryGameIds, starterBoardFlags } from "lib/projections/starterBoardFlags";
@@ -31,25 +35,72 @@ export function parsePlanningDataQuery(query: Record<string, unknown>): Planning
 }
 
 type Row = Record<string, any>;
+type CatalogRead = { sources: any[]; checksum: string | null; limitations: string[] };
+/** Native catalog inputs, read only for a `native` source and only from its head's pins. A head selects exactly the baseline,
+ * roster-observation and rolling groups (`NATIVE_CATALOG_PIN_KEYS`); the legacy and frozen groups are blank under it, so
+ * their checksums are null here, as the octoberBranch loader computes them. */
+async function loadNativeCatalogInputs(db: SupabaseClient<any>, seasonId: number, now: Date, deadline: number, inputDeadline: number,
+  environment: Readonly<Record<string, string | undefined>>) {
+  const read = (load: (signal: AbortSignal) => Promise<CatalogRead>, reason: string) =>
+    withinDeadline(inputDeadline, load).catch((): CatalogRead => ({ sources: [], checksum: null, limitations: [reason] }));
+  const [baseline, observedSkater, observedGoalie, observedStarts, rollingSkater, rollingGoalie, rollingStarts] = await Promise.all([
+    // Admission reads bundles, review receipts, then original inputs: bounded by the route deadline, not one stage.
+    withinDeadline(deadline, signal => loadNativeContributionBundle(db, seasonId, now, { signal, environment }))
+      .catch(() => ({ sources: [], manifests: [], checksum: null, limitations: ["baseline_read_unavailable"] })),
+    read(signal => loadRosterObservationSkaterParticipation(db, seasonId, now, { signal, environment }), "roster_observation_skater_participation_read_unavailable"),
+    read(signal => loadRosterObservationGoalieParticipation(db, seasonId, now, { signal, environment }), "roster_observation_goalie_participation_read_unavailable"),
+    read(signal => loadRosterObservationGoalieStarts(db, seasonId, now, { signal, environment }), "roster_observation_goalie_starts_read_unavailable"),
+    read(signal => loadRollingWindowSkaterParticipation(db, seasonId, now, { signal, environment }), "rolling_skater_participation_read_unavailable"),
+    read(signal => loadRollingWindowGoalieParticipation(db, seasonId, now, { signal, environment }), "rolling_goalie_participation_read_unavailable"),
+    read(signal => loadRollingWindowGoalieStarts(db, seasonId, now, { signal, environment }), "rolling_goalie_starts_read_unavailable"),
+  ]);
+  const observationEnabled = observedSkater.checksum || observedGoalie.checksum || observedStarts.checksum;
+  const observedChecksum = observationEnabled ? playerForecastSourcePayloadHash({ existing: null,
+    observedSkater: observedSkater.checksum, observedGoalie: observedGoalie.checksum, observedGoalieStarts: observedStarts.checksum }) : null;
+  const rollingEnabled = rollingSkater.checksum || rollingGoalie.checksum || rollingStarts.checksum;
+  const groups = [observedSkater, observedGoalie, observedStarts, rollingSkater, rollingGoalie, rollingStarts];
+  return { baseline, participation: { sources: groups.flatMap(group => group.sources),
+    checksum: rollingEnabled ? playerForecastSourcePayloadHash({ existing: observedChecksum, rollingSkater: rollingSkater.checksum,
+      rollingGoalie: rollingGoalie.checksum, rollingGoalieStarts: rollingStarts.checksum }) : observedChecksum,
+    limitations: groups.flatMap(group => group.limitations).filter(reason => reason !== "modeled_participation_serving_disabled") },
+  label: rollingEnabled ? "Released modeled participation with rolling 14-day history and official roster-observation continuation proxies"
+    : "Released modeled participation with official roster-observation continuation proxies" };
+}
 const numberOrNull = (value: unknown) => typeof value === "number" && Number.isFinite(value) ? value : null;
+/** Provider ownership percentage: a finite 0–100 number or plain numeric string; anything else is unknown, never 0. */
+const ownershipPct = (value: unknown) => {
+  const parsed = typeof value === "string" && /^\d+(\.\d+)?$/.test(value) ? Number(value) : numberOrNull(value);
+  return parsed !== null && parsed >= 0 && parsed <= 100 ? parsed : null;
+};
 function evidence(source: string, asOf: string | null, seasonId: number | null, limitations: string[] = []): SourceEvidence {
   return { source, asOf, seasonId, completeness: limitations.length ? "partial" : "complete", limitations };
 }
 
 export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningDataQuery, options: { now?: Date; forecastsEnabled?: boolean; deadlineMs?: number;
+  /** A source the caller already selected for this request; otherwise it is selected here. */
+  source?: ForecastServingSource;
   /** RSO only: serve interim FORGE daily projections while issued game forecasts are not served. */
   forgeDailyBridge?: boolean } = {}): Promise<PlanningData> {
   const now = options.now ?? new Date();
   const deadline = Math.min(options.deadlineMs ?? Infinity, Date.now() + 20000);
+  // Dark until PLAYER_FORECAST_NATIVE_CATALOG_HEAD_ID is set: without it the source is `legacy`, selected with no lookups,
+  // and every read below is unchanged. A `native` source reads the head's catalog; an unusable head serves no baselines,
+  // participation or interim bridge (D-2: empty).
+  const source = options.source ?? await withinDeadline(Math.min(deadline, Date.now() + 8000), signal => selectForecastServingSource(db, query.seasonId, now, process.env, signal))
+    .catch(() => unavailableForecastServingSource(process.env));
+  const nativeLimitation = source.kind === "legacy_flagged" || source.kind === "empty" ? source.reason : null;
   const inputDeadline = Math.min(deadline, Date.now() + 8000);
   const calendarPolicy = forecastCalendarPolicy(Number(process.env.STARTER_BOARD_CALENDAR_HORIZON_DAYS ?? 14));
-  const [{ players, games, scheduleRows, scheduleProblems, evidence: sources }, weeks, baseline] = await Promise.all([
+  const [{ players, games, scheduleRows, scheduleProblems, evidence: sources }, weeks, legacyBaseline, native] = await Promise.all([
     loadPlanningInputs(db, query, now, inputDeadline),
     pages(() => db.from("yahoo_matchup_weeks").select("id,game_key,week,start_date,end_date", { count: "exact" })
       .eq("season", String(query.seasonId).slice(0, 4)).order("week").order("id"), inputDeadline, 500).catch(() => []),
-    withinDeadline(inputDeadline, signal => loadApprovedContributionBundle(db, query.seasonId, now, { signal }))
-      .catch(() => ({ sources: [], manifests: [], checksum: null, limitations: ["baseline_read_unavailable"] })),
+    source.kind !== "legacy" ? Promise.resolve({ sources: [], manifests: [], checksum: null, limitations: nativeLimitation ? [nativeLimitation] : [] })
+      : withinDeadline(inputDeadline, signal => loadApprovedContributionBundle(db, query.seasonId, now, { signal }))
+        .catch(() => ({ sources: [], manifests: [], checksum: null, limitations: ["baseline_read_unavailable"] })),
+    source.kind === "native" ? loadNativeCatalogInputs(db, query.seasonId, now, deadline, inputDeadline, source.environment) : Promise.resolve(null),
   ]);
+  const baseline = native?.baseline ?? legacyBaseline;
   const revisions: ForgeGameRevision[] = [];
   const exclusionCounts: Record<string, number> = {};
   const exclusionRows: ForecastDiscoveryExclusion[] = [];
@@ -109,7 +160,7 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
   forecastProblems.push(...admissionProblems);
   let forecasts = admitted, bridged = false;
   // Interim RSO source (TJ, 2026-10-19): only while no issued forecasts or baselines are served.
-  if (options.forgeDailyBridge && !admitted.length && !baseline.sources.length && process.env.RSO_FORGE_DAILY_BRIDGE !== "off") {
+  if (options.forgeDailyBridge && source.kind === "legacy" && !admitted.length && !baseline.sources.length && process.env.RSO_FORGE_DAILY_BRIDGE !== "off") {
     try {
       const bridge = await loadForgeDailyBridgeForecasts(db, players, games, now, query.seasonId, deadline, calendarPolicy);
       forecastProblems.push(...bridge.limitations);
@@ -135,11 +186,14 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
   const rosterRevision = playerForecastSourcePayloadHash(players.map(player => [player.id, player.rosterRevision]).sort());
   const manifestContent = { seasonId: query.seasonId, calendarPolicy, acceptedNewsRevision, scheduleRevision, rosterRevision,
     issuedRevisionIds: [...new Set(forecasts.map(row => row.revisionId))].sort(), baselineChecksum: baseline.checksum,
+    // Participation joins the manifest only for a native source, so legacy manifest identities are unchanged.
+    ...(native ? { participationRevisionIds: native.participation.sources.map(row => row.revisionId).sort(), participationChecksum: native.participation.checksum } : {}),
     exclusions: exclusionRows };
   const forecastManifest: ForecastManifest = { ...manifestContent, version: "planning-forecasts-v1", id: playerForecastSourcePayloadHash(manifestContent), asOf: now.toISOString(),
     requiredOpportunities: players.reduce((sum, player) => sum + games.filter(game => game.teamAbbreviation === player.teamAbbreviation && game.status === "scheduled").length, 0),
     forecastedOpportunities: forecasts.length, exclusionCounts, exclusions: exclusionRows };
   sources.baselines = evidence("Approved contribution rate bundles", baseline.manifests.map(manifest => manifest.issuedAt).sort()[0] ?? null, query.seasonId, baseline.limitations);
+  if (native) sources.participation = evidence(native.label, native.participation.sources.map(row => row.issuedAt).sort()[0] ?? null, query.seasonId, native.participation.limitations);
   forecastProblems.push("Only issued unconditional game forecasts are used. Conditional-only, missing, or out-of-horizon statistics are unknown, not zero.");
   sources.forecasts = evidence(bridged ? "Interim FORGE daily projections" : "selected FORGE game revisions", forecasts.map((row) => row.issuedAt).sort()[0] ?? null, query.seasonId, [...new Set(forecastProblems)]);
 
@@ -160,10 +214,16 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
       const nhl = [...matches][0];
       if (!latest.has(nhl)) latest.set(nhl, row);
     }
+    // A reported 0 is a real 0%; missing, empty, invalid or future rows stay unknown. Only a fresh (≤3-day) reading sets
+    // `ownership`; an older one is kept as labelled last-known evidence, never as a fresh value or ranking input.
     for (const player of players) {
       const row = player.nhlId === null ? null : latest.get(player.nhlId);
-      const value = numberOrNull(row?.ownership_pct);
-      if (value !== null && value >= 0 && value <= 100 && Date.parse(`${row!.ownership_date}T00:00:00Z`) >= now.getTime() - 3 * 86400000) player.ownership = value;
+      const value = ownershipPct(row?.ownership_pct);
+      const observedOn = typeof row?.ownership_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(row.ownership_date) ? row.ownership_date : null;
+      const observedAt = observedOn ? Date.parse(`${observedOn}T00:00:00Z`) : NaN;
+      if (value === null || !Number.isFinite(observedAt) || observedAt > now.getTime()) continue;
+      if (observedAt >= now.getTime() - 3 * 86400000) player.ownership = value;
+      else player.ownershipEvidence = { value, observedOn, provider: "yahoo", status: "stale" };
     }
     sources.ownership = evidence("Yahoo daily ownership", ownership[0]?.updated_at ?? null, query.seasonId, ["Ownership is not league availability; missing or older than three days is unknown."]);
   } catch { sources.ownership = evidence("Yahoo daily ownership", null, query.seasonId, ["Ownership could not be verified."]); }
@@ -208,5 +268,6 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
     .filter((row: Row) => Number.isInteger(row.week) && row.week > 0 && /^\d{4}-\d{2}-\d{2}$/.test(row.start_date) && row.start_date <= row.end_date)
     .map((row: Row) => ({ gameKey: String(row.game_key), week: row.week, startDate: row.start_date, endDate: row.end_date })) : [];
   sources.matchupWeeks = evidence("Yahoo matchup weeks", null, query.seasonId, matchupWeeks.length ? [] : ["Matchup week presets are unavailable for this season; use custom dates."]);
-  return { players, games, forecasts, baselineSources: baseline.sources, forecastManifest, evidence: sources, matchupWeeks };
+  return { players, games, forecasts, baselineSources: baseline.sources, ...(native ? { participationSources: native.participation.sources } : {}),
+    forecastManifest, evidence: sources, matchupWeeks };
 }

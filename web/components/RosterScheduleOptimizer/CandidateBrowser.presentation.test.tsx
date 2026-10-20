@@ -294,3 +294,15 @@ it("withholds upcoming totals when canonical game state is missing rather than i
   expect(screen.queryByText(/upcoming game/)).toBeNull();
   expect(screen.queryAllByLabelText(/^Result /)).toHaveLength(0);
 });
+
+it("tells category managers that each card carries the whole swap's category gains and losses (W7)", () => {
+  const workspace = defaultWorkspace();
+  const players: PlanningPlayer[] = [{ id: "c", nhlId: null, name: "Category Candidate", teamAbbreviation: "CAR", eligiblePositions: ["C"],
+    playerClass: "skater", availability: "free_agent", ownership: null, canDrop: true, holdValue: null, reserveEligibility: [] }];
+  const snapshot: PlanningSnapshot = { id: "categories", context: workspace.context, games: [], players, roster: [], lockedAssignments: [], forecasts: [],
+    rules: { ...workspace.rules, scoring: { mode: "categories", weights: {}, categories: [{ key: "GOALS", direction: "higher" }] } },
+    realized: {}, opponent: null, evidence: {} };
+  render(<CandidateBrowser players={players} rosterIds={new Set()} snapshot={snapshot} intent={workspace.intent} fits={[]} manual
+    select={vi.fn()} add={vi.fn()} markAvailable={vi.fn()} />);
+  expect(screen.getByText("Ranked by more starts. Each card shows the category gains and losses for the whole swap.")).toBeTruthy();
+});
