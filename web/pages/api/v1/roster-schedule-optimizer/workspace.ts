@@ -3,17 +3,22 @@ import { z } from "zod";
 import { createHash, randomUUID } from "crypto";
 import { requireApiUser } from "lib/api/requireApiUser";
 import { loadInSeasonAccess, requireInSeasonCapability } from "lib/in-season/server";
-import { contextSchema, saveWorkspaceSchema, workspaceQuerySchema } from "lib/in-season/workspaceSchema";
+import { contextSchema, saveWorkspaceSchema, WORKSPACE_SAVE_BYTE_BUDGET, WORKSPACE_TRANSPORT_BYTE_BUDGET, workspaceQuerySchema } from "lib/in-season/workspaceSchema";
 import { isDraftProOwner } from "lib/draft-pro/ownerAccess";
 import { preservationJson, validatePreservation, workspaceContextKey, type WorkspacePreservation } from "lib/rosterScheduleOptimizer/workspace";
-import { packPlanningSnapshots, unpackPlanningSnapshots } from "lib/rosterScheduleData/bridgeForecastWire";
+import { jsonUtf8Bytes, packPlanningSnapshots, unpackPlanningSnapshots } from "lib/rosterScheduleData/bridgeForecastWire";
 import serviceRoleClient from "lib/supabase/server";
 
 export const config = { api: { bodyParser: { sizeLimit: "10mb" } } };
-// Interim bridge projections travel packed in both directions; stored and validated snapshots are always complete.
-const ok = (res: NextApiResponse, body: unknown) => res.status(200).json(packPlanningSnapshots(body));
-
 const fail = (res: NextApiResponse, status: number, code: string, message: string) => res.status(status).json({ error: { code, message } });
+const megabytes = (bytes: number) => (bytes / 1_000_000).toFixed(1);
+// Interim bridge projections travel packed in both directions; stored and validated snapshots are always complete.
+// A body past the platform limit would fail with no usable error, so an oversized one is refused plainly instead.
+const ok = (res: NextApiResponse, body: unknown) => {
+  const packed = packPlanningSnapshots(body), bytes = jsonUtf8Bytes(packed);
+  if (bytes > WORKSPACE_TRANSPORT_BYTE_BUDGET) return fail(res, 503, "workspace_too_large", `This saved workspace is too large to send (${megabytes(bytes)} MB; the limit is ${megabytes(WORKSPACE_TRANSPORT_BYTE_BUDGET)} MB). Your local plan is unchanged.`);
+  return res.status(200).json(packed);
+};
 const select = "id,lock_version,workspace,snapshot,updated_at";
 const contextFilter = (query: any, userId: string, context: z.infer<typeof workspaceQuerySchema>) => query.eq("user_id", userId).eq("provider", context.provider).eq("season_id", context.seasonId).eq("league_id", context.leagueId).eq("team_id", context.teamId).eq("start_date", context.startDate).eq("end_date", context.endDate);
 const output = (row: any) => row ? { workspace: row.workspace, snapshot: row.snapshot, version: row.lock_version, updatedAt: row.updated_at } : null;
@@ -121,7 +126,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const user = await requireApiUser(req, res, { onUnauthorized: (message) => fail(res, 401, "authentication_required", message) });
   if (!user) return;
   try {
-    if (req.method === "PUT") req.body = unpackPlanningSnapshots(req.body);
+    if (req.method === "PUT") {
+      // Measured as sent (packed), before anything is unpacked or written.
+      const bytes = jsonUtf8Bytes(req.body);
+      if (bytes > WORKSPACE_SAVE_BYTE_BUDGET) return fail(res, 413, "workspace_too_large", `This workspace is too large to save (${megabytes(bytes)} MB; the limit is ${megabytes(WORKSPACE_SAVE_BYTE_BUDGET)} MB). Shorten the planning range. Your local plan is unchanged.`);
+      req.body = unpackPlanningSnapshots(req.body);
+    }
     if (req.query.preservation !== undefined) return await preserve(req, res, user.id);
     // This table is created by the accompanying local migration, before generated types are refreshed.
     const db = serviceRoleClient as any;

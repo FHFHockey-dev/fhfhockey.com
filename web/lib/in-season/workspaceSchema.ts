@@ -145,6 +145,11 @@ export const snapshotSchema: z.ZodType<PlanningSnapshot> = z.object({ id, contex
   forecastManifest: forecastManifest.optional(), rules, lockedAssignments: z.array(lockedAssignment).max(1000),
   realized: statLine, opponent, evidence: z.record(z.string().min(1), evidence) }).strict();
 
+/** Exact UTF-8 bytes of any workspace response as sent (packed): inside Vercel's 4.5 MB response limit. */
+export const WORKSPACE_TRANSPORT_BYTE_BUDGET = 4_000_000;
+/** A packed save body; the rest of the transport budget holds the response wrapper (version, timestamp, preservation receipt). */
+export const WORKSPACE_SAVE_BYTE_BUDGET = WORKSPACE_TRANSPORT_BYTE_BUDGET - 4_000;
+
 export const saveWorkspaceSchema = z.object({ workspace: workspaceSchema, snapshot: snapshotSchema.nullable(), expectedVersion: z.number().int().positive().nullable() }).strict().superRefine((value, ctx) => {
   if (value.snapshot && JSON.stringify(value.snapshot.context) !== JSON.stringify(value.workspace.context)) ctx.addIssue({ code: "custom", message: "Snapshot context differs from workspace context." });
   if (Buffer.byteLength(JSON.stringify(value), "utf8") > 10_000_000) ctx.addIssue({ code: "custom", message: "Workspace exceeds the save limit." });

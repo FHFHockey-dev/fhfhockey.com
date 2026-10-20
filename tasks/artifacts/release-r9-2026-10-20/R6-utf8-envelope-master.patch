@@ -1,0 +1,370 @@
+diff --git a/web/__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts b/web/__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts
+new file mode 100644
+index 000000000..bea850d9a
+--- /dev/null
++++ b/web/__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts
+@@ -0,0 +1,57 @@
++import { beforeEach, describe, expect, it, vi } from "vitest";
++const mocks = vi.hoisted(() => ({ load: vi.fn(), db: {} }));
++vi.mock("lib/supabase/server", () => ({ default: mocks.db }));
++vi.mock("lib/rosterScheduleData/planning", async importOriginal => ({
++  ...await importOriginal<typeof import("lib/rosterScheduleData/planning")>(), loadPlanningData: mocks.load,
++}));
++import { expandBridgeForecasts } from "lib/rosterScheduleData/bridgeForecastWire";
++import handler from "pages/api/v1/roster-schedule-optimizer/data";
++
++const query = { seasonId: "20262027", startDate: "2026-10-15", endDate: "2026-10-21" };
++const data = { players: [], games: [], forecasts: [], evidence: {} };
++const utf8 = (value: unknown) => Buffer.byteLength(JSON.stringify(value), "utf8");
++async function request() {
++  const res: any = { code: 200, body: null, setHeader: vi.fn(), end: vi.fn(),
++    status: vi.fn(code => { res.code = code; return res; }), json: vi.fn(body => { res.body = body; return res; }) };
++  await handler({ method: "GET", query } as any, res); return res;
++}
++beforeEach(() => { vi.clearAllMocks(); });
++
++describe("/api/v1/roster-schedule-optimizer/data", () => {
++  it("fits the whole response, bridge siblings included, in exact UTF-8 bytes by trimming the latest bridge rows", async () => {
++    // Non-ASCII names: about 3.7 MB of UTF-8 but only about 2 M characters.
++    const players = Array.from({ length: 3600 }, (_, index) => ({ id: String(index + 1), nhlId: 8470000 + index, nhlTeamId: 10,
++      rosterRevision: `roster-${index}`, name: `Ž${"ø".repeat(399)}`, teamAbbreviation: "TOR", eligiblePositions: ["C"], eligibilityVerified: true,
++      playerClass: "skater", availability: "free_agent", ownership: null, canDrop: true, holdValue: null, reserveEligibility: [] }));
++    const games = ["2026020101", "2026020102"].map((id, index) => ({ id, scheduleRevision: `schedule-${id}`, date: `2026-10-1${6 + index}`,
++      startsAt: `2026-10-1${6 + index}T23:00:00.000Z`, teamAbbreviation: "TOR", opponent: "MTL", home: true, status: "scheduled" }));
++    const wire = { version: "forge-daily-bridge-wire-v1", seasonId: 20262027, limitations: ["Interim FORGE projection."],
++      runs: [["forge-daily-bridge-v1:run-a", "forge-daily-bridge-v1:run-a", "forge-daily-bridge-v1:abc", "2026-10-15T11:00:00.000Z", "2026-10-15T11:00:00.000Z"]],
++      rows: games.flatMap(game => players.map(player => [player.id, game.id, 0, game.startsAt, { GOALS: 0.3, ASSISTS: 0.4, SHOTS: 2.7 }, null, false, null])) };
++    const forecasts = expandBridgeForecasts(wire, { players, games } as never);
++    expect(forecasts).toHaveLength(7200);
++    mocks.load.mockResolvedValue({ ...data, players, games, forecasts });
++    const res = await request();
++    expect(res.code).toBe(200);
++    expect(JSON.stringify(res.body).length).toBeLessThan(4_000_000);
++    expect(utf8(res.body)).toBeLessThanOrEqual(4_000_000);
++    const sent = JSON.parse(JSON.stringify(res.body));
++    const kept = sent.bridgeForecasts.rows.length;
++    expect(kept).toBeGreaterThan(0);
++    expect(kept).toBeLessThan(7200);
++    expect(sent.bridgeForecasts.rows).toEqual(wire.rows.slice(0, kept));
++    const rebuilt = expandBridgeForecasts(sent.bridgeForecasts, sent.data);
++    expect(rebuilt).toHaveLength(kept);
++    expect(rebuilt[0].limitations.at(-1)).toBe(`Interim projections were trimmed to the first ${kept} of 7200 player-games to fit the planning response; later games stay schedule-only.`);
++  });
++
++  it("refuses a range whose data cannot fit even without bridge rows, with a clear code", async () => {
++    const players = Array.from({ length: 5000 }, (_, index) => ({ id: String(index + 1), nhlId: null, name: "ø".repeat(500),
++      teamAbbreviation: null, eligiblePositions: [], playerClass: "skater", availability: "free_agent", ownership: null, canDrop: null,
++      holdValue: null, reserveEligibility: [] }));
++    mocks.load.mockResolvedValue({ ...data, players });
++    const res = await request();
++    expect(res.code).toBe(503);
++    expect(res.body).toMatchObject({ success: false, code: "planning_range_too_large" });
++  });
++});
+diff --git a/web/lib/in-season/workspaceRoutes.test.ts b/web/lib/in-season/workspaceRoutes.test.ts
+index 6f79537d1..828761d7a 100644
+--- a/web/lib/in-season/workspaceRoutes.test.ts
++++ b/web/lib/in-season/workspaceRoutes.test.ts
+@@ -1,5 +1,6 @@
+ import { beforeEach, describe, expect, it, vi } from "vitest";
+ import { expandBridgeForecasts, packPlanningSnapshots, unpackPlanningSnapshots } from "lib/rosterScheduleData/bridgeForecastWire";
++import { WORKSPACE_SAVE_BYTE_BUDGET, WORKSPACE_TRANSPORT_BYTE_BUDGET } from "lib/in-season/workspaceSchema";
+ 
+ const state = vi.hoisted(() => ({
+   userId: "owner-a", rows: [] as any[], capabilities: [] as string[],
+@@ -159,3 +160,55 @@ describe("in-season workspace routes", () => {
+     expect(response.body.data.capabilities).toEqual(["rso_sync", "rso_account_save"]);
+   });
+ });
++
++describe("workspace transport in exact UTF-8 bytes", () => {
++  // Measured independently of the route: Vercel caps request and response bodies at 4.5 MB.
++  const utf8 = (value: unknown) => Buffer.byteLength(JSON.stringify(value), "utf8");
++  const SAVE_BUDGET = 3_996_000, TRANSPORT_BUDGET = 4_000_000;
++  const noted = (note: string, ctx = context) => ({ ...snapshot, context: ctx, players: [{ id: "p1", nhlId: null, name: "Pálffy", teamAbbreviation: null,
++    eligiblePositions: [], playerClass: "skater", availability: "free_agent", ownership: null, canDrop: null, holdValue: null,
++    reserveEligibility: [], injury: { status: "IR", label: "IR", note } }] });
++  const body = (note: string) => ({ workspace, snapshot: noted(note), expectedVersion: null });
++  const ascii = (bytes: number) => body("a".repeat(bytes - utf8(body(""))));
++  beforeEach(() => { state.capabilities = ["rso_account_save"]; });
++
++  it("uses a save budget that leaves the response wrapper inside the transport budget", () => {
++    expect([WORKSPACE_SAVE_BYTE_BUDGET, WORKSPACE_TRANSPORT_BYTE_BUDGET]).toEqual([SAVE_BUDGET, TRANSPORT_BUDGET]);
++  });
++
++  it("saves a packed body exactly at the save budget and sends it back inside the transport budget", async () => {
++    const sent = ascii(SAVE_BUDGET);
++    expect(utf8(sent)).toBe(SAVE_BUDGET);
++    const saved = res(); await workspaceHandler(req("PUT", sent), saved);
++    expect(saved.statusCode).toBe(200);
++    expect(utf8(saved.body)).toBeLessThanOrEqual(TRANSPORT_BUDGET);
++    const loaded = res(); await workspaceHandler(req("GET"), loaded);
++    expect(loaded.statusCode).toBe(200);
++    expect(utf8(loaded.body)).toBeLessThanOrEqual(TRANSPORT_BUDGET);
++  });
++
++  it("rejects a save one byte past the budget before writing anything", async () => {
++    const saved = res(); await workspaceHandler(req("PUT", ascii(SAVE_BUDGET + 1)), saved);
++    expect(saved.statusCode).toBe(413);
++    expect(saved.body.error.code).toBe("workspace_too_large");
++    expect(state.rows).toEqual([]);
++  });
++
++  it("counts non-ASCII text in UTF-8 bytes, not string length", async () => {
++    const sent = body("é".repeat(Math.ceil((SAVE_BUDGET - utf8(body(""))) / 2) + 1));
++    expect(JSON.stringify(sent).length).toBeLessThanOrEqual(SAVE_BUDGET);
++    expect(utf8(sent)).toBeGreaterThan(SAVE_BUDGET);
++    const saved = res(); await workspaceHandler(req("PUT", sent), saved);
++    expect(saved.statusCode).toBe(413);
++    expect(state.rows).toEqual([]);
++  });
++
++  it("refuses to send a stored workspace the platform would cut off, with a clear error", async () => {
++    state.rows = [{ ...savedRow("owner-a"), snapshot: noted("ø".repeat(2_100_000)) }];
++    const loaded = res(); await workspaceHandler(req("GET"), loaded);
++    expect(loaded.statusCode).toBe(503);
++    expect(loaded.body.error.code).toBe("workspace_too_large");
++    expect(utf8(loaded.body)).toBeLessThan(1_000);
++  });
++
++});
+diff --git a/web/lib/in-season/workspaceSchema.ts b/web/lib/in-season/workspaceSchema.ts
+index 7eb8d7991..4b8869b03 100644
+--- a/web/lib/in-season/workspaceSchema.ts
++++ b/web/lib/in-season/workspaceSchema.ts
+@@ -144,6 +144,11 @@ export const snapshotSchema: z.ZodType<PlanningSnapshot> = z.object({ id, contex
+   forecastManifest: forecastManifest.optional(), rules, lockedAssignments: z.array(lockedAssignment).max(1000),
+   realized: statLine, opponent, evidence: z.record(z.string().min(1), evidence) }).strict();
+ 
++/** Exact UTF-8 bytes of any workspace response as sent (packed): inside Vercel's 4.5 MB response limit. */
++export const WORKSPACE_TRANSPORT_BYTE_BUDGET = 4_000_000;
++/** A packed save body; the rest of the transport budget holds the response wrapper (version, timestamp, preservation receipt). */
++export const WORKSPACE_SAVE_BYTE_BUDGET = WORKSPACE_TRANSPORT_BYTE_BUDGET - 4_000;
++
+ export const saveWorkspaceSchema = z.object({ workspace: workspaceSchema, snapshot: snapshotSchema.nullable(), expectedVersion: z.number().int().positive().nullable() }).strict().superRefine((value, ctx) => {
+   if (value.snapshot && JSON.stringify(value.snapshot.context) !== JSON.stringify(value.workspace.context)) ctx.addIssue({ code: "custom", message: "Snapshot context differs from workspace context." });
+   if (Buffer.byteLength(JSON.stringify(value), "utf8") > 10_000_000) ctx.addIssue({ code: "custom", message: "Workspace exceeds the save limit." });
+diff --git a/web/lib/rosterScheduleData/bridgeForecastWire.ts b/web/lib/rosterScheduleData/bridgeForecastWire.ts
+index a8f49c836..eabb5f586 100644
+--- a/web/lib/rosterScheduleData/bridgeForecastWire.ts
++++ b/web/lib/rosterScheduleData/bridgeForecastWire.ts
+@@ -88,10 +88,48 @@ export function expandBridgeForecasts(wire: unknown, inputs: Inputs): GameForeca
+   return result;
+ }
+ 
++/** Exact UTF-8 bytes of a value's JSON, as it travels in a request or response body. */
++export function jsonUtf8Bytes(value: unknown): number {
++  return new TextEncoder().encode(JSON.stringify(value) ?? "").byteLength;
++}
++
+ /** Wire size of one forecast as the bridge budget counts it. */
+ export function bridgeWireRowBytes(forecast: GameForecast): number {
+-  return JSON.stringify([forecast.playerId, forecast.gameId, 0, forecast.expiresAt, forecast.stats, forecast.startProbability,
+-    forecast.confirmedStart, forecast.conditionalStats ?? null]).length + 1;
++  return jsonUtf8Bytes([forecast.playerId, forecast.gameId, 0, forecast.expiresAt, forecast.stats, forecast.startProbability,
++    forecast.confirmedStart, forecast.conditionalStats ?? null]) + 1;
++}
++
++/** Whole planning response body, bridge wire included: inside Vercel's 4.5 MB response limit with room for headers. */
++export const PLANNING_RESPONSE_BYTE_BUDGET = 4_000_000;
++const trimmedNote = (kept: number, total: number) =>
++  `Interim projections were trimmed to the first ${kept} of ${total} player-games to fit the planning response; later games stay schedule-only.`;
++
++/**
++ * Fits a whole response body within `budget` exact UTF-8 bytes. `envelope` must embed the wire as given. When the full
++ * body is too large, it keeps the earliest wire rows (they are in game-time order) and says so in the wire's
++ * limitations; with no row fitting it sends no wire. Null when even the body without a wire does not fit.
++ */
++export function fitBridgeWire<T>(wire: BridgeForecastWire | null, envelope: (wire: BridgeForecastWire | null) => T, budget: number): T | null {
++  const full = envelope(wire);
++  if (jsonUtf8Bytes(full) <= budget) return full;
++  if (wire && wire.rows.length > 1) {
++    const total = wire.rows.length, prefix = [0];
++    for (const row of wire.rows) prefix.push(prefix[prefix.length - 1] + jsonUtf8Bytes(row));
++    // Exact: each kept row adds its bytes and, after the first, a comma; the note likewise after any limitation.
++    const empty = jsonUtf8Bytes(envelope({ ...wire, rows: [] })) + (wire.limitations.length ? 1 : 0);
++    const size = (kept: number) => empty + jsonUtf8Bytes(trimmedNote(kept, total)) + prefix[kept] + kept - 1;
++    let low = 0, high = total - 1;
++    while (low < high) {
++      const mid = Math.ceil((low + high) / 2);
++      if (size(mid) <= budget) low = mid; else high = mid - 1;
++    }
++    if (low > 0) {
++      const fitted = envelope({ ...wire, limitations: [...wire.limitations, trimmedNote(low, total)], rows: wire.rows.slice(0, low) });
++      if (jsonUtf8Bytes(fitted) <= budget) return fitted;
++    }
++  }
++  const bare = envelope(null);
++  return jsonUtf8Bytes(bare) <= budget ? bare : null;
+ }
+ 
+ const PACKED_KEY = "bridgeForecastWire";
+diff --git a/web/lib/rosterScheduleData/forgeDailyBridge.test.ts b/web/lib/rosterScheduleData/forgeDailyBridge.test.ts
+index 978b1eace..ed3fb363c 100644
+--- a/web/lib/rosterScheduleData/forgeDailyBridge.test.ts
++++ b/web/lib/rosterScheduleData/forgeDailyBridge.test.ts
+@@ -3,7 +3,7 @@ import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
+ import { candidateHorizonPoints } from "lib/rosterScheduleOptimizer/planning";
+ import type { PlanningGame, PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
+ import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_VERSION, loadForgeDailyBridgeForecasts, opponentTilts, teamWinProbability, type ForgeDailyBridgeInputs } from "./forgeDailyBridge";
+-import { compactBridgeForecasts, expandBridgeForecasts, packPlanningSnapshots, unpackPlanningSnapshots } from "./bridgeForecastWire";
++import { compactBridgeForecasts, expandBridgeForecasts, fitBridgeWire, packPlanningSnapshots, unpackPlanningSnapshots, type BridgeForecastWire } from "./bridgeForecastWire";
+ import { preservationJson } from "lib/rosterScheduleOptimizer/workspace";
+ 
+ const now = new Date("2026-10-19T18:00:00Z");
+@@ -320,4 +320,61 @@ describe("FORGE daily bridge", () => {
+     expect(runIdReads).toEqual(expected.length ? [expected, expected] : []);
+     if (!expected.length) expect(result.limitations[0]).toContain("no successful FORGE run");
+   });
++
++  describe("fitting the full response envelope in exact UTF-8 bytes", () => {
++    const jsonUtf8Bytes = (value: unknown) => Buffer.byteLength(JSON.stringify(value), "utf8");
++    const wireOf = (rows: number, limitations = ["Interim FORGE projection."]): BridgeForecastWire => ({
++      version: "forge-daily-bridge-wire-v1", seasonId: 20262027, limitations,
++      runs: [["forge-daily-bridge-v1:r", "forge-daily-bridge-v1:r", "forge-daily-bridge-v1:abc", "2026-10-19T12:00:00.000Z", "2026-10-19T12:00:00.000Z"]],
++      rows: Array.from({ length: rows }, (_, index) => [`p${index}`, "2026020101", 0, "2026-10-20T23:00:00.000Z", { GOALS: 0.25, SHOTS: 2.5 }, null, false, null]) });
++    const envelopeWith = (metadata: unknown) => (wire: BridgeForecastWire | null) => ({ success: true, data: metadata, ...(wire ? { bridgeForecasts: wire } : {}) });
++    const rowsOnly = (wire: BridgeForecastWire) => wire.rows.reduce((sum, row) => sum + JSON.stringify(row).length + 1, 0);
++    const expectMaximalTrim = (wire: BridgeForecastWire, envelope: ReturnType<typeof envelopeWith>, budget: number) => {
++      const body = fitBridgeWire(wire, envelope, budget) as any;
++      expect(jsonUtf8Bytes(body)).toBeLessThanOrEqual(budget);
++      const kept = body.bridgeForecasts.rows.length;
++      expect(kept).toBeGreaterThan(0);
++      expect(body.bridgeForecasts.rows).toEqual(wire.rows.slice(0, kept));
++      expect(body.bridgeForecasts.limitations).toEqual([...wire.limitations,
++        `Interim projections were trimmed to the first ${kept} of ${wire.rows.length} player-games to fit the planning response; later games stay schedule-only.`]);
++      // One more row would not have fit.
++      const next = envelope({ ...wire, rows: wire.rows.slice(0, kept + 1), limitations: [...wire.limitations,
++        `Interim projections were trimmed to the first ${kept + 1} of ${wire.rows.length} player-games to fit the planning response; later games stay schedule-only.`] });
++      expect(jsonUtf8Bytes(next)).toBeGreaterThan(budget);
++      return body;
++    };
++
++    it("counts envelope metadata and wire limitations that a row-only tally leaves out", () => {
++      const wire = wireOf(60, Array.from({ length: 40 }, (_, index) => `Limitation ${index}: ${"metadata ".repeat(20)}`));
++      const envelope = envelopeWith({ evidence: { forge: { limitations: Array.from({ length: 50 }, () => "evidence ".repeat(20)) } } });
++      const budget = 20_000;
++      expect(rowsOnly(wire)).toBeLessThan(budget);
++      expect(jsonUtf8Bytes(envelope(wire))).toBeGreaterThan(budget);
++      expectMaximalTrim(wire, envelope, budget);
++    });
++
++    it("measures non-ASCII names in UTF-8 bytes, not string length", () => {
++      const wire = wireOf(80);
++      const envelope = envelopeWith({ players: Array.from({ length: 30 }, (_, index) => ({ id: String(index), name: "Žigmund Pálffy Ståhlberg Łukasz ".repeat(4) })) });
++      const budget = JSON.stringify(envelope(wire)).length;
++      expect(jsonUtf8Bytes(envelope(wire))).toBeGreaterThan(budget);
++      expectMaximalTrim(wire, envelope, budget);
++    });
++
++    it("keeps a full payload exactly at the limit and trims one byte past it", () => {
++      const wire = wireOf(100), envelope = envelopeWith({ players: [{ name: "Örjan Lindström" }] });
++      const exact = jsonUtf8Bytes(envelope(wire));
++      expect(fitBridgeWire(wire, envelope, exact)).toEqual(envelope(wire));
++      const body = expectMaximalTrim(wire, envelope, exact - 1);
++      expect(expandBridgeForecasts(body.bridgeForecasts, { players: [], games: [] })).toEqual([]);
++    });
++
++    it("drops the bridge when no row fits, and rejects an envelope that cannot fit at all", () => {
++      const wire = wireOf(5), envelope = envelopeWith({ players: [{ name: "Ведерников" }] });
++      const bare = jsonUtf8Bytes(envelope(null));
++      expect(fitBridgeWire(wire, envelope, bare)).toEqual(envelope(null));
++      expect(fitBridgeWire(wire, envelope, bare - 1)).toBeNull();
++      expect(fitBridgeWire(null, envelope, bare - 1)).toBeNull();
++    });
++  });
+ });
+diff --git a/web/lib/rosterScheduleData/forgeDailyBridge.ts b/web/lib/rosterScheduleData/forgeDailyBridge.ts
+index b1ea190c1..3b8a4e4d5 100644
+--- a/web/lib/rosterScheduleData/forgeDailyBridge.ts
++++ b/web/lib/rosterScheduleData/forgeDailyBridge.ts
+@@ -9,7 +9,7 @@ import { DEFENSE_B2B_FATIGUE_BOOST, OPPONENT_AWAY_PENALTY, OPPONENT_B2B_PENALTY,
+ import type { TeamStrengthPrior } from "lib/projections/types/run-forge-projections.types";
+ import type { GameForecast, PlanningGame, PlanningPlayer, StatLine } from "lib/rosterScheduleOptimizer/planningTypes";
+ import { pages, withinDeadline } from "./planningInputs";
+-import { bridgeWireRowBytes, FORGE_DAILY_BRIDGE_VERSION } from "./bridgeForecastWire";
++import { bridgeWireRowBytes, FORGE_DAILY_BRIDGE_VERSION, jsonUtf8Bytes } from "./bridgeForecastWire";
+ 
+ type Row = Record<string, any>;
+ type Run = { runId: string; asOfDate: string; issuedAt: string; gitSha: string | null };
+@@ -423,7 +423,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
+   forecasts.sort((a, b) => (a.issuedContext!.scheduledAt).localeCompare(b.issuedContext!.scheduledAt) || a.playerId.localeCompare(b.playerId) || a.gameId.localeCompare(b.gameId));
+   let bytes = 0, expandedBytes = 0, kept = forecasts.length;
+   for (const [index, forecast] of forecasts.entries()) {
+-    bytes += bridgeWireRowBytes(forecast); expandedBytes += JSON.stringify(forecast).length + 1;
++    bytes += bridgeWireRowBytes(forecast); expandedBytes += jsonUtf8Bytes(forecast) + 1;
+     if (bytes > byteBudget || expandedBytes > expandedByteBudget) { kept = index; break; }
+   }
+   const coveredTeams = new Set(forecasts.map(row => row.issuedContext!.teamId)).size;
+diff --git a/web/pages/api/v1/roster-schedule-optimizer/data.ts b/web/pages/api/v1/roster-schedule-optimizer/data.ts
+index 00604ec9f..c15c6f569 100644
+--- a/web/pages/api/v1/roster-schedule-optimizer/data.ts
++++ b/web/pages/api/v1/roster-schedule-optimizer/data.ts
+@@ -1,7 +1,7 @@
+ import type { NextApiRequest, NextApiResponse } from "next";
+ import serviceRoleClient from "lib/supabase/server";
+ import { loadPlanningData, parsePlanningDataQuery } from "lib/rosterScheduleData/planning";
+-import { compactBridgeForecasts } from "lib/rosterScheduleData/bridgeForecastWire";
++import { compactBridgeForecasts, fitBridgeWire, PLANNING_RESPONSE_BYTE_BUDGET } from "lib/rosterScheduleData/bridgeForecastWire";
+ 
+ /** Public shared inputs. No league/account data or admin/research payloads. */
+ export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+@@ -14,7 +14,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
+     res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=300");
+     // Interim bridge projections travel compactly beside `data`; clients rebuild them exactly.
+     const bridge = compactBridgeForecasts(data.forecasts, data, query.seasonId);
+-    return res.json({ success: true, data: { ...data, forecasts: bridge.forecasts }, ...(bridge.wire ? { bridgeForecasts: bridge.wire } : {}) });
++    // The whole body, bridge wire included, must fit the platform response limit; the latest bridge rows give way first.
++    const body = fitBridgeWire(bridge.wire, wire => ({ success: true, data: { ...data, forecasts: bridge.forecasts }, ...(wire ? { bridgeForecasts: wire } : {}) }),
++      PLANNING_RESPONSE_BYTE_BUDGET);
++    if (!body) return res.status(503).json({ success: false, code: "planning_range_too_large", error: "This planning range is too large to display. Choose a shorter range." });
++    return res.json(body);
+   } catch {
+     return res.status(503).json({ success: false, error: "Planning data is temporarily unavailable. Your saved manual workspace is preserved." });
+   }
+diff --git a/web/pages/api/v1/roster-schedule-optimizer/workspace.ts b/web/pages/api/v1/roster-schedule-optimizer/workspace.ts
+index 3370b3690..79f96fc53 100644
+--- a/web/pages/api/v1/roster-schedule-optimizer/workspace.ts
++++ b/web/pages/api/v1/roster-schedule-optimizer/workspace.ts
+@@ -3,17 +3,22 @@ import { z } from "zod";
+ import { createHash, randomUUID } from "crypto";
+ import { requireApiUser } from "lib/api/requireApiUser";
+ import { loadInSeasonAccess, requireInSeasonCapability } from "lib/in-season/server";
+-import { contextSchema, saveWorkspaceSchema, workspaceQuerySchema } from "lib/in-season/workspaceSchema";
++import { contextSchema, saveWorkspaceSchema, WORKSPACE_SAVE_BYTE_BUDGET, WORKSPACE_TRANSPORT_BYTE_BUDGET, workspaceQuerySchema } from "lib/in-season/workspaceSchema";
+ import { isDraftProOwner } from "lib/draft-pro/ownerAccess";
+ import { preservationJson, validatePreservation, workspaceContextKey, type WorkspacePreservation } from "lib/rosterScheduleOptimizer/workspace";
+-import { packPlanningSnapshots, unpackPlanningSnapshots } from "lib/rosterScheduleData/bridgeForecastWire";
++import { jsonUtf8Bytes, packPlanningSnapshots, unpackPlanningSnapshots } from "lib/rosterScheduleData/bridgeForecastWire";
+ import serviceRoleClient from "lib/supabase/server";
+ 
+ export const config = { api: { bodyParser: { sizeLimit: "10mb" } } };
+-// Interim bridge projections travel packed in both directions; stored and validated snapshots are always complete.
+-const ok = (res: NextApiResponse, body: unknown) => res.status(200).json(packPlanningSnapshots(body));
+-
+ const fail = (res: NextApiResponse, status: number, code: string, message: string) => res.status(status).json({ error: { code, message } });
++const megabytes = (bytes: number) => (bytes / 1_000_000).toFixed(1);
++// Interim bridge projections travel packed in both directions; stored and validated snapshots are always complete.
++// A body past the platform limit would fail with no usable error, so an oversized one is refused plainly instead.
++const ok = (res: NextApiResponse, body: unknown) => {
++  const packed = packPlanningSnapshots(body), bytes = jsonUtf8Bytes(packed);
++  if (bytes > WORKSPACE_TRANSPORT_BYTE_BUDGET) return fail(res, 503, "workspace_too_large", `This saved workspace is too large to send (${megabytes(bytes)} MB; the limit is ${megabytes(WORKSPACE_TRANSPORT_BYTE_BUDGET)} MB). Your local plan is unchanged.`);
++  return res.status(200).json(packed);
++};
+ const select = "id,lock_version,workspace,snapshot,updated_at";
+ const contextFilter = (query: any, userId: string, context: z.infer<typeof workspaceQuerySchema>) => query.eq("user_id", userId).eq("provider", context.provider).eq("season_id", context.seasonId).eq("league_id", context.leagueId).eq("team_id", context.teamId).eq("start_date", context.startDate).eq("end_date", context.endDate);
+ const output = (row: any) => row ? { workspace: row.workspace, snapshot: row.snapshot, version: row.lock_version, updatedAt: row.updated_at } : null;
+@@ -121,7 +126,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
+   const user = await requireApiUser(req, res, { onUnauthorized: (message) => fail(res, 401, "authentication_required", message) });
+   if (!user) return;
+   try {
+-    if (req.method === "PUT") req.body = unpackPlanningSnapshots(req.body);
++    if (req.method === "PUT") {
++      // Measured as sent (packed), before anything is unpacked or written.
++      const bytes = jsonUtf8Bytes(req.body);
++      if (bytes > WORKSPACE_SAVE_BYTE_BUDGET) return fail(res, 413, "workspace_too_large", `This workspace is too large to save (${megabytes(bytes)} MB; the limit is ${megabytes(WORKSPACE_SAVE_BYTE_BUDGET)} MB). Shorten the planning range. Your local plan is unchanged.`);
++      req.body = unpackPlanningSnapshots(req.body);
++    }
+     if (req.query.preservation !== undefined) return await preserve(req, res, user.id);
+     // This table is created by the accompanying local migration, before generated types are refreshed.
+     const db = serviceRoleClient as any;

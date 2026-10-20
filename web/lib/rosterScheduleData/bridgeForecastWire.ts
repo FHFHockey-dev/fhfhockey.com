@@ -88,10 +88,48 @@ export function expandBridgeForecasts(wire: unknown, inputs: Inputs): GameForeca
   return result;
 }
 
+/** Exact UTF-8 bytes of a value's JSON, as it travels in a request or response body. */
+export function jsonUtf8Bytes(value: unknown): number {
+  return new TextEncoder().encode(JSON.stringify(value) ?? "").byteLength;
+}
+
 /** Wire size of one forecast as the bridge budget counts it. */
 export function bridgeWireRowBytes(forecast: GameForecast): number {
-  return JSON.stringify([forecast.playerId, forecast.gameId, 0, forecast.expiresAt, forecast.stats, forecast.startProbability,
-    forecast.confirmedStart, forecast.conditionalStats ?? null]).length + 1;
+  return jsonUtf8Bytes([forecast.playerId, forecast.gameId, 0, forecast.expiresAt, forecast.stats, forecast.startProbability,
+    forecast.confirmedStart, forecast.conditionalStats ?? null]) + 1;
+}
+
+/** Whole planning response body, bridge wire included: inside Vercel's 4.5 MB response limit with room for headers. */
+export const PLANNING_RESPONSE_BYTE_BUDGET = 4_000_000;
+const trimmedNote = (kept: number, total: number) =>
+  `Interim projections were trimmed to the first ${kept} of ${total} player-games to fit the planning response; later games stay schedule-only.`;
+
+/**
+ * Fits a whole response body within `budget` exact UTF-8 bytes. `envelope` must embed the wire as given. When the full
+ * body is too large, it keeps the earliest wire rows (they are in game-time order) and says so in the wire's
+ * limitations; with no row fitting it sends no wire. Null when even the body without a wire does not fit.
+ */
+export function fitBridgeWire<T>(wire: BridgeForecastWire | null, envelope: (wire: BridgeForecastWire | null) => T, budget: number): T | null {
+  const full = envelope(wire);
+  if (jsonUtf8Bytes(full) <= budget) return full;
+  if (wire && wire.rows.length > 1) {
+    const total = wire.rows.length, prefix = [0];
+    for (const row of wire.rows) prefix.push(prefix[prefix.length - 1] + jsonUtf8Bytes(row));
+    // Exact: each kept row adds its bytes and, after the first, a comma; the note likewise after any limitation.
+    const empty = jsonUtf8Bytes(envelope({ ...wire, rows: [] })) + (wire.limitations.length ? 1 : 0);
+    const size = (kept: number) => empty + jsonUtf8Bytes(trimmedNote(kept, total)) + prefix[kept] + kept - 1;
+    let low = 0, high = total - 1;
+    while (low < high) {
+      const mid = Math.ceil((low + high) / 2);
+      if (size(mid) <= budget) low = mid; else high = mid - 1;
+    }
+    if (low > 0) {
+      const fitted = envelope({ ...wire, limitations: [...wire.limitations, trimmedNote(low, total)], rows: wire.rows.slice(0, low) });
+      if (jsonUtf8Bytes(fitted) <= budget) return fitted;
+    }
+  }
+  const bare = envelope(null);
+  return jsonUtf8Bytes(bare) <= budget ? bare : null;
 }
 
 const PACKED_KEY = "bridgeForecastWire";

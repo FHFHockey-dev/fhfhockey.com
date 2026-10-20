@@ -3,7 +3,7 @@ import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import { candidateHorizonPoints } from "lib/rosterScheduleOptimizer/planning";
 import type { PlanningGame, PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_VERSION, loadForgeDailyBridgeForecasts, opponentTilts, teamWinProbability, type ForgeDailyBridgeInputs } from "./forgeDailyBridge";
-import { compactBridgeForecasts, expandBridgeForecasts, packPlanningSnapshots, unpackPlanningSnapshots } from "./bridgeForecastWire";
+import { compactBridgeForecasts, expandBridgeForecasts, fitBridgeWire, packPlanningSnapshots, unpackPlanningSnapshots, type BridgeForecastWire } from "./bridgeForecastWire";
 import { preservationJson } from "lib/rosterScheduleOptimizer/workspace";
 
 const now = new Date("2026-10-19T18:00:00Z");
@@ -320,5 +320,62 @@ describe("FORGE daily bridge", () => {
     const result = await loadForgeDailyBridgeForecasts(db as never, players, games, now, 20262027, Date.now() + 5000, policy);
     expect(runIdReads).toEqual(expected.length ? [expected, expected] : []);
     if (!expected.length) expect(result.limitations[0]).toContain("no successful FORGE run");
+  });
+
+  describe("fitting the full response envelope in exact UTF-8 bytes", () => {
+    const jsonUtf8Bytes = (value: unknown) => Buffer.byteLength(JSON.stringify(value), "utf8");
+    const wireOf = (rows: number, limitations = ["Interim FORGE projection."]): BridgeForecastWire => ({
+      version: "forge-daily-bridge-wire-v1", seasonId: 20262027, limitations,
+      runs: [["forge-daily-bridge-v1:r", "forge-daily-bridge-v1:r", "forge-daily-bridge-v1:abc", "2026-10-19T12:00:00.000Z", "2026-10-19T12:00:00.000Z"]],
+      rows: Array.from({ length: rows }, (_, index) => [`p${index}`, "2026020101", 0, "2026-10-20T23:00:00.000Z", { GOALS: 0.25, SHOTS: 2.5 }, null, false, null]) });
+    const envelopeWith = (metadata: unknown) => (wire: BridgeForecastWire | null) => ({ success: true, data: metadata, ...(wire ? { bridgeForecasts: wire } : {}) });
+    const rowsOnly = (wire: BridgeForecastWire) => wire.rows.reduce((sum, row) => sum + JSON.stringify(row).length + 1, 0);
+    const expectMaximalTrim = (wire: BridgeForecastWire, envelope: ReturnType<typeof envelopeWith>, budget: number) => {
+      const body = fitBridgeWire(wire, envelope, budget) as any;
+      expect(jsonUtf8Bytes(body)).toBeLessThanOrEqual(budget);
+      const kept = body.bridgeForecasts.rows.length;
+      expect(kept).toBeGreaterThan(0);
+      expect(body.bridgeForecasts.rows).toEqual(wire.rows.slice(0, kept));
+      expect(body.bridgeForecasts.limitations).toEqual([...wire.limitations,
+        `Interim projections were trimmed to the first ${kept} of ${wire.rows.length} player-games to fit the planning response; later games stay schedule-only.`]);
+      // One more row would not have fit.
+      const next = envelope({ ...wire, rows: wire.rows.slice(0, kept + 1), limitations: [...wire.limitations,
+        `Interim projections were trimmed to the first ${kept + 1} of ${wire.rows.length} player-games to fit the planning response; later games stay schedule-only.`] });
+      expect(jsonUtf8Bytes(next)).toBeGreaterThan(budget);
+      return body;
+    };
+
+    it("counts envelope metadata and wire limitations that a row-only tally leaves out", () => {
+      const wire = wireOf(60, Array.from({ length: 40 }, (_, index) => `Limitation ${index}: ${"metadata ".repeat(20)}`));
+      const envelope = envelopeWith({ evidence: { forge: { limitations: Array.from({ length: 50 }, () => "evidence ".repeat(20)) } } });
+      const budget = 20_000;
+      expect(rowsOnly(wire)).toBeLessThan(budget);
+      expect(jsonUtf8Bytes(envelope(wire))).toBeGreaterThan(budget);
+      expectMaximalTrim(wire, envelope, budget);
+    });
+
+    it("measures non-ASCII names in UTF-8 bytes, not string length", () => {
+      const wire = wireOf(80);
+      const envelope = envelopeWith({ players: Array.from({ length: 30 }, (_, index) => ({ id: String(index), name: "Žigmund Pálffy Ståhlberg Łukasz ".repeat(4) })) });
+      const budget = JSON.stringify(envelope(wire)).length;
+      expect(jsonUtf8Bytes(envelope(wire))).toBeGreaterThan(budget);
+      expectMaximalTrim(wire, envelope, budget);
+    });
+
+    it("keeps a full payload exactly at the limit and trims one byte past it", () => {
+      const wire = wireOf(100), envelope = envelopeWith({ players: [{ name: "Örjan Lindström" }] });
+      const exact = jsonUtf8Bytes(envelope(wire));
+      expect(fitBridgeWire(wire, envelope, exact)).toEqual(envelope(wire));
+      const body = expectMaximalTrim(wire, envelope, exact - 1);
+      expect(expandBridgeForecasts(body.bridgeForecasts, { players: [], games: [] })).toEqual([]);
+    });
+
+    it("drops the bridge when no row fits, and rejects an envelope that cannot fit at all", () => {
+      const wire = wireOf(5), envelope = envelopeWith({ players: [{ name: "Ведерников" }] });
+      const bare = jsonUtf8Bytes(envelope(null));
+      expect(fitBridgeWire(wire, envelope, bare)).toEqual(envelope(null));
+      expect(fitBridgeWire(wire, envelope, bare - 1)).toBeNull();
+      expect(fitBridgeWire(null, envelope, bare - 1)).toBeNull();
+    });
   });
 });

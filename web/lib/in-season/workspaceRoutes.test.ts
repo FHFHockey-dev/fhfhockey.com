@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { webcrypto } from "node:crypto";
 import { capturePreservation, defaultWorkspace, preservationChecksum, writeWorkspace } from "lib/rosterScheduleOptimizer/workspace";
 import { expandBridgeForecasts, packPlanningSnapshots, unpackPlanningSnapshots } from "lib/rosterScheduleData/bridgeForecastWire";
+import { WORKSPACE_SAVE_BYTE_BUDGET, WORKSPACE_TRANSPORT_BYTE_BUDGET } from "lib/in-season/workspaceSchema";
 
 const state = vi.hoisted(() => ({
   userId: "owner-a", rows: [] as any[], capabilities: [] as string[],
@@ -250,5 +251,71 @@ describe("owner preservation route", () => {
     const { original, params, backup, proof } = await prepare(true); expect(proof.accountSaveAllowed).toBe(false);
     const save = res(); await workspaceHandler(req("PUT", { workspace: original, snapshot: null, expectedVersion: null }, { ...params, preservation: "write", receipt: backup.remote.receiptId }), save); expect(save.statusCode).toBe(409); expect(state.rows).toEqual([]);
     const missing = res(); await workspaceHandler(req("GET", undefined, { ...params, preservation: "verify", receipt: "unknown-runtime-receipt" }), missing); expect(missing.statusCode).toBe(409); expect(state.writes).toEqual([]);
+  });
+});
+
+describe("workspace transport in exact UTF-8 bytes", () => {
+  // Measured independently of the route: Vercel caps request and response bodies at 4.5 MB.
+  const utf8 = (value: unknown) => Buffer.byteLength(JSON.stringify(value), "utf8");
+  const SAVE_BUDGET = 3_996_000, TRANSPORT_BUDGET = 4_000_000;
+  const noted = (note: string, ctx = context) => ({ ...snapshot, context: ctx, players: [{ id: "p1", nhlId: null, name: "Pálffy", teamAbbreviation: null,
+    eligiblePositions: [], playerClass: "skater", availability: "free_agent", ownership: null, canDrop: null, holdValue: null,
+    reserveEligibility: [], injury: { status: "IR", label: "IR", note } }] });
+  const body = (note: string) => ({ workspace, snapshot: noted(note), expectedVersion: null });
+  const ascii = (bytes: number) => body("a".repeat(bytes - utf8(body(""))));
+  beforeEach(() => { state.capabilities = ["rso_account_save"]; });
+
+  it("uses a save budget that leaves the response wrapper inside the transport budget", () => {
+    expect([WORKSPACE_SAVE_BYTE_BUDGET, WORKSPACE_TRANSPORT_BYTE_BUDGET]).toEqual([SAVE_BUDGET, TRANSPORT_BUDGET]);
+  });
+
+  it("saves a packed body exactly at the save budget and sends it back inside the transport budget", async () => {
+    const sent = ascii(SAVE_BUDGET);
+    expect(utf8(sent)).toBe(SAVE_BUDGET);
+    const saved = res(); await workspaceHandler(req("PUT", sent), saved);
+    expect(saved.statusCode).toBe(200);
+    expect(utf8(saved.body)).toBeLessThanOrEqual(TRANSPORT_BUDGET);
+    const loaded = res(); await workspaceHandler(req("GET"), loaded);
+    expect(loaded.statusCode).toBe(200);
+    expect(utf8(loaded.body)).toBeLessThanOrEqual(TRANSPORT_BUDGET);
+  });
+
+  it("rejects a save one byte past the budget before writing anything", async () => {
+    const saved = res(); await workspaceHandler(req("PUT", ascii(SAVE_BUDGET + 1)), saved);
+    expect(saved.statusCode).toBe(413);
+    expect(saved.body.error.code).toBe("workspace_too_large");
+    expect(state.rows).toEqual([]);
+  });
+
+  it("counts non-ASCII text in UTF-8 bytes, not string length", async () => {
+    const sent = body("é".repeat(Math.ceil((SAVE_BUDGET - utf8(body(""))) / 2) + 1));
+    expect(JSON.stringify(sent).length).toBeLessThanOrEqual(SAVE_BUDGET);
+    expect(utf8(sent)).toBeGreaterThan(SAVE_BUDGET);
+    const saved = res(); await workspaceHandler(req("PUT", sent), saved);
+    expect(saved.statusCode).toBe(413);
+    expect(state.rows).toEqual([]);
+  });
+
+  it("refuses to send a stored workspace the platform would cut off, with a clear error", async () => {
+    state.rows = [{ ...savedRow("owner-a"), snapshot: noted("ø".repeat(2_100_000)) }];
+    const loaded = res(); await workspaceHandler(req("GET"), loaded);
+    expect(loaded.statusCode).toBe(503);
+    expect(loaded.body.error.code).toBe("workspace_too_large");
+    expect(utf8(loaded.body)).toBeLessThan(1_000);
+  });
+
+  it("counts preservation responses, which carry the row twice", async () => {
+    const original = defaultWorkspace(new Date("2026-10-01T12:00:00Z"));
+    original.context = { ...original.context, provider: "yahoo", leagueId: "league", teamId: "team", timeZone: "America/New_York" };
+    const big = noted("a".repeat(2_200_000), original.context);
+    state.rows = [{ id: "record-a", user_id: "owner-a", provider: "yahoo", season_id: original.context.seasonId, league_id: "league", team_id: "team",
+      start_date: original.context.startDate, end_date: original.context.endDate, lock_version: 2, workspace: original, snapshot: big, updated_at: "2026-10-01T12:30:00Z" }];
+    const { provider, leagueId, teamId, startDate, endDate } = original.context;
+    const plain = res(); await workspaceHandler(req("GET", undefined, { provider, seasonId: String(original.context.seasonId), leagueId, teamId, startDate, endDate }), plain);
+    expect(plain.statusCode).toBe(200);
+    expect(utf8(plain.body)).toBeLessThanOrEqual(TRANSPORT_BUDGET);
+    const read = res(); await workspaceHandler(req("GET", undefined, { ...original.context, seasonId: String(original.context.seasonId), preservation: "read" }), read);
+    expect(read.statusCode).toBe(503);
+    expect(read.body.error.code).toBe("workspace_too_large");
   });
 });
