@@ -821,6 +821,33 @@ describe("planning engine", () => {
     expect(evaluatePlan(data, intent, "agp", [drop]).legal).toBe(false);
     expect(evaluatePlan(data, intent, "agp", [{ ...drop, at: "2026-11-02T05:00:00Z", effectiveAt: "2026-11-02T05:00:00Z" }]).legal).toBe(true);
   });
+  it("holds a daily slot lock past puck drop until the next league-local midnight", () => {
+    const data = snapshot();
+    data.players[0].reserveEligibility = ["IR"];
+    data.rules.rosterSlots.IR = 1;
+    // a's 10-05 game starts at 20:00Z and the provider has locked him in C#1 for that day.
+    data.lockedAssignments = [{ date: "2026-10-05", playerId: "a", slotId: "C#1" }];
+    const moves = (at: string) => [
+      { id: "drop", type: "drop" as const, playerId: "a", at, effectiveAt: at, conditional: false, dependsOn: [] },
+      { id: "swap", type: "add" as const, playerId: "c", dropPlayerId: "a", at, effectiveAt: at, conditional: true, dependsOn: [] },
+      { id: "reserve", type: "reserve" as const, playerId: "a", reservePosition: "IR" as const, at, effectiveAt: at, conditional: false, dependsOn: [] },
+    ];
+    const legal = (step: ReturnType<typeof moves>[number]) => { const timeline = buildTimeline(data, intent, [step]); timeline.at(step.effectiveAt); return timeline.legal; };
+    for (const at of ["2026-10-05T20:00:00Z", "2026-10-05T21:00:00Z", "2026-10-05T23:59:59Z"]) for (const step of moves(at)) expect(legal(step), `${step.id} at ${at}`).toBe(false);
+    for (const step of moves("2026-10-06T00:00:00Z")) expect(legal(step), `${step.id} at midnight`).toBe(true);
+  });
+  it("holds a daily slot lock until the New York midnight after DST ends", () => {
+    const data = snapshot();
+    data.context.timeZone = "America/New_York";
+    data.context.asOf = "2026-10-31T00:00:00Z";
+    data.games = [{ ...data.games[0], id: "A-nov1", date: "2026-11-01", startsAt: "2026-11-01T23:00:00Z" }];
+    data.forecasts = [];
+    data.lockedAssignments = [{ date: "2026-11-01", playerId: "a", slotId: "C#1" }];
+    const drop = (at: string) => { const timeline = buildTimeline(data, intent, [{ id: "drop", type: "drop", playerId: "a", at, effectiveAt: at, conditional: false, dependsOn: [] }]); timeline.at(at); return timeline.legal; };
+    // 23:59 EST on Nov 1 is still the locked day; a fixed EDT offset would have released him at 04:00Z.
+    expect(drop("2026-11-02T04:59:00Z")).toBe(false);
+    expect(drop("2026-11-02T05:00:00Z")).toBe(true);
+  });
   it("combines ratio components and reports missing forecasts without zeros", () => {
     const data = snapshot();
     data.rules.scoring = { mode: "categories", weights: {}, categories: [{ key: "pct", direction: "higher", numerator: "made", denominator: "attempts" }] };
@@ -1716,6 +1743,22 @@ describe("injured players", () => {
     data.roster = data.roster.filter(entry => entry.playerId !== "d");
     expect(proposals(data).flat().some(step => step.type === "reserve" && step.playerId === "b")).toBe(true);
   });
+
+  it("keeps a provider-locked injured starter in his slot without valuing or counting the start", () => {
+    const data = snapshot();
+    data.players = data.players.map(row => row.id === "b" ? { ...row, injury: { status: "O", label: "Out", note: null } } : row);
+    data.lockedAssignments = [{ date: "2026-10-05", playerId: "b", slotId: "C#1" }];
+    const result = evaluatePlan(data, intent, "outcome", [], false);
+    expect(result.legal).toBe(true);
+    expect(result.limitations.some(line => line.startsWith("Locked assignment"))).toBe(false);
+    // b holds C#1 on 10-05, so a cannot take it; on 10-06 (no lock) a starts.
+    expect(result.assignments.map(row => `${row.date}:${row.playerId}@${row.slotId}${row.locked ? ":locked" : ""}`))
+      .toEqual(["2026-10-05:b@C#1:locked", "2026-10-06:a@C#1"]);
+    // Only a's 10-06 game is a remaining start; b's projection adds nothing.
+    expect(result.activeGames).toBe(1);
+    expect(result.projectedValue).toBe(1);
+    expect(result.forecastInputs?.some(row => row.playerId === "b")).toBe(false);
+  });
 });
 
 
@@ -1748,6 +1791,12 @@ describe("games already under way", () => {
     expect(locked.limitations.some(line => line.startsWith("Locked assignment"))).toBe(false);
     // Benched by the provider: the slot is open for the later game.
     expect(today(evaluatePlan(underway(undefined, [{ date: "2026-10-05", playerId: "a", slotId: null }]), intent, "agp", [], false))).toEqual(["b@C#1"]);
+    // Provider-locked while listed out: he still holds the slot.
+    const out = underway(undefined, [{ date: "2026-10-05", playerId: "a", slotId: "C#1" }]);
+    out.players = out.players.map(row => row.id === "a" ? { ...row, injury: { status: "IR", label: "Injured Reserve", note: null } } : row);
+    const held = evaluatePlan(out, intent, "agp", [], false);
+    expect(held.legal).toBe(true);
+    expect(today(held)).toEqual(["a@C#1:locked"]);
   });
 
   it("still shows today's locked lineup once every game today has started", () => {

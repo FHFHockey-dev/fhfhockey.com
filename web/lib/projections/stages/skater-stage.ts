@@ -3065,12 +3065,10 @@ export async function runPerGameSkaterStage(args: {
         player_id: playerId,
         team_id: teamId,
         opponent_team_id: opponentTeamId,
-        proj_toi_es_seconds: Number(
-          (p.toiEs * teamHorizonTotalScalar).toFixed(3),
-        ),
-        proj_toi_pp_seconds: Number(
-          (p.toiPp * teamHorizonTotalScalar).toFixed(3),
-        ),
+        // Integer columns: horizon scalars (decay, rest) make the scaled
+        // seconds fractional for horizonGames > 1, so round to whole seconds.
+        proj_toi_es_seconds: Math.round(p.toiEs * teamHorizonTotalScalar),
+        proj_toi_pp_seconds: Math.round(p.toiPp * teamHorizonTotalScalar),
         proj_toi_pk_seconds: null,
         proj_shots_es: Number((shotsEs * teamHorizonTotalScalar).toFixed(3)),
         proj_shots_pp: Number((shotsPp * teamHorizonTotalScalar).toFixed(3)),
@@ -3253,11 +3251,12 @@ export async function runPerGameSkaterStage(args: {
       game_id: game.id,
       team_id: teamId,
       opponent_team_id: opponentTeamId,
-      proj_toi_es_seconds: Number(
-        (teamTotals.toiEsSeconds * teamHorizonTotalScalar).toFixed(3),
+      // Integer columns: round the horizon-scaled seconds (see player rows).
+      proj_toi_es_seconds: Math.round(
+        teamTotals.toiEsSeconds * teamHorizonTotalScalar,
       ),
-      proj_toi_pp_seconds: Number(
-        (teamTotals.toiPpSeconds * teamHorizonTotalScalar).toFixed(3),
+      proj_toi_pp_seconds: Math.round(
+        teamTotals.toiPpSeconds * teamHorizonTotalScalar,
       ),
       proj_toi_pk_seconds: null,
       proj_shots_es: Number(

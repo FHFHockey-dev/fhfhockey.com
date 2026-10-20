@@ -68,11 +68,8 @@ export function buildTimeline(snapshot: PlanningSnapshot, intent: PlanIntent, st
     const lockMidnight = time(zonedMidnight(lock.date, snapshot.context.timeZone));
     const period = snapshot.rules.lineupMode === "weekly" ? snapshot.rules.lineupPeriods?.find(item => time(item.start) <= lockMidnight && lockMidnight < time(item.end)) : null;
     if (period?.lockAt && time(step.effectiveAt) >= time(period.lockAt) && time(step.effectiveAt) < time(period.end)) return true;
-    if (lock.date < localDate(step.effectiveAt, snapshot.context.timeZone)) return false;
-    const player = snapshot.players.find(candidate => candidate.id === playerId);
-    const game = snapshot.games.find(candidate => candidate.date === lock.date && candidate.teamAbbreviation === player?.teamAbbreviation);
-    const cutoff = lock.slotId && game?.startsAt ? game.startsAt : nextLocalMidnight(lock.date, snapshot.context.timeZone);
-    return lock.slotId && game?.startsAt ? time(step.effectiveAt) <= time(cutoff) : time(step.effectiveAt) < time(cutoff);
+    // A daily provider lock (slot or bench) holds through the locked day, past puck drop, until the next league-local midnight.
+    return time(step.effectiveAt) < time(nextLocalMidnight(lock.date, snapshot.context.timeZone));
   });
   const apply = (step: PlanStep) => {
     const player = snapshot.players.find(candidate => candidate.id === step.playerId);

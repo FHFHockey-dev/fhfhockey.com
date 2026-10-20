@@ -6,6 +6,7 @@ import { computeShotsFromRate } from "./utils/number-utils";
 import { runPerGameSkaterStage } from "./stages/skater-stage";
 import { resolveSkaterRolloutConfig } from "./skaterRollout";
 import { completeBoardSkaterStatsFromProjection } from "./starterBoardScoring";
+import { buildSequentialHorizonScalarsFromDates } from "./utils/date-utils";
 
 const producer = vi.hoisted(() => ({
   roster: (teamId: number) => Array.from({ length: 18 }, (_, index) => teamId * 100 + index + 1),
@@ -368,5 +369,48 @@ describe("native skater-stage accounting integration", () => {
       }
     }
     expect(playerPredictionOutputRows).toHaveLength(36);
+  });
+
+  it("writes whole seconds to the integer TOI columns for a multi-game horizon", async () => {
+    producer.playerWrites.mockClear();
+    producer.teamWrites.mockClear();
+    producer.ppLine = { goalsPp: 0.1114, assistsPp: 0.2004 };
+    const asOfDate = "2026-10-07";
+    const cached = <T>(value: T) => new Map([10, 11].map(teamId => [`${teamId}:${asOfDate}`, value]));
+    // Rest gaps of 2, 2, 4 and 2 days sum to 1 + 0.985 + 0.97 + 0.985 + 0.94 = 4.88,
+    // the scalar behind production's 2026-10-20 "5704.72" (1169 s x 4.88).
+    const scalars = buildSequentialHorizonScalarsFromDates(["2026-10-07", "2026-10-09", "2026-10-11", "2026-10-15", "2026-10-17"], 5);
+    expect(scalars.reduce((sum, value) => sum + value, 0)).toBeCloseTo(4.88, 9);
+    await runPerGameSkaterStage({
+      seasonBootstrap: true, asOfDate, runId: "synthetic-horizon-toi", horizonGames: 5,
+      game: { id: 2026020002, date: asOfDate, homeTeamId: 10, awayTeamId: 11 },
+      deadlineMs: Date.now() + 30_000, currentSeasonId: 20262027,
+      skaterRollout: resolveSkaterRolloutConfig("baseline"),
+      teamAbbreviationById: new Map(), playerAvailabilityMultiplier: new Map(), availabilityEventByPlayer: new Map(), roleEventByPlayer: new Map(),
+      goalieOverrideByTeamId: new Map(), activeRosterSkaterIdsByTeamId: new Map([10, 11].map(id => [id, producer.roster(id)])),
+      teamHorizonScalarsCache: cached(scalars), teamSkaterRoleHistoryCache: cached(new Map()),
+      teamShotsByTeamId: new Map(), teamGoalsByTeamId: new Map(), fallbackGoalieByTeamId: new Map([[10, null], [11, null]]),
+      teamGoalieStarterContextCache: cached({ startsByGoalie: new Map(), lastPlayedDateByGoalie: new Map(), totalGames: 0,
+        previousGameDate: null, previousGameStarterGoalieId: null }),
+      teamDefensiveEnvironmentCache: new Map(), teamOffenseEnvironmentCache: new Map(), teamRestDaysCache: cached(null),
+      // A 2999 s PP average leaves a 15001 s ES target, so the team total is fractional too.
+      teamStrengthPriorCache: cached(null), teamStrengthCache: cached({ toiEsSecondsAvg: 15000, toiPpSecondsAvg: 2999, shotsEsAvg: 36, shotsPpAvg: 18 }),
+      teamFiveOnFiveProfileCache: cached(null), teamNstExpectedGoalsCache: cached(null), teamLineComboGoaliePriorCache: cached(new Map()),
+      currentTeamGoalieIdsCache: cached(new Set()), playerPropContextByGamePlayerKey: new Map(), playerPredictionOutputRows: [], modelMarketFlagRows: [],
+      goalieCandidates: [], learningCounters: { players: 0, goalRecent: 0, assistRecent: 0 }, metrics: { data_quality: {}, warnings: [] },
+      dailyBoardEvidence: { informationCutoffAt: evidenceCutoffAt, assertions: [], conflicts: [] },
+    });
+    const players = producer.playerWrites.mock.calls.flatMap(call => call[0] as Array<Record<string, any>>);
+    const teams = producer.teamWrites.mock.calls.map(call => call[0] as Record<string, any>);
+    expect(players.length).toBeGreaterThan(0);
+    expect(teams).toHaveLength(2);
+    for (const row of [...players, ...teams]) {
+      expect(row.horizon_games).toBe(5);
+      expect(Number.isInteger(row.proj_toi_es_seconds)).toBe(true);
+      expect(Number.isInteger(row.proj_toi_pp_seconds)).toBe(true);
+      expect(row.proj_toi_pk_seconds).toBeNull();
+    }
+    // Still the horizon total: the per-game ES target times the scalar sum, rounded.
+    expect(teams.map(team => team.proj_toi_es_seconds)).toEqual([73205, 73205]);
   });
 });

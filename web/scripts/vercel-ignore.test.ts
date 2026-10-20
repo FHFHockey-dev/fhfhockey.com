@@ -55,9 +55,20 @@ describe("Vercel project path filters", () => {
     expect(statuses(cwd, previous)).toEqual(expected);
   });
 
-  it.each(["", "missing-commit"])("builds when previous history is unavailable: %s", previous => {
+  it("builds every project when no previous deployment SHA is given", () => {
     const { cwd } = fixture("AGENTS.md");
-    expect(statuses(cwd, previous)).toEqual([1, 1, 1]);
+    expect(statuses(cwd, "")).toEqual([1, 1, 1]);
+  });
+
+  // A rarely-built project's previous SHA can fall outside Vercel's shallow
+  // clone. cms and functions then compare the tip commit; web still builds.
+  it.each([
+    ["AGENTS.md", [1, 0, 0]],
+    ["cms/schemas/example.ts", [1, 1, 0]],
+    ["functions/api/example.py", [1, 0, 1]],
+  ])("compares the tip commit when the previous SHA is outside the clone: %s", (path, expected) => {
+    const { cwd } = fixture(path as string);
+    expect(statuses(cwd, "missing-commit")).toEqual(expected);
   });
 
   it("retains the legacy root quarantine", () => {

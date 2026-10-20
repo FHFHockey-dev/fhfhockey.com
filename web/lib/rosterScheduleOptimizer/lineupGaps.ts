@@ -1,5 +1,6 @@
 import { candidatePlanForSort, type CandidateComparison, type CandidatePlan } from "./candidatePlanMetrics";
 import { contributionLedger } from "./contributionLedger";
+import { providerListsOut } from "./planning";
 import { canEligibilityOccupySlot, normalizeEligibility } from "./eligibility";
 import { expandActiveSlots } from "./slots";
 import type { PlanEvaluation, PlanIntent, PlanningSnapshot } from "./planningTypes";
@@ -46,7 +47,8 @@ export function lineupGapReport(snapshot: PlanningSnapshot, intent: PlanIntent, 
   const ledger = contributionLedger(snapshot, baseline, { ...intent, steps: [] });
   const players = new Map(snapshot.players.map(player => [player.id, player]));
   const drop = snapshot.roster.filter(row => !RESERVE.has(row.position)).map(row => players.get(row.playerId))
-    .filter(player => player?.canDrop === true && !intent.protectedPlayerIds.includes(player.id))
+    // Same no-auto-drop rule as the planner: a player listed out projects nothing now, which says nothing of his value on return.
+    .filter(player => player?.canDrop === true && !providerListsOut(player) && !intent.protectedPlayerIds.includes(player.id))
     .map(player => ({ player: player!, contribution: ledger.get(player!.id) }))
     .sort((a, b) => nullsLast(points ? a.contribution?.projectedPoints ?? null : a.contribution?.activeGames ?? null,
       points ? b.contribution?.projectedPoints ?? null : b.contribution?.activeGames ?? null)
