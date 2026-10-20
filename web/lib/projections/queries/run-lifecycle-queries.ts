@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";
 
 import supabase from "lib/supabase/server";
@@ -22,6 +23,16 @@ export const RUN_RESUME_MAX_AGE_MS = 2 * 60 * 60 * 1000;
 // The lease outlives the invocation deadline, so a run whose invocation was
 // killed frees up shortly after the kill.
 export const RUN_LEASE_GRACE_MS = 60_000;
+// Quiescent-only takeover. A run its owner released (every write awaited, then
+// `released_by` stored) is adopted at once. A run whose owner stopped without
+// releasing it is adopted only after its lease has been expired for the grace.
+// The owner sends no output write within the safety margin before its lease
+// expires, so a write it sent would have to stay in flight for margin + grace
+// to land after a takeover. That bounds, but cannot prove, quiescence: this is
+// not crash safety. It also assumes invocation clocks agree to well within the
+// margin.
+export const RUN_WRITE_SAFETY_MARGIN_MS = 30_000;
+export const RUN_TAKEOVER_GRACE_MS = 2 * 60_000;
 
 type RunResumeState = {
   version: typeof RUN_RESUME_VERSION;
@@ -30,12 +41,15 @@ type RunResumeState = {
   lease_expires_at: string;
   completed_game_ids: number[];
   invocations: number;
+  // The owner that released the lease after its last write settled.
+  released_by?: string | null;
 };
 
 export type ForgeRunClaim = {
   runId: string;
   scopeKey: string;
   leaseOwner: string;
+  leaseExpiresAt: string;
   resumed: boolean;
   invocations: number;
   completedGameIds: number[];
@@ -136,7 +150,9 @@ export function readRunResumeState(metrics: Json | null): RunResumeState | null 
       .filter(Number.isSafeInteger),
     invocations: Number.isSafeInteger(resume.invocations)
       ? Number(resume.invocations)
-      : 1
+      : 1,
+    released_by:
+      typeof resume.released_by === "string" ? resume.released_by : null
   };
 }
 
@@ -149,6 +165,15 @@ export function isRunLeaseActive(
   if (!resume) return !isRunningRunStale(row, nowMs, RUN_ACTIVE_WINDOW_MS);
   const expiresAtMs = Date.parse(resume.lease_expires_at);
   return Number.isFinite(expiresAtMs) && expiresAtMs > nowMs;
+}
+
+/** Its owner released it, or its lease has been expired past the takeover grace. */
+function isRunQuiescent(row: ForgeRunLifecycleRow, nowMs: number) {
+  const resume = readRunResumeState(row.metrics);
+  if (!resume) return false;
+  if (resume.released_by === resume.lease_owner) return true;
+  const expiresAtMs = Date.parse(resume.lease_expires_at);
+  return Number.isFinite(expiresAtMs) && nowMs >= expiresAtMs + RUN_TAKEOVER_GRACE_MS;
 }
 
 /** A paused resumable run waits for its next invocation instead of being failed. */
@@ -198,7 +223,8 @@ async function readRunningRuns(asOfDate: string) {
 function activeRunError(
   asOfDate: string,
   activeRow: ForgeRunLifecycleRow,
-  nowMs: number
+  nowMs: number,
+  state = "active"
 ) {
   const activeAgeMs = getRunActivityAgeMs(activeRow, nowMs);
   const activeMinutes =
@@ -206,7 +232,7 @@ function activeRunError(
       ? "unknown"
       : `${Math.max(1, Math.round(activeAgeMs / 60_000))}m`;
   const error = new Error(
-    `Projection run already active for ${asOfDate} (run ${activeRow.run_id}, last activity ${activeMinutes} ago).`
+    `Projection run already ${state} for ${asOfDate} (run ${activeRow.run_id}, last activity ${activeMinutes} ago).`
   ) as Error & {
     code?: string;
     statusCode?: number;
@@ -273,6 +299,7 @@ export async function claimResumableRun(
   const activeRow = rows.find((row) => isRunLeaseActive(row, nowMs));
   const offRelease = isOffReleaseGitSha(currentRunGitSha());
   let candidate: ForgeRunLifecycleRow | null = null;
+  let settling: ForgeRunLifecycleRow | null = null;
 
   for (const row of rows) {
     if (isRunLeaseActive(row, nowMs)) continue;
@@ -282,8 +309,10 @@ export async function claimResumableRun(
       // invocation's work under the other's git_sha.
       if (readRunResumeState(row.metrics)?.scope_key !== args.scopeKey
         || isOffReleaseGitSha(row.git_sha) !== offRelease) continue;
-      if (!candidate) {
-        candidate = row;
+      if (!candidate && !settling) {
+        // An unreleased run may still have a write in flight: wait it out.
+        if (isRunQuiescent(row, nowMs)) candidate = row;
+        else settling = row;
         continue;
       }
     }
@@ -291,6 +320,7 @@ export async function claimResumableRun(
   }
 
   if (activeRow) throw activeRunError(asOfDate, activeRow, nowMs);
+  if (settling) throw activeRunError(asOfDate, settling, nowMs, "settling");
 
   const leaseOwner = randomUUID();
   const previous = candidate ? readRunResumeState(candidate.metrics) : null;
@@ -299,7 +329,8 @@ export async function claimResumableRun(
       ...previous,
       lease_owner: leaseOwner,
       lease_expires_at: args.leaseExpiresAt,
-      invocations: previous.invocations + 1
+      invocations: previous.invocations + 1,
+      released_by: null
     };
     const priorMetrics = candidate.metrics as JsonObject;
     const { data, error } = await supabase
@@ -311,6 +342,7 @@ export async function claimResumableRun(
       .eq("run_id", candidate.run_id)
       .eq("status", "running")
       .eq("metrics->resume->>lease_owner", previous.lease_owner)
+      .eq("metrics->resume->>lease_expires_at", previous.lease_expires_at)
       .select("run_id");
     if (error) throw error;
     if (!data?.length) throw activeRunError(asOfDate, candidate, nowMs);
@@ -318,6 +350,7 @@ export async function claimResumableRun(
       runId: candidate.run_id,
       scopeKey: args.scopeKey,
       leaseOwner,
+      leaseExpiresAt: args.leaseExpiresAt,
       resumed: true,
       invocations: resume.invocations,
       completedGameIds: previous.completed_game_ids,
@@ -331,12 +364,14 @@ export async function claimResumableRun(
     lease_owner: leaseOwner,
     lease_expires_at: args.leaseExpiresAt,
     completed_game_ids: [],
-    invocations: 1
+    invocations: 1,
+    released_by: null
   };
   return {
     runId: await insertRunningRun(asOfDate, { resume }),
     scopeKey: args.scopeKey,
     leaseOwner,
+    leaseExpiresAt: args.leaseExpiresAt,
     resumed: false,
     invocations: 1,
     completedGameIds: [],
@@ -344,10 +379,20 @@ export async function claimResumableRun(
   };
 }
 
+function runLeaseLostError(runId: string, reason: string) {
+  const lost = new Error(
+    `Projection run ${runId} is no longer held by this invocation (${reason}).`
+  ) as Error & { code?: string };
+  lost.code = "RUN_LEASE_LOST";
+  return lost;
+}
+
 /**
  * Stores progress (`running`) or the final status of a claimed run. Only the
  * lease owner may write; a lost lease throws `RUN_LEASE_LOST`. Omitting
- * `leaseExpiresAt` releases the lease, so the next invocation can resume.
+ * `leaseExpiresAt` releases the lease, so the next invocation can resume: the
+ * caller must have awaited every write first, since the release lets the next
+ * invocation take over at once.
  */
 export async function writeClaimedRun(
   claim: ForgeRunClaim,
@@ -366,7 +411,8 @@ export async function writeClaimedRun(
     lease_owner: claim.leaseOwner,
     lease_expires_at: args.leaseExpiresAt ?? nowIso,
     completed_game_ids: args.completedGameIds,
-    invocations: claim.invocations
+    invocations: claim.invocations,
+    released_by: args.leaseExpiresAt ? null : claim.leaseOwner
   };
   const { data, error } = await supabase
     .from("forge_runs")
@@ -380,24 +426,75 @@ export async function writeClaimedRun(
     .eq("metrics->resume->>lease_owner", claim.leaseOwner)
     .select("run_id");
   if (error) throw error;
-  if (!data?.length) {
-    const lost = new Error(
-      `Projection run ${claim.runId} is no longer held by this invocation.`
-    ) as Error & { code?: string };
-    lost.code = "RUN_LEASE_LOST";
-    throw lost;
+  if (!data?.length) throw runLeaseLostError(claim.runId, "lease taken over");
+  // A renewal moves this invocation's own write deadline too.
+  if (args.leaseExpiresAt) claim.leaseExpiresAt = args.leaseExpiresAt;
+}
+
+/** In memory: no output write within the safety margin of the lease's expiry. */
+function assertBeforeWriteDeadline(claim: ForgeRunClaim) {
+  if (!(Date.now() < Date.parse(claim.leaseExpiresAt) - RUN_WRITE_SAFETY_MARGIN_MS)) {
+    throw runLeaseLostError(claim.runId, "past its write deadline");
   }
+}
+
+/**
+ * Throws `RUN_LEASE_LOST` unless this invocation is before its write deadline
+ * and the stored run is still running under its lease, unreleased. Checked at
+ * game, stage and cleanup boundaries; single writes check only the deadline.
+ * A write already sent is not recalled (see the takeover grace).
+ */
+export async function assertClaimedRunWritable(claim: ForgeRunClaim) {
+  assertSupabase();
+  assertBeforeWriteDeadline(claim);
+  const { data, error } = await supabase
+    .from("forge_runs")
+    .select("status,resume:metrics->resume")
+    .eq("run_id", claim.runId)
+    .maybeSingle();
+  if (error) throw error;
+  const row = data as { status?: string; resume?: Json } | null;
+  const resume = isJsonObject(row?.resume ?? null) ? (row!.resume as JsonObject) : null;
+  if (
+    row?.status !== "running" ||
+    resume?.lease_owner !== claim.leaseOwner ||
+    resume?.released_by === claim.leaseOwner
+  ) {
+    throw runLeaseLostError(claim.runId, "lease taken over");
+  }
+}
+
+// The claim whose lease guards output writes in the current async context.
+const claimedRunWrites = new AsyncLocalStorage<ForgeRunClaim>();
+
+/** Runs `fn` with every guarded output write checked against `claim`'s lease. */
+export function runWithClaimedRunWrites<T>(claim: ForgeRunClaim, fn: () => Promise<T>) {
+  return claimedRunWrites.run(claim, fn);
+}
+
+/** Output writers call this before each write (no query); a no-op outside a claimed run. */
+export function assertRunWriteAllowed() {
+  const claim = claimedRunWrites.getStore();
+  if (claim) assertBeforeWriteDeadline(claim);
+}
+
+/** At game, stage and cleanup boundaries: re-confirms ownership in the database. */
+export async function assertRunStillOwned() {
+  const claim = claimedRunWrites.getStore();
+  if (claim) await assertClaimedRunWritable(claim);
 }
 
 /** Removes a paused run's rows for games it will project again. */
 export async function clearRunGameRows(runId: string, gameIds: number[]) {
   assertSupabase();
   if (gameIds.length === 0) return;
+  await assertRunStillOwned();
   for (const table of [
     "forge_player_projections",
     "forge_team_projections",
     "forge_goalie_projections"
   ] as const) {
+    assertRunWriteAllowed();
     const { error } = await supabase
       .from(table)
       .delete()

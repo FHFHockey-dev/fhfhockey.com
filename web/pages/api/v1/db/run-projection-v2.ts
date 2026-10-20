@@ -79,7 +79,10 @@ import { resolveLatestStartedSeasonIdForDate } from "lib/NHL/server";
 import { fetchRecentTeamLineCombinations } from "lib/projections/queries/line-combo-queries";
 import { classifyStoredPbpGames } from "lib/projections/pbpCompletenessServer";
 import { classifyStoredShiftChartStrengthGamesAgainstRawSource } from "lib/projections/shiftChartCompletenessServer";
-import { runProjectionV2ForDate } from "lib/projections/run-forge-projections";
+import {
+  runProjectionV2ForDate,
+  type RunProjectionV2Result,
+} from "lib/projections/run-forge-projections";
 import {
   LINE_COMBO_STALE_HARD_DAYS,
   LINE_COMBO_STALE_SOFT_DAYS,
@@ -286,6 +289,12 @@ type Result =
       preflight: PreflightSummary;
       observability: GoalieObservability;
       scanSummary: EndpointScanSummary;
+      postRun?: {
+        step: PostRunFailure["step"];
+        status: "failed";
+        blocking: false;
+        dependencyError: ReturnType<typeof normalizeDependencyError>;
+      };
       results?: Array<{
         asOfDate: string;
         runId: string;
@@ -908,6 +917,22 @@ function buildGoalieObservability(args: {
   };
 }
 
+type PostRunFailure = NonNullable<RunProjectionV2Result["postRunFailure"]>;
+
+/**
+ * A run that finalized succeeded keeps that outcome when a later step its rows
+ * do not depend on fails; the failure is reported as a non-blocking warning.
+ */
+function postRunFailureWarnings(
+  failures: Array<{ asOfDate: string; failure: PostRunFailure }>,
+): DataQualityWarning[] {
+  return failures.map(({ asOfDate, failure }) => ({
+    code: "post_run_step_failed",
+    message: `Run for ${asOfDate} succeeded; post-run step ${failure.step} failed (non-blocking): ${normalizeDependencyError(failure.message).message}`,
+    detail: normalizeDependencyError(failure.message).detail ?? undefined,
+  }));
+}
+
 function buildProjectionRunScanSummary(args: {
   status: EndpointScanSummary["status"];
   requestedDate: string;
@@ -1151,6 +1176,7 @@ async function handler(
         goalieRowsUpserted: number;
         timedOut: boolean;
       }> = [];
+      const rangePostRunFailures: Array<{ asOfDate: string; failure: PostRunFailure }> = [];
       for (const date of limitedRangeDates) {
         const rangePreflight = await runProjectionPreflightChecks(
           date,
@@ -1307,6 +1333,9 @@ async function handler(
           deadlineMs,
           horizonGames,
         });
+        if (out.postRunFailure) {
+          rangePostRunFailures.push({ asOfDate: date, failure: out.postRunFailure });
+        }
         results.push({
           asOfDate: date,
           runId: out.runId,
@@ -1352,17 +1381,28 @@ async function handler(
           dependencyContract,
           compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
           preflight,
-          observability: rangeObservability,
+          observability: {
+            ...rangeObservability,
+            dataQualityWarnings: [
+              ...rangeObservability.dataQualityWarnings,
+              ...postRunFailureWarnings(rangePostRunFailures),
+            ],
+          },
           scanSummary: buildProjectionRunScanSummary({
             status: chunkNextStartDate ? "partial" : "ready",
             requestedDate: endDate,
             activeDataDate: last?.asOfDate ?? asOfDate,
             blockingIssueCount: 0,
-            notes: chunkNextStartDate
-              ? [
-                  "Chunked range execution stopped before the requested end date.",
-                ]
-              : [],
+            notes: [
+              ...(chunkNextStartDate
+                ? [
+                    "Chunked range execution stopped before the requested end date.",
+                  ]
+                : []),
+              ...postRunFailureWarnings(rangePostRunFailures).map(
+                (warning) => warning.message,
+              ),
+            ],
             rowCounts: {
               gamesProcessed: results.reduce(
                 (sum, r) => sum + r.gamesProcessed,
@@ -1521,6 +1561,9 @@ async function handler(
         }),
       );
     }
+    const postRunWarnings = out.postRunFailure
+      ? postRunFailureWarnings([{ asOfDate, failure: out.postRunFailure }])
+      : [];
     return res.status(200).json(
       withTiming({
         success: true,
@@ -1540,12 +1583,33 @@ async function handler(
         dependencyContract,
         compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
         preflight,
-        observability: singleRunObservability,
+        observability: {
+          ...singleRunObservability,
+          dataQualityWarnings: [
+            ...singleRunObservability.dataQualityWarnings,
+            ...postRunWarnings,
+          ],
+        },
+        ...(out.postRunFailure
+          ? {
+              postRun: {
+                step: out.postRunFailure.step,
+                status: "failed" as const,
+                blocking: false as const,
+                dependencyError: normalizeDependencyError(
+                  out.postRunFailure.message,
+                ),
+              },
+            }
+          : {}),
         scanSummary: buildProjectionRunScanSummary({
           status: "ready",
           requestedDate: asOfDate,
           activeDataDate: asOfDate,
           blockingIssueCount: 0,
+          notes: postRunWarnings.length
+            ? postRunWarnings.map((warning) => warning.message)
+            : undefined,
           rowCounts: {
             gamesProcessed: out.gamesProcessed,
             playerRowsUpserted: out.playerRowsUpserted,

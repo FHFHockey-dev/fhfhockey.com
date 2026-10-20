@@ -262,6 +262,47 @@ describe("/api/v1/db/run-projection-v2", () => {
     expect(auditInsertMock.mock.calls[0]?.[0]?.status).toBe("continued");
   });
 
+  it("reports a succeeded run whose post-run snapshot save failed as succeeded, with a non-blocking warning", async () => {
+    vi.mocked(runProjectionV2ForDate).mockResolvedValueOnce({
+      runId: "run-3",
+      gamesProcessed: 6,
+      playerRowsUpserted: 216,
+      teamRowsUpserted: 12,
+      goalieRowsUpserted: 12,
+      timedOut: false,
+      postRunFailure: {
+        step: "save_input_snapshot",
+        message: "<!DOCTYPE html><html><title>fyhftlxokyjtpndbkfse.supabase.co | 520: Web server is returning an unknown error</title></html>",
+      },
+    });
+    const res = createMockRes();
+
+    await handler({ method: "GET", query: { date: "2026-10-20", bypassPreflight: "true" } } as any, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).not.toHaveProperty("error");
+    expect(res.body).toMatchObject({
+      success: true,
+      runId: "run-3",
+      gamesProcessed: 6,
+      termination: { state: "completed", resumeRequired: false },
+      postRun: {
+        step: "save_input_snapshot",
+        status: "failed",
+        blocking: false,
+        dependencyError: { classification: "html_upstream_response" },
+      },
+      observability: {
+        dataQualityWarnings: [expect.objectContaining({
+          code: "post_run_step_failed",
+          message: expect.stringContaining("Run for 2026-10-20 succeeded; post-run step save_input_snapshot failed (non-blocking)"),
+        })],
+      },
+      scanSummary: { status: "ready", blockingIssueCount: 0 },
+    });
+    expect(auditInsertMock.mock.calls[0]?.[0]?.status).toBe("success");
+  });
+
   it("keeps a non-resumable timeout as an unsuccessful 200", async () => {
     vi.mocked(runProjectionV2ForDate).mockResolvedValueOnce({
       runId: "run-2",

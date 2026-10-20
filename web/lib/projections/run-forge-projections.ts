@@ -249,7 +249,9 @@ import {
   clearRunGameRows,
   createRun,
   finalizeRun,
+  assertRunStillOwned,
   resumableRunLeaseExpiresAt,
+  runWithClaimedRunWrites,
   writeClaimedRun,
   type ForgeRunClaim,
 } from "./queries/run-lifecycle-queries";
@@ -401,10 +403,18 @@ export const projectionModelEnvironment = () => Object.fromEntries([
   "START_CHART_GAME_REVISIONS", "STARTER_BOARD_COMPUTE_ENABLED", "STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED",
 ].map((key) => [key, process.env[key] ?? null]));
 
+/**
+ * `postRunFailure`: the run finalized `succeeded` with its rows written, then a
+ * later step that its outputs do not depend on failed.
+ */
+export type RunProjectionV2Result = RunProjectionResult & {
+  postRunFailure?: { step: "save_input_snapshot"; message: string };
+};
+
 export async function runProjectionV2ForDate(
   asOfDate: string,
   opts?: RunProjectionOptions,
-): Promise<RunProjectionResult> {
+): Promise<RunProjectionV2Result> {
   assertSupabase();
   const decisionAsOf = opts?.decisionAsOf ?? new Date().toISOString();
   if (!Number.isFinite(Date.parse(decisionAsOf)) || Date.parse(decisionAsOf) > Date.now()) {
@@ -467,7 +477,11 @@ export async function runProjectionV2ForDate(
     verifyExecution({ phase: "reserved", runId });
     throw new Error("Local FORGE attempt already exists; reconcile its immutable evidence without recomputing.");
   }
-  if (!captureEnabled) return runProjectionCalculations(asOfDate, { ...opts, decisionAsOf }, runId, resumeClaim ?? undefined);
+  if (!captureEnabled) {
+    const calculate = () => runProjectionCalculations(asOfDate, { ...opts, decisionAsOf }, runId, resumeClaim ?? undefined);
+    // A claimed run re-checks its lease before every output write and cleanup.
+    return resumeClaim ? runWithClaimedRunWrites(resumeClaim, calculate) : calculate();
+  }
   try {
     verifyExecution({ phase: "reserved", runId });
     let issuedContexts: ForgeIssuedContextV1[] | undefined;
@@ -514,7 +528,16 @@ export async function runProjectionV2ForDate(
       outputHash: projectionWritesHash(capture.writes),
     };
     verifyExecution({ phase: "before_snapshot", runId });
-    const inputSnapshotId = await saveForgeInputSnapshot(snapshot);
+    let inputSnapshotId: string;
+    try {
+      inputSnapshotId = await saveForgeInputSnapshot(snapshot);
+    } catch (error) {
+      // The run already finalized succeeded. Without Starter Board computation
+      // nothing is published from this snapshot (it is replay evidence), so the
+      // run stands and the failure is reported instead of failing the run.
+      if (compute) throw error;
+      return { ...capture.result, postRunFailure: { step: "save_input_snapshot", message: getErrorMessage(error) } };
+    }
     let publishedGames = 0;
     if (compute && snapshot.horizonGames === 1 && snapshot.replayClassification === "captured_live") {
       verifyExecution({ phase: "before_publish", runId, inputSnapshotId });
@@ -811,6 +834,9 @@ async function runProjectionCalculations(
         timedOut = true;
         break gamesLoop;
       }
+      // Ownership is re-confirmed at each game and stage boundary (a no-op
+      // outside a claimed run); each write checks only the lease deadline.
+      await assertRunStillOwned();
       const pbpComplete = await hasCompleteStoredPbpGame(game.id);
       if (!pbpComplete) {
         metrics.data_quality.missing_pbp_games += 1;
@@ -924,6 +950,7 @@ async function runProjectionCalculations(
       }
 
       // Create goalie projections after both teams are projected so we can use opponent shots.
+      await assertRunStillOwned();
       const goalieStageResult = await runPerGameGoalieStage({
         seasonBootstrap: opts?.seasonBootstrap,
         dailyBoardEvidence: preflight.dailyBoardEvidence,
@@ -1083,6 +1110,7 @@ async function runProjectionCalculations(
       // Issued revisions use the FORGE rows. The optional analytics replacement
       // deletes prior sidecar rows, outside the fenced local transport contract.
       if (!opts?.localAttempt) {
+        await assertRunStillOwned();
         await persistPerGameAnalyticsOutputs({
           asOfDate,
           gameId: game.id,
