@@ -6,9 +6,12 @@ import { loadInSeasonAccess, requireInSeasonCapability } from "lib/in-season/ser
 import { contextSchema, saveWorkspaceSchema, workspaceQuerySchema } from "lib/in-season/workspaceSchema";
 import { isDraftProOwner } from "lib/draft-pro/ownerAccess";
 import { preservationJson, validatePreservation, workspaceContextKey, type WorkspacePreservation } from "lib/rosterScheduleOptimizer/workspace";
+import { packPlanningSnapshots, unpackPlanningSnapshots } from "lib/rosterScheduleData/bridgeForecastWire";
 import serviceRoleClient from "lib/supabase/server";
 
 export const config = { api: { bodyParser: { sizeLimit: "10mb" } } };
+// Interim bridge projections travel packed in both directions; stored and validated snapshots are always complete.
+const ok = (res: NextApiResponse, body: unknown) => res.status(200).json(packPlanningSnapshots(body));
 
 const fail = (res: NextApiResponse, status: number, code: string, message: string) => res.status(status).json({ error: { code, message } });
 const select = "id,lock_version,workspace,snapshot,updated_at";
@@ -81,7 +84,7 @@ async function preserve(req: NextApiRequest, res: NextApiResponse, userId: strin
     if (payload(row) !== payload(receipt.original)) return fail(res, 409, "restore_required", "Restore the original account payload before resuming.");
     preservationReceipts.delete(id);
   }
-  if (req.method === "GET") return res.status(200).json({ data: output(row), preservation: {
+  if (req.method === "GET") return ok(res, { data: output(row), preservation: {
     principalId: userId, ownerVerified: true, contextKey: key, receiptId: id,
     ownedTeam: { leagueKey: league.external_league_key, teamKey: team.external_team_key },
     row, originalRowHash: hash(receipt.original), checksum: receipt.checksum, lastVersion: receipt.lastVersion,
@@ -107,7 +110,7 @@ async function preserve(req: NextApiRequest, res: NextApiResponse, userId: strin
   if (result.error) throw result.error;
   if (!result.data) return fail(res, 409, "version_conflict", "Concurrent account change rejected. Nothing was overwritten.");
   receipt.lastVersion = result.data.lock_version; receipt.lastPayload = payload(result.data);
-  return res.status(200).json({ data: output(result.data), preservation: { principalId: userId, contextKey: key, receiptId: id,
+  return ok(res, { data: output(result.data), preservation: { principalId: userId, contextKey: key, receiptId: id,
     checksum: receipt.checksum, restored: Boolean(restored), lastVersion: receipt.lastVersion,
     originalPayloadHash: hash({ workspace: receipt.original.workspace, snapshot: receipt.original.snapshot }) } });
 }
@@ -118,6 +121,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const user = await requireApiUser(req, res, { onUnauthorized: (message) => fail(res, 401, "authentication_required", message) });
   if (!user) return;
   try {
+    if (req.method === "PUT") req.body = unpackPlanningSnapshots(req.body);
     if (req.query.preservation !== undefined) return await preserve(req, res, user.id);
     // This table is created by the accompanying local migration, before generated types are refreshed.
     const db = serviceRoleClient as any;
@@ -125,7 +129,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const context = workspaceQuerySchema.parse({ ...req.query, seasonId: Number(req.query.seasonId) });
       const { data, error } = await contextFilter(db.from("in_season_workspaces").select(select), user.id, context).maybeSingle();
       if (error) throw error;
-      return res.status(200).json({ data: output(data) });
+      return ok(res, { data: output(data) });
     }
     const parsed = saveWorkspaceSchema.parse(req.body);
     const { provider, seasonId, leagueId, teamId, startDate, endDate } = parsed.workspace.context;
@@ -136,12 +140,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { data, error } = await db.from("in_season_workspaces").insert({ user_id: user.id, provider: context.provider, season_id: context.seasonId, league_id: context.leagueId, team_id: context.teamId, start_date: context.startDate, end_date: context.endDate, lock_version: 1, ...values }).select(select).single();
       if (error?.code === "23505") return fail(res, 409, "version_conflict", "This workspace was saved elsewhere. Reload before saving.");
       if (error) throw error;
-      return res.status(200).json({ data: output(data) });
+      return ok(res, { data: output(data) });
     }
     const { data, error } = await contextFilter(db.from("in_season_workspaces").update({ ...values, lock_version: parsed.expectedVersion + 1 }), user.id, context).eq("lock_version", parsed.expectedVersion).select(select).maybeSingle();
     if (error) throw error;
     if (!data) return fail(res, 409, "version_conflict", "This workspace changed elsewhere. Reload before saving.");
-    return res.status(200).json({ data: output(data) });
+    return ok(res, { data: output(data) });
   } catch (cause) {
     if (cause instanceof z.ZodError) return fail(res, 400, "invalid_request", cause.issues[0]?.message ?? "Invalid workspace.");
     const accessError = cause as { statusCode?: number; code?: string };

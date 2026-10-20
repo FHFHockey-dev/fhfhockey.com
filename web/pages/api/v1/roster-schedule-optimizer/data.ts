@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import serviceRoleClient from "lib/supabase/server";
 import { loadPlanningData, parsePlanningDataQuery } from "lib/rosterScheduleData/planning";
+import { compactBridgeForecasts } from "lib/rosterScheduleData/bridgeForecastWire";
 
 /** Public shared inputs. No league/account data or admin/research payloads. */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -11,7 +12,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const data = await loadPlanningData(serviceRoleClient, query, { forgeDailyBridge: true });
     res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=300");
-    return res.json({ success: true, data });
+    // Interim bridge projections travel compactly beside `data`; clients rebuild them exactly.
+    const bridge = compactBridgeForecasts(data.forecasts, data, query.seasonId);
+    return res.json({ success: true, data: { ...data, forecasts: bridge.forecasts }, ...(bridge.wire ? { bridgeForecasts: bridge.wire } : {}) });
   } catch {
     return res.status(503).json({ success: false, error: "Planning data is temporarily unavailable. Your saved manual workspace is preserved." });
   }

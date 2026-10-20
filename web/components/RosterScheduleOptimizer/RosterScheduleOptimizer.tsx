@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { expandBridgeForecasts, packPlanningSnapshots, unpackPlanningSnapshots } from "lib/rosterScheduleData/bridgeForecastWire";
 import { fromZonedTime } from "date-fns-tz";
 import { useAuth } from "contexts/AuthProviderContext";
 import { useRosterPlanning } from "hooks/useRosterPlanning";
@@ -168,7 +169,7 @@ export default function RosterScheduleOptimizer() {
   const [ownTeams, setOwnTeams] = useState<OwnTeam[]>([]);
   const [savedJournal] = useState(() => {
     try { const raw = typeof window === "undefined" ? null : sessionStorage.getItem(WORKSPACE_PRESERVATION_JOURNAL);
-      return { raw, value: raw ? JSON.parse(raw) as { backup: WorkspacePreservation; expected: PreservedKey[]; exported: boolean; restored: boolean } : null };
+      return { raw, value: raw ? unpackPlanningSnapshots(JSON.parse(raw)) as { backup: WorkspacePreservation; expected: PreservedKey[]; exported: boolean; restored: boolean } : null };
     } catch { return { raw: "unreadable", value: null }; }
   });
   const journalRaw = useRef(savedJournal.raw);
@@ -257,7 +258,7 @@ export default function RosterScheduleOptimizer() {
     const held = preservationRef.current;
     if (!held.backup) throw new Error("The original preservation backup is missing.");
     if (sessionStorage.getItem(WORKSPACE_PRESERVATION_JOURNAL) !== journalRaw.current) throw new Error("Preservation journal changed outside this writer.");
-    const raw = JSON.stringify({ backup: held.backup, expected: held.expected, exported: held.exported, restored: held.restored });
+    const raw = JSON.stringify(packPlanningSnapshots({ backup: held.backup, expected: held.expected, exported: held.exported, restored: held.restored }));
     sessionStorage.setItem(WORKSPACE_PRESERVATION_JOURNAL, raw); journalRaw.current = raw;
   };
   const persistLocal = useCallback((write: () => string | null | void) => {
@@ -391,7 +392,7 @@ export default function RosterScheduleOptimizer() {
     const explicitRead = scheduleReadRevision?.contextKey === contextKey ? scheduleReadRevision.token : null;
     if (explicitRead) params.set("readToken", explicitRead);
     trackedFetch(`/api/v1/roster-schedule-optimizer/data?${params}`, { signal: controller.signal, ...(explicitRead ? { cache: "no-store" as const } : {}) })
-      .then(async (response) => { const body = await response.json(); if (!response.ok || !body.success) throw new Error(requestErrorMessage(body.error, "Planning data unavailable.")); return body.data as PlanningData; })
+      .then(async (response) => { const body = await response.json(); if (!response.ok || !body.success) throw new Error(requestErrorMessage(body.error, "Planning data unavailable.")); const data = body.data as PlanningData; return { ...data, forecasts: [...data.forecasts, ...expandBridgeForecasts(body.bridgeForecasts, data)] }; })
       .then((next) => { if (controller.signal.aborted || preservationRef.current.phase !== "idle") return;
         if (sharedReadNotice.current?.contextKey === contextKey && sharedReadNotice.current.revision === noticeRevision.current) setNotice(null);
         sharedReadNotice.current = null;
@@ -451,7 +452,7 @@ export default function RosterScheduleOptimizer() {
     const { provider, seasonId, leagueId, teamId, startDate, endDate } = workspace.context;
     const params = new URLSearchParams({ provider, seasonId: String(seasonId), leagueId, teamId, startDate, endDate });
     authHeaders().then((headers) => { if (controller.signal.aborted) return null; return trackedFetch(`/api/v1/roster-schedule-optimizer/workspace?${params}`, { signal: controller.signal, headers }); })
-      .then(async (response) => response?.ok ? (await response.json()).data as AccountRecord | null : null)
+      .then(async (response) => response?.ok ? unpackPlanningSnapshots(await response.json()).data as AccountRecord | null : null)
       .then((saved) => { if (!controller.signal.aborted) setAccount(saved); }).catch(() => undefined);
     return () => controller.abort();
   }, [hydrated, accountKey, user?.id, networkSuspended, trackedFetch]);
@@ -492,7 +493,9 @@ export default function RosterScheduleOptimizer() {
       if (!response.ok || !body.success) throw new Error(requestErrorMessage(body.error, "Provider refresh failed."));
       const current = providerRef.current.context;
       if (controller.signal.aborted || userId !== providerRef.current.userId || requestKey !== workspaceContextKey(current)) return false;
-      const next = body.snapshot as PlanningSnapshot;
+      const provided = body.snapshot as PlanningSnapshot;
+      const next = provided && Array.isArray(provided.forecasts) && body.bridgeForecasts
+        ? { ...provided, forecasts: [...provided.forecasts, ...expandBridgeForecasts(body.bridgeForecasts, provided)] } : provided;
       if (preservationRef.current.backup && workspaceContextKey(next.context) !== preservationRef.current.backup.contextKey) {
         preservationRef.current.phase = "invalid"; setPreservation({ phase: "invalid", text: "Provider context differs from the admitted backup. The original plan was kept." });
         throw new Error("Provider context differs from the admitted backup.");
@@ -726,8 +729,8 @@ export default function RosterScheduleOptimizer() {
     if (backup) params.set("receipt", backup.remote.receiptId);
     const headers = await authHeaders();
     if (providerRef.current.userId !== userId || workspaceContextKey(providerRef.current.context) !== key) throw new Error("Preservation context changed before dispatch.");
-    const response = await fetch(`/api/v1/roster-schedule-optimizer/workspace?${params}`, { headers: { ...headers, "Content-Type": "application/json" }, ...(body ? { method: "PUT", body: JSON.stringify(body) } : {}) });
-    const result = await response.json();
+    const response = await fetch(`/api/v1/roster-schedule-optimizer/workspace?${params}`, { headers: { ...headers, "Content-Type": "application/json" }, ...(body ? { method: "PUT", body: JSON.stringify(packPlanningSnapshots(body)) } : {}) });
+    const result = unpackPlanningSnapshots(await response.json());
     if (providerRef.current.userId !== userId || workspaceContextKey(providerRef.current.context) !== key) throw new Error("Preservation response belongs to a retired context.");
     if (!response.ok) throw new Error(requestErrorMessage(result.error, "Preservation could not be verified."));
     if (result.preservation?.principalId !== userId || result.preservation?.contextKey !== key) throw new Error("Authenticated preservation binding does not match.");
@@ -939,8 +942,8 @@ export default function RosterScheduleOptimizer() {
       const headers = await authHeaders();
       if (!sameContext()) return;
       const suffix = backup ? `?preservation=write&receipt=${encodeURIComponent(backup.remote.receiptId)}` : "";
-      const response = await trackedFetch(`/api/v1/roster-schedule-optimizer/workspace${suffix}`, { method: "PUT", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ workspace: submittedWorkspace, snapshot, expectedVersion: account?.version ?? null }) });
-      const body = await response.json(); if (!sameContext()) return;
+      const response = await trackedFetch(`/api/v1/roster-schedule-optimizer/workspace${suffix}`, { method: "PUT", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify(packPlanningSnapshots({ workspace: submittedWorkspace, snapshot, expectedVersion: account?.version ?? null })) });
+      const body = unpackPlanningSnapshots(await response.json()); if (!sameContext()) return;
       if (response.status === 409) throw new Error("Another device saved this workspace. Your local plan is intact; review the other version before saving again.");
       if (!response.ok) throw new Error(requestErrorMessage(body.error, "Account save failed."));
       if (backup) {
