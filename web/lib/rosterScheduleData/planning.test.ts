@@ -420,7 +420,8 @@ describe("public RSO data boundary", () => {
     tables.roster_optimizer_team_games = [side, away];
     const query = { ...publicQuery, timeZone: "UTC" };
     const read = () => loadPlanningData(db as never, query, publicOptions);
-    expect((await read()).evidence.schedule.completeness).toBe("complete");
+    // A certified horizon always carries its oldest fetch as the observation time the planner rechecks (R5).
+    expect((await read()).evidence.schedule).toMatchObject({ completeness: "complete", asOf: "2026-10-10T09:00:00Z" });
     tables.roster_optimizer_team_games = [side];
     expect((await read()).evidence.schedule.completeness).toBe("partial");
     tables.roster_optimizer_team_games = [side, { ...away, fetched_at: "2026-10-10T10:00:00Z" }];

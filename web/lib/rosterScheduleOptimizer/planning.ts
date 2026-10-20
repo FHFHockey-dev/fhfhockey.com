@@ -498,6 +498,19 @@ function refineOutcomeLineup(
   return best;
 }
 
+/** The schedule reader's coverage witness lasts 36 hours from its oldest fetch (planningInputs, canonicalSchedule). */
+const SCHEDULE_WITNESS_TTL_MS = 36 * 3600000;
+/** Schedule admission reads the schedule's own observation clock, never the forecast/planning clock it is checked against.
+ * Only an observation that expired by planning time blocks. Legacy evidence without an observation time keeps the
+ * completeness-only behavior (the caller notes it), and a witness newer than the planning clock cannot have expired. */
+function scheduleAdmissionProblem(snapshot: PlanningSnapshot): string | null {
+  const schedule = snapshot.evidence.schedule;
+  if (schedule?.completeness !== "complete") return "Planning schedule coverage is incomplete or unknown.";
+  const observed = time(schedule.asOf ?? ""), planning = time(snapshot.context.asOf);
+  if (!Number.isFinite(observed) || !Number.isFinite(planning) || planning - observed < SCHEDULE_WITNESS_TTL_MS) return null;
+  const iso = (value: number) => new Date(value).toISOString();
+  return `Schedule evidence observed ${iso(observed)} expired ${iso(observed + SCHEDULE_WITNESS_TTL_MS)}; planning time is ${iso(planning)}. Reload the schedule; a forecast refresh does not renew it.`;
+}
 /** Provider injury designations that mean the player won't play (day-to-day still might). */
 const OUT_INJURY_STATUSES = new Set(["IR", "IR-LT", "IR-NR", "O"]);
 /** Out per the provider: never valued in a lineup and never an automatic drop. */
@@ -523,8 +536,10 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
   const requiredPlayers = new Set([...snapshot.roster.map(row => row.playerId),
     ...steps.flatMap(step => [step.playerId, ...(step.dropPlayerId ? [step.dropPlayerId] : [])])]);
   const unknownTeams = [...requiredPlayers].filter(id => !players.get(id)?.teamAbbreviation);
-  const opportunitiesComplete = snapshot.evidence.schedule?.completeness === "complete" && !unknownTeams.length;
-  if (snapshot.evidence.schedule?.completeness !== "complete") limitations.add("Planning schedule coverage is incomplete or unknown.");
+  const scheduleProblem = scheduleAdmissionProblem(snapshot);
+  const opportunitiesComplete = !scheduleProblem && !unknownTeams.length;
+  if (scheduleProblem) limitations.add(scheduleProblem);
+  else if (!Number.isFinite(time(snapshot.evidence.schedule?.asOf ?? ""))) limitations.add("Schedule evidence has no observation time, so its freshness was not rechecked at planning time. Reload the schedule to confirm it.");
   for (const id of unknownTeams) limitations.add(`Player ${id} has unknown current NHL team membership; remaining opportunities and net gains are indeterminate.`);
   const unresolved: CoverageIssue[] = [];
   const timeline = buildTimeline(snapshot, intent, steps);
@@ -985,7 +1000,7 @@ function safeAlternative(snapshot: PlanningSnapshot, baseline: PlanEvaluation, e
     // quality forecasts do not make a legal capacity comparison unavailable.
     const required = new Set([...snapshot.roster.map(row => row.playerId),
       ...evaluation.steps.flatMap(step => [step.playerId, ...(step.dropPlayerId ? [step.dropPlayerId] : [])])]);
-    if (snapshot.evidence.schedule?.completeness === "complete"
+    if (!scheduleAdmissionProblem(snapshot)
       && [...required].every(id => !!snapshot.players.find(player => player.id === id)?.teamAbbreviation)) return true;
   }
   const coverageImproves = evaluation.objective === "outcome" && pointsCoverageTarget !== null
