@@ -169,17 +169,28 @@
 .advancedGrid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: v.$space-xl;
-  margin: v.$space-xl 0;
+  gap: v.$space-sm;
+  margin: 0;
 
   @media (min-width: 1200px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-// Advanced panels size to their content (the chart owns its canvas height).
+// Advanced panels size to their content (the chart owns its canvas height);
+// panels in the same row share the row height.
 .advancedPanel {
   min-width: 0;
+}
+
+.advancedPanel,
+.advancedTable {
+  display: flex;
+  flex-direction: column;
+
+  > * {
+    flex: 1 1 auto;
+  }
 }
 
 // =============================================================================
@@ -195,7 +206,7 @@
 .contextualContainer,
 .performanceCalendar,
 .summarySection,
-.advancedTable {
+.chartContainer {
   min-width: 0;
   box-sizing: border-box;
   margin: 0;
@@ -213,6 +224,122 @@
 .contextualContainer > h3 {
   @extend %panel-title;
   margin-bottom: v.$space-sm;
+}
+
+.advancedTable {
+  min-width: 0;
+}
+
+// Chart panel header (PlayerStatsChart), same anatomy as the table header.
+.chartHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: v.$space-xs v.$space-md;
+  margin-bottom: v.$space-sm;
+
+  h3 {
+    @extend %panel-title;
+  }
+}
+
+.chartSubtitle {
+  color: v.$warning-color;
+  font-size: v.$font-size-xs;
+}
+
+// Advanced source note + glossary as one disclosure.
+.advancedNote {
+  min-width: 0;
+  padding: v.$space-xs v.$space-md;
+  background: v.$draft-surface;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-card;
+
+  > summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: v.$space-xs v.$space-md;
+    min-height: 32px;
+    padding-block: v.$space-xs;
+    cursor: pointer;
+
+    @media (max-width: 1100px) {
+      min-height: 44px;
+    }
+  }
+}
+
+.advancedNoteTitle {
+  @extend %panel-title;
+}
+
+.advancedNoteHint {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.advancedNoteContent {
+  padding: v.$space-xs 0 v.$space-sm;
+  border-top: 1px solid v.$draft-border;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  line-height: 1.45;
+
+  p {
+    margin: v.$space-xs 0;
+  }
+
+  strong {
+    color: v.$text-primary;
+  }
+}
+
+.advancedGlossary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+  gap: 2px v.$space-md;
+  margin: v.$space-xs 0 0;
+
+  > div {
+    display: flex;
+    gap: v.$space-xs;
+    padding: 2px 0;
+    border-bottom: 1px solid v.$draft-border;
+  }
+
+  dt {
+    flex: 0 0 auto;
+    min-width: 4.5rem;
+    color: v.$primary-color;
+    font-weight: 700;
+  }
+
+  dd {
+    margin: 0;
+  }
+}
+
+// Game Log: the table panel carries the visible title; keep the tab heading
+// for screen readers only.
+.gameLogTab {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+  min-width: 0;
+
+  > h2 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }
 
 // Lineup deployment is shared with Start Chart (compact), so the player page
@@ -616,27 +743,28 @@
   }
 }
 
+// Scrolls inside its own box (both axes); short logs take only their height.
 .scrollableTableWrapper {
-  // Maintained for backward compatibility if needed
-  height: 400px;
-  overflow-y: auto;
-  overflow-x: auto;
-  border-radius: v.$border-radius-md;
-  border: 1px solid v.$border-secondary;
-  background: v.$background-dark;
+  max-height: min(520px, 70vh);
+  overflow: auto;
+  border-radius: v.$radius-control;
+  border: 1px solid v.$draft-border;
+  background: v.$draft-surface;
 }
 
 .statsTable {
   width: 100%;
   border-collapse: collapse;
-  background: v.$background-dark;
+  background: v.$draft-surface;
+  font-variant-numeric: tabular-nums;
 
   th,
   td {
-    padding: v.$space-sm v.$space-md;
+    padding: v.$space-xs v.$space-sm;
     text-align: left;
-    border-bottom: 1px solid v.$border-secondary;
-    font-size: v.$font-size-sm;
+    border-bottom: 1px solid v.$draft-border;
+    font-size: v.$font-size-xs;
+    white-space: nowrap;
   }
 
   th:first-child,
@@ -644,15 +772,22 @@
     position: sticky;
     left: 0;
     z-index: 2;
-    background: v.$background-dark;
+    background: v.$draft-surface;
     white-space: nowrap;
-    box-shadow: 1px 0 0 v.$border-secondary;
+    box-shadow: 1px 0 0 v.$draft-border;
+  }
+
+  tbody tr:nth-child(even) td {
+    background: v.$draft-zebra;
   }
 
   th {
-    background: v.$background-medium;
+    background: v.$draft-surface-raised;
+    font-size: 10px;
     font-weight: 600;
-    color: v.$primary-color;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: v.$text-secondary;
     position: sticky;
     top: 0;
     z-index: 10;
@@ -660,14 +795,14 @@
 
     &:first-child {
       z-index: 11;
-      background: v.$background-medium;
+      background: v.$draft-surface-raised;
     }
     cursor: pointer;
     user-select: none;
     transition: background-color 0.2s;
 
     &:hover {
-      background: v.$background-light;
+      color: v.$text-primary;
     }
     &.sortable::after {
       content: "↕";
@@ -685,7 +820,7 @@
   }
 
   td {
-    color: v.$text-secondary;
+    color: v.$text-primary;
     &.numeric {
       text-align: right;
       font-variant-numeric: tabular-nums;
@@ -700,13 +835,18 @@
   }
 
   tbody tr {
-    transition: background-color 0.2s;
-    &:hover {
-      background: v.$background-light;
+    &:hover td {
+      background: rgba(v.$primary-color, 0.1);
     }
     &:last-child td {
       border-bottom: none;
     }
+  }
+
+  // Missed games: icon + 0 GP + dashes carry the state; the tint is extra.
+  tbody tr.missedGameRow td {
+    background: color-mix(in srgb, #{v.$color-coral-500} 10%, #{v.$draft-surface});
+    color: v.$text-secondary;
   }
 }
 
@@ -1363,15 +1503,13 @@
 
 .summarySection {
   h3 {
-    font-size: v.$font-size-xl;
-    font-weight: 600;
-    color: v.$text-primary;
-    margin: 0 0 v.$space-lg 0;
+    @extend %panel-title;
+    margin-bottom: v.$space-sm;
   }
   .summaryGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
-    gap: v.$space-md;
+    grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
+    gap: v.$space-xs;
   }
 }
 
@@ -1384,8 +1522,7 @@
 
 .summaryCard {
   @extend %card-base;
-  background: v.$background-medium;
-  border-left-color: v.$secondary-color;
+  --card-tone: #{v.$primary-color};
 
   &.elite {
     @extend %performance-elite;

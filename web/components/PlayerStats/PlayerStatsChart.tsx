@@ -12,11 +12,11 @@ import {
   Filler
 } from "chart.js";
 import styles from "./PlayerStats.module.scss";
+import { formatPlayerStat, parseLocalDate } from "./playerStatsContract";
 import {
   PlayerStatsChartProps,
   CHART_COLORS,
-  STAT_DISPLAY_NAMES,
-  formatStatValue
+  STAT_DISPLAY_NAMES
 } from "./types";
 
 ChartJS.register(
@@ -45,11 +45,11 @@ export function PlayerStatsChart({
 
     // Sort games by date
     const sortedGames = [...log].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      (a, b) => String(a.date).localeCompare(String(b.date))
     );
 
     const labels = sortedGames.map((game) =>
-      new Date(game.date).toLocaleDateString("en-US", {
+      parseLocalDate(game.date).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric"
       })
@@ -57,7 +57,12 @@ export function PlayerStatsChart({
 
     const datasets = selectedStats
       .map((stat, index) => {
-        const data = sortedGames.map((game) => Number(game[stat]) || 0);
+        // Missing values stay gaps rather than plotting as zero.
+        const data = sortedGames.map((game) =>
+          game[stat] === null || game[stat] === undefined
+            ? null
+            : Number(game[stat])
+        );
         const color = CHART_COLORS[index % CHART_COLORS.length];
 
         const dataset = {
@@ -184,11 +189,10 @@ export function PlayerStatsChart({
               const log =
                 showPlayoffData && playoffGameLog ? playoffGameLog : gameLog;
               const sortedGames = [...log].sort(
-                (a, b) =>
-                  new Date(a.date).getTime() - new Date(b.date).getTime()
+                (a, b) => String(a.date).localeCompare(String(b.date))
               );
               const game = sortedGames[gameIndex];
-              return new Date(game.date).toLocaleDateString("en-US", {
+              return parseLocalDate(game.date).toLocaleDateString("en-US", {
                 weekday: "short",
                 month: "short",
                 day: "numeric",
@@ -207,7 +211,7 @@ export function PlayerStatsChart({
                     label.replace(" (5-game avg)", "")
                 ) || label;
 
-              const formattedValue = formatStatValue(value, statName);
+              const formattedValue = formatPlayerStat(value, statName);
               return `${label}: ${formattedValue}`;
             },
             labelColor: (context: any) => ({

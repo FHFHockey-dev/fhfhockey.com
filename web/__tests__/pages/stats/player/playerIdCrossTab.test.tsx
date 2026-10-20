@@ -1,5 +1,5 @@
 import React from "react";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Same fixture, all five tabs: counts, denominators, season context and SH%
@@ -73,7 +73,12 @@ const valueAfter = (label: string) =>
 
 function snapshotAllTabs() {
   openTab("Overview");
+  const strip = screen.queryByRole("region", { name: /^Summary/ });
+  const stripValue = (label: string) =>
+    strip ? within(strip).getByText(label).nextElementSibling?.textContent ?? null : null;
   const overview = {
+    stripGames: stripValue("Games"),
+    stripShooting: stripValue("SH%"),
     availability: screen.queryByText(/possible games|games played \(/)?.textContent ?? null,
     shooting: screen.queryByText("Shooting %") ? valueAfter("Shooting %") : null,
     calendarGames: screen.queryByText("Games Played") ? valueBefore("Games Played") : null,
@@ -90,8 +95,12 @@ function snapshotAllTabs() {
 
   openTab("Trends");
   fireEvent.click(screen.getByLabelText("SHOOTING PERCENTAGE"));
+  // The control bar's selected-stat chips repeat abbreviations, so read the
+  // summary panel itself.
+  const summaryPanel = document.querySelector<HTMLElement>('[class*="summarySection"]');
+  const summaryLabel = summaryPanel ? within(summaryPanel).queryByText("SH%") : null;
   const trends = {
-    shooting: screen.queryByText("SH%") ? valueAfter("SH%") : null,
+    shooting: summaryLabel ? summaryLabel.nextElementSibling?.textContent ?? null : null,
     gamesPlayed: screen.queryAllByText(/games played$/)[0]?.textContent ?? null
   };
 
@@ -159,6 +168,8 @@ describe("player page cross-tab contract", () => {
     expect(tabs.trends.gamesPlayed).toBe("10 games played");
 
     // 2 goals on 11 shots, everywhere.
+    expect(tabs.overview.stripGames).toBe("10");
+    expect(tabs.overview.stripShooting).toBe("18.2%");
     expect(tabs.overview.shooting).toBe("18.2%");
     expect(tabs.trends.shooting).toBe("18.2%");
 
@@ -211,6 +222,7 @@ describe("player page cross-tab contract", () => {
     const tabs = snapshotAllTabs();
     expect(tabs.overview.shooting).toBeNull();
     expect(tabs.trends.shooting).toBe("-");
+    expect(tabs.overview.stripShooting).toBe("-");
     expect(tabs.gamelog.header).toBe("Games: 2");
   });
 
@@ -223,6 +235,7 @@ describe("player page cross-tab contract", () => {
     renderPage({ gameLog, missedGames: [], mostRecentSeason: 20262027 });
     const tabs = snapshotAllTabs();
     expect(tabs.overview.availability).toBe("2 of 2 possible games");
+    expect(tabs.overview.stripGames).toBe("2");
     expect(tabs.calendar.games).toBe("2");
     expect(tabs.advanced.tableGames).toBe("Games: 2");
     expect(tabs.gamelog.header).toBe("Games: 2");

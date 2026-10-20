@@ -216,6 +216,12 @@ describe("unit-aware formatting", () => {
     expect(formatPlayerStat(52.4, "cf_pct")).toBe("52.4%");
   });
 
+  it("whole counts are integers; averages keep two decimals", () => {
+    expect(formatPlayerStat(1, "goals")).toBe("1");
+    expect(formatPlayerStat(0, "points")).toBe("0");
+    expect(formatPlayerStat(0.3, "points")).toBe("0.30");
+  });
+
   it("unavailable stays unavailable", () => {
     expect(formatPlayerStat(null, "shooting_percentage")).toBe("-");
   });

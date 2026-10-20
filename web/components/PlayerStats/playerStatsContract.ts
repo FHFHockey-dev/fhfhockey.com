@@ -245,9 +245,34 @@ export function toDisplayUnits(value: unknown, stat: string): number | null {
   return isFractionStat(stat) ? n * 100 : n;
 }
 
+// Per-game and season counts. The shared formatter shows two decimals (it is
+// built for averages), so whole counts are shown as integers here.
+const COUNT_STATS = new Set([
+  "goals",
+  "assists",
+  "points",
+  "shots",
+  "pp_points",
+  "gw_goals",
+  "hits",
+  "blocked_shots",
+  "takeaways",
+  "giveaways",
+  "plus_minus",
+  "wins",
+  "losses",
+  "ot_losses",
+  "shutouts",
+  "saves",
+  "shots_against",
+  "goals_against",
+  "games_started"
+]);
+
 export function formatPlayerStat(value: unknown, stat: string): string {
   const n = toDisplayUnits(value, stat);
   if (n === null) return "-";
+  if (COUNT_STATS.has(stat) && Number.isInteger(n)) return String(n);
   if (stat === "usat_pct") return `${n.toFixed(1)}%`;
   return formatStatValue(n, stat);
 }
