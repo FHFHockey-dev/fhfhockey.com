@@ -1,3 +1,11 @@
+diff --git a/node_modules/.vite/vitest/da39a3ee5e6b4b0d3255bfef95601890afd80709/results.json b/node_modules/.vite/vitest/da39a3ee5e6b4b0d3255bfef95601890afd80709/results.json
+new file mode 100644
+index 000000000..b50f44a47
+--- /dev/null
++++ b/node_modules/.vite/vitest/da39a3ee5e6b4b0d3255bfef95601890afd80709/results.json
+@@ -0,0 +1 @@
++{"version":"4.1.12","results":[[":web/lib/projections/run-forge-projections.resume.test.ts",{"duration":0,"failed":true}]]}
+\ No newline at end of file
 diff --git a/web/__tests__/pages/api/v1/forge/goalies.test.ts b/web/__tests__/pages/api/v1/forge/goalies.test.ts
 index 386aaeb3b..d1e4456b3 100644
 --- a/web/__tests__/pages/api/v1/forge/goalies.test.ts
@@ -241,27 +249,74 @@ index fda6b6825..ecb7234f5 100644
      .limit(1)
      .maybeSingle();
 diff --git a/web/lib/projections/queries/run-lifecycle-queries.ts b/web/lib/projections/queries/run-lifecycle-queries.ts
-index c6604d9f3..a871b44c3 100644
+index c6604d9f3..41945d9c9 100644
 --- a/web/lib/projections/queries/run-lifecycle-queries.ts
 +++ b/web/lib/projections/queries/run-lifecycle-queries.ts
 @@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
  
  import supabase from "lib/supabase/server";
  import type { Json } from "lib/supabase/database-generated.types";
-+import { LOCAL_UNKNOWN_GIT_SHA } from "lib/projections/releasedRunFence";
++import { isOffReleaseGitSha, LOCAL_UNKNOWN_GIT_SHA } from "lib/projections/releasedRunFence";
  
  function assertSupabase() {
    if (!supabase) throw new Error("Supabase server client not available");
-@@ -223,7 +224,8 @@ async function insertRunningRun(asOfDate: string, metrics: JsonObject) {
+@@ -47,6 +48,7 @@ type ForgeRunLifecycleRow = {
+   status: string;
+   created_at: string | null;
+   updated_at: string | null;
++  git_sha?: string | null;
+   metrics: Json | null;
+ };
+ 
+@@ -182,7 +184,7 @@ export function resumableRunLeaseExpiresAt(
+ async function readRunningRuns(asOfDate: string) {
+   const { data: runningRows, error: runningError } = await supabase
+     .from("forge_runs")
+-    .select("run_id,as_of_date,status,created_at,updated_at,metrics")
++    .select("run_id,as_of_date,status,created_at,updated_at,git_sha,metrics")
+     .eq("as_of_date", asOfDate)
+     .eq("status", "running")
+     .order("created_at", { ascending: false })
+@@ -217,13 +219,18 @@ function activeRunError(
+   return error;
+ }
+ 
++// No deployment SHA means an off-release (local) run: never stamp null.
++function currentRunGitSha() {
++  return process.env.VERCEL_GIT_COMMIT_SHA || process.env.GIT_SHA || LOCAL_UNKNOWN_GIT_SHA;
++}
++
+ async function insertRunningRun(asOfDate: string, metrics: JsonObject) {
+   const { data, error } = await supabase
+     .from("forge_runs")
      .insert({
        as_of_date: asOfDate,
        status: "running",
 -      git_sha: process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GIT_SHA ?? null,
-+      // No deployment SHA means an off-release (local) run: never stamp null.
-+      git_sha: process.env.VERCEL_GIT_COMMIT_SHA || process.env.GIT_SHA || LOCAL_UNKNOWN_GIT_SHA,
++      git_sha: currentRunGitSha(),
        metrics
      })
      .select("run_id")
+@@ -264,13 +271,17 @@ export async function claimResumableRun(
+   const nowMs = Date.now();
+   const rows = await readRunningRuns(asOfDate);
+   const activeRow = rows.find((row) => isRunLeaseActive(row, nowMs));
++  const offRelease = isOffReleaseGitSha(currentRunGitSha());
+   let candidate: ForgeRunLifecycleRow | null = null;
+ 
+   for (const row of rows) {
+     if (isRunLeaseActive(row, nowMs)) continue;
+     if (isPausedResumableRun(row, nowMs)) {
+-      // Paused runs of another scope wait for their own resume.
+-      if (readRunResumeState(row.metrics)?.scope_key !== args.scopeKey) continue;
++      // Paused runs of another scope wait for their own resume. So do runs from
++      // the other side of the release path: adopting one would publish this
++      // invocation's work under the other's git_sha.
++      if (readRunResumeState(row.metrics)?.scope_key !== args.scopeKey
++        || isOffReleaseGitSha(row.git_sha) !== offRelease) continue;
+       if (!candidate) {
+         candidate = row;
+         continue;
 diff --git a/web/lib/projections/releasedRunFence.test.ts b/web/lib/projections/releasedRunFence.test.ts
 new file mode 100644
 index 000000000..12f91dc13
@@ -403,7 +458,7 @@ index 8c68f7495..26473444a 100644
      const backend = fixture("player");
      await expect(run(true, backend)).rejects.toMatchObject({ code: "TEST_WRITE_REJECTED" });
 diff --git a/web/lib/projections/run-forge-projections.resume.test.ts b/web/lib/projections/run-forge-projections.resume.test.ts
-index d8bdf1272..93605bf40 100644
+index d8bdf1272..40eca6d4b 100644
 --- a/web/lib/projections/run-forge-projections.resume.test.ts
 +++ b/web/lib/projections/run-forge-projections.resume.test.ts
 @@ -79,6 +79,13 @@ const db = vi.hoisted(() => {
@@ -456,6 +511,48 @@ index d8bdf1272..93605bf40 100644
    it("refuses a run whose lease is still held, then takes it over once the lease expires", async () => {
      // A killed invocation: game 1 finished, game 2 was in flight, no release.
      seedPausedRun({
+@@ -273,6 +293,41 @@ describe("resumable FORGE projection run", () => {
+     expect(playerRows("killed-run")).toEqual(["1:1", "1:2", "2:1", "2:2", "3:1", "3:2", "4:1", "4:2"]);
+   });
+ 
++  it.each([
++    ["hosted", "hosted", true],
++    ["hosted", "local", false],
++    ["local", "hosted", false],
++    ["local", "local", true],
++  ] as const)("a %s invocation meeting a paused %s run resumes it only when both match: %s", async (invocation, paused, resumes) => {
++    // Hosted runs need not share a deployment SHA, only the release side.
++    vi.stubEnv("VERCEL_GIT_COMMIT_SHA", invocation === "hosted" ? "b".repeat(40) : "");
++    vi.stubEnv("GIT_SHA", "");
++    seedPausedRun({
++      runId: "paused-run", owner: "dead-owner", leaseExpiresAt: new Date(start - 1_000).toISOString(),
++      createdAt: new Date(start - 4 * 60_000).toISOString(), completed: [1],
++    });
++    const pausedSha = paused === "hosted" ? "a".repeat(40) : "local:unknown";
++    runs()[0].git_sha = pausedSha;
++
++    const result = await runProjectionV2ForDate(date, { deadlineMs: Date.now() + 200_000 });
++    const pausedRow = runs().find((row) => row.run_id === "paused-run")!;
++    if (resumes) {
++      expect(result).toMatchObject({ runId: "paused-run", resume: { resumed: true, invocations: 2 } });
++      expect(pausedRow).toMatchObject({ status: "succeeded", git_sha: pausedSha });
++      expect(runs()).toHaveLength(1);
++    } else {
++      // The other side's paused run is neither adopted nor failed: it waits for its own resume.
++      expect(result).toMatchObject({ resume: { resumed: false, invocations: 1 } });
++      expect(result.runId).not.toBe("paused-run");
++      expect(runs().find((row) => row.run_id === result.runId)).toMatchObject({
++        status: "succeeded", git_sha: invocation === "hosted" ? "b".repeat(40) : "local:unknown",
++      });
++      expect(pausedRow).toMatchObject({ status: "running", git_sha: pausedSha,
++        metrics: { resume: { lease_owner: "dead-owner", invocations: 1, completed_game_ids: [1] } } });
++      expect(fakes.skaterCalls).toEqual([1, 2, 3, 4]);
++    }
++  });
++
+   it("fences the previous owner and a second claimer once a run is taken over", async () => {
+     seedPausedRun({
+       runId: "killed-run", owner: "dead-owner", leaseExpiresAt: new Date(start - 1_000).toISOString(),
 diff --git a/web/lib/rosterScheduleData/forgeDailyBridge.test.ts b/web/lib/rosterScheduleData/forgeDailyBridge.test.ts
 index 7aab1e062..978b1eace 100644
 --- a/web/lib/rosterScheduleData/forgeDailyBridge.test.ts

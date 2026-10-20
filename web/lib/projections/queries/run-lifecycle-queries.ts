@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import supabase from "lib/supabase/server";
 import type { Json } from "lib/supabase/database-generated.types";
-import { LOCAL_UNKNOWN_GIT_SHA } from "lib/projections/releasedRunFence";
+import { isOffReleaseGitSha, LOCAL_UNKNOWN_GIT_SHA } from "lib/projections/releasedRunFence";
 
 function assertSupabase() {
   if (!supabase) throw new Error("Supabase server client not available");
@@ -48,6 +48,7 @@ type ForgeRunLifecycleRow = {
   status: string;
   created_at: string | null;
   updated_at: string | null;
+  git_sha?: string | null;
   metrics: Json | null;
 };
 
@@ -183,7 +184,7 @@ export function resumableRunLeaseExpiresAt(
 async function readRunningRuns(asOfDate: string) {
   const { data: runningRows, error: runningError } = await supabase
     .from("forge_runs")
-    .select("run_id,as_of_date,status,created_at,updated_at,metrics")
+    .select("run_id,as_of_date,status,created_at,updated_at,git_sha,metrics")
     .eq("as_of_date", asOfDate)
     .eq("status", "running")
     .order("created_at", { ascending: false })
@@ -218,14 +219,18 @@ function activeRunError(
   return error;
 }
 
+// No deployment SHA means an off-release (local) run: never stamp null.
+function currentRunGitSha() {
+  return process.env.VERCEL_GIT_COMMIT_SHA || process.env.GIT_SHA || LOCAL_UNKNOWN_GIT_SHA;
+}
+
 async function insertRunningRun(asOfDate: string, metrics: JsonObject) {
   const { data, error } = await supabase
     .from("forge_runs")
     .insert({
       as_of_date: asOfDate,
       status: "running",
-      // No deployment SHA means an off-release (local) run: never stamp null.
-      git_sha: process.env.VERCEL_GIT_COMMIT_SHA || process.env.GIT_SHA || LOCAL_UNKNOWN_GIT_SHA,
+      git_sha: currentRunGitSha(),
       metrics
     })
     .select("run_id")
@@ -266,13 +271,17 @@ export async function claimResumableRun(
   const nowMs = Date.now();
   const rows = await readRunningRuns(asOfDate);
   const activeRow = rows.find((row) => isRunLeaseActive(row, nowMs));
+  const offRelease = isOffReleaseGitSha(currentRunGitSha());
   let candidate: ForgeRunLifecycleRow | null = null;
 
   for (const row of rows) {
     if (isRunLeaseActive(row, nowMs)) continue;
     if (isPausedResumableRun(row, nowMs)) {
-      // Paused runs of another scope wait for their own resume.
-      if (readRunResumeState(row.metrics)?.scope_key !== args.scopeKey) continue;
+      // Paused runs of another scope wait for their own resume. So do runs from
+      // the other side of the release path: adopting one would publish this
+      // invocation's work under the other's git_sha.
+      if (readRunResumeState(row.metrics)?.scope_key !== args.scopeKey
+        || isOffReleaseGitSha(row.git_sha) !== offRelease) continue;
       if (!candidate) {
         candidate = row;
         continue;
