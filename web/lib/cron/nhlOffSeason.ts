@@ -161,6 +161,16 @@ export function resetNhlSeasonWindowCache() {
   cachedWindow = null;
 }
 
+// Canonical cron classification: a route whose request passed through
+// withNhlOffSeasonSkip writes NHL game data that pauses between seasons. The
+// gate marks the response object it was handed, so an audit wrapper on either
+// side of it (or around a handler that calls a gated worker) can record it
+// without guessing from route names, imports or row counts. withCronJobAudit
+// reads the same registered symbol (see cronClassificationOf there).
+export const NHL_SEASONAL_GAME_DATA = "nhl_seasonal_game_data";
+export type CronClassification = typeof NHL_SEASONAL_GAME_DATA;
+export const CRON_CLASSIFICATION_KEY = Symbol.for("fhfh.cron.classification");
+
 function ignoresOffSeason(req: NextApiRequest): boolean {
   const value = req.query?.ignoreOffSeason;
   const flag = Array.isArray(value) ? value[0] : value;
@@ -181,6 +191,8 @@ export function withNhlOffSeasonSkip<
 ): (req: Req, res: Res) => Promise<unknown> {
   const loadWindow = options.loadWindow ?? cachedNhlSeasonWindow;
   return async (req, res) => {
+    (res as unknown as Record<symbol, CronClassification>)[CRON_CLASSIFICATION_KEY] =
+      NHL_SEASONAL_GAME_DATA;
     if (!ignoresOffSeason(req)) {
       const window = await loadWindow();
       if (window.state === "unknown") {

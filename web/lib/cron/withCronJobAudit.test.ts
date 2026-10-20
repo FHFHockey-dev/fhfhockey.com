@@ -10,7 +10,15 @@ vi.mock("lib/supabase/server", () => ({
   },
 }));
 
-import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import {
+  cronClassificationFromAuditDetails,
+  withCronJobAudit,
+} from "lib/cron/withCronJobAudit";
+import {
+  NHL_SEASONAL_GAME_DATA,
+  withNhlOffSeasonSkip,
+  type NhlSeasonWindow,
+} from "lib/cron/nhlOffSeason";
 import { withCronJobTiming } from "lib/cron/timingContract";
 
 function createMockReq(overrides: Record<string, unknown> = {}) {
@@ -547,5 +555,128 @@ describe("withCronJobAudit", () => {
       "cron_job_audit insert failed",
       "audit insert unavailable"
     );
+  });
+});
+
+describe("withCronJobAudit seasonal game-data classification", () => {
+  const inSeason: NhlSeasonWindow = {
+    state: "in_season",
+    today: "2026-10-20",
+    seasonId: 20262027,
+    activeFrom: "2026-09-19",
+    activeUntil: "2027-06-13",
+  };
+  const offSeason: NhlSeasonWindow = {
+    state: "off_season",
+    today: "2026-08-01",
+    lastSeasonId: 20252026,
+    lastActiveUntil: "2026-06-18",
+    nextSeasonId: null,
+    resumesOn: null,
+  };
+  const gate = (handler: (req: any, res: any) => unknown, window = inSeason) =>
+    withNhlOffSeasonSkip(handler, { loadWindow: async () => window });
+  const insertedDetails = () => insertMock.mock.calls.at(-1)?.[0].details;
+
+  it("exports the canonical classification value", () => {
+    expect(NHL_SEASONAL_GAME_DATA).toBe("nhl_seasonal_game_data");
+  });
+
+  beforeEach(() => {
+    insertMock.mockReset();
+    insertMock.mockResolvedValue({});
+  });
+
+  it("stamps the classification from the actual wrapper chain, whatever the route is called", async () => {
+    const wrapped = withCronJobAudit(gate(async (_req, res) => res.status(200).json({ success: true, rowsUpserted: 0 })));
+
+    await wrapped(createMockReq({ url: "/api/v1/db/not-a-listed-route", query: {} }), createMockRes());
+
+    expect(insertedDetails().cronClassification).toBe("nhl_seasonal_game_data");
+    expect(cronClassificationFromAuditDetails(insertedDetails())).toBe("nhl_seasonal_game_data");
+  });
+
+  it("stamps a gate nested inside the audited handler and a gate outside the audit wrapper", async () => {
+    const work = gate(async (_req, res) => res.status(200).json({ success: true }));
+    const nested = withCronJobAudit(async (req, res) => work(req, res));
+    const outer = gate(withCronJobAudit(async (_req, res) => res.status(200).json({ success: true })));
+
+    await nested(createMockReq({ query: {} }), createMockRes());
+    expect(insertedDetails().cronClassification).toBe("nhl_seasonal_game_data");
+    await outer(createMockReq({ query: {} }), createMockRes());
+    expect(insertedDetails().cronClassification).toBe("nhl_seasonal_game_data");
+  });
+
+  it("records null for a non-wrapped control, even on a route the legacy list names", async () => {
+    const wrapped = withCronJobAudit(async (_req, res) => res.status(200).json({ success: true, rowsUpserted: 0 }));
+
+    await wrapped(createMockReq({ url: "/api/v1/db/update-PbP" }), createMockRes());
+
+    expect(insertedDetails()).toHaveProperty("cronClassification", null);
+    expect(cronClassificationFromAuditDetails(insertedDetails())).toBeNull();
+  });
+
+  it("ignores an unused import and a comment or string naming the gate", async () => {
+    // withNhlOffSeasonSkip is imported by this file but never wraps this handler.
+    const unusedImport = withCronJobAudit(async (_req, res) => {
+      // withNhlOffSeasonSkip(handler) — a comment is not a wrapper.
+      const note = "withNhlOffSeasonSkip lib/cron/nhlOffSeason nhl_seasonal_game_data";
+      return res.status(200).json({ success: true, note, cronClassification: NHL_SEASONAL_GAME_DATA });
+    });
+    void withNhlOffSeasonSkip;
+
+    await unusedImport(createMockReq({ query: {} }), createMockRes());
+
+    expect(insertedDetails().cronClassification).toBeNull();
+  });
+
+  it("stamps success, failure, thrown, off-season skip and ignoreOffSeason runs", async () => {
+    const cases: Array<[(req: any, res: any) => unknown, NhlSeasonWindow, Record<string, unknown>, string]> = [
+      [async (_req, res) => res.status(200).json({ success: true }), inSeason, {}, "success"],
+      [async (_req, res) => res.status(500).json({ success: false, error: "boom" }), inSeason, {}, "failure"],
+      [async () => { throw new Error("thrown"); }, inSeason, {}, "failure"],
+      [async (_req, res) => res.status(200).json({ success: true }), offSeason, {}, "success"],
+      [async (_req, res) => res.status(200).json({ success: true }), offSeason, { ignoreOffSeason: "true" }, "success"],
+    ];
+    for (const [handler, window, query, status] of cases) {
+      await withCronJobAudit(gate(handler, window))(createMockReq({ query }), createMockRes());
+      expect(insertMock.mock.calls.at(-1)?.[0].status).toBe(status);
+      expect(insertedDetails().cronClassification).toBe("nhl_seasonal_game_data");
+    }
+    expect(insertMock.mock.calls[3][0].details.responseOutcome.success).toBe(true);
+  });
+
+  it("keeps the classification when the response preview is truncated", async () => {
+    const wrapped = withCronJobAudit(gate(async (_req, res) =>
+      res.status(200).json({ success: true, payload: "x".repeat(5000) })));
+
+    await wrapped(createMockReq({ query: {} }), createMockRes());
+
+    expect(insertedDetails().responseTruncated).toBe(true);
+    expect(insertedDetails().cronClassification).toBe("nhl_seasonal_game_data");
+  });
+
+  it("keeps the classification and continued status on a planned 207 continuation", async () => {
+    const wrapped = withCronJobAudit(gate(async (_req, res) => res.status(207).json({
+      success: false,
+      termination: { state: "continuation_required", resumeRequired: true },
+      payload: "x".repeat(5000),
+    })));
+
+    await wrapped(createMockReq({ query: {} }), createMockRes());
+
+    expect(insertMock.mock.calls[0][0].status).toBe("continued");
+    expect(insertedDetails().responseTruncated).toBe(true);
+    expect(insertedDetails().cronClassification).toBe("nhl_seasonal_game_data");
+  });
+
+  it("reports a historical row without the field as unknown, not as unclassified", () => {
+    const historical = { statusCode: 200, rowsUpserted: 0, response: "{}" };
+
+    expect(cronClassificationFromAuditDetails(historical)).toBeUndefined();
+    expect(cronClassificationFromAuditDetails(null)).toBeUndefined();
+    expect(cronClassificationFromAuditDetails("not-an-object")).toBeUndefined();
+    expect(cronClassificationFromAuditDetails({ cronClassification: "something_else" })).toBeUndefined();
+    expect(cronClassificationFromAuditDetails({ cronClassification: null })).toBeNull();
   });
 });

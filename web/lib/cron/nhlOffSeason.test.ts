@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
+import { cronClassificationOf } from "./withCronJobAudit";
 import {
+  CRON_CLASSIFICATION_KEY,
   resolveNhlSeasonWindow,
   withNhlOffSeasonSkip,
   type NhlSeasonSpan,
@@ -147,5 +149,25 @@ describe("withNhlOffSeasonSkip", () => {
       response() as never,
     );
     expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it("marks the response as seasonal game data on skip, ignore and run paths alone", async () => {
+    const unwrapped = response();
+    expect(cronClassificationOf(unwrapped)).toBeNull();
+    for (const [query, window] of [
+      [{}, offSeason],
+      [{ ignoreOffSeason: "true" }, offSeason],
+      [{}, { state: "unknown", today: "2026-08-01", reason: "lookup failed" }],
+    ] as const) {
+      const res = response();
+      await withNhlOffSeasonSkip(vi.fn(), { loadWindow: async () => window })(
+        { query } as never,
+        res as never,
+      );
+      expect(cronClassificationOf(res)).toBe("nhl_seasonal_game_data");
+      expect((res as any)[CRON_CLASSIFICATION_KEY]).toBe("nhl_seasonal_game_data");
+      expect(Object.keys(res)).not.toContain("cronClassification");
+      expect(JSON.stringify(res.body ?? {})).not.toContain("nhl_seasonal_game_data");
+    }
   });
 });

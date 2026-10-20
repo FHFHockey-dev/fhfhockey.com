@@ -5,6 +5,7 @@ import {
   withCronJobTiming,
 } from "lib/cron/timingContract";
 import supabase from "lib/supabase/server";
+import type { CronClassification } from "lib/cron/nhlOffSeason";
 
 // "continued" marks a planned partial run: the route stopped at its runtime
 // budget and handed back a cursor for the next call. It is not a failure.
@@ -219,6 +220,35 @@ function isPlannedContinuation(statusCode: number, body: unknown): boolean {
   return (inferFailedRows(body) ?? 0) === 0;
 }
 
+// The registered symbol withNhlOffSeasonSkip stamps on the response. It is read
+// through the global registry rather than imported, so route tests that mock
+// lib/cron/nhlOffSeason still run this wrapper unchanged.
+const CRON_CLASSIFICATION_KEY = Symbol.for("fhfh.cron.classification");
+const SEASONAL_GAME_DATA: CronClassification = "nhl_seasonal_game_data";
+
+function knownClassification(value: unknown): CronClassification | null {
+  return value === SEASONAL_GAME_DATA ? SEASONAL_GAME_DATA : null;
+}
+
+/** The classification the off-season gate stamped on this response, if any. */
+export function cronClassificationOf(res: object): CronClassification | null {
+  return knownClassification((res as Record<symbol, unknown>)[CRON_CLASSIFICATION_KEY]);
+}
+
+/**
+ * Reads `details.cronClassification` from a cron_job_audit row. New rows carry
+ * the classification or null (not seasonal game data); undefined means the row
+ * predates the field (or holds an unrecognised value), so callers must fall back.
+ */
+export function cronClassificationFromAuditDetails(
+  details: unknown,
+): CronClassification | null | undefined {
+  if (!details || typeof details !== "object" || Array.isArray(details)) return undefined;
+  const value = (details as Record<string, unknown>).cronClassification;
+  if (value === null) return null;
+  return knownClassification(value) ?? undefined;
+}
+
 function defaultJobName(req: NextApiRequest): string {
   const url = req.url ?? "";
   const pathOnly = url.split("?")[0]?.trim();
@@ -368,6 +398,7 @@ export function withCronJobAudit(
         response: responsePreview,
         responseTruncated: responsePreview?.endsWith("…") ?? false,
         responseOutcome: responseOutcome(auditBody),
+        cronClassification: cronClassificationOf(res),
       },
     };
 
