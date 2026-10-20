@@ -797,22 +797,74 @@ describe("skater physical event rates", () => {
     blocks_per_60_blocks_3ya: 380, blocks_per_60_toi_seconds_3ya: 300000,
     ...overrides,
   });
-  const hitsWeight = 110 / (110 + 120);
+  const hitsWeight = 110 / (110 + 240);
   const blocksWeight = 110 / (110 + 1000);
+  // Invented league totals: D hits 3.2/60 over the prior two seasons, 2.8/60 so far this season.
+  const league = (overrides: { hitsToDate?: number; toiToDate?: number } = {}) => ({
+    F: { toDate: { hits: 4900, blocks: 2100, toiSeconds: 3_600_000 }, prior: { hits: 49000, blocks: 21000, toiSeconds: 36_000_000 } },
+    D: { toDate: { hits: overrides.hitsToDate ?? 280, blocks: 440, toiSeconds: overrides.toiToDate ?? 360_000 },
+      prior: { hits: 3200, blocks: 4400, toiSeconds: 3_600_000 } },
+  });
 
   it("keeps a thin window of zero hits and blocks from zeroing an established defenseman", () => {
+    // No current-season split and no league totals: all history is prior, at half weight, with constant priors.
     const rates = computeSkaterPhysicalEventRates({ all: allRow(), position: "D", esPpToiSeconds: 1200 });
     expect(rates.hitsRecentWeight).toBeCloseTo(hitsWeight, 12);
     expect(rates.blocksRecentWeight).toBeCloseTo(blocksWeight, 12);
-    expect(rates.hitsPer60).toBeCloseTo((1 - hitsWeight) * (220 * 60 + 50 * 3.2) / 5050, 12);
-    expect(rates.blocksPer60).toBeCloseTo((1 - blocksWeight) * (380 * 60 + 300 * 4.4) / 5300, 12);
+    expect(rates.hitsPer60).toBeCloseTo((1 - hitsWeight) * (0.5 * 220 * 60 + 50 * 3.2) / (0.5 * 5000 + 50), 12);
+    expect(rates.blocksPer60).toBeCloseTo((1 - blocksWeight) * (0.5 * 380 * 60 + 300 * 4.4) / (0.5 * 5000 + 300), 12);
     expect(rates.blocksPer60).toBeGreaterThan(3);
+    expect(rates).toMatchObject({ hitsLeagueScale: 1, blocksLeagueScale: 1 });
+  });
+
+  it("keeps this season at full weight and rescales prior seasons to the league rate to date", () => {
+    const row = allRow({ hits_per_60_hits_season: 10, hits_per_60_toi_seconds_season: 6000,
+      blocks_per_60_blocks_season: 8, blocks_per_60_toi_seconds_season: 6000 });
+    const rates = computeSkaterPhysicalEventRates({ all: row, position: "D", esPpToiSeconds: 1200,
+      currentSeasonId: 20262027, league: league() });
+    // League to date shrunk by 5750 D minutes toward 3.2: (60*280 + 3.2*5750) / (6000 + 5750).
+    const leagueHits = (60 * 280 + 3.2 * 5750) / (6000 + 5750);
+    expect(rates.hitsLeagueScale).toBeCloseTo(leagueHits / 3.2, 12);
+    expect(rates.blocksLeagueScale).toBeCloseTo(1, 12);
+    const baseline = ((10 + 0.5 * (leagueHits / 3.2) * 210) * 60 + 50 * leagueHits) / ((6000 + 0.5 * 294000) / 60 + 50);
+    expect(rates.hitsPer60).toBeCloseTo((1 - hitsWeight) * baseline, 12);
+    const unscaled = computeSkaterPhysicalEventRates({ all: row, position: "D", esPpToiSeconds: 1200, currentSeasonId: 20262027 });
+    expect(unscaled.hitsLeagueScale).toBe(1);
+    expect(rates.hitsPer60).toBeLessThan(unscaled.hitsPer60);
+  });
+
+  it("treats a row from an earlier season as all prior history", () => {
+    const seasonFields = { hits_per_60_hits_season: 40, hits_per_60_toi_seconds_season: 60000 };
+    const stale = computeSkaterPhysicalEventRates({ all: allRow({ season: 20252026, ...seasonFields }), position: "D",
+      esPpToiSeconds: 1200, currentSeasonId: 20262027, league: league() });
+    const withoutSplit = computeSkaterPhysicalEventRates({ all: allRow({ season: 20252026 }), position: "D",
+      esPpToiSeconds: 1200, currentSeasonId: 20262027, league: league() });
+    expect(stale.hitsPer60).toBeCloseTo(withoutSplit.hitsPer60, 12);
+    const current = computeSkaterPhysicalEventRates({ all: allRow(seasonFields), position: "D",
+      esPpToiSeconds: 1200, currentSeasonId: 20262027, league: league() });
+    expect(current.hitsPer60).not.toBeCloseTo(stale.hitsPer60, 6);
+  });
+
+  it("bounds the league scale and uses the prior two seasons' rate before any league games", () => {
+    const low = computeSkaterPhysicalEventRates({ all: allRow(), position: "D", esPpToiSeconds: 1200,
+      currentSeasonId: 20262027, league: league({ hitsToDate: 0, toiToDate: 360_000_000 }) });
+    expect(low.hitsLeagueScale).toBe(0.7);
+    const high = computeSkaterPhysicalEventRates({ all: allRow(), position: "D", esPpToiSeconds: 1200,
+      currentSeasonId: 20262027, league: league({ hitsToDate: 1_000_000, toiToDate: 360_000_000 }) });
+    expect(high.hitsLeagueScale).toBe(1.3);
+    const opening = computeSkaterPhysicalEventRates({ all: undefined, position: "D", esPpToiSeconds: 1200,
+      currentSeasonId: 20262027, league: league({ hitsToDate: 0, toiToDate: 0 }) });
+    expect(opening.hitsLeagueScale).toBe(1);
+    expect(opening.hitsPer60).toBeCloseTo(3.2, 12);
+    const noPriorTotals = computeSkaterPhysicalEventRates({ all: undefined, position: "C", esPpToiSeconds: 1000,
+      currentSeasonId: 20262027, league: { ...league(), F: { toDate: league().F.toDate, prior: { hits: 0, blocks: 0, toiSeconds: 0 } } } });
+    expect(noPriorTotals).toMatchObject({ ...SKATER_PHYSICAL_RATE_PRIORS.F, hitsLeagueScale: 1, blocksLeagueScale: 1 });
   });
 
   it("uses the position prior, not zero, when there is no all-strength row or history", () => {
     expect(computeSkaterPhysicalEventRates({ all: undefined, position: "D", esPpToiSeconds: 1200 }))
       .toEqual({ hitsPer60: SKATER_PHYSICAL_RATE_PRIORS.D.hitsPer60, blocksPer60: SKATER_PHYSICAL_RATE_PRIORS.D.blocksPer60,
-        hitsRecentWeight: 0, blocksRecentWeight: 0, toiMultiplier: 1 });
+        hitsRecentWeight: 0, blocksRecentWeight: 0, hitsLeagueScale: 1, blocksLeagueScale: 1, toiMultiplier: 1 });
     const forward = computeSkaterPhysicalEventRates({ all: undefined, position: "C", esPpToiSeconds: 1000 });
     expect(forward).toMatchObject(SKATER_PHYSICAL_RATE_PRIORS.F);
     expect(forward.blocksPer60).toBeLessThan(SKATER_PHYSICAL_RATE_PRIORS.D.blocksPer60);
@@ -824,7 +876,7 @@ describe("skater physical event rates", () => {
   it("shrinks a short rookie history toward the prior and lets a genuine non-hitter stay near zero", () => {
     const rookie = computeSkaterPhysicalEventRates({ position: "L", esPpToiSeconds: 1000, all: allRow({
       hits_per_60_hits_3ya: 0, hits_per_60_toi_seconds_3ya: 7560 }) });
-    expect(rookie.hitsPer60).toBeCloseTo((1 - hitsWeight) * (50 * 4.9) / (126 + 50), 12);
+    expect(rookie.hitsPer60).toBeCloseTo((1 - hitsWeight) * (50 * 4.9) / (0.5 * 126 + 50), 12);
     const nonHitter = computeSkaterPhysicalEventRates({ position: "L", esPpToiSeconds: 1000, all: allRow({ hits_per_60_hits_3ya: 0 }) });
     expect(nonHitter.hitsPer60).toBeGreaterThan(0);
     expect(nonHitter.hitsPer60).toBeLessThan(0.3);

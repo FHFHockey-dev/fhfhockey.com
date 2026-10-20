@@ -1,6 +1,6 @@
 import { readAlignedCountSupport } from "lib/rollingPlayerCountSupport";
 import { resolveNullableCompatibilityValue } from "lib/rollingPlayerMetricCompatibility";
-import type { RollingRow } from "../types/run-forge-projections.types";
+import type { LeaguePhysicalTotals, RollingRow } from "../types/run-forge-projections.types";
 import {
   GOALIE_GSAA_PRIOR_MAX_ABS,
   SKATER_IXG_PER_SHOT_BASELINE,
@@ -16,7 +16,11 @@ import {
   SKATER_OPP_GOALIE_ASSIST_MIN_MULTIPLIER,
   SKATER_OPP_GOALIE_GOAL_MAX_MULTIPLIER,
   SKATER_OPP_GOALIE_GOAL_MIN_MULTIPLIER,
+  SKATER_PHYSICAL_LEAGUE_SCALE_MAX,
+  SKATER_PHYSICAL_LEAGUE_SCALE_MIN,
+  SKATER_PHYSICAL_LEAGUE_SHRINK_MINUTES,
   SKATER_PHYSICAL_PRIOR_MINUTES,
+  SKATER_PHYSICAL_PRIOR_SEASON_WEIGHT,
   SKATER_PHYSICAL_RATE_PRIORS,
   SKATER_PHYSICAL_RECENT_SHRINK_MINUTES,
   SKATER_PHYSICAL_TOI_RATIO_MAX,
@@ -440,47 +444,80 @@ export function computeSkaterSampleShrinkageAdjustments(args: {
 /**
  * All-situation hits and blocks per 60 from the all-strength rolling row, which
  * falls back to official NHL counts where NST logs are missing. The last-5 rate
- * is blended toward a three-season baseline shrunk to a position prior, so a
- * thin window of zeros lowers a line instead of zeroing it.
+ * is blended toward a baseline of this season plus the two prior seasons at half
+ * weight, shrunk to a position prior, so a thin window of zeros lowers a line
+ * instead of zeroing it. Prior-season events are rescaled to this season's league
+ * rate to date (shrunk toward the prior two seasons' and bounded), because league
+ * hit and block rates drift between seasons. Without league totals the constant
+ * position priors stand in and nothing is rescaled.
  */
 export function computeSkaterPhysicalEventRates(args: {
   all: RollingRow | undefined;
   position: string | null | undefined;
   esPpToiSeconds: number;
+  currentSeasonId?: number | null;
+  league?: LeaguePhysicalTotals | null;
 }): {
   hitsPer60: number;
   blocksPer60: number;
   hitsRecentWeight: number;
   blocksRecentWeight: number;
+  hitsLeagueScale: number;
+  blocksLeagueScale: number;
   toiMultiplier: number;
 } {
   const row = args.all;
-  const prior = SKATER_PHYSICAL_RATE_PRIORS[args.position === "D" ? "D" : "F"];
-  const recentMinutes = Math.max(0, finiteOrNull(row?.toi_seconds_total_last5) ?? 0) / 60;
+  const positionGroup = args.position === "D" ? "D" : "F";
+  const prior = SKATER_PHYSICAL_RATE_PRIORS[positionGroup];
+  const league = args.league?.[positionGroup];
+  const nonNegative = (value: number | null | undefined) => Math.max(0, finiteOrNull(value) ?? 0);
+  const recentMinutes = nonNegative(row?.toi_seconds_total_last5) / 60;
   const hitsRecentWeight = recentMinutes / (recentMinutes + SKATER_PHYSICAL_RECENT_SHRINK_MINUTES.hits);
   const blocksRecentWeight = recentMinutes / (recentMinutes + SKATER_PHYSICAL_RECENT_SHRINK_MINUTES.blocks);
+  // A row from an earlier season has no games this season, so all of its three-season history is prior.
+  const sameSeason = args.currentSeasonId != null && row?.season === args.currentSeasonId;
+  // League per-60 this season (shrunk toward the prior two seasons') and its bounded ratio to them.
+  const leagueReference = (metric: "hits" | "blocks", fallbackPer60: number) => {
+    const priorPer60 = league && league.prior.toiSeconds > 0 ? 3600 * league.prior[metric] / league.prior.toiSeconds : 0;
+    if (!league || !(priorPer60 > 0)) return { per60: fallbackPer60, scale: 1 };
+    const shrinkMinutes = SKATER_PHYSICAL_LEAGUE_SHRINK_MINUTES[positionGroup];
+    const per60 = (60 * nonNegative(league.toDate[metric]) + priorPer60 * shrinkMinutes)
+      / (nonNegative(league.toDate.toiSeconds) / 60 + shrinkMinutes);
+    return { per60, scale: clamp(per60 / priorPer60, SKATER_PHYSICAL_LEAGUE_SCALE_MIN, SKATER_PHYSICAL_LEAGUE_SCALE_MAX) };
+  };
   const blend = (recent: number | null | undefined, events3ya: number | null | undefined,
-    toiSeconds3ya: number | null | undefined, priorPer60: number, priorMinutes: number, recentWeight: number) => {
+    toiSeconds3ya: number | null | undefined, eventsSeason: number | null | undefined,
+    toiSecondsSeason: number | null | undefined, reference: { per60: number; scale: number },
+    priorMinutes: number, recentWeight: number) => {
     const events = finiteOrNull(events3ya);
-    const historyMinutes = Math.max(0, finiteOrNull(toiSeconds3ya) ?? 0) / 60;
-    const baseline = events != null && events >= 0 && historyMinutes > 0
-      ? (events * 60 + priorMinutes * priorPer60) / (historyMinutes + priorMinutes)
-      : priorPer60;
+    const historySeconds = nonNegative(toiSeconds3ya);
+    let baseline = reference.per60;
+    if (events != null && events >= 0 && historySeconds > 0) {
+      const seasonEvents = sameSeason ? Math.min(events, nonNegative(eventsSeason)) : 0;
+      const seasonSeconds = sameSeason ? Math.min(historySeconds, nonNegative(toiSecondsSeason)) : 0;
+      const weightedEvents = seasonEvents + SKATER_PHYSICAL_PRIOR_SEASON_WEIGHT * reference.scale * (events - seasonEvents);
+      const weightedMinutes = (seasonSeconds + SKATER_PHYSICAL_PRIOR_SEASON_WEIGHT * (historySeconds - seasonSeconds)) / 60;
+      baseline = (weightedEvents * 60 + priorMinutes * reference.per60) / (weightedMinutes + priorMinutes);
+    }
     const recentRate = finiteOrNull(recent);
     return recentRate != null && recentRate >= 0
       ? recentWeight * recentRate + (1 - recentWeight) * baseline
       : baseline;
   };
+  const hitsReference = leagueReference("hits", prior.hitsPer60);
+  const blocksReference = leagueReference("blocks", prior.blocksPer60);
   const allToi = finiteOrNull(row?.toi_seconds_avg_last5);
   return {
     hitsPer60: blend(resolveNullableCompatibilityValue("weighted_rate", row?.hits_per_60_last5, row?.hits_per_60_avg_last5),
-      row?.hits_per_60_hits_3ya, row?.hits_per_60_toi_seconds_3ya, prior.hitsPer60,
-      SKATER_PHYSICAL_PRIOR_MINUTES.hits, hitsRecentWeight),
+      row?.hits_per_60_hits_3ya, row?.hits_per_60_toi_seconds_3ya, row?.hits_per_60_hits_season,
+      row?.hits_per_60_toi_seconds_season, hitsReference, SKATER_PHYSICAL_PRIOR_MINUTES.hits, hitsRecentWeight),
     blocksPer60: blend(resolveNullableCompatibilityValue("weighted_rate", row?.blocks_per_60_last5, row?.blocks_per_60_avg_last5),
-      row?.blocks_per_60_blocks_3ya, row?.blocks_per_60_toi_seconds_3ya, prior.blocksPer60,
-      SKATER_PHYSICAL_PRIOR_MINUTES.blocks, blocksRecentWeight),
+      row?.blocks_per_60_blocks_3ya, row?.blocks_per_60_toi_seconds_3ya, row?.blocks_per_60_blocks_season,
+      row?.blocks_per_60_toi_seconds_season, blocksReference, SKATER_PHYSICAL_PRIOR_MINUTES.blocks, blocksRecentWeight),
     hitsRecentWeight,
     blocksRecentWeight,
+    hitsLeagueScale: hitsReference.scale,
+    blocksLeagueScale: blocksReference.scale,
     // PK time is not projected; scale ES+PP TOI by the recent all-situation share.
     toiMultiplier: allToi != null && allToi > 0 && args.esPpToiSeconds > 0
       ? clamp(allToi / args.esPpToiSeconds, 1, SKATER_PHYSICAL_TOI_RATIO_MAX)

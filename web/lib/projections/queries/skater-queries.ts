@@ -7,6 +7,7 @@ import {
   TREND_BAND_WINDOW_PRIORITY
 } from "../constants/projection-weights";
 import type {
+  LeaguePhysicalTotals,
   RollingRow,
   SkaterOnIceContextProfile,
   SkaterShotQualityProfile,
@@ -123,12 +124,16 @@ export const ROLLING_ROW_SELECT_CLAUSE =
       canonicalField: "blocks_per_60_all",
       legacyField: "blocks_per_60_avg_all"
     }),
-    // Window exposure and three-season event/TOI totals for hit and block shrinkage.
+    // Window exposure plus three-season and current-season event/TOI totals for hit and block shrinkage.
     "toi_seconds_total_last5",
     "hits_per_60_hits_3ya",
     "hits_per_60_toi_seconds_3ya",
     "blocks_per_60_blocks_3ya",
-    "blocks_per_60_toi_seconds_3ya"
+    "blocks_per_60_toi_seconds_3ya",
+    "hits_per_60_hits_season",
+    "hits_per_60_toi_seconds_season",
+    "blocks_per_60_blocks_season",
+    "blocks_per_60_toi_seconds_season"
   ].join(",");
 
 function normalizeWgoToiToSeconds(value: number | null | undefined): number | null {
@@ -313,6 +318,53 @@ export async function fetchRollingRows(
     offset += result.data.length;
     if (offset === supportTotal) return rows.map(row => byKey.get(key(row))!);
   }
+}
+
+export class LeaguePhysicalTotalsReadError extends Error {
+  constructor(readonly reason: "invalid_scope" | "read_failed" | "invalid_rows", cause?: unknown) {
+    super(`League physical totals read failed: ${reason}`, { cause });
+    this.name = "LeaguePhysicalTotalsReadError";
+  }
+}
+
+/** League all-situation hits, blocks and TOI by F/D: this season before cutoffDate and the two prior seasons. */
+export async function fetchLeaguePhysicalTotals(
+  seasonId: number,
+  cutoffDate: string,
+  db = supabase
+): Promise<LeaguePhysicalTotals> {
+  if (!db) throw new Error("Supabase server client not available");
+  if (!Number.isSafeInteger(seasonId) || seasonId % 10000 !== Math.floor(seasonId / 10000) + 1
+    || !/^\d{4}-\d{2}-\d{2}$/.test(cutoffDate) || Number.isNaN(Date.parse(cutoffDate))) {
+    throw new LeaguePhysicalTotalsReadError("invalid_scope");
+  }
+  let result: { data: unknown; error: unknown };
+  try {
+    // Not in the generated types until the migration is applied and types are regenerated.
+    result = await (db as any).rpc("forge_league_skater_physical_totals", { p_season_id: seasonId, p_cutoff: cutoffDate });
+  } catch (cause) {
+    throw new LeaguePhysicalTotalsReadError("read_failed", cause);
+  }
+  if (result.error) throw new LeaguePhysicalTotalsReadError("read_failed", result.error);
+  const rows = Array.isArray(result.data) ? result.data : [];
+  const totals: Partial<Record<string, { hits: number; blocks: number; toiSeconds: number }>> = {};
+  for (const row of rows) {
+    const key = `${row?.position_group}:${row?.scope}`;
+    // bigint columns may arrive as numeric strings; null or blank must not read as zero.
+    const raw = [row?.hits, row?.blocks, row?.toi_seconds];
+    const values = raw.map(Number);
+    if (!["F:to_date", "F:prior2", "D:to_date", "D:prior2"].includes(key) || totals[key]
+      || raw.some(value => typeof value !== "number" && !(typeof value === "string" && value.trim() !== ""))
+      || values.some(value => !Number.isFinite(value) || value < 0)) {
+      throw new LeaguePhysicalTotalsReadError("invalid_rows");
+    }
+    totals[key] = { hits: values[0], blocks: values[1], toiSeconds: values[2] };
+  }
+  if (rows.length !== 4) throw new LeaguePhysicalTotalsReadError("invalid_rows");
+  return {
+    F: { toDate: totals["F:to_date"]!, prior: totals["F:prior2"]! },
+    D: { toDate: totals["D:to_date"]!, prior: totals["D:prior2"]! },
+  };
 }
 
 export async function fetchLatestWgoSkaterDeploymentProfiles(

@@ -881,6 +881,16 @@
       "migrationClass": "feature",
       "rolloutGate": "Drafted 2026-10-19 at TJ's request by session local_08a0bf1c: materialized view public.opponent_skater_allowed_by_position (regular-season points and shots allowed to F vs D per opponent, current and last season; service_role select only) plus fhfh_internal.register_opponent_allowed_refresh_cron(), which the migration does not call. Hosted apply and cron registration are separate explicit approvals. The register function schedules the refresh at 09:42 UTC ('42 9 * * *'), clear of the */5, */10, */20 and */25 jobs that fire at 09:40.",
       "stateEvidence": "Production ledger version 20261019211444 name opponent_skater_allowed_by_position (applied 2026-10-19 by explicit TJ approval via session local_08a0bf1c; file renamed from its draft timestamp 20261019213000 to the ledger version). Chef read-only readback: it is the only ledger row after 20261019172842; materialized view has 128 rows; SELECT for service_role only (anon/authenticated false); fhfh_internal.register_opponent_allowed_refresh_cron() was called once by approval and cron.job 'opponent-skater-allowed-refresh' is active at '42 9 * * *'. IFTTT SQL6-SQL8 drafts take orders 88-90 when added."
+    },
+    {
+      "order": 88,
+      "path": "supabase/migrations/20261020211500_forge_league_skater_physical_totals.sql",
+      "sha256": "b5f86c6bd990d28d5fe31c60782ca8888b0f9248735b2c370fc6e4935ff107a2",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "feature",
+      "rolloutGate": "Drafted 2026-10-20 at TJ's request (FORGE hits/blocks league-to-date rescale): read-only STABLE SECURITY INVOKER function public.forge_league_skater_physical_totals(p_season_id, p_cutoff) returning league all-situation hits, blocks and TOI by F/D for this season to date and the two prior seasons from wgo_skater_stats, every scope bounded by game date as well as season_id; EXECUTE for service_role only. FORGE falls back to constant priors if the function is absent, so code may ship first. Hosted apply needs TJ's separate explicit approval; no migration command was run.",
+      "stateEvidence": "Local source only; no hosted ledger or apply receipt. Disposable PostgreSQL 17.11 harness (synthetic wgo_skater_stats with 16,041 planted 2012-dated rows labelled 20242025): applied twice cleanly; output matched a direct aggregate; planted rows excluded; an invalid season id returned four zero rows; anon was refused EXECUTE. Takes order 88, so the IFTTT SQL6-SQL8 drafts noted on order 87 move to 89-91."
     }
   ],
   "sourceExtensionApproval": {

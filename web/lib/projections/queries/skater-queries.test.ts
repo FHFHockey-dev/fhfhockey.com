@@ -17,7 +17,8 @@ vi.mock("lib/supabase/server", () => ({ default: {
   },
 } }));
 
-import { ROLLING_ROW_SELECT_CLAUSE, fetchRollingRows, fetchCurrentRosterPlayerIds, fetchSkaterRecencyEvents, fetchLatestSkaterContextProfiles } from "./skater-queries";
+import { ROLLING_ROW_SELECT_CLAUSE, fetchRollingRows, fetchCurrentRosterPlayerIds, fetchSkaterRecencyEvents, fetchLatestSkaterContextProfiles,
+  fetchLeaguePhysicalTotals } from "./skater-queries";
 
 describe("native skater recency event identity", () => {
   const rows = [{ player_id: 7, game_id: 2026020025, season: 20262027, game_date: "2026-10-03" }] as any;
@@ -303,7 +304,8 @@ describe("counted rolling skater history", () => {
       hits_per_60_toi_seconds_3ya: 300000, blocks_per_60_blocks_3ya: 380, blocks_per_60_toi_seconds_3ya: 300000 });
     expect(row).not.toHaveProperty("aligned_count_support");
     for (const field of ["toi_seconds_total_last5", "hits_per_60_hits_3ya", "hits_per_60_toi_seconds_3ya",
-      "blocks_per_60_blocks_3ya", "blocks_per_60_toi_seconds_3ya"]) expect(ROLLING_ROW_SELECT_CLAUSE.split(",")).toContain(field);
+      "blocks_per_60_blocks_3ya", "blocks_per_60_toi_seconds_3ya", "hits_per_60_hits_season", "hits_per_60_toi_seconds_season",
+      "blocks_per_60_blocks_season", "blocks_per_60_toi_seconds_season"]) expect(ROLLING_ROW_SELECT_CLAUSE.split(",")).toContain(field);
   });
   it.each([null, undefined, -1, 1.5, NaN, "1"])("rejects unproved exact count %s", async count => {
     fixture(rows(1), [{ count }]);
@@ -403,5 +405,40 @@ describe("combined skater context read", () => {
       nstOiXgaPer60: null, nstOiCfPct: 0.55, possessionPctSafe: 0.54 });
     expect(result.shotQuality.get(8)?.nstShotsPer60).toBeNull();
     expect(result.onIceContext.get(8)?.nstOiCfPct).toBe(0.49);
+  });
+});
+
+describe("league physical totals", () => {
+  const rows = [
+    { scope: "prior2", position_group: "D", player_games: 9000, hits: 3200, blocks: 4400, toi_seconds: 3_600_000 },
+    { scope: "prior2", position_group: "F", player_games: 18000, hits: 4900, blocks: 2100, toi_seconds: 3_600_000 },
+    { scope: "to_date", position_group: "D", player_games: 900, hits: 280, blocks: 440, toi_seconds: 360_000 },
+    { scope: "to_date", position_group: "F", player_games: 1800, hits: "490", blocks: "210", toi_seconds: 360_000 },
+  ];
+  const client = (data: unknown, error: unknown = null) => ({ rpc: vi.fn().mockResolvedValue({ data, error }) });
+
+  it("reads this season to date and the prior two seasons by position in one call", async () => {
+    const db = client(rows);
+    await expect(fetchLeaguePhysicalTotals(20262027, "2026-10-20", db as any)).resolves.toEqual({
+      F: { toDate: { hits: 490, blocks: 210, toiSeconds: 360_000 }, prior: { hits: 4900, blocks: 2100, toiSeconds: 3_600_000 } },
+      D: { toDate: { hits: 280, blocks: 440, toiSeconds: 360_000 }, prior: { hits: 3200, blocks: 4400, toiSeconds: 3_600_000 } },
+    });
+    expect(db.rpc).toHaveBeenCalledTimes(1);
+    expect(db.rpc).toHaveBeenCalledWith("forge_league_skater_physical_totals", { p_season_id: 20262027, p_cutoff: "2026-10-20" });
+  });
+
+  it("rejects an invalid scope before reading, and missing, extra, duplicate or negative rows", async () => {
+    for (const [season, cutoff] of [[20262026, "2026-10-20"], [2026, "2026-10-20"], [20262027, "10/20/2026"]] as const) {
+      const db = client(rows);
+      await expect(fetchLeaguePhysicalTotals(season, cutoff, db as any)).rejects.toMatchObject({ reason: "invalid_scope" });
+      expect(db.rpc).not.toHaveBeenCalled();
+    }
+    for (const data of [rows.slice(1), [...rows, rows[0]], [rows[0], rows[0], rows[2], rows[3]],
+      [{ ...rows[0], hits: -1 }, ...rows.slice(1)], [{ ...rows[0], toi_seconds: null }, ...rows.slice(1)],
+      [{ ...rows[0], scope: "career" }, ...rows.slice(1)], null]) {
+      await expect(fetchLeaguePhysicalTotals(20262027, "2026-10-20", client(data) as any)).rejects.toMatchObject({ reason: "invalid_rows" });
+    }
+    await expect(fetchLeaguePhysicalTotals(20262027, "2026-10-20", client(null, { code: "PGRST202" }) as any))
+      .rejects.toMatchObject({ reason: "read_failed" });
   });
 });

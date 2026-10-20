@@ -52,7 +52,18 @@ export type RollingRow = {
   hits_per_60_toi_seconds_3ya?: number | null;
   blocks_per_60_blocks_3ya?: number | null;
   blocks_per_60_toi_seconds_3ya?: number | null;
+  hits_per_60_hits_season?: number | null;
+  hits_per_60_toi_seconds_season?: number | null;
+  blocks_per_60_blocks_season?: number | null;
+  blocks_per_60_toi_seconds_season?: number | null;
 };
+
+/** League all-situation totals by position group: this season to date and the two prior seasons pooled. */
+export type LeaguePhysicalTotals = Record<"F" | "D", Record<"toDate" | "prior", {
+  hits: number;
+  blocks: number;
+  toiSeconds: number;
+}>>;
 
 export type RosterEventRow = {
   event_id: number;

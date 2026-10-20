@@ -43,6 +43,7 @@ import type {
   ReconciledSkaterVector,
   ReconciliationDistributionValidation,
   RollingSkaterMetricRow,
+  LeaguePhysicalTotals,
   RollingRow,
   RosterEventRow,
   RunProjectionOptions,
@@ -220,6 +221,7 @@ import {
   fetchLatestSkaterContextProfiles,
   fetchLatestSkaterTrendAdjustments,
   fetchLatestWgoSkaterDeploymentProfiles,
+  fetchLeaguePhysicalTotals,
   fetchRollingRows,
 } from "../queries/skater-queries";
 import { type MarketTypeSummary } from "../queries/market-queries";
@@ -1261,6 +1263,7 @@ export async function runPerGameSkaterStage(args: {
   teamRestDaysCache: Map<string, number | null>;
   teamStrengthPriorCache: Map<string, TeamStrengthPrior | null>;
   teamStrengthCache: Map<string, TeamStrengthAverages>;
+  leaguePhysicalTotalsCache: Map<string, LeaguePhysicalTotals | null>;
   teamFiveOnFiveProfileCache: Map<string, TeamFiveOnFiveProfile | null>;
   teamNstExpectedGoalsCache: Map<string, TeamNstExpectedGoalsProfile | null>;
   teamLineComboGoaliePriorCache: Map<string, Map<number, number>>;
@@ -1308,6 +1311,7 @@ export async function runPerGameSkaterStage(args: {
     teamRestDaysCache,
     teamStrengthPriorCache,
     teamStrengthCache,
+    leaguePhysicalTotalsCache,
     teamFiveOnFiveProfileCache,
     teamNstExpectedGoalsCache,
     teamLineComboGoaliePriorCache,
@@ -1478,6 +1482,18 @@ export async function runPerGameSkaterStage(args: {
       "all",
       asOfDate,
     ));
+    // League hit/block totals rescale prior-season history: one read per run and date; constant priors if it fails.
+    const leaguePhysicalKey = `${currentSeasonId}:${asOfDate}`;
+    if (!leaguePhysicalTotalsCache.has(leaguePhysicalKey)) {
+      let totals: LeaguePhysicalTotals | null = null;
+      try {
+        totals = await fetchLeaguePhysicalTotals(currentSeasonId, asOfDate);
+      } catch {
+        metrics.data_quality.physical_league_totals_unavailable += 1;
+      }
+      leaguePhysicalTotalsCache.set(leaguePhysicalKey, totals);
+    }
+    const leaguePhysicalTotals = leaguePhysicalTotalsCache.get(leaguePhysicalKey) ?? null;
     let evLatest = pickLatestByPlayer(evRows);
     let ppLatest = pickLatestByPlayer(ppRows);
     let latestMetricDateByPlayerId = new Map<number, string>();
@@ -2140,6 +2156,8 @@ export async function runPerGameSkaterStage(args: {
         all: allLatest.get(playerId),
         position: playerMetaById.get(playerId)?.position ?? null,
         esPpToiSeconds: toiEs + toiPp,
+        currentSeasonId,
+        league: leaguePhysicalTotals,
       });
 
       const shotsEs = computeShotsFromRate(boundedToiEs, sogPer60Ev);
