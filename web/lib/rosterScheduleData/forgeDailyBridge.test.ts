@@ -3,6 +3,7 @@ import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import { candidateHorizonPoints } from "lib/rosterScheduleOptimizer/planning";
 import type { PlanningGame, PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_VERSION, opponentTilts, teamWinProbability, type ForgeDailyBridgeInputs } from "./forgeDailyBridge";
+import { compactBridgeForecasts, expandBridgeForecasts } from "./bridgeForecastWire";
 
 const now = new Date("2026-10-19T18:00:00Z");
 const policy = forecastCalendarPolicy(14);
@@ -59,9 +60,29 @@ describe("FORGE daily bridge", () => {
   it("is empty with a plain reason when no run exists, and trims to the byte budget", () => {
     expect(buildForgeDailyBridgeForecasts({ runs: [], skaters: [], goalies: [], goalieShares: [] }, players, games, now, 20262027, policy))
       .toEqual({ forecasts: [], limitations: [expect.stringContaining("no successful FORGE run")] });
-    const trimmed = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy, 3000);
+    // The budget counts compact wire bytes, the size the projections actually travel at.
+    const trimmed = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy, 1000);
     expect(trimmed.forecasts.length).toBeGreaterThan(0);
     expect(trimmed.limitations.at(-1)).toMatch(/trimmed to the first \d+ of 6 player-games/);
+  });
+
+  it("travels compactly and is rebuilt exactly, leaving anything it cannot rebuild as it is", () => {
+    const { forecasts } = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy);
+    const { forecasts: kept, wire } = compactBridgeForecasts(forecasts, { players, games }, 20262027);
+    expect(kept).toEqual([]);
+    const sent = JSON.parse(JSON.stringify(wire));
+    expect(expandBridgeForecasts(sent, { players, games })).toEqual(forecasts);
+    expect(JSON.stringify(wire).length).toBeLessThan(JSON.stringify(forecasts).length * 0.5);
+    // A row whose identity no longer matches, and any non-bridge forecast, stay in full.
+    const moved = { ...forecasts[0], issuedContext: { ...forecasts[0].issuedContext!, rosterRevision: "other" } };
+    const other = { ...forecasts[1], revisionId: "issued-revision" };
+    const mixed = compactBridgeForecasts([moved, other, ...forecasts.slice(2)], { players, games }, 20262027);
+    expect(mixed.forecasts).toEqual([moved, other]);
+    expect(expandBridgeForecasts(mixed.wire, { players, games })).toEqual(forecasts.slice(2));
+    // Nothing usable comes from a missing, foreign or malformed wire.
+    expect(expandBridgeForecasts(undefined, { players, games })).toEqual([]);
+    expect(expandBridgeForecasts({ ...sent, version: "other" }, { players, games })).toEqual([]);
+    expect(expandBridgeForecasts({ ...sent, rows: [["s1", "1", 9, "x", {}, 2, "no", null]] }, { players, games })).toEqual([]);
   });
 
   it("keeps a skater FORGE gives no power-play line, at zero power-play production", () => {

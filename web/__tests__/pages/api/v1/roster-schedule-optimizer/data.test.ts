@@ -8,6 +8,7 @@ vi.mock("lib/player-forecasts/forecastServingSource", async importOriginal => ({
   ...await importOriginal<typeof import("lib/player-forecasts/forecastServingSource")>(), selectForecastServingSource: mocks.select,
 }));
 import { decodePlanningDataTransport } from "lib/rosterScheduleData/planningDataTransport";
+import { expandBridgeForecasts } from "lib/rosterScheduleData/bridgeForecastWire";
 import handler from "pages/api/v1/roster-schedule-optimizer/data";
 
 const query = { seasonId: "20262027", startDate: "2026-10-15", endDate: "2026-10-21" };
@@ -71,5 +72,26 @@ describe("/api/v1/roster-schedule-optimizer/data", () => {
     mocks.load.mockRejectedValue(new Error("fixture-secret-database-url"));
     const failed = await request();
     expect(failed.code).toBe(503); expect(JSON.stringify(failed.body)).not.toContain("fixture-secret");
+  });
+
+  it("sends interim bridge projections compactly beside the strict transport, rebuilt exactly by the client", async () => {
+    const players = [{ id: "7", nhlId: 8470001, nhlTeamId: 10, rosterRevision: "roster-7", name: "Skater", teamAbbreviation: "TOR",
+      eligiblePositions: ["C"], eligibilityVerified: true, playerClass: "skater", availability: "free_agent", ownership: null, canDrop: true,
+      holdValue: null, reserveEligibility: [] }];
+    const games = [{ id: "2026020101", scheduleRevision: "schedule-101", date: "2026-10-16", startsAt: "2026-10-16T23:00:00.000Z",
+      teamAbbreviation: "TOR", opponent: "MTL", home: true, status: "scheduled" }];
+    const wire = { version: "forge-daily-bridge-wire-v1", seasonId: 20262027, limitations: ["Interim FORGE projection."],
+      runs: [["forge-daily-bridge-v1:run-a", "forge-daily-bridge-v1:run-a", "forge-daily-bridge-v1:abc", "2026-10-15T11:00:00.000Z", "2026-10-15T11:00:00.000Z"]],
+      rows: [["7", "2026020101", 0, "2026-10-16T23:00:00.000Z", { GOALS: 0.3, ASSISTS: 0.4 }, null, false, null]] };
+    const forecasts = expandBridgeForecasts(wire, { players, games } as never);
+    expect(forecasts).toHaveLength(1);
+    mocks.load.mockResolvedValue({ ...data, players, games, forecasts });
+    const res = await request();
+    expect(res.code).toBe(200);
+    const sent = JSON.parse(JSON.stringify(res.body));
+    const decoded = decodePlanningDataTransport(sent.data);
+    expect(decoded.forecasts).toEqual([]);
+    expect(sent.bridgeForecasts.rows).toHaveLength(1);
+    expect(expandBridgeForecasts(sent.bridgeForecasts, decoded)).toEqual(forecasts);
   });
 });

@@ -8,15 +8,16 @@ import { DEFENSE_B2B_FATIGUE_BOOST, OPPONENT_AWAY_PENALTY, OPPONENT_B2B_PENALTY,
 import type { TeamStrengthPrior } from "lib/projections/types/run-forge-projections.types";
 import type { GameForecast, PlanningGame, PlanningPlayer, StatLine } from "lib/rosterScheduleOptimizer/planningTypes";
 import { pages, withinDeadline } from "./planningInputs";
+import { bridgeWireRowBytes, FORGE_DAILY_BRIDGE_VERSION } from "./bridgeForecastWire";
 
 type Row = Record<string, any>;
 type Run = { runId: string; asOfDate: string; issuedAt: string; gitSha: string | null };
 
 /** Interim RSO source until native forecasts are activated (TJ, 2026-10-19). Each player's
  * latest FORGE v2 daily projection stands in for his remaining games in the planning window. */
-export const FORGE_DAILY_BRIDGE_VERSION = "forge-daily-bridge-v1";
+export { FORGE_DAILY_BRIDGE_VERSION };
 export const FORGE_DAILY_BRIDGE_LOOKBACK_DAYS = 7;
-/** Leaves room for players, games and evidence under the 4 MB `/data` transport limit. */
+/** Compact wire bytes (see bridgeForecastWire) the projections may take beside players, games and evidence. */
 export const FORGE_DAILY_BRIDGE_BYTE_BUDGET = 2_500_000;
 /** Yahoo skater stats FORGE does not project: per-game season rates stand in, and the evidence says so. */
 export const FORGE_DAILY_BRIDGE_SEASON_RATED = ["PENALTY_MINUTES", "PLUS_MINUS", "SH_GOALS", "SH_ASSISTS", "SH_POINTS", "GAME_WINNING_GOALS", "FACEOFFS_WON", "FACEOFFS_LOST"] as const;
@@ -416,7 +417,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   }
   forecasts.sort((a, b) => (a.issuedContext!.scheduledAt).localeCompare(b.issuedContext!.scheduledAt) || a.playerId.localeCompare(b.playerId) || a.gameId.localeCompare(b.gameId));
   let bytes = 0, kept = forecasts.length;
-  for (const [index, forecast] of forecasts.entries()) { bytes += JSON.stringify(forecast).length + 1; if (bytes > byteBudget) { kept = index; break; } }
+  for (const [index, forecast] of forecasts.entries()) { bytes += bridgeWireRowBytes(forecast); if (bytes > byteBudget) { kept = index; break; } }
   const coveredTeams = new Set(forecasts.map(row => row.issuedContext!.teamId)).size;
   const teamCount = new Set(identified.map(player => player.nhlTeamId)).size;
   const dates = [...runs.values()].map(run => run.asOfDate).sort();

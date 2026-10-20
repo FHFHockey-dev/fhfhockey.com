@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { encodePlanningDataTransport, PlanningDataTransportLimitError } from "lib/rosterScheduleData/planningDataTransport";
+import { compactBridgeForecasts } from "lib/rosterScheduleData/bridgeForecastWire";
 import serviceRoleClient from "lib/supabase/server";
 import { loadPlanningData, parsePlanningDataQuery } from "lib/rosterScheduleData/planning";
 import { forecastSourceSummary, selectForecastServingSource } from "lib/player-forecasts/forecastServingSource";
@@ -18,8 +19,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // A shared copy of native forecasts never outlives the selected catalog.
     const nativeMaxAge = source.kind === "native" ? Math.max(0, Math.min(300, Math.floor((Date.parse(source.expiresAt) - Date.now()) / 1000))) : null;
     res.setHeader("Cache-Control", nativeMaxAge === null ? "public, s-maxage=300, stale-while-revalidate=300" : `public, s-maxage=${nativeMaxAge}, stale-while-revalidate=0`);
-    // Beside `data`, so clients decoding the strict transport keep working.
-    return res.json({ success: true, data: encodePlanningDataTransport(data), forecastSource: forecastSourceSummary(source) });
+    // Interim bridge projections travel compactly beside `data`; clients rebuild them, so the strict transport is unchanged.
+    const bridge = compactBridgeForecasts(data.forecasts, data, query.seasonId);
+    return res.json({ success: true, data: encodePlanningDataTransport({ ...data, forecasts: bridge.forecasts }),
+      ...(bridge.wire ? { bridgeForecasts: bridge.wire } : {}), forecastSource: forecastSourceSummary(source) });
   } catch (error) {
     if (error instanceof PlanningDataTransportLimitError) return res.status(503).json({ success: false, code: "planning_range_too_large", error: error.message });
     return res.status(503).json({ success: false, error: "Planning data is temporarily unavailable. Your saved manual workspace is preserved." });

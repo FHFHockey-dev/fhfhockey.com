@@ -1,4 +1,5 @@
 import { decodePlanningDataTransport } from "lib/rosterScheduleData/planningDataTransport";
+import { expandBridgeForecasts } from "lib/rosterScheduleData/bridgeForecastWire";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fromZonedTime } from "date-fns-tz";
 import { useAuth } from "contexts/AuthProviderContext";
@@ -392,7 +393,7 @@ export default function RosterScheduleOptimizer() {
     const explicitRead = scheduleReadRevision?.contextKey === contextKey ? scheduleReadRevision.token : null;
     if (explicitRead) params.set("readToken", explicitRead);
     trackedFetch(`/api/v1/roster-schedule-optimizer/data?${params}`, { signal: controller.signal, ...(explicitRead ? { cache: "no-store" as const } : {}) })
-      .then(async (response) => { const body = await response.json(); if (!response.ok || !body.success) throw new Error(requestErrorMessage(body.error, "Planning data unavailable.")); return decodePlanningDataTransport(body.data); })
+      .then(async (response) => { const body = await response.json(); if (!response.ok || !body.success) throw new Error(requestErrorMessage(body.error, "Planning data unavailable.")); const decoded = decodePlanningDataTransport(body.data); return { ...decoded, forecasts: [...decoded.forecasts, ...expandBridgeForecasts(body.bridgeForecasts, decoded)] }; })
       .then((next) => { if (controller.signal.aborted || preservationRef.current.phase !== "idle") return;
         if (sharedReadNotice.current?.contextKey === contextKey && sharedReadNotice.current.revision === noticeRevision.current) setNotice(null);
         sharedReadNotice.current = null;
@@ -493,7 +494,9 @@ export default function RosterScheduleOptimizer() {
       if (!response.ok || !body.success) throw new Error(requestErrorMessage(body.error, "Provider refresh failed."));
       const current = providerRef.current.context;
       if (controller.signal.aborted || userId !== providerRef.current.userId || requestKey !== workspaceContextKey(current)) return false;
-      const next = body.snapshot as PlanningSnapshot;
+      const provided = body.snapshot as PlanningSnapshot;
+      const next = provided && Array.isArray(provided.forecasts) && body.bridgeForecasts
+        ? { ...provided, forecasts: [...provided.forecasts, ...expandBridgeForecasts(body.bridgeForecasts, provided)] } : provided;
       if (preservationRef.current.backup && workspaceContextKey(next.context) !== preservationRef.current.backup.contextKey) {
         preservationRef.current.phase = "invalid"; setPreservation({ phase: "invalid", text: "Provider context differs from the admitted backup. The original plan was kept." });
         throw new Error("Provider context differs from the admitted backup.");
