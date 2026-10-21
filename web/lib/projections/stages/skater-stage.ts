@@ -257,6 +257,8 @@ import {
   computeSupportedStrengthSplitConversionRates,
   applySupportedSkaterConversionHeads,
   resolveSkaterConversionRates,
+  skaterConversionPriorsAndBounds,
+  type SkaterAssistDenominator,
 } from "../calculators/skater-adjustments";
 import {
   blendTopStarterScenarioOutputs,
@@ -1049,6 +1051,48 @@ function roleGroupKeyForTeammateCoupling(
   if (roleTag.esRole.startsWith("L")) return roleTag.esRole;
   if (roleTag.esRole.startsWith("D")) return roleTag.esRole;
   return null;
+}
+
+// Assist-rate clamps after the trend and teammate-coupling multipliers, per assist scale.
+const SKATER_ASSIST_RATE_CLAMPS = {
+  per_goal: {
+    trend: { es: [0.4, 3.4], pp: [0.6, 4] },
+    coupling: { es: [0.4, 3.6], pp: [0.6, 4.2] },
+  },
+  per_two_goals: {
+    trend: { es: [0.2, 1.7], pp: [0.3, 2] },
+    coupling: { es: [0.2, 1.8], pp: [0.3, 2.1] },
+  },
+} as const;
+
+export function clampSkaterAssistRate(
+  rate: number,
+  strength: "es" | "pp",
+  step: "trend" | "coupling",
+  assistDenominator: SkaterAssistDenominator,
+): number {
+  const [min, max] = SKATER_ASSIST_RATE_CLAMPS[assistDenominator][step][strength];
+  return clamp(rate, min, max);
+}
+
+/** Holdout benchmark: fixed league conversion priors on the per-goal assist scale. */
+export function buildSkaterNaivePriorBaseline(args: {
+  shotsEs: number;
+  shotsPp: number;
+}) {
+  const { priors } = skaterConversionPriorsAndBounds("per_goal");
+  const goalsEs = args.shotsEs * priors.goalRateEs;
+  const goalsPp = args.shotsPp * priors.goalRatePp;
+  return {
+    goal_rate_es: priors.goalRateEs,
+    goal_rate_pp: priors.goalRatePp,
+    assist_per_goal_es: priors.assistRateEs,
+    assist_per_goal_pp: priors.assistRatePp,
+    goals_es: goalsEs,
+    goals_pp: goalsPp,
+    assists_es: goalsEs * priors.assistRateEs,
+    assists_pp: goalsPp * priors.assistRatePp,
+  };
 }
 
 export function computeTeammateAssistCoupling(args: {
@@ -1922,6 +1966,8 @@ export async function runPerGameSkaterStage(args: {
         goalRatePp: number;
         assistRateEs: number;
         assistRatePp: number;
+        legacyAssistRateEs: number;
+        legacyAssistRatePp: number;
         hitsRate: number;
         blocksRate: number;
         physicalToiMultiplier: number;
@@ -2203,6 +2249,22 @@ export async function runPerGameSkaterStage(args: {
         assistRatePp,
         conversionShrink,
       } = resolveSkaterConversionRates({ splitRates, sampleWeight });
+      // Ledger-only: the same path on the former per-two-goals assist scale.
+      const legacyAssistRates = resolveSkaterConversionRates({
+        splitRates: computeSupportedStrengthSplitConversionRates({
+          ev,
+          pp,
+          goalRateMultiplier: 1,
+          assistRateMultiplier:
+            onIceContextAdjustment.assistEnvironmentMultiplier *
+            teamLevelContextAdjustment.assistRateMultiplier *
+            opponentGoalieContextAdjustment.assistRateMultiplier *
+            restScheduleAdjustment.assistRateMultiplier,
+          assistDenominator: "per_two_goals",
+        }),
+        sampleWeight,
+        assistDenominator: "per_two_goals",
+      });
 
       const roleContinuity =
         roleTag != null
@@ -2261,8 +2323,30 @@ export async function runPerGameSkaterStage(args: {
         shotsPp: shotsPp * availabilityMultiplier * trendShotMultiplier,
         goalRateEs: clamp(goalRateEs * trendGoalMultiplier, 0.025, 0.3),
         goalRatePp: clamp(goalRatePp * trendGoalMultiplier, 0.04, 0.45),
-        assistRateEs: clamp(assistRateEs * trendAssistMultiplier, 0.2, 1.7),
-        assistRatePp: clamp(assistRatePp * trendAssistMultiplier, 0.3, 2),
+        assistRateEs: clampSkaterAssistRate(
+          assistRateEs * trendAssistMultiplier,
+          "es",
+          "trend",
+          "per_goal",
+        ),
+        assistRatePp: clampSkaterAssistRate(
+          assistRatePp * trendAssistMultiplier,
+          "pp",
+          "trend",
+          "per_goal",
+        ),
+        legacyAssistRateEs: clampSkaterAssistRate(
+          legacyAssistRates.assistRateEs * trendAssistMultiplier,
+          "es",
+          "trend",
+          "per_two_goals",
+        ),
+        legacyAssistRatePp: clampSkaterAssistRate(
+          legacyAssistRates.assistRatePp * trendAssistMultiplier,
+          "pp",
+          "trend",
+          "per_two_goals",
+        ),
         hitsRate: physicalRates.hitsPer60,
         blocksRate: physicalRates.blocksPer60,
         physicalToiMultiplier: physicalRates.toiMultiplier,
@@ -2494,15 +2578,29 @@ export async function runPerGameSkaterStage(args: {
       ) {
         metrics.data_quality.teammate_coupling_players_adjusted += 1;
       }
-      p.assistRateEs = clamp(
+      p.assistRateEs = clampSkaterAssistRate(
         p.assistRateEs * teammateCoupling.assistRateEsMultiplier,
-        0.2,
-        1.8,
+        "es",
+        "coupling",
+        "per_goal",
       );
-      p.assistRatePp = clamp(
+      p.assistRatePp = clampSkaterAssistRate(
         p.assistRatePp * teammateCoupling.assistRatePpMultiplier,
-        0.3,
-        2.1,
+        "pp",
+        "coupling",
+        "per_goal",
+      );
+      p.legacyAssistRateEs = clampSkaterAssistRate(
+        p.legacyAssistRateEs * teammateCoupling.assistRateEsMultiplier,
+        "es",
+        "coupling",
+        "per_two_goals",
+      );
+      p.legacyAssistRatePp = clampSkaterAssistRate(
+        p.legacyAssistRatePp * teammateCoupling.assistRatePpMultiplier,
+        "pp",
+        "coupling",
+        "per_two_goals",
       );
       p.teammateAssistEsMultiplier = teammateCoupling.assistRateEsMultiplier;
       p.teammateAssistPpMultiplier = teammateCoupling.assistRatePpMultiplier;
@@ -2679,10 +2777,7 @@ export async function runPerGameSkaterStage(args: {
         ({ goalsEs, goalsPp, assistsEs, assistsPp, shotsEs, shotsPp } = seasonLine);
         projHits = seasonLine.hits; projBlocks = seasonLine.blocks;
       }
-      const naivePriorGoalsEs = shotsEs * 0.095;
-      const naivePriorGoalsPp = shotsPp * 0.145;
-      const naivePriorAssistsEs = naivePriorGoalsEs * 0.72;
-      const naivePriorAssistsPp = naivePriorGoalsPp * 0.95;
+      const naivePrior = buildSkaterNaivePriorBaseline({ shotsEs, shotsPp });
 
       teamTotals.toiEsSeconds += p.toiEs;
       teamTotals.toiPpSeconds += p.toiPp;
@@ -2750,14 +2845,14 @@ export async function runPerGameSkaterStage(args: {
             naive_prior: {
               definition:
                 "fixed_league_conversion_priors_on_reconciled_opportunities",
-              goal_rate_es: 0.095,
-              goal_rate_pp: 0.145,
-              assist_per_goal_es: 0.72,
-              assist_per_goal_pp: 0.95,
-              goals_es: Number(naivePriorGoalsEs.toFixed(4)),
-              goals_pp: Number(naivePriorGoalsPp.toFixed(4)),
-              assists_es: Number(naivePriorAssistsEs.toFixed(4)),
-              assists_pp: Number(naivePriorAssistsPp.toFixed(4)),
+              goal_rate_es: naivePrior.goal_rate_es,
+              goal_rate_pp: naivePrior.goal_rate_pp,
+              assist_per_goal_es: naivePrior.assist_per_goal_es,
+              assist_per_goal_pp: naivePrior.assist_per_goal_pp,
+              goals_es: Number(naivePrior.goals_es.toFixed(4)),
+              goals_pp: Number(naivePrior.goals_pp.toFixed(4)),
+              assists_es: Number(naivePrior.assists_es.toFixed(4)),
+              assists_pp: Number(naivePrior.assists_pp.toFixed(4)),
               shots_es: Number(shotsEs.toFixed(4)),
               shots_pp: Number(shotsPp.toFixed(4)),
               hits: Number(projHits.toFixed(4)),
@@ -3043,6 +3138,13 @@ export async function runPerGameSkaterStage(args: {
             },
             // Backtest inputs: pre-shrink Bayes rate vs the former second shrink.
             conversion_shrink: p.conversionShrink,
+            assist_rate_scale: {
+              convention: "per_goal",
+              legacy_per_two_goals: {
+                assist_rate_es: Number(p.legacyAssistRateEs.toFixed(4)),
+                assist_rate_pp: Number(p.legacyAssistRatePp.toFixed(4)),
+              },
+            },
             pp_opportunity: {
               team_pp_target_seconds: p.ppOpportunityTeamTargetSeconds,
               allocated_player_pp_share: p.ppOpportunityAllocatedShare,

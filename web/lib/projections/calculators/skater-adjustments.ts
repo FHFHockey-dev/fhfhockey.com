@@ -532,6 +532,26 @@ export function computeSkaterPhysicalEventRates(args: {
   };
 }
 
+/**
+ * Assist rates are assists per player goal. "per_two_goals" is the former halved scale (denominator
+ * goals x 2), kept with its exact constants so stored rows can be recomputed offline. "per_goal"
+ * halves every pseudo-count (priorStrength is added to the denominator in blendOnlineRate and sets
+ * the recent weight), so shrinkage is identical and every rate is exactly twice the legacy one.
+ */
+export type SkaterAssistDenominator = "per_goal" | "per_two_goals";
+const SKATER_ASSIST_SCALE = {
+  per_two_goals: {
+    goalsPerDenominator: 2,
+    ev: { baseStrength: 22, evidenceScale: 36, minStrength: 8, maxStrength: 40, fallback: 0.72, raw: [0.2, 1.45], out: [0.2, 1.7] },
+    pp: { baseStrength: 16, evidenceScale: 24, minStrength: 6, maxStrength: 30, fallback: 0.95, raw: [0.3, 1.8], out: [0.3, 2] },
+  },
+  per_goal: {
+    goalsPerDenominator: 1,
+    ev: { baseStrength: 11, evidenceScale: 18, minStrength: 4, maxStrength: 20, fallback: 1.44, raw: [0.4, 2.9], out: [0.4, 3.4] },
+    pp: { baseStrength: 8, evidenceScale: 12, minStrength: 3, maxStrength: 15, fallback: 1.9, raw: [0.6, 3.6], out: [0.6, 4] },
+  },
+} as const;
+
 export function computeStrengthSplitConversionRates(args: {
   evGoalsRecent: number;
   evShotsRecent: number;
@@ -547,6 +567,7 @@ export function computeStrengthSplitConversionRates(args: {
   ppAssistsAll: number;
   goalRateMultiplier: number;
   assistRateMultiplier: number;
+  assistDenominator?: SkaterAssistDenominator;
 }): {
   goalRateEs: number;
   goalRatePp: number;
@@ -580,19 +601,22 @@ export function computeStrengthSplitConversionRates(args: {
     minStrength: 9,
     maxStrength: 54
   });
+  const assistScale = SKATER_ASSIST_SCALE[args.assistDenominator ?? "per_goal"];
+  const perDenominator = assistScale.goalsPerDenominator;
+  const evAssist = assistScale.ev, ppAssist = assistScale.pp;
   const evAssistPriorStrength = adaptivePriorStrength({
-    baseStrength: 22,
-    evidenceDenom: Math.max(0, args.evGoalsAll * 2) + Math.max(0, args.evGoalsRecent * 2),
-    evidenceScale: 36,
-    minStrength: 8,
-    maxStrength: 40
+    baseStrength: evAssist.baseStrength,
+    evidenceDenom: Math.max(0, args.evGoalsAll * perDenominator) + Math.max(0, args.evGoalsRecent * perDenominator),
+    evidenceScale: evAssist.evidenceScale,
+    minStrength: evAssist.minStrength,
+    maxStrength: evAssist.maxStrength
   });
   const ppAssistPriorStrength = adaptivePriorStrength({
-    baseStrength: 16,
-    evidenceDenom: Math.max(0, args.ppGoalsAll * 2) + Math.max(0, args.ppGoalsRecent * 2),
-    evidenceScale: 24,
-    minStrength: 6,
-    maxStrength: 30
+    baseStrength: ppAssist.baseStrength,
+    evidenceDenom: Math.max(0, args.ppGoalsAll * perDenominator) + Math.max(0, args.ppGoalsRecent * perDenominator),
+    evidenceScale: ppAssist.evidenceScale,
+    minStrength: ppAssist.minStrength,
+    maxStrength: ppAssist.maxStrength
   });
 
   const goalRateEsRaw = blendOnlineRate({
@@ -617,37 +641,40 @@ export function computeStrengthSplitConversionRates(args: {
   });
   const assistRateEsRaw = blendOnlineRate({
     recentNumerator: args.evAssistsRecent,
-    recentDenom: args.evGoalsRecent * 2,
+    recentDenom: args.evGoalsRecent * perDenominator,
     baseNumerator: args.evAssistsAll,
-    baseDenom: args.evGoalsAll * 2,
-    fallback: 0.72,
+    baseDenom: args.evGoalsAll * perDenominator,
+    fallback: evAssist.fallback,
     priorStrength: evAssistPriorStrength,
-    minRate: 0.2,
-    maxRate: 1.45
+    minRate: evAssist.raw[0],
+    maxRate: evAssist.raw[1]
   });
   const assistRatePpRaw = blendOnlineRate({
     recentNumerator: args.ppAssistsRecent,
-    recentDenom: args.ppGoalsRecent * 2,
+    recentDenom: args.ppGoalsRecent * perDenominator,
     baseNumerator: args.ppAssistsAll,
-    baseDenom: args.ppGoalsAll * 2,
-    fallback: 0.95,
+    baseDenom: args.ppGoalsAll * perDenominator,
+    fallback: ppAssist.fallback,
     priorStrength: ppAssistPriorStrength,
-    minRate: 0.3,
-    maxRate: 1.8
+    minRate: ppAssist.raw[0],
+    maxRate: ppAssist.raw[1]
   });
 
   return {
     goalRateEs: clamp(goalRateEsRaw * args.goalRateMultiplier, 0.02, 0.3),
     goalRatePp: clamp(goalRatePpRaw * args.goalRateMultiplier, 0.03, 0.45),
-    assistRateEs: clamp(assistRateEsRaw * args.assistRateMultiplier, 0.2, 1.7),
-    assistRatePp: clamp(assistRatePpRaw * args.assistRateMultiplier, 0.3, 2)
+    assistRateEs: clamp(assistRateEsRaw * args.assistRateMultiplier, evAssist.out[0], evAssist.out[1]),
+    assistRatePp: clamp(assistRatePpRaw * args.assistRateMultiplier, ppAssist.out[0], ppAssist.out[1])
   };
 }
 
-const SKATER_CONVERSION_FIXED_PRIORS = { goalRateEs: 0.095, goalRatePp: 0.145, assistRateEs: 0.72, assistRatePp: 0.95 } as const;
-const SKATER_CONVERSION_BOUNDS = {
-  goalRateEs: [0.025, 0.3], goalRatePp: [0.04, 0.45], assistRateEs: [0.2, 1.7], assistRatePp: [0.3, 2],
-} as const;
+export const skaterConversionPriorsAndBounds = (assistDenominator: SkaterAssistDenominator) => {
+  const { ev, pp } = SKATER_ASSIST_SCALE[assistDenominator];
+  return {
+    priors: { goalRateEs: 0.095, goalRatePp: 0.145, assistRateEs: ev.fallback, assistRatePp: pp.fallback },
+    bounds: { goalRateEs: [0.025, 0.3], goalRatePp: [0.04, 0.45], assistRateEs: ev.out, assistRatePp: pp.out },
+  } as const;
+};
 
 /**
  * Supported split rates are already shrunk toward an adaptive prior, so they are used directly
@@ -658,10 +685,12 @@ const SKATER_CONVERSION_BOUNDS = {
 export function resolveSkaterConversionRates(args: {
   splitRates: { goalRateEs: number | null; goalRatePp: number | null; assistRateEs: number | null; assistRatePp: number | null };
   sampleWeight: number;
+  assistDenominator?: SkaterAssistDenominator;
 }) {
-  const resolve = (key: keyof typeof SKATER_CONVERSION_FIXED_PRIORS) => {
-    const prior = SKATER_CONVERSION_FIXED_PRIORS[key];
-    const [min, max] = SKATER_CONVERSION_BOUNDS[key];
+  const { priors, bounds } = skaterConversionPriorsAndBounds(args.assistDenominator ?? "per_goal");
+  const resolve = (key: keyof typeof priors) => {
+    const prior = priors[key];
+    const [min, max] = bounds[key];
     const bayes = args.splitRates[key];
     const legacy = clamp((bayes ?? prior) * args.sampleWeight + (1 - args.sampleWeight) * prior, min, max);
     return { value: bayes == null ? legacy : clamp(bayes, min, max),
@@ -681,6 +710,7 @@ export function computeSupportedStrengthSplitConversionRates(args: {
   pp: RollingRow | undefined;
   goalRateMultiplier: number;
   assistRateMultiplier: number;
+  assistDenominator?: SkaterAssistDenominator;
 }) {
   const support = (row: RollingRow | undefined, strengthState: "ev" | "pp") => row
     ? readAlignedCountSupport(row.aligned_count_support, {
@@ -706,6 +736,7 @@ export function computeSupportedStrengthSplitConversionRates(args: {
       ppAssistsRecent: name === "assistPerGoal" ? p?.last5.numerator ?? 0 : 0,
       ppAssistsAll: name === "assistPerGoal" ? p?.all.numerator ?? 0 : 0,
       goalRateMultiplier: args.goalRateMultiplier, assistRateMultiplier: args.assistRateMultiplier,
+      assistDenominator: args.assistDenominator,
     });
   };
   const goals = calculate("goalPerShot"), assists = calculate("assistPerGoal");

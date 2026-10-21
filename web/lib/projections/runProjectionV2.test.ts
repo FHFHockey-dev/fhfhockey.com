@@ -1034,6 +1034,33 @@ describe("strength-split conversion rates", () => {
   });
 });
 
+describe("assist rate scale", () => {
+  const leagueAverage = {
+    evGoalsRecent: 4, evShotsRecent: 0, evGoalsAll: 20, evShotsAll: 0, evAssistsRecent: 7, evAssistsAll: 34,
+    ppGoalsRecent: 4, ppShotsRecent: 0, ppGoalsAll: 20, ppShotsAll: 0, ppAssistsRecent: 7, ppAssistsAll: 34,
+    goalRateMultiplier: 1, assistRateMultiplier: 1
+  };
+  it("fits assists per goal by default, pulled modestly from the 1.7 raw rate toward the 1.44 prior", () => {
+    const perGoal = computeStrengthSplitConversionRates(leagueAverage);
+    // Prior strength 11*(0.35+1.35*18/42) ~ 10.2 pseudo-goals: base (34+1.44*10.2)/30.2 ~ 1.61, recent 7/4 at weight ~0.28.
+    expect(perGoal.assistRateEs).toBeCloseTo(1.651, 3);
+    expect(computeStrengthSplitConversionRates({ ...leagueAverage, assistDenominator: "per_goal" })).toEqual(perGoal);
+    const legacy = computeStrengthSplitConversionRates({ ...leagueAverage, assistDenominator: "per_two_goals" });
+    expect(legacy.assistRateEs).toBeCloseTo(0.8255, 3);
+    expect(perGoal.assistRateEs).toBeCloseTo(legacy.assistRateEs * 2, 10);
+    expect(perGoal.assistRatePp).toBeCloseTo(legacy.assistRatePp * 2, 10);
+    expect(legacy.goalRateEs).toBe(perGoal.goalRateEs);
+  });
+  it("keeps the legacy per-two-goals numbers exactly", () => {
+    const legacy = computeStrengthSplitConversionRates({ ...leagueAverage, evGoalsAll: 0, evGoalsRecent: 0, evAssistsAll: 0,
+      evAssistsRecent: 0, ppGoalsAll: 1, ppGoalsRecent: 0, ppAssistsAll: 3, ppAssistsRecent: 0, assistDenominator: "per_two_goals" });
+    expect(legacy.assistRateEs).toBe(0.72);
+    // (3 + 0.95 * s) / (2 + s), s = clamp(16 * (0.35 + 1.35 * 24 / 26), 6, 30)
+    const s = 16 * (0.35 + 1.35 * 24 / 26);
+    expect(legacy.assistRatePp).toBeCloseTo((3 + 0.95 * s) / (2 + s), 12);
+  });
+});
+
 describe("pp opportunity allocation", () => {
   it("allocates team PP TOI target across skaters using role-weighted shares", () => {
     const allocation = allocatePpToiByTeamOpportunity({
