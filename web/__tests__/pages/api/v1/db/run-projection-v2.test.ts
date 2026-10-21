@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { auditInsertMock, gamesEqMock, gamesSelectMock } = vi.hoisted(() => ({
+const { auditInsertMock, gamesEqMock, gamesSelectMock, runningRunRows } = vi.hoisted(() => ({
   auditInsertMock: vi.fn().mockResolvedValue({ error: null }),
   gamesEqMock: vi.fn(),
   gamesSelectMock: vi.fn(),
+  runningRunRows: [] as Array<Record<string, unknown>>,
 }));
 
 vi.mock("lib/supabase", () => ({
@@ -21,6 +22,15 @@ vi.mock("lib/supabase/server", () => ({
         return {
           insert: auditInsertMock,
         };
+      }
+
+      if (table === "forge_runs") {
+        const query: any = {
+          select: vi.fn(() => query),
+          eq: vi.fn(() => query),
+          limit: vi.fn().mockImplementation(async () => ({ data: runningRunRows, error: null })),
+        };
+        return query;
       }
 
       if (table === "games") {
@@ -99,6 +109,7 @@ function createMockRes() {
 describe("/api/v1/db/run-projection-v2", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    runningRunRows.length = 0;
   });
 
   it("normalizes a bounded single-date game batch without duplicate ids", () => {
@@ -301,6 +312,50 @@ describe("/api/v1/db/run-projection-v2", () => {
       scanSummary: { status: "ready", blockingIssueCount: 0 },
     });
     expect(auditInsertMock.mock.calls[0]?.[0]?.status).toBe("success");
+  });
+
+  it.each([
+    ["resumes this scope's paused run: route preflight skipped", "h1:full", true],
+    ["another scope's paused run: route preflight runs", "h5:full", false],
+  ])("%s", async (_label, scopeKey, skipped) => {
+    runningRunRows.push({
+      run_id: "run-4",
+      metrics: {
+        resume: {
+          version: "forge-run-resume-v1",
+          scope_key: scopeKey,
+          lease_owner: "earlier-call",
+          lease_expires_at: "2026-10-17T10:00:00.000Z",
+          completed_game_ids: [2026020101],
+        },
+      },
+    });
+    if (skipped) {
+      vi.mocked(runProjectionV2ForDate).mockResolvedValueOnce({
+        runId: "run-4",
+        gamesProcessed: 3,
+        playerRowsUpserted: 108,
+        teamRowsUpserted: 6,
+        goalieRowsUpserted: 6,
+        timedOut: false,
+      });
+    }
+    const res = createMockRes();
+
+    await handler({ method: "GET", query: { date: "2026-10-17" } } as any, res);
+
+    if (skipped) {
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toMatchObject({ success: true, runId: "run-4", preflightSkipped: "resumed_run" });
+      // The preflight's first read never happened; the run's own stage preflight still applies.
+      expect(gamesSelectMock).not.toHaveBeenCalled();
+      expect(runProjectionV2ForDate).toHaveBeenCalledTimes(1);
+    } else {
+      expect(res.statusCode).toBe(500);
+      expect(res.body).not.toHaveProperty("preflightSkipped");
+      expect(gamesSelectMock).toHaveBeenCalled();
+      expect(runProjectionV2ForDate).not.toHaveBeenCalled();
+    }
   });
 
   it("keeps a non-resumable timeout as an unsuccessful 200", async () => {

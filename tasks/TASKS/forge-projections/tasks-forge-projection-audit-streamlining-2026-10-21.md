@@ -12,7 +12,8 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
 - `web/lib/projections/queries/skater-queries.test.ts` - Reader tests: latest-row selection, sidecar keys, coverage proofs.
 - `web/pages/api/v1/db/run-rolling-forge-pipeline.ts` - Pipeline: goalie step (:919-926), projection stage cursor, effective `stopOnFailure` (:1489-1495).
 - `web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts` - Pipeline tests: goalie step once per run.
-- `web/pages/api/v1/db/run-projection-v2.ts` - Route preflight on a resumed claim (:1154).
+- `web/pages/api/v1/db/run-projection-v2.ts` - Route preflight skipped on a resumed claim (`hasPausedResumableRun`, `preflightSkipped: "resumed_run"`).
+- `web/__tests__/pages/api/v1/db/run-projection-v2.test.ts` - Resumed-claim preflight test.
 - `supabase/migrations/` - New migrations: latest-rolling-row RPC, unread-column drop.
 - `tasks/TASKS/repository-audit-remediation/migration-authority.json` - Migration ledger records.
 - `web/lib/supabase/supportedBaselineMigration.test.ts` - Ledger counts.
@@ -39,7 +40,7 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
   - [ ] 1.4 Decide with TJ which diagnostic-only columns (`trendsDebug`, scripts) to keep.
 
 - [ ] 2.0 Sidecar payload diet (Q11)
-  - [ ] 2.1 In `splitRollingUpsertRowForDurableStorage`, stop writing null-valued keys into `support_payload`. (Audit session's W-B has this done, uncommitted; it owns the file until it commits.)
+  - [x] 2.1 In `splitRollingUpsertRowForDurableStorage`, stop writing null-valued keys into `support_payload`. (Drafted by the audit session's W-B before the hand-over; verified here: test added, file tests green.)
   - [ ] 2.2 Write only the sidecar keys in the read list from 1.3 (an explicit allowlist), dropping the unread ones.
   - [ ] 2.3 Extend `fetchRollingPlayerAverages.test.ts`: a payload with nulls and unread keys produces the reduced payload, and the reader merge (`mergeRollingSupportPayloadFields`, `skater-queries` hydrate) returns identical values with and without them.
   - [ ] 2.4 Run the writer and reader test files and lint.
@@ -52,11 +53,11 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
   - [ ] 3.5 Extend `skater-queries.test.ts`: the latest-row result matches the old path's `pickLatestByPlayer` output on a multi-game fixture, coverage failures still raise, and the sidecar keys hydrate identically.
   - [ ] 3.6 If (a) was chosen: write the RPC migration, apply it with TJ's approval and record it in the ledger.
 
-- [ ] 4.0 Pipeline: no repeated per-invocation work (Q12). Owned by the audit session's W-C (`run-rolling-forge-pipeline.ts`, `run-projection-v2.ts`); this list only tracks it.
-  - [ ] 4.1 Run the goalie step once per run: only when the projection stage starts its first date (`datesDone === 0`) and the step has not succeeded in this run (a marker in the stage state).
-  - [ ] 4.2 Skip the route-level preflight in `run-projection-v2` when it resumes an already-claimed run (the stage preflight still runs).
-  - [ ] 4.3 Report the effective `stopOnFailure` in the pipeline response instead of echoing the query value.
-  - [ ] 4.4 Extend the pipeline tests: the goalie step runs on the first projection invocation and not on resumed ones, and a failed goalie step is retried on the next invocation. Add a resumed-claim preflight test in the `run-projection-v2` tests.
+- [x] 4.0 Pipeline: no repeated per-invocation work (Q12). Drafts by the audit session's W-C plus this list's worker were handed over 2026-10-21 and are verified here.
+  - [x] 4.1 Run the goalie step once per run: only when the projection stage starts its first date (`datesDone === 0`) and the step has not succeeded in this run (a marker in the stage state).
+  - [x] 4.2 Skip the route-level preflight in `run-projection-v2` when it resumes an already-claimed run (the stage preflight still runs).
+  - [x] 4.3 Report the effective `stopOnFailure` in the pipeline response instead of echoing the query value.
+  - [x] 4.4 Extend the pipeline tests: the goalie step runs on the first projection invocation and not on resumed ones, and a failed goalie step is retried on the next invocation. Add a resumed-claim preflight test in the `run-projection-v2` tests.
   - [x] 4.5 Write a cross-platform note asking Codex to alert on `attempts_exhausted` and `stage_killed` in the daily cron report. (The audit session's `tasks/artifacts/cross-platform/2026-10-21-claude-to-codex-forge-audit-followups.md` §5 covers it; the job 329 move is in `2026-10-21-claude-to-codex-nst-team-stats-schedule.md`.)
 
 - [ ] 5.0 Cron schedule cleanup (Q13, DB/Ops)
@@ -85,10 +86,10 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
   - [ ] 8.1 For each finished set: commit on octoberBranch with explicit paths, build a master candidate in a temporary index, gate it in a clean export (tests, lint, type check), push with TJ's approval and the Vercel check, smoke-test, and sync octoberBranch.
   - [ ] 8.2 Keep the migration ledger and `cron-schedule.md` in step with every production change.
 
-- [ ] 9.0 Rolling-writer correctness (Q10; same file as 2.0 and 7.1). Owned by the audit session's W-B (done, uncommitted); this list only tracks it.
-  - [ ] 9.1 `season=` runs must not truncate history: drop `season` from `buildPlayerHistoryReadOptions` (:3031-3035), so the WGO and NST reads span full history, and use `season` only for the write window.
-  - [ ] 9.2 `expected_sh_pct`: skip a game's entry when the xG numerator is null instead of adding its shots with 0 xG (:1362-1369).
-  - [ ] 9.3 Fixtures: a season run and an unscoped run produce identical rows, and WGO shots without NST ixG contribute nothing.
+- [x] 9.0 Rolling-writer correctness (Q10; same file as 2.0 and 7.1). Drafted by the audit session's W-B, handed over 2026-10-21, verified here.
+  - [x] 9.1 `season=` runs must not truncate history: drop `season` from `buildPlayerHistoryReadOptions` (:3031-3035), so the WGO and NST reads span full history, and use `season` only for the write window.
+  - [x] 9.2 `expected_sh_pct`: skip a game's entry when the xG numerator is null instead of adding its shots with 0 xG (:1362-1369).
+  - [x] 9.3 Fixtures: a season run and an unscoped run produce identical rows, and WGO shots without NST ixG contribute nothing.
 
 ## Results (2026-10-21)
 
@@ -151,3 +152,16 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
 - `cron.alter_job(278, '15 8 * * 0')` and `cron.alter_job(329, '15 9 * * *')`; readback confirmed both.
 - Recorded in `cron-schedule.md` (dated note, JSON inventory, timeline) and `nstCoordination.ts`.
 - Checks: `lib/cron` and `__tests__/pages/api/Teams` passed (32 files, 289 tests), plus `cron-audit-wrappers` (39 tests).
+
+### 2.1, 4.0 and 9.0 (handed over by the audit session 2026-10-21)
+
+- Writer (`fetchRollingPlayerAverages.ts`):
+  - Null pruned keys are left out of `support_payload`. `prunedFieldCount` still counts them, so a sidecar row is still written and replaces the old payload.
+  - `expected_sh_pct` `getComponents` returns null without an ixG value.
+  - `buildPlayerHistoryReadOptions` drops `season`; `isWithinRequestedWriteWindow` scopes writes by `game.season`.
+  - Not changed: the `expected_sh_pct_{ixg,shots}_{season,3ya,career}` support pair still totals all shots. The w2 inventory lists those components as unread, so 7.0 takes them.
+- Pipeline:
+  - Goalie step: the companion row `projection_execution:goalie` is marked `complete` after a successful step. Resumed invocations skip it, and a failed step is retried. The key passes `projection_pipeline_key_check`.
+  - Response: `stopOnFailureRequested`, and `failureSummary.terminalStop` set to `attempts_exhausted` or `stage_killed`.
+- `run-projection-v2`: a read-only `forge_runs` lookup skips the route preflight when a running run with the same resume scope exists. The response says `preflightSkipped: "resumed_run"`.
+- Checks: the writer, pipeline and RPV2 test files passed (66 + 43 + 17 = 126 tests); eslint on the changed files is clean.

@@ -10,6 +10,7 @@ import {
   createHistoricalAverageAccumulator,
   updateHistoricalAverageAccumulator
 } from "./rollingHistoricalAverages";
+import { mergeRollingSupportPayloadFields } from "./rollingPlayerSupportPayload";
 
 let fetchCounts: typeof import("./fetchRollingPlayerAverages").__testables.fetchCounts;
 let buildGameRecords: typeof import("./fetchRollingPlayerAverages").__testables.buildGameRecords;
@@ -190,7 +191,7 @@ describe("fetchRollingPlayerAverages main runtime budget", () => {
   // Serves a 14-day window in which every player has one WGO game, so each
   // processed player yields exactly one dry-run batch.
   function createWindowClient(
-    historyRows: (playerId: unknown) => Record<string, unknown>[] = (playerId) => [{
+    historyRows: (playerId: unknown, filters: Record<string, unknown>) => Record<string, unknown>[] = (playerId) => [{
       player_id: playerId,
       game_id: 2026020100,
       date: "2026-10-15",
@@ -206,7 +207,9 @@ describe("fetchRollingPlayerAverages main runtime budget", () => {
     // Runs before every round trip resolves; may throw to fail the trip.
     onRoundTrip: () => void = () => undefined,
     // Sees every query of a table start (when awaited) and end.
-    onQuery: (table: string, phase: "start" | "end") => void = () => undefined
+    onQuery: (table: string, phase: "start" | "end") => void = () => undefined,
+    // Rows served for any other table (NST reads), keyed by table name.
+    tableRows: Record<string, Record<string, unknown>[]> = {}
   ) {
     return {
       rpc: vi.fn(async () => ({ data: null, error: null })),
@@ -228,11 +231,11 @@ describe("fetchRollingPlayerAverages main runtime budget", () => {
           if (table === "players") {
             return (filters.id as number[]).map((id) => ({ id }));
           }
-          if (table !== "wgo_skater_stats") return [];
+          if (table !== "wgo_skater_stats") return tableRows[table] ?? [];
           if (selected === "player_id") {
             return PLAYER_IDS.map((player_id) => ({ player_id }));
           }
-          return historyRows(filters.player_id);
+          return historyRows(filters.player_id, filters);
         };
         query.then = (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => {
           onQuery(table, "start");
@@ -436,6 +439,137 @@ describe("fetchRollingPlayerAverages main runtime budget", () => {
       hits_per_60_hits_career: 21,
       career_games_played: 9
     });
+  });
+
+  it("scopes a season run's writes, not its history, so it matches an unscoped run", async () => {
+    silenceConsole();
+    const historyGames = [
+      ["2024-11-02", 20242025, 2024020150, 3, 4, 1150],
+      ["2025-02-10", 20242025, 2024020800, 2, 7, 1210],
+      ["2025-11-02", 20252026, 2025020150, 0, 3, 990],
+      ["2026-01-12", 20252026, 2025020700, 1, 5, 1040],
+      ["2026-10-09", 20262027, 2026020020, 0, 2, 1080]
+    ] as const;
+    const games = historyGames.map(([date, seasonId, id]) => ({
+      id,
+      date,
+      seasonId,
+      homeTeamId: 10,
+      awayTeamId: 8
+    }));
+    // Honors the season_id filter the way PostgREST would.
+    const history = (playerId: unknown, filters: Record<string, unknown>) =>
+      historyGames
+        .filter(([, season_id]) => filters.season_id === undefined || filters.season_id === season_id)
+        .map(([date, season_id, game_id, goals, shots, toi_per_game]) => ({
+          player_id: playerId,
+          game_id,
+          date,
+          season_id,
+          team_abbrev: "TOR",
+          goals,
+          assists: 1,
+          shots,
+          points: Number(goals) + 1,
+          hits: 2,
+          toi_per_game
+        }));
+    const collect = async (scope: Record<string, unknown>) => {
+      const rows: Record<string, unknown>[] = [];
+      const main = await importMainWithClient(createWindowClient(history, games));
+      await main({
+        playerId: PLAYER_IDS[0],
+        dryRunUpsert: true,
+        skipDiagnostics: true,
+        dryRunBatchObserver: (batch) => {
+          rows.push(...batch.rankingRows, ...batch.supportRows);
+        },
+        ...scope
+      });
+      return rows;
+    };
+
+    const unscoped = await collect({});
+    const seasonScoped = await collect({ season: 20252026 });
+
+    const inSeason = (row: Record<string, unknown>) => row.season === 20252026;
+    expect(seasonScoped.length).toBeGreaterThan(0);
+    expect(seasonScoped.every(inSeason)).toBe(true);
+    expect(seasonScoped).toEqual(unscoped.filter(inSeason));
+  });
+
+  it("does not count WGO shots without an NST ixG as zero-xG shots in expected_sh_pct", async () => {
+    silenceConsole();
+    const history = (playerId: unknown) =>
+      [
+        ["2026-10-09", 2026020020, 4],
+        ["2026-10-15", 2026020100, 5]
+      ].map(([date, game_id, shots]) => ({
+        player_id: playerId,
+        game_id,
+        date,
+        season_id: 20262027,
+        team_abbrev: "TOR",
+        goals: 0,
+        assists: 0,
+        shots,
+        points: 0,
+        toi_per_game: 1000
+      }));
+    const nstCounts = {
+      player_id: PLAYER_IDS[0],
+      date_scraped: "2026-10-09",
+      season: 20262027,
+      toi: 1000,
+      goals: 0,
+      total_assists: 0,
+      shots: 4,
+      ixg: 0.6
+    };
+    const collect = async (countsRows: Record<string, unknown>[]) => {
+      const byDate = new Map<string, Record<string, unknown>>();
+      const main = await importMainWithClient(
+        createWindowClient(history, [], undefined, undefined, {
+          nst_gamelog_as_counts: countsRows
+        })
+      );
+      await main({
+        playerId: PLAYER_IDS[0],
+        strengths: ["all"],
+        dryRunUpsert: true,
+        skipDiagnostics: true,
+        dryRunBatchObserver: (batch) => {
+          for (const row of batch.rankingRows) {
+            byDate.set(String(row.game_date), { ...row });
+          }
+          for (const row of batch.supportRows) {
+            const merged = byDate.get(row.game_date) ?? {};
+            for (const [key, value] of Object.entries(
+              row.support_payload.historicalCompatibility ?? {}
+            )) {
+              if (value != null) merged[key] = value;
+            }
+          }
+        }
+      });
+      return byDate;
+    };
+
+    // Only the second game lacks ixG: its five WGO shots must not dilute the rate.
+    const withNst = await collect([nstCounts]);
+    const second = withNst.get("2026-10-15")!;
+    expect(second.expected_sh_pct_all).toBe(0.15);
+    expect(second.expected_sh_pct_last3).toBe(0.15);
+    expect(second.expected_sh_pct_season).toBe(0.15);
+    expect(second.expected_sh_pct_3ya).toBe(0.15);
+    expect(second.expected_sh_pct_career).toBe(0.15);
+    expect(withNst.get("2026-10-09")!.expected_sh_pct_all).toBe(0.15);
+
+    // With no NST row at all, WGO shots contribute nothing.
+    const wgoOnly = await collect([]);
+    expect(wgoOnly.get("2026-10-15")!.expected_sh_pct_all ?? null).toBeNull();
+    expect(wgoOnly.get("2026-10-15")!.expected_sh_pct_season ?? null).toBeNull();
+    expect(wgoOnly.get("2026-10-15")!.expected_sh_pct_career ?? null).toBeNull();
   });
 
   it("keeps the incoming cursor when the budget is spent before any player is claimed", async () => {
@@ -2133,6 +2267,39 @@ describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
     });
   });
 
+  it("leaves null pruned fields out of the support payload without changing what readers merge", () => {
+    const row = {
+      player_id: 8470613,
+      game_date: "2026-04-16",
+      season: 20252026,
+      strength_state: "all",
+      team_id: 14,
+      game_id: 2025021301,
+      goals_avg_all: 0.4,
+      goals_avg_3ya: null,
+      gp_pct_avg_all: null
+    };
+    const split = splitRollingUpsertRowForDurableStorage(row);
+    const payload = split.supportRow?.support_payload;
+
+    expect(payload?.historicalCompatibility).toEqual({ goals_avg_all: 0.4 });
+    expect(payload?.deprecatedCompatibility).toBeUndefined();
+    expect(payload?.diagnostics?.prunedFieldCount).toBe(3);
+
+    const withNullKeys = {
+      historicalCompatibility: { goals_avg_all: 0.4, goals_avg_3ya: null },
+      deprecatedCompatibility: { gp_pct_avg_all: null }
+    };
+    expect(mergeRollingSupportPayloadFields(split.rankingRow, payload)).toEqual(
+      mergeRollingSupportPayloadFields(split.rankingRow, withNullKeys)
+    );
+
+    // An all-null row still writes its sidecar, so stale stored values are replaced.
+    const allNull = splitRollingUpsertRowForDurableStorage({ ...row, goals_avg_all: null });
+    expect(allNull.supportRow?.support_payload.historicalCompatibility).toBeUndefined();
+    expect(allNull.supportRow?.support_payload.diagnostics?.prunedFieldCount).toBe(3);
+  });
+
   it("splits pruned support fields into the durable support payload", () => {
     expect(
       splitRollingUpsertRowForDurableStorage({
@@ -2389,15 +2556,15 @@ describe("fetchRollingPlayerAverages resume behavior", () => {
     };
 
     expect(buildPlayerHistoryReadOptions(options)).toEqual({
-      season: 20252026,
       endDate: "2026-03-14",
       strengths: ["all"],
       maxPlayers: 25
     });
-    expect(isWithinRequestedWriteWindow("2026-03-09", options)).toBe(false);
-    expect(isWithinRequestedWriteWindow("2026-03-10", options)).toBe(true);
-    expect(isWithinRequestedWriteWindow("2026-03-14", options)).toBe(true);
-    expect(isWithinRequestedWriteWindow("2026-03-15", options)).toBe(false);
+    expect(isWithinRequestedWriteWindow("2026-03-09", 20252026, options)).toBe(false);
+    expect(isWithinRequestedWriteWindow("2026-03-10", 20252026, options)).toBe(true);
+    expect(isWithinRequestedWriteWindow("2026-03-14", 20252026, options)).toBe(true);
+    expect(isWithinRequestedWriteWindow("2026-03-15", 20252026, options)).toBe(false);
+    expect(isWithinRequestedWriteWindow("2026-03-12", 20242025, options)).toBe(false);
   });
 
   it("uses date-scoped player selection only for incremental date-bounded runs", () => {
