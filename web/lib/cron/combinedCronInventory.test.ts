@@ -268,8 +268,8 @@ SELECT cron.schedule(
     ).toHaveLength(57);
     expect(
       inventory.jobs.filter((job) => job.provider === "vercel"),
-    ).toHaveLength(28);
-    expect(inventory.jobs).toHaveLength(85);
+    ).toHaveLength(30);
+    expect(inventory.jobs).toHaveLength(87);
     // pg_cron job 234 was intentionally disabled; the Vercel 13:00 UTC cron
     // is the sole daily report. Live SQL jobs 394/396/397 were added 2026-10-18.
     // Job 393 (horizon-5 projection run) was unscheduled 2026-10-21.
@@ -278,6 +278,20 @@ SELECT cron.schedule(
     ).toEqual([
       expect.objectContaining({ provider: "vercel", normalizedCronExpression: "0 13 * * *" }),
     ]);
+    expect(inventory.jobs).toContainEqual(
+      expect.objectContaining({
+        provider: "vercel",
+        routePath: "/api/v1/db/forge-served-forecast-settle",
+        normalizedCronExpression: "0 11 * * *",
+      }),
+    );
+    expect(inventory.jobs).toContainEqual(
+      expect.objectContaining({
+        provider: "vercel",
+        routePath: "/api/v1/db/forge-served-forecast-snapshot",
+        normalizedCronExpression: "30 12 * * *",
+      }),
+    );
     expect(inventory.jobs).toContainEqual(
       expect.objectContaining({
         provider: "vercel",

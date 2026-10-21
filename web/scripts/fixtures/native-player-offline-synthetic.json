@@ -260,10 +260,10 @@
     },
     "forge_team_game_strength": {
       "rows": [
-        {"team_id":6,"game_id":2026020031,"game_date":"2026-10-08","toi_es_seconds":15000,"toi_pp_seconds":1500,"shots_es":25,"shots_pp":5,"goals_es":2,"goals_pp":1},
-        {"team_id":9,"game_id":2026020031,"game_date":"2026-10-08","toi_es_seconds":15000,"toi_pp_seconds":1500,"shots_es":25,"shots_pp":5,"goals_es":2,"goals_pp":1}
+        {"team_id":6,"game_id":2026020031,"game_date":"2026-10-08","toi_es_seconds":15000,"toi_pp_seconds":1500,"toi_pk_seconds":1500,"shots_es":25,"shots_pp":5,"goals_es":2,"goals_pp":1},
+        {"team_id":9,"game_id":2026020031,"game_date":"2026-10-08","toi_es_seconds":15000,"toi_pp_seconds":1500,"toi_pk_seconds":1500,"shots_es":25,"shots_pp":5,"goals_es":2,"goals_pp":1}
       ],
-      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:forge_team_game_strength","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; forge_team_game_strength","complete":true,"rowCount":2,"rowsHash":"b5bb55a07c2ded83b87cecb298e824c698a98652a3b06dff652cc90dc05dd45d"}
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:forge_team_game_strength","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; forge_team_game_strength","complete":true,"rowCount":2,"rowsHash":"bd2b84ef3600c3234da77ca780ac4a5c04fd9b29955188c489c3c15ecb62cef0"}
     },
     "forge_goalie_game": {
       "rows": [
