@@ -314,6 +314,9 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       startDate: "2026-03-07",
       endDate: "2026-03-13"
     });
+    expect(updateGoalieProjectionsV2Mock.mock.calls[0]?.[0]?.query).toEqual({
+      limit: "7"
+    });
     expect(runProjectionV2Mock).toHaveBeenCalled();
     expect(runProjectionAccuracyMock).not.toHaveBeenCalled();
     expect(res.body).toMatchObject({
@@ -1304,6 +1307,8 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         reason: "stage_partial",
         nextStageId: "projection_execution"
       });
+      // Goalie start priors are written through the next day so its projection gate passes.
+      expect(updateGoalieProjectionsV2Mock.mock.calls[0][0].query).toEqual({ limit: "7", endDate: "2026-10-20" });
       expect(runProjectionV2Mock.mock.calls.map((call: any[]) => call[0].query.date)).toEqual(["2026-10-19", "2026-10-20"]);
       expect(Number(runProjectionV2Mock.mock.calls[1][0].query.maxDurationMs)).toBe(160_000);
       expect(pipelineStateRows.get(stageKey("projection_execution"))).toMatchObject({ status: "running", cursor_game_id: 1 });

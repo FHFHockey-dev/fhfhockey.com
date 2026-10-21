@@ -57,16 +57,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }))
       .reverse();
 
-    if (series.length === 0 || series.every((s) => s.accuracy === 0)) {
-      throw new Error("No valid accuracy data available");
-    }
+    // No scored days yet is a valid state, not a server error.
+    const empty =
+      series.length === 0 || series.every((s) => s.accuracy === 0);
 
     return res.status(200).json({
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       scope: q.scope,
       endDate: targetDate,
       days: q.days,
-      data: series
+      data: empty ? [] : series,
+      ...(empty ? { empty: true } : {})
     });
   } catch (e) {
     const statusCode = (e as any)?.statusCode ?? 500;

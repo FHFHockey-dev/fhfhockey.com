@@ -265,7 +265,9 @@ async function insertRunningRun(asOfDate: string, metrics: JsonObject) {
   return data.run_id;
 }
 
-export async function createRun(asOfDate: string): Promise<string> {
+// Readers pick runs by metrics.horizon_games (releasedRunFence), so every run
+// carries it from creation; the pipeline's later metrics writes keep it.
+export async function createRun(asOfDate: string, horizonGames = 1): Promise<string> {
   assertSupabase();
   const nowMs = Date.now();
   const rows = await readRunningRuns(asOfDate);
@@ -281,7 +283,7 @@ export async function createRun(asOfDate: string): Promise<string> {
     throw activeRunError(asOfDate, activeRows[0], nowMs);
   }
 
-  return insertRunningRun(asOfDate, {});
+  return insertRunningRun(asOfDate, { horizon_games: horizonGames });
 }
 
 /**
@@ -368,7 +370,10 @@ export async function claimResumableRun(
     released_by: null
   };
   return {
-    runId: await insertRunningRun(asOfDate, { resume }),
+    runId: await insertRunningRun(asOfDate, {
+      horizon_games: Number(/^h(\d+):/.exec(args.scopeKey)?.[1] ?? 1),
+      resume
+    }),
     scopeKey: args.scopeKey,
     leaseOwner,
     leaseExpiresAt: args.leaseExpiresAt,

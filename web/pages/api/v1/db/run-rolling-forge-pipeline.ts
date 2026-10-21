@@ -921,7 +921,9 @@ async function runStage(args: {
         route: "/api/v1/db/update-goalie-projections-v2",
         handler: updateGoalieProjectionsV2Handler,
         query: {
-          limit: args.mode === "overnight" ? "30" : "7"
+          limit: args.mode === "overnight" ? "30" : "7",
+          // The next day's projection gate needs its goalie start priors.
+          ...(args.projectNextDay ? { endDate: addDays(args.date, 1) } : {})
         }
       });
       if (args.startDate !== args.endDate) {

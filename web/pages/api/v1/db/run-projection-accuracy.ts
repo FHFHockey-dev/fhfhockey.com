@@ -102,6 +102,45 @@ type UnknownPredictionSkips = {
   goalieWinProbabilityRows: number;
 };
 
+// A null predicted or actual stat is unknown, never zero. Per stat key it is
+// left out of that stat's MAE/RMSE (and its interval/calibration diagnostics)
+// and counted in `prediction`/`actual`. A row with any unknown fantasy-weighted
+// stat is left out of the fantasy-point results, aggregates and miss
+// attribution entirely (the same rule as withheld heads) and counted in
+// `skaterFantasyRows`/`goalieFantasyRows`.
+type UnknownStatSkips = {
+  prediction: Record<string, number>;
+  actual: Record<string, number>;
+  skaterFantasyRows: number;
+  goalieFantasyRows: number;
+};
+
+function knownStat(value: unknown): number | null {
+  if (value == null) return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function sumKnown(a: number | null, b: number | null): number | null {
+  return a == null || b == null ? null : a + b;
+}
+
+// Counts which side is unknown; returns true only when both are known.
+function recordUnknownStat(
+  skips: UnknownStatSkips,
+  statKey: string,
+  predicted: number | null,
+  actual: number | null,
+): boolean {
+  if (predicted == null) {
+    skips.prediction[statKey] = (skips.prediction[statKey] ?? 0) + 1;
+  }
+  if (actual == null) {
+    skips.actual[statKey] = (skips.actual[statKey] ?? 0) + 1;
+  }
+  return predicted != null && actual != null;
+}
+
 type SkaterActualMatchDiagnostics = {
   projectionRows: number;
   eligibleSameDateRows: number;
@@ -755,13 +794,14 @@ function finalizeStatAggregates(
 function updateCoverage(
   map: Map<string, CoverageAccumulator>,
   statKey: string,
-  actual: number,
+  actual: number | null,
   interval: { p10?: number; p90?: number } | null | undefined,
 ) {
   if (!interval) return;
   const p10 = interval.p10;
   const p90 = interval.p90;
   if (
+    actual == null ||
     !Number.isFinite(actual) ||
     !Number.isFinite(p10) ||
     !Number.isFinite(p90)
@@ -1644,6 +1684,7 @@ async function runAccuracyForDate(
   totalRows: number;
   skaterActualMatchDiagnostics: SkaterActualMatchDiagnostics;
   unknownPredictionSkips: UnknownPredictionSkips;
+  unknownStatSkips: UnknownStatSkips;
   goalieMatchDiagnostics: {
     goalieProjectionCount: number;
     goalieActualCount: number;
@@ -1736,6 +1777,12 @@ async function runAccuracyForDate(
     skaterRows: 0,
     goalieWinProbabilityRows: 0,
   };
+  const unknownStatSkips: UnknownStatSkips = {
+    prediction: {},
+    actual: {},
+    skaterFantasyRows: 0,
+    goalieFantasyRows: 0,
+  };
   const skaterResults: AccuracyResultRow[] = [];
   const skaterHoldoutSamples: HoldoutComparisonSample[] = [];
   const skaterStatAggregates = new Map<string, StatAggregate>();
@@ -1764,51 +1811,46 @@ async function runAccuracyForDate(
     const predictedAssists = headTotals.assists;
     const predictedShots = headTotals.shots;
     const predictedPpPoints = headTotals.ppPoints;
-    const predictedHits = row.proj_hits ?? 0;
-    const predictedBlocks = row.proj_blocks ?? 0;
+    const predictedHits = knownStat(row.proj_hits);
+    const predictedBlocks = knownStat(row.proj_blocks);
+    const actualGoals = knownStat(actual.goals);
+    const actualAssists = knownStat(actual.assists);
+    const actualPoints = sumKnown(actualGoals, actualAssists);
+    const actualPpPoints = knownStat(actual.pp_points);
+    const actualShots = knownStat(actual.shots);
+    const actualHits = knownStat(actual.hits);
+    const actualBlocks = knownStat(actual.blocked_shots);
 
-    updateStatAggregate(
-      skaterStatAggregates,
-      "goals",
-      predictedGoals,
-      actual.goals ?? 0,
-    );
-    updateStatAggregate(
-      skaterStatAggregates,
-      "assists",
-      predictedAssists,
-      actual.assists ?? 0,
-    );
-    updateStatAggregate(
-      skaterStatAggregates,
-      "points",
-      predictedGoals + predictedAssists,
-      (actual.goals ?? 0) + (actual.assists ?? 0),
-    );
-    updateStatAggregate(
-      skaterStatAggregates,
-      "pp_points",
-      predictedPpPoints,
-      actual.pp_points ?? 0,
-    );
-    updateStatAggregate(
-      skaterStatAggregates,
-      "shots",
-      predictedShots,
-      actual.shots ?? 0,
-    );
-    updateStatAggregate(
-      skaterStatAggregates,
-      "hits",
-      predictedHits,
-      actual.hits ?? 0,
-    );
-    updateStatAggregate(
-      skaterStatAggregates,
-      "blocks",
-      predictedBlocks,
-      actual.blocked_shots ?? 0,
-    );
+    const skaterStats = [
+      { key: "goals", predicted: predictedGoals, actual: actualGoals },
+      { key: "assists", predicted: predictedAssists, actual: actualAssists },
+      {
+        key: "points",
+        predicted: predictedGoals + predictedAssists,
+        actual: actualPoints,
+      },
+      { key: "pp_points", predicted: predictedPpPoints, actual: actualPpPoints },
+      { key: "shots", predicted: predictedShots, actual: actualShots },
+      { key: "hits", predicted: predictedHits, actual: actualHits },
+      { key: "blocks", predicted: predictedBlocks, actual: actualBlocks },
+    ];
+    for (const stat of skaterStats) {
+      if (
+        recordUnknownStat(
+          unknownStatSkips,
+          stat.key,
+          stat.predicted,
+          stat.actual,
+        )
+      ) {
+        updateStatAggregate(
+          skaterStatAggregates,
+          stat.key,
+          stat.predicted as number,
+          stat.actual as number,
+        );
+      }
+    }
     const roleBuckets = inferRoleBuckets({
       uncertainty: row.uncertainty,
       gameId,
@@ -1817,18 +1859,18 @@ async function runAccuracyForDate(
       ppUnitBucketByPlayer,
     });
     const roleBucketStats = [
-      { key: "g", predicted: predictedGoals, actual: actual.goals ?? 0 },
-      { key: "a", predicted: predictedAssists, actual: actual.assists ?? 0 },
+      { key: "g", predicted: predictedGoals, actual: actualGoals },
+      { key: "a", predicted: predictedAssists, actual: actualAssists },
       {
         key: "pts",
         predicted: predictedGoals + predictedAssists,
-        actual: (actual.goals ?? 0) + (actual.assists ?? 0),
+        actual: actualPoints,
       },
-      { key: "sog", predicted: predictedShots, actual: actual.shots ?? 0 },
+      { key: "sog", predicted: predictedShots, actual: actualShots },
       {
         key: "ppp",
         predicted: predictedPpPoints,
-        actual: actual.pp_points ?? 0,
+        actual: actualPpPoints,
       },
     ];
     for (const bucket of roleBuckets) {
@@ -1837,66 +1879,41 @@ async function runAccuracyForDate(
         bucket,
       );
       for (const stat of roleBucketStats) {
+        if (stat.actual == null) continue;
         updateStatAggregate(bucketMap, stat.key, stat.predicted, stat.actual);
       }
     }
 
     const skaterUncertainty = row.uncertainty ?? {};
-    updateCoverage(skaterCoverage, "g", actual.goals ?? 0, skaterUncertainty.g);
-    updateCoverage(
-      skaterCoverage,
-      "a",
-      actual.assists ?? 0,
-      skaterUncertainty.a,
-    );
-    updateCoverage(
-      skaterCoverage,
-      "pts",
-      (actual.goals ?? 0) + (actual.assists ?? 0),
-      skaterUncertainty.pts,
-    );
-    updateCoverage(
-      skaterCoverage,
-      "sog",
-      actual.shots ?? 0,
-      skaterUncertainty.sog,
-    );
-    updateCoverage(
-      skaterCoverage,
-      "ppp",
-      actual.pp_points ?? 0,
-      skaterUncertainty.ppp,
-    );
+    updateCoverage(skaterCoverage, "g", actualGoals, skaterUncertainty.g);
+    updateCoverage(skaterCoverage, "a", actualAssists, skaterUncertainty.a);
+    updateCoverage(skaterCoverage, "pts", actualPoints, skaterUncertainty.pts);
+    updateCoverage(skaterCoverage, "sog", actualShots, skaterUncertainty.sog);
+    updateCoverage(skaterCoverage, "ppp", actualPpPoints, skaterUncertainty.ppp);
     for (const bucket of roleBuckets) {
       const coverageMap = getSkaterRoleBucketCoverageStatMap(
         skaterRoleBucketCoverage,
         bucket,
       );
-      updateCoverage(coverageMap, "g", actual.goals ?? 0, skaterUncertainty.g);
-      updateCoverage(
-        coverageMap,
-        "a",
-        actual.assists ?? 0,
-        skaterUncertainty.a,
-      );
-      updateCoverage(
-        coverageMap,
-        "pts",
-        (actual.goals ?? 0) + (actual.assists ?? 0),
-        skaterUncertainty.pts,
-      );
-      updateCoverage(
-        coverageMap,
-        "sog",
-        actual.shots ?? 0,
-        skaterUncertainty.sog,
-      );
-      updateCoverage(
-        coverageMap,
-        "ppp",
-        actual.pp_points ?? 0,
-        skaterUncertainty.ppp,
-      );
+      updateCoverage(coverageMap, "g", actualGoals, skaterUncertainty.g);
+      updateCoverage(coverageMap, "a", actualAssists, skaterUncertainty.a);
+      updateCoverage(coverageMap, "pts", actualPoints, skaterUncertainty.pts);
+      updateCoverage(coverageMap, "sog", actualShots, skaterUncertainty.sog);
+      updateCoverage(coverageMap, "ppp", actualPpPoints, skaterUncertainty.ppp);
+    }
+
+    if (
+      predictedHits == null ||
+      predictedBlocks == null ||
+      actualGoals == null ||
+      actualAssists == null ||
+      actualPpPoints == null ||
+      actualShots == null ||
+      actualHits == null ||
+      actualBlocks == null
+    ) {
+      unknownStatSkips.skaterFantasyRows += 1;
+      continue;
     }
 
     const predicted = computeSkaterFantasyPoints({
@@ -1909,12 +1926,12 @@ async function runAccuracyForDate(
     });
 
     const actualFp = computeSkaterFantasyPoints({
-      goals: actual.goals ?? 0,
-      assists: actual.assists ?? 0,
-      ppPoints: actual.pp_points ?? 0,
-      shots: actual.shots ?? 0,
-      hits: actual.hits ?? 0,
-      blockedShots: actual.blocked_shots ?? 0,
+      goals: actualGoals,
+      assists: actualAssists,
+      ppPoints: actualPpPoints,
+      shots: actualShots,
+      hits: actualHits,
+      blockedShots: actualBlocks,
     });
     skaterHoldoutSamples.push({
       actual: actualFp,
@@ -1953,15 +1970,15 @@ async function runAccuracyForDate(
         : predictedToiSeconds;
     const safeActualToiSeconds = Math.max(1, actualToiSeconds);
     const predictedShotsSafe = Math.max(0, predictedShots);
-    const actualShotsSafe = Math.max(0, Number(actual.shots ?? 0));
+    const actualShotsSafe = Math.max(0, actualShots);
     const predictedScoringFp =
       DEFAULT_SKATER_FANTASY_POINTS.GOALS * predictedGoals +
       DEFAULT_SKATER_FANTASY_POINTS.ASSISTS * predictedAssists +
       DEFAULT_SKATER_FANTASY_POINTS.PP_POINTS * predictedPpPoints;
     const actualScoringFp =
-      DEFAULT_SKATER_FANTASY_POINTS.GOALS * Number(actual.goals ?? 0) +
-      DEFAULT_SKATER_FANTASY_POINTS.ASSISTS * Number(actual.assists ?? 0) +
-      DEFAULT_SKATER_FANTASY_POINTS.PP_POINTS * Number(actual.pp_points ?? 0);
+      DEFAULT_SKATER_FANTASY_POINTS.GOALS * actualGoals +
+      DEFAULT_SKATER_FANTASY_POINTS.ASSISTS * actualAssists +
+      DEFAULT_SKATER_FANTASY_POINTS.PP_POINTS * actualPpPoints;
     const predictedShotRate = predictedShotsSafe / predictedToiSeconds;
     const actualShotRate = actualShotsSafe / safeActualToiSeconds;
     const predictedFpPerShot =
@@ -2043,23 +2060,31 @@ async function runAccuracyForDate(
   for (const row of goalieProjectionRows) {
     const playerId = Number(row.goalie_id);
     if (!Number.isFinite(playerId)) continue;
-    const actual =
+    // forge_goalie_game has no decision columns, so a fallback row leaves
+    // wins and shutouts unknown rather than scoring them as zero.
+    const fallback = goalieActualsFallback.get(playerId);
+    const actualRow =
       goalieActuals.get(playerId) ??
-      (goalieActualsFallback.has(playerId)
+      (fallback
         ? {
-            saves: goalieActualsFallback.get(playerId)?.saves ?? 0,
-            goals_against:
-              goalieActualsFallback.get(playerId)?.goals_allowed ?? 0,
-            wins: 0,
-            shutouts: 0,
+            saves: fallback.saves,
+            goals_against: fallback.goals_allowed,
+            wins: null,
+            shutouts: null,
           }
         : null);
-    updateCalibrationAccumulator(
-      starterProbabilityCalibration,
-      Number(row.starter_probability ?? 0),
-      actual ? 1 : 0,
-    );
-    if (!actual) continue;
+    const starterProbability = knownStat(row.starter_probability);
+    if (starterProbability == null) {
+      unknownStatSkips.prediction.starter_probability =
+        (unknownStatSkips.prediction.starter_probability ?? 0) + 1;
+    } else {
+      updateCalibrationAccumulator(
+        starterProbabilityCalibration,
+        starterProbability,
+        actualRow ? 1 : 0,
+      );
+    }
+    if (!actualRow) continue;
     // The writer stores null when the win probability is unknown; the goalie's
     // fantasy-point prediction depends on it, so the whole row is left out.
     if (row.proj_win_prob == null) {
@@ -2067,70 +2092,98 @@ async function runAccuracyForDate(
       continue;
     }
 
-    const projectedWins = row.proj_win_prob;
-    const projectedShutouts = row.proj_shutout_prob ?? 0;
-    updateCalibrationAccumulator(
-      winProbabilityCalibration,
-      Number(projectedWins),
-      (actual.wins ?? 0) > 0 ? 1 : 0,
-    );
-    updateCalibrationAccumulator(
-      shutoutProbabilityCalibration,
-      Number(projectedShutouts),
-      (actual.shutouts ?? 0) > 0 ? 1 : 0,
-    );
-    const projectedSaves = row.proj_saves ?? 0;
-    const projectedGoalsAgainst = row.proj_goals_allowed ?? 0;
+    const actualSaves = knownStat(actualRow.saves);
+    const actualGoalsAgainst = knownStat(actualRow.goals_against);
+    const actualWins = knownStat(actualRow.wins);
+    const actualShutouts = knownStat(actualRow.shutouts);
+    const projectedWins = Number(row.proj_win_prob);
+    const projectedShutouts = knownStat(row.proj_shutout_prob);
+    if (actualWins != null) {
+      updateCalibrationAccumulator(
+        winProbabilityCalibration,
+        projectedWins,
+        actualWins > 0 ? 1 : 0,
+      );
+    }
+    if (projectedShutouts != null && actualShutouts != null) {
+      updateCalibrationAccumulator(
+        shutoutProbabilityCalibration,
+        projectedShutouts,
+        actualShutouts > 0 ? 1 : 0,
+      );
+    }
+    const projectedSaves = knownStat(row.proj_saves);
+    const projectedGoalsAgainst = knownStat(row.proj_goals_allowed);
     const projectedShotsAgainst =
-      row.proj_shots_against ??
-      Math.max(0, projectedSaves + projectedGoalsAgainst);
+      knownStat(row.proj_shots_against) ??
+      (projectedSaves != null && projectedGoalsAgainst != null
+        ? Math.max(0, projectedSaves + projectedGoalsAgainst)
+        : null);
     const baselineSavePct = 0.9;
-    const baselineGoalsAgainst = projectedShotsAgainst * (1 - baselineSavePct);
-    const baselineSaves = Math.max(
-      0,
-      projectedShotsAgainst - baselineGoalsAgainst,
-    );
+    const baselineGoalsAgainst =
+      projectedShotsAgainst == null
+        ? null
+        : projectedShotsAgainst * (1 - baselineSavePct);
+    const baselineSaves =
+      projectedShotsAgainst == null || baselineGoalsAgainst == null
+        ? null
+        : Math.max(0, projectedShotsAgainst - baselineGoalsAgainst);
 
-    updateStatAggregate(
-      goalieStatAggregates,
-      "saves",
-      projectedSaves,
-      actual.saves ?? 0,
-    );
-    updateStatAggregate(
-      goalieStatAggregates,
-      "goals_against",
-      projectedGoalsAgainst,
-      actual.goals_against ?? 0,
-    );
-    updateStatAggregate(
-      goalieStatAggregates,
-      "win_prob",
-      projectedWins,
-      actual.wins ?? 0,
-    );
-    updateStatAggregate(
-      goalieStatAggregates,
-      "shutout_prob",
-      projectedShutouts,
-      actual.shutouts ?? 0,
-    );
-    updateErrorStats(savesModelStats, projectedSaves, actual.saves ?? 0);
-    updateErrorStats(savesBaselineStats, baselineSaves, actual.saves ?? 0);
-    updateErrorStats(
-      goalsAgainstModelStats,
-      projectedGoalsAgainst,
-      actual.goals_against ?? 0,
-    );
-    updateErrorStats(
-      goalsAgainstBaselineStats,
-      baselineGoalsAgainst,
-      actual.goals_against ?? 0,
-    );
+    const goalieStats = [
+      { key: "saves", predicted: projectedSaves, actual: actualSaves },
+      {
+        key: "goals_against",
+        predicted: projectedGoalsAgainst,
+        actual: actualGoalsAgainst,
+      },
+      { key: "win_prob", predicted: projectedWins, actual: actualWins },
+      {
+        key: "shutout_prob",
+        predicted: projectedShutouts,
+        actual: actualShutouts,
+      },
+    ];
+    for (const stat of goalieStats) {
+      if (
+        recordUnknownStat(
+          unknownStatSkips,
+          stat.key,
+          stat.predicted,
+          stat.actual,
+        )
+      ) {
+        updateStatAggregate(
+          goalieStatAggregates,
+          stat.key,
+          stat.predicted as number,
+          stat.actual as number,
+        );
+      }
+    }
+    // Model and baseline are compared on the same rows only.
+    if (projectedSaves != null && baselineSaves != null && actualSaves != null) {
+      updateErrorStats(savesModelStats, projectedSaves, actualSaves);
+      updateErrorStats(savesBaselineStats, baselineSaves, actualSaves);
+    }
+    if (
+      projectedGoalsAgainst != null &&
+      baselineGoalsAgainst != null &&
+      actualGoalsAgainst != null
+    ) {
+      updateErrorStats(
+        goalsAgainstModelStats,
+        projectedGoalsAgainst,
+        actualGoalsAgainst,
+      );
+      updateErrorStats(
+        goalsAgainstBaselineStats,
+        baselineGoalsAgainst,
+        actualGoalsAgainst,
+      );
+    }
 
     const goalieUncertainty = row.uncertainty ?? {};
-    const actualShotsAgainst =
-      (actual.saves ?? 0) + (actual.goals_against ?? 0);
+    const actualShotsAgainst = sumKnown(actualSaves, actualGoalsAgainst);
     updateCoverage(
       goalieCoverage,
       "shots_against",
@@ -2140,15 +2193,30 @@ async function runAccuracyForDate(
     updateCoverage(
       goalieCoverage,
       "goals_allowed",
-      actual.goals_against ?? 0,
+      actualGoalsAgainst,
       goalieUncertainty.goals_allowed,
     );
     updateCoverage(
       goalieCoverage,
       "saves",
-      actual.saves ?? 0,
+      actualSaves,
       goalieUncertainty.saves,
     );
+
+    if (
+      projectedSaves == null ||
+      projectedGoalsAgainst == null ||
+      projectedShotsAgainst == null ||
+      projectedShutouts == null ||
+      actualSaves == null ||
+      actualGoalsAgainst == null ||
+      actualShotsAgainst == null ||
+      actualWins == null ||
+      actualShutouts == null
+    ) {
+      unknownStatSkips.goalieFantasyRows += 1;
+      continue;
+    }
 
     const predicted = computeGoalieFantasyPoints({
       saves: projectedSaves,
@@ -2158,10 +2226,10 @@ async function runAccuracyForDate(
     });
 
     const actualFp = computeGoalieFantasyPoints({
-      saves: actual.saves ?? 0,
-      goalsAgainst: actual.goals_against ?? 0,
-      wins: actual.wins ?? 0,
-      shutouts: actual.shutouts ?? 0,
+      saves: actualSaves,
+      goalsAgainst: actualGoalsAgainst,
+      wins: actualWins,
+      shutouts: actualShutouts,
     });
 
     const errorAbs = Math.abs(predicted - actualFp);
@@ -2176,19 +2244,17 @@ async function runAccuracyForDate(
         : 0.9;
     const actualSavePct =
       actualShotsAgainst > 0
-        ? Math.max(0, Math.min(1, (actual.saves ?? 0) / actualShotsAgainst))
+        ? Math.max(0, Math.min(1, actualSaves / actualShotsAgainst))
         : modeledSavePct;
-    const starterProb = Math.max(
-      0,
-      Math.min(1, Number(row.starter_probability ?? 0)),
-    );
-    const gaErrorAbs = Math.abs(
-      projectedGoalsAgainst - (actual.goals_against ?? 0),
-    );
+    const gaErrorAbs = Math.abs(projectedGoalsAgainst - actualGoalsAgainst);
     missAttribution.sampleCount += 1;
     missAttribution.totalAbsFpError += errorAbs;
     missAttribution.totalAbsGaError += gaErrorAbs;
-    missAttribution.starterContribution += (1 - starterProb) * gaErrorAbs;
+    // An unknown starter probability attributes nothing to the starter call.
+    if (starterProbability != null) {
+      missAttribution.starterContribution +=
+        (1 - Math.max(0, Math.min(1, starterProbability))) * gaErrorAbs;
+    }
     missAttribution.shotsAgainstContribution += Math.abs(
       (projectedShotsAgainst - actualShotsAgainst) * (1 - modeledSavePct),
     );
@@ -2426,6 +2492,7 @@ async function runAccuracyForDate(
     totalRows: allResults.length,
     skaterActualMatchDiagnostics,
     unknownPredictionSkips,
+    unknownStatSkips,
     goalieMatchDiagnostics: {
       goalieProjectionCount: goalieProjectionRows.length,
       goalieActualCount,
@@ -2698,6 +2765,8 @@ export default withCronJobAudit(
               result.unknownPredictionSkips.skaterRows,
             goalieUnknownWinProbabilitySkips:
               result.unknownPredictionSkips.goalieWinProbabilityRows,
+            skaterUnknownStatRows: result.unknownStatSkips.skaterFantasyRows,
+            goalieUnknownStatRows: result.unknownStatSkips.goalieFantasyRows,
           },
           blockingIssueCount: 0,
           notes:
@@ -2711,6 +2780,7 @@ export default withCronJobAudit(
         totalRows: result.totalRows,
         skaterActualMatchDiagnostics: result.skaterActualMatchDiagnostics,
         unknownPredictionSkips: result.unknownPredictionSkips,
+        unknownStatSkips: result.unknownStatSkips,
         goalieMatchDiagnostics: result.goalieMatchDiagnostics,
         goalieHoldoutComparison: result.goalieHoldoutComparison,
         goalieStatDiagnostics: result.goalieStatDiagnostics,

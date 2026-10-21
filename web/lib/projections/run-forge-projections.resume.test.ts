@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { runHorizonFilter } from "./releasedRunFence";
 
 /**
  * Resumable FORGE runs: one run_id per date across invocations, with the
@@ -120,6 +121,15 @@ const db = vi.hoisted(() => {
         else if (operator === "like" && value === "local:*") {
           filters.push((row) => read(row, column) != null && !String(read(row, column)).startsWith("local:"));
         } else throw new Error(`unsupported not(${column}, ${operator})`);
+        return query;
+      },
+      // Readers' h1 horizon fence (releasedRunFence.runHorizonFilter): stamped h1, or unstamped with no or an h1 resume scope.
+      or: (expression: string) => {
+        if (expression !== runHorizonFilter(1)) throw new Error(`unsupported or(${expression})`);
+        filters.push((row) => {
+          const horizon = row.metrics?.horizon_games, scope = row.metrics?.resume?.scope_key;
+          return horizon != null ? String(horizon) === "1" : scope == null || String(scope).startsWith("h1:");
+        });
         return query;
       },
       order: (key: string, options?: { ascending?: boolean }) => {

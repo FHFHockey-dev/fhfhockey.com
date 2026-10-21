@@ -73,6 +73,75 @@ function createMockRes() {
   return res;
 }
 
+type UpsertCall = { table: string; rows: unknown };
+
+async function runAccuracyWithTables(tables: Record<string, unknown[]>) {
+  const upserts: UpsertCall[] = [];
+  const query = (table: string): any => {
+    const result = () => {
+      const data = tables[table] ?? [];
+      return { data, count: data.length, error: null };
+    };
+    const builder: any = new Proxy(
+      {},
+      {
+        get(_target, prop) {
+          if (prop === "then") {
+            return (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) =>
+              Promise.resolve(result()).then(resolve, reject);
+          }
+          if (prop === "upsert") {
+            return (rows: unknown) => {
+              upserts.push({ table, rows });
+              return builder;
+            };
+          }
+          if (prop === "maybeSingle") {
+            return () =>
+              Promise.resolve({
+                data:
+                  table === "forge_runs"
+                    ? {
+                        metrics: {
+                          input_provenance: buildForgeInputProvenance()
+                        }
+                      }
+                    : null,
+                error: null
+              });
+          }
+          return () => builder;
+        }
+      }
+    );
+    return builder;
+  };
+  const rpc = vi.fn(async (_name: string, args: Record<string, any>) => ({
+    data: {
+      deleted: 0,
+      inserted: args.p_rows.length,
+      asOfDate: args.p_as_of_date,
+      actualDate: args.p_actual_date,
+      sourceRunId: args.p_source_run_id
+    },
+    error: null
+  }));
+  requireLatestSucceededRunIdMock.mockResolvedValue("run-a08");
+  serverSupabaseMock.from = vi.fn(query);
+  serverSupabaseMock.rpc = rpc;
+  try {
+    const res = createMockRes();
+    await handler(
+      { method: "GET", query: { date: "2026-03-20", ignoreOffSeason: "true" } } as any,
+      res
+    );
+    return { res, rpc, upserts };
+  } finally {
+    delete serverSupabaseMock.from;
+    delete serverSupabaseMock.rpc;
+  }
+}
+
 describe("/api/v1/db/run-projection-accuracy", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -333,90 +402,117 @@ describe("/api/v1/db/run-projection-accuracy", () => {
         shutouts: 0, date: "2026-03-20"
       }))
     };
-    const query = (table: string): any => {
-      const result = () => {
-        const data = tables[table] ?? [];
-        return { data, count: data.length, error: null };
-      };
-      const builder: any = new Proxy(
-        {},
-        {
-          get(_target, prop) {
-            if (prop === "then") {
-              return (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) =>
-                Promise.resolve(result()).then(resolve, reject);
-            }
-            if (prop === "maybeSingle") {
-              return () =>
-                Promise.resolve({
-                  data:
-                    table === "forge_runs"
-                      ? {
-                          metrics: {
-                            input_provenance: buildForgeInputProvenance()
-                          }
-                        }
-                      : null,
-                  error: null
-                });
-            }
-            return () => builder;
-          }
-        }
-      );
-      return builder;
-    };
-    const rpc = vi.fn(async (_name: string, args: Record<string, any>) => ({
-      data: {
-        deleted: 0,
-        inserted: args.p_rows.length,
-        asOfDate: args.p_as_of_date,
-        actualDate: args.p_actual_date,
-        sourceRunId: args.p_source_run_id
-      },
-      error: null
-    }));
-    requireLatestSucceededRunIdMock.mockResolvedValue("run-a08");
-    serverSupabaseMock.from = vi.fn(query);
-    serverSupabaseMock.rpc = rpc;
-    try {
-      const res = createMockRes();
-      await handler(
-        { method: "GET", query: { date: "2026-03-20", ignoreOffSeason: "true" } } as any,
-        res
-      );
+    const { res, rpc } = await runAccuracyWithTables(tables);
 
-      expect(res.statusCode).toBe(200);
-      expect(res.body).toMatchObject({
-        success: true,
-        skaterRows: 1,
-        goalieRows: 1,
-        totalRows: 2,
-        unknownPredictionSkips: { skaterRows: 1, goalieWinProbabilityRows: 1 },
-        scanSummary: {
-          rowCounts: {
-            skaterUnknownPredictionSkips: 1,
-            goalieUnknownWinProbabilitySkips: 1
-          }
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      skaterRows: 1,
+      goalieRows: 1,
+      totalRows: 2,
+      unknownPredictionSkips: { skaterRows: 1, goalieWinProbabilityRows: 1 },
+      scanSummary: {
+        rowCounts: {
+          skaterUnknownPredictionSkips: 1,
+          goalieUnknownWinProbabilitySkips: 1
         }
-      });
-      const writtenRows = rpc.mock.calls[0][1].p_rows as any[];
-      expect(writtenRows.map((row) => row.player_id)).toEqual([10, 30]);
-      // The fully known skater row is scored exactly as before.
-      expect(writtenRows[0].predicted_fp).toBeCloseTo(
-        computeSkaterFantasyPoints({
-          goals: 0.6,
-          assists: 0.6,
-          ppPoints: 0.3,
-          shots: 3.5,
-          hits: 0.6,
-          blockedShots: 0.4
-        }),
-        6
-      );
-    } finally {
-      delete serverSupabaseMock.from;
-      delete serverSupabaseMock.rpc;
-    }
+      }
+    });
+    const writtenRows = rpc.mock.calls[0][1].p_rows as any[];
+    expect(writtenRows.map((row) => row.player_id)).toEqual([10, 30]);
+    // The fully known skater row is scored exactly as before.
+    expect(writtenRows[0].predicted_fp).toBeCloseTo(
+      computeSkaterFantasyPoints({
+        goals: 0.6,
+        assists: 0.6,
+        ppPoints: 0.3,
+        shots: 3.5,
+        hits: 0.6,
+        blockedShots: 0.4
+      }),
+      6
+    );
+  });
+
+  it("treats a null predicted or actual stat as unknown, never as zero", async () => {
+    // Skater 12: proj_hits null. Skater 13: actual hits null. Goalie 32:
+    // proj_shutout_prob and starter_probability null. Goalie 33: actuals only
+    // in forge_goalie_game (a real 30-save shutout win), so wins/shutouts are
+    // unknown there.
+    const skater = (player_id: number, proj_hits: number | null) => ({
+      game_id: 1, player_id, team_id: 8, opponent_team_id: 10,
+      proj_goals_es: 0.4, proj_goals_pp: 0.2, proj_goals_pk: 0,
+      proj_assists_es: 0.5, proj_assists_pp: 0.1, proj_assists_pk: 0,
+      proj_shots_es: 2.7, proj_shots_pp: 0.8, proj_shots_pk: 0,
+      proj_toi_es_seconds: 900, proj_toi_pp_seconds: 120, proj_toi_pk_seconds: 0,
+      proj_hits, proj_blocks: 0.4, uncertainty: {}
+    });
+    const goalie = (
+      goalie_id: number,
+      starter_probability: number | null,
+      proj_shutout_prob: number | null
+    ) => ({
+      game_id: 1, goalie_id, team_id: 8, opponent_team_id: 10,
+      starter_probability, proj_shots_against: 30, proj_saves: 27,
+      proj_goals_allowed: 3, proj_win_prob: 0.55, proj_shutout_prob,
+      uncertainty: {}
+    });
+    const tables: Record<string, unknown[]> = {
+      forge_player_projections: [skater(10, 0.6), skater(12, null), skater(13, 0.6)],
+      games: [{ id: 1, date: "2026-03-20" }],
+      wgo_skater_stats: [10, 12, 13].map((player_id) => ({
+        game_id: 1, player_id, goals: 1, assists: 0, pp_points: 0, shots: 3,
+        hits: player_id === 13 ? null : 1, blocked_shots: 0, date: "2026-03-20",
+        toi_per_game: 18, ev_time_on_ice: null, pp_toi: null, sh_time_on_ice: null
+      })),
+      forge_goalie_projections: [
+        goalie(30, 0.9, 0.05),
+        goalie(32, null, null),
+        goalie(33, 0.7, 0.06)
+      ],
+      goalie_stats_unified: [30, 32].map((player_id) => ({
+        player_id, goals_against: 2, saves: 28, wins: 1, shutouts: 0,
+        date: "2026-03-20"
+      })),
+      forge_goalie_game: [
+        { goalie_id: 33, goals_allowed: 0, saves: 30, game_date: "2026-03-20" }
+      ]
+    };
+
+    const { res, rpc, upserts } = await runAccuracyWithTables(tables);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      skaterRows: 1,
+      goalieRows: 1,
+      unknownStatSkips: {
+        prediction: { hits: 1, shutout_prob: 1, starter_probability: 1 },
+        actual: { hits: 1, win_prob: 1, shutout_prob: 1 },
+        skaterFantasyRows: 2,
+        goalieFantasyRows: 2
+      },
+      scanSummary: {
+        rowCounts: { skaterUnknownStatRows: 2, goalieUnknownStatRows: 2 }
+      },
+      goalieProbabilityCalibration: {
+        starter_probability: { sample_count: 2 },
+        win_probability: { sample_count: 2 },
+        shutout_probability: { sample_count: 1 }
+      }
+    });
+    const writtenRows = rpc.mock.calls[0][1].p_rows as any[];
+    expect(writtenRows.map((row) => row.player_id)).toEqual([10, 30]);
+
+    const statRows = upserts
+      .filter((u) => u.table === "forge_projection_accuracy_stat_daily")
+      .flatMap((u) => u.rows as any[]);
+    const count = (scope: string, key: string) =>
+      statRows.find((r) => r.scope === scope && r.stat_key === key)?.player_count;
+    expect(count("skater", "goals")).toBe(3);
+    expect(count("skater", "hits")).toBe(1);
+    expect(count("goalie", "saves")).toBe(3);
+    expect(count("goalie", "win_prob")).toBe(2);
+    expect(count("goalie", "shutout_prob")).toBe(1);
   });
 });
