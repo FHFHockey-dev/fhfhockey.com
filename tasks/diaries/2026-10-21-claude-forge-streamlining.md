@@ -1,0 +1,26 @@
+# FORGE audit streamlining (S-F, S-G, Q11 allowlist, Q13 cron) — 2026-10-21
+
+- **Scope**
+  - Task list: `tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md`.
+  - Q10, the Q11 null-key drop, Q12 and Q14 belong to the audit session (`local_f4058d3f`, workers W-B and W-C). I sent it a collision report at 13:56 EDT.
+- **Where**
+  - octoberBranch at HEAD `1c3759ab9`; my work is uncommitted.
+  - Production is on R15 `42eb9fd80`.
+- **State**
+  - 1.1, 1.2 and 5.1 reads done; results are in the task list.
+  - Workers running:
+    - 3.0: `skater-queries.ts` and its test, plus a new RPC migration.
+    - 1.3: the column inventory JSON.
+  - The 4.0 worker was stopped after a collision with W-C. Its goalie-marker hunk in `run-rolling-forge-pipeline.ts` is now the audit session's to keep or revert.
+- **Decisions (TJ)**
+  - 3.1: new RPC.
+  - Job 278: weekly.
+  - 7.3: pg_repack if it is available.
+- **Next**
+  - Review the 3.0 and 1.3 output.
+  - 1.4: ask TJ about the diagnostic columns.
+  - Cron approvals for 278, 329 and 79 (79 after the backfill).
+  - 2.2 waits for W-B's commit.
+- **Gotchas**
+  - Every pre-2026-27 season still holds values in the pruned wide columns, so never omit the pruned keys from the upsert.
+  - Job 278 never writes an audit row: it dies inside the function limit.
