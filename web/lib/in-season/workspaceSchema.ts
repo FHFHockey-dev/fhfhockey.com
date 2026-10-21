@@ -38,7 +38,7 @@ const player = z.object({
 }).strict();
 const rosterEntry = z.object({ playerId: id, position: z.enum(["active", "bench", "IR", "IR+", "NA"]) }).strict();
 const lockedAssignment = z.object({ date, playerId: id, slotId: id.nullable(), source: z.enum(["provider", "manager"]).optional() }).strict();
-const pastLineup = z.object({ date, source: z.literal("yahoo"), entries: z.array(z.object({ playerId: id.nullable(), name: id, position: id, slotId: id.nullable() }).strict()).max(60) }).strict();
+const pastLineup = z.object({ date, source: z.literal("yahoo"), entries: z.array(z.object({ playerId: id.nullable(), name: id, position: id, slotId: id.nullable(), points: z.number().finite().nullable().optional() }).strict()).max(60) }).strict();
 const game = z.object({ id, date, startsAt: instant.nullable(), scheduleRevision: id.optional(), teamAbbreviation: id, opponent: id, home: z.boolean(), status: z.enum(["scheduled", "live", "final", "postponed", "cancelled"]) }).strict();
 const contributionGame = z.object({ seasonId, gameId: positiveInteger, teamId: positiveInteger,
   scheduledAt: instant, scheduleRevision: id, rosterRevision: id,

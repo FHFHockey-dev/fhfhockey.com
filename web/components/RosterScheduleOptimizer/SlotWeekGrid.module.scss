@@ -41,6 +41,7 @@ td[data-focused] .cellButton, td[data-focused] .cellBody, td[data-focused] .empt
 .points[data-tier="high"] { background: color-mix(in srgb, #{v.$success-color} 18%, transparent); color: v.$success-color; }
 .points[data-tier="mid"] { background: color-mix(in srgb, #{v.$warning-color} 14%, transparent); color: v.$warning-color; }
 .points[data-tier="low"] { background: color-mix(in srgb, #{v.$color-coral-500} 18%, transparent); color: v.$color-coral-500; }
+.points[data-actual] { background: color-mix(in srgb, #{v.$color-white} 12%, transparent); color: v.$color-white; }
 .legend .points { margin-left: 0; }
 .opp { align-self: flex-start; padding: 0 4px; border-radius: 3px; background: v.$draft-input; color: v.$text-secondary; font-size: 10px; line-height: 14px; }
 .dust { display: inline-block; flex: none; width: 6px; height: 6px; border-radius: 50%; background: v.$color-coral-500; }

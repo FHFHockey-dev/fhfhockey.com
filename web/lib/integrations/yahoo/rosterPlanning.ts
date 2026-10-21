@@ -18,6 +18,75 @@ const no = (value: unknown) => value === false || value === 0 || value === "0";
 const pastRosterCache = new Map<string, Row[]>();
 const PAST_ROSTER_CACHE_LIMIT = 500;
 
+/** The per-game WGO column behind each points-league stat Yahoo scores per game; ratio stats can't be scored per game. */
+const SKATER_POINT_COLUMNS: Readonly<Record<string, string>> = { GOALS: "goals", ASSISTS: "assists", POINTS: "points",
+  PLUS_MINUS: "plus_minus", PENALTY_MINUTES: "penalty_minutes", PP_GOALS: "pp_goals", PP_ASSISTS: "pp_assists", PP_POINTS: "pp_points",
+  SH_GOALS: "sh_goals", SH_ASSISTS: "sh_assists", SH_POINTS: "sh_points", GAME_WINNING_GOALS: "gw_goals", SHOTS_ON_GOAL: "shots",
+  FACEOFFS_WON: "total_fow", FACEOFFS_LOST: "total_fol", HITS: "hits", BLOCKED_SHOTS: "blocked_shots" };
+const GOALIE_POINT_COLUMNS: Readonly<Record<string, string>> = { WINS_GOALIE: "wins", LOSSES_GOALIE: "losses",
+  GOALS_AGAINST_GOALIE: "goals_against", SHOTS_AGAINST_GOALIE: "shots_against", SAVES_GOALIE: "saves", SHUTOUTS_GOALIE: "shutouts",
+  GAMES_STARTED: "games_started" };
+const isGoalieStat = (key: string) => key.endsWith("_GOALIE") || ["GAMES_STARTED", "GOALS_AGAINST_AVERAGE", "SAVE_PERCENTAGE"].includes(key);
+
+/**
+ * Each recorded player's actual fantasy points that night, from the NHL game stats in `wgo_skater_stats` /
+ * `wgo_goalie_stats` and the league's own weights (points leagues only). A player who sat out a landed game scores 0;
+ * no game is null, and so is a game not final yet, one whose stats haven't landed, or a league weight that can't be
+ * scored per game. Yahoo's own total can differ after its stat corrections.
+ */
+export async function yahooPastLineupPoints(db: SupabaseClient<any>, args: {
+  pastLineups: PastLineup[]; players: PlanningPlayer[]; games: PlanningGame[]; scoring: LeagueRules["scoring"];
+}): Promise<PastLineup[]> {
+  if (args.scoring.mode !== "points" || !args.pastLineups.length) return args.pastLineups;
+  const weights = Object.entries(args.scoring.weights).filter(([, weight]) => Number.isFinite(weight) && weight !== 0);
+  const tiers = {
+    skater: { weights: weights.filter(([key]) => !isGoalieStat(key)), columns: SKATER_POINT_COLUMNS, table: "wgo_skater_stats", id: "player_id" },
+    goalie: { weights: weights.filter(([key]) => isGoalieStat(key)), columns: GOALIE_POINT_COLUMNS, table: "wgo_goalie_stats", id: "goalie_id" },
+  } as const;
+  const byId = new Map(args.players.map(player => [player.id, player]));
+  const gameOf = (player: PlanningPlayer, date: string) => args.games.find(game => game.date === date && game.teamAbbreviation === player.teamAbbreviation);
+  const gameIds = new Set<number>();
+  for (const day of args.pastLineups) for (const entry of day.entries) {
+    const player = entry.playerId ? byId.get(entry.playerId) : undefined, game = player ? gameOf(player, day.date) : undefined;
+    if (game?.status === "final" && Number.isSafeInteger(Number(game.id))) gameIds.add(Number(game.id));
+  }
+  const rowsFor = new Map<"skater" | "goalie", Row[] | null>();
+  for (const [playerClass, tier] of Object.entries(tiers) as Array<["skater" | "goalie", (typeof tiers)["skater" | "goalie"]]>) {
+    if (!gameIds.size || !tier.weights.every(([key]) => key in tier.columns)) { rowsFor.set(playerClass, null); continue; }
+    const columns = [...new Set(tier.weights.map(([key]) => tier.columns[key]))];
+    const rows: Row[] = [];
+    let failed = false;
+    for (let offset = 0; ; offset += 1000) {
+      const page = await db.from(tier.table).select([tier.id, "game_id", ...columns].join(",")).in("game_id", [...gameIds])
+        .order("game_id").order(tier.id).range(offset, offset + 999);
+      if (page.error) { failed = true; break; }
+      rows.push(...(page.data ?? []) as Row[]);
+      if ((page.data?.length ?? 0) < 1000) break;
+    }
+    rowsFor.set(playerClass, failed ? null : rows);
+  }
+  const pointsOf = (player: PlanningPlayer | undefined, date: string): number | null => {
+    if (!player || player.nhlId === null || !player.teamAbbreviation) return null;
+    const game = gameOf(player, date);
+    if (game?.status !== "final") return null;
+    const tier = tiers[player.playerClass], rows = rowsFor.get(player.playerClass);
+    if (!rows) return null;
+    const gameRows = rows.filter(row => Number(row.game_id) === Number(game.id));
+    if (!gameRows.length) return null;
+    const own = gameRows.find(row => Number(row[tier.id]) === player.nhlId);
+    if (!own) return 0;
+    let total = 0;
+    for (const [key, weight] of tier.weights) {
+      const value = Number(own[tier.columns[key]] ?? 0);
+      if (!Number.isFinite(value)) return null;
+      total += value * weight;
+    }
+    return Math.round(total * 100) / 100;
+  };
+  return args.pastLineups.map(day => ({ ...day, entries: day.entries.map(entry =>
+    ({ ...entry, points: pointsOf(entry.playerId ? byId.get(entry.playerId) : undefined, day.date) })) }));
+}
+
 /**
  * Goalie appearances Yahoo has already credited toward this matchup's minimum: a goalie it recorded in an active G slot
  * on an elapsed day who played in his team's game that day (`wgo_goalie_stats.games_played`). 0 before the first day
@@ -383,6 +452,7 @@ export async function loadYahooPlanningSnapshot(args: {
   // Appearances already credited this matchup, from the lineups Yahoo recorded on its elapsed days.
   if ((rules.goalieMinimum.required ?? 0) > 0) rules.goalieMinimum.credited = await yahooCreditedGoalieAppearances(db, {
     periodStart: rules.goalieMinimum.periodStart, today, pastLineups, slots, players: data.players, games: data.games });
+  const scoredPastLineups = await yahooPastLineupPoints(db, { pastLineups, players: data.players, games: data.games, scoring: rules.scoring });
   const unverifiedRules = [...(periods.length ? [] : ["remaining acquisitions, reset periods and counting rules"]),
     ...(rules.goalieMinimum.required === 0 || rules.goalieMinimum.credited !== null ? [] : ["goalie minimum progress"])];
   if (unverifiedRules.length) limitations.push(`Verify ${unverifiedRules.join(" and ")}; these are not inferred from season transaction totals.`);
@@ -485,7 +555,7 @@ export async function loadYahooPlanningSnapshot(args: {
   const observedAt = rosterResponse.transport.responseDate;
   const snapshot: PlanningSnapshot = {
     id: `yahoo:${team.id}:${now.toISOString()}`, context: { provider: "yahoo", seasonId: query.seasonId, leagueId: league.id, teamId: team.id, startDate: query.startDate, endDate: query.endDate, timeZone, asOf: now.toISOString() },
-    ...data, roster, rules, lockedAssignments, pastLineups, realized, opponent, acquisitionEvidence,
+    ...data, roster, rules, lockedAssignments, pastLineups: scoredPastLineups, realized, opponent, acquisitionEvidence,
     evidence: { ...data.evidence,
       roster: { source: "Yahoo authorized current roster", asOf: observedAt, seasonId: query.seasonId, completeness: fresh && roster.length === ownRows.length && roster.length > 0 ? "complete" : "partial", limitations },
       availability: { source: `Yahoo league ownership (${pagesChecked} pages)`, asOf: now.toISOString(), seasonId: query.seasonId, completeness: availabilityComplete ? "complete" : "partial", limitations: availabilityComplete ? [] : ["Only individually verified availability may be actionable."] },
