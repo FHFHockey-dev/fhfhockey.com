@@ -734,8 +734,8 @@ describe("skater rest/schedule adjustments", () => {
 
   it("penalizes on second leg of back-to-back against rested opponent", () => {
     const result = computeSkaterRestScheduleAdjustments({
-      teamRestDays: 0,
-      opponentRestDays: 2,
+      teamRestDays: 1,
+      opponentRestDays: 3,
       isHome: false
     });
     expect(result.sampleWeight).toBe(1);
@@ -747,14 +747,37 @@ describe("skater rest/schedule adjustments", () => {
 
   it("boosts rested home team versus opponent on back-to-back", () => {
     const result = computeSkaterRestScheduleAdjustments({
-      teamRestDays: 2,
-      opponentRestDays: 0,
+      teamRestDays: 3,
+      opponentRestDays: 1,
       isHome: true
     });
     expect(result.toiMultiplier).toBeGreaterThan(1);
     expect(result.shotRateMultiplier).toBeGreaterThan(1);
     expect(result.goalRateMultiplier).toBeGreaterThan(1);
     expect(result.assistRateMultiplier).toBeGreaterThan(1);
+  });
+
+  it("reads rest days as days since the previous game, so a back-to-back (1) is the heavy tier", () => {
+    const rest = (teamRestDays: number, opponentRestDays: number, buckets?: "legacy") =>
+      computeSkaterRestScheduleAdjustments({ teamRestDays, opponentRestDays, isHome: false, buckets });
+    expect(rest(1, 1).toiMultiplier).toBe(0.8876);
+    expect(rest(2, 2).toiMultiplier).toBe(0.9626);
+    expect(rest(3, 3).toiMultiplier).toBe(1.0096);
+    expect(rest(4, 4).toiMultiplier).toBe(1.0276);
+    expect(rest(1, 1).toiMultiplier).toBeLessThan(rest(2, 2).toiMultiplier);
+    // Every tier moved up one day with unchanged magnitudes.
+    for (const [team, opp] of [[1, 2], [2, 1], [3, 1], [4, 2], [2, 5]]) {
+      expect(rest(team, opp)).toMatchObject({
+        toiMultiplier: rest(team - 1, opp - 1, "legacy").toiMultiplier,
+        shotRateMultiplier: rest(team - 1, opp - 1, "legacy").shotRateMultiplier,
+        goalRateMultiplier: rest(team - 1, opp - 1, "legacy").goalRateMultiplier,
+        assistRateMultiplier: rest(team - 1, opp - 1, "legacy").assistRateMultiplier
+      });
+    }
+    expect(rest(1, 1, "legacy").toiMultiplier).toBe(0.9626);
+    const missingOpponent = { teamRestDays: 2, opponentRestDays: null, isHome: true };
+    expect(computeSkaterRestScheduleAdjustments(missingOpponent)).toEqual({
+      ...computeSkaterRestScheduleAdjustments({ ...missingOpponent, teamRestDays: 1, buckets: "legacy" }), teamRestDays: 2 });
   });
 });
 

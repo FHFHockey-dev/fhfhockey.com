@@ -349,6 +349,8 @@ export function computeSkaterRestScheduleAdjustments(args: {
   teamRestDays: number | null;
   opponentRestDays: number | null;
   isHome: boolean;
+  /** "legacy" reproduces the pre-Q8 buckets (B2B read as 0) for offline backtests only. */
+  buckets?: "legacy";
 }): SkaterRestScheduleAdjustment {
   const teamRestDays = Number.isFinite(args.teamRestDays) && args.teamRestDays != null ? Math.max(0, Number(args.teamRestDays)) : null;
   const opponentRestDays = Number.isFinite(args.opponentRestDays) && args.opponentRestDays != null ? Math.max(0, Number(args.opponentRestDays)) : null;
@@ -366,12 +368,17 @@ export function computeSkaterRestScheduleAdjustments(args: {
     };
   }
 
-  const teamRest = teamRestDays ?? 1;
-  const oppRest = opponentRestDays ?? 1;
+  // Rest days are days since the previous game (fetchTeamRestDays), so a back-to-back is 1,
+  // as in the goalie stage: 1 = heavy fatigue, 2 = mild, 3 = small boost, 4+ = full recovery.
+  // Legacy buckets read every tier one day lower; restDelta is shift-invariant, and a missing
+  // side keeps its former neutral default (old 1 = new 2) in both modes.
+  const shift = args.buckets === "legacy" ? 1 : 0;
+  const teamRest = teamRestDays == null ? 2 : teamRestDays + shift;
+  const oppRest = opponentRestDays == null ? 2 : opponentRestDays + shift;
   const restDelta = clamp((teamRest - oppRest) / 3, -1, 1);
-  const teamFatiguePenalty = teamRest <= 0 ? 0.11 : teamRest === 1 ? 0.035 : 0;
-  const teamRecoveryBoost = teamRest >= 3 ? 0.03 : teamRest === 2 ? 0.012 : 0;
-  const opponentFatigueBoost = oppRest <= 0 ? 0.055 : oppRest === 1 ? 0.018 : 0;
+  const teamFatiguePenalty = teamRest <= 1 ? 0.11 : teamRest === 2 ? 0.035 : 0;
+  const teamRecoveryBoost = teamRest >= 4 ? 0.03 : teamRest === 3 ? 0.012 : 0;
+  const opponentFatigueBoost = oppRest <= 1 ? 0.055 : oppRest === 2 ? 0.018 : 0;
   const homeIceEdge = args.isHome ? 0.012 : -0.004;
 
   const toiMultiplier = clamp(
@@ -634,6 +641,37 @@ export function computeStrengthSplitConversionRates(args: {
     goalRatePp: clamp(goalRatePpRaw * args.goalRateMultiplier, 0.03, 0.45),
     assistRateEs: clamp(assistRateEsRaw * args.assistRateMultiplier, 0.2, 1.7),
     assistRatePp: clamp(assistRatePpRaw * args.assistRateMultiplier, 0.3, 2)
+  };
+}
+
+const SKATER_CONVERSION_FIXED_PRIORS = { goalRateEs: 0.095, goalRatePp: 0.145, assistRateEs: 0.72, assistRatePp: 0.95 } as const;
+const SKATER_CONVERSION_BOUNDS = {
+  goalRateEs: [0.025, 0.3], goalRatePp: [0.04, 0.45], assistRateEs: [0.2, 1.7], assistRatePp: [0.3, 2],
+} as const;
+
+/**
+ * Supported split rates are already shrunk toward an adaptive prior, so they are used directly
+ * (clamped). Only an unsupported head falls back to the fixed prior via the small-sample blend,
+ * which reduces to the prior. `conversionShrink` keeps the pre-shrink Bayes rate and the value
+ * the former second shrink would have produced, so a backtest can score both from stored rows.
+ */
+export function resolveSkaterConversionRates(args: {
+  splitRates: { goalRateEs: number | null; goalRatePp: number | null; assistRateEs: number | null; assistRatePp: number | null };
+  sampleWeight: number;
+}) {
+  const resolve = (key: keyof typeof SKATER_CONVERSION_FIXED_PRIORS) => {
+    const prior = SKATER_CONVERSION_FIXED_PRIORS[key];
+    const [min, max] = SKATER_CONVERSION_BOUNDS[key];
+    const bayes = args.splitRates[key];
+    const legacy = clamp((bayes ?? prior) * args.sampleWeight + (1 - args.sampleWeight) * prior, min, max);
+    return { value: bayes == null ? legacy : clamp(bayes, min, max),
+      shrink: { bayes, legacy, sample_weight: args.sampleWeight } };
+  };
+  const goalEs = resolve("goalRateEs"), goalPp = resolve("goalRatePp");
+  const assistEs = resolve("assistRateEs"), assistPp = resolve("assistRatePp");
+  return {
+    goalRateEs: goalEs.value, goalRatePp: goalPp.value, assistRateEs: assistEs.value, assistRatePp: assistPp.value,
+    conversionShrink: { goal_es: goalEs.shrink, goal_pp: goalPp.shrink, assist_es: assistEs.shrink, assist_pp: assistPp.shrink },
   };
 }
 

@@ -256,6 +256,7 @@ import {
   computeSkaterTeamLevelContextAdjustments,
   computeSupportedStrengthSplitConversionRates,
   applySupportedSkaterConversionHeads,
+  resolveSkaterConversionRates,
 } from "../calculators/skater-adjustments";
 import {
   blendTopStarterScenarioOutputs,
@@ -1840,11 +1841,18 @@ export async function runPerGameSkaterStage(args: {
         await fetchTeamRestDays(opponentTeamId, asOfDate),
       );
     }
-    const restScheduleAdjustment = computeSkaterRestScheduleAdjustments({
+    const restScheduleArgs = {
       teamRestDays: teamRestDaysCache.get(teamDateKey(teamId)) ?? null,
       opponentRestDays:
         teamRestDaysCache.get(teamDateKey(opponentTeamId)) ?? null,
       isHome: teamId === game.homeTeamId,
+    };
+    const restScheduleAdjustment =
+      computeSkaterRestScheduleAdjustments(restScheduleArgs);
+    // Backtest-only: what the pre-Q8 buckets would have applied.
+    const restScheduleLegacyAdjustment = computeSkaterRestScheduleAdjustments({
+      ...restScheduleArgs,
+      buckets: "legacy",
     });
     if (restScheduleAdjustment.sampleWeight > 0) {
       metrics.data_quality.rest_schedule_teams_with_signal += 1;
@@ -1957,6 +1965,11 @@ export async function runPerGameSkaterStage(args: {
         restScheduleRestDelta: number;
         restScheduleTeamRestDays: number | null;
         restScheduleOpponentRestDays: number | null;
+        restScheduleIsHome: boolean;
+        restScheduleLegacyAdjustment: SkaterRestScheduleAdjustment;
+        conversionShrink: ReturnType<
+          typeof resolveSkaterConversionRates
+        >["conversionShrink"];
         smallSampleWeight: number;
         smallSampleIsLow: boolean;
         smallSampleUsedCallupFallback: boolean;
@@ -2183,26 +2196,13 @@ export async function runPerGameSkaterStage(args: {
       if ((splitRates.support.ev?.pairs.goalPerShot?.last5.denominator ?? 0) > 0) learningCounters.goalRecent += 1;
       if ((splitRates.support.ev?.pairs.assistPerGoal?.last5.denominator ?? 0) > 0) learningCounters.assistRecent += 1;
       // Fixed priors remain internal benchmarks. Missing learned heads are masked before persistence.
-      const goalRateEs = clamp(
-        (splitRates.goalRateEs ?? 0.095) * sampleWeight + (1 - sampleWeight) * 0.095,
-        0.025,
-        0.3,
-      );
-      const goalRatePp = clamp(
-        (splitRates.goalRatePp ?? 0.145) * sampleWeight + (1 - sampleWeight) * 0.145,
-        0.04,
-        0.45,
-      );
-      const assistRateEs = clamp(
-        (splitRates.assistRateEs ?? 0.72) * sampleWeight + (1 - sampleWeight) * 0.72,
-        0.2,
-        1.7,
-      );
-      const assistRatePp = clamp(
-        (splitRates.assistRatePp ?? 0.95) * sampleWeight + (1 - sampleWeight) * 0.95,
-        0.3,
-        2,
-      );
+      const {
+        goalRateEs,
+        goalRatePp,
+        assistRateEs,
+        assistRatePp,
+        conversionShrink,
+      } = resolveSkaterConversionRates({ splitRates, sampleWeight });
 
       const roleContinuity =
         roleTag != null
@@ -2321,6 +2321,9 @@ export async function runPerGameSkaterStage(args: {
         restScheduleRestDelta: restScheduleAdjustment.restDelta,
         restScheduleTeamRestDays: restScheduleAdjustment.teamRestDays,
         restScheduleOpponentRestDays: restScheduleAdjustment.opponentRestDays,
+        restScheduleIsHome: restScheduleArgs.isHome,
+        restScheduleLegacyAdjustment,
+        conversionShrink,
         smallSampleWeight: sampleShrinkage.sampleWeight,
         smallSampleIsLow: sampleShrinkage.isLowSample,
         smallSampleUsedCallupFallback: sampleShrinkage.usedCallupFallback,
@@ -3007,6 +3010,21 @@ export async function runPerGameSkaterStage(args: {
               assist_rate_multiplier: Number(
                 p.restScheduleAssistRateMultiplier.toFixed(4),
               ),
+              // Backtest inputs: days since previous game (B2B = 1).
+              rest: {
+                team_rest_days: p.restScheduleTeamRestDays,
+                opponent_rest_days: p.restScheduleOpponentRestDays,
+                is_home: p.restScheduleIsHome,
+              },
+              rest_legacy_multipliers: {
+                toi_multiplier: p.restScheduleLegacyAdjustment.toiMultiplier,
+                shot_rate_multiplier:
+                  p.restScheduleLegacyAdjustment.shotRateMultiplier,
+                goal_rate_multiplier:
+                  p.restScheduleLegacyAdjustment.goalRateMultiplier,
+                assist_rate_multiplier:
+                  p.restScheduleLegacyAdjustment.assistRateMultiplier,
+              },
             },
             small_sample: {
               sample_weight: Number(p.smallSampleWeight.toFixed(4)),
@@ -3023,6 +3041,8 @@ export async function runPerGameSkaterStage(args: {
               assist_rate_es: Number(p.assistRateEs.toFixed(4)),
               assist_rate_pp: Number(p.assistRatePp.toFixed(4)),
             },
+            // Backtest inputs: pre-shrink Bayes rate vs the former second shrink.
+            conversion_shrink: p.conversionShrink,
             pp_opportunity: {
               team_pp_target_seconds: p.ppOpportunityTeamTargetSeconds,
               allocated_player_pp_share: p.ppOpportunityAllocatedShare,

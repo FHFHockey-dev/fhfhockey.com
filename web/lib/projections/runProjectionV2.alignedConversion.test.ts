@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createAlignedCountSupportBuilder } from "lib/rollingPlayerCountSupport";
 import type { RollingRow } from "./types/run-forge-projections.types";
-import { computeSupportedStrengthSplitConversionRates, applySupportedSkaterConversionHeads } from "./calculators/skater-adjustments";
+import { computeSupportedStrengthSplitConversionRates, applySupportedSkaterConversionHeads, resolveSkaterConversionRates } from "./calculators/skater-adjustments";
 import { blendTopStarterScenarioOutputs, computeStrengthSplitConversionRates } from "./run-forge-projections";
 
 // Moved from runProjectionV2.test.ts so that file also runs against production calculators.
@@ -60,6 +60,19 @@ describe("aligned conversion integration", () => {
         role_scenarios: { scenario_stat_lines: [{ goals_pp: 0.2, assists_pp: null }] } },
         holdout_baselines: { current_baseline: { assists_pp: null }, naive_prior: { assists_pp: 0.5 } } } } });
     expect(source.proj_assists_pp).toBe(0.4); expect(source.uncertainty.ppp).toEqual({ mean: 0.6 });
+  });
+  it("uses a supported Bayes rate directly and records the legacy second shrink for backtests", () => {
+    const rates = computeSupportedStrengthSplitConversionRates({ ev: row("ev", 40, 52, 400), pp: undefined, goalRateMultiplier: 1, assistRateMultiplier: 1 });
+    const bayes = rates.goalRateEs as number;
+    expect(bayes).toBeGreaterThan(0.12); expect(bayes).toBeLessThan(0.13);
+    const resolved = resolveSkaterConversionRates({ splitRates: rates, sampleWeight: 0.7 });
+    expect(resolved.goalRateEs).toBe(bayes);
+    expect(resolved.conversionShrink.goal_es).toEqual({ bayes, legacy: bayes * 0.7 + 0.3 * 0.095, sample_weight: 0.7 });
+    expect(resolved.conversionShrink.goal_pp).toEqual({ bayes: null, legacy: 0.145, sample_weight: 0.7 });
+    const unsupported = resolveSkaterConversionRates({
+      splitRates: { goalRateEs: null, goalRatePp: null, assistRateEs: null, assistRatePp: null }, sampleWeight: 0.4 });
+    expect(unsupported).toMatchObject({ goalRateEs: 0.095, goalRatePp: 0.145, assistRateEs: 0.72, assistRatePp: 0.95 });
+    expect(unsupported.conversionShrink.assist_pp).toEqual({ bayes: null, legacy: 0.95, sample_weight: 0.4 });
   });
   it("distinguishes zero exposure from a supported goal/shot pair with zero goals", () => {
     const rates = computeSupportedStrengthSplitConversionRates({ ev: row("ev", 0, 0, 8), pp: row("pp", 0, 0, 0), goalRateMultiplier: 1, assistRateMultiplier: 1 });
