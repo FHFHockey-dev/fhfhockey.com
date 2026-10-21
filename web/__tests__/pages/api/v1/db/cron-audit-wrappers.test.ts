@@ -144,7 +144,7 @@ describe("Vercel cron static source coverage", () => {
   ];
 
   it("represents all configured entries without merging query or schedule identities", () => {
-    expect(findings).toHaveLength(28);
+    expect(findings).toHaveLength(30);
     expect(findings.map(({ entryIndex, configuredPath, schedule }) => ({ entryIndex, configuredPath, schedule })))
       .toEqual(crons.map((entry: { path: string; schedule: string }, entryIndex: number) => ({
         entryIndex, configuredPath: entry.path, schedule: entry.schedule,
@@ -165,7 +165,7 @@ describe("Vercel cron static source coverage", () => {
   it("keeps every unresolved audit owner explicit rather than granting an exemption", () => {
     const routes = [...new Set(findings.filter((finding) => finding.auditMode === "unqualified").map((finding) => finding.routePath))].sort();
     expect(routes).toEqual(unresolvedAuditRoutes);
-    expect(new Set(findings.filter((finding) => finding.auditMode === "shared-wrapper").map((finding) => finding.routePath)).size).toBe(15);
+    expect(new Set(findings.filter((finding) => finding.auditMode === "shared-wrapper").map((finding) => finding.routePath)).size).toBe(17);
     for (const finding of findings.filter((finding) => finding.auditMode === "unqualified")) {
       expect(finding.auditReason).toContain("manual/helper-owned auditing remains unqualified (not an exemption)");
     }
