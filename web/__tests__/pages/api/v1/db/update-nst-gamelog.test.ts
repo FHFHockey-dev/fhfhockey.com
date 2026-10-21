@@ -561,6 +561,135 @@ describe("update-nst-gamelog automatic season cursor", () => {
     }
   });
 
+  it("stops on the first of ten queued 521s, audits the outage, and retries that URL on a later call", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "nst-source-down-test-"));
+    const store = createNstFileBudgetStore(directory);
+    const starts: string[] = [];
+    const startedAt = Date.now();
+    try {
+      // Model the reported run of fast failures; none after the first may dispatch.
+      for (let i = 0; i < 10; i++) {
+        fetchNstTextByUrlMock.mockImplementationOnce((url, options) => {
+          expect(options.retries).toBe(0);
+          return withNstRequestBudget(url, options.requestControl, async () => {
+            starts.push(url);
+            throw new NstResponseError({ status: 521, redactedUrl: url });
+          }, store);
+        });
+      }
+      const query = { runMode: "incremental", dates: "2026-10-03", overwrite: "yes" };
+      const result = await run(query);
+      expect(result.statusCode).toBe(503);
+      expect(Date.now() - startedAt).toBeLessThan(220_000);
+      expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(1);
+      expect(starts).toHaveLength(1);
+      expect(result.body).toMatchObject({ success: false, operationStatus: "source_down" });
+      expect(result.body.nstProgress).toMatchObject({ networkAttempts: 1, stoppedEarly: true,
+        continuation: { nextIndex: 0 }, auditPersistence: "confirmed" });
+      expect(db.audits).toHaveLength(1);
+      expect(db.audits[0]).toMatchObject({ status: "failure", details: {
+        failedRows: 1, failedUrls: [starts[0]], sourceDown: { status: 521, url: starts[0] }
+      } });
+      const second = await run(query);
+      expect(second.statusCode).toBe(503);
+      expect(starts).toEqual([starts[0], starts[0]]);
+      expect(db.audits).toHaveLength(2);
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+
+  it.each([520, 522, 523, 524, 525, 526, 527])("stops and audits origin status %i without an internal or failed-URL retry", async (status) => {
+    fetchNstTextByUrlMock.mockRejectedValue(new NstResponseError({ status, redactedUrl: "https://data.naturalstattrick.com" }));
+    const result = await run({ dates: "2026-10-03" });
+    expect(result.statusCode).toBe(503);
+    expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(1);
+    expect(fetchNstTextByUrlMock.mock.calls[0][1].retries).toBe(0);
+    expect(db.audits[0].details.sourceDown.status).toBe(status);
+  });
+
+  it("bounds a stalled NST await by maxRuntimeMs, audits the date-range cursor, and resumes the same URL", async () => {
+    supplyThreePlayerRows();
+    const source = await fetchNstTextByUrlMock();
+    const directory = mkdtempSync(join(tmpdir(), "nst-stalled-test-"));
+    const store = createNstFileBudgetStore(directory);
+    const starts: string[] = [];
+    const startedAt = Date.now();
+    let finishStalled: (() => void) | undefined;
+    try {
+      fetchNstTextByUrlMock.mockReset().mockImplementation((url, options) =>
+        withNstRequestBudget(url, options.requestControl, async () => {
+          starts.push(url);
+          if (starts.length === 2) return new Promise<typeof source>((resolve) => { finishStalled = () => resolve(source); });
+          return source;
+        }, store));
+      const query = { runMode: "incremental", startDate: "2026-10-02", endDate: "2026-10-03", maxRuntimeMs: "30000" };
+      const first = await run(query);
+      expect(first.statusCode).toBe(207);
+      expect(Date.now() - startedAt).toBeLessThan(30_000);
+      expect(first.body.resume.request.query).toEqual({ ...query, cursor: "1" });
+      expect(first.body.nstProgress).toMatchObject({ networkAttempts: 2, auditPersistence: "confirmed", continuation: { nextIndex: 1 } });
+      expect(db.audits[0]).toMatchObject({ status: "continued", details: { nstProgress: { continuation: { nextIndex: 1 } } } });
+      const stalledUrl = starts[1];
+      // Admission keeps the stalled attempt active until transport settles.
+      // A late response must never proceed to parsing/writing after the cutoff.
+      finishStalled!();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(db.upsertCalls).toHaveLength(1);
+      const second = await run(query);
+      expect(second.statusCode).toBe(207);
+      expect(starts[2]).toBe(stalledUrl);
+      expect(second.body.nstProgress.continuation.nextIndex).toBe(2);
+      expect(db.audits[1].details.nstProgress.continuation.nextIndex).toBe(2);
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+
+  it("retains the acknowledged prefix on source-down and resumes the failed URL", async () => {
+    supplyThreePlayerRows();
+    const source = await fetchNstTextByUrlMock();
+    const directory = mkdtempSync(join(tmpdir(), "nst-outage-prefix-test-"));
+    const store = createNstFileBudgetStore(directory);
+    const starts: string[] = [];
+    try {
+      fetchNstTextByUrlMock.mockReset().mockImplementation((url, options) =>
+        withNstRequestBudget(url, options.requestControl, async () => {
+          starts.push(url);
+          if (starts.length === 4) throw new NstResponseError({ status: 521, redactedUrl: url });
+          return source;
+        }, store));
+      const query = { dates: "2026-10-03", overwrite: "yes", maxRequests: "3" };
+      const chunk = await run(query);
+      expect(chunk.statusCode).toBe(207);
+      const resumedQuery = chunk.body.resume.request.query;
+      const outage = await run(resumedQuery);
+      expect(outage.statusCode).toBe(503);
+      expect(outage.body.nstProgress.continuation).toMatchObject({ nextIndex: 3, blocked: false });
+      expect(db.audits[1].details.nstProgress.continuation.nextIndex).toBe(3);
+      const second = await run(resumedQuery);
+      expect(second.statusCode).toBe(207);
+      expect(starts[4]).toBe(starts[3]);
+      expect(second.body.nstProgress.continuation.nextIndex).toBe(6);
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+
+  it("stops the failed-URL pass on source-down and retains unvisited failures in the audit", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "nst-retry-outage-test-"));
+    const store = createNstFileBudgetStore(directory);
+    let attempts = 0;
+    try {
+      fetchNstTextByUrlMock.mockImplementation((url, options) =>
+        withNstRequestBudget(url, options.requestControl, async () => {
+          attempts++;
+          // Four sources, two route attempts each, then the retry pass.
+          throw new NstResponseError({ status: attempts === 9 ? 521 : 500, redactedUrl: url });
+        }, store));
+      const result = await run({ dates: "2026-10-03", datasetGroup: "fiveOnFive" });
+      expect(result.statusCode).toBe(503);
+      expect(attempts).toBe(9);
+      expect(db.audits[0].details).toMatchObject({ failedRows: 4, sourceDown: { status: 521 } });
+      expect(db.audits[0].details.failedUrls).toHaveLength(4);
+      expect(result.body.nstProgress.continuation.nextIndex).toBe(0);
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+
   it("finishes an explicit scope in three invocations and replays old cursors without refetching acknowledged sources", async () => {
     const directory = mkdtempSync(join(tmpdir(), "nst-explicit-test-"));
     const store = createNstFileBudgetStore(directory);

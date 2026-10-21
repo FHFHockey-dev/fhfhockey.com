@@ -165,6 +165,25 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 const runControlStorage = new AsyncLocalStorage<NstRequestControl>();
+
+async function beforeDeadline<T>(work: () => PromiseLike<T>, deadlineAt: number, onTimeout?: () => void): Promise<T> {
+  if (Date.now() >= deadlineAt) throw new NstExecutionLimitError("NST run deadline reached.");
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      new Promise<never>((_, reject) => {
+        timeout = setTimeout(() => {
+          onTimeout?.();
+          reject(new NstExecutionLimitError("NST run deadline reached while awaiting work."));
+        }, deadlineAt - Date.now());
+      }),
+      Promise.resolve().then(work)
+    ]);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey, {
   global: {
     fetch: async (input, init) => {
@@ -172,16 +191,13 @@ const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey, {
       if (!control) return fetch(input, init);
       if (Date.now() >= control.deadlineAt) throw new NstExecutionLimitError("NST run deadline reached before database request.");
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), Math.min(30_000, control.deadlineAt - Date.now()));
-      try {
+      return beforeDeadline(async () => {
         const response = await fetch(input, {
           ...init, signal: init?.signal ? AbortSignal.any([init.signal, controller.signal]) : controller.signal
         });
         await response.clone().arrayBuffer();
         return response;
-      } finally {
-        clearTimeout(timeout);
-      }
+      }, Math.min(Date.now() + 30_000, control.deadlineAt), () => controller.abort());
     }
   }
 });
@@ -254,7 +270,14 @@ async function nstGet(
       throw new NstExecutionLimitError("NST run deadline or network-attempt budget reached.");
     }
   }
-  const result = await fetchNstTextByUrl(url, { timeoutMs, requestControl: options?.requestControl, retries: options?.retries });
+  // The route owns retries so a 520–527 response reaches its stop logic before
+  // another network attempt. Every call still passes through shared admission.
+  const fetchText = () => fetchNstTextByUrl(url, {
+    timeoutMs, requestControl: options?.requestControl, retries: options?.retries ?? 0
+  });
+  const result = options?.requestControl
+    ? await beforeDeadline(fetchText, options.requestControl.deadlineAt)
+    : await fetchText();
 
   return {
     data: result.text,
@@ -1489,7 +1512,8 @@ async function fetchAndParseData(
           ? "rows_persisted" : "parse_or_identity_unresolved"
       };
     } catch (error: any) {
-      if (error instanceof NstExecutionLimitError || isNstAuthError(error) || isNstRateLimitError(error) || isNstConfigError(error)) {
+      if (error instanceof NstExecutionLimitError || isNstAuthError(error) || isNstRateLimitError(error) || isNstConfigError(error) ||
+        (isNstResponseError(error) && error.status >= 520 && error.status <= 527)) {
         throw error;
       }
       if (isNstNotFoundError(error)) {
@@ -1731,6 +1755,7 @@ async function processUrls(
   requestsAttempted: number;
   stoppedEarly: boolean;
   nextItem: UrlQueueItem | null;
+  sourceDown: { status: number; url: string } | null;
   outcomes: Map<string, { item: NstGamelogItem; outcome: NstGamelogOutcome }>;
 }> {
   banner(
@@ -1741,6 +1766,7 @@ async function processUrls(
   let requestsAttempted = 0;
   let stoppedEarly = false;
   let nextItem: UrlQueueItem | null = urlsQueue[0] ?? null;
+  let sourceDown: { status: number; url: string } | null = null;
   const outcomes = new Map<string, { item: NstGamelogItem; outcome: NstGamelogOutcome }>();
 
   for (let i = 0; i < urlsQueue.length; i++) {
@@ -1784,6 +1810,14 @@ async function processUrls(
           options?.bypassRateLimit ? 1 : 2, options
         );
       } catch (error) {
+        if (isNstResponseError(error) && error.status >= 520 && error.status <= 527) {
+          sourceDown = { status: error.status, url };
+          failedUrls.push(item);
+          outcomes.set(nstGamelogItemKey(item), { item: nstGamelogItemIdentity(item), outcome: "fetch_or_write_failed" });
+          stoppedEarly = true;
+          nextItem = item;
+          break;
+        }
         if (error instanceof NstExecutionLimitError) {
           stoppedEarly = true;
           nextItem = item;
@@ -1860,7 +1894,7 @@ async function processUrls(
     `\n--- Initial URL processing complete. ${failedUrls.length} failures recorded. ---`
   );
 
-  return { totalRowsProcessed, requestsAttempted, stoppedEarly, nextItem, outcomes };
+  return { totalRowsProcessed, requestsAttempted, stoppedEarly, nextItem, sourceDown, outcomes };
 }
 
 // --- NHL API Cross-Referencing ---
@@ -2179,9 +2213,10 @@ async function main(
   const writeAudit = async (row: Record<string, unknown>) => {
     auditWriteStarted = true;
     try {
-      const result = await runControlStorage.run(requestControl && options?.auditDeadlineAt
+      const insert = () => runControlStorage.run(requestControl && options?.auditDeadlineAt
         ? { ...requestControl, deadlineAt: options.auditDeadlineAt } : requestControl!,
       async () => await supabase.from("cron_job_audit").insert([row]));
+      const result = options?.auditDeadlineAt ? await beforeDeadline(insert, options.auditDeadlineAt) : await insert();
       if (!result || result.error !== null) throw new Error("Audit insert was not acknowledged.");
       auditPersistence = "confirmed";
     } catch {
@@ -2408,11 +2443,13 @@ async function main(
         rows_affected: totalRowsAffected,
         details: {
           timing: { ...buildCronJobTiming(startTime), source: "audit" },
-          failedRows: failedUrls.length, troublesomePlayersCount: troublesomePlayers.length,
+          failedRows: failedUrls.length, failedUrls: failedUrls.map((item) => item.url), sourceDown: initialResult.sourceDown,
+          troublesomePlayersCount: troublesomePlayers.length,
           isReverseFull: fullRefreshFlag("reverse"), nstProgress
         }
       });
-      return { success, nstProgress: { ...nstProgress, auditPersistence: "confirmed" } };
+      return { success, ...(initialResult.sourceDown ? { operationStatus: "source_down" } : {}),
+        nstProgress: { ...nstProgress, auditPersistence: "confirmed" } };
     }
 
     // --- Refactored Logic for Incremental and Forward Modes ---
@@ -2566,18 +2603,16 @@ async function main(
 
     if (allDatesToScrape.length === 0) {
       console.log("No new dates to scrape based on the determined range.");
-      await supabase.from("cron_job_audit").insert([
-        {
-          job_name: "update-nst-gamelog",
-          status: "success",
-          rows_affected: 0,
-          details: {
-            message: "no new dates to scrape",
-            failedRows: 0,
-            timing: { ...buildCronJobTiming(startTime), source: "audit" }
-          }
+      await writeAudit({
+        job_name: "update-nst-gamelog",
+        status: "success",
+        rows_affected: 0,
+        details: {
+          message: "no new dates to scrape",
+          failedRows: 0,
+          timing: { ...buildCronJobTiming(startTime), source: "audit" }
         }
-      ]);
+      });
       console.log(
         "--- Script execution finished early: No dates to process. ---"
       );
@@ -2732,8 +2767,10 @@ async function main(
     const finalOutcomes = new Map(initialProcessResult.outcomes);
     let stoppedEarly = initialProcessResult.stoppedEarly;
     let nextItem = initialProcessResult.nextItem;
+    let sourceDown = initialProcessResult.sourceDown;
+    let remainingFailedUrls = [...failedUrls];
 
-    if (failedUrls.length > 0 && (!requestControl ||
+    if (!stoppedEarly && failedUrls.length > 0 && (!requestControl ||
       (requestControl.attemptsStarted < requestControl.maxAttempts && Date.now() < requestControl.deadlineAt))) {
       console.log(`\n--- Retrying ${failedUrls.length} failed URLs ---`);
       const failedUrlsRetryCopy = [...failedUrls];
@@ -2751,12 +2788,18 @@ async function main(
       );
 
       totalRowsAffected += retryResult.totalRowsProcessed || 0;
+      sourceDown = retryResult.sourceDown;
       if (retryResult.stoppedEarly) {
         stoppedEarly = true;
         nextItem = retryResult.nextItem;
       }
-      failedUrlCountAfterRetry = retryFailedUrls.length;
       for (const [key, outcome] of retryResult.outcomes) finalOutcomes.set(key, outcome);
+      // Unvisited retries remain failed; an early stop never clears them.
+      remainingFailedUrls = failedUrlsRetryCopy.filter((item) => {
+        const outcome = finalOutcomes.get(nstGamelogItemKey(item))?.outcome;
+        return outcome !== "rows_persisted" && outcome !== "already_present";
+      });
+      failedUrlCountAfterRetry = remainingFailedUrls.length;
 
       if (retryFailedUrls.length > 0) {
         console.error(
@@ -2764,10 +2807,10 @@ async function main(
         );
         retryFailedUrls.forEach((item) => console.error(`  - ${item.url}`));
       } else {
-        console.log("All initial failures successfully retried.");
+        console.log(retryResult.stoppedEarly ? "Retry pass stopped before all failures could be revisited." : "All initial failures successfully retried.");
       }
     } else {
-      console.log("No failures during initial processing pass.");
+      console.log(failedUrls.length > 0 ? "Failed URLs retained; retry pass was not admitted." : "No failures during initial processing pass.");
     }
 
     if (isForwardFull) {
@@ -2790,7 +2833,9 @@ async function main(
         acknowledged++;
       }
       explicitContinuation.nextIndex = resumeOffset + acknowledged;
-      explicitContinuation.blocked = sourceFailed;
+      // An origin outage has no write acknowledgement ambiguity. Replaying the
+      // same cursor remains safe and must retry this unacknowledged URL.
+      explicitContinuation.blocked = sourceFailed && !sourceDown;
     }
     const skippedNoCompletedGames = fullPlanRequestCount === 0 &&
       allDatesToScrape.length === skippedUnstartedDates.length;
@@ -2799,7 +2844,7 @@ async function main(
       explicitContinuation.nextIndex > (options?.cursor ?? 0));
     const success = skippedNoCompletedGames || (!sourceFailed && !stoppedEarly &&
       (fullPlanRequestCount > 0) && (!explicitContinuation || explicitContinuation.nextIndex === fullPlanRequestCount));
-    const operationStatus = continuationRequired ? "continuation_required"
+    const operationStatus = sourceDown ? "source_down" : continuationRequired ? "continuation_required"
       : skippedNoCompletedGames ? "skipped_no_completed_games" : success ? "completed" : "blocked";
     const progress = {
       version: NST_GAMELOG_PROGRESS_VERSION,
@@ -2813,6 +2858,7 @@ async function main(
       maxNetworkAttempts: requestControl?.maxAttempts,
       deadlineAt: requestControl?.deadlineAt,
       sourceOutcomes,
+      sourceDown,
       plannedRequestCount: fullPlanRequestCount,
       requestIntervalMs: requestPlan.requestIntervalMs,
       skippedUnstartedDates,
@@ -2837,6 +2883,8 @@ async function main(
         details: {
           timing: { ...buildCronJobTiming(startTime, endTime), source: "audit" },
           failedRows: failedUrlCountAfterRetry,
+          failedUrls: remainingFailedUrls.map((item) => item.url),
+          sourceDown,
           urlsProcessed: initialProcessResult.requestsAttempted,
           urlsQueued: initialUrlsQueue.length,
           stoppedEarly,
@@ -3080,7 +3128,8 @@ async function handler(
       cursor, replayQuery: { ...input }
     }));
     return res
-      .status(outcome && "operationStatus" in outcome && outcome.operationStatus === "continuation_required" ? 207 : 200)
+      .status(outcome && "operationStatus" in outcome && outcome.operationStatus === "continuation_required" ? 207
+        : outcome && "operationStatus" in outcome && outcome.operationStatus === "source_down" ? 503 : 200)
       .json({
         message: outcome?.success === false ? "Incomplete NST work; inspect source outcomes and deferred URLs." : "Done",
         runMode,
