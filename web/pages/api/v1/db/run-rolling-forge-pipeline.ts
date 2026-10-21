@@ -104,6 +104,8 @@ type ResponseBody = {
     date: string;
     rollingStartDate: string;
     rollingEndDate: string;
+    sourceStartDate: string;
+    sourceEndDate: string;
   };
   durationMs: string;
   runtimeBudget: {
@@ -186,15 +188,19 @@ function parseDateWindow(req: NextApiRequest, implicitWindow: boolean) {
   const date = getParam(req, "date") ?? todayEtDateOnly();
   const startDate = getParam(req, "startDate") ?? date;
   const endDate = getParam(req, "endDate") ?? date;
-  // The scheduled run fires before today's games, so its rolling step
-  // recomputes the last completed day. Explicit windows stay as requested.
+  // The scheduled run fires before today's games, so its rolling step and the
+  // source steps that read played games (NST and WGO skater ingestion,
+  // power-play combinations) use the last completed day. Incremental NST from
+  // today would not include yesterday. Explicit windows stay as requested.
   const completedDate = addDays(date, -1);
   return {
     date,
     startDate,
     endDate,
     rollingStartDate: implicitWindow ? completedDate : startDate,
-    rollingEndDate: implicitWindow ? completedDate : endDate
+    rollingEndDate: implicitWindow ? completedDate : endDate,
+    sourceStartDate: implicitWindow ? completedDate : startDate,
+    sourceEndDate: implicitWindow ? completedDate : endDate
   };
 }
 
@@ -367,6 +373,63 @@ function isPartialResume(statusCode: number, body: unknown) {
   );
 }
 
+/**
+ * NST step resume: the consumer side of the pipeline <-> update-nst-gamelog
+ * contract (tasks/artifacts/cross-platform/2026-10-21-claude-to-codex-pipeline-
+ * nst-contract.md with its ~01:00Z amendment, accepted by Codex in
+ * 2026-10-20-codex-to-claude-pipeline-nst-contract.md). INACTIVE until Codex
+ * ships it; enable only after review. With it enabled:
+ * - 200 with success true finishes the step (operationStatus
+ *   "skipped_no_completed_games" is the expected no-work skip); WGO follows.
+ * - 207, operationStatus "continuation_required", resume.required true and
+ *   resume.request.query: the stage pauses, and the next invocation re-calls
+ *   NST with that query and a fresh deadlineAt. WGO waits.
+ * - Anything else (>= 400, success false, a malformed continuation) fails the
+ *   step and blocks the stage: nothing advances.
+ * The query is stored in the stage's projection_pipeline_state row, which has
+ * no JSON column: the replay query must be the query this pipeline sent plus
+ * one `cursor`, a positive integer past the cursor sent, kept in the
+ * forward-only cursor_game_id. Any other query is uncertain and fails the step.
+ */
+const nstStepResume = { enabled: false };
+// Terminal audit headroom kept back from the NST step's deadline.
+const NST_DEADLINE_HEADROOM_MS = 20_000;
+// vercel.json maxDuration: an explicit run never gets longer than this.
+const FUNCTION_MAX_DURATION_MS = 240_000;
+
+type NstOutcome =
+  | { kind: "finished"; skipped: boolean }
+  | { kind: "continuation"; cursor: number }
+  | { kind: "blocked"; reason: string };
+
+function readNstOutcome(step: StepResult, sentCursor: number | null): NstOutcome {
+  const body = step.summary as Record<string, any> | null;
+  const record = body && typeof body === "object" ? body : null;
+  if (step.statusCode === 200 && record?.success !== false && !record?.error) {
+    return { kind: "finished", skipped: record?.operationStatus === "skipped_no_completed_games" };
+  }
+  if (step.statusCode !== 207 || record?.operationStatus !== "continuation_required") {
+    return { kind: "blocked", reason: "NST did not finish or return a continuation; the stage stops here." };
+  }
+  const query = record.resume?.required === true ? record.resume.request?.query : null;
+  if (!query || typeof query !== "object" || Array.isArray(query)) {
+    return { kind: "blocked", reason: "NST continuation has no replayable resume.request.query." };
+  }
+  const { cursor: rawCursor, deadlineAt: _replayDeadline, ...scope } = query as Record<string, unknown>;
+  const { cursor: _sentCursor, deadlineAt: _sentDeadline, ...sentScope } = step.query;
+  const sameScope =
+    Object.keys(scope).length === Object.keys(sentScope).length &&
+    Object.entries(sentScope).every(([key, value]) => scope[key] === value);
+  if (!sameScope) {
+    return { kind: "blocked", reason: "NST continuation query does not replay the request this pipeline sent." };
+  }
+  const cursor = typeof rawCursor === "string" && /^[1-9]\d*$/.test(rawCursor) ? Number(rawCursor) : NaN;
+  if (!Number.isSafeInteger(cursor) || cursor <= (sentCursor ?? 0)) {
+    return { kind: "blocked", reason: "NST continuation cursor is not a positive integer past the cursor sent." };
+  }
+  return { kind: "continuation", cursor };
+}
+
 function classifyStepStatus(statusCode: number, body: unknown): StepStatus {
   if (isPartialResume(statusCode, body)) return "partial";
   if (statusCode >= 400) return "failed";
@@ -379,6 +442,11 @@ function classifyStepStatus(statusCode: number, body: unknown): StepStatus {
 }
 
 function readRollingNextResumeFrom(stage: StageResult): number | null {
+  if (stage.id === "upstream_skater_sources") {
+    const nst = stage.steps.find((step) => step.id === "update-nst-gamelog");
+    const outcome = nst?.status === "partial" ? readNstOutcome(nst, null) : null;
+    return outcome?.kind === "continuation" ? outcome.cursor : null;
+  }
   const summary = stage.steps.find(
     (step) => step.id === "update-rolling-player-averages"
   )?.summary as Record<string, any> | undefined;
@@ -438,7 +506,11 @@ async function runStage(args: {
   date: string;
   rollingStartDate: string;
   rollingEndDate: string;
+  sourceStartDate: string;
+  sourceEndDate: string;
   rollingResumeFrom?: number | null;
+  nstResumeCursor?: number | null;
+  sourceDeadlineAtMs?: number;
   rollingMaxRuntimeMs?: number;
   projectionDeadlineMs?: number;
   includeDownstream: boolean;
@@ -488,23 +560,49 @@ async function runStage(args: {
         handler: updatePlayersHandler
       });
       break;
-    case "upstream_skater_sources":
-      await addStep({
+    case "upstream_skater_sources": {
+      const nstCursor = nstStepResume.enabled ? (args.nstResumeCursor ?? null) : null;
+      const nst = await invokeRouteStep({
         id: "update-nst-gamelog",
         route: "/api/v1/db/update-nst-gamelog",
         handler: updateNstGamelogHandler,
         query: {
           runMode: "incremental",
-          startDate: args.startDate
+          startDate: args.sourceStartDate,
+          // The implicit run names its one completed date; explicit windows
+          // pass through as before.
+          ...(args.useDurableProjectionBacklog ? { endDate: args.sourceEndDate } : {}),
+          ...(nstCursor != null ? { cursor: String(nstCursor) } : {}),
+          ...(args.sourceDeadlineAtMs != null
+            ? { deadlineAt: String(args.sourceDeadlineAtMs - NST_DEADLINE_HEADROOM_MS) }
+            : {})
         }
       });
+      steps.push(nst);
+      if (nstStepResume.enabled) {
+        const outcome = readNstOutcome(nst, nstCursor);
+        if (outcome.kind === "continuation") {
+          // WGO waits until NST finishes.
+          nst.status = "partial";
+          break;
+        }
+        if (outcome.kind === "blocked") {
+          nst.status = "failed";
+          nst.reason = outcome.reason;
+          break;
+        }
+        if (outcome.skipped) {
+          nst.status = "skipped";
+          nst.reason = "NST reported no completed games for the date.";
+        }
+      }
       await addStep({
         id: "update-wgo-skaters",
         route: "/api/v1/db/update-wgo-skaters",
         handler: updateWgoSkatersHandler,
         query: {
           action: "all",
-          startDate: args.startDate
+          startDate: args.sourceStartDate
         }
       });
       await addStep({
@@ -516,6 +614,7 @@ async function runStage(args: {
         }
       });
       break;
+    }
     case "contextual_builders": {
       await addStep({
         id: "update-line-combinations",
@@ -525,7 +624,7 @@ async function runStage(args: {
           count: args.mode === "overnight" ? "25" : "10"
         }
       });
-      const gameIds = await listGameIdsInRange(args.startDate, args.endDate);
+      const gameIds = await listGameIdsInRange(args.sourceStartDate, args.sourceEndDate);
       if (gameIds.length === 0) {
         steps.push({
           id: "update-power-play-combinations-batch",
@@ -543,8 +642,8 @@ async function runStage(args: {
           route: "/api/v1/db/update-power-play-combinations",
           handler: updatePowerPlayCombinationsBatchHandler,
           query: {
-            startDate: args.startDate,
-            endDate: args.endDate
+            startDate: args.sourceStartDate,
+            endDate: args.sourceEndDate
           }
         });
       }
@@ -883,6 +982,12 @@ async function runResumablePipeline(args: {
     const result = await runStage({
       ...args.stageArgs,
       id: stage.id,
+      ...(stage.id === "upstream_skater_sources"
+        ? {
+            nstResumeCursor: lease.cursorGameId,
+            sourceDeadlineAtMs: args.startedAt + RESUMABLE_INVOCATION_BUDGET_MS
+          }
+        : {}),
       ...(isRolling
         ? {
             rollingResumeFrom: lease.cursorGameId,
@@ -964,7 +1069,8 @@ async function runResumablePipeline(args: {
 export const __testables = {
   listGameIdsInRange,
   invokeRouteStep,
-  runStage
+  runStage,
+  nstStepResume
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) {
@@ -979,7 +1085,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
         endDate: "",
         date: "",
         rollingStartDate: "",
-        rollingEndDate: ""
+        rollingEndDate: "",
+        sourceStartDate: "",
+        sourceEndDate: ""
       },
       durationMs: formatDurationMsToMMSS(0),
       runtimeBudget: buildRuntimeBudgetSummary("daily_incremental", 0),
@@ -1025,8 +1133,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
     getParam(req, "date") == null &&
     getParam(req, "startDate") == null &&
     getParam(req, "endDate") == null;
-  const { startDate, endDate, date, rollingStartDate, rollingEndDate } =
-    parseDateWindow(req, useDurableProjectionBacklog);
+  const {
+    startDate,
+    endDate,
+    date,
+    rollingStartDate,
+    rollingEndDate,
+    sourceStartDate,
+    sourceEndDate
+  } = parseDateWindow(req, useDurableProjectionBacklog);
   const includeDownstream = parseBooleanParam(
     getParam(req, "includeDownstream"),
     true
@@ -1050,6 +1165,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
     date,
     rollingStartDate,
     rollingEndDate,
+    sourceStartDate,
+    sourceEndDate,
     includeDownstream,
     includeAccuracy,
     useDurableProjectionBacklog
@@ -1076,7 +1193,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
         continue;
       }
 
-      const result = await runStage({ ...stageArgs, id: stage.id });
+      const result = await runStage({
+        ...stageArgs,
+        id: stage.id,
+        sourceDeadlineAtMs:
+          startedAt +
+          Math.min(ROLLING_FORGE_PIPELINE_BUDGETS_MS[mode], FUNCTION_MAX_DURATION_MS)
+      });
       stageResults.push(result);
 
       if (
@@ -1169,7 +1292,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
       endDate,
       date,
       rollingStartDate,
-      rollingEndDate
+      rollingEndDate,
+      sourceStartDate,
+      sourceEndDate
     },
     durationMs: formatDurationMsToMMSS(durationMs),
     runtimeBudget: buildRuntimeBudgetSummary(mode, durationMs),
