@@ -931,6 +931,26 @@
       "migrationClass": "feature",
       "rolloutGate": "Drafted 2026-10-21 (FORGE projection audit, proposal Q3). Re-creates replace_forge_projection_results_atomic so its 'latest succeeded run' check matches the readers' selection in web/lib/projections/releasedRunFence.ts: released runs only (git_sha not null and not local:%) and horizon-1 runs only (metrics->>'horizon_games' = '1', falling back to the resume scope key or h1 for unstamped runs). Without it the accuracy write raises when a fenced local run or the 10:12Z horizon-5 cron run is the newest succeeded run for a date (observed 10-15..10-19 422s). Security, search_path, grants and the rest of the body are byte-identical to 20260723121407. Hosted apply was approved by TJ on 2026-10-21 after release R15 (master 42eb9fd80) shipped the matching reader change; file renamed from its draft timestamp 20261021170000 to the ledger version.",
       "stateEvidence": "Production ledger version 20261021165413 name forge_projection_results_source_run_fence (applied 2026-10-21 by explicit TJ approval via session local_08a0bf1c, after R15). Readback: the live function definition contains the released-h1 fence; service_role keeps EXECUTE and anon has none. Before applying, the live definition matched 20260723121407 apart from the new clause. Evidence: tasks/artifacts/forge-projection-audit-2026-10-21/REPORT.md (finding 3, Q3)."
+    },
+    {
+      "order": 93,
+      "path": "supabase/migrations/20261021172444_rolling_tables_autovacuum_tuning.sql",
+      "sha256": "6e0184424a266bbe48318605a001413090b5b41399a9b5720018d60dc0f04a70",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "FORGE projection audit 2026-10-21, proposal Q4 (TJ approved Claude running it): per-table autovacuum_analyze_scale_factor 0.002 and autovacuum_vacuum_scale_factor 0.01 on rolling_player_game_metrics, wgo_skater_stats and rolling_player_metric_support_payloads, which had never been auto-analyzed or auto-vacuumed. Rollback: ALTER TABLE ... RESET (autovacuum_analyze_scale_factor, autovacuum_vacuum_scale_factor).",
+      "stateEvidence": "Production ledger version 20261021172444 name rolling_tables_autovacuum_tuning (applied 2026-10-21 by explicit TJ approval via session local_08a0bf1c). Readback: all three tables carry both reloptions. A one-time ANALYZE ran first (17:23-17:24Z): rolling_player_game_metrics n_live_tup 891,302 (planner had estimated ~2,370), n_dead_tup 154,932; wgo_skater_stats 2,250,701 / 417,341; support payloads 69,522 / 5,624. Evidence: tasks/artifacts/forge-projection-audit-2026-10-21/REPORT.md (Q4)."
+    },
+    {
+      "order": 94,
+      "path": "supabase/migrations/20261021172445_drop_rpgm_player_date_duplicate_index.sql",
+      "sha256": "b3582780f6265d028ad4e527bc194334e2a905c187f58206008b0903355f13ec",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "FORGE projection audit 2026-10-21, proposal Q5 (TJ approved Claude running it): drops idx_rpgm_player_date (player_id, game_date desc), a duplicate of the primary key's leading columns. Other 0-scan indexes on the table stay until a longer idx_scan observation. Rollback: CREATE INDEX CONCURRENTLY idx_rpgm_player_date ON public.rolling_player_game_metrics (player_id, game_date desc).",
+      "stateEvidence": "Production ledger version 20261021172445 name drop_rpgm_player_date_duplicate_index (applied 2026-10-21 by explicit TJ approval via session local_08a0bf1c). Pre-check: definition (player_id, game_date DESC) vs rolling_player_game_metrics_pkey (player_id, game_date, strength_state); idx_scan 0 vs 15,973 on the primary key; pg_stat_database.stats_reset null; 21 MB. Readback: the index no longer exists. Evidence: tasks/artifacts/forge-projection-audit-2026-10-21/REPORT.md (Q5)."
     }
   ],
   "sourceExtensionApproval": {

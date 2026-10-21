@@ -75,21 +75,23 @@ describe("scheduled cron audit coverage", () => {
     // 2026-10-17: pg_cron job 234 (daily-cron-report) is intentionally
     // inactive (tasks/artifacts/ops-health-2026-10-17, OPS-06). Its route is
     // scheduled only by the Vercel 0 13 * * * cron, outside this pg_cron set.
-    expect(authFindings).toHaveLength(46);
+    // 2026-10-21: job 393 (run-projection-v2?horizonGames=5) was unscheduled;
+    // run-projection-v2 has no other active pg_cron owner.
+    expect(authFindings).toHaveLength(45);
     expect(
       authFindings.reduce(
         (jobCount, finding) => jobCount + finding.jobNames.length,
         0,
       ),
-    ).toBe(50);
+    ).toBe(49);
     expect(modeCounts).toEqual({
-      "admin-or-cron": 46,
+      "admin-or-cron": 45,
     });
     expect(callerCounts).toEqual({
       "browser-admin": 5,
       "browser-admin-and-internal": 4,
       "cron-only": 26,
-      "internal-server": 11,
+      "internal-server": 10,
     });
     expect(authFindings.some((finding) => finding.routePath === "/api/v1/db/cron-report")).toBe(false);
     const vercelConfig = JSON.parse(fs.readFileSync(path.resolve(webRoot, "vercel.json"), "utf8"));

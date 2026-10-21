@@ -19,6 +19,15 @@
 -- The JSON inventory below is the current-state source of truth; job 308 is
 -- inactive and distinct horizon-5 job 393 remains active.
 
+-- 2026-10-21 job 393 run-forge-projection-v2-weekly (10:12 UTC, run-projection-v2?horizonGames=5)
+-- unscheduled (cron.unschedule(393), by explicit TJ approval via session local_08a0bf1c). No reader
+-- consumed horizon-5 rows (the RSO bridge, Start Chart and run-projection-accuracy filter
+-- horizon_games = 1); the run competed for the same-date lease with the scheduled pipeline's h1 run
+-- and could be selected as the newest succeeded run by horizon-blind readers (fixed in release R15).
+-- The pipeline's projection stage projects today and tomorrow at horizon 1. The reference SQL below
+-- (10:12 UTC option-A block) restores it if ever needed. Evidence:
+-- tasks/artifacts/forge-projection-audit-2026-10-21/REPORT.md section 3 finding 3 and Q2.
+
 -- 2026-10-04 read-only Yahoo reconciliation: active job 106 and run 177006
 -- target update-yahoo-players without a query at 08:40 UTC. Its route receipt
 -- is partial; this inventory correction does not establish complete ownership
@@ -416,7 +425,7 @@
     "jobname": "run-forge-projection-v2-weekly",
     "schedule": "12 10 * * *",
     "run_time_utc": "10:12 UTC",
-    "active": true,
+    "active": false,
     "method": "POST",
     "route": "/api/v1/db/run-projection-v2?horizonGames=5",
     "auth": "Supabase Vault cron_secret",
@@ -1679,7 +1688,7 @@ curl -i -sS -m 180 \
 --     $$
 -- );
 
--- 10:12 UTC option-A weekly owner (approved 2026-07-11; ACTIVE as job 393):
+-- 10:12 UTC option-A weekly owner (approved 2026-07-11; was job 393, UNSCHEDULED 2026-10-21 — see the dated note at the top):
 -- - runs after the daily writer's 4m30s ceiling plus buffer
 -- - owns only genuine horizon-5 output
 -- - uses a separate run id on the same as-of date
