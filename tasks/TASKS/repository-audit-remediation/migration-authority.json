@@ -961,6 +961,16 @@
       "migrationClass": "feature",
       "rolloutGate": "FORGE projection audit 2026-10-21, proposal S-F / Q-3 (TJ approved Claude applying it): read-only STABLE SECURITY INVOKER function forge_latest_rolling_rows(bigint[], text, date, text[]) returning the latest rolling_player_game_metrics row per requested player for one strength before a cutoff, with only the sidecar keys FORGE hydrates. EXECUTE for service_role only (public, anon, authenticated revoked). The reader (web/lib/projections/queries/skater-queries.ts fetchRollingRows, octoberBranch 0ff219d25) falls back to its legacy window scan while the function is absent (PGRST202). File renamed from its draft timestamp 20261021180242 to the ledger version. Rollback: DROP FUNCTION public.forge_latest_rolling_rows(bigint[], text, date, text[]) (the reader falls back).",
       "stateEvidence": "Production ledger version 20261021182129 name forge_latest_rolling_rows (applied 2026-10-21 by explicit TJ approval via session local_08a0bf1c). EXPLAIN (no ANALYZE) of the body with 20 ids: nested loop with Index Only Scan Backward using rolling_player_game_metrics_pkey (Limit 1 per player) and a Memoize + rolling_player_metric_support_payloads_pkey lookup, total cost about 17. Evidence: tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md (3.6)."
+    },
+    {
+      "order": 96,
+      "path": "supabase/migrations/20261021185034_drop_unread_rolling_columns.sql",
+      "sha256": "4f392329a0f9e2113e2b5d598e0eafbdc90394f7ae6293ec62fedc2eed651ea4",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "FORGE projection audit 2026-10-21, S-G (TJ decision: drop all 491): drops the 491 rolling_player_game_metrics columns no runtime code reads (rolling-column-inventory.json: wide_unread + pruned_unread + diag_sweep_only), matching web/lib/supabase/Upserts/rollingDroppedColumns.ts. Applied only after release R17 (master 8b99c22d2) shipped the writer that omits them. DROP COLUMN marks columns dropped; heap space returns on rewrite (pg_repack). Rollback: data is gone; columns can be re-added empty and refilled by a rolling recompute. File moved from its draft at tasks/artifacts/forge-projection-audit-2026-10-21/drafts/ to the ledger version.",
+      "stateEvidence": "Production ledger version 20261021185034 name drop_unread_rolling_columns (applied 2026-10-21 by explicit TJ approval via session local_08a0bf1c, after R17 was READY and smoke-tested). Pre-check: no views, triggers or publications depend on the table; the two functions that reference it (truncate_rolling_player_game_metrics, forge_latest_rolling_rows) name none of the 491 columns. Readback: 623 live and 491 dropped attributes (was 1,114 live)."
     }
   ],
   "sourceExtensionApproval": {

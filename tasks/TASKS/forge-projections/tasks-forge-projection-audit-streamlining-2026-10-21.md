@@ -23,7 +23,7 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
 - `web/lib/supabase/database-generated.types.ts` - The 491 dropped keys removed from the `rolling_player_game_metrics` Row/Insert/Update blocks (1,473 lines).
 - `web/lib/supabase/Upserts/rollingDroppedColumns.ts` - `ROLLING_DROPPED_COLUMNS` (491) and `isRollingDroppedColumn`.
 - `web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts` (+ test), `web/scripts/check-rolling-player-{family-reconstruction,disputed-metrics,optional-additions}.ts` - Skip dropped columns.
-- `tasks/artifacts/forge-projection-audit-2026-10-21/drafts/drop_unread_rolling_columns.sql` - The 491-column drop. It moves to `supabase/migrations/` with its ledger version when applied.
+- `supabase/migrations/20261021185034_drop_unread_rolling_columns.sql` - The 491-column drop; applied 2026-10-21 as ledger order 96.
 - `tasks/TASKS/cron-operations/cron-schedule.md` - pg_cron inventory (jobs 278, 79, 329); 278 weekly and 329 at 09:15Z recorded 2026-10-21.
 - `web/lib/cron/nstCoordination.ts` - NST cron start table, kept in step with the inventory by `nstCoordination.test.ts` (329 moved to 09:15).
 - `web/lib/cron/combinedCronInventory.test.ts`, `web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts` - Frozen cron counts.
@@ -80,12 +80,12 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
 
 - [ ] 7.0 Wide-table unread columns (S-G)
   - [x] 7.1 Stop writing the confirmed wide-unread columns (from 1.3) in the writer's upsert body, and omit the always-null pruned keys if Q4 shows no pre-pruning values that a reader would still see.
-  - [ ] 7.2 Release the writer change (8.0), so nothing writes the columns before they are dropped.
+  - [x] 7.2 Release the writer change (8.0), so nothing writes the columns before they are dropped.
   - [x] 7.3 Decide with TJ how to reclaim space after the drop:
     - (a) `DROP COLUMN` only: instant, but the space returns only as rows are rewritten.
     - (b) `VACUUM FULL` in a maintenance window: locks the table for the duration.
     - (c) `pg_repack`, if available on the project: online. (TJ chose (c), falling back to (a) if unavailable.)
-  - [ ] 7.4 Write the drop-column migration, apply it with TJ's approval, record it in the ledger, and regenerate `database-generated.types.ts`.
+  - [x] 7.4 Write the drop-column migration, apply it with TJ's approval, record it in the ledger, and regenerate `database-generated.types.ts`.
   - [ ] 7.5 Verify: a row-identical recompute for 20 players × 5 strengths, plus the rankings and trends tests.
 
 - [ ] 8.0 Release and record
@@ -235,3 +235,18 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
   - Upserts, rankings, trends, trendsDebug, the debug API tests and skater-queries: 76 files, 714 tests passed.
   - eslint is clean; the worker's tsc exited 0.
 - **Order:** release the writer change (7.2, R17) before applying the drop (7.4); otherwise upserts that still send the keys fail.
+
+### R16, R17 and the drop (2026-10-21)
+
+- **R16:**
+  - Candidate `1ed78ca5d`, pushed 18:29Z. `fhfhockey` READY; the other three projects CANCELED.
+  - Smoke test: 3/3 pages returned 200.
+  - octoberBranch synced with `-s ours` (`b55c22877`), pushed; the 10-minute watch saw no builds.
+- **R17:**
+  - Candidate `8b99c22d2`: S-G writer plus `b59070d92` plus Q9/Q14 `1bc536e8b`.
+  - Gate: 13 failures, the same as master's baseline in the same 6 files; tsc and eslint 0.
+  - Pushed 18:43Z; READY at 18:48Z; smoke test 3/3 returned 200.
+- **7.4 drop applied:** about 18:50Z as ledger `20261021185034`. Readback: 623 live and 491 dropped attributes.
+- **7.5 still open:**
+  - space reclaim via pg_repack (TJ runs it);
+  - the first production writer run after the drop is the 10:05Z pipeline.
