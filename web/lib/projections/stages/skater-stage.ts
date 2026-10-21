@@ -2208,16 +2208,10 @@ export async function runPerGameSkaterStage(args: {
         0.04,
         0.45,
       );
-      const assistRateEs = clamp(
-        splitRates.assistRateEs * sampleWeight + (1 - sampleWeight) * 0.72,
-        0.2,
-        1.7,
-      );
-      const assistRatePp = clamp(
-        splitRates.assistRatePp * sampleWeight + (1 - sampleWeight) * 0.95,
-        0.3,
-        2,
-      );
+      // Split assist rates are already shrunk toward an adaptive prior, so they are used as
+      // fitted (clamped) without a second sample-weight shrink. ES is per goal, PP per two goals.
+      const assistRateEs = splitRates.assistRateEs;
+      const assistRatePp = splitRates.assistRatePp;
 
       const roleContinuity =
         roleTag != null
@@ -2275,7 +2269,7 @@ export async function runPerGameSkaterStage(args: {
         shotsPp: shotsPp * availabilityMultiplier * trendShotMultiplier,
         goalRateEs: clamp(goalRateEs * trendGoalMultiplier, 0.025, 0.3),
         goalRatePp: clamp(goalRatePp * trendGoalMultiplier, 0.04, 0.45),
-        assistRateEs: clamp(assistRateEs * trendAssistMultiplier, 0.2, 1.7),
+        assistRateEs: clamp(assistRateEs * trendAssistMultiplier, 0.4, 3.4),
         assistRatePp: clamp(assistRatePp * trendAssistMultiplier, 0.3, 2),
         hitsRate: hitsPer60,
         blocksRate: blocksPer60,
@@ -2506,8 +2500,8 @@ export async function runPerGameSkaterStage(args: {
       }
       p.assistRateEs = clamp(
         p.assistRateEs * teammateCoupling.assistRateEsMultiplier,
-        0.2,
-        1.8,
+        0.4,
+        3.6,
       );
       p.assistRatePp = clamp(
         p.assistRatePp * teammateCoupling.assistRatePpMultiplier,
@@ -2690,7 +2684,7 @@ export async function runPerGameSkaterStage(args: {
       }
       const naivePriorGoalsEs = shotsEs * 0.095;
       const naivePriorGoalsPp = shotsPp * 0.145;
-      const naivePriorAssistsEs = naivePriorGoalsEs * 0.72;
+      const naivePriorAssistsEs = naivePriorGoalsEs * 1.44;
       const naivePriorAssistsPp = naivePriorGoalsPp * 0.95;
 
       teamTotals.toiEsSeconds += p.toiEs;
@@ -2761,7 +2755,7 @@ export async function runPerGameSkaterStage(args: {
                 "fixed_league_conversion_priors_on_reconciled_opportunities",
               goal_rate_es: 0.095,
               goal_rate_pp: 0.145,
-              assist_per_goal_es: 0.72,
+              assist_per_goal_es: 1.44,
               assist_per_goal_pp: 0.95,
               goals_es: Number(naivePriorGoalsEs.toFixed(4)),
               goals_pp: Number(naivePriorGoalsPp.toFixed(4)),
@@ -3034,6 +3028,9 @@ export async function runPerGameSkaterStage(args: {
               goal_rate_pp: Number(p.goalRatePp.toFixed(4)),
               assist_rate_es: Number(p.assistRateEs.toFixed(4)),
               assist_rate_pp: Number(p.assistRatePp.toFixed(4)),
+            },
+            assist_rate_scale: {
+              convention: { es: "per_goal", pp: "per_two_goals" },
             },
             pp_opportunity: {
               team_pp_target_seconds: p.ppOpportunityTeamTargetSeconds,

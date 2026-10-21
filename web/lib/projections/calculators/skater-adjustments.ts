@@ -430,6 +430,22 @@ export function computeSkaterSampleShrinkageAdjustments(args: {
   };
 }
 
+// Assist-rate conventions: ES assists are fitted per player goal; PP assists stay on the former
+// per-two-goals scale (denominator goals x 2) pending the power-play over-prediction. The ES
+// pseudo-counts are half the former per-two-goals ones (blendOnlineRate adds priorStrength to the
+// denominator), so ES shrinkage is unchanged while the rate is exactly twice the former value.
+const SKATER_ES_ASSIST_PER_GOAL = {
+  baseStrength: 11,
+  evidenceScale: 18,
+  minStrength: 4,
+  maxStrength: 20,
+  fallback: 1.44,
+  minRawRate: 0.4,
+  maxRawRate: 2.9,
+  minRate: 0.4,
+  maxRate: 3.4
+} as const;
+
 export function computeStrengthSplitConversionRates(args: {
   evGoalsRecent: number;
   evShotsRecent: number;
@@ -479,11 +495,11 @@ export function computeStrengthSplitConversionRates(args: {
     maxStrength: 54
   });
   const evAssistPriorStrength = adaptivePriorStrength({
-    baseStrength: 22,
-    evidenceDenom: Math.max(0, args.evGoalsAll * 2) + Math.max(0, args.evGoalsRecent * 2),
-    evidenceScale: 36,
-    minStrength: 8,
-    maxStrength: 40
+    baseStrength: SKATER_ES_ASSIST_PER_GOAL.baseStrength,
+    evidenceDenom: Math.max(0, args.evGoalsAll) + Math.max(0, args.evGoalsRecent),
+    evidenceScale: SKATER_ES_ASSIST_PER_GOAL.evidenceScale,
+    minStrength: SKATER_ES_ASSIST_PER_GOAL.minStrength,
+    maxStrength: SKATER_ES_ASSIST_PER_GOAL.maxStrength
   });
   const ppAssistPriorStrength = adaptivePriorStrength({
     baseStrength: 16,
@@ -515,13 +531,13 @@ export function computeStrengthSplitConversionRates(args: {
   });
   const assistRateEsRaw = blendOnlineRate({
     recentNumerator: args.evAssistsRecent,
-    recentDenom: args.evGoalsRecent * 2,
+    recentDenom: args.evGoalsRecent,
     baseNumerator: args.evAssistsAll,
-    baseDenom: args.evGoalsAll * 2,
-    fallback: 0.72,
+    baseDenom: args.evGoalsAll,
+    fallback: SKATER_ES_ASSIST_PER_GOAL.fallback,
     priorStrength: evAssistPriorStrength,
-    minRate: 0.2,
-    maxRate: 1.45
+    minRate: SKATER_ES_ASSIST_PER_GOAL.minRawRate,
+    maxRate: SKATER_ES_ASSIST_PER_GOAL.maxRawRate
   });
   const assistRatePpRaw = blendOnlineRate({
     recentNumerator: args.ppAssistsRecent,
@@ -537,7 +553,11 @@ export function computeStrengthSplitConversionRates(args: {
   return {
     goalRateEs: clamp(goalRateEsRaw * args.goalRateMultiplier, 0.02, 0.3),
     goalRatePp: clamp(goalRatePpRaw * args.goalRateMultiplier, 0.03, 0.45),
-    assistRateEs: clamp(assistRateEsRaw * args.assistRateMultiplier, 0.2, 1.7),
+    assistRateEs: clamp(
+      assistRateEsRaw * args.assistRateMultiplier,
+      SKATER_ES_ASSIST_PER_GOAL.minRate,
+      SKATER_ES_ASSIST_PER_GOAL.maxRate
+    ),
     assistRatePp: clamp(assistRatePpRaw * args.assistRateMultiplier, 0.3, 2)
   };
 }

@@ -878,6 +878,60 @@ describe("strength-split conversion rates", () => {
     expect(lowSample.goalRateEs).toBeLessThan(established.goalRateEs);
     expect(lowSample.goalRatePp).toBeLessThan(established.goalRatePp);
   });
+
+  const leagueAverageSupport = {
+    evGoalsRecent: 4,
+    evShotsRecent: 42,
+    evGoalsAll: 20,
+    evShotsAll: 210,
+    evAssistsRecent: 7,
+    evAssistsAll: 34,
+    ppGoalsRecent: 1,
+    ppShotsRecent: 8,
+    ppGoalsAll: 6,
+    ppShotsAll: 45,
+    ppAssistsRecent: 2,
+    ppAssistsAll: 10,
+    goalRateMultiplier: 1,
+    assistRateMultiplier: 1
+  };
+
+  it("fits ES assists per goal (twice the former per-two-goals rate) and keeps PP per two goals", () => {
+    const result = computeStrengthSplitConversionRates(leagueAverageSupport);
+    // Former per-two-goals ES value for this input was 0.8254544590565118.
+    expect(result.assistRateEs).toBeCloseTo(2 * 0.8254544590565118, 10);
+    expect(result.assistRateEs).toBeCloseTo(1.65, 2);
+    expect(result.assistRatePp).toBeCloseTo(0.9141154141032594, 10);
+  });
+
+  it("leaves goal rates unchanged by the assist refit", () => {
+    const result = computeStrengthSplitConversionRates(leagueAverageSupport);
+    expect(result.goalRateEs).toBeCloseTo(0.09522746586507684, 12);
+    expect(result.goalRatePp).toBeCloseTo(0.13432867161139336, 12);
+  });
+
+  it("falls back to 1.44 ES and 0.95 PP assists per goal without support", () => {
+    const result = computeStrengthSplitConversionRates({
+      evGoalsRecent: 0,
+      evShotsRecent: 0,
+      evGoalsAll: 0,
+      evShotsAll: 0,
+      evAssistsRecent: 0,
+      evAssistsAll: 0,
+      ppGoalsRecent: 0,
+      ppShotsRecent: 0,
+      ppGoalsAll: 0,
+      ppShotsAll: 0,
+      ppAssistsRecent: 0,
+      ppAssistsAll: 0,
+      goalRateMultiplier: 1,
+      assistRateMultiplier: 1
+    });
+    expect(result.assistRateEs).toBeCloseTo(1.44, 10);
+    expect(result.assistRatePp).toBeCloseTo(0.95, 10);
+    expect(result.goalRateEs).toBeCloseTo(0.095, 10);
+    expect(result.goalRatePp).toBeCloseTo(0.145, 10);
+  });
 });
 
 describe("pp opportunity allocation", () => {
