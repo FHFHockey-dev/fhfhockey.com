@@ -1,0 +1,214 @@
+diff --git a/web/lib/projections/calculators/skater-adjustments.ts b/web/lib/projections/calculators/skater-adjustments.ts
+index 62d002d..689d0a5 100644
+--- a/web/lib/projections/calculators/skater-adjustments.ts
++++ b/web/lib/projections/calculators/skater-adjustments.ts
+@@ -430,6 +430,22 @@ export function computeSkaterSampleShrinkageAdjustments(args: {
+   };
+ }
+ 
++// Assist-rate conventions: ES assists are fitted per player goal; PP assists stay on the former
++// per-two-goals scale (denominator goals x 2) pending the power-play over-prediction. The ES
++// pseudo-counts are half the former per-two-goals ones (blendOnlineRate adds priorStrength to the
++// denominator), so ES shrinkage is unchanged while the rate is exactly twice the former value.
++const SKATER_ES_ASSIST_PER_GOAL = {
++  baseStrength: 11,
++  evidenceScale: 18,
++  minStrength: 4,
++  maxStrength: 20,
++  fallback: 1.44,
++  minRawRate: 0.4,
++  maxRawRate: 2.9,
++  minRate: 0.4,
++  maxRate: 3.4
++} as const;
++
+ export function computeStrengthSplitConversionRates(args: {
+   evGoalsRecent: number;
+   evShotsRecent: number;
+@@ -479,11 +495,11 @@ export function computeStrengthSplitConversionRates(args: {
+     maxStrength: 54
+   });
+   const evAssistPriorStrength = adaptivePriorStrength({
+-    baseStrength: 22,
+-    evidenceDenom: Math.max(0, args.evGoalsAll * 2) + Math.max(0, args.evGoalsRecent * 2),
+-    evidenceScale: 36,
+-    minStrength: 8,
+-    maxStrength: 40
++    baseStrength: SKATER_ES_ASSIST_PER_GOAL.baseStrength,
++    evidenceDenom: Math.max(0, args.evGoalsAll) + Math.max(0, args.evGoalsRecent),
++    evidenceScale: SKATER_ES_ASSIST_PER_GOAL.evidenceScale,
++    minStrength: SKATER_ES_ASSIST_PER_GOAL.minStrength,
++    maxStrength: SKATER_ES_ASSIST_PER_GOAL.maxStrength
+   });
+   const ppAssistPriorStrength = adaptivePriorStrength({
+     baseStrength: 16,
+@@ -515,13 +531,13 @@ export function computeStrengthSplitConversionRates(args: {
+   });
+   const assistRateEsRaw = blendOnlineRate({
+     recentNumerator: args.evAssistsRecent,
+-    recentDenom: args.evGoalsRecent * 2,
++    recentDenom: args.evGoalsRecent,
+     baseNumerator: args.evAssistsAll,
+-    baseDenom: args.evGoalsAll * 2,
+-    fallback: 0.72,
++    baseDenom: args.evGoalsAll,
++    fallback: SKATER_ES_ASSIST_PER_GOAL.fallback,
+     priorStrength: evAssistPriorStrength,
+-    minRate: 0.2,
+-    maxRate: 1.45
++    minRate: SKATER_ES_ASSIST_PER_GOAL.minRawRate,
++    maxRate: SKATER_ES_ASSIST_PER_GOAL.maxRawRate
+   });
+   const assistRatePpRaw = blendOnlineRate({
+     recentNumerator: args.ppAssistsRecent,
+@@ -537,7 +553,11 @@ export function computeStrengthSplitConversionRates(args: {
+   return {
+     goalRateEs: clamp(goalRateEsRaw * args.goalRateMultiplier, 0.02, 0.3),
+     goalRatePp: clamp(goalRatePpRaw * args.goalRateMultiplier, 0.03, 0.45),
+-    assistRateEs: clamp(assistRateEsRaw * args.assistRateMultiplier, 0.2, 1.7),
++    assistRateEs: clamp(
++      assistRateEsRaw * args.assistRateMultiplier,
++      SKATER_ES_ASSIST_PER_GOAL.minRate,
++      SKATER_ES_ASSIST_PER_GOAL.maxRate
++    ),
+     assistRatePp: clamp(assistRatePpRaw * args.assistRateMultiplier, 0.3, 2)
+   };
+ }
+diff --git a/web/lib/projections/runProjectionV2.test.ts b/web/lib/projections/runProjectionV2.test.ts
+index 5ee9795..061f3a2 100644
+--- a/web/lib/projections/runProjectionV2.test.ts
++++ b/web/lib/projections/runProjectionV2.test.ts
+@@ -878,6 +878,60 @@ describe("strength-split conversion rates", () => {
+     expect(lowSample.goalRateEs).toBeLessThan(established.goalRateEs);
+     expect(lowSample.goalRatePp).toBeLessThan(established.goalRatePp);
+   });
++
++  const leagueAverageSupport = {
++    evGoalsRecent: 4,
++    evShotsRecent: 42,
++    evGoalsAll: 20,
++    evShotsAll: 210,
++    evAssistsRecent: 7,
++    evAssistsAll: 34,
++    ppGoalsRecent: 1,
++    ppShotsRecent: 8,
++    ppGoalsAll: 6,
++    ppShotsAll: 45,
++    ppAssistsRecent: 2,
++    ppAssistsAll: 10,
++    goalRateMultiplier: 1,
++    assistRateMultiplier: 1
++  };
++
++  it("fits ES assists per goal (twice the former per-two-goals rate) and keeps PP per two goals", () => {
++    const result = computeStrengthSplitConversionRates(leagueAverageSupport);
++    // Former per-two-goals ES value for this input was 0.8254544590565118.
++    expect(result.assistRateEs).toBeCloseTo(2 * 0.8254544590565118, 10);
++    expect(result.assistRateEs).toBeCloseTo(1.65, 2);
++    expect(result.assistRatePp).toBeCloseTo(0.9141154141032594, 10);
++  });
++
++  it("leaves goal rates unchanged by the assist refit", () => {
++    const result = computeStrengthSplitConversionRates(leagueAverageSupport);
++    expect(result.goalRateEs).toBeCloseTo(0.09522746586507684, 12);
++    expect(result.goalRatePp).toBeCloseTo(0.13432867161139336, 12);
++  });
++
++  it("falls back to 1.44 ES and 0.95 PP assists per goal without support", () => {
++    const result = computeStrengthSplitConversionRates({
++      evGoalsRecent: 0,
++      evShotsRecent: 0,
++      evGoalsAll: 0,
++      evShotsAll: 0,
++      evAssistsRecent: 0,
++      evAssistsAll: 0,
++      ppGoalsRecent: 0,
++      ppShotsRecent: 0,
++      ppGoalsAll: 0,
++      ppShotsAll: 0,
++      ppAssistsRecent: 0,
++      ppAssistsAll: 0,
++      goalRateMultiplier: 1,
++      assistRateMultiplier: 1
++    });
++    expect(result.assistRateEs).toBeCloseTo(1.44, 10);
++    expect(result.assistRatePp).toBeCloseTo(0.95, 10);
++    expect(result.goalRateEs).toBeCloseTo(0.095, 10);
++    expect(result.goalRatePp).toBeCloseTo(0.145, 10);
++  });
+ });
+ 
+ describe("pp opportunity allocation", () => {
+diff --git a/web/lib/projections/stages/skater-stage.ts b/web/lib/projections/stages/skater-stage.ts
+index 62dd280..9cfb8ab 100644
+--- a/web/lib/projections/stages/skater-stage.ts
++++ b/web/lib/projections/stages/skater-stage.ts
+@@ -2208,16 +2208,10 @@ export async function runPerGameSkaterStage(args: {
+         0.04,
+         0.45,
+       );
+-      const assistRateEs = clamp(
+-        splitRates.assistRateEs * sampleWeight + (1 - sampleWeight) * 0.72,
+-        0.2,
+-        1.7,
+-      );
+-      const assistRatePp = clamp(
+-        splitRates.assistRatePp * sampleWeight + (1 - sampleWeight) * 0.95,
+-        0.3,
+-        2,
+-      );
++      // Split assist rates are already shrunk toward an adaptive prior, so they are used as
++      // fitted (clamped) without a second sample-weight shrink. ES is per goal, PP per two goals.
++      const assistRateEs = splitRates.assistRateEs;
++      const assistRatePp = splitRates.assistRatePp;
+ 
+       const roleContinuity =
+         roleTag != null
+@@ -2275,7 +2269,7 @@ export async function runPerGameSkaterStage(args: {
+         shotsPp: shotsPp * availabilityMultiplier * trendShotMultiplier,
+         goalRateEs: clamp(goalRateEs * trendGoalMultiplier, 0.025, 0.3),
+         goalRatePp: clamp(goalRatePp * trendGoalMultiplier, 0.04, 0.45),
+-        assistRateEs: clamp(assistRateEs * trendAssistMultiplier, 0.2, 1.7),
++        assistRateEs: clamp(assistRateEs * trendAssistMultiplier, 0.4, 3.4),
+         assistRatePp: clamp(assistRatePp * trendAssistMultiplier, 0.3, 2),
+         hitsRate: hitsPer60,
+         blocksRate: blocksPer60,
+@@ -2506,8 +2500,8 @@ export async function runPerGameSkaterStage(args: {
+       }
+       p.assistRateEs = clamp(
+         p.assistRateEs * teammateCoupling.assistRateEsMultiplier,
+-        0.2,
+-        1.8,
++        0.4,
++        3.6,
+       );
+       p.assistRatePp = clamp(
+         p.assistRatePp * teammateCoupling.assistRatePpMultiplier,
+@@ -2690,7 +2684,7 @@ export async function runPerGameSkaterStage(args: {
+       }
+       const naivePriorGoalsEs = shotsEs * 0.095;
+       const naivePriorGoalsPp = shotsPp * 0.145;
+-      const naivePriorAssistsEs = naivePriorGoalsEs * 0.72;
++      const naivePriorAssistsEs = naivePriorGoalsEs * 1.44;
+       const naivePriorAssistsPp = naivePriorGoalsPp * 0.95;
+ 
+       teamTotals.toiEsSeconds += p.toiEs;
+@@ -2761,7 +2755,7 @@ export async function runPerGameSkaterStage(args: {
+                 "fixed_league_conversion_priors_on_reconciled_opportunities",
+               goal_rate_es: 0.095,
+               goal_rate_pp: 0.145,
+-              assist_per_goal_es: 0.72,
++              assist_per_goal_es: 1.44,
+               assist_per_goal_pp: 0.95,
+               goals_es: Number(naivePriorGoalsEs.toFixed(4)),
+               goals_pp: Number(naivePriorGoalsPp.toFixed(4)),
+@@ -3035,6 +3029,9 @@ export async function runPerGameSkaterStage(args: {
+               assist_rate_es: Number(p.assistRateEs.toFixed(4)),
+               assist_rate_pp: Number(p.assistRatePp.toFixed(4)),
+             },
++            assist_rate_scale: {
++              convention: { es: "per_goal", pp: "per_two_goals" },
++            },
+             pp_opportunity: {
+               team_pp_target_seconds: p.ppOpportunityTeamTargetSeconds,
+               allocated_player_pp_share: p.ppOpportunityAllocatedShare,
