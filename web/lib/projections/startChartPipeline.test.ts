@@ -704,8 +704,13 @@ describe("Starter Board same-day overlay", () => {
     const before = allocatePpToiByTeamOpportunity({ projectedByPlayer: new Map([
       [7, { toiPp: 120, roleTag: null }], [8, { toiPp: 120, roleTag: null }],
     ]), targetTeamPpSeconds: 600 });
-    const after = allocatePpToiByTeamOpportunity({ projectedByPlayer: new Map([
+    // The PP1 role is not a multiplier; official PP evidence moves time toward player 7.
+    const roleOnly = allocatePpToiByTeamOpportunity({ projectedByPlayer: new Map([
       [7, { toiPp: 120, roleTag: ppRole }], [8, { toiPp: 120, roleTag: null }],
+    ]), targetTeamPpSeconds: 600 });
+    expect(roleOnly.perPlayerPpToiSeconds).toEqual(before.perPlayerPpToiSeconds);
+    const after = allocatePpToiByTeamOpportunity({ projectedByPlayer: new Map([
+      [7, { toiPp: 120, roleTag: ppRole, officialPpToiAvgSec: 180 }], [8, { toiPp: 120, roleTag: null, officialPpToiAvgSec: 60 }],
     ]), targetTeamPpSeconds: 600 });
     expect(after.perPlayerPpToiSeconds.get(7)!).toBeGreaterThan(before.perPlayerPpToiSeconds.get(7)!);
     expect(after.perPlayerPpToiSeconds.get(8)!).toBeLessThan(before.perPlayerPpToiSeconds.get(8)!);
