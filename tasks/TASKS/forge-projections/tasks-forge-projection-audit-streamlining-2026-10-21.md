@@ -270,3 +270,22 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
   - Smoke test 3/3 returned 200.
   - Gate: master's 13 baseline failures, plus `TeamStandingsChart.test.tsx` failing under full-suite load only (it passes alone on both R18 and R17); tsc and eslint 0.
   - octoberBranch synced with `-s ours` (`2d62f390c`).
+
+### R19 (2026-10-21 ~23:01Z)
+
+- **Candidate:** `3929c6422`.
+- **Contents:**
+  - S-B: ledger lib, snapshot and settle routes, public scoreboard.
+  - S-F-lite: the master-only one-call reader, no hydration.
+  - F13: full-refresh safety.
+  - S-B crons: settle 11:00Z, snapshot 12:30Z.
+  - pp1: the audit session's power-play usage patch, TJ approved folding it in.
+  - The offline qualification fixture gains `toi_pk_seconds`, with its pinned checksum updated.
+- **Before the deploy:** migration 97 applied as ledger `20261021230025`.
+- **Gate:**
+  - tsc and eslint 0.
+  - vitest: master's baseline failures only, the same files. The offline qualification file went back to master's 9 after the fixture fix.
+- **Deploy and smoke:** READY 23:06Z; smoke 4/4 returned 200. The scoreboard is empty until the first snapshot and settle.
+- **octoberBranch:**
+  - synced with `-s ours`;
+  - vercel crons and cron counts committed (`7099fa414`, `4aec56d65`, `e1cd41eeb`): 30 Vercel crons, 87 jobs, 21 routes, 17 audited.
