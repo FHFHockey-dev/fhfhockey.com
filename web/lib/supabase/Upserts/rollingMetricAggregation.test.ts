@@ -387,20 +387,49 @@ describe("rollingMetricAggregation", () => {
     expect(snapshot.all).toBeCloseTo(12, 6);
   });
 
-  it("coerces missing numerators to zero when a selected appearance has a denominator", () => {
+  it("keeps the selected slot but excludes components when a numerator is missing beside a denominator", () => {
+    const excluded = { occupiesSelectedSlot: true, aggregatedComponents: null };
+    expect(
+      normalizeRatioWindowEntry({ numerator: null, denominator: 5 }, "ratio_performance")
+    ).toEqual(excluded);
     expect(
       normalizeRatioWindowEntry(
-        { numerator: null, denominator: 5 },
+        { numerator: 1, denominator: 10, secondaryNumerator: null, secondaryDenominator: 10 },
         "ratio_performance"
       )
-    ).toEqual({
-      occupiesSelectedSlot: true,
-      aggregatedComponents: {
-        numerator: 0,
-        denominator: 5,
-        secondaryNumerator: 0,
-        secondaryDenominator: 0
-      }
+    ).toEqual(excluded);
+    // An explicit zero numerator is an observation, not a missing value.
+    expect(
+      normalizeRatioWindowEntry({ numerator: 0, denominator: 5 }, "ratio_performance")
+        .aggregatedComponents
+    ).toEqual({ numerator: 0, denominator: 5, secondaryNumerator: 0, secondaryDenominator: 0 });
+  });
+
+  it("does not let a missing numerator dilute rolling or historical ratios", () => {
+    const spec: RatioAggregationSpec = { scale: 1, noPrimaryDenominatorBehavior: "null" };
+    const rolling = createRatioRollingAccumulator([3]);
+    const historical = createHistoricalRatioAccumulator();
+    for (const components of [
+      { numerator: 0.6, denominator: 4 },
+      { numerator: null, denominator: 5 }
+    ]) {
+      updateRatioRollingAccumulator(rolling, components, {
+        windowFamily: "ratio_performance",
+        windows: [3],
+        anchor: true
+      });
+      updateHistoricalRatioAccumulator(historical, 20262027, components);
+    }
+
+    const snapshot = getRatioRollingSnapshot(rolling, spec, [3]);
+    expect(snapshot.all).toBe(0.15);
+    expect(snapshot.windows[3]).toBe(0.15);
+    // The missing-numerator appearance still occupies its window slot.
+    expect(rolling.windows[3].entries).toHaveLength(2);
+    expect(getHistoricalRatioSnapshot(historical, 20262027, spec)).toEqual({
+      season: 0.15,
+      threeYear: 0.15,
+      career: 0.15
     });
   });
 

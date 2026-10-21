@@ -1018,13 +1018,17 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         status: "failed",
         completedEarlier: true
       });
-      expect(second.body.failureSummary.terminalStop).toEqual({
-        code: "attempts_exhausted",
-        stageId: "projection_relationship_build"
+      expect(second.body.failureSummary).toMatchObject({
+        failedStepCount: 1,
+        // The terminal code replaces the child's; the step error stays.
+        firstFailure: { stageId: "projection_relationship_build", stepId: "build-projection-relationships",
+          code: "attempts_exhausted", error: "relationship failed" },
+        terminalStop: { code: "attempts_exhausted", stageId: "projection_relationship_build" }
       });
       expect(third.body.failureSummary).toMatchObject({
         failedStepCount: 0,
-        firstFailure: null,
+        firstFailure: { stageId: "projection_relationship_build", stepId: null, code: "attempts_exhausted",
+          error: "Failed 2 time(s) in earlier invocations of this run; not retried." },
         terminalStop: { code: "attempts_exhausted", stageId: "projection_relationship_build" }
       });
       expect(first.body.failureSummary.terminalStop).toBeNull();
@@ -1293,7 +1297,8 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
 
       expect(third.body.failureSummary).toMatchObject({
         failedStepCount: 0,
-        firstFailure: null,
+        firstFailure: { stageId: "rolling_player_recompute", stepId: null, code: "stage_killed",
+          error: "Killed 3 time(s)." },
         terminalStop: { code: "stage_killed", stageId: "rolling_player_recompute" }
       });
 
@@ -1303,6 +1308,7 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         code: "stage_killed",
         stageId: "rolling_player_recompute"
       });
+      expect(fourth.body.failureSummary.firstFailure).toMatchObject({ stepId: null, code: "stage_killed" });
       expect(updateRollingPlayerAveragesMock).not.toHaveBeenCalled();
       expect(pipelineStateRows.get(stageKey("rolling_player_recompute:kills"))?.cursor_game_id).toBe(3);
     });
