@@ -199,3 +199,6 @@ order by s.team_id, s.game_date;
 select player_id, date, game_id, season_id, pp_toi_per_game, pp_toi
 from wgo_skater_stats
 where date between '2026-09-15' and '2026-10-21';
+
+-- S9 (TJ-approved with the reconstruction backtest; once, read-only psql): hits/blocks actuals for scoring
+select coalesce(json_agg(t),'[]'::json) from (select game_id, player_id, date, hits, blocked_shots from wgo_skater_stats where date between '2026-10-13' and '2026-10-20') t;

@@ -1,0 +1,30 @@
+[
+ {
+  "game_id": 1,
+  "player_id": 11,
+  "date": "2026-10-13",
+  "hits": 1,
+  "blocked_shots": 0
+ },
+ {
+  "game_id": 1,
+  "player_id": 12,
+  "date": "2026-10-13",
+  "hits": 1,
+  "blocked_shots": 0
+ },
+ {
+  "game_id": 2,
+  "player_id": 21,
+  "date": "2026-10-13",
+  "hits": 1,
+  "blocked_shots": 1
+ },
+ {
+  "game_id": 2,
+  "player_id": 22,
+  "date": "2026-10-13",
+  "hits": 1,
+  "blocked_shots": 0
+ }
+]

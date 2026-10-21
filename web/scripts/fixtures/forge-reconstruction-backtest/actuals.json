@@ -1,0 +1,38 @@
+[
+ {
+  "game_id": 1,
+  "player_id": 11,
+  "date": "2026-10-13",
+  "goals": 1,
+  "assists": 0,
+  "pp_points": 0,
+  "shots": 3
+ },
+ {
+  "game_id": 1,
+  "player_id": 12,
+  "date": "2026-10-13",
+  "goals": 0,
+  "assists": 1,
+  "pp_points": 0,
+  "shots": 2
+ },
+ {
+  "game_id": 2,
+  "player_id": 21,
+  "date": "2026-10-13",
+  "goals": 0,
+  "assists": 0,
+  "pp_points": 0,
+  "shots": 2
+ },
+ {
+  "game_id": 2,
+  "player_id": 22,
+  "date": "2026-10-13",
+  "goals": 1,
+  "assists": 0,
+  "pp_points": 0,
+  "shots": 3
+ }
+]
