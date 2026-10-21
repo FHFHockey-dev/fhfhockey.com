@@ -61,6 +61,53 @@ describe("FORGE daily bridge", () => {
     expect(s1[1].issuedAt).toBe("2026-10-19T18:00:00.000Z");
   });
 
+  it("keeps a skater's own-game line when his team's newer run omits him, withholding only re-aimed copies", () => {
+    // r2 (day D) projects s1 and s2 for game 1; r3 (D+1) projects only s1, for game 2.
+    const data = inputs();
+    data.runs.push({ run_id: "r3", as_of_date: "2026-10-20", created_at: "2026-10-19T15:00:00Z", git_sha: "ghi" });
+    data.skaters.push(skater("r2", "2026-10-19", 1, 102, 10), skater("r3", "2026-10-20", 2, 101, 10));
+    const { forecasts, limitations } = buildForgeDailyBridgeForecasts(data, players, games, now, 20262027, policy);
+    const lines = (id: string) => forecasts.filter(row => row.playerId === id).map(row => [row.gameId, row.revisionId]);
+    expect(lines("s1")).toEqual([["1", `${FORGE_DAILY_BRIDGE_VERSION}:r2`], ["2", `${FORGE_DAILY_BRIDGE_VERSION}:r3`]]);
+    expect(lines("s2")).toEqual([["1", `${FORGE_DAILY_BRIDGE_VERSION}:r2`]]);
+    expect(limitations.some(line => line.includes("missing from their team's latest FORGE run"))).toBe(false);
+    // s3's latest line is for another team.
+    expect(limitations).toContain("1 skaters whose latest FORGE line is for a different team than their current one get no forecast.");
+    // Without r3's line for game 1, s2 has nothing issued for an upcoming game and counts as stale.
+    expect(buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy).limitations)
+      .toContain("1 skaters missing from their team's latest FORGE run get no forecast (likely scratched, injured or moved).");
+  });
+
+  it("names the coverage gaps: unknown heads, goalies with no start share, opponents with no team-strength prior", () => {
+    const base = inputs();
+    // s2's latest line has a blank even-strength head; s1 was projected against MTL and moves to SJS, neither with a prior.
+    base.skaters.push({ ...skater("r2", "2026-10-19", 1, 102, 10), proj_goals_es: null } as unknown as ReturnType<typeof skater>);
+    base.skaters = base.skaters.map(row => row.player_id === 101 && row.run_id === "r2" ? { ...row, opponent_team_id: 8 } : row);
+    // The goalie line was projected against team 77, which has no abbreviation to look a prior up by.
+    base.goalies = base.goalies.map(row => ({ ...row, opponent_team_id: 77 }));
+    base.goalieShares = base.goalieShares.filter(row => row.player_id !== 202);
+    const opponentGames = games.map(game => game.id === "2" ? { ...game, opponent: "SJS" } : game.id === "1" ? { ...game, opponent: "MTL" } : game);
+    const teamPriors = [{ team_abbrev: "TOR", date: "2026-10-19", games_played: 50, xga: 145, xga_per_game: 2.9, xgf_per_game: 3 }];
+    const { forecasts, limitations } = buildForgeDailyBridgeForecasts({ ...base, teamPriors }, players, opponentGames, now, 20262027, policy);
+    expect(forecasts.some(row => row.playerId === "s2")).toBe(false);
+    expect(limitations).toContain("1 skaters have a FORGE line with blank even-strength goals, assists or shots; such lines give no forecast.");
+    expect(limitations.some(line => line.includes("power-play"))).toBe(false);
+    expect(forecasts.some(row => row.playerId === "g2" && row.gameId === "2")).toBe(false);
+    expect(limitations).toContain("1 goalies with no start share get no forecast for games FORGE has not projected for them.");
+    expect(limitations).toContain("3 opponents have no team-strength prior, so lines projected against or moved to them skip the opponent adjustment.");
+  });
+
+  it("normalises start shares that sum to less than one when FORGE has not projected the game", () => {
+    const base = inputs();
+    base.goalieShares = [{ ...base.goalieShares[0], l10_start_pct: 0.4 }, { ...base.goalieShares[1], l10_start_pct: 0.2 }];
+    const { forecasts } = buildForgeDailyBridgeForecasts(base, players, games, now, 20262027, policy);
+    const goalie = (id: string, gameId: string) => forecasts.find(row => row.playerId === id && row.gameId === gameId)!;
+    expect(goalie("g1", "2").startProbability).toBeCloseTo(2 / 3, 3);
+    expect(goalie("g2", "2").startProbability).toBeCloseTo(1 / 3, 3);
+    // The projected game keeps FORGE's starter probability.
+    expect(goalie("g1", "1").startProbability).toBe(0.8);
+  });
+
   it("keeps FORGE's starter probability for a projected game and splits the rest by start share", () => {
     const { forecasts } = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy);
     const goalie = (id: string, gameId: string) => forecasts.find(row => row.playerId === id && row.gameId === gameId)!;
