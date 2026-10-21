@@ -155,8 +155,9 @@ export type LockedAssignment = {
 /** The provider's recorded lineup for an elapsed day: display only, never a planner input or lock. */
 export type PastLineup = {
   date: string; source: "yahoo";
-  /** `position` is the provider's selected position (BN, IR+ ...); `slotId` is the active slot it maps to. */
-  entries: Array<{ playerId: string | null; name: string; position: string; slotId: string | null }>;
+  /** `position` is the provider's selected position (BN, IR+ ...); `slotId` is the active slot it maps to. `points` is the
+   * player's actual fantasy points that night (points leagues; null when unknown, absent when not computed). */
+  entries: Array<{ playerId: string | null; name: string; position: string; slotId: string | null; points?: number | null }>;
 };
 export type AcquisitionEvidence = {
   source: string;

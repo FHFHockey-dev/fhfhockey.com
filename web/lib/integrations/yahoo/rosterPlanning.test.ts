@@ -23,7 +23,7 @@ vi.mock("lib/integrations/yahoo/rosterPlanning", async (original) => ({
   loadYahooPlanningSnapshot: mocks.snapshot,
 }));
 
-import { yahooCreditedGoalieAppearances, yahooInjury, yahooPlanningAcquisitions, yahooPlanningCategories, yahooPlanningEditable, yahooPlanningPlayers, yahooPlanningStats, yahooPlanningTeams } from "./rosterPlanning";
+import { yahooCreditedGoalieAppearances, yahooInjury, yahooPastLineupPoints, yahooPlanningAcquisitions, yahooPlanningCategories, yahooPlanningEditable, yahooPlanningPlayers, yahooPlanningStats, yahooPlanningTeams } from "./rosterPlanning";
 import type { YahooProviderJsonResult } from "./providerClient";
 import { YahooLiveDraftError } from "./liveDraft";
 import providerHandler from "../../../pages/api/v1/roster-schedule-optimizer/provider";
@@ -364,7 +364,7 @@ describe("Yahoo snapshot evidence", () => {
           ...(past ? { 1: { player: [{ player_key: "453.p.7777" }, { name: { full: "Gone Player" } }, { selected_position: [{ position: "BN" }] }] } } : {}) } } } }, transport };
     });
     const withPast = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-09-28", endDate: "2026-10-04", now });
-    const recorded = [{ playerId: "canonical", name: "Mapped Player", position: "C", slotId: "C#1" }, { playerId: null, name: "Gone Player", position: "BN", slotId: null }];
+    const recorded = [{ playerId: "canonical", name: "Mapped Player", position: "C", slotId: "C#1", points: null }, { playerId: null, name: "Gone Player", position: "BN", slotId: null, points: null }];
     expect(withPast.snapshot.pastLineups).toEqual([{ date: "2026-09-28", source: "yahoo", entries: recorded }, { date: "2026-09-30", source: "yahoo", entries: recorded }]);
     expect(withPast.snapshot.evidence.roster.limitations).toContain("Yahoo's recorded lineup for 2026-09-29 could not be read; that day shows no lineup.");
     expect(withPast.snapshot.lockedAssignments).toEqual([{ date: "2026-10-01", playerId: "canonical", slotId: "C#1" }]);
@@ -613,5 +613,43 @@ describe("Yahoo goalie appearances already credited", () => {
   });
   it("skips postponed games without an appearance", async () => {
     await expect(yahooCreditedGoalieAppearances(db(played), { ...base, games: [...games.filter(row => row.id !== "103"), game("103", "2026-10-20", "VGK", "postponed")] })).resolves.toBe(2);
+  });
+});
+
+describe("Actual fantasy points on recorded past lineups", () => {
+  const person = (id: string, nhlId: number, team: string, playerClass: "skater" | "goalie") => ({ id, nhlId, name: id, teamAbbreviation: team,
+    eligiblePositions: [playerClass === "goalie" ? "G" : "C"], eligibilityVerified: true, playerClass, availability: "rostered" as const,
+    ownership: null, canDrop: true, holdValue: null, reserveEligibility: [] });
+  const players = [person("larkin", 10, "DET", "skater"), person("scratch", 11, "DET", "skater"), person("oettinger", 20, "DAL", "goalie"),
+    person("idle", 12, "CHI", "skater"), person("late", 13, "VGK", "skater")];
+  const game = (id: string, team: string, status: "final" | "live" = "final") => ({ id, date: "2026-10-20", startsAt: "2026-10-20T23:00:00Z",
+    teamAbbreviation: team, opponent: "OPP", home: true, status });
+  const games = [game("201", "DET"), game("202", "DAL"), game("203", "VGK")];
+  const lineup = [{ date: "2026-10-20", source: "yahoo" as const, entries: ["larkin", "scratch", "oettinger", "idle", "late"]
+    .map(id => ({ playerId: id, name: id, position: "C", slotId: null })) }];
+  const scoring = { mode: "points" as const, categories: [], weights: { GOALS: 3, ASSISTS: 2, PP_POINTS: 1, SHOTS_ON_GOAL: 0.2, HITS: 0.2,
+    BLOCKED_SHOTS: 0.25, WINS_GOALIE: 4, GOALS_AGAINST_GOALIE: -1, SAVES_GOALIE: 0.2, SHUTOUTS_GOALIE: 3 } };
+  const tables: Record<string, Array<Record<string, number>>> = {
+    wgo_skater_stats: [{ player_id: 10, game_id: 201, goals: 1, assists: 1, pp_points: 1, shots: 4, hits: 2, blocked_shots: 0 },
+      { player_id: 99, game_id: 201, goals: 0, assists: 0, pp_points: 0, shots: 1, hits: 0, blocked_shots: 1 }],
+    wgo_goalie_stats: [{ goalie_id: 20, game_id: 202, wins: 1, goals_against: 2, saves: 30, shutouts: 0 }],
+  };
+  const db = { from: (table: string) => { const query: any = { select: () => query, in: (_c: string, ids: number[]) => { query.ids = ids; return query; },
+    order: () => query, range: async () => ({ data: tables[table].filter(row => query.ids.includes(row.game_id)), error: null }) }; return query; } } as any;
+  const points = async (overrides: Partial<Parameters<typeof yahooPastLineupPoints>[1]> = {}) => Object.fromEntries((await yahooPastLineupPoints(db,
+    { pastLineups: lineup, players, games, scoring, ...overrides }))[0].entries.map(entry => [entry.playerId, entry.points]));
+
+  it("scores each player's night with the league weights", async () => {
+    // Larkin 3 + 2 + 1 + 0.8 + 0.4; Oettinger 4 - 2 + 6; a scratch in a landed game scores 0; no game and unlanded stats stay unknown.
+    await expect(points()).resolves.toEqual({ larkin: 7.2, scratch: 0, oettinger: 8, idle: null, late: null });
+  });
+  it("leaves points unknown when a weighted stat can't be scored per game, or outside points leagues", async () => {
+    await expect(points({ scoring: { ...scoring, weights: { ...scoring.weights, SAVE_PERCENTAGE: 5 } } })).resolves
+      .toMatchObject({ larkin: 7.2, oettinger: null });
+    const categories = await yahooPastLineupPoints(db, { pastLineups: lineup, players, games, scoring: { mode: "categories", weights: {}, categories: [] } });
+    expect(categories).toBe(lineup);
+  });
+  it("does not score a game that is not final", async () => {
+    await expect(points({ games: [game("201", "DET", "live"), game("202", "DAL")] })).resolves.toMatchObject({ larkin: null, oettinger: 8 });
   });
 });

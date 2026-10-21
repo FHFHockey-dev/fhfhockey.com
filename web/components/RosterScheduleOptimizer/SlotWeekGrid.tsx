@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type 
 import { fallbackTeamLogo, getLocalTeamLogoPath } from "lib/images";
 import { canEligibilityOccupySlot, normalizeEligibility } from "lib/rosterScheduleOptimizer/eligibility";
 import type { ActiveSlotInstance } from "lib/rosterScheduleOptimizer/types";
-import type { GameForecast, PlanningAssignment, PlanningGame, PlanningPlayer, RosterEntry } from "lib/rosterScheduleOptimizer/planningTypes";
+import type { GameForecast, PastLineup, PlanningAssignment, PlanningGame, PlanningPlayer, RosterEntry } from "lib/rosterScheduleOptimizer/planningTypes";
 import InfoTooltip from "./InfoTooltip";
 import styles from "./SlotWeekGrid.module.scss";
 
@@ -23,6 +23,8 @@ export type Props = {
   today?: string;
   /** League bench (BN) spots; the bench block keeps at least this many rows. */
   benchCapacity?: number;
+  /** The lineups the provider recorded on elapsed days; those columns show them, with each player's actual points. */
+  pastLineups?: PastLineup[];
 };
 
 const SUFFIXES = new Set(["jr", "jr.", "sr", "sr.", "ii", "iii", "iv"]);
@@ -51,8 +53,10 @@ function Logo({ abbr }: { abbr: string | null }) {
   return <Image className={styles.logo} src={getLocalTeamLogoPath(abbr)} alt="" width={18} height={18} onError={event => { event.currentTarget.src = fallbackTeamLogo; }} />;
 }
 
-export default function SlotWeekGrid({ dates, slots, assignments, games, players, roster, forecasts, pointsFor, focusedDate, onSelectPlayer, animationToken, today, benchCapacity = 0 }: Props) {
+export default function SlotWeekGrid({ dates, slots, assignments, games, players, roster, forecasts, pointsFor, focusedDate, onSelectPlayer, animationToken, today, benchCapacity = 0, pastLineups }: Props) {
   const playerById = new Map(players.map(player => [player.id, player]));
+  // An elapsed day shows the lineup the provider recorded, not the planner's assignments (which start today).
+  const pastByDate = new Map((pastLineups ?? []).filter(day => today && day.date < today).map(day => [day.date, day]));
   // Each game has one row per team (same id), so a player's game is keyed by id and his own team.
   const gameBySide = new Map(games.map(game => [`${game.id}|${game.teamAbbreviation}`, game]));
   const gameCount = new Map(dates.map(date => [date, new Set(games.filter(game => game.date === date).map(game => game.id)).size]));
@@ -115,6 +119,13 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
   // Bench: everyone rostered (not IR/NA) who is out of the lineup that day. Players with a game come first and are
   // highlighted (a game left on the bench); players without one are greyed out, and extras fold into one "+N off" chip.
   const sittingOn = (date: string) => {
+    const past = pastByDate.get(date);
+    if (past) {
+      const sitting = past.entries.filter(entry => entry.slotId === null && entry.position.toUpperCase() === "BN" && entry.playerId)
+        .map(entry => playerById.get(entry.playerId!)).filter((player): player is PlanningPlayer => !!player);
+      return [...sitting.filter(player => gameFor(player, date)).map(player => ({ player, playing: true })),
+        ...sitting.filter(player => !gameFor(player, date)).map(player => ({ player, playing: false }))];
+    }
     const lineup = before(date) ? beforeActive : new Set(assignments.filter(row => row.date === date).map(row => row.playerId));
     const sitting = rostered.filter(entry => !lineup.has(entry.playerId)).map(entry => playerById.get(entry.playerId))
       .filter((player): player is PlanningPlayer => !!player);
@@ -140,8 +151,30 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
       : <div className={styles.cellBody} {...chip}>{content}</div>;
   }
 
+  function pastCell(slot: ActiveSlotInstance, date: string, past: PastLineup) {
+    const entry = past.entries.find(row => row.slotId === slot.id);
+    if (!entry) return <td key={date} role="cell" {...columnAttrs(date)} data-past=""><span className={styles.empty}>Empty</span></td>;
+    const player = entry.playerId ? playerById.get(entry.playerId) : undefined;
+    const game = player ? gameFor(player, date) : undefined;
+    const content = <>
+      <span className={styles.nameLine}>
+        <Logo abbr={player?.teamAbbreviation ?? null} />
+        <span className={styles.name}>{lastName(player?.name ?? entry.name)}</span>
+        {player && <InjuryFlag player={player} />}
+      </span>
+      {game ? <span className={styles.opp}>{game.home ? `vs${game.opponent}` : `@${game.opponent}`}</span> : <span className={styles.noGameTag}>{player ? "No game" : "Unmatched"}</span>}
+      {typeof entry.points === "number" && <span className={styles.points} data-actual="" title="Actual fantasy points that night, from NHL game stats and your league's scoring (Yahoo's own total can differ after stat corrections)">{entry.points.toFixed(1)}</span>}
+    </>;
+    return <td key={date} role="cell" {...columnAttrs(date)} data-past="">
+      {player ? wrap(player.id, `${player.name}, ${slot.type}, ${date}, recorded lineup${typeof entry.points === "number" ? `, ${entry.points.toFixed(1)} actual points` : ""}`, content, !game)
+        : <div className={styles.cellBody} data-idle="">{content}</div>}
+    </td>;
+  }
+
   function slotCell(slot: ActiveSlotInstance, date: string) {
     if (!gameCount.get(date)) return <td key={date} role="cell" {...columnAttrs(date)}><span className={styles.noGames}>—</span></td>;
+    const past = pastByDate.get(date);
+    if (past) return pastCell(slot, date, past);
     const showBefore = before(date);
     const assignment = showBefore ? undefined : assignmentAt.get(`${date}|${slot.id}`);
     const player = playerById.get((showBefore ? beforeSlots.get(slot.id) : assignment?.playerId) ?? "");
@@ -197,7 +230,7 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
       <table className={styles.grid} aria-label="Lineup by position" style={{ "--day-count": dates.length } as CSSProperties}>
         <thead role="rowgroup">
           <tr role="row" className={`${styles.row} ${styles.headRow}`}>
-            <th scope="col" role="columnheader" className={styles.corner}><InfoTooltip label="About the lineup grid"><span className={styles.legend}>Numbers are each player&apos;s projected fantasy points for that game, using your league&apos;s scoring: <span className={styles.points} data-tier="high">high</span> <span className={styles.points} data-tier="mid">mid</span> <span className={styles.points} data-tier="low">low</span> for your lineup this week. <b>✓</b> confirmed starter · <b>~</b> likely starter · <span className={styles.dust} aria-hidden="true" /> game on the bench · grey: no game that night</span></InfoTooltip></th>
+            <th scope="col" role="columnheader" className={styles.corner}><InfoTooltip label="About the lineup grid"><span className={styles.legend}>Numbers are each player&apos;s projected fantasy points for that game, using your league&apos;s scoring: <span className={styles.points} data-tier="high">high</span> <span className={styles.points} data-tier="mid">mid</span> <span className={styles.points} data-tier="low">low</span> for your lineup this week. <b>✓</b> confirmed starter · <b>~</b> likely starter · <span className={styles.dust} aria-hidden="true" /> game on the bench · grey: no game that night. Past days show the lineup Yahoo recorded and each player&apos;s <span className={styles.points} data-actual="">actual</span> points.</span></InfoTooltip></th>
             {dates.map(date => {
               const { weekday, label } = dateParts(date);
               return <th key={date} scope="col" role="columnheader" {...columnAttrs(date)}>
@@ -255,7 +288,9 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
           <tr role="row" className={`${styles.row} ${styles.footRow}`}>
             <th scope="row" role="rowheader" className={styles.corner}>Filled</th>
             {dates.map(date => {
-              const filled = slots.filter(slot => assignmentAt.has(`${date}|${slot.id}`)).length;
+              const past = pastByDate.get(date);
+              const filled = past ? slots.filter(slot => past.entries.some(entry => entry.slotId === slot.id)).length
+                : slots.filter(slot => assignmentAt.has(`${date}|${slot.id}`)).length;
               return <td key={date} role="cell" className={styles.footer} {...columnAttrs(date)}>{gameCount.get(date) ? `${filled}/${slots.length}` : ""}</td>;
             })}
           </tr>

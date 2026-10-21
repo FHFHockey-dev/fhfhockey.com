@@ -23,6 +23,23 @@ const assignments: PlanningAssignment[] = [
 const forecasts = [{ playerId: "g", gameId: "1", confirmedStart: true, startProbability: 1 } as GameForecast];
 
 describe("SlotWeekGrid", () => {
+  it("shows an elapsed day as the recorded lineup with actual points", () => {
+    // Today is 10-21: 10-19 is elapsed and recorded; the planner's 10-19 assignments are not shown for it.
+    const pastLineups = [{ date: "2026-10-19", source: "yahoo" as const, entries: [
+      { playerId: "c", name: "Jack Hughes", position: "C", slotId: "C1", points: 7.2 },
+      { playerId: "g", name: "Tristan Jarry", position: "G", slotId: "G1", points: 0 },
+      { playerId: "a", name: "Sidney Crosby", position: "BN", slotId: null, points: 3.4 },
+      { playerId: null, name: "Gone Player", position: "BN", slotId: null, points: null }] }];
+    render(<SlotWeekGrid dates={dates} slots={slots} assignments={assignments} games={games} players={players} roster={roster}
+      forecasts={forecasts} pointsFor={() => 2.34} today="2026-10-21" pastLineups={pastLineups} onSelectPlayer={vi.fn()} />);
+    const day = (name: RegExp) => screen.getByRole("button", { name });
+    expect(day(/Jack Hughes, C, 2026-10-19, recorded lineup, 7\.2 actual points/).textContent).toContain("7.2");
+    expect(day(/Tristan Jarry, G, 2026-10-19, recorded lineup, 0\.0 actual points/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Sidney Crosby, bench, has a game, 2026-10-19" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Nick Suzuki, C, 2026-10-19/ })).toBeNull();
+    const footer = screen.getAllByRole("cell").filter(cell => cell.getAttribute("data-date") === "2026-10-19" && /\d\/3/.test(cell.textContent ?? ""));
+    expect(footer.map(cell => cell.textContent)).toEqual(["2/3"]);
+  });
   it("renders the position-first week", () => {
     const onSelectPlayer = vi.fn();
     render(<SlotWeekGrid dates={dates} slots={slots} assignments={assignments} games={games} players={players} roster={roster}
