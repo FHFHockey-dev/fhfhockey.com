@@ -1,0 +1,49 @@
+# FORGE projection pipeline audit — claude (Chef), 2026-10-21
+
+Scope: end-to-end read-only audit of the fantasy-point projection pipeline (inputs → rolling metrics → FORGE v2 runs → scheduled orchestration → interim daily bridge → RSO/Start Chart; dark native v2 path and accuracy measurement). Proposals only: no code changes, no commits, no production writes. Deliverable `tasks/artifacts/forge-projection-audit-2026-10-21/REPORT.md`.
+Owned: this diary and the report folder only. The checkout is shared; parent session is releasing RSO files (`rosterPlanning.ts`, `SlotWeekGrid.tsx`, `planningTypes.ts`, `workspaceSchema.ts`) — never touched here.
+Where: `/Users/tim/Code/fhfhockey.com` octoberBranch, HEAD 3c90d72b3 (R12 released 5e4551c75; repair commit afa8cac9b).
+
+## State
+- 15:33Z Read AGENTS.md, mise-en-place.md, master tasklist items F3/F5/F6/F7/F8/F11/S1, consolidated checkpoints §B–E, repair diary + hand-over note, skater-pool-coverage, hits/blocks, A-05, 82-game notes.
+- Runtime check (`get_session self`): model claude-fable-5-1, effort **high** (ticket asked Opus 5.5 xhigh). Attempting to raise effort; workers will be staffed strictly below Chef's actual effort.
+- Prod reads: none yet. Will ask TJ (pop-up) for an exact bounded SELECT list before any `execute_sql`; no Vercel log pulls planned unless a worker finding needs one.
+
+- 15:40Z Self re-pricing refused by the app; TJ (in-session): keep Chef on Fable 5.1 high; workers may use Opus 5.5 at commensurate effort. Staffed 6 read-only workers W1–W6 (Fable 5.1, medium — below Chef): W1 inputs/freshness, W2 rolling writer/table, W3 model accuracy, W4 orchestration/runtime, W5 bridge/RSO/Start Chart, W6 native-vs-bridge + accuracy measurement. Findings land in scratchpad `audit/w*.md`; each returns a ≤350-word summary. Any follow-up worker: Opus 5.5 ≤ medium.
+
+- 15:55Z All six Fable workers hit the Fable session limit (429). W1, W3, W4, W5, W6 had already written their findings files; W2 had not (intermediates only). TJ: workers must not be on Fable → W2 relaunched on Opus 5.5 medium reusing its intermediates.
+- 16:05Z Chef spot-checks (code read, not run): CONFIRMED null team GF ⇒ null goalie `proj_win_prob` (`nativeGoalAccounting.ts:135-138`, `skater-stage.ts:3292`, `goalieModel.ts:193`); double conversion shrink (`skater-stage.ts:2186-2200`); skater rest tier `<=0` unreachable when B2B=1 (`skater-adjustments.ts:369-374`); `stopOnFailure` forced true on the scheduled path (`run-rolling-forge-pipeline.ts:1493-1495`); horizon-blind newest-run selection (`apiHelpers.ts:41-48`, `forgeDailyBridge.ts:466-473`); stale rule at `forgeDailyBridge.ts:354` fires before the own-game lookup at :364; RPC `replace_forge_projection_results_atomic` checks latest succeeded run WITHOUT the git_sha fence (migration :22-30). `update-goalie-projections-v2` reads games `.lte("date", today)` with no date param (:98-132) — tomorrow's goalie gate likely fails; prod Q5 decides. CORRECTION to W6: `run-projection-accuracy?projectionOffsetDays=0` is in the pg_cron inventory at 11:30Z (cron-schedule.md:579-584); only the Vercel pipeline step is off.
+
+## Prod evidence (read-only, 16:15Z; Q1–Q6, Q8–Q12 ran once; Q7 failed on `powerPlayCombinations."teamId"`, one corrected retry pending)
+- Q1 forge_runs: 10-21 three stamped 7baa91407 runs (h5 10:12 70 rows; h1 14:15 and 14:20, 70+4 rows, TJ manual). 10-20: h5 500; local runs 20:49 failed / 20:50 succeeded `local:unknown` (fenced); 21:14 run stamped 98614484 391+22 rows. 10-14..10-19 all `git_sha` null (fenced, local 10-19 runs). No scheduled h1 run completed on 10-20 or 10-21.
+- Q2 pipeline state: 10-20 `upstream_skater_sources` running rev 9 lease 10:59:57; 10-21 `rolling_player_recompute` running rev 9 lease 10:59:57 — pre-R12 deployed code still looping; R12 first scheduled run is 10-22 10:05Z.
+- Q3 cron audit 7 d: pipeline 10-21 10:08 continued, 10:23 failure(207), then no rows (kills); h5 job 393: 422 daily 10-15..19, 500 10-20, 200 10-21 (71 s); accuracy job 361: 422 daily 10-15..19, 200 10-20 (92 rows,134 s) and 10-21 (381 rows,137 s); `update-nst-gamelog` job 79 07:26 failure every day 10-15..20; pipeline NST step 10-21 10:05:59 success 6,784 rows; TJ manual NST runs 10-20 20:53–20:59 (8).
+- Q4 goalie_start_projections: 10-19/20/21 fully covered, written 09:30Z (job 364); **10-22: 0 of 12 games, 10-23: 0 of 2** → next-day `goalie_start_priors_v2` gate fails.
+- Q5 NST coverage: ES/PP/5v5 NULL for 10-07..10-18 (AS only 10-09..10-13); 10-19 and 10-20 complete (es = wgo rows; pp 92/257).
+- Q6 rolling rows per date×strength = wgo rows except 10-15 (114/396) and 10-19 (38/144), both last written 10-21 08:17–08:18 (job 278 partial); 10-20 395/396 (14:19Z).
+- Q8 accuracy daily: 10-19 skater 92 (goalie 0), 10-20 skater 364 MAE 1.444 FP / goalie 17 MAE 3.353; acc≈0.48.
+- Q9 null heads (h1, succeeded runs): 10-21 0/140; 10-20 192/782; 10-19 21/141; 10-17 75/494; 10-13 87/569; null hits/blocks 0 everywhere.
+- Q10 pg_stat: rolling_player_game_metrics 6,528 MB, n_live 2,370 / n_dead 10,599, never (auto)vacuumed/analyzed; wgo_skater_stats 2,770 MB never analyzed; support_payloads 611 MB autovacuum 10-21 10:27 / autoanalyze 14:19.
+- Q11 indexes: rolling pkey 44 MB 15,973 scans; latest_snapshot_lookup 45 MB, contextual_lookup 42 MB, player_date 21 MB, season_team_date 15 MB all 0 scans; forge_player_projections 7 of 8 secondary indexes 0 scans.
+- Q12 cron.job live: 393 h5 active; 278 active; 361 accuracy active; 364 goalie-proj 09:30 active; 79 NST 07:25 active; 308 `run-forge-projection-v2` 10:05 INACTIVE; 234 daily-cron-report INACTIVE; 319/280 inactive.
+
+- Q7 retried once (`powerPlayCombinations` has `playerId`, not `teamId`): lines + ≥10 PP players present for all 101 games since 10-07. W2 (Opus 5.5 medium) landed: 591/1,114 columns read at runtime, 492 unread (176 stored wide), `idx_rpgm_player_date` = PK prefix (confirmed in baseline migration :32455/:35565), `season=` truncation, `expected_sh_pct` xG-as-0.
+- 16:40Z REPORT.md written (`tasks/artifacts/forge-projection-audit-2026-10-21/REPORT.md`): pipeline map, measured state, 12 ranked findings, 14 quick wins + 10 structural proposals, 8 questions. Worker files copied to `…/workers/`. `6e14053ff` confirmed NOT in origin/master (null heads are branch-only).
+
+## Phase 2 — implementation (TJ, 16:50Z: pursue Q1, Q2, Q3, Q6; TJ runs Q4/Q5 himself)
+- Workers (Opus 5.5 medium, disjoint ownership, uncommitted): Q1 `update-goalie-projections-v2.ts` (+test) & pipeline goalie step `:919-926` (+test); Q3 `run-lifecycle-queries.ts` (horizon stamp), `releasedRunFence.ts` (+test), `apiHelpers.ts` (+tests), `start-chart.ts` (+test), `forgeDailyBridge.ts` loader (+test), new migration `20261021170000_forge_projection_results_source_run_fence.sql` (write only, not applied); Q6 `run-projection-accuracy.ts` (+test), `forge/accuracy.ts` (+test).
+- Q2 prepared (not run): `tasks/artifacts/forge-projection-audit-2026-10-21/q2-unschedule-h5-job-393.md` — SQL + inventory record; TJ executes.
+- Chef: review diffs, run named Vitest files, eslint, tsc under `/private/tmp/fhfh-heavy.lock`; nothing committed unless TJ asks.
+- 17:20Z Workers done; Chef reviewed all three diffs (accepted; Q1 got one follow-up: resume point `min(last stored game_date, today)`). Chef edits: registered migration order 92 (pending) in `tasks/TASKS/repository-audit-remediation/migration-authority.json`; `supportedBaselineMigration.test.ts` counts 91→92 / pending 5→6; `super-goal-final-summary.md:985` summary line (92 records; six pending incl. order 92).
+- Checks: Vitest 14 files — goalie route 8, pipeline 41, releasedRunFence 20, apiHelpers 11 + runAdmission 16, start-chart 112+1 skipped, bridge 24, queries, accuracy 8, dashboard-4xx 7, baseline 21 → all pass (351 + 1 skipped); eslint clean on 9 sources; tsc: running under the mkdir lock (first attempt used `flock`, absent on macOS, and left a stray lock FILE at 12:22 which I removed).
+- 17:25Z tsc (`NODE_OPTIONS=--max-old-space-size=8192`, the repo's `typecheck` script heap; default heap OOMs) under the mkdir lock: exit 2 with exactly ONE error, `pages/api/v1/webhooks/in-season-stripe.ts(25,58)` Buffer[]/Uint8Array — an UNTRACKED file from another session; none of this task's files report errors. Lock released.
+- State: Q1/Q3/Q6 implemented and verified locally, uncommitted (TJ to decide); Q2 SQL drafted for TJ; migration order 92 drafted, NOT applied (hosted apply needs TJ's explicit approval).
+- 17:45Z TJ: commit only this task's files, no push. The 16 code/test files were already committed by TJ as `bb1c80e8e` (after the R14 sync `2b93e660d`); the follow-up commit carries the RPC-fence migration (order 92, pending), the authority registry + baseline test + summary line, `tests/api/dashboard-endpoints-4xx.test.ts`, the audit artifacts and this diary. Not pushed.
+- Q3 PostgREST `or` filter not exercised against live PostgREST (unit-tested only): `metrics->>horizon_games.eq.1,and(metrics->>horizon_games.is.null,or(metrics->resume->>scope_key.is.null,metrics->resume->>scope_key.like."h1:*"))` — bounded read-only smoke on the release candidate recommended. Follow-up noted: `run-forge-projections.ts:478` `createRun(asOfDate)` without horizon (harmless; finalize overwrites).
+- Review findings, run approved queries, write REPORT.md.
+
+## Blockers / approvals
+- 16:12Z TJ approved (pop-up, this session) "Approve all 12": the read-only SELECTs in `tasks/artifacts/forge-projection-audit-2026-10-21/prod-queries.sql`, each once, one column-name retry max, no writes. Running via Supabase MCP execute_sql on fyhftlxokyjtpndbkfse.
+
+## Insights
+- (none yet)

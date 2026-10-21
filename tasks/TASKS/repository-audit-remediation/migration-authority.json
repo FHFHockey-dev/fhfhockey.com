@@ -921,6 +921,16 @@
       "migrationClass": "feature",
       "rolloutGate": "Recorded 2026-10-21 at TJ's request (FORGE pipeline repair): drops the unused GIN index idx_rolling_player_metric_support_payloads_payload_gin (jsonb_path_ops on support_payload, ~1.5 GB). No code queries support_payload by containment; the index made 5-row support-payload upserts hit the 8 s PostgREST statement timeout and stalled the scheduled rolling stage. The production drop itself was run by direct SQL on 2026-10-21 (about 14:16-14:20Z) with TJ's explicit approval; this file records it, idempotently, so baseline-built environments match. Rollback: CREATE INDEX CONCURRENTLY idx_rolling_player_metric_support_payloads_payload_gin ON public.rolling_player_metric_support_payloads USING gin (support_payload jsonb_path_ops).",
       "stateEvidence": "Production ledger version 20261021145154 name drop_rolling_support_payload_gin (applied 2026-10-21 by explicit TJ approval via session local_08a0bf1c; a no-op because the index was already dropped). Readback: rolling_player_metric_support_payloads keeps only rolling_player_metric_support_payloads_pkey and idx_rolling_player_metric_support_payloads_snapshot. After the drop the 10-20 rolling tail ran about 3 players/s versus about 1/s before (pipeline repair diary 2026-10-21)."
+    },
+    {
+      "order": 92,
+      "path": "supabase/migrations/20261021170000_forge_projection_results_source_run_fence.sql",
+      "sha256": "6d48dad663ee976ff53ea4cf7273040b594c046fdcfe9d114490326b60928299",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "feature",
+      "rolloutGate": "Drafted 2026-10-21 (FORGE projection audit, proposal Q3). Re-creates replace_forge_projection_results_atomic so its 'latest succeeded run' check matches the readers' selection in web/lib/projections/releasedRunFence.ts: released runs only (git_sha not null and not local:%) and horizon-1 runs only (metrics->>'horizon_games' = '1', falling back to the resume scope key or h1 for unstamped runs). Without it the accuracy write raises when a fenced local run or the 10:12Z horizon-5 cron run is the newest succeeded run for a date (observed 10-15..10-19 422s). Security, search_path, grants and the rest of the body are byte-identical to 20260723121407. Hosted apply needs TJ's separate explicit approval; no migration command was run.",
+      "stateEvidence": "Local source only; not applied. Evidence: tasks/artifacts/forge-projection-audit-2026-10-21/REPORT.md section 3 finding 3 and section 4.1 Q3; Vitest lib/projections/releasedRunFence.test.ts covers the equivalent TypeScript predicate."
     }
   ],
   "sourceExtensionApproval": {
