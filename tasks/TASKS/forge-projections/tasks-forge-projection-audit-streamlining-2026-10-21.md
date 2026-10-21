@@ -250,3 +250,23 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
 - **7.5 still open:**
   - space reclaim via pg_repack (TJ runs it);
   - the first production writer run after the drop is the 10:05Z pipeline.
+
+### NST outage, pg_repack and R18 (2026-10-21 evening)
+
+- **NST is down:**
+  - Every fetch returns HTTP 521 (TJ suspects the PHP vulnerability).
+  - The 10-07..10-18 backfill (`update-nst-gamelog?runMode=incremental&startDate=2026-10-07&endDate=2026-10-18&overwrite=yes`) is blocked at `nextIndex` 0. Re-open the same URL once NST is back.
+  - The first manual call hung to a 504 (Codex note `dd9dde066`).
+- **Pipeline degrade (`b22c8b55f`):**
+  - An NST source shortfall (200, `success: false`, unresolved source outcomes) no longer blocks `upstream_skater_sources`.
+  - The NST step is skipped with `degraded: "nst_source_unavailable"`; WGO, the rolling recompute and FORGE still run.
+  - `failureSummary.degradedSteps` names the degraded step. Route errors still block.
+- **pg_repack:** not usable. Supabase needs 1.5.2+ to repack without superuser; this project offers 1.5.0. The extension was not created.
+  - TJ chose to run `VACUUM FULL` himself at a quiet hour.
+- **R18:** candidate `56fb03fef` = `b22c8b55f` plus the audit session's even-strength assist patch (`946d8367e`, sha256 `bfdaab5c…`), which TJ approved in this session.
+- **Pre-check for tomorrow:** master's FORGE select list (25 columns) and the rankings select list (126) contain none of the 491 dropped columns.
+- **R18 shipped:**
+  - `56fb03fef`, pushed 19:01Z and READY at 19:06Z.
+  - Smoke test 3/3 returned 200.
+  - Gate: master's 13 baseline failures, plus `TeamStandingsChart.test.tsx` failing under full-suite load only (it passes alone on both R18 and R17); tsc and eslint 0.
+  - octoberBranch synced with `-s ours` (`2d62f390c`).
