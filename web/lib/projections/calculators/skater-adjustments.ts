@@ -551,6 +551,18 @@ const SKATER_ASSIST_SCALE = {
     pp: { baseStrength: 8, evidenceScale: 12, minStrength: 3, maxStrength: 15, fallback: 1.9, raw: [0.6, 3.6], out: [0.6, 4] },
   },
 } as const;
+export type SkaterAssistDenominators = { es: SkaterAssistDenominator; pp: SkaterAssistDenominator };
+/** A single string applies to both strengths. */
+export type SkaterAssistDenominatorOption = SkaterAssistDenominator | SkaterAssistDenominators;
+/** Held candidate: ES assists per goal, PP assists still per two goals. */
+export const SKATER_ASSIST_DENOMINATOR_DEFAULT: SkaterAssistDenominators = { es: "per_goal", pp: "per_two_goals" };
+export function resolveAssistDenominators(
+  option: SkaterAssistDenominatorOption | undefined,
+  fallback: SkaterAssistDenominators = SKATER_ASSIST_DENOMINATOR_DEFAULT,
+): SkaterAssistDenominators {
+  if (option == null) return { ...fallback };
+  return typeof option === "string" ? { es: option, pp: option } : { es: option.es, pp: option.pp };
+}
 
 export function computeStrengthSplitConversionRates(args: {
   evGoalsRecent: number;
@@ -567,7 +579,7 @@ export function computeStrengthSplitConversionRates(args: {
   ppAssistsAll: number;
   goalRateMultiplier: number;
   assistRateMultiplier: number;
-  assistDenominator?: SkaterAssistDenominator;
+  assistDenominator?: SkaterAssistDenominatorOption;
 }): {
   goalRateEs: number;
   goalRatePp: number;
@@ -601,19 +613,20 @@ export function computeStrengthSplitConversionRates(args: {
     minStrength: 9,
     maxStrength: 54
   });
-  const assistScale = SKATER_ASSIST_SCALE[args.assistDenominator ?? "per_goal"];
-  const perDenominator = assistScale.goalsPerDenominator;
-  const evAssist = assistScale.ev, ppAssist = assistScale.pp;
+  const denominators = resolveAssistDenominators(args.assistDenominator);
+  const evScale = SKATER_ASSIST_SCALE[denominators.es], ppScale = SKATER_ASSIST_SCALE[denominators.pp];
+  const evPerDenominator = evScale.goalsPerDenominator, ppPerDenominator = ppScale.goalsPerDenominator;
+  const evAssist = evScale.ev, ppAssist = ppScale.pp;
   const evAssistPriorStrength = adaptivePriorStrength({
     baseStrength: evAssist.baseStrength,
-    evidenceDenom: Math.max(0, args.evGoalsAll * perDenominator) + Math.max(0, args.evGoalsRecent * perDenominator),
+    evidenceDenom: Math.max(0, args.evGoalsAll * evPerDenominator) + Math.max(0, args.evGoalsRecent * evPerDenominator),
     evidenceScale: evAssist.evidenceScale,
     minStrength: evAssist.minStrength,
     maxStrength: evAssist.maxStrength
   });
   const ppAssistPriorStrength = adaptivePriorStrength({
     baseStrength: ppAssist.baseStrength,
-    evidenceDenom: Math.max(0, args.ppGoalsAll * perDenominator) + Math.max(0, args.ppGoalsRecent * perDenominator),
+    evidenceDenom: Math.max(0, args.ppGoalsAll * ppPerDenominator) + Math.max(0, args.ppGoalsRecent * ppPerDenominator),
     evidenceScale: ppAssist.evidenceScale,
     minStrength: ppAssist.minStrength,
     maxStrength: ppAssist.maxStrength
@@ -641,9 +654,9 @@ export function computeStrengthSplitConversionRates(args: {
   });
   const assistRateEsRaw = blendOnlineRate({
     recentNumerator: args.evAssistsRecent,
-    recentDenom: args.evGoalsRecent * perDenominator,
+    recentDenom: args.evGoalsRecent * evPerDenominator,
     baseNumerator: args.evAssistsAll,
-    baseDenom: args.evGoalsAll * perDenominator,
+    baseDenom: args.evGoalsAll * evPerDenominator,
     fallback: evAssist.fallback,
     priorStrength: evAssistPriorStrength,
     minRate: evAssist.raw[0],
@@ -651,9 +664,9 @@ export function computeStrengthSplitConversionRates(args: {
   });
   const assistRatePpRaw = blendOnlineRate({
     recentNumerator: args.ppAssistsRecent,
-    recentDenom: args.ppGoalsRecent * perDenominator,
+    recentDenom: args.ppGoalsRecent * ppPerDenominator,
     baseNumerator: args.ppAssistsAll,
-    baseDenom: args.ppGoalsAll * perDenominator,
+    baseDenom: args.ppGoalsAll * ppPerDenominator,
     fallback: ppAssist.fallback,
     priorStrength: ppAssistPriorStrength,
     minRate: ppAssist.raw[0],
@@ -668,8 +681,8 @@ export function computeStrengthSplitConversionRates(args: {
   };
 }
 
-export const skaterConversionPriorsAndBounds = (assistDenominator: SkaterAssistDenominator) => {
-  const { ev, pp } = SKATER_ASSIST_SCALE[assistDenominator];
+export const skaterConversionPriorsAndBounds = (denominators: SkaterAssistDenominators) => {
+  const ev = SKATER_ASSIST_SCALE[denominators.es].ev, pp = SKATER_ASSIST_SCALE[denominators.pp].pp;
   return {
     priors: { goalRateEs: 0.095, goalRatePp: 0.145, assistRateEs: ev.fallback, assistRatePp: pp.fallback },
     bounds: { goalRateEs: [0.025, 0.3], goalRatePp: [0.04, 0.45], assistRateEs: ev.out, assistRatePp: pp.out },
@@ -685,9 +698,9 @@ export const skaterConversionPriorsAndBounds = (assistDenominator: SkaterAssistD
 export function resolveSkaterConversionRates(args: {
   splitRates: { goalRateEs: number | null; goalRatePp: number | null; assistRateEs: number | null; assistRatePp: number | null };
   sampleWeight: number;
-  assistDenominator?: SkaterAssistDenominator;
+  assistDenominator?: SkaterAssistDenominatorOption;
 }) {
-  const { priors, bounds } = skaterConversionPriorsAndBounds(args.assistDenominator ?? "per_goal");
+  const { priors, bounds } = skaterConversionPriorsAndBounds(resolveAssistDenominators(args.assistDenominator));
   const resolve = (key: keyof typeof priors) => {
     const prior = priors[key];
     const [min, max] = bounds[key];
@@ -710,7 +723,7 @@ export function computeSupportedStrengthSplitConversionRates(args: {
   pp: RollingRow | undefined;
   goalRateMultiplier: number;
   assistRateMultiplier: number;
-  assistDenominator?: SkaterAssistDenominator;
+  assistDenominator?: SkaterAssistDenominatorOption;
 }) {
   const support = (row: RollingRow | undefined, strengthState: "ev" | "pp") => row
     ? readAlignedCountSupport(row.aligned_count_support, {

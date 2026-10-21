@@ -46,7 +46,7 @@ import {
   toGoalieRestSplitBucket,
   type StarterContextForTest
 } from "./run-forge-projections";
-import { computeSkaterPhysicalEventRates } from "./calculators/skater-adjustments";
+import { computeSkaterPhysicalEventRates, resolveAssistDenominators, SKATER_ASSIST_DENOMINATOR_DEFAULT } from "./calculators/skater-adjustments";
 import { SKATER_PHYSICAL_RATE_PRIORS } from "./constants/projection-weights";
 import type { RollingRow } from "./types/run-forge-projections.types";
 
@@ -1040,11 +1040,10 @@ describe("assist rate scale", () => {
     ppGoalsRecent: 4, ppShotsRecent: 0, ppGoalsAll: 20, ppShotsAll: 0, ppAssistsRecent: 7, ppAssistsAll: 34,
     goalRateMultiplier: 1, assistRateMultiplier: 1
   };
-  it("fits assists per goal by default, pulled modestly from the 1.7 raw rate toward the 1.44 prior", () => {
-    const perGoal = computeStrengthSplitConversionRates(leagueAverage);
+  it("fits assists per goal, pulled modestly from the 1.7 raw rate toward the 1.44 prior", () => {
+    const perGoal = computeStrengthSplitConversionRates({ ...leagueAverage, assistDenominator: "per_goal" });
     // Prior strength 11*(0.35+1.35*18/42) ~ 10.2 pseudo-goals: base (34+1.44*10.2)/30.2 ~ 1.61, recent 7/4 at weight ~0.28.
     expect(perGoal.assistRateEs).toBeCloseTo(1.651, 3);
-    expect(computeStrengthSplitConversionRates({ ...leagueAverage, assistDenominator: "per_goal" })).toEqual(perGoal);
     const legacy = computeStrengthSplitConversionRates({ ...leagueAverage, assistDenominator: "per_two_goals" });
     expect(legacy.assistRateEs).toBeCloseTo(0.8255, 3);
     expect(perGoal.assistRateEs).toBeCloseTo(legacy.assistRateEs * 2, 10);
@@ -1058,6 +1057,19 @@ describe("assist rate scale", () => {
     // (3 + 0.95 * s) / (2 + s), s = clamp(16 * (0.35 + 1.35 * 24 / 26), 6, 30)
     const s = 16 * (0.35 + 1.35 * 24 / 26);
     expect(legacy.assistRatePp).toBeCloseTo((3 + 0.95 * s) / (2 + s), 12);
+  });
+  it("refits ES assists per goal and keeps PP on the per-two-goals scale by default", () => {
+    const legacy = computeStrengthSplitConversionRates({ ...leagueAverage, assistDenominator: "per_two_goals" });
+    const esOnly = computeStrengthSplitConversionRates({ ...leagueAverage,
+      assistDenominator: { es: "per_goal", pp: "per_two_goals" } });
+    expect(esOnly.assistRateEs).toBeCloseTo(legacy.assistRateEs * 2, 10);
+    expect(esOnly.assistRatePp).toBe(legacy.assistRatePp);
+    expect(esOnly.goalRateEs).toBe(legacy.goalRateEs);
+    expect(computeStrengthSplitConversionRates(leagueAverage)).toEqual(esOnly);
+    expect(SKATER_ASSIST_DENOMINATOR_DEFAULT).toEqual({ es: "per_goal", pp: "per_two_goals" });
+    expect(resolveAssistDenominators("per_goal")).toEqual({ es: "per_goal", pp: "per_goal" });
+    expect(resolveAssistDenominators(undefined)).toEqual(SKATER_ASSIST_DENOMINATOR_DEFAULT);
+    expect(resolveAssistDenominators(undefined, { es: "per_two_goals", pp: "per_goal" })).toEqual({ es: "per_two_goals", pp: "per_goal" });
   });
 });
 

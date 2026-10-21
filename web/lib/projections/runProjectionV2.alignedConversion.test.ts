@@ -72,8 +72,10 @@ describe("aligned conversion integration", () => {
     expect(resolved.conversionShrink.goal_pp).toEqual({ bayes: null, legacy: 0.145, sample_weight: 0.7 });
     const splitRates = { goalRateEs: null, goalRatePp: null, assistRateEs: null, assistRatePp: null };
     const unsupported = resolveSkaterConversionRates({ splitRates, sampleWeight: 0.4 });
-    expect(unsupported).toMatchObject({ goalRateEs: 0.095, goalRatePp: 0.145, assistRateEs: 1.44, assistRatePp: 1.9 });
-    expect(unsupported.conversionShrink.assist_pp).toEqual({ bayes: null, legacy: 1.9, sample_weight: 0.4 });
+    expect(unsupported).toMatchObject({ goalRateEs: 0.095, goalRatePp: 0.145, assistRateEs: 1.44, assistRatePp: 0.95 });
+    expect(unsupported.conversionShrink.assist_pp).toEqual({ bayes: null, legacy: 0.95, sample_weight: 0.4 });
+    expect(resolveSkaterConversionRates({ splitRates, sampleWeight: 0.4, assistDenominator: "per_goal" }))
+      .toMatchObject({ assistRateEs: 1.44, assistRatePp: 1.9 });
     expect(resolveSkaterConversionRates({ splitRates, sampleWeight: 0.4, assistDenominator: "per_two_goals" }))
       .toMatchObject({ goalRateEs: 0.095, goalRatePp: 0.145, assistRateEs: 0.72, assistRatePp: 0.95 });
   });
@@ -92,12 +94,18 @@ describe("aligned conversion integration", () => {
     expect(assistsEs / goalsEs).toBeCloseTo(live.assistRateEs, 12);
     expect(legacy.assistRateEs).toBeCloseTo(live.assistRateEs / 2, 10);
     const naivePrior = buildSkaterNaivePriorBaseline({ shotsEs: 160, shotsPp: 0 });
-    expect(naivePrior).toMatchObject({ assist_per_goal_es: 1.44, assist_per_goal_pp: 1.9 });
+    expect(naivePrior).toMatchObject({ assist_per_goal_es: 1.44, assist_per_goal_pp: 0.95 });
     expect(naivePrior.assists_es).toBeCloseTo(naivePrior.goals_es * 1.44, 12);
     expect(clampSkaterAssistRate(5, "pp", "coupling", "per_goal")).toBe(4.2);
     expect(clampSkaterAssistRate(5, "pp", "coupling", "per_two_goals")).toBe(2.1);
     expect(clampSkaterAssistRate(5, "es", "trend", "per_goal")).toBe(3.4);
     expect(clampSkaterAssistRate(0, "es", "trend", "per_two_goals")).toBe(0.2);
+    // Default live convention: ES clamps per goal, PP clamps stay on the per-two-goals scale.
+    const live2 = { es: "per_goal", pp: "per_two_goals" } as const;
+    expect([clampSkaterAssistRate(5, "es", "trend", live2), clampSkaterAssistRate(0, "es", "trend", live2)]).toEqual([3.4, 0.4]);
+    expect([clampSkaterAssistRate(5, "es", "coupling", live2), clampSkaterAssistRate(0, "es", "coupling", live2)]).toEqual([3.6, 0.4]);
+    expect([clampSkaterAssistRate(5, "pp", "trend", live2), clampSkaterAssistRate(0, "pp", "trend", live2)]).toEqual([2, 0.3]);
+    expect([clampSkaterAssistRate(5, "pp", "coupling", live2), clampSkaterAssistRate(0, "pp", "coupling", live2)]).toEqual([2.1, 0.3]);
   });
   it("distinguishes zero exposure from a supported goal/shot pair with zero goals", () => {
     const rates = computeSupportedStrengthSplitConversionRates({ ev: row("ev", 0, 0, 8), pp: row("pp", 0, 0, 0), goalRateMultiplier: 1, assistRateMultiplier: 1 });

@@ -257,8 +257,10 @@ import {
   computeSupportedStrengthSplitConversionRates,
   applySupportedSkaterConversionHeads,
   resolveSkaterConversionRates,
+  resolveAssistDenominators,
   skaterConversionPriorsAndBounds,
-  type SkaterAssistDenominator,
+  SKATER_ASSIST_DENOMINATOR_DEFAULT,
+  type SkaterAssistDenominatorOption,
 } from "../calculators/skater-adjustments";
 import {
   blendTopStarterScenarioOutputs,
@@ -1069,18 +1071,21 @@ export function clampSkaterAssistRate(
   rate: number,
   strength: "es" | "pp",
   step: "trend" | "coupling",
-  assistDenominator: SkaterAssistDenominator,
+  assistDenominator: SkaterAssistDenominatorOption,
 ): number {
-  const [min, max] = SKATER_ASSIST_RATE_CLAMPS[assistDenominator][step][strength];
+  const convention = resolveAssistDenominators(assistDenominator)[strength];
+  const [min, max] = SKATER_ASSIST_RATE_CLAMPS[convention][step][strength];
   return clamp(rate, min, max);
 }
 
-/** Holdout benchmark: fixed league conversion priors on the per-goal assist scale. */
+/** Holdout benchmark: fixed league conversion priors on the live per-strength assist scales. */
 export function buildSkaterNaivePriorBaseline(args: {
   shotsEs: number;
   shotsPp: number;
 }) {
-  const { priors } = skaterConversionPriorsAndBounds("per_goal");
+  const { priors } = skaterConversionPriorsAndBounds(
+    SKATER_ASSIST_DENOMINATOR_DEFAULT,
+  );
   const goalsEs = args.shotsEs * priors.goalRateEs;
   const goalsPp = args.shotsPp * priors.goalRatePp;
   return {
@@ -2327,13 +2332,13 @@ export async function runPerGameSkaterStage(args: {
           assistRateEs * trendAssistMultiplier,
           "es",
           "trend",
-          "per_goal",
+          SKATER_ASSIST_DENOMINATOR_DEFAULT,
         ),
         assistRatePp: clampSkaterAssistRate(
           assistRatePp * trendAssistMultiplier,
           "pp",
           "trend",
-          "per_goal",
+          SKATER_ASSIST_DENOMINATOR_DEFAULT,
         ),
         legacyAssistRateEs: clampSkaterAssistRate(
           legacyAssistRates.assistRateEs * trendAssistMultiplier,
@@ -2582,13 +2587,13 @@ export async function runPerGameSkaterStage(args: {
         p.assistRateEs * teammateCoupling.assistRateEsMultiplier,
         "es",
         "coupling",
-        "per_goal",
+        SKATER_ASSIST_DENOMINATOR_DEFAULT,
       );
       p.assistRatePp = clampSkaterAssistRate(
         p.assistRatePp * teammateCoupling.assistRatePpMultiplier,
         "pp",
         "coupling",
-        "per_goal",
+        SKATER_ASSIST_DENOMINATOR_DEFAULT,
       );
       p.legacyAssistRateEs = clampSkaterAssistRate(
         p.legacyAssistRateEs * teammateCoupling.assistRateEsMultiplier,
@@ -3139,7 +3144,7 @@ export async function runPerGameSkaterStage(args: {
             // Backtest inputs: pre-shrink Bayes rate vs the former second shrink.
             conversion_shrink: p.conversionShrink,
             assist_rate_scale: {
-              convention: "per_goal",
+              convention: { ...SKATER_ASSIST_DENOMINATOR_DEFAULT },
               legacy_per_two_goals: {
                 assist_rate_es: Number(p.legacyAssistRateEs.toFixed(4)),
                 assist_rate_pp: Number(p.legacyAssistRatePp.toFixed(4)),
