@@ -57,7 +57,7 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
   - [ ] 4.2 Skip the route-level preflight in `run-projection-v2` when it resumes an already-claimed run (the stage preflight still runs).
   - [ ] 4.3 Report the effective `stopOnFailure` in the pipeline response instead of echoing the query value.
   - [ ] 4.4 Extend the pipeline tests: the goalie step runs on the first projection invocation and not on resumed ones, and a failed goalie step is retried on the next invocation. Add a resumed-claim preflight test in the `run-projection-v2` tests.
-  - [ ] 4.5 Write a cross-platform note asking Codex to alert on `attempts_exhausted` and `stage_killed` in the daily cron report.
+  - [x] 4.5 Write a cross-platform note asking Codex to alert on `attempts_exhausted` and `stage_killed` in the daily cron report. (The audit session's `tasks/artifacts/cross-platform/2026-10-21-claude-to-codex-forge-audit-followups.md` §5 covers it; the job 329 move is in `2026-10-21-claude-to-codex-nst-team-stats-schedule.md`.)
 
 - [ ] 5.0 Cron schedule cleanup (Q13, DB/Ops)
   - [x] 5.1 With TJ's approval, read jobs 278, 79 and 329 (`cron.job`) and their last 7 days of `cron_job_audit` outcomes.
