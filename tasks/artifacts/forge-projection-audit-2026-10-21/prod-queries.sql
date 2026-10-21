@@ -176,3 +176,15 @@ from games g
 where g.date between '2026-10-13' and '2026-10-21'
 order by g.date, g.id) t;
 -- s2 retry (cast fix): ((s->'on_ice_context')::jsonb - 'source_date'::text - 'possession_pct'::text)
+
+-- ===== PP diagnosis (proposed 2026-10-21; run once each via read-only psql only if TJ approves; outputs to scratchpad JSON) =====
+-- S5 actual PP split for the cohort dates (~2,231 rows, ~0.2 MB)
+select game_id, player_id, date, pp_goals, pp_assists, pp_points, pp_shots, pp_toi
+from wgo_skater_stats
+where date between '2026-10-13' and '2026-10-21';
+-- S6 predicted PP usage for the cohort's projection rows (~2,268 rows, ~0.3 MB): PP TOI column + the stored PP-allocation bookkeeping
+select p.run_id, p.game_id, p.player_id, p.proj_toi_es_seconds, p.proj_toi_pp_seconds,
+       p.uncertainty->'model'->'skater_selection'->'pp_opportunity' as pp_opportunity,
+       p.uncertainty->'model'->'skater_selection'->'es_role' as es_role
+from forge_player_projections p
+where p.horizon_games = 1 and p.as_of_date between '2026-10-13' and '2026-10-21';
