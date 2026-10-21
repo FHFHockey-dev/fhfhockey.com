@@ -23,7 +23,7 @@ export type RollingWindowContract = {
       | "selected_slot_always_counts"
       | "selected_slot_counts_only_with_defined_value";
     missingNumeratorBehavior:
-      | "coerce_to_zero_when_denominator_present"
+      | "exclude_components_but_keep_selected_slot"
       | "not_applicable";
     missingDenominatorBehavior:
       | "exclude_components_but_keep_selected_slot"
@@ -65,7 +65,7 @@ export const CANONICAL_ROLLING_WINDOW_CONTRACTS: Record<
     aggregationMethod: "ratio_of_aggregated_components_over_selected_appearances",
     missingComponentPolicy: {
       selectedWindowSlotBehavior: "selected_slot_always_counts",
-      missingNumeratorBehavior: "coerce_to_zero_when_denominator_present",
+      missingNumeratorBehavior: "exclude_components_but_keep_selected_slot",
       missingDenominatorBehavior: "exclude_components_but_keep_selected_slot"
     },
     contractSummary:
@@ -78,7 +78,7 @@ export const CANONICAL_ROLLING_WINDOW_CONTRACTS: Record<
       "weighted_rate_from_aggregated_components_over_selected_appearances",
     missingComponentPolicy: {
       selectedWindowSlotBehavior: "selected_slot_always_counts",
-      missingNumeratorBehavior: "coerce_to_zero_when_denominator_present",
+      missingNumeratorBehavior: "exclude_components_but_keep_selected_slot",
       missingDenominatorBehavior: "exclude_components_but_keep_selected_slot"
     },
     contractSummary:

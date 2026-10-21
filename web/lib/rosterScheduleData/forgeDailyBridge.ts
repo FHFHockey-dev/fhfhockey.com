@@ -317,8 +317,16 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   };
   const abbreviationById = new Map(players.filter(player => finite(player.nhlTeamId) && player.teamAbbreviation)
     .map(player => [player.nhlTeamId!, player.teamAbbreviation!.toUpperCase()]));
+  // Opponents with no team-strength prior (or no abbreviation to look one up by), counted once each.
+  const missingPriors = new Set<string>();
+  const opponentAbbreviation = (teamId: unknown) => {
+    const abbreviation = finite(teamId) ? abbreviationById.get(teamId) : undefined;
+    if (finite(teamId) && !abbreviation) missingPriors.add(`#${teamId}`);
+    return abbreviation;
+  };
   const context = (team: string | null | undefined, opponent: string | null | undefined): Context | null => {
     const own = team ? priors.get(team.toUpperCase()) : undefined, other = opponent ? priors.get(opponent.toUpperCase()) : undefined;
+    if (opponent && !other) missingPriors.add(opponent.toUpperCase());
     if (!own || !other) return null;
     const defending = computeTeamStrengthContextAdjustment({ defendingTeamPrior: own, opponentTeamPrior: other });
     // Goals for come from the same helper called from the opponent's side (its goals-against term for them),
@@ -346,27 +354,32 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       modelVersion: `${FORGE_DAILY_BRIDGE_VERSION}:${run.gitSha ?? "unknown"}`, limitations: [FORECAST_LIMITATION] });
   };
   const identified = players.filter(player => player.nhlId !== null && finite(player.nhlTeamId) && player.rosterRevision && player.teamAbbreviation);
-  let staleSkaters = 0, noPowerPlay = 0, unknownPowerPlay = 0;
+  let staleSkaters = 0, teamMismatch = 0, noPowerPlay = 0, unknownPowerPlay = 0;
+  const unknownHeads = new Set<number>(), unsharedGoalies = new Set<number>();
   for (const player of identified.filter(row => row.playerClass === "skater")) {
     const latestRow = skaterLatest.get(player.nhlId);
-    if (!latestRow || latestRow.team_id !== player.nhlTeamId) continue;
-    // Missing from his team's latest run: scratched, injured or reassigned since.
-    if (latestRow.as_of_date !== teamLatestDate.get(latestRow.team_id)) { staleSkaters++; continue; }
+    if (!latestRow) continue;
+    if (latestRow.team_id !== player.nhlTeamId) { teamMismatch++; continue; }
+    // Missing from his team's latest run (scratched, injured or reassigned since): only lines issued for a game itself stand.
+    const stale = latestRow.as_of_date !== teamLatestDate.get(latestRow.team_id), emitted = forecasts.length;
     const lineFor = (row: Row) => {
       const special = withSpecialTeamsZeros(row);
       if (special.filled) noPowerPlay++;
       if (special.unknown) unknownPowerPlay++;
-      return skaterStats(special.row, rates ? rates.get(player.nhlId!) ?? rates.get(0)! : null);
+      const line = skaterStats(special.row, rates ? rates.get(player.nhlId!) ?? rates.get(0)! : null);
+      if (!line && !special.unknown) unknownHeads.add(player.nhlId!);
+      return line;
     };
-    const stats = lineFor(latestRow);
-    const projectedAgainst = context(player.teamAbbreviation, abbreviationById.get(latestRow.opponent_team_id));
-    if (stats) for (const game of upcoming(player.teamAbbreviation!)) {
+    const stats = stale ? null : lineFor(latestRow);
+    const projectedAgainst = stale ? null : context(player.teamAbbreviation, opponentAbbreviation(latestRow.opponent_team_id));
+    if (stale || stats) for (const game of upcoming(player.teamAbbreviation!)) {
       const own = exactSkater.get(`${game.id}:${player.nhlId}`);
-      if (own && own !== latestRow && own.team_id === player.nhlTeamId) {
+      if (own && (stale || own !== latestRow) && own.team_id === player.nhlTeamId) {
         // Projected for this game itself: use that line as issued, no re-aiming.
         const ownStats = lineFor(own);
         if (ownStats) { emit(player, game, runs.get(own.run_id)!, ownStats, null); continue; }
       }
+      if (!stats) continue;
       const row = latestRow;
       const facing = String(row.game_id) === game.id ? null : context(player.teamAbbreviation, game.opponent);
       const scale = projectedAgainst && facing ? (1 + facing.goalsFor) / (1 + projectedAgainst.goalsFor) : 1;
@@ -374,6 +387,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       const tilt = String(row.game_id) === game.id ? undefined : tiltBetween(player, abbreviationById.get(row.opponent_team_id), game.opponent);
       emit(player, game, runs.get(row.run_id)!, scale === 1 && !rest && !tilt ? stats : retargetSkater(stats, scale, rest, tilt), null);
     }
+    if (stale && forecasts.length === emitted) staleSkaters++;
   }
   const goaliesByTeam = new Map<number, PlanningPlayer[]>();
   for (const player of identified.filter(row => row.playerClass === "goalie")) goaliesByTeam.set(player.nhlTeamId!, [...(goaliesByTeam.get(player.nhlTeamId!) ?? []), player]);
@@ -388,7 +402,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     } else {
       const known = goalies.filter(goalie => shares.has(goalie.nhlId!));
       const mass = known.reduce((sum, goalie) => sum + shares.get(goalie.nhlId!)!, 0);
-      for (const goalie of known) probability.set(String(goalie.nhlId), shares.get(goalie.nhlId!)! / Math.max(1, mass));
+      for (const goalie of known) probability.set(String(goalie.nhlId), shares.get(goalie.nhlId!)! / (mass || 1));
     }
     // Second night of a back-to-back: the usual starter rarely starts both, so part of his chance moves to the others.
     if (!exact && gameContext(game.id, teamId)?.teamRestDays === 1 && probability.size > 1) {
@@ -418,8 +432,9 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       const p = probability.get(String(goalie.nhlId));
       const own = goalieLatest.get(goalie.nhlId);
       const source = exact && exact.goalie_id === goalie.nhlId ? exact : own && own.team_id === teamId ? own : teamGoalieLatest.get(teamId);
+      if (p === undefined) unsharedGoalies.add(goalie.nhlId!);
       if (p === undefined || !source) continue;
-      const from = String(source.game_id) === game.id ? null : context(goalies[0].teamAbbreviation, abbreviationById.get(source.opponent_team_id));
+      const from = String(source.game_id) === game.id ? null : context(goalies[0].teamAbbreviation, opponentAbbreviation(source.opponent_team_id));
       const to = from ? context(goalies[0].teamAbbreviation, game.opponent) : null;
       const fromGame = String(source.game_id) === game.id ? null : gameContext(source.game_id, teamId), toGame = fromGame ? gameContext(game.id, teamId) : null;
       const venue = fromGame && toGame ? { from: goalieShotContext(fromGame), to: goalieShotContext(toGame) } : undefined;
@@ -453,7 +468,11 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       : "Goalie news could not be read; start chances use start shares only.",
     ...(noPowerPlay ? [`${noPowerPlay} skaters with no FORGE power-play line or time count 0 power-play production.`] : []),
     ...(unknownPowerPlay ? [`${unknownPowerPlay} skaters have projected power-play time but no FORGE power-play line, so they get no forecast.`] : []),
+    ...(unknownHeads.size ? [`${unknownHeads.size} skaters have a FORGE line with blank even-strength goals, assists or shots; such lines give no forecast.`] : []),
     ...(staleSkaters ? [`${staleSkaters} skaters missing from their team's latest FORGE run get no forecast (likely scratched, injured or moved).`] : []),
+    ...(teamMismatch ? [`${teamMismatch} skaters whose latest FORGE line is for a different team than their current one get no forecast.`] : []),
+    ...(unsharedGoalies.size ? [`${unsharedGoalies.size} goalies with no start share get no forecast for games FORGE has not projected for them.`] : []),
+    ...(priors.size && missingPriors.size ? [`${missingPriors.size} opponents have no team-strength prior, so lines projected against or moved to them skip the opponent adjustment.`] : []),
     ...(kept < forecasts.length ? [`Interim projections were trimmed to the first ${kept} of ${forecasts.length} player-games to fit the planning transport; later games stay schedule-only.`] : []),
   ];
   return { forecasts: forecasts.slice(0, kept), limitations };

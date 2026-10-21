@@ -37,7 +37,7 @@ describe("rollingWindowContract", () => {
       aggregationMethod: "ratio_of_aggregated_components_over_selected_appearances",
       missingComponentPolicy: {
         selectedWindowSlotBehavior: "selected_slot_always_counts",
-        missingNumeratorBehavior: "coerce_to_zero_when_denominator_present",
+        missingNumeratorBehavior: "exclude_components_but_keep_selected_slot",
         missingDenominatorBehavior: "exclude_components_but_keep_selected_slot"
       },
       contractSummary:
@@ -52,7 +52,7 @@ describe("rollingWindowContract", () => {
         "weighted_rate_from_aggregated_components_over_selected_appearances",
       missingComponentPolicy: {
         selectedWindowSlotBehavior: "selected_slot_always_counts",
-        missingNumeratorBehavior: "coerce_to_zero_when_denominator_present",
+        missingNumeratorBehavior: "exclude_components_but_keep_selected_slot",
         missingDenominatorBehavior: "exclude_components_but_keep_selected_slot"
       },
       contractSummary:

@@ -111,6 +111,23 @@ function hasAnyDenominator(components: NormalizedRatioComponents): boolean {
   return components.denominator > 0 || components.secondaryDenominator > 0;
 }
 
+function isMissingComponent(value: number | null | undefined): boolean {
+  return value == null || !Number.isFinite(Number(value));
+}
+
+// A missing numerator beside a present denominator is a missing observation,
+// not a zero: counting it would dilute the ratio. An explicit 0 still counts.
+function hasMissingNumeratorForDenominator(
+  components: RatioComponents,
+  normalized: NormalizedRatioComponents
+): boolean {
+  return (
+    (normalized.denominator > 0 && isMissingComponent(components.numerator)) ||
+    (normalized.secondaryDenominator > 0 &&
+      isMissingComponent(components.secondaryNumerator))
+  );
+}
+
 function getSeasonWindowKey(season: number): number {
   if (!Number.isFinite(season)) return season;
   return season >= 10000000 ? Math.floor(season / 10000) : season;
@@ -218,11 +235,17 @@ export function normalizeRatioWindowEntry(
     };
   }
 
-  const denominator = normalizeComponent(components.denominator);
-  const secondaryDenominator = normalizeComponent(components.secondaryDenominator);
-  const hasDenominator = denominator > 0 || secondaryDenominator > 0;
+  const normalized: NormalizedRatioComponents = {
+    numerator: normalizeComponent(components.numerator),
+    denominator: normalizeComponent(components.denominator),
+    secondaryNumerator: normalizeComponent(components.secondaryNumerator),
+    secondaryDenominator: normalizeComponent(components.secondaryDenominator)
+  };
 
-  if (!hasDenominator) {
+  if (
+    !hasAnyDenominator(normalized) ||
+    hasMissingNumeratorForDenominator(components, normalized)
+  ) {
     return {
       occupiesSelectedSlot:
         contract.missingComponentPolicy.selectedWindowSlotBehavior ===
@@ -233,12 +256,7 @@ export function normalizeRatioWindowEntry(
 
   return {
     occupiesSelectedSlot: true,
-    aggregatedComponents: {
-      numerator: normalizeComponent(components.numerator),
-      denominator,
-      secondaryNumerator: normalizeComponent(components.secondaryNumerator),
-      secondaryDenominator
-    }
+    aggregatedComponents: normalized
   };
 }
 
@@ -348,7 +366,10 @@ export function updateHistoricalRatioAccumulator(
     secondaryDenominator: normalizeComponent(components.secondaryDenominator)
   };
 
-  if (!hasAnyDenominator(normalized)) {
+  if (
+    !hasAnyDenominator(normalized) ||
+    hasMissingNumeratorForDenominator(components, normalized)
+  ) {
     return;
   }
 

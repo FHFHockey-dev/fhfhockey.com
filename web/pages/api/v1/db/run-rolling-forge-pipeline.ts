@@ -142,7 +142,8 @@ type ResponseBody = {
   stages: StageResult[];
   failureSummary?: {
     failedStepCount: number;
-    firstFailure: { stageId: string; stepId: string; route: string; statusCode: number;
+    // stepId is null when the run stopped on a stage it did not run (terminalStop).
+    firstFailure: { stageId: string; stepId: string | null; route: string; statusCode: number;
       error: string | null; gameId: number | null; stage: string | null; reportedErrorCount: number;
       code: string | null; endpoint: string | null; attempts: number | null; classification: string | null } | null;
     // Set when the scheduled run stopped on a stage it will not take again.
@@ -1668,6 +1669,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
     .find(value => typeof value === "string" && value.length > 0);
   // Put bounded, observed failure facts before verbose graphs for the existing
   // 4000 character cron audit. Full child receipts remain unchanged in stages below.
+  const terminalStop = terminalStopCode && termination.nextStageId
+    ? { code: terminalStopCode, stageId: termination.nextStageId }
+    : null;
+  // A terminal stop names its code in firstFailure.code, so a report keys on one
+  // field; with no step run this invocation the stage itself is the failure.
+  const terminalStage = terminalStop && !firstFailed
+    ? stageResults.find(stage => stage.id === terminalStop.stageId)
+    : undefined;
   const failureSummary = {
     failedStepCount: failedSteps.length,
     firstFailure: firstFailed ? { stageId: firstFailed.stageId, stepId: firstFailed.step.id,
@@ -1675,14 +1684,18 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
       error: typeof message === "string" ? message.slice(0, 512) : null,
       gameId: typeof firstError.gameId === "number" ? firstError.gameId : null,
       stage: typeof firstError.stage === "string" ? firstError.stage.slice(0, 128) : null,
-      code: typeof firstError.code === "string" ? firstError.code.slice(0, 128) : null,
+      code: terminalStop?.code ?? (typeof firstError.code === "string" ? firstError.code.slice(0, 128) : null),
       endpoint: typeof firstError.endpoint === "string" ? firstError.endpoint.slice(0, 128) : null,
       attempts: Number.isSafeInteger(firstError.attempts) && Number(firstError.attempts) > 0 ? Number(firstError.attempts) : null,
       classification: typeof dependencyError.classification === "string" ? dependencyError.classification.slice(0, 128) : null,
-      reportedErrorCount: errors.length } : null,
-    terminalStop: terminalStopCode && termination.nextStageId
-      ? { code: terminalStopCode, stageId: termination.nextStageId }
+      reportedErrorCount: errors.length }
+      : terminalStop ? { stageId: terminalStop.stageId, stepId: null,
+        route: "/api/v1/db/run-rolling-forge-pipeline", statusCode: 207,
+        error: (termination.detail ?? terminalStage?.reason ?? null)?.slice(0, 512) ?? null,
+        gameId: null, stage: null, code: terminalStop.code, endpoint: null, attempts: null,
+        classification: null, reportedErrorCount: 0 }
       : null,
+    terminalStop,
   };
   return res.status(success ? 200 : 207).json({
     success,

@@ -455,21 +455,17 @@ describe("rollingPlayerValidationPayload metadata builders", () => {
       valuesMatch: false,
       mismatchCauseBucket: "logic defect"
     });
-    expect(
-      focusedRow?.comparisonMatrix.map((entry: { field: string }) => entry.field)
-    ).toEqual(
-      expect.arrayContaining([
-        "pp_share_pct_last5",
-        "pp_share_pct_avg_last5",
-        "pp_share_pct_player_pp_toi_last5"
-      ])
+    const comparedFields = focusedRow?.comparisonMatrix.map(
+      (entry: { field: string }) => entry.field
     );
-    expect(focusedRow?.supportComparisons).toContainEqual({
-      field: "pp_share_pct_player_pp_toi_last5",
-      storedValue: 156,
-      recomputedValue: 149,
-      valuesMatch: false
-    });
+    expect(comparedFields).toEqual(
+      expect.arrayContaining(["pp_share_pct_last5", "pp_share_pct_avg_last5"])
+    );
+    // pp_share_pct_player_pp_toi_last5 is a dropped column (S-G), so it is not compared.
+    expect(comparedFields).not.toContain("pp_share_pct_player_pp_toi_last5");
+    expect(
+      focusedRow?.supportComparisons.map((entry: { field: string }) => entry.field)
+    ).not.toContain("pp_share_pct_player_pp_toi_last5");
 
     const familySummary = __testables.buildFamilyComparisonSummary({
       storedRows: [
@@ -509,7 +505,8 @@ describe("rollingPlayerValidationPayload metadata builders", () => {
           season: 20252026,
           team_id: 1,
           strength: "all",
-          pp_share_pct_last5: 0.495
+          pp_share_pct_last5: 0.495,
+          pp_share_pct_player_pp_toi_last5: 149
         }
       ],
       selectedMetricFamily: "pp_usage"
@@ -534,16 +531,16 @@ describe("rollingPlayerValidationPayload metadata builders", () => {
   it("derives payload-only support traces for on_ice_sv_pct from oi_sa and oi_ga companions", () => {
     const metadata = __testables.inferMetricMetadata(
       {
-        on_ice_sv_pct_last5: 95,
-        oi_sa_total_last5: 100,
-        oi_ga_total_last5: 5
+        on_ice_sv_pct_season: 95,
+        oi_sa_avg_season: 100,
+        oi_ga_avg_season: 5
       },
-      "on_ice_sv_pct_last5",
+      "on_ice_sv_pct_season",
       "on_ice_context"
     );
 
     expect(metadata.supportFields).toEqual(
-      expect.arrayContaining(["oi_sa_total_last5", "oi_ga_total_last5"])
+      expect.arrayContaining(["oi_sa_avg_season", "oi_ga_avg_season"])
     );
 
     const focusedRow = __testables.buildFocusedRowComparisons({
@@ -553,9 +550,9 @@ describe("rollingPlayerValidationPayload metadata builders", () => {
         season: 20252026,
         team_id: 1,
         strength_state: "all",
-        on_ice_sv_pct_last5: 95,
-        oi_sa_total_last5: 100,
-        oi_ga_total_last5: 5
+        on_ice_sv_pct_season: 95,
+        oi_sa_avg_season: 100,
+        oi_ga_avg_season: 5
       },
       recomputedRow: {
         game_id: 3,
@@ -563,12 +560,12 @@ describe("rollingPlayerValidationPayload metadata builders", () => {
         season: 20252026,
         team_id: 1,
         strength: "all",
-        on_ice_sv_pct_last5: 94.5,
-        oi_sa_total_last5: 110,
-        oi_ga_total_last5: 6
+        on_ice_sv_pct_season: 94.5,
+        oi_sa_avg_season: 110,
+        oi_ga_avg_season: 6
       },
       selectedMetric: metadata,
-      selectedMetricField: "on_ice_sv_pct_last5",
+      selectedMetricField: "on_ice_sv_pct_season",
       readiness: {
         status: "READY_WITH_CAUTIONS",
         blockerReasons: [],
@@ -583,25 +580,71 @@ describe("rollingPlayerValidationPayload metadata builders", () => {
     expect(focusedRow?.supportComparisons).toEqual(
       expect.arrayContaining([
         {
-          field: "oi_sa_total_last5",
+          field: "oi_sa_avg_season",
           storedValue: 100,
           recomputedValue: 110,
           valuesMatch: false
         },
         {
-          field: "oi_ga_total_last5",
+          field: "oi_ga_avg_season",
           storedValue: 5,
           recomputedValue: 6,
           valuesMatch: false
         },
         {
-          field: "on_ice_sv_pct_saves_total_last5",
+          field: "on_ice_sv_pct_saves_avg_season",
           storedValue: 95,
           recomputedValue: 104,
           valuesMatch: false
         }
       ])
     );
+
+    // lastN oi_sa totals are dropped columns (S-G): neither they nor the saves
+    // derived from them are compared; the kept oi_ga total still is.
+    const lastNMetadata = __testables.inferMetricMetadata(
+      { on_ice_sv_pct_last5: 95, oi_sa_total_last5: 100, oi_ga_total_last5: 5 },
+      "on_ice_sv_pct_last5",
+      "on_ice_context"
+    );
+    const lastNFocusedRow = __testables.buildFocusedRowComparisons({
+      storedRow: {
+        game_id: 3,
+        game_date: "2026-03-11",
+        season: 20252026,
+        team_id: 1,
+        strength_state: "all",
+        on_ice_sv_pct_last5: 95,
+        oi_ga_total_last5: 5
+      },
+      recomputedRow: {
+        game_id: 3,
+        game_date: "2026-03-11",
+        season: 20252026,
+        team_id: 1,
+        strength: "all",
+        on_ice_sv_pct_last5: 94.5,
+        oi_sa_total_last5: 110,
+        oi_ga_total_last5: 6
+      },
+      selectedMetric: lastNMetadata,
+      selectedMetricField: "on_ice_sv_pct_last5",
+      readiness: {
+        status: "READY_WITH_CAUTIONS",
+        blockerReasons: [],
+        cautionReasons: [],
+        nextRecommendedAction: null
+      },
+      sourceTailFreshness: null,
+      latestStoredGameDate: "2026-03-11",
+      latestRecomputedGameDate: "2026-03-11"
+    });
+    expect(
+      lastNFocusedRow?.supportComparisons.map((entry: { field: string }) => entry.field)
+    ).toEqual(["oi_ga_total_last5"]);
+    expect(
+      lastNFocusedRow?.comparisonMatrix.map((entry: { field: string }) => entry.field)
+    ).not.toContain("oi_sa_total_last5");
   });
 
   it("derives payload-only weighted-rate support traces for lastN scopes from existing row companions", () => {
