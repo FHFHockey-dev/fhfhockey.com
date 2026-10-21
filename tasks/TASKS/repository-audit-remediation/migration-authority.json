@@ -971,6 +971,16 @@
       "migrationClass": "feature",
       "rolloutGate": "FORGE projection audit 2026-10-21, S-G (TJ decision: drop all 491): drops the 491 rolling_player_game_metrics columns no runtime code reads (rolling-column-inventory.json: wide_unread + pruned_unread + diag_sweep_only), matching web/lib/supabase/Upserts/rollingDroppedColumns.ts. Applied only after release R17 (master 8b99c22d2) shipped the writer that omits them. DROP COLUMN marks columns dropped; heap space returns on rewrite (pg_repack). Rollback: data is gone; columns can be re-added empty and refilled by a rolling recompute. File moved from its draft at tasks/artifacts/forge-projection-audit-2026-10-21/drafts/ to the ledger version.",
       "stateEvidence": "Production ledger version 20261021185034 name drop_unread_rolling_columns (applied 2026-10-21 by explicit TJ approval via session local_08a0bf1c, after R17 was READY and smoke-tested). Pre-check: no views, triggers or publications depend on the table; the two functions that reference it (truncate_rolling_player_game_metrics, forge_latest_rolling_rows) name none of the 491 columns. Readback: 623 live and 491 dropped attributes (was 1,114 live)."
+    },
+    {
+      "order": 97,
+      "path": "supabase/migrations/20261021230025_forge_served_forecast_ledger.sql",
+      "sha256": "825b9d5290c540e0505ba12bee13a39b578c21dfaf8a75e50b1fcbabbb9c6efe",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "FORGE projection audit 2026-10-21, S-B (TJ approved in session local_08a0bf1c: apply before the R19 deploy): table forge_served_forecast_ledger (served forecasts and naive controls, settled against WGO actuals; PK served_date, player_id, game_id, source) and the optional view forge_served_forecast_scoreboard_daily (security_invoker). RLS on, no policies; all privileges revoked from public, anon, authenticated and service_role, then select/insert/update on the table and select on the view granted to service_role (D4 pattern). Readers/writers: forge-served-forecast-snapshot, forge-served-forecast-settle, /api/v1/forge/scoreboard (release R19). SQL from tasks/artifacts/forge-projection-audit-2026-10-21/s-b-served-forecast-ledger-design.md section 7, with its begin/commit wrappers removed. Rollback: drop view, then drop table (no other object depends on them).",
+      "stateEvidence": "Production ledger version 20261021230025 name forge_served_forecast_ledger (applied 2026-10-21 by explicit TJ approval via session local_08a0bf1c). Readback: relrowsecurity true; table grants service_role INSERT/SELECT/UPDATE (plus owner postgres), view grant service_role SELECT; no anon or authenticated grants; 0 rows."
     }
   ],
   "sourceExtensionApproval": {
