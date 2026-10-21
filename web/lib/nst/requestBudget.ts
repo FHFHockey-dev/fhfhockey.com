@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, rmdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { NST_RATE_LIMIT_WINDOWS } from "lib/cron/nstRateLimitPolicy";
+import { canBurstNstRequests, NST_MIN_REQUEST_INTERVAL_MS, NST_RATE_LIMIT_WINDOWS } from "lib/cron/nstRateLimitPolicy";
 
 export class NstExecutionLimitError extends Error {
   constructor(message: string) {
@@ -16,6 +16,9 @@ export type NstRequestControl = {
   maxAttempts: number;
   attemptsStarted: number;
   minIntervalMs: number;
+  // Authoritative URL count for the entire job, including work outside this
+  // invocation's chunk. Omission never authorizes bursting.
+  plannedRequestCount?: number;
 };
 
 type Attempt = { id: string; urlHash: string; startedAt: number; intervalMs: number; active: boolean };
@@ -84,8 +87,11 @@ export async function withNstRequestBudget<T>(
   store: NstBudgetStore = defaultStore
 ): Promise<T> {
   const parsed = new URL(url);
-  parsed.searchParams.delete("key");
+  for (const key of Array.from(parsed.searchParams.keys())) {
+    if (key.toLowerCase() === "key") parsed.searchParams.delete(key);
+  }
   parsed.searchParams.sort();
+  parsed.hash = "";
   const urlHash = createHash("sha256").update(parsed.toString()).digest("hex");
   const id = randomUUID();
   let pending: Promise<T> | undefined;
@@ -100,8 +106,12 @@ export async function withNstRequestBudget<T>(
       }
       ledger.attempts = ledger.attempts.filter((entry) => entry.active || now - entry.startedAt <= HOUR_MS);
       let waitMs = ledger.attempts.some((entry) => entry.active && entry.urlHash === urlHash) ? 100 : 0;
+      const intervalMs = control.minIntervalMs === 0 && canBurstNstRequests(control.plannedRequestCount ?? NaN)
+        ? 0
+        : Math.max(NST_MIN_REQUEST_INTERVAL_MS,
+          Number.isFinite(control.minIntervalMs) ? control.minIntervalMs : NST_MIN_REQUEST_INTERVAL_MS);
       const last = ledger.attempts.at(-1);
-      if (last) waitMs = Math.max(waitMs, last.startedAt + Math.max(last.intervalMs, control.minIntervalMs) - now);
+      if (last) waitMs = Math.max(waitMs, last.startedAt + Math.max(last.intervalMs, intervalMs) - now);
       for (const window of NST_RATE_LIMIT_WINDOWS) {
         const inWindow = ledger.attempts.filter((entry) => now - entry.startedAt <= window.windowMs);
         if (inWindow.length >= window.maxRequests) {
@@ -109,7 +119,7 @@ export async function withNstRequestBudget<T>(
         }
       }
       if (waitMs > 0) return waitMs;
-      const entry: Attempt = { id, urlHash, startedAt: 0, intervalMs: control.minIntervalMs, active: true };
+      const entry: Attempt = { id, urlHash, startedAt: 0, intervalMs, active: true };
       ledger.attempts.push(entry);
       save();
       control.attemptsStarted++;

@@ -258,6 +258,41 @@ describe("update-nst-team-daily incremental queue", () => {
     expect(res.body.complete).toBe(true);
   });
 
+  it("preserves a single requested reverse date on a UTC host", async () => {
+    const res = await invoke({
+      runMode: "reverse",
+      startDate: "2026-10-18",
+      endDate: "2026-10-18",
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(fetchedDates()).toEqual(["2026-10-18"]);
+  });
+
+  it("includes both reverse range boundaries on a UTC host", async () => {
+    const res = await invoke({
+      runMode: "reverse",
+      startDate: "2026-10-10",
+      endDate: "2026-10-08",
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(fetchedDates()).toEqual(["2026-10-10", "2026-10-09"]);
+    expect(res.body.summary.totalDates).toBe(3);
+    expect(res.body.nextStartDate).toBe("2026-10-08");
+  });
+
+  it("clamps a future reverse start to today's calendar date on a UTC host", async () => {
+    const res = await invoke({
+      runMode: "reverse",
+      startDate: "2026-10-20",
+      endDate: "2026-10-18",
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(fetchedDates()).toEqual(["2026-10-18"]);
+  });
+
   it("leaves time for a terminal audit and resumes a date after slow NST responses", async () => {
     schedule(["2026-10-07", "2026-10-16", "2026-10-17", "2026-10-18"]);
     storeComplete("2026-10-07", "2026-10-16");

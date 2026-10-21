@@ -1,6 +1,7 @@
 // @ts-expect-error memory-cache has no declarations in this project
 import cacheData from "memory-cache";
 import { NstExecutionLimitError, withNstRequestBudget, type NstRequestControl } from "./requestBudget";
+import { NST_MIN_REQUEST_INTERVAL_MS } from "lib/cron/nstRateLimitPolicy";
 
 export const NST_BASE_URL = "https://data.naturalstattrick.com";
 export const NST_KEY_ENV_NAME = "NST_KEY";
@@ -257,9 +258,7 @@ function withRequestControl<T extends Omit<NstRequestOptions, "path" | "query">>
       deadlineAt: Date.now() + 220_000,
       maxAttempts: (options.retries ?? NST_DEFAULT_RETRIES) + 1,
       attemptsStarted: 0,
-      // Other callers retain their existing pacing/parallelism. Gamelog passes
-      // its day-aperture interval explicitly; all clients share rolling budgets.
-      minIntervalMs: 0
+      minIntervalMs: NST_MIN_REQUEST_INTERVAL_MS
     }
   };
 }

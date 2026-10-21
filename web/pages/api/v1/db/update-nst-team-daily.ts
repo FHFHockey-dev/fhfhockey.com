@@ -574,7 +574,7 @@ function buildDateQueue(
     }
     let cursor = start;
     while (!isBefore(cursor, end)) {
-      dates.push(formatEstDate(cursor));
+      dates.push(format(cursor, "yyyy-MM-dd"));
       cursor = addDays(cursor, -1);
     }
     return dates;

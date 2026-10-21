@@ -222,10 +222,26 @@ describe("nst client", () => {
     expect(admission).toHaveBeenCalledTimes(2);
     expect(admission.mock.calls[0][1]).toBe(admission.mock.calls[1][1]);
     expect(admission.mock.calls[1][1].attemptsStarted).toBe(2);
+    expect(admission.mock.calls[1][1].minIntervalMs).toBe(21_000);
+    expect(admission.mock.calls[1][1].plannedRequestCount).toBeUndefined();
     expect(result.text).toBe("<html>ok</html>");
     expect(result.response.status).toBe(200);
     expect(result.redactedUrl).toContain("key=%5BREDACTED%5D");
     expect(result.redactedUrl).not.toContain("retry-key");
+  });
+
+  it("forwards authoritative full-job count and one shared control through retries", async () => {
+    vi.stubEnv("NST_KEY", "synthetic-key");
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response("retry", { status: 500 }))
+      .mockResolvedValueOnce(new Response("ok", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const requestControl = { deadlineAt: Date.now() + 60_000, maxAttempts: 2,
+      attemptsStarted: 0, minIntervalMs: 0, plannedRequestCount: 39 };
+    await fetchNstText({ path: "playerreport.php", retries: 1, requestControl });
+    expect(admission.mock.calls.map((call) => call[1])).toEqual([requestControl, requestControl]);
+    expect(requestControl.attemptsStarted).toBe(2);
+    expect(requestControl.plannedRequestCount).toBe(39);
   });
 
   it("redacts query-string auth tokens from surfaced response text", async () => {

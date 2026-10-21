@@ -32,6 +32,7 @@ describe("nstRateLimitPolicy", () => {
   it("allows at most 39 requests in a burst", () => {
     expect(NST_MAX_BURST_REQUESTS).toBe(39);
     expect(canBurstNstRequests(10)).toBe(true);
+    for (const count of [0, -1, 1.5, NaN, Infinity]) expect(canBurstNstRequests(count)).toBe(false);
     expect(canBurstNstRequests(39)).toBe(true);
     expect(canBurstNstRequests(40)).toBe(false);
     expect(canBurstNstRequests(80)).toBe(false);
@@ -57,13 +58,13 @@ describe("nstRateLimitPolicy", () => {
     );
   });
 
-  it("accepts a modest delay when it brings the plan under every limit", () => {
+  it("requires 21 seconds for a full job of 40 or more even when shorter pacing fits the windows", () => {
     const assessment = assessNstRequestPlan({
       requestCount: 81,
       intervalMs: 4_000
     });
 
-    expect(assessment.isCompliant).toBe(true);
+    expect(assessment.isCompliant).toBe(false);
     expect(assessment.windowCounts).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -99,7 +100,7 @@ describe("nstRateLimitPolicy", () => {
     const assessment = selectNstSafeInterval(81, [0, 1_000, 4_000, 21_000]);
 
     expect(assessment).not.toBeNull();
-    expect(assessment?.intervalMs).toBe(4_000);
+    expect(assessment?.intervalMs).toBe(21_000);
     expect(assessment?.isCompliant).toBe(true);
   });
 
