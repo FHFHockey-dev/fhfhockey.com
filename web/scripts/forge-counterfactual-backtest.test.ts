@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
-  bayesSplitRates, clusterBootstrap, counterfactualHeads, prepareRows, renderReport, runCounterfactualBacktest, summarize, usedRates, VARIANTS,
+  allocatePpToi, bayesSplitRates, buildOfficialPp, clusterBootstrap, counterfactualHeads, scalePpLine, prepareRows, renderReport, runCounterfactualBacktest, summarize, usedRates, VARIANTS,
   type PreparedRow,
 } from "./forge-counterfactual-backtest";
 import { computeSkaterRestScheduleAdjustments, resolveSkaterConversionRates } from "../lib/projections/calculators/skater-adjustments";
@@ -206,5 +206,56 @@ describe("forge counterfactual backtest", () => {
     expect(a).toEqual(b);
     expect(a.clusters).toBe(2);
     expect(a.dMaeCi[0]).toBeLessThanOrEqual(a.dMaeCi[1]);
+  });
+
+  it("PP usage: official PP TOI 240/60 s splits the new team target 80/20", () => {
+    const alloc = allocatePpToi([{ playerId: 1, weight: 240, fallbackSeconds: 500 }, { playerId: 2, weight: 60, fallbackSeconds: 500 }], 1000);
+    expect(alloc.get(1)).toBeCloseTo(800, 10);
+    expect(alloc.get(2)).toBeCloseTo(200, 10);
+    // A player without official history keeps share x old target; the rest is split by official PP TOI.
+    const mixed = allocatePpToi([{ playerId: 1, weight: 240, fallbackSeconds: 0 }, { playerId: 2, weight: 60, fallbackSeconds: 0 },
+      { playerId: 3, weight: null, fallbackSeconds: 100 }], 1100);
+    expect([mixed.get(1), mixed.get(2), mixed.get(3)]).toEqual([800, 200, 100]);
+  });
+
+  it("PP usage: PP shots, goals and assists scale with the PP TOI ratio", () => {
+    const old = { PP_TOI: 120, PP_SHOTS: 0.6, PP_GOALS: 0.09, PP_ASSISTS: 0.12 };
+    const next = scalePpLine(old, 180, { shotsPerSecond: 0, goalsPerShot: 0, assistsPerShot: 0 });
+    expect(next.PP_TOI).toBe(180);
+    for (const h of ["PP_SHOTS", "PP_GOALS", "PP_ASSISTS"] as const) expect(next[h] / old[h]).toBeCloseTo(1.5, 12);
+    expect(scalePpLine({ ...old, PP_TOI: 0 }, 100, { shotsPerSecond: 0.005, goalsPerShot: 0.15, assistsPerShot: 0.2 }))
+      .toEqual({ PP_TOI: 100, PP_SHOTS: 0.5, PP_GOALS: 0.075, PP_ASSISTS: 0.1 });
+  });
+
+  it("PP usage: fixture targets use the last 10 regular-season games and the report renders", () => {
+    const pp = { ppActuals: load("pp_actuals"), ppUsage: load("pp_usage"), wgoPp: load("wgo_pp"), teamStrength: load("team_strength") };
+    const team = new Map<number, number>([[101, 1], [102, 1], [103, 1], [201, 2], [202, 2], [203, 2], [301, 3], [302, 3], [303, 3], [304, 3]]);
+    const official = buildOfficialPp(pp.wgoPp, pp.teamStrength, team);
+    const sums = (ids: number[]) => ids.map((g) => official.teamGames.get(`1:${g}`)!.sum);
+    expect(official.teamGames.has("1:899")).toBe(false); // preseason (game_type 1) excluded
+    const expected = sums([901, 903, 905]).reduce((a, b) => a + b, 0) / 3;
+    expect(official.teamTarget(1, "2026-10-13")).toBeCloseTo(expected, 10);
+    // Player weight = mean over the team's last-10 games in which he has a row (preseason 899 excluded).
+    const own = [901, 903, 905].map((g) => load("wgo_pp").find((w: any) => w.game_id === g && w.player_id === 101).pp_toi);
+    expect(official.playerPerGame(101, 1, "2026-10-13")).toBeCloseTo(own.reduce((a: number, b: number) => a + b, 0) / 3, 10);
+    expect(official.playerPerGame(303, 3, "2026-10-14")).toBeNull();
+    expect(official.playerPerGame(101, 2, "2026-10-13")).toBeCloseTo(own[0], 10); // only 901 is a team-2 game with a 101 row
+    const { rows, checks, selected, ppReport } = prepareRows({ ...inputs(), pp });
+    expect(checks.pp_player_no_official_history_fallback).toBeGreaterThan(0);
+    const t1 = ppReport!.targets.find((x) => x.gameId === 1001 && x.teamId === 1)!;
+    expect(t1.newTarget).toBeCloseTo(expected, 10);
+    // Team 1 at 10-13: every player has history, so the projected players' new PP TOI sums to the new target.
+    const team1 = rows.filter((r) => r.gameId === 1001 && r.ppBase!.teamId === 1);
+    expect(team1.reduce((s, r) => s + r.pp!.preds.pp1.PP_TOI, 0)).toBeCloseTo(t1.newTarget, 8);
+    for (const r of rows.filter((x) => x.pp)) {
+      const k = r.pp!.preds.pp1.PP_TOI / r.pp!.preds.baseline.PP_TOI, b = r.ppBase!;
+      expect(r.pp!.preds.pp1.PP_GOALS).toBeCloseTo((b.gPp ?? 0) * k, 10);
+      expect(r.ppPreds!.pp1.G).toBeCloseTo((b.gEs ?? 0) + (b.gPp ?? 0) * k, 10);
+      expect(r.pp!.preds.pp2.PP_ASSISTS).toBeCloseTo(((b.aPp ?? 0) + b.ppAssistDelta) * k, 10);
+    }
+    const report = renderReport({ rows, checks, selected, ppReport, inputs: [], seed: 1, reps: 50 });
+    for (const section of ["## PP usage (official PP targets)", "## PP heads (vs S5)", "## PP calibration: baseline-G top decile", "| pp2 | PP_ASSISTS |", "| pp1 | G |"])
+      expect(report).toContain(section);
+    expect(report).toContain("13/13 agree within 1 s");
   });
 });

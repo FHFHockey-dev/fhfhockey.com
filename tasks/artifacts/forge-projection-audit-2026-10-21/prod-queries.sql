@@ -188,3 +188,14 @@ select p.run_id, p.game_id, p.player_id, p.proj_toi_es_seconds, p.proj_toi_pp_se
        p.uncertainty->'model'->'skater_selection'->'es_role' as es_role
 from forge_player_projections p
 where p.horizon_games = 1 and p.as_of_date between '2026-10-13' and '2026-10-21';
+
+-- ===== PP minutes diagnosis, round 2 (proposed 2026-10-21; once each via read-only psql if TJ approves) =====
+-- S8 team strength rows behind the PP targets, with game type (~500 rows): does the last-10 window include preseason, and what PK share is left out?
+select s.team_id, s.game_id, s.game_date, s.toi_es_seconds, s.toi_pp_seconds, s.toi_pk_seconds, s.shots_es, s.shots_pp, g.type as game_type
+from forge_team_game_strength s join games g on g.id = s.game_id
+where s.game_date between '2026-09-15' and '2026-10-21'
+order by s.team_id, s.game_date;
+-- S7 WGO season-to-date PP TOI per player per date before each cohort game (~3,000 rows): the deployment-prior evidence for the allocation counterfactual
+select player_id, date, game_id, season_id, pp_toi_per_game, pp_toi
+from wgo_skater_stats
+where date between '2026-09-15' and '2026-10-21';

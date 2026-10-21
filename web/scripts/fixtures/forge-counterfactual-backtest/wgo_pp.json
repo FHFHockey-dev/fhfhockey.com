@@ -1,0 +1,346 @@
+[
+ {
+  "player_id": 101,
+  "date": "2026-10-05",
+  "game_id": 899,
+  "season_id": 20262027,
+  "pp_toi_per_game": 600,
+  "pp_toi": 600
+ },
+ {
+  "player_id": 102,
+  "date": "2026-10-05",
+  "game_id": 899,
+  "season_id": 20262027,
+  "pp_toi_per_game": 600,
+  "pp_toi": 600
+ },
+ {
+  "player_id": 103,
+  "date": "2026-10-05",
+  "game_id": 899,
+  "season_id": 20262027,
+  "pp_toi_per_game": 600,
+  "pp_toi": 600
+ },
+ {
+  "player_id": 201,
+  "date": "2026-10-05",
+  "game_id": 899,
+  "season_id": 20262027,
+  "pp_toi_per_game": 600,
+  "pp_toi": 600
+ },
+ {
+  "player_id": 202,
+  "date": "2026-10-05",
+  "game_id": 899,
+  "season_id": 20262027,
+  "pp_toi_per_game": 600,
+  "pp_toi": 600
+ },
+ {
+  "player_id": 203,
+  "date": "2026-10-05",
+  "game_id": 899,
+  "season_id": 20262027,
+  "pp_toi_per_game": 600,
+  "pp_toi": 600
+ },
+ {
+  "player_id": 101,
+  "date": "2026-10-08",
+  "game_id": 901,
+  "season_id": 20262027,
+  "pp_toi_per_game": 110,
+  "pp_toi": 110
+ },
+ {
+  "player_id": 102,
+  "date": "2026-10-08",
+  "game_id": 901,
+  "season_id": 20262027,
+  "pp_toi_per_game": 150,
+  "pp_toi": 150
+ },
+ {
+  "player_id": 103,
+  "date": "2026-10-08",
+  "game_id": 901,
+  "season_id": 20262027,
+  "pp_toi_per_game": 190,
+  "pp_toi": 190
+ },
+ {
+  "player_id": 201,
+  "date": "2026-10-08",
+  "game_id": 901,
+  "season_id": 20262027,
+  "pp_toi_per_game": 110,
+  "pp_toi": 110
+ },
+ {
+  "player_id": 202,
+  "date": "2026-10-08",
+  "game_id": 901,
+  "season_id": 20262027,
+  "pp_toi_per_game": 150,
+  "pp_toi": 150
+ },
+ {
+  "player_id": 203,
+  "date": "2026-10-08",
+  "game_id": 901,
+  "season_id": 20262027,
+  "pp_toi_per_game": 190,
+  "pp_toi": 190
+ },
+ {
+  "player_id": 301,
+  "date": "2026-10-09",
+  "game_id": 903,
+  "season_id": 20262027,
+  "pp_toi_per_game": 100,
+  "pp_toi": 100
+ },
+ {
+  "player_id": 302,
+  "date": "2026-10-09",
+  "game_id": 903,
+  "season_id": 20262027,
+  "pp_toi_per_game": 140,
+  "pp_toi": 140
+ },
+ {
+  "player_id": 304,
+  "date": "2026-10-09",
+  "game_id": 903,
+  "season_id": 20262027,
+  "pp_toi_per_game": 60,
+  "pp_toi": 60
+ },
+ {
+  "player_id": 101,
+  "date": "2026-10-09",
+  "game_id": 903,
+  "season_id": 20262027,
+  "pp_toi_per_game": 100,
+  "pp_toi": 100
+ },
+ {
+  "player_id": 102,
+  "date": "2026-10-09",
+  "game_id": 903,
+  "season_id": 20262027,
+  "pp_toi_per_game": 140,
+  "pp_toi": 140
+ },
+ {
+  "player_id": 103,
+  "date": "2026-10-09",
+  "game_id": 903,
+  "season_id": 20262027,
+  "pp_toi_per_game": 180,
+  "pp_toi": 180
+ },
+ {
+  "player_id": 101,
+  "date": "2026-10-10",
+  "game_id": 905,
+  "season_id": 20262027,
+  "pp_toi_per_game": 120,
+  "pp_toi": 120
+ },
+ {
+  "player_id": 102,
+  "date": "2026-10-10",
+  "game_id": 905,
+  "season_id": 20262027,
+  "pp_toi_per_game": 160,
+  "pp_toi": 160
+ },
+ {
+  "player_id": 103,
+  "date": "2026-10-10",
+  "game_id": 905,
+  "season_id": 20262027,
+  "pp_toi_per_game": 200,
+  "pp_toi": 200
+ },
+ {
+  "player_id": 301,
+  "date": "2026-10-10",
+  "game_id": 905,
+  "season_id": 20262027,
+  "pp_toi_per_game": 120,
+  "pp_toi": 120
+ },
+ {
+  "player_id": 302,
+  "date": "2026-10-10",
+  "game_id": 905,
+  "season_id": 20262027,
+  "pp_toi_per_game": 160,
+  "pp_toi": 160
+ },
+ {
+  "player_id": 304,
+  "date": "2026-10-10",
+  "game_id": 905,
+  "season_id": 20262027,
+  "pp_toi_per_game": 80,
+  "pp_toi": 80
+ },
+ {
+  "player_id": 201,
+  "date": "2026-10-11",
+  "game_id": 906,
+  "season_id": 20262027,
+  "pp_toi_per_game": 100,
+  "pp_toi": 100
+ },
+ {
+  "player_id": 202,
+  "date": "2026-10-11",
+  "game_id": 906,
+  "season_id": 20262027,
+  "pp_toi_per_game": 140,
+  "pp_toi": 140
+ },
+ {
+  "player_id": 203,
+  "date": "2026-10-11",
+  "game_id": 906,
+  "season_id": 20262027,
+  "pp_toi_per_game": 180,
+  "pp_toi": 180
+ },
+ {
+  "player_id": 301,
+  "date": "2026-10-11",
+  "game_id": 906,
+  "season_id": 20262027,
+  "pp_toi_per_game": 100,
+  "pp_toi": 100
+ },
+ {
+  "player_id": 302,
+  "date": "2026-10-11",
+  "game_id": 906,
+  "season_id": 20262027,
+  "pp_toi_per_game": 140,
+  "pp_toi": 140
+ },
+ {
+  "player_id": 304,
+  "date": "2026-10-11",
+  "game_id": 906,
+  "season_id": 20262027,
+  "pp_toi_per_game": 60,
+  "pp_toi": 60
+ },
+ {
+  "player_id": 101,
+  "date": "2026-10-13",
+  "game_id": 1001,
+  "season_id": 20262027,
+  "pp_toi_per_game": 120,
+  "pp_toi": 120
+ },
+ {
+  "player_id": 102,
+  "date": "2026-10-13",
+  "game_id": 1001,
+  "season_id": 20262027,
+  "pp_toi_per_game": 160,
+  "pp_toi": 160
+ },
+ {
+  "player_id": 103,
+  "date": "2026-10-13",
+  "game_id": 1001,
+  "season_id": 20262027,
+  "pp_toi_per_game": 200,
+  "pp_toi": 200
+ },
+ {
+  "player_id": 201,
+  "date": "2026-10-13",
+  "game_id": 1001,
+  "season_id": 20262027,
+  "pp_toi_per_game": 120,
+  "pp_toi": 120
+ },
+ {
+  "player_id": 202,
+  "date": "2026-10-13",
+  "game_id": 1001,
+  "season_id": 20262027,
+  "pp_toi_per_game": 160,
+  "pp_toi": 160
+ },
+ {
+  "player_id": 203,
+  "date": "2026-10-13",
+  "game_id": 1001,
+  "season_id": 20262027,
+  "pp_toi_per_game": 200,
+  "pp_toi": 200
+ },
+ {
+  "player_id": 301,
+  "date": "2026-10-14",
+  "game_id": 1002,
+  "season_id": 20262027,
+  "pp_toi_per_game": 100,
+  "pp_toi": 100
+ },
+ {
+  "player_id": 302,
+  "date": "2026-10-14",
+  "game_id": 1002,
+  "season_id": 20262027,
+  "pp_toi_per_game": 140,
+  "pp_toi": 140
+ },
+ {
+  "player_id": 303,
+  "date": "2026-10-14",
+  "game_id": 1002,
+  "season_id": 20262027,
+  "pp_toi_per_game": 180,
+  "pp_toi": 180
+ },
+ {
+  "player_id": 304,
+  "date": "2026-10-14",
+  "game_id": 1002,
+  "season_id": 20262027,
+  "pp_toi_per_game": 60,
+  "pp_toi": 60
+ },
+ {
+  "player_id": 201,
+  "date": "2026-10-14",
+  "game_id": 1002,
+  "season_id": 20262027,
+  "pp_toi_per_game": 100,
+  "pp_toi": 100
+ },
+ {
+  "player_id": 202,
+  "date": "2026-10-14",
+  "game_id": 1002,
+  "season_id": 20262027,
+  "pp_toi_per_game": 140,
+  "pp_toi": 140
+ },
+ {
+  "player_id": 203,
+  "date": "2026-10-14",
+  "game_id": 1002,
+  "season_id": 20262027,
+  "pp_toi_per_game": 180,
+  "pp_toi": 180
+ }
+]

@@ -140,7 +140,14 @@ export function counterfactualHeads(args: { base: UsedRates; final: Line; weight
 export type PreparedRow = { gameId: number; playerId: number; date: string; gitSha: string | null; stamped: boolean;
   teamRest: number | null; oppRest: number | null; heads: Head[]; actual: Line; preds: Record<Variant, Line>; decomp: AssistDecomp;
   /** Counterfactual organic (pre-bootstrap) assists per strength, per variant. */
-  organicA: Record<Variant, { es: number; pp: number }> };
+  organicA: Record<Variant, { es: number; pp: number }>;
+  /** Stored columns and the PP-per-goal assist delta, used by the optional PP-usage counterfactual. */
+  ppBase?: PpBase; ppPreds?: Record<PpVariant, Line>; pp?: { teamId: number; heads: PpHead[]; actual: PpLine; preds: Record<"baseline" | PpVariant, PpLine> } };
+export type PpBase = { runId: string; teamId: number; gEs: number | null; gPp: number | null; aEs: number | null; aPp: number | null;
+  sPp: number | null; ppAssistDelta: number };
+/** Rows scored by summarize / clusterBootstrap: any head and variant names. */
+export type ScoredRow = { gameId: number; playerId: number; heads: readonly string[]; actual: Record<string, number>;
+  preds: Record<string, Record<string, number>> };
 /** Baseline assist decomposition: final = (p*org + W*prior)/W, prior = (W*final - p*org)/W. */
 export type AssistDecomp = { p: number; W: number; orgA: number; priorA: number; finalA: number; bindEs: boolean; bindPp: boolean };
 export type Checks = Record<string, number>;
@@ -162,7 +169,7 @@ export function selectRuns(runs: Json[]) {
 
 /** One stored row -> four variants, after the self-checks. Returns a drop reason on failure. */
 export function evaluateRow(raw: Json, isHome: boolean, checks: Checks):
-  { heads: Head[]; preds: Record<Variant, Line>; decomp: AssistDecomp; organicA: PreparedRow["organicA"] } | { drop: string } {
+  { heads: Head[]; preds: Record<Variant, Line>; decomp: AssistDecomp; organicA: PreparedRow["organicA"]; ppAssistDelta: number } | { drop: string } {
   if (raw.rollout_mode === "candidate") return { drop: "candidate_mode_not_modelled" };
   const cb = obj(raw.current_baseline), rest = obj(raw.rest_schedule), conv = obj(raw.conversion_rates);
   const sw = num(raw.sample_weight);
@@ -221,10 +228,14 @@ export function evaluateRow(raw: Json, isHome: boolean, checks: Checks):
     }
   }
   for (const k of HEADS) if (!avail[k]) bump(checks, `head_withheld_${k}`);
-  return { heads: HEADS.filter((k) => avail[k]), preds, decomp, organicA };
+  // pp2: the PP half of the per-goal assist refit (legacy shrink kept), as a change in final A (= final PP assists).
+  const ppDen: AssistDenominator = { es: "per_two_goals", pp: "per_goal" };
+  const ppOut = counterfactualHeads({ base, final, weights, rates, restScale: { G: 1, A: 1, PPP: 1 }, capPpp: false,
+    ratesPrime: usedRates(split(legacyRest.goalRateMultiplier, legacyRest.assistRateMultiplier, ppDen), sw, trend, teammate, false, { assistDenominator: ppDen }) });
+  return { heads: HEADS.filter((k) => avail[k]), preds, decomp, organicA, ppAssistDelta: ppOut.pred.A - preds.baseline.A };
 }
 
-export function prepareRows(input: { runs: Json[]; projections: Json[]; actuals: Json[]; games: Json[] }) {
+export function prepareRows(input: { runs: Json[]; projections: Json[]; actuals: Json[]; games: Json[]; pp?: PpInputs }) {
   const checks: Checks = { projection_rows: input.projections.length, drop_used_rate_mismatch: 0,
     drop_rest_multiplier_mismatch: 0, drop_mask_disagrees_with_support: 0, negative_residual_G: 0, negative_residual_A: 0, negative_residual_PPP: 0 };
   const selected = selectRuns(input.runs);
@@ -253,13 +264,16 @@ export function prepareRows(input: { runs: Json[]; projections: Json[]; actuals:
     if (typeof storedHome === "boolean" && storedHome !== isHome) bump(checks, "info_is_home_ne_games");
     rows.push({ gameId: Number(raw.game_id), playerId: Number(raw.player_id), date, gitSha: run.git_sha ?? null,
       stamped: isStamped(run.git_sha), teamRest, oppRest, heads: result.heads, preds: result.preds, decomp: result.decomp, organicA: result.organicA,
-      actual: { G: num(actual.goals) ?? 0, A: num(actual.assists) ?? 0, PPP: num(actual.pp_points) ?? 0 } });
+      actual: { G: num(actual.goals) ?? 0, A: num(actual.assists) ?? 0, PPP: num(actual.pp_points) ?? 0 },
+      ppBase: { runId: String(raw.run_id), teamId, gEs: num(raw.proj_goals_es), gPp: num(raw.proj_goals_pp), aEs: num(raw.proj_assists_es),
+        aPp: num(raw.proj_assists_pp), sPp: num(raw.proj_shots_pp), ppAssistDelta: result.ppAssistDelta } });
   }
   checks.rows_used = rows.length;
-  return { rows, checks, selected };
+  const ppReport = input.pp ? applyPpUsage(rows, input.projections, input.pp, checks) : null;
+  return { rows, checks, selected, ppReport };
 }
 
-export function summarize(rows: PreparedRow[], variant: Variant, head: Head) {
+export function summarize(rows: readonly ScoredRow[], variant: string, head: string) {
   const use = rows.filter((r) => r.heads.includes(head));
   const err = use.map((r) => r.preds[variant][head] - r.actual[head]);
   const n = use.length, sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
@@ -278,7 +292,7 @@ export function mulberry32(seed: number) {
 }
 
 /** Paired cluster bootstrap by game_id: same resampled games for every variant/head under a seed. */
-export function clusterBootstrap(rows: PreparedRow[], variant: Variant, head: Head, seed: number, reps = 2000) {
+export function clusterBootstrap(rows: readonly ScoredRow[], variant: string, head: string, seed: number, reps = 2000) {
   type Cluster = { n: number; dAbs: number; dErr: number; sse0: number; sse1: number };
   const clusters = new Map<number, Cluster>();
   for (const r of rows) {
@@ -305,7 +319,7 @@ export function clusterBootstrap(rows: PreparedRow[], variant: Variant, head: He
     dBias: total.n ? total.dErr / total.n : NaN, dBiasCi: ci(bias), dRmse: total.n ? dRmse(total) : NaN, dRmseCi: ci(rmse) };
 }
 
-export function topDecile(rows: PreparedRow[], variant: Variant) {
+export function topDecile<T extends ScoredRow>(rows: T[], variant: string): T[] {
   const g = rows.filter((r) => r.heads.includes("G")).sort((a, b) => b.preds[variant].G - a.preds[variant].G || a.playerId - b.playerId);
   return g.slice(0, Math.ceil(g.length / 10));
 }
@@ -313,28 +327,34 @@ export function topDecile(rows: PreparedRow[], variant: Variant) {
 const f = (x: number, d = 4) => (Number.isFinite(x) ? x.toFixed(d) : "n/a");
 const signed = (x: number, d = 4) => (Number.isFinite(x) ? `${x >= 0 ? "+" : ""}${x.toFixed(d)}` : "n/a");
 
-function metricsTable(rows: PreparedRow[], seed: number, reps: number) {
+function metricsTable(rows: readonly ScoredRow[], seed: number, reps: number, variants: readonly string[], heads: readonly string[] = HEADS) {
   const out = ["| variant | head | n | MAE | bias | RMSE | ΔMAE [95% CI] | Δbias [95% CI] | ΔRMSE [95% CI] |", "|---|---|---|---|---|---|---|---|---|"];
   const delta = (d: number, ci: number[]) => `${signed(d)} [${signed(ci[0])}, ${signed(ci[1])}]`;
-  for (const head of HEADS) for (const v of VARIANTS) {
-    const s = summarize(rows, v.key, head);
-    const b = v.key === "baseline" ? null : clusterBootstrap(rows, v.key, head, seed, reps);
-    out.push(`| ${v.key} | ${head} | ${s.n} | ${f(s.mae)} | ${signed(s.bias)} | ${f(s.rmse)} | ${b ? delta(b.dMae, b.dMaeCi) : "—"} | ${
+  for (const head of heads) for (const v of variants) {
+    const s = summarize(rows, v, head);
+    const b = v === "baseline" ? null : clusterBootstrap(rows, v, head, seed, reps);
+    out.push(`| ${v} | ${head} | ${s.n} | ${f(s.mae)} | ${signed(s.bias)} | ${f(s.rmse)} | ${b ? delta(b.dMae, b.dMaeCi) : "—"} | ${
       b ? delta(b.dBias, b.dBiasCi) : "—"} | ${b ? delta(b.dRmse, b.dRmseCi) : "—"} |`);
   }
   return out.join("\n");
 }
 
-function decileTable(rows: PreparedRow[]) {
+const calibrationRow = (rows: readonly ScoredRow[], v: string, head: string, bin: string) => {
+  const s = summarize(rows, v, head);
+  return `| ${v} | ${head} | ${bin} | ${s.n} | ${f(s.sumActual / s.sumPred, 3)} | ${f(s.sumPred / s.n)} | ${f(s.sumActual / s.n)} |`;
+};
+const CALIBRATION_HEADER = ["| variant | head | bin | n | Σactual/Σpred | mean pred | mean actual |", "|---|---|---|---|---|---|---|"];
+
+function decileTable(rows: ScoredRow[], variants: readonly string[]) {
   const fixed = topDecile(rows, "baseline");
-  const out = ["| variant | head | bin | n | Σactual/Σpred | mean pred | mean actual |", "|---|---|---|---|---|---|---|"];
-  for (const v of VARIANTS) {
+  const out = [...CALIBRATION_HEADER];
+  for (const v of variants) {
     for (const head of HEADS) {
-      const s = summarize(fixed, v.key, head);
-      out.push(`| ${v.key} | ${head} | baseline-G top decile | ${s.n} | ${f(s.sumActual / s.sumPred, 3)} | ${f(s.sumPred / s.n)} | ${f(s.sumActual / s.n)} |`);
+      const s = summarize(fixed, v, head);
+      out.push(`| ${v} | ${head} | baseline-G top decile | ${s.n} | ${f(s.sumActual / s.sumPred, 3)} | ${f(s.sumPred / s.n)} | ${f(s.sumActual / s.n)} |`);
     }
-    const own = summarize(topDecile(rows, v.key), v.key, "G");
-    out.push(`| ${v.key} | G | own top decile | ${own.n} | ${f(own.sumActual / own.sumPred, 3)} | ${f(own.sumPred / own.n)} | ${f(own.sumActual / own.n)} |`);
+    const own = summarize(topDecile(rows, v), v, "G");
+    out.push(`| ${v} | G | own top decile | ${own.n} | ${f(own.sumActual / own.sumPred, 3)} | ${f(own.sumPred / own.n)} | ${f(own.sumActual / own.n)} |`);
   }
   return out.join("\n");
 }
@@ -357,16 +377,21 @@ function assistDecompositionSection(rows: PreparedRow[]) {
 }
 
 export function renderReport(args: { rows: PreparedRow[]; checks: Checks; selected: Map<string, Json>;
-  inputs: { name: string; path: string; sha256: string }[]; seed: number; reps: number }) {
-  const { rows, seed, reps } = args;
-  const slices: [string, PreparedRow[]][] = [
-    ["B2B team (stored team_rest_days = 1)", rows.filter((r) => r.teamRest === 1)],
-    ["B2B opponent (stored opponent_rest_days = 1)", rows.filter((r) => r.oppRest === 1)],
-    ["Stratum: stamped git_sha", rows.filter((r) => r.stamped)],
-    ["Stratum: null/local git_sha", rows.filter((r) => !r.stamped)],
+  inputs: { name: string; path: string; sha256: string }[]; seed: number; reps: number; ppReport?: PpReport | null }) {
+  const { rows, seed, reps, ppReport } = args;
+  // With PP inputs, pp1/pp2 join every G/A/PPP table (rows without a PP counterfactual keep baseline values).
+  const variants: string[] = [...VARIANTS.map((v) => v.key), ...(ppReport ? PP_VARIANTS : [])];
+  const view = rows.map((r) => (ppReport ? { ...r, preds: { ...r.preds, ...(r.ppPreds ?? { pp1: r.preds.baseline, pp2: r.preds.baseline }) } } : r));
+  const slices: [string, ScoredRow[]][] = [
+    ["B2B team (stored team_rest_days = 1)", view.filter((r) => r.teamRest === 1)],
+    ["B2B opponent (stored opponent_rest_days = 1)", view.filter((r) => r.oppRest === 1)],
+    ["Stratum: stamped git_sha", view.filter((r) => r.stamped)],
+    ["Stratum: null/local git_sha", view.filter((r) => !r.stamped)],
   ];
   return [
     "# FORGE counterfactual backtest (Q7 conversion shrink, Q8 rest buckets)", "",
+    ...(ppReport ? ["pp1 = official PP targets in stage (target = mean of the team's last 10 regular-season summed official PP TOI; split by each player's mean official PP TOI over those games in which he has a row, else stored share x old target; PP shots/goals/assists scale with PP TOI; ES unchanged); pp2 = pp1 + PP assists on the per-goal scale.",
+      "The stage's target additionally divides by summed official all-situation TOI and multiplies by the team's skater-second target; the harness uses the summed PP TOI directly (approximately equivalent).", ""] : []),
     `Seed ${seed}, ${reps} paired cluster-bootstrap reps by game_id; Δ is variant minus baseline (negative ΔMAE = better).`,
     "Baseline reproduces stored predictions; Q7 drops the second sample-weight shrink; Q8 uses B2B = 1 rest tiers (organic rates and season-bootstrap prior context).",
     "Organic shots/TOI are held fixed under Q8 (team reconciliation cancels uniform rest multipliers); candidate-mode rows are not modelled.",
@@ -378,11 +403,168 @@ export function renderReport(args: { rows: PreparedRow[]; checks: Checks; select
     "## Check counts", "", "| check | count |", "|---|---|",
     ...Object.entries(args.checks).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `| ${k} | ${v} |`), "",
     `Games (clusters): ${new Set(rows.map((r) => r.gameId)).size}`, "",
-    "## All rows", "", metricsTable(rows, seed, reps), "",
-    "## Top decile by predicted G", "", decileTable(rows), "",
+    "## All rows", "", metricsTable(view, seed, reps, variants), "",
+    "## Top decile by predicted G", "", decileTable(view, variants), "",
     "## Assists decomposition (baseline)", "", assistDecompositionSection(rows), "",
-    ...slices.flatMap(([title, slice]) => [`## ${title}`, "", slice.length ? metricsTable(slice, seed, reps) : "_no rows_", ""]),
+    ...(ppReport ? [ppSection(rows, view, ppReport, seed, reps), ""] : []),
+    ...slices.flatMap(([title, slice]) => [`## ${title}`, "", slice.length ? metricsTable(slice, seed, reps, variants) : "_no rows_", ""]),
   ].join("\n");
+}
+
+// ---------------------------------------------------------------------------------------------
+// PP-usage counterfactual ("official PP targets in stage"), enabled by the four optional PP inputs.
+export type PpHead = "PP_TOI" | "PP_SHOTS" | "PP_GOALS" | "PP_ASSISTS";
+export type PpVariant = "pp1" | "pp2";
+export type PpLine = Record<PpHead, number>;
+export type PpInputs = { ppActuals: Json[]; ppUsage: Json[]; wgoPp: Json[]; teamStrength: Json[] };
+export const PP_HEADS: PpHead[] = ["PP_TOI", "PP_SHOTS", "PP_GOALS", "PP_ASSISTS"];
+export const PP_VARIANTS: PpVariant[] = ["pp1", "pp2"];
+const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : NaN);
+
+/** New team target split by official PP TOI per game; players without official history keep share x old target. */
+export function allocatePpToi(players: { playerId: number; weight: number | null; fallbackSeconds: number }[], target: number) {
+  const totalW = players.reduce((sum, p) => sum + (p.weight ?? 0), 0);
+  const fixed = players.filter((p) => p.weight == null || totalW <= 0);
+  const out = new Map(fixed.map((p) => [p.playerId, p.fallbackSeconds]));
+  const rest = Math.max(0, target - fixed.reduce((sum, p) => sum + p.fallbackSeconds, 0));
+  if (totalW > 0) for (const p of players) if (p.weight != null) out.set(p.playerId, (rest * p.weight) / totalW);
+  return out;
+}
+
+/** PP shots keep shots per PP second and PP goals/assists keep conversion per shot; zero old TOI uses group rates. */
+export function scalePpLine(old: PpLine, newToi: number, groupRate: { shotsPerSecond: number; goalsPerShot: number; assistsPerShot: number }): PpLine {
+  if (old.PP_TOI > 0) {
+    const k = newToi / old.PP_TOI;
+    return { PP_TOI: newToi, PP_SHOTS: old.PP_SHOTS * k, PP_GOALS: old.PP_GOALS * k, PP_ASSISTS: old.PP_ASSISTS * k };
+  }
+  const shots = newToi * groupRate.shotsPerSecond;
+  return { PP_TOI: newToi, PP_SHOTS: shots, PP_GOALS: shots * groupRate.goalsPerShot, PP_ASSISTS: shots * groupRate.assistsPerShot };
+}
+
+/**
+ * Official per-player PP TOI (S7), regular season only. Team target = mean over the team's last 10 regular-season games
+ * of the summed per-player PP TOI; player weight = his mean PP TOI over those same games in which he has a row.
+ */
+export function buildOfficialPp(wgoPp: Json[], teamStrength: Json[], playerTeam: Map<number, number>) {
+  const gameType = new Map(teamStrength.map((r) => [Number(r.game_id), num(r.game_type)]));
+  const regular = (gameId: number) => (gameType.has(gameId) ? gameType.get(gameId) === 2 : String(gameId).slice(4, 6) === "02");
+  const teamGames = new Map<string, { teamId: number; gameId: number; date: string; sum: number }>();
+  const players = new Map<number, Map<number, number>>();
+  let unmappedRows = 0;
+  for (const r of wgoPp) {
+    const playerId = Number(r.player_id), gameId = Number(r.game_id), date = day(r.date), toi = num(r.pp_toi);
+    if (!date || toi == null || !regular(gameId)) continue;
+    players.set(playerId, (players.get(playerId) ?? new Map()).set(gameId, toi));
+    const teamId = playerTeam.get(playerId);
+    if (teamId == null) { unmappedRows += 1; continue; }
+    const tg = teamGames.get(`${teamId}:${gameId}`) ?? { teamId, gameId, date, sum: 0 };
+    tg.sum += toi; teamGames.set(`${teamId}:${gameId}`, tg);
+  }
+  const ordered = [...teamGames.values()].sort((a, b) => a.date.localeCompare(b.date) || a.gameId - b.gameId);
+  const lastTen = (teamId: number, date: string) => ordered.filter((g) => g.teamId === teamId && g.date < date).slice(-10);
+  return { unmappedRows, teamGames,
+    teamTarget: (teamId: number, date: string) => {
+      const last = lastTen(teamId, date);
+      return last.length ? mean(last.map((g) => g.sum)) : null;
+    },
+    playerPerGame: (playerId: number, teamId: number, date: string) => {
+      const own = players.get(playerId), tois = lastTen(teamId, date).filter((g) => own?.has(g.gameId)).map((g) => own!.get(g.gameId)!);
+      return tois.length ? mean(tois) : null;
+    } };
+}
+
+export type PpReport = { targets: { date: string; gameId: number; teamId: number; oldTarget: number; newTarget: number; actual: number; s8: number | null }[];
+  units: string[] };
+
+export function applyPpUsage(rows: PreparedRow[], projections: Json[], pp: PpInputs, checks: Checks): PpReport {
+  const teamByKey = new Map(projections.map((p) => [`${p.run_id}:${p.game_id}:${p.player_id}`, Number(p.team_id)]));
+  const latest = new Map<number, { date: string; teamId: number }>();
+  for (const p of projections) {
+    const date = day(p.as_of_date) ?? "", prev = latest.get(Number(p.player_id));
+    if (!prev || date > prev.date) latest.set(Number(p.player_id), { date, teamId: Number(p.team_id) });
+  }
+  const playerTeam = new Map([...latest].map(([id, v]) => [id, v.teamId]));
+  const official = buildOfficialPp(pp.wgoPp, pp.teamStrength, playerTeam);
+  const usage = new Map<string, Json[]>();
+  for (const u of pp.ppUsage) usage.set(`${u.run_id}:${u.game_id}`, [...(usage.get(`${u.run_id}:${u.game_id}`) ?? []), u]);
+  const s5 = new Map(pp.ppActuals.map((a) => [`${a.game_id}:${a.player_id}`, a]));
+  const teamOf = (runId: string, gameId: number, playerId: number) => teamByKey.get(`${runId}:${gameId}:${playerId}`) ?? playerTeam.get(playerId);
+  const groups = new Map<string, { alloc: Map<number, number>; oldToi: Map<number, number>; oldTarget: number; newTarget: number }>();
+  const report: PpReport = { targets: [], units: [] };
+  const group = (r: PreparedRow) => {
+    const { runId, teamId } = r.ppBase!, key = `${runId}:${r.gameId}:${teamId}`;
+    if (groups.has(key)) return groups.get(key)!;
+    const members = (usage.get(`${runId}:${r.gameId}`) ?? []).filter((u) => teamOf(runId, r.gameId, Number(u.player_id)) === teamId);
+    const oldTarget = num(obj(members[0]?.pp_opportunity).team_pp_target_seconds) ?? 0;
+    const target = official.teamTarget(teamId, r.date);
+    if (target == null) bump(checks, "pp_target_no_official_history_kept_old");
+    const players = members.map((u) => {
+      const weight = official.playerPerGame(Number(u.player_id), teamId, r.date);
+      if (weight == null) bump(checks, "pp_player_no_official_history_fallback");
+      return { playerId: Number(u.player_id), weight, fallbackSeconds: (num(obj(u.pp_opportunity).allocated_player_pp_share) ?? 0) * oldTarget };
+    });
+    const g = { alloc: allocatePpToi(players, target ?? oldTarget), oldTarget, newTarget: target ?? oldTarget,
+      oldToi: new Map(members.map((u) => [Number(u.player_id), num(u.proj_toi_pp_seconds) ?? 0])) };
+    const actual = pp.ppActuals.filter((a) => Number(a.game_id) === r.gameId && teamOf(runId, r.gameId, Number(a.player_id)) === teamId)
+      .reduce((sum, a) => sum + (num(a.pp_toi) ?? 0), 0);
+    const s8 = pp.teamStrength.find((t) => Number(t.game_id) === r.gameId && Number(t.team_id) === teamId);
+    report.targets.push({ date: r.date, gameId: r.gameId, teamId, oldTarget, newTarget: g.newTarget, actual, s8: num(s8?.toi_pp_seconds) });
+    groups.set(key, g);
+    return g;
+  };
+  // Group-level rates for players whose stored PP TOI is zero (no per-second rate of their own).
+  const rateOf = (members: PreparedRow[], g: { oldToi: Map<number, number> }, pp2: boolean) => {
+    const sum = (f: (r: PreparedRow) => number) => members.reduce((s, r) => s + f(r), 0);
+    const toi = sum((r) => g.oldToi.get(r.playerId) ?? 0), shots = sum((r) => r.ppBase!.sPp ?? 0);
+    return { shotsPerSecond: toi > 0 ? shots / toi : 0, goalsPerShot: shots > 0 ? sum((r) => r.ppBase!.gPp ?? 0) / shots : 0,
+      assistsPerShot: shots > 0 ? sum((r) => (r.ppBase!.aPp ?? 0) + (pp2 ? r.ppBase!.ppAssistDelta : 0)) / shots : 0 };
+  };
+  for (const r of rows) {
+    const b = r.ppBase!, g = group(r);
+    if (!g.oldToi.has(r.playerId)) { bump(checks, "pp_usage_row_missing_kept_baseline"); continue; }
+    const members = rows.filter((x) => x.ppBase!.runId === b.runId && x.gameId === r.gameId && x.ppBase!.teamId === b.teamId);
+    const oldLine: PpLine = { PP_TOI: g.oldToi.get(r.playerId)!, PP_SHOTS: b.sPp ?? 0, PP_GOALS: b.gPp ?? 0, PP_ASSISTS: b.aPp ?? 0 };
+    if (oldLine.PP_TOI <= 0 && (g.alloc.get(r.playerId) ?? 0) > 0) bump(checks, "pp_zero_old_toi_group_rate");
+    const newToi = g.alloc.get(r.playerId) ?? oldLine.PP_TOI;
+    const lines = { baseline: oldLine, pp1: scalePpLine(oldLine, newToi, rateOf(members, g, false)),
+      pp2: scalePpLine({ ...oldLine, PP_ASSISTS: oldLine.PP_ASSISTS + b.ppAssistDelta }, newToi, rateOf(members, g, true)) };
+    const toLine = (l: PpLine): Line => ({ G: (b.gEs ?? 0) + l.PP_GOALS, A: (b.aEs ?? 0) + l.PP_ASSISTS, PPP: l.PP_GOALS + l.PP_ASSISTS });
+    r.ppPreds = { pp1: toLine(lines.pp1), pp2: toLine(lines.pp2) };
+    const a = s5.get(`${r.gameId}:${r.playerId}`);
+    if (!a) { bump(checks, "pp_no_s5_actual"); continue; }
+    r.pp = { teamId: b.teamId, preds: lines, actual: { PP_TOI: num(a.pp_toi) ?? 0, PP_SHOTS: num(a.pp_shots) ?? 0, PP_GOALS: num(a.pp_goals) ?? 0,
+      PP_ASSISTS: num(a.pp_assists) ?? 0 }, heads: PP_HEADS.filter((h) => (h !== "PP_GOALS" || b.gPp != null) && (h !== "PP_ASSISTS" || b.aPp != null)) };
+  }
+  // Units: S5 and S7 pp_toi are both seconds per player-game when they agree on shared game:player keys.
+  const shared = pp.wgoPp.filter((w) => s5.has(`${w.game_id}:${w.player_id}`));
+  const agree = shared.filter((w) => Math.abs((num(w.pp_toi) ?? NaN) - (num(s5.get(`${w.game_id}:${w.player_id}`)!.pp_toi) ?? NaN)) <= 1).length;
+  const s8Ratios = pp.teamStrength.map((t) => [num(t.toi_pp_seconds), official.teamGames.get(`${t.team_id}:${t.game_id}`)?.sum] as const)
+    .filter(([a, b]) => a != null && b != null && b > 0).map(([a, b]) => a! / b!);
+  report.units = [
+    `S5 vs S7 pp_toi on shared game:player keys: ${agree}/${shared.length} agree within 1 s (both seconds per player-game when they agree).`,
+    `Mean S5 pp_toi on non-zero player-games: ${f(mean(pp.ppActuals.map((a) => num(a.pp_toi) ?? 0).filter((x) => x > 0)), 1)} s.`,
+    `S7 pp_toi_per_game = pp_toi on ${pp.wgoPp.filter((w) => num(w.pp_toi_per_game) === num(w.pp_toi)).length}/${pp.wgoPp.length} rows.`,
+    `S8 toi_pp_seconds / summed S7 per team-game: mean ${f(mean(s8Ratios), 3)} over ${s8Ratios.length} team-games; S7 rows with no team mapping: ${official.unmappedRows}.`,
+  ];
+  return report;
+}
+
+function ppSection(rows: PreparedRow[], view: ScoredRow[], ppReport: PpReport, seed: number, reps: number) {
+  const ppRows: ScoredRow[] = rows.filter((r) => r.pp).map((r) => ({ gameId: r.gameId, playerId: r.playerId, heads: r.pp!.heads, actual: r.pp!.actual, preds: r.pp!.preds }));
+  const top = new Set(topDecile(rows, "baseline").map((r) => `${r.gameId}:${r.playerId}`));
+  const inTop = <T extends ScoredRow>(xs: T[]) => xs.filter((r) => top.has(`${r.gameId}:${r.playerId}`));
+  const t = ppReport.targets, sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
+  const targetRow = (label: string, pick: (x: PpReport["targets"][number]) => number) => `| ${label} | ${t.length} | ${f(mean(t.map(pick)), 1)} | ${
+    f(mean(t.map((x) => x.actual)), 1)} | ${f(mean(t.map((x) => Math.abs(pick(x) - x.actual))), 1)} | ${f(sum(t.map((x) => x.actual)) / sum(t.map(pick)), 3)} |`;
+  return ["## PP usage (official PP targets)", "", ...ppReport.units.map((u) => `- ${u}`), "",
+    "Team PP target vs actual team PP TOI per game (skater-seconds; actual = Σ S5 pp_toi of the team's players).", "",
+    "| target | team-games | mean target | mean actual | MAE | Σactual/Σtarget |", "|---|---|---|---|---|---|",
+    targetRow("old (stored)", (x) => x.oldTarget), targetRow("new (official last 10)", (x) => x.newTarget), "",
+    `Mean S8 toi_pp_seconds on these team-games: ${f(mean(t.map((x) => x.s8).filter((x): x is number => x != null)), 1)}.`, "",
+    "## PP heads (vs S5)", "", ppRows.length ? metricsTable(ppRows, seed, reps, ["baseline", ...PP_VARIANTS], PP_HEADS) : "_no rows_", "",
+    "## PP calibration: baseline-G top decile", "", ...CALIBRATION_HEADER,
+    ...["baseline", ...PP_VARIANTS].flatMap((v) => [calibrationRow(inTop(ppRows), v, "PP_TOI", "baseline-G top decile"),
+      calibrationRow(inTop(view), v, "PPP", "baseline-G top decile")])].join("\n");
 }
 
 function localJson(name: string, path: string) {
@@ -393,11 +575,13 @@ function localJson(name: string, path: string) {
   return { name, path, sha256: createHash("sha256").update(new Uint8Array(bytes)).digest("hex"), value: value as Json[] };
 }
 
-const USAGE = "Use --runs FILE --projections FILE --actuals FILE --games FILE --output NEW_FILE [--seed N] [--reps N]";
+const USAGE = "Use --runs FILE --projections FILE --actuals FILE --games FILE --output NEW_FILE [--seed N] [--reps N]"
+  + " [--pp-actuals FILE --pp-usage FILE --wgo-pp FILE --team-strength FILE]";
+const PP_FLAGS = ["--pp-actuals", "--pp-usage", "--wgo-pp", "--team-strength"] as const;
 export function runCounterfactualBacktest(argv: string[]) {
   const opts = new Map<string, string>();
   for (let i = 0; i < argv.length; i += 2) {
-    if (!["--runs", "--projections", "--actuals", "--games", "--output", "--seed", "--reps"].includes(argv[i]) || !argv[i + 1] || opts.has(argv[i])) throw new Error(USAGE);
+    if (!["--runs", "--projections", "--actuals", "--games", "--output", "--seed", "--reps", ...PP_FLAGS].includes(argv[i]) || !argv[i + 1] || opts.has(argv[i])) throw new Error(USAGE);
     opts.set(argv[i], argv[i + 1]);
   }
   for (const k of ["--runs", "--projections", "--actuals", "--games", "--output"]) if (!opts.has(k)) throw new Error(USAGE);
@@ -405,8 +589,12 @@ export function runCounterfactualBacktest(argv: string[]) {
   if (!Number.isInteger(seed) || !Number.isInteger(reps) || reps < 1) throw new Error(USAGE);
   const [runs, projections, actuals, games] = (["runs", "projections", "actuals", "games"] as const)
     .map((k) => localJson(k, resolve(opts.get(`--${k}`)!)));
-  const prepared = prepareRows({ runs: runs.value, projections: projections.value, actuals: actuals.value, games: games.value });
-  const report = renderReport({ ...prepared, seed, reps, inputs: [runs, projections, actuals, games] });
+  const ppGiven = PP_FLAGS.filter((k) => opts.has(k));
+  if (ppGiven.length !== 0 && ppGiven.length !== PP_FLAGS.length) throw new Error(USAGE);
+  const ppFiles = ppGiven.map((k) => localJson(k.slice(2), resolve(opts.get(k)!)));
+  const pp = ppFiles.length ? { ppActuals: ppFiles[0].value, ppUsage: ppFiles[1].value, wgoPp: ppFiles[2].value, teamStrength: ppFiles[3].value } : undefined;
+  const prepared = prepareRows({ runs: runs.value, projections: projections.value, actuals: actuals.value, games: games.value, pp });
+  const report = renderReport({ ...prepared, seed, reps, inputs: [runs, projections, actuals, games, ...ppFiles] });
   // A new output is required so prior reports are never overwritten.
   writeFileSync(resolve(opts.get("--output")!), report + "\n", { flag: "wx" });
   return { report, checks: prepared.checks, rows: prepared.rows };
