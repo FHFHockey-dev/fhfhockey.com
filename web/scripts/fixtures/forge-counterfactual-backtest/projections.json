@@ -1,0 +1,1768 @@
+[
+ {
+  "run_id": "run-1013-stamped",
+  "as_of_date": "2026-10-13",
+  "git_sha": "abc1234",
+  "game_id": 1001,
+  "player_id": 101,
+  "team_id": 1,
+  "opponent_team_id": 2,
+  "proj_shots_es": 1.9,
+  "proj_shots_pp": 0.3,
+  "proj_goals_es": 0.1812,
+  "proj_goals_pp": 0.0423,
+  "proj_assists_es": 0.2297,
+  "proj_assists_pp": 0.0635,
+  "rollout_mode": "baseline",
+  "current_baseline": {
+   "definition": "scenario_free_current_rate_model_on_reconciled_opportunities",
+   "goals_es": 0.1979,
+   "goals_pp": 0.0453,
+   "assists_es": 0.1043,
+   "assists_pp": 0.0364,
+   "shots_es": 1.9,
+   "shots_pp": 0.3
+  },
+  "season_bootstrap": {
+   "version": "season-bootstrap-v1",
+   "currentSeasonGames": 3,
+   "historyGames": 20,
+   "transitionGames": 20,
+   "sourceIds": [
+    "fantasy-src"
+   ],
+   "fantasyWeight": 0.51,
+   "historyWeight": 0.34,
+   "validation": "unvalidated",
+   "limitations": []
+  },
+  "conversion_rates": {
+   "goal_rate_es": 0.1041,
+   "goal_rate_pp": 0.151,
+   "assist_rate_es": 0.5274,
+   "assist_rate_pp": 0.8029
+  },
+  "sample_weight": 0.55,
+  "rest_schedule": {
+   "sample_weight": 1,
+   "team_rest_days": 3,
+   "opponent_rest_days": 2,
+   "rest_delta": 0.3333,
+   "toi_multiplier": 1.0472,
+   "shot_rate_multiplier": 1.0204,
+   "goal_rate_multiplier": 1.0213,
+   "assist_rate_multiplier": 1.0199
+  },
+  "sq_goal": 0.98,
+  "on_ice": {
+   "sample_weight": 0.8,
+   "goal_environment_multiplier": 1.01,
+   "assist_environment_multiplier": 0.995,
+   "shot_environment_multiplier": 1
+  },
+  "team_level": {
+   "sample_weight": 1,
+   "shot_rate_multiplier": 1,
+   "goal_rate_multiplier": 1.004,
+   "assist_rate_multiplier": 1.007,
+   "pace_edge": 0,
+   "opponent_defense_edge": 0
+  },
+  "opp_goalie": {
+   "sample_weight": 1,
+   "goal_rate_multiplier": 1.02,
+   "assist_rate_multiplier": 1.002
+  },
+  "trend_mult": {
+   "shot_rate": 1,
+   "goal_rate": 0.99,
+   "assist_rate": 1.005
+  },
+  "teammate": {
+   "dependency_score": 0.3,
+   "assist_rate_es_multiplier": 0.98,
+   "assist_rate_pp_multiplier": 1.01
+  },
+  "es_role": "L2",
+  "volatility": 0.1,
+  "scenarios": [
+   {
+    "role": "L2",
+    "probability": 1
+   }
+  ],
+  "support_counts": {
+   "ev.goalPerShot.all": [
+    4,
+    47
+   ],
+   "ev.goalPerShot.last5": [
+    2,
+    10
+   ],
+   "ev.assistPerGoal.all": [
+    5,
+    12
+   ],
+   "ev.assistPerGoal.last5": [
+    1,
+    4
+   ],
+   "pp.goalPerShot.all": [
+    1,
+    9
+   ],
+   "pp.goalPerShot.last5": [
+    1,
+    3
+   ],
+   "pp.assistPerGoal.all": [
+    3,
+    5
+   ],
+   "pp.assistPerGoal.last5": [
+    1,
+    2
+   ]
+  }
+ },
+ {
+  "run_id": "run-1013-stamped",
+  "as_of_date": "2026-10-13",
+  "git_sha": "abc1234",
+  "game_id": 1001,
+  "player_id": 102,
+  "team_id": 1,
+  "opponent_team_id": 2,
+  "proj_shots_es": 2.2,
+  "proj_shots_pp": 0.35,
+  "proj_goals_es": 0.197,
+  "proj_goals_pp": 0.0461,
+  "proj_assists_es": 0.2423,
+  "proj_assists_pp": 0.0692,
+  "rollout_mode": "baseline",
+  "current_baseline": {
+   "definition": "scenario_free_current_rate_model_on_reconciled_opportunities",
+   "goals_es": 0.2102,
+   "goals_pp": 0.0508,
+   "assists_es": 0.1119,
+   "assists_pp": 0.0376,
+   "shots_es": 2.2,
+   "shots_pp": 0.35
+  },
+  "season_bootstrap": {
+   "version": "season-bootstrap-v1",
+   "currentSeasonGames": 3,
+   "historyGames": 20,
+   "transitionGames": 20,
+   "sourceIds": [
+    "fantasy-src"
+   ],
+   "fantasyWeight": 0.51,
+   "historyWeight": 0.34,
+   "validation": "unvalidated",
+   "limitations": []
+  },
+  "conversion_rates": {
+   "goal_rate_es": 0.0956,
+   "goal_rate_pp": 0.1452,
+   "assist_rate_es": 0.5324,
+   "assist_rate_pp": 0.7399
+  },
+  "sample_weight": 0.65,
+  "rest_schedule": {
+   "sample_weight": 1,
+   "team_rest_days": 3,
+   "opponent_rest_days": 2,
+   "rest_delta": 0.3333,
+   "toi_multiplier": 1.0472,
+   "shot_rate_multiplier": 1.0204,
+   "goal_rate_multiplier": 1.0213,
+   "assist_rate_multiplier": 1.0199
+  },
+  "sq_goal": 0.99,
+  "on_ice": {
+   "sample_weight": 0.8,
+   "goal_environment_multiplier": 1,
+   "assist_environment_multiplier": 1,
+   "shot_environment_multiplier": 1
+  },
+  "team_level": {
+   "sample_weight": 1,
+   "shot_rate_multiplier": 1,
+   "goal_rate_multiplier": 1.008,
+   "assist_rate_multiplier": 1.004,
+   "pace_edge": 0,
+   "opponent_defense_edge": 0
+  },
+  "opp_goalie": {
+   "sample_weight": 1,
+   "goal_rate_multiplier": 1.01,
+   "assist_rate_multiplier": 1.004
+  },
+  "trend_mult": {
+   "shot_rate": 1,
+   "goal_rate": 1,
+   "assist_rate": 1
+  },
+  "teammate": {
+   "dependency_score": 0.3,
+   "assist_rate_es_multiplier": 1,
+   "assist_rate_pp_multiplier": 1.02
+  },
+  "es_role": "L2",
+  "volatility": 0.1,
+  "scenarios": [
+   {
+    "role": "L2",
+    "probability": 1
+   }
+  ],
+  "support_counts": {
+   "ev.goalPerShot.all": [
+    5,
+    54
+   ],
+   "ev.goalPerShot.last5": [
+    1,
+    11
+   ],
+   "ev.assistPerGoal.all": [
+    6,
+    14
+   ],
+   "ev.assistPerGoal.last5": [
+    2,
+    3
+   ],
+   "pp.goalPerShot.all": [
+    2,
+    10
+   ],
+   "pp.goalPerShot.last5": [
+    0,
+    4
+   ],
+   "pp.assistPerGoal.all": [
+    2,
+    6
+   ],
+   "pp.assistPerGoal.last5": [
+    0,
+    1
+   ]
+  }
+ },
+ {
+  "run_id": "run-1013-stamped",
+  "as_of_date": "2026-10-13",
+  "git_sha": "abc1234",
+  "game_id": 1001,
+  "player_id": 103,
+  "team_id": 1,
+  "opponent_team_id": 2,
+  "proj_shots_es": 2.5,
+  "proj_shots_pp": 0.4,
+  "proj_goals_es": 0.2776,
+  "proj_goals_pp": 0.0554,
+  "proj_assists_es": 0.118,
+  "proj_assists_pp": 0.038,
+  "rollout_mode": "baseline",
+  "current_baseline": {
+   "definition": "scenario_free_current_rate_model_on_reconciled_opportunities",
+   "goals_es": 0.2776,
+   "goals_pp": 0.0554,
+   "assists_es": 0.118,
+   "assists_pp": 0.038,
+   "shots_es": 2.5,
+   "shots_pp": 0.4
+  },
+  "season_bootstrap": null,
+  "conversion_rates": {
+   "goal_rate_es": 0.1111,
+   "goal_rate_pp": 0.1385,
+   "assist_rate_es": 0.425,
+   "assist_rate_pp": 0.6867
+  },
+  "sample_weight": 0.75,
+  "rest_schedule": {
+   "sample_weight": 1,
+   "team_rest_days": 3,
+   "opponent_rest_days": 2,
+   "rest_delta": 0.3333,
+   "toi_multiplier": 1.0472,
+   "shot_rate_multiplier": 1.0204,
+   "goal_rate_multiplier": 1.0213,
+   "assist_rate_multiplier": 1.0199
+  },
+  "sq_goal": 1,
+  "on_ice": {
+   "sample_weight": 0.8,
+   "goal_environment_multiplier": 0.99,
+   "assist_environment_multiplier": 1.005,
+   "shot_environment_multiplier": 1
+  },
+  "team_level": {
+   "sample_weight": 1,
+   "shot_rate_multiplier": 1,
+   "goal_rate_multiplier": 1.012,
+   "assist_rate_multiplier": 1.001,
+   "pace_edge": 0,
+   "opponent_defense_edge": 0
+  },
+  "opp_goalie": {
+   "sample_weight": 1,
+   "goal_rate_multiplier": 1,
+   "assist_rate_multiplier": 1.006
+  },
+  "trend_mult": {
+   "shot_rate": 1,
+   "goal_rate": 1.01,
+   "assist_rate": 0.995
+  },
+  "teammate": {
+   "dependency_score": 0.3,
+   "assist_rate_es_multiplier": 1.02,
+   "assist_rate_pp_multiplier": 1.03
+  },
+  "es_role": "L2",
+  "volatility": 0.1,
+  "scenarios": [
+   {
+    "role": "L2",
+    "probability": 1
+   }
+  ],
+  "support_counts": {
+   "ev.goalPerShot.all": [
+    6,
+    61
+   ],
+   "ev.goalPerShot.last5": [
+    2,
+    12
+   ],
+   "ev.assistPerGoal.all": [
+    7,
+    16
+   ],
+   "ev.assistPerGoal.last5": [
+    0,
+    4
+   ],
+   "pp.goalPerShot.all": [
+    0,
+    11
+   ],
+   "pp.goalPerShot.last5": [
+    1,
+    2
+   ],
+   "pp.assistPerGoal.all": [
+    3,
+    7
+   ],
+   "pp.assistPerGoal.last5": [
+    1,
+    2
+   ]
+  }
+ },
+ {
+  "run_id": "run-1013-stamped",
+  "as_of_date": "2026-10-13",
+  "git_sha": "abc1234",
+  "game_id": 1001,
+  "player_id": 201,
+  "team_id": 2,
+  "opponent_team_id": 1,
+  "proj_shots_es": 2.8,
+  "proj_shots_pp": 0.45,
+  "proj_goals_es": 0.2333,
+  "proj_goals_pp": 0.0529,
+  "proj_assists_es": 0.2654,
+  "proj_assists_pp": 0.0793,
+  "rollout_mode": "baseline",
+  "current_baseline": {
+   "definition": "scenario_free_current_rate_model_on_reconciled_opportunities",
+   "goals_es": 0.2655,
+   "goals_pp": 0.0555,
+   "assists_es": 0.112,
+   "assists_pp": 0.0326,
+   "shots_es": 2.8,
+   "shots_pp": 0.45
+  },
+  "season_bootstrap": {
+   "version": "season-bootstrap-v1",
+   "currentSeasonGames": 3,
+   "historyGames": 20,
+   "transitionGames": 20,
+   "sourceIds": [
+    "fantasy-src"
+   ],
+   "fantasyWeight": 0.51,
+   "historyWeight": 0.34,
+   "validation": "unvalidated",
+   "limitations": []
+  },
+  "conversion_rates": {
+   "goal_rate_es": 0.0948,
+   "goal_rate_pp": 0.1232,
+   "assist_rate_es": 0.422,
+   "assist_rate_pp": 0.5887
+  },
+  "sample_weight": 0.85,
+  "rest_schedule": {
+   "sample_weight": 1,
+   "team_rest_days": 2,
+   "opponent_rest_days": 3,
+   "rest_delta": -0.3333,
+   "toi_multiplier": 0.9996,
+   "shot_rate_multiplier": 0.9832,
+   "goal_rate_multiplier": 0.9851,
+   "assist_rate_multiplier": 0.9845
+  },
+  "sq_goal": 1.01,
+  "on_ice": {
+   "sample_weight": 0.8,
+   "goal_environment_multiplier": 0.98,
+   "assist_environment_multiplier": 1.01,
+   "shot_environment_multiplier": 1
+  },
+  "team_level": {
+   "sample_weight": 1,
+   "shot_rate_multiplier": 1,
+   "goal_rate_multiplier": 1.016,
+   "assist_rate_multiplier": 0.998,
+   "pace_edge": 0,
+   "opponent_defense_edge": 0
+  },
+  "opp_goalie": {
+   "sample_weight": 1,
+   "goal_rate_multiplier": 0.99,
+   "assist_rate_multiplier": 1.008
+  },
+  "trend_mult": {
+   "shot_rate": 1,
+   "goal_rate": 1.02,
+   "assist_rate": 0.99
+  },
+  "teammate": {
+   "dependency_score": 0.3,
+   "assist_rate_es_multiplier": 1.04,
+   "assist_rate_pp_multiplier": 1.04
+  },
+  "es_role": "L2",
+  "volatility": 0.1,
+  "scenarios": [
+   {
+    "role": "L2",
+    "probability": 1
+   }
+  ],
+  "support_counts": {
+   "ev.goalPerShot.all": [
+    7,
+    68
+   ],
+   "ev.goalPerShot.last5": [
+    1,
+    13
+   ],
+   "ev.assistPerGoal.all": [
+    8,
+    18
+   ],
+   "ev.assistPerGoal.last5": [
+    1,
+    3
+   ],
+   "pp.goalPerShot.all": [
+    1,
+    12
+   ],
+   "pp.goalPerShot.last5": [
+    0,
+    3
+   ],
+   "pp.assistPerGoal.all": [
+    2,
+    8
+   ],
+   "pp.assistPerGoal.last5": [
+    0,
+    1
+   ]
+  }
+ },
+ {
+  "run_id": "run-1013-stamped",
+  "as_of_date": "2026-10-13",
+  "git_sha": "abc1234",
+  "game_id": 1001,
+  "player_id": 202,
+  "team_id": 2,
+  "opponent_team_id": 1,
+  "proj_shots_es": 3.1,
+  "proj_shots_pp": 0.5,
+  "proj_goals_es": 0.261,
+  "proj_goals_pp": 0.0583,
+  "proj_assists_es": 0.2793,
+  "proj_assists_pp": 0.0874,
+  "rollout_mode": "baseline",
+  "current_baseline": {
+   "definition": "scenario_free_current_rate_model_on_reconciled_opportunities",
+   "goals_es": 0.3495,
+   "goals_pp": 0.0792,
+   "assists_es": 0.1358,
+   "assists_pp": 0.0421,
+   "shots_es": 3.1,
+   "shots_pp": 0.5
+  },
+  "season_bootstrap": {
+   "version": "season-bootstrap-v1",
+   "currentSeasonGames": 3,
+   "historyGames": 20,
+   "transitionGames": 20,
+   "sourceIds": [
+    "fantasy-src"
+   ],
+   "fantasyWeight": 0.51,
+   "historyWeight": 0.34,
+   "validation": "unvalidated",
+   "limitations": []
+  },
+  "conversion_rates": {
+   "goal_rate_es": 0.1127,
+   "goal_rate_pp": 0.1584,
+   "assist_rate_es": 0.3885,
+   "assist_rate_pp": 0.5316
+  },
+  "sample_weight": 0.95,
+  "rest_schedule": {
+   "sample_weight": 1,
+   "team_rest_days": 2,
+   "opponent_rest_days": 3,
+   "rest_delta": -0.3333,
+   "toi_multiplier": 0.9996,
+   "shot_rate_multiplier": 0.9832,
+   "goal_rate_multiplier": 0.9851,
+   "assist_rate_multiplier": 0.9845
+  },
+  "sq_goal": 1.02,
+  "on_ice": {
+   "sample_weight": 0.8,
+   "goal_environment_multiplier": 0.97,
+   "assist_environment_multiplier": 1.015,
+   "shot_environment_multiplier": 1
+  },
+  "team_level": {
+   "sample_weight": 1,
+   "shot_rate_multiplier": 1,
+   "goal_rate_multiplier": 1.02,
+   "assist_rate_multiplier": 0.995,
+   "pace_edge": 0,
+   "opponent_defense_edge": 0
+  },
+  "opp_goalie": {
+   "sample_weight": 1,
+   "goal_rate_multiplier": 0.98,
+   "assist_rate_multiplier": 1.01
+  },
+  "trend_mult": {
+   "shot_rate": 1,
+   "goal_rate": 1.03,
+   "assist_rate": 0.985
+  },
+  "teammate": {
+   "dependency_score": 0.3,
+   "assist_rate_es_multiplier": 1.06,
+   "assist_rate_pp_multiplier": 1.05
+  },
+  "es_role": "L2",
+  "volatility": 0.1,
+  "scenarios": [
+   {
+    "role": "L2",
+    "probability": 1
+   }
+  ],
+  "support_counts": {
+   "ev.goalPerShot.all": [
+    8,
+    75
+   ],
+   "ev.goalPerShot.last5": [
+    2,
+    14
+   ],
+   "ev.assistPerGoal.all": [
+    9,
+    20
+   ],
+   "ev.assistPerGoal.last5": [
+    2,
+    4
+   ],
+   "pp.goalPerShot.all": [
+    2,
+    13
+   ],
+   "pp.goalPerShot.last5": [
+    1,
+    4
+   ],
+   "pp.assistPerGoal.all": [
+    3,
+    9
+   ],
+   "pp.assistPerGoal.last5": [
+    1,
+    2
+   ]
+  }
+ },
+ {
+  "run_id": "run-1013-stamped",
+  "as_of_date": "2026-10-13",
+  "git_sha": "abc1234",
+  "game_id": 1001,
+  "player_id": 203,
+  "team_id": 2,
+  "opponent_team_id": 1,
+  "proj_shots_es": 1.9,
+  "proj_shots_pp": 0.3,
+  "proj_goals_es": 0.1805,
+  "proj_goals_pp": 0.0422,
+  "proj_assists_es": 0.2291,
+  "proj_assists_pp": 0.0633,
+  "rollout_mode": "baseline",
+  "current_baseline": {
+   "definition": "scenario_free_current_rate_model_on_reconciled_opportunities",
+   "goals_es": 0.1937,
+   "goals_pp": 0.0444,
+   "assists_es": 0.1008,
+   "assists_pp": 0.0351,
+   "shots_es": 1.9,
+   "shots_pp": 0.3
+  },
+  "season_bootstrap": {
+   "version": "season-bootstrap-v1",
+   "currentSeasonGames": 3,
+   "historyGames": 20,
+   "transitionGames": 20,
+   "sourceIds": [
+    "fantasy-src"
+   ],
+   "fantasyWeight": 0.51,
+   "historyWeight": 0.34,
+   "validation": "unvalidated",
+   "limitations": []
+  },
+  "conversion_rates": {
+   "goal_rate_es": 0.1019,
+   "goal_rate_pp": 0.1479,
+   "assist_rate_es": 0.5202,
+   "assist_rate_pp": 0.7901
+  },
+  "sample_weight": 0.55,
+  "rest_schedule": {
+   "sample_weight": 1,
+   "team_rest_days": 2,
+   "opponent_rest_days": 3,
+   "rest_delta": -0.3333,
+   "toi_multiplier": 0.9996,
+   "shot_rate_multiplier": 0.9832,
+   "goal_rate_multiplier": 0.9851,
+   "assist_rate_multiplier": 0.9845
+  },
+  "sq_goal": 0.98,
+  "on_ice": {
+   "sample_weight": 0.8,
+   "goal_environment_multiplier": 1.01,
+   "assist_environment_multiplier": 0.995,
+   "shot_environment_multiplier": 1
+  },
+  "team_level": {
+   "sample_weight": 1,
+   "shot_rate_multiplier": 1,
+   "goal_rate_multiplier": 1.004,
+   "assist_rate_multiplier": 1.007,
+   "pace_edge": 0,
+   "opponent_defense_edge": 0
+  },
+  "opp_goalie": {
+   "sample_weight": 1,
+   "goal_rate_multiplier": 1.02,
+   "assist_rate_multiplier": 1.002
+  },
+  "trend_mult": {
+   "shot_rate": 1,
+   "goal_rate": 0.99,
+   "assist_rate": 1.005
+  },
+  "teammate": {
+   "dependency_score": 0.3,
+   "assist_rate_es_multiplier": 0.98,
+   "assist_rate_pp_multiplier": 1.01
+  },
+  "es_role": "L2",
+  "volatility": 0.1,
+  "scenarios": [
+   {
+    "role": "L2",
+    "probability": 1
+   }
+  ],
+  "support_counts": {
+   "ev.goalPerShot.all": [
+    4,
+    47
+   ],
+   "ev.goalPerShot.last5": [
+    2,
+    10
+   ],
+   "ev.assistPerGoal.all": [
+    5,
+    12
+   ],
+   "ev.assistPerGoal.last5": [
+    1,
+    4
+   ],
+   "pp.goalPerShot.all": [
+    1,
+    9
+   ],
+   "pp.goalPerShot.last5": [
+    1,
+    3
+   ],
+   "pp.assistPerGoal.all": [
+    3,
+    5
+   ],
+   "pp.assistPerGoal.last5": [
+    1,
+    2
+   ]
+  }
+ },
+ {
+  "run_id": "run-1014-null",
+  "as_of_date": "2026-10-14",
+  "git_sha": null,
+  "game_id": 1002,
+  "player_id": 301,
+  "team_id": 3,
+  "opponent_team_id": 2,
+  "proj_shots_es": 2.2,
+  "proj_shots_pp": 0.35,
+  "proj_goals_es": 0.1976,
+  "proj_goals_pp": 0.0462,
+  "proj_assists_es": 0.2427,
+  "proj_assists_pp": 0.0693,
+  "rollout_mode": "baseline",
+  "current_baseline": {
+   "definition": "scenario_free_current_rate_model_on_reconciled_opportunities",
+   "goals_es": 0.2135,
+   "goals_pp": 0.0516,
+   "assists_es": 0.115,
+   "assists_pp": 0.0386,
+   "shots_es": 2.2,
+   "shots_pp": 0.35
+  },
+  "season_bootstrap": {
+   "version": "season-bootstrap-v1",
+   "currentSeasonGames": 3,
+   "historyGames": 20,
+   "transitionGames": 20,
+   "sourceIds": [
+    "fantasy-src"
+   ],
+   "fantasyWeight": 0.51,
+   "historyWeight": 0.34,
+   "validation": "unvalidated",
+   "limitations": []
+  },
+  "conversion_rates": {
+   "goal_rate_es": 0.0971,
+   "goal_rate_pp": 0.1474,
+   "assist_rate_es": 0.5386,
+   "assist_rate_pp": 0.7487
+  },
+  "sample_weight": 0.65,
+  "rest_schedule": {
+   "sample_weight": 1,
+   "team_rest_days": 3,
+   "opponent_rest_days": 1,
+   "rest_delta": 0.6667,
+   "toi_multiplier": 1.0572,
+   "shot_rate_multiplier": 1.0534,
+   "goal_rate_multiplier": 1.0459,
+   "assist_rate_multiplier": 1.0423
+  },
+  "sq_goal": 0.99,
+  "on_ice": {
+   "sample_weight": 0.8,
+   "goal_environment_multiplier": 1,
+   "assist_environment_multiplier": 1,
+   "shot_environment_multiplier": 1
+  },
+  "team_level": {
+   "sample_weight": 1,
+   "shot_rate_multiplier": 1,
+   "goal_rate_multiplier": 1.008,
+   "assist_rate_multiplier": 1.004,
+   "pace_edge": 0,
+   "opponent_defense_edge": 0
+  },
+  "opp_goalie": {
+   "sample_weight": 1,
+   "goal_rate_multiplier": 1.01,
+   "assist_rate_multiplier": 1.004
+  },
+  "trend_mult": {
+   "shot_rate": 1,
+   "goal_rate": 1,
+   "assist_rate": 1
+  },
+  "teammate": {
+   "dependency_score": 0.3,
+   "assist_rate_es_multiplier": 1,
+   "assist_rate_pp_multiplier": 1.02
+  },
+  "es_role": "L2",
+  "volatility": 0.1,
+  "scenarios": [
+   {
+    "role": "L2",
+    "probability": 1
+   }
+  ],
+  "support_counts": {
+   "ev.goalPerShot.all": [
+    5,
+    54
+   ],
+   "ev.goalPerShot.last5": [
+    1,
+    11
+   ],
+   "ev.assistPerGoal.all": [
+    6,
+    14
+   ],
+   "ev.assistPerGoal.last5": [
+    2,
+    3
+   ],
+   "pp.goalPerShot.all": [
+    2,
+    10
+   ],
+   "pp.goalPerShot.last5": [
+    0,
+    4
+   ],
+   "pp.assistPerGoal.all": [
+    2,
+    6
+   ],
+   "pp.assistPerGoal.last5": [
+    0,
+    1
+   ]
+  }
+ },
+ {
+  "run_id": "run-1014-null",
+  "as_of_date": "2026-10-14",
+  "git_sha": null,
+  "game_id": 1002,
+  "player_id": 302,
+  "team_id": 3,
+  "opponent_team_id": 2,
+  "proj_shots_es": 2.5,
+  "proj_shots_pp": 0.4,
+  "proj_goals_es": 0.2243,
+  "proj_goals_pp": 0.0476,
+  "proj_assists_es": 0.3243,
+  "proj_assists_pp": null,
+  "rollout_mode": "baseline",
+  "current_baseline": {
+   "definition": "scenario_free_current_rate_model_on_reconciled_opportunities",
+   "goals_es": 0.2829,
+   "goals_pp": 0.0564,
+   "assists_es": 0.1217,
+   "assists_pp": null,
+   "shots_es": 2.5,
+   "shots_pp": 0.4
+  },
+  "season_bootstrap": {
+   "version": "season-bootstrap-v1",
+   "currentSeasonGames": 3,
+   "historyGames": 20,
+   "transitionGames": 20,
+   "sourceIds": [
+    "fantasy-src"
+   ],
+   "fantasyWeight": 0.51,
+   "historyWeight": 0.34,
+   "validation": "unvalidated",
+   "limitations": []
+  },
+  "conversion_rates": {
+   "goal_rate_es": 0.1132,
+   "goal_rate_pp": 0.141,
+   "assist_rate_es": 0.4303,
+   "assist_rate_pp": null
+  },
+  "sample_weight": 0.75,
+  "rest_schedule": {
+   "sample_weight": 1,
+   "team_rest_days": 3,
+   "opponent_rest_days": 1,
+   "rest_delta": 0.6667,
+   "toi_multiplier": 1.0572,
+   "shot_rate_multiplier": 1.0534,
+   "goal_rate_multiplier": 1.0459,
+   "assist_rate_multiplier": 1.0423
+  },
+  "sq_goal": 1,
+  "on_ice": {
+   "sample_weight": 0.8,
+   "goal_environment_multiplier": 0.99,
+   "assist_environment_multiplier": 1.005,
+   "shot_environment_multiplier": 1
+  },
+  "team_level": {
+   "sample_weight": 1,
+   "shot_rate_multiplier": 1,
+   "goal_rate_multiplier": 1.012,
+   "assist_rate_multiplier": 1.001,
+   "pace_edge": 0,
+   "opponent_defense_edge": 0
+  },
+  "opp_goalie": {
+   "sample_weight": 1,
+   "goal_rate_multiplier": 1,
+   "assist_rate_multiplier": 1.006
+  },
+  "trend_mult": {
+   "shot_rate": 1,
+   "goal_rate": 1.01,
+   "assist_rate": 0.995
+  },
+  "teammate": {
+   "dependency_score": 0.3,
+   "assist_rate_es_multiplier": 1.02,
+   "assist_rate_pp_multiplier": 1.03
+  },
+  "es_role": "L2",
+  "volatility": 0.1,
+  "scenarios": [
+   {
+    "role": "L2",
+    "probability": 1
+   }
+  ],
+  "support_counts": {
+   "ev.goalPerShot.all": [
+    6,
+    61
+   ],
+   "ev.goalPerShot.last5": [
+    2,
+    12
+   ],
+   "ev.assistPerGoal.all": [
+    7,
+    16
+   ],
+   "ev.assistPerGoal.last5": [
+    0,
+    4
+   ],
+   "pp.goalPerShot.all": [
+    0,
+    11
+   ],
+   "pp.goalPerShot.last5": [
+    1,
+    2
+   ],
+   "pp.assistPerGoal.all": [
+    null,
+    null
+   ],
+   "pp.assistPerGoal.last5": [
+    null,
+    null
+   ]
+  }
+ },
+ {
+  "run_id": "run-1014-null",
+  "as_of_date": "2026-10-14",
+  "git_sha": null,
+  "game_id": 1002,
+  "player_id": 303,
+  "team_id": 3,
+  "opponent_team_id": 2,
+  "proj_shots_es": 2.8,
+  "proj_shots_pp": 0.45,
+  "proj_goals_es": 0.2354,
+  "proj_goals_pp": 0.0532,
+  "proj_assists_es": 0.267,
+  "proj_assists_pp": 0.0799,
+  "rollout_mode": "baseline",
+  "current_baseline": {
+   "definition": "scenario_free_current_rate_model_on_reconciled_opportunities",
+   "goals_es": 0.2793,
+   "goals_pp": 0.0583,
+   "assists_es": 0.123,
+   "assists_pp": 0.0358,
+   "shots_es": 2.8,
+   "shots_pp": 0.45
+  },
+  "season_bootstrap": {
+   "version": "season-bootstrap-v1",
+   "currentSeasonGames": 3,
+   "historyGames": 20,
+   "transitionGames": 20,
+   "sourceIds": [
+    "fantasy-src"
+   ],
+   "fantasyWeight": 0.51,
+   "historyWeight": 0.34,
+   "validation": "unvalidated",
+   "limitations": []
+  },
+  "conversion_rates": {
+   "goal_rate_es": 0.0998,
+   "goal_rate_pp": 0.1295,
+   "assist_rate_es": 0.4403,
+   "assist_rate_pp": 0.6146
+  },
+  "sample_weight": 0.85,
+  "rest_schedule": {
+   "sample_weight": 1,
+   "team_rest_days": 3,
+   "opponent_rest_days": 1,
+   "rest_delta": 0.6667,
+   "toi_multiplier": 1.0572,
+   "shot_rate_multiplier": 1.0534,
+   "goal_rate_multiplier": 1.0459,
+   "assist_rate_multiplier": 1.0423
+  },
+  "sq_goal": 1.01,
+  "on_ice": {
+   "sample_weight": 0.8,
+   "goal_environment_multiplier": 0.98,
+   "assist_environment_multiplier": 1.01,
+   "shot_environment_multiplier": 1
+  },
+  "team_level": {
+   "sample_weight": 1,
+   "shot_rate_multiplier": 1,
+   "goal_rate_multiplier": 1.016,
+   "assist_rate_multiplier": 0.998,
+   "pace_edge": 0,
+   "opponent_defense_edge": 0
+  },
+  "opp_goalie": {
+   "sample_weight": 1,
+   "goal_rate_multiplier": 0.99,
+   "assist_rate_multiplier": 1.008
+  },
+  "trend_mult": {
+   "shot_rate": 1,
+   "goal_rate": 1.02,
+   "assist_rate": 0.99
+  },
+  "teammate": {
+   "dependency_score": 0.3,
+   "assist_rate_es_multiplier": 1.04,
+   "assist_rate_pp_multiplier": 1.04
+  },
+  "es_role": "L2",
+  "volatility": 0.1,
+  "scenarios": [
+   {
+    "role": "L2",
+    "probability": 1
+   }
+  ],
+  "support_counts": {
+   "ev.goalPerShot.all": [
+    7,
+    68
+   ],
+   "ev.goalPerShot.last5": [
+    1,
+    13
+   ],
+   "ev.assistPerGoal.all": [
+    8,
+    18
+   ],
+   "ev.assistPerGoal.last5": [
+    1,
+    3
+   ],
+   "pp.goalPerShot.all": [
+    1,
+    12
+   ],
+   "pp.goalPerShot.last5": [
+    0,
+    3
+   ],
+   "pp.assistPerGoal.all": [
+    2,
+    8
+   ],
+   "pp.assistPerGoal.last5": [
+    0,
+    1
+   ]
+  }
+ },
+ {
+  "run_id": "run-1014-null",
+  "as_of_date": "2026-10-14",
+  "git_sha": null,
+  "game_id": 1002,
+  "player_id": 201,
+  "team_id": 2,
+  "opponent_team_id": 3,
+  "proj_shots_es": 3.1,
+  "proj_shots_pp": 0.5,
+  "proj_goals_es": 0.2599,
+  "proj_goals_pp": 0.0581,
+  "proj_assists_es": 0.2785,
+  "proj_assists_pp": 0.0871,
+  "rollout_mode": "baseline",
+  "current_baseline": {
+   "definition": "scenario_free_current_rate_model_on_reconciled_opportunities",
+   "goals_es": 0.3426,
+   "goals_pp": 0.0776,
+   "assists_es": 0.1306,
+   "assists_pp": 0.0405,
+   "shots_es": 3.1,
+   "shots_pp": 0.5
+  },
+  "season_bootstrap": {
+   "version": "season-bootstrap-v1",
+   "currentSeasonGames": 3,
+   "historyGames": 20,
+   "transitionGames": 20,
+   "sourceIds": [
+    "fantasy-src"
+   ],
+   "fantasyWeight": 0.51,
+   "historyWeight": 0.34,
+   "validation": "unvalidated",
+   "limitations": []
+  },
+  "conversion_rates": {
+   "goal_rate_es": 0.1105,
+   "goal_rate_pp": 0.1553,
+   "assist_rate_es": 0.3812,
+   "assist_rate_pp": 0.5216
+  },
+  "sample_weight": 0.95,
+  "rest_schedule": {
+   "sample_weight": 1,
+   "team_rest_days": 1,
+   "opponent_rest_days": 3,
+   "rest_delta": -0.6667,
+   "toi_multiplier": 0.9426,
+   "shot_rate_multiplier": 0.9559,
+   "goal_rate_multiplier": 0.9647,
+   "assist_rate_multiplier": 0.9641
+  },
+  "sq_goal": 1.02,
+  "on_ice": {
+   "sample_weight": 0.8,
+   "goal_environment_multiplier": 0.97,
+   "assist_environment_multiplier": 1.015,
+   "shot_environment_multiplier": 1
+  },
+  "team_level": {
+   "sample_weight": 1,
+   "shot_rate_multiplier": 1,
+   "goal_rate_multiplier": 1.02,
+   "assist_rate_multiplier": 0.995,
+   "pace_edge": 0,
+   "opponent_defense_edge": 0
+  },
+  "opp_goalie": {
+   "sample_weight": 1,
+   "goal_rate_multiplier": 0.98,
+   "assist_rate_multiplier": 1.01
+  },
+  "trend_mult": {
+   "shot_rate": 1,
+   "goal_rate": 1.03,
+   "assist_rate": 0.985
+  },
+  "teammate": {
+   "dependency_score": 0.3,
+   "assist_rate_es_multiplier": 1.06,
+   "assist_rate_pp_multiplier": 1.05
+  },
+  "es_role": "L2",
+  "volatility": 0.1,
+  "scenarios": [
+   {
+    "role": "L2",
+    "probability": 1
+   }
+  ],
+  "support_counts": {
+   "ev.goalPerShot.all": [
+    8,
+    75
+   ],
+   "ev.goalPerShot.last5": [
+    2,
+    14
+   ],
+   "ev.assistPerGoal.all": [
+    9,
+    20
+   ],
+   "ev.assistPerGoal.last5": [
+    2,
+    4
+   ],
+   "pp.goalPerShot.all": [
+    2,
+    13
+   ],
+   "pp.goalPerShot.last5": [
+    1,
+    4
+   ],
+   "pp.assistPerGoal.all": [
+    3,
+    9
+   ],
+   "pp.assistPerGoal.last5": [
+    1,
+    2
+   ]
+  }
+ },
+ {
+  "run_id": "run-1014-null",
+  "as_of_date": "2026-10-14",
+  "git_sha": null,
+  "game_id": 1002,
+  "player_id": 202,
+  "team_id": 2,
+  "opponent_team_id": 3,
+  "proj_shots_es": 1.9,
+  "proj_shots_pp": 0.3,
+  "proj_goals_es": 0.1802,
+  "proj_goals_pp": 0.0421,
+  "proj_assists_es": 0.2288,
+  "proj_assists_pp": 0.0631,
+  "rollout_mode": "baseline",
+  "current_baseline": {
+   "definition": "scenario_free_current_rate_model_on_reconciled_opportunities",
+   "goals_es": 0.1913,
+   "goals_pp": 0.0439,
+   "assists_es": 0.0987,
+   "assists_pp": 0.0343,
+   "shots_es": 1.9,
+   "shots_pp": 0.3
+  },
+  "season_bootstrap": {
+   "version": "season-bootstrap-v1",
+   "currentSeasonGames": 3,
+   "historyGames": 20,
+   "transitionGames": 20,
+   "sourceIds": [
+    "fantasy-src"
+   ],
+   "fantasyWeight": 0.51,
+   "historyWeight": 0.34,
+   "validation": "unvalidated",
+   "limitations": []
+  },
+  "conversion_rates": {
+   "goal_rate_es": 0.1007,
+   "goal_rate_pp": 0.1462,
+   "assist_rate_es": 0.516,
+   "assist_rate_pp": 0.7827
+  },
+  "sample_weight": 0.55,
+  "rest_schedule": {
+   "sample_weight": 1,
+   "team_rest_days": 1,
+   "opponent_rest_days": 3,
+   "rest_delta": -0.6667,
+   "toi_multiplier": 0.9426,
+   "shot_rate_multiplier": 0.9559,
+   "goal_rate_multiplier": 0.9647,
+   "assist_rate_multiplier": 0.9641
+  },
+  "sq_goal": 0.98,
+  "on_ice": {
+   "sample_weight": 0.8,
+   "goal_environment_multiplier": 1.01,
+   "assist_environment_multiplier": 0.995,
+   "shot_environment_multiplier": 1
+  },
+  "team_level": {
+   "sample_weight": 1,
+   "shot_rate_multiplier": 1,
+   "goal_rate_multiplier": 1.004,
+   "assist_rate_multiplier": 1.007,
+   "pace_edge": 0,
+   "opponent_defense_edge": 0
+  },
+  "opp_goalie": {
+   "sample_weight": 1,
+   "goal_rate_multiplier": 1.02,
+   "assist_rate_multiplier": 1.002
+  },
+  "trend_mult": {
+   "shot_rate": 1,
+   "goal_rate": 0.99,
+   "assist_rate": 1.005
+  },
+  "teammate": {
+   "dependency_score": 0.3,
+   "assist_rate_es_multiplier": 0.98,
+   "assist_rate_pp_multiplier": 1.01
+  },
+  "es_role": "L2",
+  "volatility": 0.1,
+  "scenarios": [
+   {
+    "role": "L2",
+    "probability": 1
+   }
+  ],
+  "support_counts": {
+   "ev.goalPerShot.all": [
+    4,
+    47
+   ],
+   "ev.goalPerShot.last5": [
+    2,
+    10
+   ],
+   "ev.assistPerGoal.all": [
+    5,
+    12
+   ],
+   "ev.assistPerGoal.last5": [
+    1,
+    4
+   ],
+   "pp.goalPerShot.all": [
+    1,
+    9
+   ],
+   "pp.goalPerShot.last5": [
+    1,
+    3
+   ],
+   "pp.assistPerGoal.all": [
+    3,
+    5
+   ],
+   "pp.assistPerGoal.last5": [
+    1,
+    2
+   ]
+  }
+ },
+ {
+  "run_id": "run-1014-null",
+  "as_of_date": "2026-10-14",
+  "git_sha": null,
+  "game_id": 1002,
+  "player_id": 203,
+  "team_id": 2,
+  "opponent_team_id": 3,
+  "proj_shots_es": 2.2,
+  "proj_shots_pp": 0.35,
+  "proj_goals_es": 0.1959,
+  "proj_goals_pp": 0.0459,
+  "proj_assists_es": 0.2412,
+  "proj_assists_pp": 0.0688,
+  "rollout_mode": "baseline",
+  "current_baseline": {
+   "definition": "scenario_free_current_rate_model_on_reconciled_opportunities",
+   "goals_es": 0.2026,
+   "goals_pp": 0.049,
+   "assists_es": 0.1048,
+   "assists_pp": 0.0352,
+   "shots_es": 2.2,
+   "shots_pp": 0.35
+  },
+  "season_bootstrap": {
+   "version": "season-bootstrap-v1",
+   "currentSeasonGames": 3,
+   "historyGames": 20,
+   "transitionGames": 20,
+   "sourceIds": [
+    "fantasy-src"
+   ],
+   "fantasyWeight": 0.51,
+   "historyWeight": 0.34,
+   "validation": "unvalidated",
+   "limitations": []
+  },
+  "conversion_rates": {
+   "goal_rate_es": 0.0921,
+   "goal_rate_pp": 0.1399,
+   "assist_rate_es": 0.5171,
+   "assist_rate_pp": 0.718
+  },
+  "sample_weight": 0.65,
+  "rest_schedule": {
+   "sample_weight": 1,
+   "team_rest_days": 1,
+   "opponent_rest_days": 3,
+   "rest_delta": -0.6667,
+   "toi_multiplier": 0.9426,
+   "shot_rate_multiplier": 0.9559,
+   "goal_rate_multiplier": 0.9647,
+   "assist_rate_multiplier": 0.9641
+  },
+  "sq_goal": 0.99,
+  "on_ice": {
+   "sample_weight": 0.8,
+   "goal_environment_multiplier": 1,
+   "assist_environment_multiplier": 1,
+   "shot_environment_multiplier": 1
+  },
+  "team_level": {
+   "sample_weight": 1,
+   "shot_rate_multiplier": 1,
+   "goal_rate_multiplier": 1.008,
+   "assist_rate_multiplier": 1.004,
+   "pace_edge": 0,
+   "opponent_defense_edge": 0
+  },
+  "opp_goalie": {
+   "sample_weight": 1,
+   "goal_rate_multiplier": 1.01,
+   "assist_rate_multiplier": 1.004
+  },
+  "trend_mult": {
+   "shot_rate": 1,
+   "goal_rate": 1,
+   "assist_rate": 1
+  },
+  "teammate": {
+   "dependency_score": 0.3,
+   "assist_rate_es_multiplier": 1,
+   "assist_rate_pp_multiplier": 1.02
+  },
+  "es_role": "L2",
+  "volatility": 0.1,
+  "scenarios": [
+   {
+    "role": "L2",
+    "probability": 1
+   }
+  ],
+  "support_counts": {
+   "ev.goalPerShot.all": [
+    5,
+    54
+   ],
+   "ev.goalPerShot.last5": [
+    1,
+    11
+   ],
+   "ev.assistPerGoal.all": [
+    6,
+    14
+   ],
+   "ev.assistPerGoal.last5": [
+    2,
+    3
+   ],
+   "pp.goalPerShot.all": [
+    2,
+    10
+   ],
+   "pp.goalPerShot.last5": [
+    0,
+    4
+   ],
+   "pp.assistPerGoal.all": [
+    2,
+    6
+   ],
+   "pp.assistPerGoal.last5": [
+    0,
+    1
+   ]
+  }
+ },
+ {
+  "run_id": "run-1014-null",
+  "as_of_date": "2026-10-14",
+  "git_sha": null,
+  "game_id": 1002,
+  "player_id": 304,
+  "team_id": 3,
+  "opponent_team_id": 2,
+  "proj_shots_es": 2.5,
+  "proj_shots_pp": 0.4,
+  "proj_goals_es": 0.222,
+  "proj_goals_pp": 0.0499,
+  "proj_assists_es": 0.2552,
+  "proj_assists_pp": 0.0749,
+  "rollout_mode": "candidate",
+  "current_baseline": {
+   "definition": "scenario_free_current_rate_model_on_reconciled_opportunities",
+   "goals_es": 0.2829,
+   "goals_pp": 0.0564,
+   "assists_es": 0.1217,
+   "assists_pp": 0.0393,
+   "shots_es": 2.5,
+   "shots_pp": 0.4
+  },
+  "season_bootstrap": {
+   "version": "season-bootstrap-v1",
+   "currentSeasonGames": 3,
+   "historyGames": 20,
+   "transitionGames": 20,
+   "sourceIds": [
+    "fantasy-src"
+   ],
+   "fantasyWeight": 0.51,
+   "historyWeight": 0.34,
+   "validation": "unvalidated",
+   "limitations": []
+  },
+  "conversion_rates": {
+   "goal_rate_es": 0.1132,
+   "goal_rate_pp": 0.141,
+   "assist_rate_es": 0.4303,
+   "assist_rate_pp": 0.6964
+  },
+  "sample_weight": 0.75,
+  "rest_schedule": {
+   "sample_weight": 1,
+   "team_rest_days": 3,
+   "opponent_rest_days": 1,
+   "rest_delta": 0.6667,
+   "toi_multiplier": 1.0572,
+   "shot_rate_multiplier": 1.0534,
+   "goal_rate_multiplier": 1.0459,
+   "assist_rate_multiplier": 1.0423
+  },
+  "sq_goal": 1,
+  "on_ice": {
+   "sample_weight": 0.8,
+   "goal_environment_multiplier": 0.99,
+   "assist_environment_multiplier": 1.005,
+   "shot_environment_multiplier": 1
+  },
+  "team_level": {
+   "sample_weight": 1,
+   "shot_rate_multiplier": 1,
+   "goal_rate_multiplier": 1.012,
+   "assist_rate_multiplier": 1.001,
+   "pace_edge": 0,
+   "opponent_defense_edge": 0
+  },
+  "opp_goalie": {
+   "sample_weight": 1,
+   "goal_rate_multiplier": 1,
+   "assist_rate_multiplier": 1.006
+  },
+  "trend_mult": {
+   "shot_rate": 1,
+   "goal_rate": 1.01,
+   "assist_rate": 0.995
+  },
+  "teammate": {
+   "dependency_score": 0.3,
+   "assist_rate_es_multiplier": 1.02,
+   "assist_rate_pp_multiplier": 1.03
+  },
+  "es_role": "L2",
+  "volatility": 0.1,
+  "scenarios": [
+   {
+    "role": "L2",
+    "probability": 1
+   }
+  ],
+  "support_counts": {
+   "ev.goalPerShot.all": [
+    6,
+    61
+   ],
+   "ev.goalPerShot.last5": [
+    2,
+    12
+   ],
+   "ev.assistPerGoal.all": [
+    7,
+    16
+   ],
+   "ev.assistPerGoal.last5": [
+    0,
+    4
+   ],
+   "pp.goalPerShot.all": [
+    0,
+    11
+   ],
+   "pp.goalPerShot.last5": [
+    1,
+    2
+   ],
+   "pp.assistPerGoal.all": [
+    3,
+    7
+   ],
+   "pp.assistPerGoal.last5": [
+    1,
+    2
+   ]
+  }
+ },
+ {
+  "run_id": "run-1013-null",
+  "as_of_date": "2026-10-13",
+  "git_sha": null,
+  "game_id": 1001,
+  "player_id": 101,
+  "team_id": 1,
+  "opponent_team_id": 2,
+  "proj_shots_es": 2.8,
+  "proj_shots_pp": 0.45,
+  "proj_goals_es": 0.2345,
+  "proj_goals_pp": 0.0531,
+  "proj_assists_es": 0.2663,
+  "proj_assists_pp": 0.0796,
+  "rollout_mode": "baseline",
+  "current_baseline": {
+   "definition": "scenario_free_current_rate_model_on_reconciled_opportunities",
+   "goals_es": 0.2737,
+   "goals_pp": 0.0571,
+   "assists_es": 0.1186,
+   "assists_pp": 0.0345,
+   "shots_es": 2.8,
+   "shots_pp": 0.45
+  },
+  "season_bootstrap": {
+   "version": "season-bootstrap-v1",
+   "currentSeasonGames": 3,
+   "historyGames": 20,
+   "transitionGames": 20,
+   "sourceIds": [
+    "fantasy-src"
+   ],
+   "fantasyWeight": 0.51,
+   "historyWeight": 0.34,
+   "validation": "unvalidated",
+   "limitations": []
+  },
+  "conversion_rates": {
+   "goal_rate_es": 0.0978,
+   "goal_rate_pp": 0.1269,
+   "assist_rate_es": 0.4332,
+   "assist_rate_pp": 0.6046
+  },
+  "sample_weight": 0.85,
+  "rest_schedule": {
+   "sample_weight": 1,
+   "team_rest_days": 3,
+   "opponent_rest_days": 2,
+   "rest_delta": 0.3333,
+   "toi_multiplier": 1.0472,
+   "shot_rate_multiplier": 1.0204,
+   "goal_rate_multiplier": 1.0213,
+   "assist_rate_multiplier": 1.0199
+  },
+  "sq_goal": 1.01,
+  "on_ice": {
+   "sample_weight": 0.8,
+   "goal_environment_multiplier": 0.98,
+   "assist_environment_multiplier": 1.01,
+   "shot_environment_multiplier": 1
+  },
+  "team_level": {
+   "sample_weight": 1,
+   "shot_rate_multiplier": 1,
+   "goal_rate_multiplier": 1.016,
+   "assist_rate_multiplier": 0.998,
+   "pace_edge": 0,
+   "opponent_defense_edge": 0
+  },
+  "opp_goalie": {
+   "sample_weight": 1,
+   "goal_rate_multiplier": 0.99,
+   "assist_rate_multiplier": 1.008
+  },
+  "trend_mult": {
+   "shot_rate": 1,
+   "goal_rate": 1.02,
+   "assist_rate": 0.99
+  },
+  "teammate": {
+   "dependency_score": 0.3,
+   "assist_rate_es_multiplier": 1.04,
+   "assist_rate_pp_multiplier": 1.04
+  },
+  "es_role": "L2",
+  "volatility": 0.1,
+  "scenarios": [
+   {
+    "role": "L2",
+    "probability": 1
+   }
+  ],
+  "support_counts": {
+   "ev.goalPerShot.all": [
+    7,
+    68
+   ],
+   "ev.goalPerShot.last5": [
+    1,
+    13
+   ],
+   "ev.assistPerGoal.all": [
+    8,
+    18
+   ],
+   "ev.assistPerGoal.last5": [
+    1,
+    3
+   ],
+   "pp.goalPerShot.all": [
+    1,
+    12
+   ],
+   "pp.goalPerShot.last5": [
+    0,
+    3
+   ],
+   "pp.assistPerGoal.all": [
+    2,
+    8
+   ],
+   "pp.assistPerGoal.last5": [
+    0,
+    1
+   ]
+  }
+ }
+]

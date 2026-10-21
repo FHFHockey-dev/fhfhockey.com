@@ -109,3 +109,70 @@ order by pg_relation_size(indexrelid) desc;
 select jobid, jobname, schedule, active
 from cron.job
 order by schedule, jobname;
+
+-- ===== Backtest cohort export (TJ approved 2026-10-21 ~19:05Z; run once each via read-only psql; outputs to scratchpad JSON, not printed) =====
+-- s1_runs
+select coalesce(json_agg(t), '[]'::json) from (-- S1 cohort runs (~10-30 rows, <10 KB)
+select run_id, as_of_date, git_sha, created_at,
+       metrics->>'horizon_games' as horizon_games,
+       metrics->'resume'->>'scope_key' as scope_key
+from forge_runs
+where status = 'succeeded' and as_of_date between '2026-10-13' and '2026-10-21'
+  and (metrics->>'horizon_games' = '1'
+       or (metrics->>'horizon_games' is null
+           and coalesce(metrics->'resume'->>'scope_key','h1:') like 'h1:%'))
+order by as_of_date, created_at desc) t;
+-- s2_projections
+select coalesce(json_agg(t), '[]'::json) from (-- S2 projection rows, needed paths only (~3,000-3,400 rows, ~1.2-1.6 KB each => ~4-5 MB JSON)
+with runs as (
+  select distinct on (as_of_date) run_id, as_of_date, git_sha
+  from forge_runs
+  where status = 'succeeded' and as_of_date between '2026-10-13' and '2026-10-21'
+    and (metrics->>'horizon_games' = '1'
+         or (metrics->>'horizon_games' is null
+             and coalesce(metrics->'resume'->>'scope_key','h1:') like 'h1:%'))
+  order by as_of_date, (git_sha is not null and git_sha not like 'local:%') desc, created_at desc)
+select p.run_id, p.as_of_date, r.git_sha, p.game_id, p.player_id, p.team_id, p.opponent_team_id,
+  p.proj_shots_es, p.proj_shots_pp, p.proj_goals_es, p.proj_goals_pp, p.proj_assists_es, p.proj_assists_pp,
+  m->'rollout'->>'mode' as rollout_mode,
+  m->'holdout_baselines'->'current_baseline' as current_baseline,
+  s->'season_bootstrap' as season_bootstrap,
+  s->'conversion_rates' as conversion_rates,
+  s->'small_sample'->'sample_weight' as sample_weight,
+  s->'rest_schedule' as rest_schedule,
+  s->'shot_quality'->'goal_rate_multiplier' as sq_goal,
+  s->'on_ice_context' - 'source_date' - 'possession_pct' as on_ice,
+  s->'team_level_context' as team_level,
+  s->'opponent_goalie_context' as opp_goalie,
+  s->'trend_adjustment'->'multipliers' as trend_mult,
+  s->'teammate_context' as teammate,
+  s->'es_role' as es_role,
+  s->'role_continuity'->'volatility_index' as volatility,
+  s->'role_scenarios'->'scenarios' as scenarios,
+  (select jsonb_object_agg(st||'.'||pr||'.'||w, jsonb_build_array(
+            s->'conversion_count_support'->st->'pairs'->pr->w->'numerator',
+            s->'conversion_count_support'->st->'pairs'->pr->w->'denominator'))
+     from unnest(array['ev','pp']) st, unnest(array['goalPerShot','assistPerGoal']) pr,
+          unnest(array['all','last5']) w) as support_counts
+from runs r
+join forge_player_projections p on p.run_id = r.run_id and p.as_of_date = r.as_of_date and p.horizon_games = 1
+join games g on g.id = p.game_id and g.date = p.as_of_date
+cross join lateral (select p.uncertainty->'model' as m) mm
+cross join lateral (select mm.m->'skater_selection' as s) ss
+order by p.as_of_date, p.game_id, p.player_id) t;
+-- s3_actuals
+select coalesce(json_agg(t), '[]'::json) from (-- S3 actuals (~2,800-3,200 rows, ~80 B each => ~0.3 MB)
+select game_id, player_id, date, goals, assists, pp_points, shots
+from wgo_skater_stats
+where date between '2026-10-13' and '2026-10-21') t;
+-- s4_games
+select coalesce(json_agg(t), '[]'::json) from (-- S4 games + independent rest context (~70-90 rows, <15 KB)
+select g.id, g.date, g."homeTeamId", g."awayTeamId",
+  (select max(h.date) from games h where h.date < g.date
+     and g."homeTeamId" in (h."homeTeamId", h."awayTeamId")) as home_prev_date,
+  (select max(h.date) from games h where h.date < g.date
+     and g."awayTeamId" in (h."homeTeamId", h."awayTeamId")) as away_prev_date
+from games g
+where g.date between '2026-10-13' and '2026-10-21'
+order by g.date, g.id) t;
+-- s2 retry (cast fix): ((s->'on_ice_context')::jsonb - 'source_date'::text - 'possession_pct'::text)
