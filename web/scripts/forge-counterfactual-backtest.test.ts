@@ -4,7 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
-  clusterBootstrap, counterfactualHeads, prepareRows, renderReport, runCounterfactualBacktest, usedRates,
+  bayesSplitRates, clusterBootstrap, counterfactualHeads, prepareRows, renderReport, runCounterfactualBacktest, summarize, usedRates, VARIANTS,
+  type PreparedRow,
 } from "./forge-counterfactual-backtest";
 import { computeSkaterRestScheduleAdjustments, resolveSkaterConversionRates } from "../lib/projections/calculators/skater-adjustments";
 
@@ -133,6 +134,27 @@ describe("forge counterfactual backtest", () => {
     expect(checked).toBe(11);
   });
 
+  it("a4 refits assists per goal: Bayes assist rates double and goals are unchanged", () => {
+    const support = load("projections")[0].support_counts;
+    const two = bayesSplitRates(support, 1, 1, "per_two_goals"), one = bayesSplitRates(support, 1, 1, "per_goal");
+    expect(two.assistRateEs).toBeGreaterThan(0.2); expect(two.assistRateEs).toBeLessThan(1.45);
+    expect(one.assistRateEs! / two.assistRateEs!).toBeCloseTo(2, 10);
+    expect(one.assistRatePp! / two.assistRatePp!).toBeCloseTo(2, 10);
+    expect(one.goalRateEs).toBe(two.goalRateEs);
+    const { rows } = prepareRows(inputs());
+    let checked = 0;
+    for (const r of rows) {
+      expect(r.preds.a4.G).toBe(r.preds.baseline.G);
+      expect(r.preds.a4q7.G).toBe(r.preds.q7.G);
+      if (!r.heads.includes("A")) continue;
+      // Organic A under a4 is exactly twice the organic A under a1 (same Bayes path, old scale) when no clamp binds.
+      const { p, W, priorA } = r.decomp, organic = (a: number) => (a * W - W * priorA) / p;
+      expect(organic(r.preds.a4.A) / organic(r.preds.a1.A)).toBeCloseTo(2, 8);
+      checked += 1;
+    }
+    expect(checked).toBe(11);
+  });
+
   it("renders the assists decomposition and it adds up", () => {
     const { rows, checks, selected } = prepareRows(inputs());
     const report = renderReport({ rows, checks, selected, inputs: [], seed: 1, reps: 50 });
@@ -144,6 +166,24 @@ describe("forge counterfactual backtest", () => {
       expect(Math.abs(finalA - (p * orgA + priorA * W) / W)).toBeLessThan(1e-6);
       expect(finalA).toBeCloseTo(r.preds.baseline.A, 10);
     }
+  });
+
+  it("RMSE and paired ΔRMSE match hand values", () => {
+    const zero = { G: 0, A: 0, PPP: 0 };
+    const row = (gameId: number, actual: number, base: number, q7: number) => ({ gameId, playerId: gameId, date: "2026-10-13",
+      gitSha: null, stamped: false, teamRest: null, oppRest: null, heads: ["G" as const], actual: { ...zero, G: actual },
+      preds: Object.fromEntries(VARIANTS.map((v) => [v.key, { ...zero, G: v.key === "q7" ? q7 : base }])) as PreparedRow["preds"],
+      decomp: { p: 1, W: 1, orgA: 0, priorA: 0, finalA: 0, bindEs: false, bindPp: false } });
+    // Baseline errors 0.5, -1, 2 (SSE 5.25); q7 errors 0, -0.5, 1 (SSE 1.25).
+    const rows: PreparedRow[] = [row(1, 0, 0.5, 0), row(2, 1, 0, 0.5), row(3, 1, 3, 2)];
+    expect(summarize(rows, "baseline", "G").rmse).toBeCloseTo(Math.sqrt(5.25 / 3), 12);
+    expect(summarize(rows, "q7", "G").rmse).toBeCloseTo(Math.sqrt(1.25 / 3), 12);
+    const a = clusterBootstrap(rows, "q7", "G", 7, 300);
+    expect(a.dRmse).toBeCloseTo(Math.sqrt(1.25 / 3) - Math.sqrt(5.25 / 3), 12);
+    expect(a.dRmseCi[0]).toBeLessThanOrEqual(a.dRmse);
+    expect(a.dRmseCi[1]).toBeLessThanOrEqual(0);
+    expect(clusterBootstrap(rows, "q7", "G", 7, 300)).toEqual(a);
+    expect(clusterBootstrap(rows, "baseline", "G", 7, 300).dRmse).toBe(0);
   });
 
   it("bootstrap CIs are deterministic for a fixed seed", () => {
