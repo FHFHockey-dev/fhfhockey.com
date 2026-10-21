@@ -91,11 +91,33 @@ const handler = async (
     return res.status(405).json({ error: "Method not allowed" });
   }
 
+  const today = new Date().toISOString().split("T")[0];
+  // Optional last game date to project (inclusive), at most a week ahead so
+  // future games stay bounded; defaults to today.
+  const maxEndDate = new Date(Date.parse(`${today}T00:00:00Z`) + 7 * 86_400_000)
+    .toISOString()
+    .split("T")[0];
+  const endDate =
+    typeof req.query.endDate === "string" ? req.query.endDate : today;
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(endDate) ||
+    Number.isNaN(Date.parse(`${endDate}T00:00:00Z`)) ||
+    new Date(`${endDate}T00:00:00Z`).toISOString().split("T")[0] !== endDate
+  ) {
+    return res
+      .status(400)
+      .json({ error: "endDate must be a valid YYYY-MM-DD date." });
+  }
+  if (endDate > maxEndDate) {
+    return res
+      .status(400)
+      .json({ error: `endDate must be on or before ${maxEndDate}.` });
+  }
+
   try {
     console.log("Starting goalie projection update...");
     const currentSeason = await fetchCurrentSeasonInfo();
     const seasonStartDate = currentSeason.startDate.split("T")[0];
-    const today = new Date().toISOString().split("T")[0];
 
     // Optional limit parameter to control how many days to process
     const limitDays = req.query.limit
@@ -113,7 +135,10 @@ const handler = async (
     let processingStartDate = seasonStartDate;
 
     if (lastProjection && (lastProjection as any).game_date) {
-      processingStartDate = (lastProjection as any).game_date;
+      // Never resume after today: rows already written for future games must
+      // not skip refreshing today's games with history through today.
+      const lastGameDate: string = (lastProjection as any).game_date;
+      processingStartDate = lastGameDate < today ? lastGameDate : today;
       console.log(
         `Found existing projections. Resuming/Overwriting from ${processingStartDate}`
       );
@@ -123,12 +148,13 @@ const handler = async (
       );
     }
 
-    // 2. Fetch all games from processingStartDate to Today (inclusive)
+    // 2. Fetch all games from processingStartDate to endDate (inclusive).
+    // Future games use goalie logs through today.
     const { data: gamesToProcess, error: gamesError } = await supabase
       .from("games")
       .select("id, homeTeamId, awayTeamId, date")
       .gte("date", processingStartDate)
-      .lte("date", today)
+      .lte("date", endDate)
       .order("date", { ascending: true });
 
     if (gamesError) throw gamesError;

@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import supabase from "lib/supabase/server";
 import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "./calibrationEligibility";
-import { excludeOffReleaseRuns } from "./releasedRunFence";
+import { excludeOffReleaseRuns, restrictRunsToHorizon } from "./releasedRunFence";
 
 export const dateSchema = z
   .string({ required_error: "date is required" })
@@ -36,13 +36,14 @@ export function buildProjectionApiErrorResponse(
 
 export async function requireLatestSucceededRunId(
   asOfDate: string,
+  horizonGames = 1,
 ): Promise<string> {
   if (!supabase) throw new Error("Supabase server client not available");
-  const { data, error } = await excludeOffReleaseRuns(supabase
+  const { data, error } = await restrictRunsToHorizon(excludeOffReleaseRuns(supabase
     .from("forge_runs")
     .select("run_id,metrics")
     .eq("as_of_date", asOfDate)
-    .eq("status", "succeeded"))
+    .eq("status", "succeeded")), horizonGames)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();

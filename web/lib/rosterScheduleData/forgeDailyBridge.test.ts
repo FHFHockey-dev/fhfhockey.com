@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import { candidateHorizonPoints } from "lib/rosterScheduleOptimizer/planning";
 import type { PlanningGame, PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
+import { runHorizonFilter } from "lib/projections/releasedRunFence";
 import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_VERSION, loadForgeDailyBridgeForecasts, opponentTilts, teamWinProbability, type ForgeDailyBridgeInputs } from "./forgeDailyBridge";
 import { compactBridgeForecasts, expandBridgeForecasts, fitBridgeWire, packPlanningSnapshots, unpackPlanningSnapshots, type BridgeForecastWire } from "./bridgeForecastWire";
 import { preservationJson } from "lib/rosterScheduleOptimizer/workspace";
@@ -293,13 +294,17 @@ describe("FORGE daily bridge", () => {
   });
 
   it.each([
-    ["only off-release runs exist", [] as string[]],
-    ["a newer null or local run shares the released run's date", ["released"]],
-  ])("reads no null-sha or local run when %s", async (_label, expected) => {
-    const runRows = [
+    ["only off-release runs exist", [] as string[], []],
+    ["a newer null or local run shares the released run's date", ["released"], []],
+    // The daily h5 cron run is the newest succeeded run for the date.
+    ["a newer released h5 run shares the released h1 run's date", ["released"],
+      [{ run_id: "h5-run", as_of_date: "2026-10-19", created_at: "2026-10-19T17:00:00Z", git_sha: "abc", metrics: { horizon_games: 5 } }]],
+  ])("reads no null-sha, local or h5 run when %s", async (_label, expected, extraRuns) => {
+    const runRows: Record<string, any>[] = [
       { run_id: "null-run", as_of_date: "2026-10-19", created_at: "2026-10-19T15:00:00Z", git_sha: null },
       { run_id: "local-run", as_of_date: "2026-10-19", created_at: "2026-10-19T16:00:00Z", git_sha: "local:unknown" },
-      ...(expected.length ? [{ run_id: "released", as_of_date: "2026-10-19", created_at: "2026-10-19T12:00:00Z", git_sha: "abc" }] : []),
+      ...(expected.length ? [{ run_id: "released", as_of_date: "2026-10-19", created_at: "2026-10-19T12:00:00Z", git_sha: "abc", metrics: { horizon_games: 1 } }] : []),
+      ...extraRuns,
     ];
     const runIdReads: unknown[] = [];
     // Applies the forge_runs git_sha filters the reader sends; every other table is empty.
@@ -321,8 +326,8 @@ describe("FORGE daily bridge", () => {
           return builder;
         },
         or: (expression: string) => {
-          if (expression !== "git_sha.is.null,git_sha.not.like.local:*") throw new Error(expression);
-          keep(sha => sha === null || !sha.startsWith("local:"));
+          if (expression !== runHorizonFilter(1)) throw new Error(expression);
+          rows = rows.filter(row => (row.metrics?.horizon_games ?? 1) === 1);
           return builder;
         },
         range: () => builder,

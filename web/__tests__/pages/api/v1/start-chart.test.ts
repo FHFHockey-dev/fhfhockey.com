@@ -10,6 +10,7 @@ import { normalizePlanningGames, publicPlanningForecasts } from "lib/rosterSched
 import { evaluatePlan } from "lib/rosterScheduleOptimizer/planning";
 import type { PlanIntent, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 import { buildForgeInputProvenance, FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
+import { runHorizonFilter } from "lib/projections/releasedRunFence";
 import type { ForgeGameRevision } from "lib/projections/gameRevisions";
 import { buildGameExpectations } from "lib/player-forecasts/gameExpectations";
 import { buildGameExpectationView, decodeGameExpectationView } from "lib/player-forecasts/gameExpectationView";
@@ -994,7 +995,7 @@ describe("/api/v1/start-chart", () => {
       const client = createClient("http://localhost:59999", "synthetic-key", { global: {
         fetch: async (input) => {
           const url = new URL(String(input)); requests.push(url);
-          expect(url.searchParams.get("or")).toBeNull();
+          expect(url.searchParams.get("or")).toBe(`(${runHorizonFilter(1)})`);
           expect(url.searchParams.getAll("git_sha")).toEqual(["not.is.null", "not.like.local:*"]);
           expect(url.searchParams.get("status")).toBe("eq.succeeded");
           expect(url.searchParams.get("limit")).toBe("1");
@@ -1021,6 +1022,38 @@ describe("/api/v1/start-chart", () => {
       expect(JSON.stringify(res.body)).not.toContain("private-success");
     },
   );
+
+  it("selects the latest h1 run when the daily h5 run is newer for the date", async () => {
+    vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "false");
+    const { createClient } = await import("@supabase/supabase-js");
+    const requests: URL[] = [];
+    const client = createClient("http://localhost:59999", "synthetic-key", { global: {
+      fetch: async (input) => {
+        const url = new URL(String(input)); requests.push(url);
+        // Newest first; the horizon filter is what keeps the h5 run out.
+        const runs = [
+          { run_id: "h5-run", created_at: "2026-02-07T15:12:00Z", horizon_games: 5 },
+          { run_id: "h1-run", created_at: "2026-02-07T14:15:00Z", horizon_games: 1 },
+        ].filter((run) => url.searchParams.get("or") !== `(${runHorizonFilter(1)})` || run.horizon_games === 1);
+        const run = runs[0];
+        return new Response(JSON.stringify({ run_id: run.run_id, as_of_date: "2026-02-07", git_sha: "a".repeat(40),
+          created_at: run.created_at, metrics: { horizon_games: run.horizon_games, input_provenance: {
+            external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } },
+          forge_player_projections: run.horizon_games === 1 ? [defaultProjection] : [] }),
+        { status: 200, headers: { "Content-Type": "application/json" } });
+      },
+    } });
+    const prior = fromMock.getMockImplementation()!;
+    fromMock.mockImplementation((table: string) => table === "forge_runs" ? client.from(table) : prior(table));
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+    expect(requests).toHaveLength(1);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.projectionRunId).toBe("h1-run");
+    expect(res.body.players.find((row: any) => row.player_id === defaultProjection.player_id).proj_fantasy_points).toBeGreaterThan(0);
+  });
 
   it("keeps the serving-off FORGE run reader independent of the revision canary", async () => {
     vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "false");

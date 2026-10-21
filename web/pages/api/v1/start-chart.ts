@@ -21,7 +21,7 @@ import {
 } from "lib/projections/forgeSkaterContext";
 import { buildGoalieStarterMixtureRows } from "lib/projections/goalieStarterMixtures";
 import { buildSkaterModeledHeadTotals } from "lib/projections/modeledHeadTotals";
-import { excludeOffReleaseRuns, isOffReleaseGitSha } from "lib/projections/releasedRunFence";
+import { excludeOffReleaseRuns, isOffReleaseGitSha, restrictRunsToHorizon } from "lib/projections/releasedRunFence";
 import { boardSkaterForecast, admittedBoardGoalieForecast, parseBoardScoringRequest, scoreStarterBoardPayload, type BoardScoringRequest } from "lib/projections/starterBoardScoring";
 import {
   normalizeStartChartResponse,
@@ -878,7 +878,8 @@ async function fetchSlate(
     .eq("status", "succeeded");
   // Off-release (null or local:) runs are private even after succeeding. Filter
   // before limit so a private run cannot replace the latest public legacy run.
-  runQuery = excludeOffReleaseRuns(runQuery)
+  // The daily h5 run shares the date: pick the latest h1 run, not the latest run.
+  runQuery = restrictRunsToHorizon(excludeOffReleaseRuns(runQuery))
     .eq("as_of_date", targetDate)
     .eq("forge_player_projections.as_of_date", targetDate)
     .eq("forge_player_projections.horizon_games", 1);

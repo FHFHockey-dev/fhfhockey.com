@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { calendarLeadDay, validForecastCalendarPolicy, type ForecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import { loadDailyBoardEvidence, type DailyBoardEvidence } from "lib/projections/dailyBoardEvidence";
 import { buildSkaterModeledHeadTotals } from "lib/projections/modeledHeadTotals";
-import { excludeOffReleaseRuns } from "lib/projections/releasedRunFence";
+import { excludeOffReleaseRuns, restrictRunsToHorizon } from "lib/projections/releasedRunFence";
 import { computeTeamStrengthContextAdjustment } from "lib/projections/calculators/team-context-adjustments";
 import { computeSkaterRestScheduleAdjustments } from "lib/projections/calculators/skater-adjustments";
 import { DEFENSE_B2B_FATIGUE_BOOST, OPPONENT_AWAY_PENALTY, OPPONENT_B2B_PENALTY, OPPONENT_HOME_BOOST, OPPONENT_RESTED_BOOST } from "lib/projections/constants/projection-weights";
@@ -459,14 +459,14 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   return { forecasts: forecasts.slice(0, kept), limitations };
 }
 
-/** Read-only: the latest successful public FORGE run per slate date in the lookback, as Start Chart serves it. */
+/** Read-only: the latest successful public h1 FORGE run per slate date in the lookback, as Start Chart serves it. */
 export async function loadForgeDailyBridgeForecasts(db: SupabaseClient<any>, players: PlanningPlayer[], games: PlanningGame[], now: Date,
   seasonId: number, deadline: number, calendarPolicy: ForecastCalendarPolicy): Promise<ForgeDailyBridgeResult> {
   const readDeadline = Math.min(deadline, Date.now() + 6000);
   const from = new Date(now.getTime() - FORGE_DAILY_BRIDGE_LOOKBACK_DAYS * DAY_MS).toISOString().slice(0, 10);
   const to = new Date(now.getTime() + DAY_MS).toISOString().slice(0, 10);
-  const runRows = await pages(() => excludeOffReleaseRuns(db.from("forge_runs").select("run_id,as_of_date,created_at,git_sha", { count: "exact" })
-    .eq("status", "succeeded")).gte("as_of_date", from).lte("as_of_date", to)
+  const runRows = await pages(() => restrictRunsToHorizon(excludeOffReleaseRuns(db.from("forge_runs").select("run_id,as_of_date,created_at,git_sha", { count: "exact" })
+    .eq("status", "succeeded"))).gte("as_of_date", from).lte("as_of_date", to)
     .order("as_of_date", { ascending: false }).order("created_at", { ascending: false }).order("run_id"), readDeadline, 500, row => row.run_id);
   const latestByDate = new Map<string, Row>();
   for (const row of runRows) if (!latestByDate.has(row.as_of_date) && Date.parse(row.created_at) <= now.getTime()) latestByDate.set(row.as_of_date, row);

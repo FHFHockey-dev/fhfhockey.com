@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const lookup = vi.hoisted(() => ({
-  from: vi.fn(), select: vi.fn(), eq: vi.fn(), not: vi.fn(), order: vi.fn(), limit: vi.fn(), maybeSingle: vi.fn(),
+  from: vi.fn(), select: vi.fn(), eq: vi.fn(), not: vi.fn(), or: vi.fn(), order: vi.fn(), limit: vi.fn(), maybeSingle: vi.fn(),
 }));
 vi.mock("lib/supabase/server", () => ({ default: { from: lookup.from } }));
 
@@ -10,11 +10,12 @@ import {
   FORGE_ROLLING_HISTORY_INPUT_CONTRACT,
   FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT,
 } from "./calibrationEligibility";
+import { runHorizonFilter } from "./releasedRunFence";
 
 describe("latest FORGE run admission", () => {
   beforeEach(() => {
     for (const mock of Object.values(lookup)) mock.mockReset();
-    for (const method of ["from", "select", "eq", "not", "order", "limit"] as const) {
+    for (const method of ["from", "select", "eq", "not", "or", "order", "limit"] as const) {
       lookup[method].mockReturnValue(lookup);
     }
   });
@@ -28,6 +29,7 @@ describe("latest FORGE run admission", () => {
     expect(lookup.select).toHaveBeenCalledWith("run_id,metrics");
     expect(lookup.eq.mock.calls).toEqual([["as_of_date", "2026-10-13"], ["status", "succeeded"]]);
     expect(lookup.not.mock.calls).toEqual([["git_sha", "is", null], ["git_sha", "like", "local:*"]]);
+    expect(lookup.or.mock.calls).toEqual([[runHorizonFilter(1)]]);
     expect(lookup.order).toHaveBeenCalledWith("created_at", { ascending: false });
     expect(lookup.limit).toHaveBeenCalledWith(1);
     expect(lookup.maybeSingle).toHaveBeenCalledTimes(1);
