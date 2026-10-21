@@ -20,7 +20,10 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
 - `supabase/migrations/` - New migrations: latest-rolling-row RPC, unread-column drop.
 - `tasks/TASKS/repository-audit-remediation/migration-authority.json` - Migration ledger records.
 - `web/lib/supabase/supportedBaselineMigration.test.ts` - Ledger counts.
-- `web/lib/supabase/database-generated.types.ts` - Regenerated after the column drop.
+- `web/lib/supabase/database-generated.types.ts` - The 491 dropped keys removed from the `rolling_player_game_metrics` Row/Insert/Update blocks (1,473 lines).
+- `web/lib/supabase/Upserts/rollingDroppedColumns.ts` - `ROLLING_DROPPED_COLUMNS` (491) and `isRollingDroppedColumn`.
+- `web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts` (+ test), `web/scripts/check-rolling-player-{family-reconstruction,disputed-metrics,optional-additions}.ts` - Skip dropped columns.
+- `tasks/artifacts/forge-projection-audit-2026-10-21/drafts/drop_unread_rolling_columns.sql` - The 491-column drop. It moves to `supabase/migrations/` with its ledger version when applied.
 - `tasks/TASKS/cron-operations/cron-schedule.md` - pg_cron inventory (jobs 278, 79, 329); 278 weekly and 329 at 09:15Z recorded 2026-10-21.
 - `web/lib/cron/nstCoordination.ts` - NST cron start table, kept in step with the inventory by `nstCoordination.test.ts` (329 moved to 09:15).
 - `web/lib/cron/combinedCronInventory.test.ts`, `web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts` - Frozen cron counts.
@@ -40,13 +43,13 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
   - [x] 1.1 Ask TJ to approve the read-only queries from `workers/w2-rolling.md` §5: Q1 (heap, TOAST and index sizes, dead tuples), Q2 (per-index use), Q3 with `pg_class.reltuples` instead of the full-table scan, and Q4 (null fractions by season on a 0.5% sample, including pre-pruning rows).
   - [x] 1.2 Run them once and record the results in the task list notes below.
   - [x] 1.3 Re-derive the unread column set at HEAD, adding the dynamic readers the audit flagged as unconfirmed (rankings select fields, trends player page builders, `skaterWindowAggregation`, entity-metric rankings, `trendsDebug`, `web/scripts/*`, `rollingPlayerValidationPayload` `select("*")`). Write the reviewed lists to `rolling-column-inventory.json`: wide-unread, wide-diagnostic-only, sidecar-unread and sidecar-read keys.
-  - [ ] 1.4 Decide with TJ which diagnostic-only columns (`trendsDebug`, scripts) to keep.
+  - [x] 1.4 Decide with TJ which diagnostic-only columns (`trendsDebug`, scripts) to keep.
 
 - [ ] 2.0 Sidecar payload diet (Q11)
   - [x] 2.1 In `splitRollingUpsertRowForDurableStorage`, stop writing null-valued keys into `support_payload`. (Drafted by the audit session's W-B before the hand-over; verified here: test added, file tests green.)
-  - [ ] 2.2 Write only the sidecar keys in the read list from 1.3 (an explicit allowlist), dropping the unread ones.
-  - [ ] 2.3 Extend `fetchRollingPlayerAverages.test.ts`: a payload with nulls and unread keys produces the reduced payload, and the reader merge (`mergeRollingSupportPayloadFields`, `skater-queries` hydrate) returns identical values with and without them.
-  - [ ] 2.4 Run the writer and reader test files and lint.
+  - [x] 2.2 Write only the sidecar keys in the read list from 1.3 (an explicit allowlist), dropping the unread ones.
+  - [x] 2.3 Extend `fetchRollingPlayerAverages.test.ts`: a payload with nulls and unread keys produces the reduced payload, and the reader merge (`mergeRollingSupportPayloadFields`, `skater-queries` hydrate) returns identical values with and without them.
+  - [x] 2.4 Run the writer and reader test files and lint.
 
 - [ ] 3.0 FORGE rolling read diet (S-F)
   - [x] 3.1 Decide with TJ: latest row per player × strength via (a) a new RPC with `DISTINCT ON (player_id)` (one round trip per team-game, needs a migration and grants), or (b) one `order by game_date desc limit 1` query per player id (no migration, about 60 small queries per team-game).
@@ -76,9 +79,9 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
   - [ ] 6.3 Confirm with a read-only count that rolling rows were rewritten for the window.
 
 - [ ] 7.0 Wide-table unread columns (S-G)
-  - [ ] 7.1 Stop writing the confirmed wide-unread columns (from 1.3) in the writer's upsert body, and omit the always-null pruned keys if Q4 shows no pre-pruning values that a reader would still see.
+  - [x] 7.1 Stop writing the confirmed wide-unread columns (from 1.3) in the writer's upsert body, and omit the always-null pruned keys if Q4 shows no pre-pruning values that a reader would still see.
   - [ ] 7.2 Release the writer change (8.0), so nothing writes the columns before they are dropped.
-  - [ ] 7.3 Decide with TJ how to reclaim space after the drop:
+  - [x] 7.3 Decide with TJ how to reclaim space after the drop:
     - (a) `DROP COLUMN` only: instant, but the space returns only as rows are rewritten.
     - (b) `VACUUM FULL` in a maintenance window: locks the table for the duration.
     - (c) `pg_repack`, if available on the project: online. (TJ chose (c), falling back to (a) if unavailable.)
@@ -198,3 +201,37 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
   - per player, a Limit over an Index Only Scan Backward on `rolling_player_game_metrics_pkey`;
   - then Memoize plus a sidecar primary-key lookup;
   - total cost about 17.
+
+### 8.0 Release notes (2026-10-21)
+
+- **R16** (TJ approved the narrowed scope):
+  - Contents: Q10/Q11/Q12 (`ebdcfe6be`) plus the NST cron constant and the 278/329 note in `cron-schedule.md` (`321ed2626`).
+  - The master merge of `cron-schedule.md` leaves out the unreleased job 393 note, so master's frozen cron counts still match.
+  - Candidate: `d5283309829f34b0bc1d909da875ef5bc02b9c1a` on `42eb9fd80`.
+- **S-F (`0ff219d25`) is not releasable alone.** Master's `skater-queries.ts` lacks six unreleased octoberBranch FORGE commits that it builds on:
+  - `6767073ea3` sidecar hydration;
+  - `6e14053ff5` aligned conversion counts;
+  - `7f094c8e68`;
+  - `b8fe1072ed`;
+  - `34a5588db2` hit/block rescale;
+  - `1988836396` whole-second TOI.
+
+  S-F ships with that FORGE model release. The RPC (ledger 95) is live and unused until then.
+- Before applying the S-G drop:
+  - Check master's code as well as octoberBranch's for literal uses of the 491 names; production runs master.
+  - Master's FORGE reader does not hydrate the sidecar, so it reads the wide row only.
+
+### 1.4, 2.2 and 7.1 (2026-10-21)
+
+- **TJ's decision:** drop all 491 columns (115 unread plus 376 read only by script sweeps) and narrow the three check scripts.
+- **Writer:** `splitRollingUpsertRowForDurableStorage` deletes the dropped keys from the wide row and leaves them out of `historicalCompatibility`.
+  - Dropped `gp_pct_*` keys that are also pruned still go to `deprecatedCompatibility`.
+  - Kept pruned keys are unchanged.
+- **Readers:** the validation payload and the three check scripts skip dropped columns.
+- **Master code check** (it serves production): outside historical SQL migrations, the only literal dropped names are in `rollingPlayerPipelineDiagnostics.ts`, which classifies recomputed rows and doesn't read the table.
+  - Master's trends page reads the same dynamically built names from the wide row only (no sidecar join).
+  - All of those names are runtime columns, none dropped.
+- **Checks:**
+  - Upserts, rankings, trends, trendsDebug, the debug API tests and skater-queries: 76 files, 714 tests passed.
+  - eslint is clean; the worker's tsc exited 0.
+- **Order:** release the writer change (7.2, R17) before applying the drop (7.4); otherwise upserts that still send the keys fail.

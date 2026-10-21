@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import path from "path";
 import { createClient } from "@supabase/supabase-js";
 import { recomputePlayerRowsForValidation } from "../lib/supabase/Upserts/fetchRollingPlayerAverages";
+import { isRollingDroppedColumn } from "../lib/supabase/Upserts/rollingDroppedColumns";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
 
@@ -278,7 +279,10 @@ function compareFamily(args: {
     }
 
     comparedRows += 1;
-    const fields = Object.keys(recomputed).filter(args.family.includeField);
+    // Dropped columns are no longer stored, so only the recomputed side has them.
+    const fields = Object.keys(recomputed).filter(
+      (field) => !isRollingDroppedColumn(field) && args.family.includeField(field)
+    );
     for (const field of fields) {
       comparedFields += 1;
       if (!valuesMatch(recomputed[field], stored[field])) {

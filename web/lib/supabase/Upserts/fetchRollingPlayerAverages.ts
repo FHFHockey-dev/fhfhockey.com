@@ -78,6 +78,7 @@ import {
   type RollingPlayerSupportPayload,
   type RollingPlayerSupportScalar
 } from "./rollingPlayerSupportPayload";
+import { isRollingDroppedColumn } from "./rollingDroppedColumns";
 import {
   summarizeCoverage,
   summarizeDerivedWindowDiagnostics,
@@ -483,9 +484,15 @@ export function splitRollingUpsertRowForDurableStorage(row: RollingUpsertRow): {
   }
 
   for (const key of Object.keys(rankingRow)) {
-    if (!isPrunableRollingStorageField(key)) continue;
     const value = rankingRow[key];
-    rankingRow[key] = null;
+    // Dropped columns no longer exist on the wide table, and their
+    // historicalCompatibility copies are unread; gp_pct_* keys still go to
+    // deprecatedCompatibility below.
+    const dropped = isRollingDroppedColumn(key);
+    if (dropped) delete rankingRow[key];
+    if (!isPrunableRollingStorageField(key)) continue;
+    if (dropped && !key.startsWith("gp_pct_")) continue;
+    if (!dropped) rankingRow[key] = null;
     if (!isSupportPayloadScalar(value)) continue;
     prunedFieldCount += 1;
     // Readers treat an absent key exactly like a null one.

@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { createAlignedCountSupportBuilder } from "lib/rollingPlayerCountSupport";
 import {
@@ -11,6 +13,10 @@ import {
   updateHistoricalAverageAccumulator
 } from "./rollingHistoricalAverages";
 import { mergeRollingSupportPayloadFields } from "./rollingPlayerSupportPayload";
+import {
+  ROLLING_DROPPED_COLUMNS,
+  isRollingDroppedColumn
+} from "./rollingDroppedColumns";
 
 let fetchCounts: typeof import("./fetchRollingPlayerAverages").__testables.fetchCounts;
 let buildGameRecords: typeof import("./fetchRollingPlayerAverages").__testables.buildGameRecords;
@@ -436,9 +442,10 @@ describe("fetchRollingPlayerAverages main runtime budget", () => {
       hits_per_60_toi_seconds_3ya: 6000,
       blocks_per_60_blocks_3ya: 6,
       three_year_games_played: 6,
-      hits_per_60_hits_career: 21,
       career_games_played: 9
     });
+    // hits_per_60_hits_career is a dropped column, so the sidecar no longer carries it.
+    expect(historical).not.toHaveProperty("hits_per_60_hits_career");
   });
 
   it("scopes a season run's writes, not its history, so it matches an unscoped run", async () => {
@@ -2326,7 +2333,6 @@ describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
         goals_per_60_last5: 2.5,
         goals_avg_all: null,
         goals_avg_3ya: null,
-        gp_pct_avg_all: null,
         pp_share_of_team: 0.55
       },
       supportRow: {
@@ -2353,6 +2359,93 @@ describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
         }
       }
     });
+  });
+
+  it("omits dropped columns from the wide row and the historical sidecar, leaving kept keys unchanged", () => {
+    const row = {
+      player_id: 8470613,
+      game_date: "2026-04-16",
+      season: 20252026,
+      strength_state: "all",
+      team_id: 14,
+      game_id: 2025021301,
+      goals_per_60_last5: 2.5,
+      goals_total_last10: 4,
+      goals_avg_all: 0.4,
+      goals_avg_3ya: null,
+      hits_per_60_hits_career: 21,
+      gp_pct_avg_all: 0.9,
+      pp_share_of_team: 0.55
+    };
+    const split = splitRollingUpsertRowForDurableStorage(row);
+    const payload = split.supportRow?.support_payload;
+
+    expect(split.rankingRow).toEqual({
+      player_id: 8470613,
+      game_date: "2026-04-16",
+      season: 20252026,
+      strength_state: "all",
+      team_id: 14,
+      game_id: 2025021301,
+      goals_per_60_last5: 2.5,
+      goals_avg_all: null,
+      goals_avg_3ya: null,
+      pp_share_of_team: 0.55
+    });
+    expect(payload?.historicalCompatibility).toEqual({ goals_avg_all: 0.4 });
+    // deprecatedCompatibility and diagnostics are unchanged by the drop.
+    expect(payload?.deprecatedCompatibility).toEqual({ gp_pct_avg_all: 0.9 });
+    expect(payload?.diagnostics?.prunedFieldCount).toBe(3);
+    for (const key of [
+      ...Object.keys(split.rankingRow),
+      ...Object.keys(payload?.historicalCompatibility ?? {})
+    ]) {
+      expect(isRollingDroppedColumn(key)).toBe(false);
+    }
+
+    // A kept pruned field that is null still writes the sidecar row.
+    const keptNull = splitRollingUpsertRowForDurableStorage({
+      player_id: 8470613,
+      game_date: "2026-04-16",
+      season: 20252026,
+      strength_state: "all",
+      goals_avg_all: null,
+      hits_per_60_hits_career: 21
+    });
+    expect(keptNull.rankingRow).not.toHaveProperty("hits_per_60_hits_career");
+    expect(keptNull.supportRow?.support_payload.historicalCompatibility).toBeUndefined();
+    expect(keptNull.supportRow?.support_payload.diagnostics?.prunedFieldCount).toBe(1);
+  });
+
+  it("drops exactly the reviewed 491 columns, never an identity or runtime column", () => {
+    const inventory = JSON.parse(
+      readFileSync(
+        path.resolve(
+          __dirname,
+          "../../../../tasks/artifacts/forge-projection-audit-2026-10-21/rolling-column-inventory.json"
+        ),
+        "utf8"
+      )
+    );
+    const reviewed = new Set<string>([
+      ...inventory.wide_unread,
+      ...inventory.pruned_unread,
+      ...inventory.diag_sweep_only.wide,
+      ...inventory.diag_sweep_only.pruned
+    ]);
+
+    expect(Object.isFrozen(ROLLING_DROPPED_COLUMNS)).toBe(true);
+    expect(ROLLING_DROPPED_COLUMNS).toHaveLength(491);
+    expect(new Set(ROLLING_DROPPED_COLUMNS).size).toBe(491);
+    expect([...ROLLING_DROPPED_COLUMNS].sort()).toEqual(ROLLING_DROPPED_COLUMNS);
+    expect(ROLLING_DROPPED_COLUMNS).toEqual([...reviewed].sort());
+    for (const name of [
+      ...inventory.identity,
+      ...inventory.wide_runtime,
+      ...inventory.pruned_runtime
+    ]) {
+      expect(isRollingDroppedColumn(name)).toBe(false);
+    }
   });
 
   it("posts wide rolling metric rows through the direct PostgREST endpoint", async () => {
@@ -2428,7 +2521,6 @@ describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
             game_date: "2025-10-07",
             season: 20252026,
             strength_state: "all",
-            goals_total_last20: 0,
             toi_seconds_total_last20: 1210,
             pp_share_pct_last20: 0.226,
             toi_seconds_avg_last5: 0,
@@ -2512,14 +2604,14 @@ describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
       game_date: "2025-10-07",
       season: 20252026,
       strength_state: "5v5",
-      goals_total_last20: 0
+      toi_seconds_total_last20: 0
     };
     const secondRow = {
       player_id: 8470613,
       game_date: "2025-10-09",
       season: 20252026,
       strength_state: "5v5",
-      goals_total_last20: 1
+      toi_seconds_total_last20: 1
     };
 
     await expect(

@@ -5,6 +5,7 @@ import {
   type RollingPlayerSupportPayload
 } from "lib/supabase/Upserts/rollingPlayerSupportPayload";
 import type { Database } from "lib/supabase/database-generated.types";
+import { isRollingDroppedColumn } from "./rollingDroppedColumns";
 import {
   fetchPlayerValidationSourceData,
   recomputePlayerRowsForValidation,
@@ -1277,7 +1278,8 @@ function getComparisonFields(args: {
     ),
     ...fields
   ];
-  return Array.from(new Set(ordered));
+  // Dropped columns exist only on recomputed rows, so they are not compared.
+  return Array.from(new Set(ordered)).filter((field) => !isRollingDroppedColumn(field));
 }
 
 function inferMismatchCauseBucket(args: {
@@ -1347,7 +1349,10 @@ function buildFocusedRowComparisons(args: {
     };
   });
 
-  const canonicalVsLegacy = args.selectedMetric.legacyFields.map((field) => {
+  const storedLegacyFields = args.selectedMetric.legacyFields.filter(
+    (field) => !isRollingDroppedColumn(field)
+  );
+  const canonicalVsLegacy = storedLegacyFields.map((field) => {
     const canonicalValue = args.selectedMetric.canonicalField
       ? toDisplayScalar(args.storedRow?.[args.selectedMetric.canonicalField] ?? null)
       : null;
@@ -1371,6 +1376,7 @@ function buildFocusedRowComparisons(args: {
     storedValue: unknown,
     recomputedValue: unknown
   ) => {
+    if (isRollingDroppedColumn(field)) return;
     supportComparisonMap.set(field, {
       field,
       storedValue: toDisplayScalar(storedValue),
@@ -1438,7 +1444,14 @@ function buildFocusedRowComparisons(args: {
         args.recomputedRow?.[goalsAgainstField] ?? null
       );
     }
-    if (savesField) {
+    // Stored saves cannot be derived once a companion column is dropped.
+    if (
+      savesField &&
+      shotsAgainstField &&
+      goalsAgainstField &&
+      !isRollingDroppedColumn(shotsAgainstField) &&
+      !isRollingDroppedColumn(goalsAgainstField)
+    ) {
       addSupportComparison(
         savesField,
         deriveSaves(args.storedRow),
@@ -1519,7 +1532,7 @@ function buildFamilyComparisonSummary(args: {
     for (const row of [storedRow, recomputedRow]) {
       if (!row) continue;
       for (const key of Object.keys(row)) {
-        if (key === "updated_at") continue;
+        if (key === "updated_at" || isRollingDroppedColumn(key)) continue;
         fieldKeys.add(key);
       }
     }
