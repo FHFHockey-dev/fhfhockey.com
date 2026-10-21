@@ -3,7 +3,7 @@ import { loadPlanningData, parsePlanningDataQuery } from "lib/rosterScheduleData
 import { expandActiveSlots } from "lib/rosterScheduleOptimizer/slots";
 import { normalizeEligibility } from "lib/rosterScheduleOptimizer/eligibility";
 import { nextLocalMidnight, zonedMidnight } from "lib/rosterScheduleOptimizer/planningDates";
-import type { AcquisitionEvidence, LeagueRules, PastLineup, PlanningData, PlanningPlayer, PlanningSnapshot, ProviderCapabilities, RosterEntry, ScoringCategory, StatLine } from "lib/rosterScheduleOptimizer/planningTypes";
+import type { AcquisitionEvidence, LeagueRules, PastLineup, PlanningData, PlanningGame, PlanningPlayer, PlanningSnapshot, ProviderCapabilities, RosterEntry, ScoringCategory, StatLine } from "lib/rosterScheduleOptimizer/planningTypes";
 import { assertYahooLeagueGameContext, resolveYahooGameContext } from "./gameContext";
 import { parseYahooBoardSettings, YAHOO_STAT_KEY_BY_ID, YahooLiveDraftError } from "./liveDraft";
 import { fetchYahooBoardResource, fetchYahooDraftResource, fetchYahooPlanningResource, type YahooProviderJsonResult } from "./providerClient";
@@ -17,6 +17,49 @@ const no = (value: unknown) => value === false || value === 0 || value === "0";
 /** A recorded lineup for an elapsed day never changes, so a warm instance reuses it instead of asking Yahoo again. */
 const pastRosterCache = new Map<string, Row[]>();
 const PAST_ROSTER_CACHE_LIMIT = 500;
+
+/**
+ * Goalie appearances Yahoo has already credited toward this matchup's minimum: a goalie it recorded in an active G slot
+ * on an elapsed day who played in his team's game that day (`wgo_goalie_stats.games_played`). 0 before the first day
+ * ends. Null (unknown) unless every elapsed day's lineup was read and every such game is final with its goalie rows
+ * landed, so a partial read never undercounts.
+ */
+export async function yahooCreditedGoalieAppearances(db: SupabaseClient<any>, args: {
+  periodStart?: string | null; today: string; pastLineups: PastLineup[]; slots: ReadonlyArray<{ id: string; type: string }>;
+  players: PlanningPlayer[]; games: PlanningGame[];
+}): Promise<number | null> {
+  if (!args.periodStart || !/^\d{4}-\d{2}-\d{2}$/.test(args.periodStart)) return null;
+  const goalieSlots = new Set(args.slots.filter(slot => slot.type === "G").map(slot => slot.id));
+  const checks: Array<{ gameId: number; nhlId: number }> = [];
+  for (let time = Date.parse(`${args.periodStart}T12:00:00Z`); ; time += 86400000) {
+    const day = new Date(time).toISOString().slice(0, 10);
+    if (day >= args.today) break;
+    const lineup = args.pastLineups.find(row => row.date === day);
+    if (!lineup) return null;
+    for (const entry of lineup.entries) {
+      if (!entry.slotId || !goalieSlots.has(entry.slotId)) continue;
+      const player = args.players.find(row => row.id === entry.playerId);
+      if (!player || player.nhlId === null || !player.teamAbbreviation) return null;
+      const game = args.games.find(row => row.date === day && row.teamAbbreviation === player.teamAbbreviation);
+      if (!game || game.status === "cancelled" || game.status === "postponed") continue;
+      if (game.status !== "final" || !Number.isSafeInteger(Number(game.id))) return null;
+      checks.push({ gameId: Number(game.id), nhlId: player.nhlId });
+    }
+  }
+  if (!checks.length) return 0;
+  const { data, error } = await db.from("wgo_goalie_stats").select("goalie_id,game_id,games_played")
+    .in("game_id", [...new Set(checks.map(check => check.gameId))]);
+  if (error) return null;
+  const rows = (data ?? []) as Array<{ goalie_id: number | null; game_id: number | null; games_played: number | null }>;
+  let credited = 0;
+  for (const check of checks) {
+    const gameRows = rows.filter(row => Number(row.game_id) === check.gameId);
+    // No goalie rows yet for a final game: the WGO load hasn't landed, so progress stays unknown.
+    if (!gameRows.length) return null;
+    if (gameRows.some(row => Number(row.goalie_id) === check.nhlId && Number(row.games_played) > 0)) credited += 1;
+  }
+  return credited;
+}
 
 export function yahooPlanningEditable(rosterEditable: unknown, playerEditable: unknown, fresh: boolean, started: boolean, daily: boolean) {
   return fresh && yes(rosterEditable) && yes(playerEditable) && !started && daily;
@@ -312,9 +355,6 @@ export async function loadYahooPlanningSnapshot(args: {
     acquisitionCost: periods.length ? 1 : null, periods, scoring: { mode: settings.leagueType, weights: { ...settings.scoringCategories }, categories: yahooPlanningCategories(Object.keys(settings.categoryWeights)) },
     goalieMinimum: { required: settings.minimumGoalieStarts, credited: null, counts: "unknown", penalty: "unknown", ...goaliePeriod }, unsupported,
   };
-  const unverifiedRules = [...(periods.length ? [] : ["remaining acquisitions, reset periods and counting rules"]),
-    ...(rules.goalieMinimum.required === 0 ? [] : ["goalie minimum progress"])];
-  if (unverifiedRules.length) limitations.push(`Verify ${unverifiedRules.join(" and ")}; these are not inferred from season transaction totals.`);
   const slots = expandActiveSlots(rules.rosterSlots).activeSlots;
   const usedSlots = new Set<string>();
   const lockedAssignments: PlanningSnapshot["lockedAssignments"] = [];
@@ -340,6 +380,12 @@ export async function loadYahooPlanningSnapshot(args: {
       return { playerId: player?.id ?? null, name: player?.name ?? text(yahooFields(row.name).full) ?? String(row.player_key), position, slotId: slot?.id ?? null };
     }) });
   }
+  // Appearances already credited this matchup, from the lineups Yahoo recorded on its elapsed days.
+  if ((rules.goalieMinimum.required ?? 0) > 0) rules.goalieMinimum.credited = await yahooCreditedGoalieAppearances(db, {
+    periodStart: rules.goalieMinimum.periodStart, today, pastLineups, slots, players: data.players, games: data.games });
+  const unverifiedRules = [...(periods.length ? [] : ["remaining acquisitions, reset periods and counting rules"]),
+    ...(rules.goalieMinimum.required === 0 || rules.goalieMinimum.credited !== null ? [] : ["goalie minimum progress"])];
+  if (unverifiedRules.length) limitations.push(`Verify ${unverifiedRules.join(" and ")}; these are not inferred from season transaction totals.`);
   let pagesChecked = 0, availabilityComplete = false;
   let pagesAttempted = 0, pagesAccepted = 0, rowsAccepted = 0, repeatedRows = 0;
   let availabilityStop = "page limit";
