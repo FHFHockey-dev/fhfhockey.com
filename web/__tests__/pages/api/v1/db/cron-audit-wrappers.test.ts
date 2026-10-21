@@ -149,7 +149,7 @@ describe("Vercel cron static source coverage", () => {
       .toEqual(crons.map((entry: { path: string; schedule: string }, entryIndex: number) => ({
         entryIndex, configuredPath: entry.path, schedule: entry.schedule,
       })));
-    expect(new Set(findings.map((finding) => finding.routePath)).size).toBe(19);
+    expect(new Set(findings.map((finding) => finding.routePath)).size).toBe(21);
     expect(findings.filter((finding) => finding.inputReason || !finding.filePath)).toEqual([]);
     expect(findings.filter((finding) => finding.authMode === "unqualified")).toEqual([]);
     expect(findings.filter((finding) => finding.authMode === "cron-secret-only").map((finding) => finding.routePath).sort())
