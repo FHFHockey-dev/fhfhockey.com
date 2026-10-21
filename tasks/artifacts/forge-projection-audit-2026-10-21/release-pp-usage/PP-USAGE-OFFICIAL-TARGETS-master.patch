@@ -1,0 +1,627 @@
+diff --git a/web/lib/projections/nativeGoalAccounting.test.ts b/web/lib/projections/nativeGoalAccounting.test.ts
+index 1699f50..87a56e3 100644
+--- a/web/lib/projections/nativeGoalAccounting.test.ts
++++ b/web/lib/projections/nativeGoalAccounting.test.ts
+@@ -324,7 +324,8 @@ describe("native skater-stage accounting integration", () => {
+       teamGoalieStarterContextCache: cached({ startsByGoalie: new Map(), lastPlayedDateByGoalie: new Map(), totalGames: 0,
+         previousGameDate: null, previousGameStarterGoalieId: null }),
+       teamDefensiveEnvironmentCache: new Map(), teamOffenseEnvironmentCache: new Map(), teamRestDaysCache: cached(null),
+-      teamStrengthPriorCache: cached(null), teamStrengthCache: cached({ toiEsSecondsAvg: 15000, toiPpSecondsAvg: 3000, shotsEsAvg: 36, shotsPpAvg: 18 }),
++      teamStrengthPriorCache: cached(null), teamStrengthCache: cached({ toiEsSecondsAvg: 15000, toiPpSecondsAvg: 3000, toiPkSecondsAvg: null, shotsEsAvg: 36, shotsPpAvg: 18 }),
++      teamOfficialPpUsageCache: cached(null),
+       teamFiveOnFiveProfileCache: cached(null), teamNstExpectedGoalsCache: cached(null), teamLineComboGoaliePriorCache: cached(new Map()),
+       currentTeamGoalieIdsCache: cached(new Set()), playerPropContextByGamePlayerKey, playerPredictionOutputRows, modelMarketFlagRows: [],
+       goalieCandidates: [], learningCounters: { players: 0, goalRecent: 0, assistRecent: 0 }, metrics: { data_quality: {}, warnings: [] },
+@@ -394,7 +395,8 @@ describe("native skater-stage accounting integration", () => {
+         previousGameDate: null, previousGameStarterGoalieId: null }),
+       teamDefensiveEnvironmentCache: new Map(), teamOffenseEnvironmentCache: new Map(), teamRestDaysCache: cached(null),
+       // A 2999 s PP average leaves a 15001 s ES target, so the team total is fractional too.
+-      teamStrengthPriorCache: cached(null), teamStrengthCache: cached({ toiEsSecondsAvg: 15000, toiPpSecondsAvg: 2999, shotsEsAvg: 36, shotsPpAvg: 18 }),
++      teamStrengthPriorCache: cached(null), teamStrengthCache: cached({ toiEsSecondsAvg: 15000, toiPpSecondsAvg: 2999, toiPkSecondsAvg: null, shotsEsAvg: 36, shotsPpAvg: 18 }),
++      teamOfficialPpUsageCache: cached(null),
+       teamFiveOnFiveProfileCache: cached(null), teamNstExpectedGoalsCache: cached(null), teamLineComboGoaliePriorCache: cached(new Map()),
+       currentTeamGoalieIdsCache: cached(new Set()), playerPropContextByGamePlayerKey: new Map(), playerPredictionOutputRows: [], modelMarketFlagRows: [],
+       goalieCandidates: [], learningCounters: { players: 0, goalRecent: 0, assistRecent: 0 }, metrics: { data_quality: {}, warnings: [] },
+diff --git a/web/lib/projections/queries/team-context-queries.test.ts b/web/lib/projections/queries/team-context-queries.test.ts
+index 10afea1..890db33 100644
+--- a/web/lib/projections/queries/team-context-queries.test.ts
++++ b/web/lib/projections/queries/team-context-queries.test.ts
+@@ -1,10 +1,100 @@
+-import { describe, expect, it } from "vitest";
++import { describe, expect, it, vi } from "vitest";
++
++const db = vi.hoisted(() => ({
++  tables: {} as Record<string, Record<string, unknown>[] | Record<string, unknown> | null>,
++  calls: [] as Array<[string, string, unknown[]]>
++}));
++vi.mock("lib/supabase/server", () => ({ default: {
++  from(table: string) {
++    const result = () => ({ data: db.tables[table] ?? null, error: null });
++    const query: Record<string, unknown> = {
++      then: (resolve: (value: unknown) => void) => resolve(result()),
++      maybeSingle: () => Promise.resolve(result())
++    };
++    for (const name of ["select", "eq", "or", "lt", "in", "order", "limit"]) {
++      query[name] = (...args: unknown[]) => { db.calls.push([table, name, args]); return query; };
++    }
++    return query;
++  }
++} }));
+ 
+ import {
+   buildTeamStrengthPriorFromInHouseXgAggregateRow,
+-  buildTeamStrengthPriorFromNhlTeamDataRows
++  buildTeamStrengthPriorFromNhlTeamDataRows,
++  fetchTeamOfficialPpUsage,
++  fetchTeamStrengthAverages
+ } from "./team-context-queries";
+ 
++describe("fetchTeamOfficialPpUsage", () => {
++  const games = (count: number) => Array.from({ length: count }, (_, i) => ({ id: 2026020100 - i, date: `2026-10-${String(20 - i).padStart(2, "0")}` }));
++  // 18 skaters x 1000 s = 18000 s; four of them on the PP for 45 s, 30 s, 30 s and 15 s (sub-minute seconds stay seconds).
++  const gameRows = (gameId: number, abbrev = "EDM") => Array.from({ length: 18 }, (_, i) => ({
++    player_id: 100 + i + (abbrev === "EDM" ? 0 : 50), game_id: gameId, team_abbrev: abbrev, toi_per_game: 1000, pp_toi: [45, 30, 30, 15][i] ?? 0, pp_toi_per_game: null, pp_shots: i < 2 ? 1 : 0
++  }));
++  function seed(gameCount: number, wgo: Record<string, unknown>[]) {
++    db.calls.length = 0;
++    db.tables = { games: games(gameCount), teams: { abbreviation: "EDM" }, wgo_skater_stats: wgo };
++  }
++
++  it("averages official per-game team sums over the last 10 regular-season games before the date", async () => {
++    const ids = games(10).map((g) => g.id);
++    seed(10, [...ids.flatMap((id) => gameRows(id)), ...gameRows(ids[0], "CGY")]);
++    const usage = await fetchTeamOfficialPpUsage(22, "2026-10-21");
++    expect(usage).toMatchObject({ games: 10, ppToiSkaterSecondsAvg: 120, ppShotsAvg: 2, totalToiSkaterSecondsAvg: 18000 });
++    expect(usage?.perPlayerPpToiAvgSec.get(100)).toBe(45);
++    expect(usage?.perPlayerPpToiAvgSec.get(117)).toBe(0);
++    expect(usage?.perPlayerPpToiAvgSec.has(150)).toBe(false);
++    const gameCalls = db.calls.filter(([table]) => table === "games").map(([, name, args]) => [name, args]);
++    expect(gameCalls).toEqual(expect.arrayContaining([["eq", ["type", 2]], ["lt", ["date", "2026-10-21"]],
++      ["order", ["date", { ascending: false }]], ["limit", [10]], ["or", ["homeTeamId.eq.22,awayTeamId.eq.22"]]]));
++    expect(db.calls).toEqual(expect.arrayContaining([["wgo_skater_stats", "in", ["game_id", ids]],
++      ["wgo_skater_stats", "eq", ["team_abbrev", "EDM"]]]));
++  });
++
++  it("reads minute-format TOI as minutes and falls back to pp_toi_per_game", async () => {
++    const ids = games(3).map((g) => g.id);
++    seed(3, ids.flatMap((id) => gameRows(id).map((row, i) => ({ ...row, toi_per_game: 1000 / 60,
++      pp_toi: null, pp_toi_per_game: i < 4 ? 0.5 : null }))));
++    const usage = await fetchTeamOfficialPpUsage(22, "2026-10-21");
++    expect(usage?.totalToiSkaterSecondsAvg).toBeCloseTo(18000, 6);
++    expect(usage?.ppToiSkaterSecondsAvg).toBeCloseTo(120, 6);
++    expect(usage?.perPlayerPpToiAvgSec.get(100)).toBeCloseTo(30, 6);
++  });
++
++  it("averages each player's PP seconds over only the games in which he has a row", async () => {
++    const ids = games(4).map((g) => g.id);
++    const rows = ids.flatMap((id) => gameRows(id));
++    // Player 100: 45 s in all four games; player 120 dressed for two games (300 s and 180 s).
++    rows.push({ ...rows[0], player_id: 120, game_id: ids[0], pp_toi: 300 }, { ...rows[0], player_id: 120, game_id: ids[2], pp_toi: 180 });
++    seed(4, rows);
++    const usage = await fetchTeamOfficialPpUsage(22, "2026-10-21");
++    expect(usage?.perPlayerPpToiAvgSec.get(120)).toBe(240);
++    expect(usage?.perPlayerPpToiAvgSec.get(100)).toBe(45);
++  });
++
++  it("returns null with fewer than three games of official rows", async () => {
++    seed(2, games(2).flatMap((g) => gameRows(g.id)));
++    expect(await fetchTeamOfficialPpUsage(22, "2026-10-21")).toBeNull();
++    const ids = games(5).map((g) => g.id);
++    seed(5, ids.slice(0, 2).flatMap((id) => gameRows(id)));
++    expect(await fetchTeamOfficialPpUsage(22, "2026-10-21")).toBeNull();
++  });
++});
++
++describe("fetchTeamStrengthAverages", () => {
++  it("averages PK time alongside ES and PP", async () => {
++    db.calls.length = 0;
++    db.tables = { forge_team_game_strength: [
++      { game_date: "2026-10-20", toi_es_seconds: 15000, toi_pp_seconds: 600, toi_pk_seconds: 500, shots_es: 25, shots_pp: 5 },
++      { game_date: "2026-10-18", toi_es_seconds: 15400, toi_pp_seconds: 400, toi_pk_seconds: 700, shots_es: 27, shots_pp: 3 }
++    ] };
++    expect(await fetchTeamStrengthAverages(22, "2026-10-21")).toEqual({
++      toiEsSecondsAvg: 15200, toiPpSecondsAvg: 500, toiPkSecondsAvg: 600, shotsEsAvg: 26, shotsPpAvg: 4 });
++    expect(db.calls).toContainEqual(["forge_team_game_strength", "select",
++      ["game_date,toi_es_seconds,toi_pp_seconds,toi_pk_seconds,shots_es,shots_pp"]]);
++  });
++});
++
+ describe("buildTeamStrengthPriorFromInHouseXgAggregateRow", () => {
+   it("maps in-house rolling team xG into projection team-strength prior fields", () => {
+     const prior = buildTeamStrengthPriorFromInHouseXgAggregateRow({
+diff --git a/web/lib/projections/queries/team-context-queries.ts b/web/lib/projections/queries/team-context-queries.ts
+index f33a400..7aa8418 100644
+--- a/web/lib/projections/queries/team-context-queries.ts
++++ b/web/lib/projections/queries/team-context-queries.ts
+@@ -32,6 +32,7 @@ function meanOrNull(nums: Array<number | null | undefined>): number | null {
+ export type TeamStrengthAverages = {
+   toiEsSecondsAvg: number | null;
+   toiPpSecondsAvg: number | null;
++  toiPkSecondsAvg: number | null;
+   shotsEsAvg: number | null;
+   shotsPpAvg: number | null;
+ };
+@@ -43,14 +44,16 @@ export async function fetchTeamStrengthAverages(
+   assertSupabase();
+   const { data, error } = await supabase
+     .from("forge_team_game_strength")
+-    .select("game_date,toi_es_seconds,toi_pp_seconds,shots_es,shots_pp")
++    .select("game_date,toi_es_seconds,toi_pp_seconds,toi_pk_seconds,shots_es,shots_pp")
+     .eq("team_id", teamId)
+     .lt("game_date", cutoffDate)
+     .order("game_date", { ascending: false })
+     .limit(10);
+   if (error) throw error;
+ 
+-  const rows = (data ?? []) as ForgeTeamGameStrengthRow[];
++  const rows = (data ?? []) as Array<
++    ForgeTeamGameStrengthRow & { toi_pk_seconds?: number | null }
++  >;
+   return {
+     toiEsSecondsAvg: meanOrNull(
+       rows.map((r) =>
+@@ -62,6 +65,11 @@ export async function fetchTeamStrengthAverages(
+         r?.toi_pp_seconds == null ? null : Number(r.toi_pp_seconds)
+       )
+     ),
++    toiPkSecondsAvg: meanOrNull(
++      rows.map((r) =>
++        r?.toi_pk_seconds == null ? null : Number(r.toi_pk_seconds)
++      )
++    ),
+     shotsEsAvg: meanOrNull(
+       rows.map((r) => (r?.shots_es == null ? null : Number(r.shots_es)))
+     ),
+@@ -71,6 +79,101 @@ export async function fetchTeamStrengthAverages(
+   };
+ }
+ 
++export type TeamOfficialPpUsage = {
++  games: number;
++  ppToiSkaterSecondsAvg: number;
++  ppShotsAvg: number;
++  totalToiSkaterSecondsAvg: number;
++  /** Each player's mean PP seconds over the window games in which he has a WGO row. */
++  perPlayerPpToiAvgSec: Map<number, number>;
++};
++
++const OFFICIAL_PP_USAGE_WINDOW_GAMES = 10;
++const OFFICIAL_PP_USAGE_MIN_GAMES = 3;
++
++/**
++ * Official (WGO, NHL stats API) per-game team PP usage: per-player game rows of the team's last
++ * 10 regular-season games before asOfDate, summed per game and averaged. WGO rows name the team
++ * by `team_abbrev`, so the team id is mapped through `teams`. The API reports TOI in seconds, so
++ * per-game PP values under a minute stay seconds; a team-game whose skater TOI sums below one hour
++ * is read as a minute-format row and both TOI fields are scaled by 60.
++ */
++export async function fetchTeamOfficialPpUsage(
++  teamId: number,
++  asOfDate: string
++): Promise<TeamOfficialPpUsage | null> {
++  assertSupabase();
++  const { data: gameData, error: gamesError } = await supabase
++    .from("games")
++    .select("id,date")
++    .or(`homeTeamId.eq.${teamId},awayTeamId.eq.${teamId}`)
++    .eq("type", 2)
++    .lt("date", asOfDate)
++    .order("date", { ascending: false })
++    .limit(OFFICIAL_PP_USAGE_WINDOW_GAMES);
++  if (gamesError) throw gamesError;
++  const gameIds = ((gameData ?? []) as Array<{ id: number | null }>)
++    .map((game) => Number(game?.id))
++    .filter((id) => Number.isFinite(id));
++  if (gameIds.length < OFFICIAL_PP_USAGE_MIN_GAMES) return null;
++
++  const { data: teamData, error: teamError } = await supabase
++    .from("teams")
++    .select("abbreviation")
++    .eq("id", teamId)
++    .maybeSingle();
++  if (teamError) throw teamError;
++  const abbreviation = (teamData as { abbreviation?: unknown } | null)?.abbreviation;
++  if (typeof abbreviation !== "string" || !abbreviation) return null;
++
++  const { data: wgoData, error: wgoError } = await supabase
++    .from("wgo_skater_stats")
++    .select("player_id,game_id,team_abbrev,toi_per_game,pp_toi,pp_toi_per_game,pp_shots")
++    .in("game_id", gameIds)
++    .eq("team_abbrev", abbreviation)
++    .limit(gameIds.length * 40);
++  if (wgoError) throw wgoError;
++
++  const totals = new Map<number, { toi: number; ppToi: number; ppShots: number;
++    playerPpToi: Map<number, number> }>();
++  for (const row of (wgoData ?? []) as any[]) {
++    const gameId = Number(row?.game_id);
++    if (!gameIds.includes(gameId) || row?.team_abbrev !== abbreviation) continue;
++    const total = totals.get(gameId) ?? { toi: 0, ppToi: 0, ppShots: 0, playerPpToi: new Map() };
++    const ppToi = Math.max(0, toFiniteOrNull(row?.pp_toi) ?? toFiniteOrNull(row?.pp_toi_per_game) ?? 0);
++    total.toi += Math.max(0, toFiniteOrNull(row?.toi_per_game) ?? 0);
++    total.ppToi += ppToi;
++    total.ppShots += Math.max(0, toFiniteOrNull(row?.pp_shots) ?? 0);
++    const playerId = Number(row?.player_id);
++    if (Number.isFinite(playerId)) {
++      total.playerPpToi.set(playerId, (total.playerPpToi.get(playerId) ?? 0) + ppToi);
++    }
++    totals.set(gameId, total);
++  }
++  const perGame = Array.from(totals.values())
++    .filter((total) => total.toi > 0)
++    .map((total) => {
++      const scale = total.toi < 3600 ? 60 : 1;
++      return { toi: total.toi * scale, ppToi: total.ppToi * scale, ppShots: total.ppShots,
++        playerPpToi: Array.from(total.playerPpToi, ([id, seconds]) => [id, seconds * scale] as const) };
++    });
++  if (perGame.length < OFFICIAL_PP_USAGE_MIN_GAMES) return null;
++  const mean = (values: number[]) => values.reduce((a, b) => a + b, 0) / values.length;
++  const playerGames = new Map<number, number[]>();
++  for (const game of perGame) {
++    for (const [id, seconds] of game.playerPpToi) {
++      playerGames.set(id, [...(playerGames.get(id) ?? []), seconds]);
++    }
++  }
++  return {
++    games: perGame.length,
++    ppToiSkaterSecondsAvg: mean(perGame.map((game) => game.ppToi)),
++    ppShotsAvg: mean(perGame.map((game) => game.ppShots)),
++    totalToiSkaterSecondsAvg: mean(perGame.map((game) => game.toi)),
++    perPlayerPpToiAvgSec: new Map(Array.from(playerGames, ([id, seconds]) => [id, mean(seconds)]))
++  };
++}
++
+ function parseOptionalIntegerEnv(name: string): number | null {
+   const raw = process.env[name];
+   if (!raw) return null;
+diff --git a/web/lib/projections/runProjectionV2.test.ts b/web/lib/projections/runProjectionV2.test.ts
+index 061f3a2..1e35330 100644
+--- a/web/lib/projections/runProjectionV2.test.ts
++++ b/web/lib/projections/runProjectionV2.test.ts
+@@ -46,6 +46,7 @@ import {
+   toGoalieRestSplitBucket,
+   type StarterContextForTest
+ } from "./run-forge-projections";
++import { computeTeamPpShare } from "./stages/skater-stage";
+ 
+ function buildContext(
+   overrides?: Partial<StarterContextForTest>
+@@ -991,6 +992,51 @@ describe("pp opportunity allocation", () => {
+   });
+ });
+ 
++describe("official pp opportunity", () => {
++  const top = { esRole: "PP1", unitTier: "TOP", roleRank: 1, source: "line_combination" } as const;
++  const depth = { esRole: "L4", unitTier: "DEPTH", roleRank: 12, source: "line_combination" } as const;
++  it("splits the team PP target in proportion to official last-10 PP TOI, falling back to rolling for absent players", () => {
++    const allocation = allocatePpToiByTeamOpportunity({
++      projectedByPlayer: new Map([
++        [1, { toiPp: 30, roleTag: depth, officialPpToiAvgSec: 240 }],
++        [2, { toiPp: 200, roleTag: top, officialPpToiAvgSec: 60 }],
++        [3, { toiPp: 90, roleTag: top, officialPpToiAvgSec: null }],
++        [4, { toiPp: 0, roleTag: top }]
++      ]),
++      targetTeamPpSeconds: 390
++    });
++    expect(allocation.perPlayerPpToiSeconds.get(1)).toBe(240);
++    expect(allocation.perPlayerPpToiSeconds.get(2)).toBe(60);
++    expect(allocation.perPlayerPpToiSeconds.get(3)).toBe(90);
++    expect(allocation.perPlayerPpToiSeconds.get(4)).toBe(0);
++    const twoPlayers = allocatePpToiByTeamOpportunity({
++      projectedByPlayer: new Map([[1, { toiPp: 10, roleTag: null, officialPpToiAvgSec: 240 }],
++        [2, { toiPp: 10, roleTag: top, officialPpToiAvgSec: 60 }]]),
++      targetTeamPpSeconds: 500
++    });
++    expect([twoPlayers.perPlayerPpToiSeconds.get(1), twoPlayers.perPlayerPpToiSeconds.get(2)]).toEqual([400, 100]);
++  });
++
++  it("applies the TOP/MIDDLE PP minimum only to players with a PP unit", () => {
++    const usage = { roleTag: { ...top, esRole: "L1" }, toiEsSeconds: 1080, toiPpSeconds: 20, sogPer60Es: 9, sogPer60Pp: 10 };
++    expect(applyRoleSpecificUsageBounds({ ...usage, hasPpUnit: true }).toiPpSeconds).toBe(120);
++    expect(applyRoleSpecificUsageBounds({ ...usage, hasPpUnit: false }).toiPpSeconds).toBe(20);
++    expect(applyRoleSpecificUsageBounds({ ...usage, roleTag: { ...usage.roleTag, unitTier: "MIDDLE" }, hasPpUnit: false }).toiPpSeconds).toBe(20);
++  });
++
++  it("uses official PP share when present, else puts PK time in the strength-table denominator", () => {
++    const strength = { toiEsSecondsAvg: 15000, toiPpSecondsAvg: 1200, toiPkSecondsAvg: 1800, shotsEsAvg: 25, shotsPpAvg: 6 };
++    const official = { games: 10, ppToiSkaterSecondsAvg: 720, ppShotsAvg: 4, totalToiSkaterSecondsAvg: 18000, perPlayerPpToiAvgSec: new Map<number, number>() };
++    expect(computeTeamPpShare({ official, strengthAverages: strength, preAllocationToiEs: 0, preAllocationToiPp: 0 }))
++      .toEqual({ ppShare: 0.04, legacyPpShare: 1200 / 16200, source: "official_wgo" });
++    expect(computeTeamPpShare({ official: null, strengthAverages: strength, preAllocationToiEs: 0, preAllocationToiPp: 0 }))
++      .toEqual({ ppShare: 1200 / 18000, legacyPpShare: 1200 / 16200, source: "strength_table_pk_denominator" });
++    const noStrength = { toiEsSecondsAvg: null, toiPpSecondsAvg: null, toiPkSecondsAvg: null, shotsEsAvg: null, shotsPpAvg: null };
++    expect(computeTeamPpShare({ official: null, strengthAverages: noStrength, preAllocationToiEs: 900, preAllocationToiPp: 100 }))
++      .toEqual({ ppShare: 0.1, legacyPpShare: 0.1, source: "strength_table_pk_denominator" });
++  });
++});
++
+ describe("teammate assist coupling", () => {
+   it("boosts assist dependency for top-unit players with strong line/PP share", () => {
+     const result = computeTeammateAssistCoupling({
+diff --git a/web/lib/projections/stages/skater-stage.ts b/web/lib/projections/stages/skater-stage.ts
+index 9cfb8ab..ee690e1 100644
+--- a/web/lib/projections/stages/skater-stage.ts
++++ b/web/lib/projections/stages/skater-stage.ts
+@@ -238,9 +238,11 @@ import {
+   fetchTeamFiveOnFiveProfile,
+   fetchTeamNstExpectedGoalsProfile,
+   fetchTeamOffenseEnvironment,
++  fetchTeamOfficialPpUsage,
+   fetchTeamRestDays,
+   fetchTeamStrengthAverages,
+   fetchTeamStrengthPrior,
++  type TeamOfficialPpUsage,
+   type TeamStrengthAverages,
+ } from "../queries/team-context-queries";
+ import { createRun, finalizeRun } from "../queries/run-lifecycle-queries";
+@@ -986,19 +988,13 @@ export function mergeSkaterCandidatePoolForRecovery(args: {
+   return out;
+ }
+ 
+-function roleBasedPpShareWeight(roleTag: SkaterRoleTag | null): number {
+-  if (!roleTag) return 0.65;
+-  if (roleTag.unitTier === "TOP") return 1.8;
+-  if (roleTag.unitTier === "MIDDLE") return 1.05;
+-  return 0.35;
+-}
+-
+ export function allocatePpToiByTeamOpportunity(args: {
+   projectedByPlayer: Map<
+     number,
+     {
+       toiPp: number;
+       roleTag: SkaterRoleTag | null;
++      officialPpToiAvgSec?: number | null;
+     }
+   >;
+   targetTeamPpSeconds: number;
+@@ -1011,11 +1007,12 @@ export function allocatePpToiByTeamOpportunity(args: {
+     };
+   }
+ 
++  // Proportional to official last-10 PP TOI per game when known, else the pre-allocation PP TOI;
++  // a zero weight gets zero time.
+   const weighted = players.map(([playerId, p]) => {
+     const basePpToi = Math.max(0, p.toiPp);
+-    const opportunityEvidence = Math.sqrt(basePpToi + 1);
+-    const roleWeight = roleBasedPpShareWeight(p.roleTag);
+-    const weight = roleWeight * opportunityEvidence;
++    const official = finiteOrNull(p.officialPpToiAvgSec);
++    const weight = official != null ? Math.max(0, official) : basePpToi;
+     return { playerId, basePpToi, weight };
+   });
+   const weightSum = weighted.reduce((acc, cur) => acc + cur.weight, 0);
+@@ -1112,6 +1109,8 @@ export function applyRoleSpecificUsageBounds(args: {
+   toiPpSeconds: number;
+   sogPer60Es: number;
+   sogPer60Pp: number;
++  /** Without a PP unit the role PP minimum does not apply. */
++  hasPpUnit?: boolean;
+ }): SkaterRoleBoundedUsage {
+   const tier = args.roleTag?.unitTier ?? "DEPTH";
+   const limits =
+@@ -1149,7 +1148,7 @@ export function applyRoleSpecificUsageBounds(args: {
+   );
+   const boundedToiPp = clamp(
+     args.toiPpSeconds,
+-    limits.toiPpMin,
++    args.hasPpUnit === false ? 0 : limits.toiPpMin,
+     limits.toiPpMax,
+   );
+   const boundedSogEs = clamp(args.sogPer60Es, 1.2, limits.sogEsMax);
+@@ -1169,6 +1168,45 @@ export function applyRoleSpecificUsageBounds(args: {
+   };
+ }
+ 
++/**
++ * Team PP share of skater time. Official WGO usage (PP over all-situation skater TOI) when present;
++ * otherwise the strength table with PK time in the denominator, then the pre-allocation split.
++ * `legacyPpShare` is the former ES+PP-denominator share, kept for the ledger.
++ */
++export function computeTeamPpShare(args: {
++  official: TeamOfficialPpUsage | null;
++  strengthAverages: TeamStrengthAverages;
++  preAllocationToiEs: number;
++  preAllocationToiPp: number;
++}): {
++  ppShare: number;
++  legacyPpShare: number;
++  source: "official_wgo" | "strength_table_pk_denominator";
++} {
++  const avgToiPp = safeNumber(args.strengthAverages.toiPpSecondsAvg, 0);
++  const esPpDenom =
++    safeNumber(args.strengthAverages.toiEsSecondsAvg, 0) + avgToiPp;
++  const allDenom =
++    esPpDenom + safeNumber(args.strengthAverages.toiPkSecondsAvg, 0);
++  const fallbackDenom = args.preAllocationToiEs + args.preAllocationToiPp;
++  const fallbackShare =
++    fallbackDenom > 0 ? args.preAllocationToiPp / fallbackDenom : 0.1;
++  const legacyPpShare = esPpDenom > 0 ? avgToiPp / esPpDenom : fallbackShare;
++  const official = args.official;
++  if (official && official.totalToiSkaterSecondsAvg > 0) {
++    return {
++      ppShare: official.ppToiSkaterSecondsAvg / official.totalToiSkaterSecondsAvg,
++      legacyPpShare,
++      source: "official_wgo",
++    };
++  }
++  return {
++    ppShare: allDenom > 0 ? avgToiPp / allDenom : fallbackShare,
++    legacyPpShare,
++    source: "strength_table_pk_denominator",
++  };
++}
++
+ async function fetchTeamHorizonScalars(
+   teamId: number,
+   asOfDate: string,
+@@ -1242,6 +1280,8 @@ export async function runPerGameSkaterStage(args: {
+   availabilityEventByPlayer: Map<number, RosterEventRow>;
+   roleEventByPlayer: Map<number, RosterEventRow>;
+   ppEventByPlayer?: Map<number, RosterEventRow>;
++  /** Official PP usage by team:asOfDate; a per-call cache is used when omitted. */
++  teamOfficialPpUsageCache?: Map<string, TeamOfficialPpUsage | null>;
+   dailyBoardEvidence?: import("../dailyBoardEvidence").DailyBoardEvidence;
+   goalieOverrideByTeamId: Map<
+     number,
+@@ -1318,6 +1358,7 @@ export async function runPerGameSkaterStage(args: {
+     metrics,
+   } = args;
+   const teamDateKey = (teamId: number) => `${teamId}:${asOfDate}`;
++  const localOfficialPpUsageCache = new Map<string, TeamOfficialPpUsage | null>();
+   let playerRowsUpserted = 0;
+   let teamRowsUpserted = 0;
+   const projectedPlayerMarketInputs = new Map<
+@@ -1930,6 +1971,14 @@ export async function runPerGameSkaterStage(args: {
+         smallSampleEvidenceShots: number;
+         ppOpportunityTeamTargetSeconds: number | null;
+         ppOpportunityAllocatedShare: number | null;
++        ppOpportunityTargetSource:
++          | "official_wgo"
++          | "strength_table_pk_denominator"
++          | null;
++        ppOpportunityLegacyTeamTargetSeconds: number | null;
++        ppOpportunityAllocationEvidence:
++          | "official_last10_pp_toi"
++          | "rolling_pp_toi";
+         teammateAssistEsMultiplier: number;
+         teammateAssistPpMultiplier: number;
+         teammateDependencyScore: number;
+@@ -2098,14 +2147,15 @@ export async function runPerGameSkaterStage(args: {
+         2,
+         28,
+       );
++      const ppRole = roleTagFromRosterEvent(args.ppEventByPlayer?.get(playerId) ?? null);
+       const boundedUsage = applyRoleSpecificUsageBounds({
+         roleTag,
+         toiEsSeconds: shrunkToiEs,
+         toiPpSeconds: shrunkToiPp,
+         sogPer60Es: sogPer60EvPreBound,
+         sogPer60Pp: sogPer60PpPreBound,
++        hasPpUnit: ppRole != null,
+       });
+-      const ppRole = roleTagFromRosterEvent(args.ppEventByPlayer?.get(playerId) ?? null);
+       const ppUsage = ppRole ? applyRoleSpecificUsageBounds({
+         roleTag: ppRole, toiEsSeconds: shrunkToiEs, toiPpSeconds: shrunkToiPp,
+         sogPer60Es: sogPer60EvPreBound, sogPer60Pp: sogPer60PpPreBound,
+@@ -2335,6 +2385,9 @@ export async function runPerGameSkaterStage(args: {
+         smallSampleEvidenceShots: sampleShrinkage.evidenceShots,
+         ppOpportunityTeamTargetSeconds: null,
+         ppOpportunityAllocatedShare: null,
++        ppOpportunityTargetSource: null,
++        ppOpportunityLegacyTeamTargetSeconds: null,
++        ppOpportunityAllocationEvidence: "rolling_pp_toi",
+         teammateAssistEsMultiplier: 1,
+         teammateAssistPpMultiplier: 1,
+         teammateDependencyScore: 0,
+@@ -2375,19 +2428,26 @@ export async function runPerGameSkaterStage(args: {
+       (acc, p) => acc + p.toiPp,
+       0,
+     );
+-    const avgToiEs = strengthAverages.toiEsSecondsAvg;
+-    const avgToiPp = strengthAverages.toiPpSecondsAvg;
+-    const toiDenom =
+-      (typeof avgToiEs === "number" ? avgToiEs : 0) +
+-      (typeof avgToiPp === "number" ? avgToiPp : 0);
+-    const fallbackDenom = preAllocationToiEs + preAllocationToiPp;
+-
+-    const ppShare =
+-      toiDenom > 0
+-        ? safeNumber(avgToiPp, 0) / toiDenom
+-        : fallbackDenom > 0
+-          ? preAllocationToiPp / fallbackDenom
+-          : 0.1;
++    const officialPpUsageCache =
++      args.teamOfficialPpUsageCache ?? localOfficialPpUsageCache;
++    const officialPpUsageKey = teamDateKey(teamId);
++    if (!officialPpUsageCache.has(officialPpUsageKey)) {
++      officialPpUsageCache.set(
++        officialPpUsageKey,
++        await fetchTeamOfficialPpUsage(teamId, asOfDate),
++      );
++    }
++    const officialPpUsage = officialPpUsageCache.get(officialPpUsageKey) ?? null;
++    const {
++      ppShare,
++      legacyPpShare,
++      source: ppTargetSource,
++    } = computeTeamPpShare({
++      official: officialPpUsage,
++      strengthAverages,
++      preAllocationToiEs,
++      preAllocationToiPp,
++    });
+ 
+     const projectedSkaterCount = projected.size;
+     metrics.data_quality.skater_pool_projected_teams += 1;
+@@ -2425,13 +2485,29 @@ export async function runPerGameSkaterStage(args: {
+     const toiPpTarget = Math.round(
+       clamp(ppShare, 0, 0.5) * targetSkaterSeconds,
+     );
++    const legacyToiPpTarget = Math.round(
++      clamp(legacyPpShare, 0, 0.5) * targetSkaterSeconds,
++    );
+     const toiEsTarget = targetSkaterSeconds - toiPpTarget;
++    for (const [playerId, p] of projected) {
++      p.ppOpportunityTargetSource = ppTargetSource;
++      p.ppOpportunityLegacyTeamTargetSeconds = legacyToiPpTarget;
++      p.ppOpportunityAllocationEvidence =
++        officialPpUsage?.perPlayerPpToiAvgSec.has(playerId)
++          ? "official_last10_pp_toi"
++          : "rolling_pp_toi";
++    }
+ 
+     const ppAllocation = allocatePpToiByTeamOpportunity({
+       projectedByPlayer: new Map(
+         Array.from(projected.entries()).map(([playerId, p]) => [
+           playerId,
+-          { toiPp: p.toiPp, roleTag: roleTagFromRosterEvent(args.ppEventByPlayer?.get(playerId) ?? null) ?? p.roleTag },
++          {
++            toiPp: p.toiPp,
++            roleTag: roleTagFromRosterEvent(args.ppEventByPlayer?.get(playerId) ?? null) ?? p.roleTag,
++            officialPpToiAvgSec:
++              officialPpUsage?.perPlayerPpToiAvgSec.get(playerId) ?? null,
++          },
+         ]),
+       ),
+       targetTeamPpSeconds: toiPpTarget,
+@@ -2536,7 +2612,7 @@ export async function runPerGameSkaterStage(args: {
+       initialShotsEs,
+     );
+     const shotsPpTarget = safeNumber(
+-      strengthAverages.shotsPpAvg,
++      officialPpUsage?.ppShotsAvg ?? strengthAverages.shotsPpAvg,
+       initialShotsPp,
+     );
+ 
+@@ -3035,6 +3111,10 @@ export async function runPerGameSkaterStage(args: {
+             pp_opportunity: {
+               team_pp_target_seconds: p.ppOpportunityTeamTargetSeconds,
+               allocated_player_pp_share: p.ppOpportunityAllocatedShare,
++              target_source: p.ppOpportunityTargetSource,
++              allocation_evidence: p.ppOpportunityAllocationEvidence,
++              legacy_team_pp_target_seconds:
++                p.ppOpportunityLegacyTeamTargetSeconds,
+             },
+             teammate_context: {
+               dependency_score: Number(p.teammateDependencyScore.toFixed(4)),
+diff --git a/web/lib/projections/startChartPipeline.test.ts b/web/lib/projections/startChartPipeline.test.ts
+index e702497..c0d370a 100644
+--- a/web/lib/projections/startChartPipeline.test.ts
++++ b/web/lib/projections/startChartPipeline.test.ts
+@@ -685,9 +685,14 @@ describe("Starter Board same-day overlay", () => {
+     const before = allocatePpToiByTeamOpportunity({ projectedByPlayer: new Map([
+       [7, { toiPp: 120, roleTag: null }], [8, { toiPp: 120, roleTag: null }],
+     ]), targetTeamPpSeconds: 600 });
+-    const after = allocatePpToiByTeamOpportunity({ projectedByPlayer: new Map([
++    // The PP1 role is not a multiplier; official PP evidence moves time toward player 7.
++    const roleOnly = allocatePpToiByTeamOpportunity({ projectedByPlayer: new Map([
+       [7, { toiPp: 120, roleTag: ppRole }], [8, { toiPp: 120, roleTag: null }],
+     ]), targetTeamPpSeconds: 600 });
++    expect(roleOnly.perPlayerPpToiSeconds).toEqual(before.perPlayerPpToiSeconds);
++    const after = allocatePpToiByTeamOpportunity({ projectedByPlayer: new Map([
++      [7, { toiPp: 120, roleTag: ppRole, officialPpToiAvgSec: 180 }], [8, { toiPp: 120, roleTag: null, officialPpToiAvgSec: 60 }],
++    ]), targetTeamPpSeconds: 600 });
+     expect(after.perPlayerPpToiSeconds.get(7)!).toBeGreaterThan(before.perPlayerPpToiSeconds.get(7)!);
+     expect(after.perPlayerPpToiSeconds.get(8)!).toBeLessThan(before.perPlayerPpToiSeconds.get(8)!);
+   });
