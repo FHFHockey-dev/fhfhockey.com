@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("utils/adminOnlyMiddleware", () => ({
   default: (handler: any) => handler,
@@ -80,6 +80,13 @@ const {
         (current.status !== "running" || current.lease_owner !== a.p_lease_owner)
       ) {
         return fail("PROJECTION_PIPELINE_LEASE_MISMATCH");
+      }
+      if (
+        a.p_transition === "advance" &&
+        current.cursor_game_id != null &&
+        (a.p_next_cursor_game_id == null || a.p_next_cursor_game_id < current.cursor_game_id)
+      ) {
+        return fail("PROJECTION_PIPELINE_CURSOR_REGRESSION");
       }
     }
     const running = a.p_next_status === "running";
@@ -200,7 +207,7 @@ vi.mock("../../../../../pages/api/v1/db/run-projection-accuracy", () => ({
   default: runProjectionAccuracyMock
 }));
 
-import handler from "../../../../../pages/api/v1/db/run-rolling-forge-pipeline";
+import handler, { __testables } from "../../../../../pages/api/v1/db/run-rolling-forge-pipeline";
 
 function createMockRes() {
   const res: any = {
@@ -652,6 +659,8 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
     };
     const stageStatus = (res: any, id: string) =>
       res.body.stages.find((stage: any) => stage.id === id);
+    const nstStageRow = () =>
+      [...pipelineStateRows.values()].find((row) => row.operation_key === "upstream_skater_sources");
 
     beforeEach(() => {
       vi.useFakeTimers({ toFake: ["Date"] });
@@ -765,6 +774,186 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       });
       expect(updateGamesMock).toHaveBeenCalledTimes(1);
       expect(runProjectionV2Mock).toHaveBeenCalledTimes(1);
+    });
+
+    // The scheduled run's NST deadline: its 180 s budget less 20 s of audit headroom.
+    const nstDeadline = (at: string) => String(Date.parse(at) + 180_000 - 20_000);
+    const nstQuery = (at: string, extra: Record<string, string> = {}) => ({
+      runMode: "incremental", startDate: "2026-10-18", endDate: "2026-10-18", ...extra, deadlineAt: nstDeadline(at)
+    });
+
+    it("points the source steps at the last completed date, not the run date", async () => {
+      const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.dateWindow).toMatchObject({ date: "2026-10-19", sourceStartDate: "2026-10-18", sourceEndDate: "2026-10-18" });
+      expect(updateNstGamelogMock.mock.calls[0]?.[0]?.query).toEqual(nstQuery("2026-10-19T10:05:00.000Z"));
+      expect(updateWgoSkatersMock.mock.calls[0]?.[0]?.query).toEqual({ action: "all", startDate: "2026-10-18" });
+      expect(updateWgoTotalsMock.mock.calls[0]?.[0]?.query).toEqual({ season: "current" });
+      // Power-play combinations come from played games: yesterday's slate, not today's.
+      expect(gamesGteMock).toHaveBeenCalledWith("date", "2026-10-18");
+      expect(gamesLteMock).toHaveBeenCalledWith("date", "2026-10-18");
+      expect(updatePowerPlayCombinationsMock.mock.calls[0]?.[0]?.query).toEqual({ startDate: "2026-10-18", endDate: "2026-10-18" });
+      // The projection itself is still for the run date.
+      expect(runProjectionV2Mock.mock.calls[0]?.[0]?.query?.date).toBe("2026-10-19");
+    });
+
+    describe("NST step resume (agreed contract; inactive until Codex ships it)", () => {
+      const continuation = (cursor: string, overrides: Record<string, string> = {}) =>
+        async (req: any, res: any) => {
+          res.status(207).json({
+            success: false,
+            operationStatus: "continuation_required",
+            resume: { required: true, request: { query: { ...req.query, cursor, deadlineAt: "1", ...overrides } } }
+          });
+        };
+      const reply = (status: number, body: Record<string, unknown>) => async (_req: any, res: any) => {
+        res.status(status).json(body);
+      };
+      beforeEach(() => {
+        __testables.nstStepResume.enabled = true;
+      });
+      afterEach(() => {
+        __testables.nstStepResume.enabled = false;
+        updateNstGamelogMock.mockReset();
+      });
+
+      it("pauses on a continuation, replays its query with a fresh deadline, and runs WGO only once NST finishes", async () => {
+        updateNstGamelogMock
+          .mockImplementationOnce(continuation("7"))
+          .mockImplementationOnce(continuation("15"));
+
+        const first = await invokeScheduled("2026-10-19T10:05:00.000Z");
+        expect(first.statusCode).toBe(207);
+        expect(first.body.termination).toMatchObject({
+          state: "continuation_required", reason: "stage_partial", nextStageId: "upstream_skater_sources"
+        });
+        expect(first.body.failureSummary).toMatchObject({ failedStepCount: 0 });
+        expect(stageStatus(first, "upstream_skater_sources").status).toBe("partial");
+        expect(stageStatus(first, "contextual_builders").status).toBe("pending");
+        expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+        expect(updateWgoTotalsMock).not.toHaveBeenCalled();
+        expect(nstStageRow()).toMatchObject({ status: "running", cursor_game_id: 7 });
+
+        const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
+        expect(updateNstGamelogMock.mock.calls[1]?.[0]?.query).toEqual(nstQuery("2026-10-19T10:10:00.000Z", { cursor: "7" }));
+        expect(second.body.termination).toMatchObject({ reason: "stage_partial", nextStageId: "upstream_skater_sources" });
+        expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+        expect(nstStageRow()).toMatchObject({ status: "running", cursor_game_id: 15 });
+
+        const third = await invokeScheduled("2026-10-19T10:15:00.000Z");
+        expect(updateNstGamelogMock.mock.calls[2]?.[0]?.query).toEqual(nstQuery("2026-10-19T10:15:00.000Z", { cursor: "15" }));
+        expect(updateNstGamelogMock).toHaveBeenCalledTimes(3);
+        expect(updateWgoSkatersMock).toHaveBeenCalledTimes(1);
+        expect(updateWgoTotalsMock).toHaveBeenCalledTimes(1);
+        expect(updateWgoSkatersMock.mock.invocationCallOrder[0]).toBeGreaterThan(updateNstGamelogMock.mock.invocationCallOrder[2]);
+        expect(nstStageRow()).toMatchObject({ status: "complete" });
+        expect(third.statusCode).toBe(200);
+        expect(third.body.termination).toMatchObject({ state: "completed" });
+      });
+
+      it("advances to WGO on the expected no-completed-games skip", async () => {
+        updateNstGamelogMock.mockImplementationOnce(reply(200, { success: true, operationStatus: "skipped_no_completed_games" }));
+
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+        expect(stageStatus(res, "upstream_skater_sources").steps.map((step: any) => [step.id, step.status])).toEqual([
+          ["update-nst-gamelog", "skipped"], ["update-wgo-skaters", "success"], ["update-wgo-totals", "success"],
+        ]);
+        expect(nstStageRow()).toMatchObject({ status: "complete" });
+      });
+
+      it.each([
+        ["a provider failure (>= 400)", reply(503, { success: false, classification: "rate_limited" })],
+        ["incomplete work (200, success false)", reply(200, { success: false, message: "Incomplete NST work; inspect source outcomes and deferred URLs." })],
+        ["a 207 that is not a continuation", reply(207, { success: false, operationStatus: "partial" })],
+        ["a cursor that is not positive", continuation("0")],
+        ["a non-integer cursor", continuation("7.5")],
+        ["a missing cursor", async (req: any, res: any) => {
+          res.status(207).json({ success: false, operationStatus: "continuation_required",
+            resume: { required: true, request: { query: { ...req.query } } } });
+        }],
+        ["a query whose scope differs from the one sent", continuation("7", { startDate: "2026-10-19" })],
+        ["a query with a field this pipeline did not send", continuation("7", { datasetGroup: "skaters" })],
+        ["no replayable query", reply(207, { success: false, operationStatus: "continuation_required", resume: { required: true, request: {} } })],
+      ])("blocks on %s: the step fails, nothing advances and WGO does not run", async (_label, responder) => {
+        updateNstGamelogMock.mockImplementationOnce(responder);
+
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+        expect(stageStatus(res, "upstream_skater_sources").steps.map((step: any) => [step.id, step.status])).toEqual([
+          ["update-nst-gamelog", "failed"],
+        ]);
+        expect(res.body.termination).toMatchObject({ state: "stopped_on_blocking_failure", reason: "retry_on_next_invocation" });
+        expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+        expect(nstStageRow()).toMatchObject({ status: "failed", cursor_game_id: null });
+      });
+
+      it("blocks a resumed step whose cursor does not increase, keeping the stored cursor", async () => {
+        updateNstGamelogMock
+          .mockImplementationOnce(continuation("7"))
+          .mockImplementationOnce(continuation("7"));
+
+        await invokeScheduled("2026-10-19T10:05:00.000Z");
+        expect(nstStageRow()).toMatchObject({ status: "running", cursor_game_id: 7 });
+        const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
+
+        expect(updateNstGamelogMock.mock.calls[1]?.[0]?.query).toMatchObject({ cursor: "7" });
+        expect(stageStatus(second, "upstream_skater_sources").steps.map((step: any) => [step.id, step.status])).toEqual([
+          ["update-nst-gamelog", "failed"],
+        ]);
+        expect(second.body.termination).toMatchObject({ state: "stopped_on_blocking_failure" });
+        expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+        expect(nstStageRow()).toMatchObject({ status: "failed", cursor_game_id: 7 });
+      });
+
+      it("does not advance when the cursor cannot be stored: the next invocation repeats from the last stored cursor", async () => {
+        const original = pipelineStateRpc.getMockImplementation()!;
+        let failedAdvance = false;
+        pipelineStateRpc.mockImplementation(async (name: string, a: any) => {
+          if (a.p_transition === "advance" && !failedAdvance) {
+            failedAdvance = true;
+            return { data: null, error: { message: "fetch failed" } };
+          }
+          return original(name, a);
+        });
+        try {
+          updateNstGamelogMock.mockImplementationOnce(continuation("7"));
+          const first = await invokeScheduled("2026-10-19T10:05:00.000Z");
+          expect(first.body.termination).toMatchObject({ state: "continuation_required", reason: "state_error", nextStageId: "upstream_skater_sources" });
+          expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+          expect(nstStageRow()).toMatchObject({ status: "running", cursor_game_id: null });
+
+          // After the lease frees, NST repeats from the stored (empty) cursor.
+          await invokeScheduled("2026-10-19T10:15:00.000Z");
+          expect(updateNstGamelogMock.mock.calls[1]?.[0]?.query).toEqual(nstQuery("2026-10-19T10:15:00.000Z"));
+          expect(updateWgoSkatersMock).toHaveBeenCalledTimes(1);
+        } finally {
+          pipelineStateRpc.mockImplementation(original);
+        }
+      });
+    });
+
+    describe("while NST step resume is inactive, today's NST responses behave as before", () => {
+      afterEach(() => updateNstGamelogMock.mockReset());
+
+      it.each([
+        ["success", 200, { success: true, message: "Done" }, "success"],
+        ["incomplete work", 200, { success: false, message: "Incomplete NST work; inspect source outcomes and deferred URLs." }, "failed"],
+        ["an error", 500, { success: false, error: "boom" }, "failed"],
+        ["a continuation", 207, { success: false, operationStatus: "continuation_required",
+          resume: { required: true, request: { query: { runMode: "incremental", startDate: "2026-10-18", endDate: "2026-10-18", cursor: "7" } } } }, "failed"],
+      ])("%s: WGO still runs and nothing is stored", async (_label, status, body, stepStatus) => {
+        updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) => { res.status(status).json(body); });
+
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+        expect(stageStatus(res, "upstream_skater_sources").steps.map((step: any) => [step.id, step.status])).toEqual([
+          ["update-nst-gamelog", stepStatus], ["update-wgo-skaters", "success"], ["update-wgo-totals", "success"],
+        ]);
+        expect(updateNstGamelogMock.mock.calls[0]?.[0]?.query).not.toHaveProperty("cursor");
+        expect(nstStageRow()?.cursor_game_id ?? null).toBeNull();
+      });
     });
 
     it("stops on a real stage failure, retries it once on the next invocation, then stays stopped", async () => {
