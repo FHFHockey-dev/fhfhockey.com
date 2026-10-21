@@ -13,17 +13,20 @@ import { clamp } from "../lib/projections/utils/number-utils";
  * Reads only local JSON exports (S1 runs, S2 projections, S3 actuals, S4 games); writes only --output.
  */
 export type Head = "G" | "A" | "PPP";
-export type Variant = "baseline" | "q7" | "q8" | "q7q8" | "a1" | "a2" | "a1a2" | "a3" | "a4" | "a4q7";
+export type Variant = "baseline" | "q7" | "q8" | "q7q8" | "a1" | "a2" | "a1a2" | "a3" | "a4" | "a4q7" | "a5";
 export type Line = Record<Head, number>;
 export type SplitRates = { goalRateEs: number | null; goalRatePp: number | null; assistRateEs: number | null; assistRatePp: number | null };
 export type UsedRates = { ges: number; gpp: number; aes: number; app: number };
 type Json = Record<string, any>;
 export const HEADS: Head[] = ["G", "A", "PPP"];
-export type AssistDenominator = "per_goal" | "per_two_goals";
+export type AssistScale = "per_goal" | "per_two_goals";
+/** Mirrors SkaterAssistDenominatorOption; always passed explicitly (the calculators' omitted default is mixed). */
+export type AssistDenominator = AssistScale | { es: AssistScale; pp: AssistScale };
 export type RateOptions = { q7Assist?: boolean; wideCoupling?: boolean; assistScale?: number; assistDenominator?: AssistDenominator };
 /** q7 = no second shrink on goal AND assist rates; q7Assist = assist rates only; wideCoupling = outer teammate clamp [0.2, 3.0] / [0.3, 3.5];
  * assistScale multiplies the final assist rates (a3 = 2: proxy for the goals x 2 assist denominator convention);
- * assistDenominator "per_two_goals" reproduces stored rows, "per_goal" is the real refit (a4) with per-goal clamps. */
+ * assistDenominator "per_two_goals" reproduces stored rows, "per_goal" is the real refit (a4) with per-goal clamps;
+ * { es, pp } mixes scales per strength (a5 = per-goal ES, old-scale PP), with each strength's clamps following its scale. */
 export const VARIANTS: ({ key: Variant; q7: boolean; q8: boolean } & Required<RateOptions>)[] = [
   { key: "baseline", q7: false, q8: false, q7Assist: false, wideCoupling: false, assistScale: 1, assistDenominator: "per_two_goals" },
   { key: "q7", q7: true, q8: false, q7Assist: false, wideCoupling: false, assistScale: 1, assistDenominator: "per_two_goals" },
@@ -35,6 +38,7 @@ export const VARIANTS: ({ key: Variant; q7: boolean; q8: boolean } & Required<Ra
   { key: "a3", q7: false, q8: false, q7Assist: false, wideCoupling: false, assistScale: 2, assistDenominator: "per_two_goals" },
   { key: "a4", q7: false, q8: false, q7Assist: true, wideCoupling: false, assistScale: 1, assistDenominator: "per_goal" },
   { key: "a4q7", q7: true, q8: false, q7Assist: true, wideCoupling: false, assistScale: 1, assistDenominator: "per_goal" },
+  { key: "a5", q7: false, q8: false, q7Assist: true, wideCoupling: false, assistScale: 1, assistDenominator: { es: "per_goal", pp: "per_two_goals" } },
 ];
 const RATE_TOL = 5e-4, REST_TOL = 1.5e-4, RESIDUAL_TOL = 1e-3, MAX_BYTES = 64 * 1024 * 1024;
 
@@ -84,18 +88,19 @@ export function bayesSplitRates(support: Json | null, goalRateMultiplier: number
  */
 export function usedRates(split: SplitRates, sampleWeight: number, trend: { g: number; a: number },
   teammate: { es: number; pp: number }, q7: boolean, opts: RateOptions = {}): UsedRates & { coupled: { es: number; pp: number } } {
-  const perGoal = opts.assistDenominator === "per_goal";
-  const r = resolveSkaterConversionRates({ splitRates: split, sampleWeight, assistDenominator: perGoal ? "per_goal" : "per_two_goals" });
+  const den = opts.assistDenominator ?? "per_two_goals";
+  const esPerGoal = (typeof den === "string" ? den : den.es) === "per_goal", ppPerGoal = (typeof den === "string" ? den : den.pp) === "per_goal";
+  const r = resolveSkaterConversionRates({ splitRates: split, sampleWeight, assistDenominator: den });
   // Per-goal clamps copied from skater-stage.ts (not imported: it reaches lib/supabase); old scale otherwise.
-  const [esTrend, ppTrend] = perGoal ? [[0.4, 3.4], [0.6, 4.0]] : [[0.2, 1.7], [0.3, 2]];
+  const esTrend = esPerGoal ? [0.4, 3.4] : [0.2, 1.7], ppTrend = ppPerGoal ? [0.6, 4.0] : [0.3, 2];
   const pick = (on: boolean, value: number, key: keyof typeof r.conversionShrink) => (on ? value : r.conversionShrink[key].legacy);
   const assistOn = q7 || Boolean(opts.q7Assist);
   const coupled = {
     es: clamp(pick(assistOn, r.assistRateEs, "assist_es") * trend.a, esTrend[0], esTrend[1]) * teammate.es,
     pp: clamp(pick(assistOn, r.assistRatePp, "assist_pp") * trend.a, ppTrend[0], ppTrend[1]) * teammate.pp,
   };
-  const [esMin, ppMin] = perGoal ? [0.4, 0.6] : [0.2, 0.3];
-  const [esMax, ppMax] = perGoal ? [3.6, 4.2] : opts.wideCoupling ? [3.0, 3.5] : [1.8, 2.1];
+  const esMin = esPerGoal ? 0.4 : 0.2, ppMin = ppPerGoal ? 0.6 : 0.3;
+  const esMax = esPerGoal ? 3.6 : opts.wideCoupling ? 3.0 : 1.8, ppMax = ppPerGoal ? 4.2 : opts.wideCoupling ? 3.5 : 2.1;
   return {
     ges: clamp(pick(q7, r.goalRateEs, "goal_es") * trend.g, 0.025, 0.3),
     gpp: clamp(pick(q7, r.goalRatePp, "goal_pp") * trend.g, 0.04, 0.45),
@@ -129,11 +134,13 @@ export function counterfactualHeads(args: { base: UsedRates; final: Line; weight
     pred[k] = (p * orgPrime[k] + args.restScale[k] * residual[k]) / W;
   }
   if (args.capPpp) pred.PPP = Math.min(pred.PPP, pred.G + pred.A);
-  return { pred, residual };
+  return { pred, residual, organicA: { es: aEs, pp: aPp } };
 }
 
 export type PreparedRow = { gameId: number; playerId: number; date: string; gitSha: string | null; stamped: boolean;
-  teamRest: number | null; oppRest: number | null; heads: Head[]; actual: Line; preds: Record<Variant, Line>; decomp: AssistDecomp };
+  teamRest: number | null; oppRest: number | null; heads: Head[]; actual: Line; preds: Record<Variant, Line>; decomp: AssistDecomp;
+  /** Counterfactual organic (pre-bootstrap) assists per strength, per variant. */
+  organicA: Record<Variant, { es: number; pp: number }> };
 /** Baseline assist decomposition: final = (p*org + W*prior)/W, prior = (W*final - p*org)/W. */
 export type AssistDecomp = { p: number; W: number; orgA: number; priorA: number; finalA: number; bindEs: boolean; bindPp: boolean };
 export type Checks = Record<string, number>;
@@ -155,7 +162,7 @@ export function selectRuns(runs: Json[]) {
 
 /** One stored row -> four variants, after the self-checks. Returns a drop reason on failure. */
 export function evaluateRow(raw: Json, isHome: boolean, checks: Checks):
-  { heads: Head[]; preds: Record<Variant, Line>; decomp: AssistDecomp } | { drop: string } {
+  { heads: Head[]; preds: Record<Variant, Line>; decomp: AssistDecomp; organicA: PreparedRow["organicA"] } | { drop: string } {
   if (raw.rollout_mode === "candidate") return { drop: "candidate_mode_not_modelled" };
   const cb = obj(raw.current_baseline), rest = obj(raw.rest_schedule), conv = obj(raw.conversion_rates);
   const sw = num(raw.sample_weight);
@@ -174,7 +181,6 @@ export function evaluateRow(raw: Json, isHome: boolean, checks: Checks):
     bayesSplitRates(raw.support_counts ?? null, goalCtx * restG, assistCtx * restA, denominator);
   const splitOld = split(legacyRest.goalRateMultiplier, legacyRest.assistRateMultiplier);
   const splitNew = split(newRest.goalRateMultiplier, newRest.assistRateMultiplier);
-  const splitPerGoal = split(legacyRest.goalRateMultiplier, legacyRest.assistRateMultiplier, "per_goal");
   const rates = usedRates(splitOld, sw, trend, teammate, false);
   const stored = { ges: conv.goal_rate_es, gpp: conv.goal_rate_pp, aes: conv.assist_rate_es, app: conv.assist_rate_pp };
   const supported = { ges: splitOld.goalRateEs != null, gpp: splitOld.goalRatePp != null,
@@ -194,7 +200,7 @@ export function evaluateRow(raw: Json, isHome: boolean, checks: Checks):
   const weights = bootstrapWeights(raw.season_bootstrap ?? null);
   const ctx = (restG: number, restA: number) => m(team.goal_rate_multiplier) * m(opp.goal_rate_multiplier) * restG
     + m(team.assist_rate_multiplier) * m(opp.assist_rate_multiplier) * restA;
-  const preds = {} as Record<Variant, Line>;
+  const preds = {} as Record<Variant, Line>, organicA = {} as PreparedRow["organicA"];
   const decomp: AssistDecomp = { p: weights.p, W: weights.W, orgA: base.aes + base.app, finalA: final.A,
     priorA: (weights.W * final.A - weights.p * (base.aes + base.app)) / weights.W,
     bindEs: rates.coupled.es > 1.8 || rates.coupled.es < 0.2, bindPp: rates.coupled.pp > 2.1 || rates.coupled.pp < 0.3 };
@@ -203,9 +209,10 @@ export function evaluateRow(raw: Json, isHome: boolean, checks: Checks):
       G: newRest.goalRateMultiplier / legacyRest.goalRateMultiplier, A: newRest.assistRateMultiplier / legacyRest.assistRateMultiplier,
       PPP: ctx(newRest.goalRateMultiplier, newRest.assistRateMultiplier) / ctx(legacyRest.goalRateMultiplier, legacyRest.assistRateMultiplier),
     } : { G: 1, A: 1, PPP: 1 };
-    const ratesPrime = usedRates(v.q8 ? splitNew : v.assistDenominator === "per_goal" ? splitPerGoal : splitOld, sw, trend, teammate, v.q7, v);
+    const ratesPrime = usedRates(v.q8 ? splitNew : v.assistDenominator === "per_two_goals" ? splitOld
+      : split(legacyRest.goalRateMultiplier, legacyRest.assistRateMultiplier, v.assistDenominator), sw, trend, teammate, v.q7, v);
     const out = counterfactualHeads({ base, final, weights, rates, ratesPrime, restScale, capPpp: avail.G && avail.A });
-    preds[v.key] = out.pred;
+    preds[v.key] = out.pred; organicA[v.key] = out.organicA;
     if (v.key !== "baseline") continue;
     for (const k of HEADS) {
       if (!avail[k]) continue;
@@ -214,7 +221,7 @@ export function evaluateRow(raw: Json, isHome: boolean, checks: Checks):
     }
   }
   for (const k of HEADS) if (!avail[k]) bump(checks, `head_withheld_${k}`);
-  return { heads: HEADS.filter((k) => avail[k]), preds, decomp };
+  return { heads: HEADS.filter((k) => avail[k]), preds, decomp, organicA };
 }
 
 export function prepareRows(input: { runs: Json[]; projections: Json[]; actuals: Json[]; games: Json[] }) {
@@ -245,7 +252,7 @@ export function prepareRows(input: { runs: Json[]; projections: Json[]; actuals:
     const storedHome = obj(rest.rest).is_home;
     if (typeof storedHome === "boolean" && storedHome !== isHome) bump(checks, "info_is_home_ne_games");
     rows.push({ gameId: Number(raw.game_id), playerId: Number(raw.player_id), date, gitSha: run.git_sha ?? null,
-      stamped: isStamped(run.git_sha), teamRest, oppRest, heads: result.heads, preds: result.preds, decomp: result.decomp,
+      stamped: isStamped(run.git_sha), teamRest, oppRest, heads: result.heads, preds: result.preds, decomp: result.decomp, organicA: result.organicA,
       actual: { G: num(actual.goals) ?? 0, A: num(actual.assists) ?? 0, PPP: num(actual.pp_points) ?? 0 } });
   }
   checks.rows_used = rows.length;
@@ -344,7 +351,8 @@ function assistDecompositionSection(rows: PreparedRow[]) {
     "| subset | n | mean organic A | mean p | mean prior part | mean final A | mean actual A |", "|---|---|---|---|---|---|---|",
     line("all", withA), line("baseline top decile by predicted G", withA.filter((r) => top.has(r))), "",
     `Outer coupling clamp binding in baseline: ES ${share("bindEs")}, PP ${share("bindPp")}.`, "",
-    `Mean A under a3 / a4: ${f(mean(withA.map((r) => r.preds.a3.A)))} / ${f(mean(withA.map((r) => r.preds.a4.A)))} (baseline ${
+    `Mean A under a3 / a4 / a5: ${f(mean(withA.map((r) => r.preds.a3.A)))} / ${f(mean(withA.map((r) => r.preds.a4.A)))} / ${
+      f(mean(withA.map((r) => r.preds.a5.A)))} (baseline ${
       f(mean(withA.map((r) => r.preds.baseline.A)))}).`].join("\n");
 }
 
@@ -362,7 +370,7 @@ export function renderReport(args: { rows: PreparedRow[]; checks: Checks; select
     `Seed ${seed}, ${reps} paired cluster-bootstrap reps by game_id; Δ is variant minus baseline (negative ΔMAE = better).`,
     "Baseline reproduces stored predictions; Q7 drops the second sample-weight shrink; Q8 uses B2B = 1 rest tiers (organic rates and season-bootstrap prior context).",
     "Organic shots/TOI are held fixed under Q8 (team reconciliation cancels uniform rest multipliers); candidate-mode rows are not modelled.",
-    "Assist-only variants: a1 drops the second shrink on assist rates only; a2 widens the outer teammate-coupling clamp to [0.2, 3.0] ES / [0.3, 3.5] PP; a1a2 both; a3 doubles the final assist rates (proxy for the goals x 2 assist denominator). a4 is the real per-goal assist refit (Bayes value, per-goal clamps); a4q7 adds the Q7 goal path. Goals are unchanged under a1/a2/a3/a4.", "",
+    "Assist-only variants: a1 drops the second shrink on assist rates only; a2 widens the outer teammate-coupling clamp to [0.2, 3.0] ES / [0.3, 3.5] PP; a1a2 both; a3 doubles the final assist rates (proxy for the goals x 2 assist denominator). a4 is the real per-goal assist refit (Bayes value, per-goal clamps); a4q7 adds the Q7 goal path; a5 refits ES assists per goal and keeps PP on the old scale. Goals are unchanged under a1/a2/a3/a4.", "",
     "## Inputs", "", "| input | path | sha256 |", "|---|---|---|",
     ...args.inputs.map((i) => `| ${i.name} | ${i.path} | ${i.sha256} |`), "",
     "## Selected runs", "", "| as_of_date | run_id | git_sha |", "|---|---|---|",

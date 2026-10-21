@@ -155,6 +155,20 @@ describe("forge counterfactual backtest", () => {
     expect(checked).toBe(11);
   });
 
+  it("a5 refits ES assists per goal and keeps PP on the old scale", () => {
+    const { rows } = prepareRows(inputs());
+    let checked = 0;
+    for (const r of rows) {
+      expect(r.preds.a5.G).toBe(r.preds.baseline.G);
+      if (!r.heads.includes("A")) continue;
+      expect(r.organicA.a5.es).toBeCloseTo(r.organicA.a4.es, 8);
+      expect(r.organicA.a5.pp).toBeCloseTo(r.organicA.a1.pp, 8);
+      expect(r.organicA.a4.es).toBeCloseTo(2 * r.organicA.a1.es, 8);
+      checked += 1;
+    }
+    expect(checked).toBe(11);
+  });
+
   it("renders the assists decomposition and it adds up", () => {
     const { rows, checks, selected } = prepareRows(inputs());
     const report = renderReport({ rows, checks, selected, inputs: [], seed: 1, reps: 50 });
@@ -173,7 +187,7 @@ describe("forge counterfactual backtest", () => {
     const row = (gameId: number, actual: number, base: number, q7: number) => ({ gameId, playerId: gameId, date: "2026-10-13",
       gitSha: null, stamped: false, teamRest: null, oppRest: null, heads: ["G" as const], actual: { ...zero, G: actual },
       preds: Object.fromEntries(VARIANTS.map((v) => [v.key, { ...zero, G: v.key === "q7" ? q7 : base }])) as PreparedRow["preds"],
-      decomp: { p: 1, W: 1, orgA: 0, priorA: 0, finalA: 0, bindEs: false, bindPp: false } });
+      decomp: { p: 1, W: 1, orgA: 0, priorA: 0, finalA: 0, bindEs: false, bindPp: false }, organicA: {} as PreparedRow["organicA"] });
     // Baseline errors 0.5, -1, 2 (SSE 5.25); q7 errors 0, -0.5, 1 (SSE 1.25).
     const rows: PreparedRow[] = [row(1, 0, 0.5, 0), row(2, 1, 0, 0.5), row(3, 1, 3, 2)];
     expect(summarize(rows, "baseline", "G").rmse).toBeCloseTo(Math.sqrt(5.25 / 3), 12);
