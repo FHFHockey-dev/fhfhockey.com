@@ -469,8 +469,10 @@ export function splitRollingUpsertRowForDurableStorage(row: RollingUpsertRow): {
     const value = rankingRow[key];
     rankingRow[key] = null;
     if (!isSupportPayloadScalar(value)) continue;
-    appendSupportPayloadValue(supportPayload, key, value);
     prunedFieldCount += 1;
+    // Readers treat an absent key exactly like a null one.
+    if (value === null) continue;
+    appendSupportPayloadValue(supportPayload, key, value);
   }
 
   if (prunedFieldCount === 0) {
@@ -1339,14 +1341,17 @@ const METRICS: MetricDefinition[] = [
       scale: 1,
       noPrimaryDenominatorBehavior: "null"
     },
-    getComponents: (game) => ({
-      numerator: resolveIxgValue({
+    getComponents: (game) => {
+      const ixg = resolveIxgValue({
         strength: game.strength,
         countsIxg: game.counts?.ixg ?? null,
         wgoIxg: getWgoNumber(game, "ixg")
-      }),
-      denominator: getShots(game)
-    })
+      });
+      // WGO supplies shots but no xG, so a game without an NST row must not
+      // count as zero-xG shots; it keeps its appearance slot without components.
+      if (ixg == null) return null;
+      return { numerator: ixg, denominator: getShots(game) };
+    }
   },
   {
     key: "ipp",
@@ -3008,16 +3013,21 @@ function shouldUseDateScopedPlayerSelection(options: FetchOptions): boolean {
   );
 }
 
+// `season` and `startDate` bound which games get rows written, never the
+// history read: `_all`, `_3ya`, `_career` and GP% need every earlier game.
 function buildPlayerHistoryReadOptions(options: FetchOptions): FetchOptions {
   const historyOptions = { ...options };
+  delete historyOptions.season;
   delete historyOptions.startDate;
   return historyOptions;
 }
 
 function isWithinRequestedWriteWindow(
   gameDate: string,
+  gameSeason: number,
   options: FetchOptions
 ): boolean {
+  if (options.season && gameSeason !== options.season) return false;
   if (options.startDate && gameDate < options.startDate) return false;
   if (options.endDate && gameDate > options.endDate) return false;
   return true;
@@ -3950,7 +3960,7 @@ async function processPlayer(
         // Earlier history only feeds the accumulators above. Building output
         // rows for it would be discarded, and that work grows with career
         // length for every strength.
-        if (!isWithinRequestedWriteWindow(game.gameDate, options)) continue;
+        if (!isWithinRequestedWriteWindow(game.gameDate, game.season, options)) continue;
 
         const historicalGpPctSnapshot = getHistoricalGpPctSnapshot(
           historicalGpPctState,

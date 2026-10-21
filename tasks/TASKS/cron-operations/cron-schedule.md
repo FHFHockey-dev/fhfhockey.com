@@ -19,6 +19,17 @@
 -- The JSON inventory below is the current-state source of truth; job 308 is
 -- inactive and distinct horizon-5 job 393 remains active.
 
+-- 2026-10-21 job 278 update-rolling-player-averages moved from daily 08:15 UTC to weekly Sunday
+-- 08:15 UTC (cron.alter_job(278, '15 8 * * 0'), by explicit TJ approval in session local_08a0bf1c).
+-- The scheduled pipeline recomputes run-1 daily; the bare route's 14-day window never finished
+-- inside the function limit (no cron_job_audit row at 08:15Z on any day 10-15..10-21). The weekly
+-- pass only revisits late-arriving source days. Rollback: cron.alter_job(278, '15 8 * * *').
+-- 2026-10-21 job 329 update-nst-team-stats-all moved from 10:55 UTC to 09:15 UTC
+-- (cron.alter_job(329, '15 9 * * *'), same approval) so FORGE team context reads same-day season
+-- aggregates in the 10:05-10:55 UTC pipeline window. NST spacing: 08:45 (job 220) -> 09:15 -> 09:55
+-- (job 328), each gap >= 10 minutes. Rollback: cron.alter_job(329, '55 10 * * *'). Evidence:
+-- tasks/artifacts/forge-projection-audit-2026-10-21/q13-pg-cron-changes.md.
+
 -- 2026-10-04 read-only Yahoo reconciliation: active job 106 and run 177006
 -- target update-yahoo-players without a query at 08:40 UTC. Its route receipt
 -- is partial; this inventory correction does not establish complete ownership
@@ -199,7 +210,7 @@
   {
     "jobid": 278,
     "jobname": "update-rolling-player-averages",
-    "schedule": "15 8 * * *",
+    "schedule": "15 8 * * 0",
     "run_time_utc": "08:15 UTC",
     "active": true,
     "method": "GET",
@@ -530,8 +541,8 @@
   {
     "jobid": 329,
     "jobname": "update-nst-team-stats-all",
-    "schedule": "55 10 * * *",
-    "run_time_utc": "10:55 UTC",
+    "schedule": "15 9 * * *",
+    "run_time_utc": "09:15 UTC",
     "active": true,
     "method": "GET",
     "route": "/api/Teams/nst-team-stats"
@@ -723,7 +734,7 @@ protected routes.
 -- - 08:05 UTC / 03:05 EST: update-power-play-combinations
 -- - 08:05 UTC / 03:05 EST: update-team-yearly-summary
 -- - 08:10 UTC / 03:10 EST: update-nst-tables-all (inactive duplicate)
--- - 08:15 UTC / 03:15 EST: update-rolling-player-averages
+-- - 08:15 UTC / 03:15 EST: update-rolling-player-averages (Sundays only since 2026-10-21)
 -- - 08:15 UTC / 03:15 EST: update-standings-details
 -- - 08:20 UTC / 03:20 EST: update-all-wgo-goalie-totals
 -- - 08:25 UTC / 03:25 EST: update-game-goal-projections
@@ -734,6 +745,7 @@ protected routes.
 -- - 08:55 UTC / 03:55 EST: sync-yahoo-players-to-sheet
 -- - 09:05 UTC / 04:05 EST: daily-refresh-goalie-unified-matview
 -- - 09:12 UTC / 04:12 EST: update-team-sos
+-- - 09:15 UTC / 04:15 EST: update-nst-team-stats-all (moved from 10:55 on 2026-10-21)
 -- - 09:25 UTC / 04:25 EST: update-nhl-edge-stats
 -- - 09:30 UTC / 04:30 EST: update-goalie-projections-v2
 -- - 09:35 UTC / 04:35 EST: update-player-underlying-stats-yesterday
@@ -757,7 +769,6 @@ protected routes.
 -- - 10:44 UTC / 05:44 EST: rebuild-sustainability-score
 -- - 10:45 UTC / 05:45 EST: update-predictions-sko
 -- - 10:46 UTC / 05:46 EST: rebuild-sustainability-trend-bands
--- - 10:55 UTC / 05:55 EST: update-nst-team-stats-all
 -- - 11:30 UTC / 06:30 EST: run-projection-accuracy
 -- - 11:34 UTC / 06:34 EST: game-predictions-ingest-espn-odds-h0-h7
 -- - 11:35 UTC / 06:35 EST: game-predictions-forecast-h7

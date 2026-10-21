@@ -476,7 +476,11 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       method: "POST",
       query: {}
     });
-    expect(res.body.executionControls.stopOnFailure).toBe(true);
+    // The schedule forces stopOnFailure; the receipt says so instead of echoing it as requested.
+    expect(res.body.executionControls).toMatchObject({
+      stopOnFailure: true,
+      stopOnFailureRequested: false
+    });
   });
 
   it("fails the implicit schedule closed before derived work when relationships fail", async () => {
@@ -1014,6 +1018,16 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         status: "failed",
         completedEarlier: true
       });
+      expect(second.body.failureSummary.terminalStop).toEqual({
+        code: "attempts_exhausted",
+        stageId: "projection_relationship_build"
+      });
+      expect(third.body.failureSummary).toMatchObject({
+        failedStepCount: 0,
+        firstFailure: null,
+        terminalStop: { code: "attempts_exhausted", stageId: "projection_relationship_build" }
+      });
+      expect(first.body.failureSummary.terminalStop).toBeNull();
       expect(runProjectionV2Mock).not.toHaveBeenCalled();
     });
 
@@ -1277,7 +1291,18 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
 
       const fourth = await invokeScheduled("2026-10-19T10:20:00.000Z");
 
+      expect(third.body.failureSummary).toMatchObject({
+        failedStepCount: 0,
+        firstFailure: null,
+        terminalStop: { code: "stage_killed", stageId: "rolling_player_recompute" }
+      });
+
       expect(fourth.body.termination).toMatchObject({ reason: "attempts_exhausted" });
+      // Later invocations keep naming the kills, not a generic exhaustion.
+      expect(fourth.body.failureSummary.terminalStop).toEqual({
+        code: "stage_killed",
+        stageId: "rolling_player_recompute"
+      });
       expect(updateRollingPlayerAveragesMock).not.toHaveBeenCalled();
       expect(pipelineStateRows.get(stageKey("rolling_player_recompute:kills"))?.cursor_game_id).toBe(3);
     });
@@ -1319,7 +1344,68 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       // Only the unfinished next day runs again.
       expect(runProjectionV2Mock).toHaveBeenCalledTimes(3);
       expect(runProjectionV2Mock.mock.calls[2][0].query).toMatchObject({ date: "2026-10-20" });
+      // The goalie priors were written by the invocation that projected the run date.
+      expect(updateGoalieProjectionsV2Mock).toHaveBeenCalledTimes(1);
+      expect(stageStatus(second, "projection_execution").steps.map((step: any) => step.id)).toEqual(["run-projection-v2"]);
       expect(pipelineStateRows.get(stageKey("projection_execution"))).toMatchObject({ status: "complete", cursor_game_id: 2 });
+    });
+
+    it("runs the goalie step on the first projection invocation only, also while the run date's projection stays partial", async () => {
+      runProjectionV2Mock.mockImplementationOnce(async (_req: any, res: any) => {
+        vi.setSystemTime(Date.now() + 100_000);
+        res.status(207).json({
+          success: false,
+          operationStatus: "partial",
+          resume: { required: true, reason: "runtime_budget", request: { date: "2026-10-19", horizonGames: "1" } }
+        });
+      });
+
+      const first = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+      expect(stageStatus(first, "projection_execution").status).toBe("partial");
+      expect(updateGoalieProjectionsV2Mock).toHaveBeenCalledTimes(1);
+      // No date finished, so the stage cursor alone could not tell the next invocation.
+      expect(pipelineStateRows.get(stageKey("projection_execution"))?.cursor_game_id ?? null).toBeNull();
+      expect(pipelineStateRows.get(stageKey("projection_execution:goalie"))).toMatchObject({ status: "complete" });
+
+      const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
+
+      expect(second.statusCode).toBe(200);
+      expect(updateGoalieProjectionsV2Mock).toHaveBeenCalledTimes(1);
+      expect(stageStatus(second, "projection_execution").steps.map((step: any) => step.id)).toEqual([
+        "run-projection-v2",
+        "run-projection-v2"
+      ]);
+    });
+
+    it("retries a failed goalie step on the next invocation even after the projection dates finished", async () => {
+      updateGoalieProjectionsV2Mock.mockImplementationOnce(async (_req: any, res: any) => {
+        res.status(500).json({ success: false, message: "NHL goalie logs unavailable" });
+      });
+
+      const first = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+      expect(first.statusCode).toBe(207);
+      expect(first.body.termination).toMatchObject({
+        state: "stopped_on_blocking_failure",
+        nextStageId: "projection_execution",
+        reason: "retry_on_next_invocation"
+      });
+      expect(runProjectionV2Mock).toHaveBeenCalledTimes(2);
+      expect(pipelineStateRows.get(stageKey("projection_execution"))).toMatchObject({ status: "failed", cursor_game_id: 2 });
+      expect(pipelineStateRows.has(stageKey("projection_execution:goalie"))).toBe(false);
+
+      const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
+
+      expect(second.statusCode).toBe(200);
+      expect(second.body.termination).toMatchObject({ state: "completed" });
+      expect(updateGoalieProjectionsV2Mock).toHaveBeenCalledTimes(2);
+      // Only the goalie step repeats; the finished dates are not projected again.
+      expect(stageStatus(second, "projection_execution").steps.map((step: any) => step.id)).toEqual([
+        "update-goalie-projections-v2"
+      ]);
+      expect(runProjectionV2Mock).toHaveBeenCalledTimes(2);
+      expect(pipelineStateRows.get(stageKey("projection_execution:goalie"))).toMatchObject({ status: "complete" });
     });
 
     it("records a failed next-day projection as a warning and completes the run date's downstream stages", async () => {

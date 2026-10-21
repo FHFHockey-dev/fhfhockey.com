@@ -29,6 +29,7 @@ import {
   isRollingForgeStageLeaseDead,
   readRollingForgeRunState,
   readRollingForgeStageFailedAttempts,
+  readRollingForgeStageKills,
   recordRollingForgeStageKill
 } from "lib/rollingForgePipelineRunState";
 
@@ -121,6 +122,8 @@ type ResponseBody = {
     includeDownstream: boolean;
     includeAccuracy: boolean;
     stopOnFailure: boolean;
+    // The query value; the scheduled run forces stopOnFailure on.
+    stopOnFailureRequested: boolean;
   };
   termination: TerminationReceipt;
   downstreamSummary: {
@@ -142,10 +145,14 @@ type ResponseBody = {
     firstFailure: { stageId: string; stepId: string; route: string; statusCode: number;
       error: string | null; gameId: number | null; stage: string | null; reportedErrorCount: number;
       code: string | null; endpoint: string | null; attempts: number | null; classification: string | null } | null;
+    // Set when the scheduled run stopped on a stage it will not take again.
+    terminalStop: { code: TerminalStopCode; stageId: RollingForgePipelineStageId } | null;
   };
 };
 
 type RouteHandler = (req: any, res: any) => Promise<void>;
+
+type TerminalStopCode = "attempts_exhausted" | "stage_killed";
 
 function getParam(req: NextApiRequest, key: string): string | null {
   const value = req.query[key];
@@ -227,6 +234,9 @@ const MAX_BLOCKING_STAGE_ATTEMPTS = 2;
 // `running`) is recorded; progress is durable, so the stage is taken again,
 // but after this many dead invocations the run stops instead of looping.
 const MAX_KILLED_STAGE_ATTEMPTS = 3;
+// Companion state row (like `<stage id>:kills`) that is `complete` once the
+// goalie step has succeeded in the run, so later invocations skip it.
+const GOALIE_STEP_DONE_KEY = "projection_execution:goalie" as RollingForgePipelineStageId;
 // The rolling route abandons in-flight players here, before the 240 s kill,
 // so it always answers and the cursor it reports is real.
 const ROLLING_IN_FLIGHT_DEADLINE_MS = 220_000;
@@ -605,6 +615,10 @@ async function runStage(args: {
   projectNextDay?: boolean;
   projectionDatesDone?: number;
   persistProjectionDatesDone?: (done: number) => Promise<void>;
+  // The goalie step already succeeded in this run (stored by the resumable
+  // run; a one-shot run always runs it).
+  goalieStepDone?: boolean;
+  persistGoalieStepDone?: () => Promise<void>;
   includeDownstream: boolean;
   includeAccuracy: boolean;
   useDurableProjectionBacklog: boolean;
@@ -916,16 +930,30 @@ async function runStage(args: {
       });
       break;
     case "projection_execution":
-      await addStep({
-        id: "update-goalie-projections-v2",
-        route: "/api/v1/db/update-goalie-projections-v2",
-        handler: updateGoalieProjectionsV2Handler,
-        query: {
-          limit: args.mode === "overnight" ? "30" : "7",
-          // The next day's projection gate needs its goalie start priors.
-          ...(args.projectNextDay ? { endDate: addDays(args.date, 1) } : {})
+      // Goalie priors run once per run: the resumable run stores the step's
+      // success, so a resumed invocation skips its external NHL fetches. A
+      // failed step stays unmarked and runs again on the next invocation.
+      if (!args.goalieStepDone) {
+        const goalieStep = await invokeRouteStep({
+          id: "update-goalie-projections-v2",
+          route: "/api/v1/db/update-goalie-projections-v2",
+          handler: updateGoalieProjectionsV2Handler,
+          query: {
+            limit: args.mode === "overnight" ? "30" : "7",
+            // The next day's projection gate needs its goalie start priors.
+            ...(args.projectNextDay ? { endDate: addDays(args.date, 1) } : {})
+          }
+        });
+        steps.push(goalieStep);
+        if (goalieStep.status === "success" && args.persistGoalieStepDone) {
+          try {
+            await args.persistGoalieStepDone();
+          } catch (error) {
+            // The step ran; only the marker lags, so the next invocation repeats it.
+            goalieStep.reason = `Completion not stored: ${errorMessage(error)}`;
+          }
         }
-      });
+      }
       if (args.startDate !== args.endDate) {
         await addStep({
           id: "run-projection-v2",
@@ -1109,7 +1137,11 @@ function describeStepFailure(step: StepResult) {
 async function runResumablePipeline(args: {
   startedAt: number;
   stageArgs: StageArgs;
-}): Promise<{ stageResults: StageResult[]; termination: TerminationReceipt }> {
+}): Promise<{
+  stageResults: StageResult[];
+  termination: TerminationReceipt;
+  terminalStopCode: TerminalStopCode | null;
+}> {
   if (!supabase) {
     throw new Error("The resumable pipeline requires the Supabase server client.");
   }
@@ -1118,6 +1150,7 @@ async function runResumablePipeline(args: {
   const states = await readRollingForgeRunState({ supabase, scopeKey: runKey });
   const stageResults: StageResult[] = [];
   let termination: TerminationReceipt | null = null;
+  let terminalStopCode: TerminalStopCode | null = null;
   let stagesRun = 0;
   const continuation = (
     reason: NonNullable<TerminationReceipt["reason"]>,
@@ -1174,6 +1207,10 @@ async function runResumablePipeline(args: {
           nextStageId: stage.id,
           reason: "attempts_exhausted"
         };
+        terminalStopCode =
+          readRollingForgeStageKills(states, stage.id) >= MAX_KILLED_STAGE_ATTEMPTS
+            ? "stage_killed"
+            : "attempts_exhausted";
       }
       continue;
     }
@@ -1259,6 +1296,7 @@ async function runResumablePipeline(args: {
           reason: "attempts_exhausted",
           detail: `Killed ${kills} time(s).`
         };
+        terminalStopCode = "stage_killed";
         continue;
       }
     }
@@ -1331,6 +1369,19 @@ async function runResumablePipeline(args: {
               args.startedAt + RESUMABLE_INVOCATION_BUDGET_MS,
             projectNextDay: true,
             projectionDatesDone: lease.cursorGameId ?? 0,
+            goalieStepDone: states.get(GOALIE_STEP_DONE_KEY)?.status === "complete",
+            persistGoalieStepDone: async () => {
+              const marker = await acquireRollingForgeStage({
+                supabase,
+                scopeKey: runKey,
+                stageId: GOALIE_STEP_DONE_KEY,
+                runDate: date,
+                leaseExpiresAtMs: Date.now() + 30_000
+              });
+              if (marker.status === "running") {
+                await finishRollingForgeStage({ supabase, lease: marker, outcome: "complete" });
+              }
+            },
             persistProjectionDatesDone: async (done: number) => {
               activeLease = await advanceRollingForgeStage({
                 supabase,
@@ -1375,6 +1426,7 @@ async function runResumablePipeline(args: {
             nextStageId: stage.id,
             reason: willRetry ? "retry_on_next_invocation" : "attempts_exhausted"
           };
+          if (!willRetry) terminalStopCode = "attempts_exhausted";
         }
       } else {
         await finishRollingForgeStage({ supabase, lease: activeLease, outcome: "complete" });
@@ -1400,7 +1452,8 @@ async function runResumablePipeline(args: {
         nextStageId: null
       }),
       stagesRun
-    }
+    },
+    terminalStopCode
   };
 }
 
@@ -1432,7 +1485,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
       executionControls: {
         includeDownstream: false,
         includeAccuracy: false,
-        stopOnFailure: true
+        stopOnFailure: true,
+        stopOnFailureRequested: true
       },
       termination: {
         state: "not_started",
@@ -1511,9 +1565,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
   };
   let stageResults: StageResult[] = [];
   let termination: TerminationReceipt;
+  let terminalStopCode: TerminalStopCode | null = null;
 
   if (useDurableProjectionBacklog) {
-    ({ stageResults, termination } = await runResumablePipeline({
+    ({ stageResults, termination, terminalStopCode } = await runResumablePipeline({
       startedAt,
       stageArgs
     }));
@@ -1625,6 +1680,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
       attempts: Number.isSafeInteger(firstError.attempts) && Number(firstError.attempts) > 0 ? Number(firstError.attempts) : null,
       classification: typeof dependencyError.classification === "string" ? dependencyError.classification.slice(0, 128) : null,
       reportedErrorCount: errors.length } : null,
+    terminalStop: terminalStopCode && termination.nextStageId
+      ? { code: terminalStopCode, stageId: termination.nextStageId }
+      : null,
   };
   return res.status(success ? 200 : 207).json({
     success,
@@ -1644,7 +1702,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
     executionControls: {
       includeDownstream,
       includeAccuracy,
-      stopOnFailure
+      stopOnFailure,
+      stopOnFailureRequested: requestedStopOnFailure
     },
     termination,
     downstreamSummary: {

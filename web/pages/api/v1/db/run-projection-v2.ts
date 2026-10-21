@@ -96,6 +96,10 @@ import { FORGE_COMPATIBILITY_INVENTORY } from "lib/projections/compatibilityInve
 import { getGoalieForgePipelineSpec } from "lib/projections/goaliePipeline";
 import { getRollingForgeStageDependencyContract } from "lib/rollingForgePipeline";
 import { PROJECTION_ROUTE_DEFAULT_BUDGET_MS } from "lib/rollingPlayerOperationalPolicy";
+import {
+  buildResumableRunScopeKey,
+  readRunResumeState,
+} from "lib/projections/queries/run-lifecycle-queries";
 import supabase from "lib/supabase/server";
 import adminOnly from "utils/adminOnlyMiddleware";
 
@@ -305,6 +309,7 @@ type Result =
         timedOut: boolean;
       }>;
       processedDates?: string[];
+      preflightSkipped?: "resumed_run";
     }
   | {
       success: false;
@@ -343,6 +348,7 @@ type Result =
         timedOut: boolean;
       }>;
       processedDates?: string[];
+      preflightSkipped?: "resumed_run";
     } & (
       | { error: string }
       // Unfinished, not failed: the resumable run continues on the next call.
@@ -461,6 +467,28 @@ export function summarizeGoalieRosterAssignments(args: {
     mismatchedAssignments,
     nonGoaliePositionRows,
   };
+}
+
+// True when a running resumable run of this date and scope exists, i.e. the
+// next call resumes it instead of starting a new run. Read-only; a failed read
+// falls back to the full preflight.
+async function hasPausedResumableRun(
+  asOfDate: string,
+  horizonGames: number,
+  gameIds: readonly number[],
+): Promise<boolean> {
+  if (!supabase) return false;
+  const scopeKey = buildResumableRunScopeKey(horizonGames, gameIds);
+  const { data, error } = await supabase
+    .from("forge_runs")
+    .select("metrics")
+    .eq("as_of_date", asOfDate)
+    .eq("status", "running")
+    .limit(20);
+  if (error) return false;
+  return (data ?? []).some(
+    (row) => readRunResumeState(row.metrics)?.scope_key === scopeKey,
+  );
 }
 
 export async function runProjectionPreflightChecks(
@@ -958,8 +986,13 @@ async function handler(
   res: NextApiResponse<CronTimedResponse<Result>>,
 ) {
   const startedAt = Date.now();
+  let preflightSkipped: "resumed_run" | null = null;
   const withTiming = (body: Result, endedAt = Date.now()) =>
-    withCronJobTiming(body, startedAt, endedAt);
+    withCronJobTiming(
+      preflightSkipped ? { ...body, preflightSkipped } : body,
+      startedAt,
+      endedAt,
+    );
   const horizonGames = parseHorizonGames(getParam(req, "horizonGames"));
   const gameIds = parseProjectionGameIds(getParam(req, "gameIds"));
   const chunkDays = parseChunkDays(getParam(req, "chunkDays"));
@@ -1151,7 +1184,18 @@ async function handler(
   });
 
   try {
-    preflight = await runProjectionPreflightChecks(asOfDate, bypassPreflight);
+    // A call resuming this scope's paused run already passed the route
+    // preflight on its first call; the run's stage preflight still applies.
+    if (
+      !bypassPreflight &&
+      rangeDates.length === 0 &&
+      (await hasPausedResumableRun(asOfDate, horizonGames, gameIds))
+    ) {
+      preflightSkipped = "resumed_run";
+      preflight = { ...defaultPreflight, asOfDate };
+    } else {
+      preflight = await runProjectionPreflightChecks(asOfDate, bypassPreflight);
+    }
 
     if (rangeDates.length > 0) {
       const effectiveRangeStart =
