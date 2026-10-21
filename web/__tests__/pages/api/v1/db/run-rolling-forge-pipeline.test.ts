@@ -958,6 +958,49 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       });
     });
 
+    describe("an NST source outage degrades the day instead of blocking it", () => {
+      // The route answered (200) but the source left dates unresolved, as when NST returns 521s.
+      const outage = { success: false, operationStatus: "blocked",
+        message: "Incomplete NST work; inspect source outcomes and deferred URLs.",
+        nstProgress: { sourceOutcomes: { unresolvedCount: 1,
+          counts: { rows_persisted: 0, fetch_or_write_failed: 1 } } } };
+      afterEach(() => {
+        updateNstGamelogMock.mockReset();
+        __testables.nstStepResume.enabled = false;
+      });
+
+      it.each([false, true])("with NST step resume %s: WGO and the later stages run, and the response names the degraded step", async (resumeEnabled) => {
+        __testables.nstStepResume.enabled = resumeEnabled;
+        updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) => { res.status(200).json(outage); });
+
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+        const upstream = stageStatus(res, "upstream_skater_sources");
+        expect(upstream.steps.map((step: any) => [step.id, step.status])).toEqual([
+          ["update-nst-gamelog", "skipped"], ["update-wgo-skaters", "success"], ["update-wgo-totals", "success"],
+        ]);
+        expect(upstream.status).toBe("success");
+        expect(upstream.steps[0]).toMatchObject({ degraded: "nst_source_unavailable",
+          reason: expect.stringContaining("NST source unavailable") });
+        expect(res.body.failureSummary).toMatchObject({ failedStepCount: 0,
+          degradedSteps: [{ stageId: "upstream_skater_sources", stepId: "update-nst-gamelog", code: "nst_source_unavailable" }] });
+        expect(updateRollingPlayerAveragesMock).toHaveBeenCalled();
+        expect(nstStageRow()).toMatchObject({ status: "complete" });
+      });
+
+      it("still blocks when the NST route itself errors", async () => {
+        updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) => {
+          res.status(500).json({ ...outage, error: "database write failed" });
+        });
+
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+        expect(stageStatus(res, "upstream_skater_sources").status).toBe("failed");
+        expect(res.body.termination).toMatchObject({ state: "stopped_on_blocking_failure" });
+        expect(res.body.failureSummary.degradedSteps).toEqual([]);
+      });
+    });
+
     describe("while NST step resume is inactive, today's NST responses behave as before", () => {
       afterEach(() => updateNstGamelogMock.mockReset());
 

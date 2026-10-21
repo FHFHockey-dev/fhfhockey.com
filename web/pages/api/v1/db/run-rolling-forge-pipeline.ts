@@ -62,6 +62,8 @@ type StepResult = {
   summary: unknown;
   query: Record<string, string>;
   reason?: string;
+  // Set when a source shortfall was downgraded so the stage still completes.
+  degraded?: "nst_source_unavailable";
 };
 
 type StageResult = {
@@ -148,6 +150,8 @@ type ResponseBody = {
       code: string | null; endpoint: string | null; attempts: number | null; classification: string | null } | null;
     // Set when the scheduled run stopped on a stage it will not take again.
     terminalStop: { code: TerminalStopCode; stageId: RollingForgePipelineStageId } | null;
+    // Steps whose source shortfall was downgraded instead of failing the run.
+    degradedSteps: Array<{ stageId: string; stepId: string; code: string; reason: string | null }>;
   };
 };
 
@@ -461,6 +465,18 @@ function readNstOutcome(step: StepResult, sentCursor: number | null): NstOutcome
   return { kind: "continuation", cursor };
 }
 
+// The NST route answered, but the source left dates unresolved (NST down or
+// returning 5xx). The run continues on WGO without that day's NST counts;
+// route exceptions and HTTP errors still fail the step.
+function isNstSourceShortfall(step: StepResult): boolean {
+  const record = step.summary && typeof step.summary === "object"
+    ? step.summary as Record<string, any> : null;
+  const unresolved = record?.nstProgress?.sourceOutcomes?.unresolvedCount;
+  return step.statusCode === 200 && record?.success === false
+    && !(typeof record.error === "string" && record.error.trim())
+    && Number.isSafeInteger(unresolved) && unresolved > 0;
+}
+
 function classifyStepStatus(statusCode: number, body: unknown): StepStatus {
   if (isPartialResume(statusCode, body)) return "partial";
   if (statusCode >= 400) return "failed";
@@ -689,7 +705,14 @@ async function runStage(args: {
         }
       });
       steps.push(nst);
-      if (nstStepResume.enabled) {
+      if (nst.status === "failed" && isNstSourceShortfall(nst)) {
+        const message = (nst.summary as Record<string, any>).message;
+        nst.status = "skipped";
+        nst.degraded = "nst_source_unavailable";
+        nst.reason = `NST source unavailable; this run continues on WGO without the day's NST counts. Backfill the date once NST returns.${
+          typeof message === "string" && message ? ` NST: ${message.slice(0, 200)}` : ""}`;
+      }
+      if (nstStepResume.enabled && !nst.degraded) {
         const outcome = readNstOutcome(nst, nstCursor);
         if (outcome.kind === "continuation") {
           // WGO waits until NST finishes.
@@ -1696,6 +1719,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
         classification: null, reportedErrorCount: 0 }
       : null,
     terminalStop,
+    degradedSteps: stageResults.flatMap(stage => stage.steps
+      .filter(step => step.degraded)
+      .map(step => ({ stageId: stage.id, stepId: step.id, code: step.degraded!, reason: step.reason ?? null }))),
   };
   return res.status(success ? 200 : 207).json({
     success,
