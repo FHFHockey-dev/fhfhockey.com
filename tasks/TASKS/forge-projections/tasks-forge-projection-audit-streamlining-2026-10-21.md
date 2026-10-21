@@ -12,7 +12,7 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
 - `web/lib/projections/queries/skater-queries.test.ts` - Reader tests: latest-row selection, sidecar keys, coverage proofs, PGRST202 fallback, capture/replay.
 - `web/lib/projections/queryCaptureHook.ts`, `web/lib/projections/inputCapture.ts` - Browser-safe read-only reconstruction probe; the reader skips the RPC there.
 - `web/scripts/run-forge-local.ts`, `web/lib/projections/run-forge-projections.local-attempt.test.ts` - Local FORGE transport allows the read-only RPC by GET; fixture answers it.
-- `supabase/migrations/20261021180242_forge_latest_rolling_rows.sql` - `forge_latest_rolling_rows(bigint[], text, date, text[])` (not applied; renamed to the ledger version on apply).
+- `supabase/migrations/20261021182129_forge_latest_rolling_rows.sql` - `forge_latest_rolling_rows(bigint[], text, date, text[])`; applied 2026-10-21 as ledger order 95.
 - `web/pages/api/v1/db/run-rolling-forge-pipeline.ts` - Pipeline: goalie step (:919-926), projection stage cursor, effective `stopOnFailure` (:1489-1495).
 - `web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts` - Pipeline tests: goalie step once per run.
 - `web/pages/api/v1/db/run-projection-v2.ts` - Route preflight skipped on a resumed claim (`hasPausedResumableRun`, `preflightSkipped: "resumed_run"`).
@@ -54,7 +54,7 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
   - [x] 3.3 Read only the sidecar keys FORGE uses (`historicalCompatibility`, `alignedCountSupport`) through a JSON-path select instead of the whole `support_payload`.
   - [x] 3.4 Drop the per-page `count: "exact"`.
   - [x] 3.5 Extend `skater-queries.test.ts`: the latest-row result matches the old path's `pickLatestByPlayer` output on a multi-game fixture, coverage failures still raise, and the sidecar keys hydrate identically.
-  - [ ] 3.6 If (a) was chosen: write the RPC migration, apply it with TJ's approval and record it in the ledger.
+  - [x] 3.6 If (a) was chosen: write the RPC migration, apply it with TJ's approval and record it in the ledger.
 
 - [x] 4.0 Pipeline: no repeated per-invocation work (Q12). Drafts by the audit session's W-C plus this list's worker were handed over 2026-10-21 and are verified here.
   - [x] 4.1 Run the goalie step once per run: only when the projection stage starts its first date (`datesDone === 0`) and the step has not succeeded in this run (a marker in the stage state).
@@ -190,3 +190,11 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
     - eslint is clean.
     - tsc's only errors are in the audit session's untracked `servedForecastLedger.ts`.
   - Pre-existing, not from this change: `scripts/qualify-native-players-offline.test.ts` fails 30 tests at HEAD (clean export). Commit `b8fe1072e` added `toi_seconds_total_last5` to `ROLLING_ROW_SELECT_CLAUSE` without the offline fixture column. Master doesn't have that commit.
+
+### 3.6 Applied (2026-10-21 ~18:21Z, TJ approved in this session)
+
+- Ledger version `20261021182129`; the file was renamed from its draft timestamp. Ledger: 95 records, 62 applied.
+- EXPLAIN (no ANALYZE) of the body with 20 ids:
+  - per player, a Limit over an Index Only Scan Backward on `rolling_player_game_metrics_pkey`;
+  - then Memoize plus a sidecar primary-key lookup;
+  - total cost about 17.

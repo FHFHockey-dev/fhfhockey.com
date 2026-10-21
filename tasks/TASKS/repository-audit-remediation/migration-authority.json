@@ -951,6 +951,16 @@
       "migrationClass": "feature",
       "rolloutGate": "FORGE projection audit 2026-10-21, proposal Q5 (TJ approved Claude running it): drops idx_rpgm_player_date (player_id, game_date desc), a duplicate of the primary key's leading columns. Other 0-scan indexes on the table stay until a longer idx_scan observation. Rollback: CREATE INDEX CONCURRENTLY idx_rpgm_player_date ON public.rolling_player_game_metrics (player_id, game_date desc).",
       "stateEvidence": "Production ledger version 20261021172445 name drop_rpgm_player_date_duplicate_index (applied 2026-10-21 by explicit TJ approval via session local_08a0bf1c). Pre-check: definition (player_id, game_date DESC) vs rolling_player_game_metrics_pkey (player_id, game_date, strength_state); idx_scan 0 vs 15,973 on the primary key; pg_stat_database.stats_reset null; 21 MB. Readback: the index no longer exists. Evidence: tasks/artifacts/forge-projection-audit-2026-10-21/REPORT.md (Q5)."
+    },
+    {
+      "order": 95,
+      "path": "supabase/migrations/20261021182129_forge_latest_rolling_rows.sql",
+      "sha256": "7f1ef23da246a8f535e4e00a5a3aef33e70f7772f7d502d1baef5e233da70fce",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "FORGE projection audit 2026-10-21, proposal S-F / Q-3 (TJ approved Claude applying it): read-only STABLE SECURITY INVOKER function forge_latest_rolling_rows(bigint[], text, date, text[]) returning the latest rolling_player_game_metrics row per requested player for one strength before a cutoff, with only the sidecar keys FORGE hydrates. EXECUTE for service_role only (public, anon, authenticated revoked). The reader (web/lib/projections/queries/skater-queries.ts fetchRollingRows, octoberBranch 0ff219d25) falls back to its legacy window scan while the function is absent (PGRST202). File renamed from its draft timestamp 20261021180242 to the ledger version. Rollback: DROP FUNCTION public.forge_latest_rolling_rows(bigint[], text, date, text[]) (the reader falls back).",
+      "stateEvidence": "Production ledger version 20261021182129 name forge_latest_rolling_rows (applied 2026-10-21 by explicit TJ approval via session local_08a0bf1c). EXPLAIN (no ANALYZE) of the body with 20 ids: nested loop with Index Only Scan Backward using rolling_player_game_metrics_pkey (Limit 1 per player) and a Memoize + rolling_player_metric_support_payloads_pkey lookup, total cost about 17. Evidence: tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md (3.6)."
     }
   ],
   "sourceExtensionApproval": {
