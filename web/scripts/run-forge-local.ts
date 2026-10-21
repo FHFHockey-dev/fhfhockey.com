@@ -141,7 +141,9 @@ export async function guardedForgeFetch(input: RequestInfo | URL, init: RequestI
   const method = (init?.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase();
   const rpc = url.pathname.startsWith("/rest/v1/rpc/") ? url.pathname.slice("/rest/v1/rpc/".length) : null;
   if (url.origin !== origin || !url.pathname.startsWith("/rest/v1/")
-    || rpc && !["begin_forge_game_run", "begin_forge_local_run", "inspect_forge_local_attempt", "publish_forge_game_revisions"].includes(rpc)
+    || rpc && !(["begin_forge_game_run", "begin_forge_local_run", "inspect_forge_local_attempt", "publish_forge_game_revisions"].includes(rpc)
+      // Read-only reader RPCs, called by GET so they count as reads.
+      || rpc === "forge_latest_rolling_rows" && method === "GET")
     || !["GET", "HEAD", "POST", "PATCH"].includes(method)
     || !allowWrite && !["GET", "HEAD"].includes(method)) {
     throw new Error("Local FORGE transport rejected a request.");

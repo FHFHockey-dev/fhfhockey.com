@@ -46,6 +46,7 @@ import {
   toGoalieRestSplitBucket,
   type StarterContextForTest
 } from "./run-forge-projections";
+import { computeTeamPpShare } from "./stages/skater-stage";
 
 function buildContext(
   overrides?: Partial<StarterContextForTest>
@@ -988,6 +989,51 @@ describe("pp opportunity allocation", () => {
     expect((allocation.perPlayerPpToiSeconds.get(2) ?? 0)).toBeGreaterThan(
       allocation.perPlayerPpToiSeconds.get(3) ?? 0
     );
+  });
+});
+
+describe("official pp opportunity", () => {
+  const top = { esRole: "PP1", unitTier: "TOP", roleRank: 1, source: "line_combination" } as const;
+  const depth = { esRole: "L4", unitTier: "DEPTH", roleRank: 12, source: "line_combination" } as const;
+  it("splits the team PP target in proportion to official last-10 PP TOI, falling back to rolling for absent players", () => {
+    const allocation = allocatePpToiByTeamOpportunity({
+      projectedByPlayer: new Map([
+        [1, { toiPp: 30, roleTag: depth, officialPpToiAvgSec: 240 }],
+        [2, { toiPp: 200, roleTag: top, officialPpToiAvgSec: 60 }],
+        [3, { toiPp: 90, roleTag: top, officialPpToiAvgSec: null }],
+        [4, { toiPp: 0, roleTag: top }]
+      ]),
+      targetTeamPpSeconds: 390
+    });
+    expect(allocation.perPlayerPpToiSeconds.get(1)).toBe(240);
+    expect(allocation.perPlayerPpToiSeconds.get(2)).toBe(60);
+    expect(allocation.perPlayerPpToiSeconds.get(3)).toBe(90);
+    expect(allocation.perPlayerPpToiSeconds.get(4)).toBe(0);
+    const twoPlayers = allocatePpToiByTeamOpportunity({
+      projectedByPlayer: new Map([[1, { toiPp: 10, roleTag: null, officialPpToiAvgSec: 240 }],
+        [2, { toiPp: 10, roleTag: top, officialPpToiAvgSec: 60 }]]),
+      targetTeamPpSeconds: 500
+    });
+    expect([twoPlayers.perPlayerPpToiSeconds.get(1), twoPlayers.perPlayerPpToiSeconds.get(2)]).toEqual([400, 100]);
+  });
+
+  it("applies the TOP/MIDDLE PP minimum only to players with a PP unit", () => {
+    const usage = { roleTag: { ...top, esRole: "L1" }, toiEsSeconds: 1080, toiPpSeconds: 20, sogPer60Es: 9, sogPer60Pp: 10 };
+    expect(applyRoleSpecificUsageBounds({ ...usage, hasPpUnit: true }).toiPpSeconds).toBe(120);
+    expect(applyRoleSpecificUsageBounds({ ...usage, hasPpUnit: false }).toiPpSeconds).toBe(20);
+    expect(applyRoleSpecificUsageBounds({ ...usage, roleTag: { ...usage.roleTag, unitTier: "MIDDLE" }, hasPpUnit: false }).toiPpSeconds).toBe(20);
+  });
+
+  it("uses official PP share when present, else puts PK time in the strength-table denominator", () => {
+    const strength = { toiEsSecondsAvg: 15000, toiPpSecondsAvg: 1200, toiPkSecondsAvg: 1800, shotsEsAvg: 25, shotsPpAvg: 6 };
+    const official = { games: 10, ppToiSkaterSecondsAvg: 720, ppShotsAvg: 4, totalToiSkaterSecondsAvg: 18000, perPlayerPpToiAvgSec: new Map<number, number>() };
+    expect(computeTeamPpShare({ official, strengthAverages: strength, preAllocationToiEs: 0, preAllocationToiPp: 0 }))
+      .toEqual({ ppShare: 0.04, legacyPpShare: 1200 / 16200, source: "official_wgo" });
+    expect(computeTeamPpShare({ official: null, strengthAverages: strength, preAllocationToiEs: 0, preAllocationToiPp: 0 }))
+      .toEqual({ ppShare: 1200 / 18000, legacyPpShare: 1200 / 16200, source: "strength_table_pk_denominator" });
+    const noStrength = { toiEsSecondsAvg: null, toiPpSecondsAvg: null, toiPkSecondsAvg: null, shotsEsAvg: null, shotsPpAvg: null };
+    expect(computeTeamPpShare({ official: null, strengthAverages: noStrength, preAllocationToiEs: 900, preAllocationToiPp: 100 }))
+      .toEqual({ ppShare: 0.1, legacyPpShare: 0.1, source: "strength_table_pk_denominator" });
   });
 });
 

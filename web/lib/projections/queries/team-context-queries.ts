@@ -32,6 +32,7 @@ function meanOrNull(nums: Array<number | null | undefined>): number | null {
 export type TeamStrengthAverages = {
   toiEsSecondsAvg: number | null;
   toiPpSecondsAvg: number | null;
+  toiPkSecondsAvg: number | null;
   shotsEsAvg: number | null;
   shotsPpAvg: number | null;
 };
@@ -43,14 +44,16 @@ export async function fetchTeamStrengthAverages(
   assertSupabase();
   const { data, error } = await supabase
     .from("forge_team_game_strength")
-    .select("game_date,toi_es_seconds,toi_pp_seconds,shots_es,shots_pp")
+    .select("game_date,toi_es_seconds,toi_pp_seconds,toi_pk_seconds,shots_es,shots_pp")
     .eq("team_id", teamId)
     .lt("game_date", cutoffDate)
     .order("game_date", { ascending: false })
     .limit(10);
   if (error) throw error;
 
-  const rows = (data ?? []) as ForgeTeamGameStrengthRow[];
+  const rows = (data ?? []) as Array<
+    ForgeTeamGameStrengthRow & { toi_pk_seconds?: number | null }
+  >;
   return {
     toiEsSecondsAvg: meanOrNull(
       rows.map((r) =>
@@ -62,12 +65,112 @@ export async function fetchTeamStrengthAverages(
         r?.toi_pp_seconds == null ? null : Number(r.toi_pp_seconds)
       )
     ),
+    toiPkSecondsAvg: meanOrNull(
+      rows.map((r) =>
+        r?.toi_pk_seconds == null ? null : Number(r.toi_pk_seconds)
+      )
+    ),
     shotsEsAvg: meanOrNull(
       rows.map((r) => (r?.shots_es == null ? null : Number(r.shots_es)))
     ),
     shotsPpAvg: meanOrNull(
       rows.map((r) => (r?.shots_pp == null ? null : Number(r.shots_pp)))
     )
+  };
+}
+
+export type TeamOfficialPpUsage = {
+  games: number;
+  ppToiSkaterSecondsAvg: number;
+  ppShotsAvg: number;
+  totalToiSkaterSecondsAvg: number;
+  /** Each player's mean PP seconds over the window games in which he has a WGO row. */
+  perPlayerPpToiAvgSec: Map<number, number>;
+};
+
+const OFFICIAL_PP_USAGE_WINDOW_GAMES = 10;
+const OFFICIAL_PP_USAGE_MIN_GAMES = 3;
+
+/**
+ * Official (WGO, NHL stats API) per-game team PP usage: per-player game rows of the team's last
+ * 10 regular-season games before asOfDate, summed per game and averaged. WGO rows name the team
+ * by `team_abbrev`, so the team id is mapped through `teams`. The API reports TOI in seconds, so
+ * per-game PP values under a minute stay seconds; a team-game whose skater TOI sums below one hour
+ * is read as a minute-format row and both TOI fields are scaled by 60.
+ */
+export async function fetchTeamOfficialPpUsage(
+  teamId: number,
+  asOfDate: string
+): Promise<TeamOfficialPpUsage | null> {
+  assertSupabase();
+  const { data: gameData, error: gamesError } = await supabase
+    .from("games")
+    .select("id,date")
+    .or(`homeTeamId.eq.${teamId},awayTeamId.eq.${teamId}`)
+    .eq("type", 2)
+    .lt("date", asOfDate)
+    .order("date", { ascending: false })
+    .limit(OFFICIAL_PP_USAGE_WINDOW_GAMES);
+  if (gamesError) throw gamesError;
+  const gameIds = ((gameData ?? []) as Array<{ id: number | null }>)
+    .map((game) => Number(game?.id))
+    .filter((id) => Number.isFinite(id));
+  if (gameIds.length < OFFICIAL_PP_USAGE_MIN_GAMES) return null;
+
+  const { data: teamData, error: teamError } = await supabase
+    .from("teams")
+    .select("abbreviation")
+    .eq("id", teamId)
+    .maybeSingle();
+  if (teamError) throw teamError;
+  const abbreviation = (teamData as { abbreviation?: unknown } | null)?.abbreviation;
+  if (typeof abbreviation !== "string" || !abbreviation) return null;
+
+  const { data: wgoData, error: wgoError } = await supabase
+    .from("wgo_skater_stats")
+    .select("player_id,game_id,team_abbrev,toi_per_game,pp_toi,pp_toi_per_game,pp_shots")
+    .in("game_id", gameIds)
+    .eq("team_abbrev", abbreviation)
+    .limit(gameIds.length * 40);
+  if (wgoError) throw wgoError;
+
+  const totals = new Map<number, { toi: number; ppToi: number; ppShots: number;
+    playerPpToi: Map<number, number> }>();
+  for (const row of (wgoData ?? []) as any[]) {
+    const gameId = Number(row?.game_id);
+    if (!gameIds.includes(gameId) || row?.team_abbrev !== abbreviation) continue;
+    const total = totals.get(gameId) ?? { toi: 0, ppToi: 0, ppShots: 0, playerPpToi: new Map() };
+    const ppToi = Math.max(0, toFiniteOrNull(row?.pp_toi) ?? toFiniteOrNull(row?.pp_toi_per_game) ?? 0);
+    total.toi += Math.max(0, toFiniteOrNull(row?.toi_per_game) ?? 0);
+    total.ppToi += ppToi;
+    total.ppShots += Math.max(0, toFiniteOrNull(row?.pp_shots) ?? 0);
+    const playerId = Number(row?.player_id);
+    if (Number.isFinite(playerId)) {
+      total.playerPpToi.set(playerId, (total.playerPpToi.get(playerId) ?? 0) + ppToi);
+    }
+    totals.set(gameId, total);
+  }
+  const perGame = Array.from(totals.values())
+    .filter((total) => total.toi > 0)
+    .map((total) => {
+      const scale = total.toi < 3600 ? 60 : 1;
+      return { toi: total.toi * scale, ppToi: total.ppToi * scale, ppShots: total.ppShots,
+        playerPpToi: Array.from(total.playerPpToi, ([id, seconds]) => [id, seconds * scale] as const) };
+    });
+  if (perGame.length < OFFICIAL_PP_USAGE_MIN_GAMES) return null;
+  const mean = (values: number[]) => values.reduce((a, b) => a + b, 0) / values.length;
+  const playerGames = new Map<number, number[]>();
+  for (const game of perGame) {
+    for (const [id, seconds] of game.playerPpToi) {
+      playerGames.set(id, [...(playerGames.get(id) ?? []), seconds]);
+    }
+  }
+  return {
+    games: perGame.length,
+    ppToiSkaterSecondsAvg: mean(perGame.map((game) => game.ppToi)),
+    ppShotsAvg: mean(perGame.map((game) => game.ppShots)),
+    totalToiSkaterSecondsAvg: mean(perGame.map((game) => game.toi)),
+    perPlayerPpToiAvgSec: new Map(Array.from(playerGames, ([id, seconds]) => [id, mean(seconds)]))
   };
 }
 

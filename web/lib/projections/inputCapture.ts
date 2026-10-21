@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash } from "node:crypto";
-import { installProjectionQueryInterceptor } from "./queryCaptureHook";
+import { installProjectionQueryInterceptor, installProjectionReadOnlyProbe } from "./queryCaptureHook";
 
 type Operation = { method: string; args: unknown[] };
 installProjectionQueryInterceptor(interceptProjectionQuery);
@@ -23,6 +23,7 @@ type Capture = {
 };
 
 const storage = new AsyncLocalStorage<Capture>();
+installProjectionReadOnlyProbe(() => storage.getStore()?.suppressWrites === true);
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
 function canonical(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(canonical);

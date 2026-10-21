@@ -268,8 +268,22 @@ SELECT cron.schedule(
     ).toHaveLength(56);
     expect(
       inventory.jobs.filter((job) => job.provider === "vercel"),
-    ).toHaveLength(28);
-    expect(inventory.jobs).toHaveLength(84);
+    ).toHaveLength(30);
+    expect(inventory.jobs).toHaveLength(86);
+    expect(inventory.jobs).toContainEqual(
+      expect.objectContaining({
+        provider: "vercel",
+        routePath: "/api/v1/db/forge-served-forecast-settle",
+        normalizedCronExpression: "0 11 * * *",
+      }),
+    );
+    expect(inventory.jobs).toContainEqual(
+      expect.objectContaining({
+        provider: "vercel",
+        routePath: "/api/v1/db/forge-served-forecast-snapshot",
+        normalizedCronExpression: "30 12 * * *",
+      }),
+    );
     expect(inventory.jobs).toContainEqual(
       expect.objectContaining({
         provider: "vercel",

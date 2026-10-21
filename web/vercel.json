@@ -112,6 +112,14 @@
       "schedule": "45 12 * * *"
     },
     {
+      "path": "/api/v1/db/forge-served-forecast-settle",
+      "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/v1/db/forge-served-forecast-snapshot",
+      "schedule": "30 12 * * *"
+    },
+    {
       "path": "/api/v1/db/cron-report",
       "schedule": "0 13 * * *"
     },
