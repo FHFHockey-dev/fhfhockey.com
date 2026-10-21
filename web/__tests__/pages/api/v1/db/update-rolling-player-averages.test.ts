@@ -366,7 +366,8 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
       skipDiagnostics: true,
       dryRunUpsert: undefined,
       debugUpsertPayload: undefined,
-      stopClaimingPlayersAtMs: expect.any(Number)
+      stopClaimingPlayersAtMs: expect.any(Number),
+      abortInFlightAtMs: expect.any(Number)
     });
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({
@@ -555,6 +556,9 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
     const args = mainMock.mock.calls[0][0];
     expect(args.stopClaimingPlayersAtMs).toBeGreaterThanOrEqual(before + 180_000);
     expect(args.stopClaimingPlayersAtMs).toBeLessThanOrEqual(Date.now() + 180_000);
+    // In-flight players are abandoned 40 s after claiming stops, 20 s before the cap.
+    expect(args.abortInFlightAtMs).toBe(args.stopClaimingPlayersAtMs + 40_000);
+    expect(res.body.inFlightDeadlineAt).toBe(args.abortInFlightAtMs);
     expect(res.statusCode).toBe(207);
     expect(Object.keys(res.body)[0]).toBe("resumeCursor");
     expect(res.body).toMatchObject({
@@ -581,6 +585,30 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
         }
       }
     });
+  });
+
+  it("passes an explicit deadlineAt to the writer and drops it with disableRuntimeBudget", async () => {
+    mainMock.mockResolvedValue(createRollingRunSummary({ stoppedReason: "complete" }));
+    const invoke = async (query: Record<string, string>) => {
+      const req: any = {
+        method: "GET",
+        query: { startDate: "2026-10-20", endDate: "2026-10-20", fastMode: "true", executionProfile: "daily_incremental", ...query },
+        url: "/api/v1/db/update-rolling-player-averages"
+      };
+      const res = createMockRes();
+      await handler(req, res);
+      return res;
+    };
+
+    const explicit = await invoke({ deadlineAt: "1792580000000" });
+    expect(explicit.statusCode).toBe(200);
+    expect(mainMock.mock.calls[0][0].abortInFlightAtMs).toBe(1792580000000);
+    expect(explicit.body.inFlightDeadlineAt).toBe(1792580000000);
+
+    const disabled = await invoke({ disableRuntimeBudget: "true" });
+    expect(mainMock.mock.calls[1][0].abortInFlightAtMs).toBeUndefined();
+    expect(mainMock.mock.calls[1][0].stopClaimingPlayersAtMs).toBeUndefined();
+    expect(disabled.body.inFlightDeadlineAt).toBeNull();
   });
 
   it("continues today's daily window from the cursor a prior partial run left in the audit", async () => {

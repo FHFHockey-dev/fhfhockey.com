@@ -26,8 +26,10 @@ import {
   advanceRollingForgeStage,
   buildRollingForgeRunScopeKey,
   finishRollingForgeStage,
+  isRollingForgeStageLeaseDead,
   readRollingForgeRunState,
-  readRollingForgeStageFailedAttempts
+  readRollingForgeStageFailedAttempts,
+  recordRollingForgeStageKill
 } from "lib/rollingForgePipelineRunState";
 
 import updateGamesHandler from "./update-games";
@@ -221,6 +223,24 @@ const MIN_PROJECTION_RUNTIME_MS = 30_000;
 const RESUMABLE_STAGE_LEASE_MS = 270_000;
 // A failing blocking stage is retried once, on the next invocation.
 const MAX_BLOCKING_STAGE_ATTEMPTS = 2;
+// An invocation that dies holding a stage (its lease expires while
+// `running`) is recorded; progress is durable, so the stage is taken again,
+// but after this many dead invocations the run stops instead of looping.
+const MAX_KILLED_STAGE_ATTEMPTS = 3;
+// The rolling route abandons in-flight players here, before the 240 s kill,
+// so it always answers and the cursor it reports is real.
+const ROLLING_IN_FLIGHT_DEADLINE_MS = 220_000;
+// The rolling stage runs in chunks of players and stores the cursor after
+// each one, so a dead invocation loses at most one chunk. The first chunk is
+// a fixed size; later ones are sized from the measured time per player.
+const ROLLING_FIRST_CHUNK_PLAYERS = 16;
+const ROLLING_MIN_CHUNK_PLAYERS = 4;
+const ROLLING_MAX_CHUNK_PLAYERS = 60;
+// Share of the remaining claim budget a chunk may plan to use.
+const ROLLING_CHUNK_BUDGET_SHARE = 0.75;
+// A game whose start was this long ago is treated as completed for line and
+// power-play context.
+const GAME_COMPLETION_GRACE_MS = 3 * 60 * 60 * 1000;
 
 function buildRuntimeBudgetSummary(
   mode: RollingForgePipelineMode,
@@ -447,10 +467,19 @@ function readRollingNextResumeFrom(stage: StageResult): number | null {
     const outcome = nst?.status === "partial" ? readNstOutcome(nst, null) : null;
     return outcome?.kind === "continuation" ? outcome.cursor : null;
   }
-  const summary = stage.steps.find(
-    (step) => step.id === "update-rolling-player-averages"
-  )?.summary as Record<string, any> | undefined;
-  const value = summary?.resume?.nextResumeFrom;
+  // The rolling stage runs in chunks; the newest chunk carries the cursor.
+  for (const step of [...stage.steps].reverse()) {
+    if (step.id !== "update-rolling-player-averages") continue;
+    const value = readRollingStepNextResumeFrom(step);
+    if (value != null) return value;
+  }
+  return null;
+}
+
+function readRollingStepNextResumeFrom(step: StepResult): number | null {
+  const summary = step.summary as Record<string, any> | undefined;
+  const value =
+    summary?.resume?.nextResumeFrom ?? summary?.runSummary?.nextResumeFrom;
   return Number.isSafeInteger(value) && value > 0 ? value : null;
 }
 
@@ -486,16 +515,62 @@ async function invokeRouteStep(args: {
   };
 }
 
-async function listGameIdsInRange(startDate: string, endDate: string) {
+type GameInRange = { id: number; startTime: string | null };
+
+async function listGamesInRange(
+  startDate: string,
+  endDate: string
+): Promise<GameInRange[]> {
   if (!supabase) return [];
   const { data, error } = await supabase
     .from("games")
-    .select("id")
+    .select("id, startTime")
     .gte("date", startDate)
     .lte("date", endDate)
     .order("date", { ascending: true });
   if (error) throw error;
-  return (data ?? []).map((row) => Number((row as { id: number }).id));
+  return (data ?? []).map((row) => {
+    const record = row as { id: number; startTime?: string | null };
+    return {
+      id: Number(record.id),
+      startTime: typeof record.startTime === "string" ? record.startTime : null
+    };
+  });
+}
+
+async function listGameIdsInRange(startDate: string, endDate: string) {
+  return (await listGamesInRange(startDate, endDate)).map((game) => game.id);
+}
+
+// Games that started long enough ago to be over. A game without a known
+// start time counts as completed, which the builders tolerate.
+function selectCompletedGameIds(games: GameInRange[], nowMs: number) {
+  return games
+    .filter((game) => {
+      if (!game.startTime) return true;
+      const startedAt = Date.parse(game.startTime);
+      return !Number.isFinite(startedAt) || startedAt + GAME_COMPLETION_GRACE_MS <= nowMs;
+    })
+    .map((game) => game.id);
+}
+
+// Completed games of the source date that still lack a line row for both
+// teams. Rolling reads this context per game, so a missing game degrades
+// every skater who played in it.
+async function listGamesMissingLineContext(gameIds: number[]) {
+  if (!supabase || gameIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from("lineCombinations")
+    .select("gameId, teamId")
+    .in("gameId", gameIds);
+  if (error) throw error;
+  const teamsByGame = new Map<number, Set<number>>();
+  for (const row of (data ?? []) as Array<{ gameId: number; teamId: number }>) {
+    const teams = teamsByGame.get(Number(row.gameId)) ?? new Set<number>();
+    teams.add(Number(row.teamId));
+    teamsByGame.set(Number(row.gameId), teams);
+  }
+  return gameIds.filter((gameId) => (teamsByGame.get(gameId)?.size ?? 0) < 2);
 }
 
 async function runStage(args: {
@@ -511,14 +586,34 @@ async function runStage(args: {
   rollingResumeFrom?: number | null;
   nstResumeCursor?: number | null;
   sourceDeadlineAtMs?: number;
-  rollingMaxRuntimeMs?: number;
+  // Epoch ms: the rolling stage starts no chunk and the route claims no
+  // player after this.
+  rollingClaimUntilMs?: number;
+  // Epoch ms: the rolling route abandons in-flight players after this.
+  rollingDeadlineMs?: number;
+  // Stores the rolling cursor after each chunk (the resumable run).
+  persistRollingCursor?: (cursor: number) => Promise<void>;
+  // Earlier failed attempts of the contextual stage in this run. Missing line
+  // context fails the stage once so the next invocation retries it; set only
+  // by the resumable run, a one-shot run just warns.
+  contextualFailedAttempts?: number;
   projectionDeadlineMs?: number;
+  // The scheduled run also projects the next day's games when budget remains,
+  // so every team has a line for its next game a day ahead. The stage cursor
+  // counts the dates finished; a re-entry skips them (a finished date would
+  // otherwise start a new run).
+  projectNextDay?: boolean;
+  projectionDatesDone?: number;
+  persistProjectionDatesDone?: (done: number) => Promise<void>;
   includeDownstream: boolean;
   includeAccuracy: boolean;
   useDurableProjectionBacklog: boolean;
 }): Promise<StageResult> {
   const startedAt = Date.now();
   const steps: StepResult[] = [];
+  // Set when a stage's loop stops with work left and no failure (rolling
+  // chunks at the claim budget, the next projection date at the deadline).
+  let stageUnfinished = false;
   const isSingleDateDailyIncremental =
     args.mode === "daily_incremental" && args.startDate === args.endDate;
   const projectionInputStartDate = isSingleDateDailyIncremental
@@ -616,15 +711,26 @@ async function runStage(args: {
       break;
     }
     case "contextual_builders": {
+      const sourceGames = await listGamesInRange(args.sourceStartDate, args.sourceEndDate);
+      const gameIds = sourceGames.map((game) => game.id);
+      const completedGameIds = selectCompletedGameIds(sourceGames, Date.now());
+      // The completed games of the source date are named explicitly: the
+      // recent-gap mode only repairs games whose team stats already landed,
+      // which left late games without line rows until later in the morning.
       await addStep({
         id: "update-line-combinations",
         route: "/api/v1/db/update-line-combinations",
         handler: updateLineCombinationsHandler,
-        query: {
-          count: args.mode === "overnight" ? "25" : "10"
-        }
+        query:
+          completedGameIds.length > 0
+            ? {
+                repairMode: "historical_backfill",
+                gameIds: completedGameIds.join(",")
+              }
+            : {
+                count: args.mode === "overnight" ? "25" : "10"
+              }
       });
-      const gameIds = await listGameIdsInRange(args.sourceStartDate, args.sourceEndDate);
       if (gameIds.length === 0) {
         steps.push({
           id: "update-power-play-combinations-batch",
@@ -647,32 +753,127 @@ async function runStage(args: {
           }
         });
       }
+      if (completedGameIds.length > 0 && !steps.some((step) => step.status === "failed")) {
+        const verifyStartedAt = Date.now();
+        const missing = await listGamesMissingLineContext(completedGameIds);
+        const retry = missing.length > 0 && (args.contextualFailedAttempts ?? 1) === 0;
+        steps.push({
+          id: "verify-line-context",
+          route: "lineCombinations",
+          status: retry ? "failed" : "success",
+          statusCode: 200,
+          durationMs: Date.now() - verifyStartedAt,
+          summary: { completedGames: completedGameIds.length, missingLineContextGameIds: missing },
+          query: {},
+          reason:
+            missing.length === 0
+              ? `Every completed game of ${args.sourceStartDate} has line rows for both teams.`
+              : retry
+                ? `Line rows are missing for ${missing.length} completed game(s) (${missing.join(", ")}); the next invocation retries the stage.`
+                : `Line rows are still missing for ${missing.length} completed game(s) (${missing.join(", ")}); continuing with degraded line context.`
+        });
+      }
       break;
     }
-    case "rolling_player_recompute":
-      await addStep({
-        id: "update-rolling-player-averages",
-        route: "/api/v1/db/update-rolling-player-averages",
-        handler: updateRollingPlayerAveragesHandler,
-        query: {
-          startDate: args.rollingStartDate,
-          endDate: args.rollingEndDate,
-          fastMode: "true",
-          executionProfile:
-            args.mode === "overnight"
-              ? "overnight"
-              : args.mode === "targeted_repair"
-                ? "targeted_repair"
-                : "daily_incremental",
-          ...(args.rollingMaxRuntimeMs != null
-            ? { maxRuntimeMs: String(args.rollingMaxRuntimeMs) }
-            : {}),
-          ...(args.rollingResumeFrom != null
-            ? { resumeFrom: String(args.rollingResumeFrom) }
-            : {})
+    case "rolling_player_recompute": {
+      const baseQuery = {
+        startDate: args.rollingStartDate,
+        endDate: args.rollingEndDate,
+        fastMode: "true",
+        executionProfile:
+          args.mode === "overnight"
+            ? "overnight"
+            : args.mode === "targeted_repair"
+              ? "targeted_repair"
+              : "daily_incremental",
+        // The contextual stage has just refreshed line and power-play context
+        // for the source date; a remaining source gap degrades the rows it
+        // touches and is reported, instead of blocking the whole day.
+        bypassFreshnessBlockers: "true"
+      };
+      const invokeRolling = (query: Record<string, string>) =>
+        invokeRouteStep({
+          id: "update-rolling-player-averages",
+          route: "/api/v1/db/update-rolling-player-averages",
+          handler: updateRollingPlayerAveragesHandler,
+          query: { ...baseQuery, ...query }
+        });
+      if (args.rollingClaimUntilMs == null) {
+        steps.push(
+          await invokeRolling({
+            ...(args.rollingDeadlineMs != null
+              ? { deadlineAt: String(args.rollingDeadlineMs) }
+              : {}),
+            ...(args.rollingResumeFrom != null
+              ? { resumeFrom: String(args.rollingResumeFrom) }
+              : {})
+          })
+        );
+        break;
+      }
+      // Chunked: every chunk returns and stores its cursor, so an invocation
+      // killed mid-stage loses at most one chunk of players.
+      let cursor = args.rollingResumeFrom ?? null;
+      let msPerPlayer: number | null = null;
+      while (true) {
+        const claimRemainingMs = args.rollingClaimUntilMs - Date.now();
+        if (claimRemainingMs < MIN_ROLLING_CLAIM_MS) {
+          stageUnfinished = true;
+          break;
         }
-      });
+        const chunkPlayers =
+          msPerPlayer == null
+            ? ROLLING_FIRST_CHUNK_PLAYERS
+            : Math.min(
+                ROLLING_MAX_CHUNK_PLAYERS,
+                Math.max(
+                  ROLLING_MIN_CHUNK_PLAYERS,
+                  Math.floor((claimRemainingMs * ROLLING_CHUNK_BUDGET_SHARE) / msPerPlayer)
+                )
+              );
+        const step = await invokeRolling({
+          maxPlayers: String(chunkPlayers),
+          maxRuntimeMs: String(claimRemainingMs),
+          ...(args.rollingDeadlineMs != null
+            ? { deadlineAt: String(args.rollingDeadlineMs) }
+            : {}),
+          ...(cursor != null ? { resumeFrom: String(cursor) } : {})
+        });
+        steps.push(step);
+        if (step.status === "failed") break;
+        const summary = (step.summary as Record<string, any> | null)?.runSummary as
+          | Record<string, any>
+          | undefined;
+        const processedPlayers = readNumeric(summary?.processedPlayers) ?? 0;
+        if (processedPlayers > 0) {
+          msPerPlayer = Math.max(1, step.durationMs / processedPlayers);
+        }
+        const next = readRollingStepNextResumeFrom(step);
+        if (next != null && next !== cursor) {
+          cursor = next;
+          if (args.persistRollingCursor) {
+            try {
+              await args.persistRollingCursor(next);
+            } catch (error) {
+              // The chunk's rows are written; only the stored cursor lags.
+              step.reason = `Cursor ${next} not stored: ${errorMessage(error)}`;
+            }
+          }
+        }
+        if (step.status !== "success") {
+          // The route stopped at its own budget (partial, resume required).
+          break;
+        }
+        const stoppedReason = summary?.stoppedReason;
+        if (stoppedReason !== "max_players") break;
+        if (processedPlayers === 0 || next == null) {
+          // Nothing moved: do not spin on the same cursor.
+          stageUnfinished = true;
+          break;
+        }
+      }
       break;
+    }
     case "projection_input_ingest":
       await addStep({
         id: "ingest-projection-inputs",
@@ -723,31 +924,65 @@ async function runStage(args: {
           limit: args.mode === "overnight" ? "30" : "7"
         }
       });
-      await addStep({
-        id: "run-projection-v2",
-        route: "/api/v1/db/run-projection-v2",
-        handler: runProjectionV2Handler,
-        query:
-          args.startDate === args.endDate
-            ? {
-                date: args.date,
-                // Measured after the goalie step, which runs first.
-                ...(args.projectionDeadlineMs != null
-                  ? {
-                      maxDurationMs: String(
-                        Math.max(
-                          MIN_PROJECTION_RUNTIME_MS,
-                          args.projectionDeadlineMs - Date.now()
-                        )
-                      )
-                    }
-                  : {})
-              }
-            : {
-                startDate: args.startDate,
-                endDate: args.endDate
-              }
-      });
+      if (args.startDate !== args.endDate) {
+        await addStep({
+          id: "run-projection-v2",
+          route: "/api/v1/db/run-projection-v2",
+          handler: runProjectionV2Handler,
+          query: {
+            startDate: args.startDate,
+            endDate: args.endDate
+          }
+        });
+        break;
+      }
+      {
+        const dates = args.projectNextDay
+          ? [args.date, addDays(args.date, 1)]
+          : [args.date];
+        const datesDone = args.projectionDatesDone ?? 0;
+        for (let index = datesDone; index < dates.length; index += 1) {
+          // Measured after the goalie step, which runs first. The first date of
+          // an invocation always gets its minimum; a later one waits for the
+          // next invocation when less than that is left.
+          const remainingMs =
+            args.projectionDeadlineMs != null
+              ? args.projectionDeadlineMs - Date.now()
+              : null;
+          if (index > datesDone && remainingMs != null && remainingMs < MIN_PROJECTION_RUNTIME_MS) {
+            stageUnfinished = true;
+            break;
+          }
+          const step = await invokeRouteStep({
+            id: "run-projection-v2",
+            route: "/api/v1/db/run-projection-v2",
+            handler: runProjectionV2Handler,
+            query: {
+              date: dates[index],
+              ...(remainingMs != null
+                ? { maxDurationMs: String(Math.max(MIN_PROJECTION_RUNTIME_MS, remainingMs)) }
+                : {})
+            }
+          });
+          steps.push(step);
+          if (step.status === "failed" && index > 0) {
+            // The next day is best effort: its failure is recorded on the
+            // step and never blocks the run date's downstream stages.
+            step.status = "skipped";
+            step.reason = `Next-day projection for ${dates[index]} failed (non-blocking): ${describeStepFailure(step)}`;
+            break;
+          }
+          if (step.status !== "success") break;
+          if (args.persistProjectionDatesDone) {
+            try {
+              await args.persistProjectionDatesDone(index + 1);
+            } catch (error) {
+              // The run is written; only the stored progress lags.
+              step.reason = `Progress ${index + 1} not stored: ${errorMessage(error)}`;
+            }
+          }
+        }
+      }
       break;
     case "downstream_projection_consumers":
       if (!args.includeDownstream) {
@@ -804,7 +1039,7 @@ async function runStage(args: {
 
   const status = steps.some((step) => step.status === "failed")
     ? "failed"
-    : steps.some((step) => step.status === "partial")
+    : stageUnfinished || steps.some((step) => step.status === "partial")
       ? "partial"
       : steps.some((step) => step.status === "success")
         ? "success"
@@ -847,6 +1082,20 @@ function notRunStage(
 
 function errorMessage(error: unknown) {
   return (error instanceof Error ? error.message : String(error)).slice(0, 512);
+}
+
+// A short account of why a route step failed, from its status and body.
+function describeStepFailure(step: StepResult) {
+  const body = step.summary && typeof step.summary === "object" ? (step.summary as Record<string, unknown>) : {};
+  const gates = Array.isArray((body.preflight as Record<string, unknown> | undefined)?.gates)
+    ? ((body.preflight as Record<string, any>).gates as Array<Record<string, unknown>>)
+        .filter((gate) => gate?.status === "FAIL")
+        .map((gate) => String(gate.gate_key))
+    : [];
+  const message = [body.error, body.message].find((value) => typeof value === "string" && value.length > 0);
+  return [`HTTP ${step.statusCode}`, gates.length ? `failed gates ${gates.join(", ")}` : null, typeof message === "string" ? message.slice(0, 200) : null]
+    .filter(Boolean)
+    .join("; ");
 }
 
 /**
@@ -946,6 +1195,72 @@ async function runResumablePipeline(args: {
       continue;
     }
 
+    // A `running` row whose lease has expired was held by an invocation that
+    // died (the function was killed). Its progress is stored, so the stage is
+    // taken again, but every dead invocation is counted and the run stops
+    // once there have been too many.
+    if (isRollingForgeStageLeaseDead(state)) {
+      let kills: number;
+      try {
+        kills = await recordRollingForgeStageKill({
+          supabase,
+          scopeKey: runKey,
+          stageId: stage.id,
+          runDate: date
+        });
+      } catch (error) {
+        termination = continuation("state_error", stage.id, state?.cursorGameId ?? null, errorMessage(error));
+        stageResults.push(
+          notRunStage(stage, "pending", "Could not record the dead invocation; see termination.detail.")
+        );
+        continue;
+      }
+      if (kills >= MAX_KILLED_STAGE_ATTEMPTS) {
+        // Close the stage as failed with its attempts spent, so later
+        // invocations stop here without touching state again.
+        try {
+          const closing = await acquireRollingForgeStage({
+            supabase,
+            scopeKey: runKey,
+            stageId: stage.id,
+            runDate: date,
+            leaseExpiresAtMs: Date.now() + 30_000
+          });
+          if (closing.status === "running") {
+            await finishRollingForgeStage({
+              supabase,
+              lease: closing,
+              outcome: "failed",
+              attempt: MAX_BLOCKING_STAGE_ATTEMPTS
+            });
+          }
+        } catch (error) {
+          console.warn(
+            "[run-rolling-forge-pipeline] could not close a repeatedly killed stage",
+            errorMessage(error)
+          );
+        }
+        stageResults.push(
+          notRunStage(
+            stage,
+            "failed",
+            `${kills} invocation(s) of this run died while running this stage (last stored cursor ${state?.cursorGameId ?? "none"}); not taken again.`,
+            true
+          )
+        );
+        termination = {
+          state: "stopped_on_blocking_failure",
+          resumeRequired: false,
+          nextStartDate: null,
+          runKey,
+          nextStageId: stage.id,
+          reason: "attempts_exhausted",
+          detail: `Killed ${kills} time(s).`
+        };
+        continue;
+      }
+    }
+
     let lease;
     try {
       lease = await acquireRollingForgeStage({
@@ -979,6 +1294,7 @@ async function runResumablePipeline(args: {
     }
 
     stagesRun += 1;
+    let activeLease = lease;
     const result = await runStage({
       ...args.stageArgs,
       id: stage.id,
@@ -988,19 +1304,39 @@ async function runResumablePipeline(args: {
             sourceDeadlineAtMs: args.startedAt + RESUMABLE_INVOCATION_BUDGET_MS
           }
         : {}),
+      ...(stage.id === "contextual_builders"
+        ? { contextualFailedAttempts: failedAttempts }
+        : {}),
       ...(isRolling
         ? {
             rollingResumeFrom: lease.cursorGameId,
-            rollingMaxRuntimeMs: Math.max(
-              MIN_ROLLING_CLAIM_MS,
-              RESUMABLE_INVOCATION_BUDGET_MS - (Date.now() - args.startedAt)
-            )
+            rollingClaimUntilMs: args.startedAt + RESUMABLE_INVOCATION_BUDGET_MS,
+            rollingDeadlineMs: args.startedAt + ROLLING_IN_FLIGHT_DEADLINE_MS,
+            persistRollingCursor: async (cursor: number) => {
+              // Keeps the long lease: this invocation still owns the stage.
+              activeLease = await advanceRollingForgeStage({
+                supabase,
+                lease: activeLease,
+                cursorGameId: cursor,
+                leaseExpiresAtMs: args.startedAt + RESUMABLE_STAGE_LEASE_MS
+              });
+            }
           }
         : {}),
       ...(stage.id === "projection_execution"
         ? {
             projectionDeadlineMs:
-              args.startedAt + RESUMABLE_INVOCATION_BUDGET_MS
+              args.startedAt + RESUMABLE_INVOCATION_BUDGET_MS,
+            projectNextDay: true,
+            projectionDatesDone: lease.cursorGameId ?? 0,
+            persistProjectionDatesDone: async (done: number) => {
+              activeLease = await advanceRollingForgeStage({
+                supabase,
+                lease: activeLease,
+                cursorGameId: done,
+                leaseExpiresAtMs: args.startedAt + RESUMABLE_STAGE_LEASE_MS
+              });
+            }
           }
         : {})
     });
@@ -1011,7 +1347,7 @@ async function runResumablePipeline(args: {
         const nextResumeFrom = readRollingNextResumeFrom(result);
         const advanced = await advanceRollingForgeStage({
           supabase,
-          lease,
+          lease: activeLease,
           cursorGameId: nextResumeFrom
         });
         termination = continuation(
@@ -1023,7 +1359,7 @@ async function runResumablePipeline(args: {
         const attempt = failedAttempts + 1;
         await finishRollingForgeStage({
           supabase,
-          lease,
+          lease: activeLease,
           outcome: "failed",
           attempt
         });
@@ -1039,7 +1375,7 @@ async function runResumablePipeline(args: {
           };
         }
       } else {
-        await finishRollingForgeStage({ supabase, lease, outcome: "complete" });
+        await finishRollingForgeStage({ supabase, lease: activeLease, outcome: "complete" });
       }
     } catch (error) {
       // The stage itself ran; only its receipt was not stored. The next
@@ -1047,7 +1383,7 @@ async function runResumablePipeline(args: {
       const message = errorMessage(error);
       termination = termination
         ? { ...termination, detail: `State write failed: ${message}` }
-        : continuation("state_error", stage.id, lease.cursorGameId, message);
+        : continuation("state_error", stage.id, activeLease.cursorGameId, message);
     }
   }
 
@@ -1193,12 +1529,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
         continue;
       }
 
+      const oneShotDeadlineMs =
+        startedAt +
+        Math.min(ROLLING_FORGE_PIPELINE_BUDGETS_MS[mode], FUNCTION_MAX_DURATION_MS);
       const result = await runStage({
         ...stageArgs,
         id: stage.id,
-        sourceDeadlineAtMs:
-          startedAt +
-          Math.min(ROLLING_FORGE_PIPELINE_BUDGETS_MS[mode], FUNCTION_MAX_DURATION_MS)
+        sourceDeadlineAtMs: oneShotDeadlineMs,
+        // One-shot runs chunk the rolling step too, so a killed call still
+        // reports the cursor of every finished chunk in its audit row.
+        rollingClaimUntilMs: oneShotDeadlineMs - (FUNCTION_MAX_DURATION_MS - RESUMABLE_INVOCATION_BUDGET_MS),
+        rollingDeadlineMs: oneShotDeadlineMs - (FUNCTION_MAX_DURATION_MS - ROLLING_IN_FLIGHT_DEADLINE_MS)
       });
       stageResults.push(result);
 

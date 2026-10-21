@@ -42,6 +42,9 @@
  *   Defaults to 180000 for the daily_incremental profile (the scheduled path), so the run answers inside the 240 s function cap.
  *   A run that stops at the budget returns 207 with `resume.request`, the exact parameters that continue it.
  * - disableRuntimeBudget (boolean, optional): If true, removes that default for manual runs without a function time limit.
+ * - deadlineAt (number, optional): Epoch ms hard deadline. In-flight players are abandoned at their next phase boundary and
+ *   retries stop waiting, so the run answers before the function is killed; abandoned players sit past `resume.nextResumeFrom`.
+ *   Defaults to 220000 ms after the request starts for the daily_incremental profile; disableRuntimeBudget removes it.
  * - continueDailyWindow (boolean, optional): Implicit daily window only. Continues after today's newest `resumeCursor`
  *   recorded in cron_job_audit for the same window, or returns 200 without work when today's window is already complete.
  *
@@ -127,6 +130,7 @@ type ResponseBody = {
   };
   appliedPlayerLimit?: number;
   playerClaimBudgetMs?: number | null;
+  inFlightDeadlineAt?: number | null;
   resume?: {
     required: true;
     nextResumeFrom: number | null;
@@ -179,6 +183,9 @@ const DEFAULT_AUTO_RESUME_MAX_RUNTIME_MS = 220_000;
 // Leaves about 60 s of the 240 s function cap for in-flight players, the
 // response and the cron audit insert.
 const DEFAULT_DAILY_PLAYER_CLAIM_BUDGET_MS = 180_000;
+// In-flight players are abandoned here, 20 s before the function cap, so the
+// response and the audit insert still go out.
+const DEFAULT_DAILY_IN_FLIGHT_DEADLINE_MS = 220_000;
 const VALID_STRENGTH_STATES = new Set<StrengthState>([
   "all",
   "5v5",
@@ -501,6 +508,7 @@ export async function handler(
       : parseQueryPositiveInt(getRequestParam(req, "autoResumeMaxRuntimeMs")) ??
         DEFAULT_AUTO_RESUME_MAX_RUNTIME_MS;
     const maxRuntimeMs = parseQueryPositiveInt(getRequestParam(req, "maxRuntimeMs"));
+    const requestedDeadlineAt = parseQueryPositiveInt(getRequestParam(req, "deadlineAt"));
     const disableRuntimeBudget =
       parseQueryBoolean(getRequestParam(req, "disableRuntimeBudget")) ?? false;
     const continueDailyWindow =
@@ -659,6 +667,13 @@ export async function handler(
       playerClaimBudgetMs != null
         ? requestStartedAt + playerClaimBudgetMs
         : undefined;
+    const inFlightDeadlineAt = disableRuntimeBudget
+      ? null
+      : (requestedDeadlineAt ??
+        (executionProfile === "daily_incremental"
+          ? requestStartedAt + DEFAULT_DAILY_IN_FLIGHT_DEADLINE_MS
+          : null));
+    const abortInFlightAtMs = inFlightDeadlineAt ?? undefined;
 
     const resolvedPlayerConcurrency =
       playerConcurrency ??
@@ -689,6 +704,7 @@ export async function handler(
         resumeFrom: effectiveResumeFrom,
         continueDailyWindow,
         playerClaimBudgetMs,
+        inFlightDeadlineAt,
         maxPlayers: effectiveMaxPlayers,
         fullRefresh,
         fullRefreshMode,
@@ -794,7 +810,8 @@ export async function handler(
             skipDiagnostics: resolvedSkipDiagnostics,
             dryRunUpsert,
             debugUpsertPayload,
-            stopClaimingPlayersAtMs
+            stopClaimingPlayersAtMs,
+            abortInFlightAtMs
           });
 
           aggregateSummary = mergeRollingRunSummaries(
@@ -860,7 +877,8 @@ export async function handler(
           skipDiagnostics: resolvedSkipDiagnostics,
           dryRunUpsert,
           debugUpsertPayload,
-          stopClaimingPlayersAtMs
+          stopClaimingPlayersAtMs,
+          abortInFlightAtMs
         });
       }
       const executeDurationMs = Date.now() - executeStartedAt;
@@ -959,6 +977,7 @@ export async function handler(
           }),
           appliedPlayerLimit: effectiveMaxPlayers,
           playerClaimBudgetMs,
+          inFlightDeadlineAt,
           resume,
           dependencyContract,
           runSummary,
@@ -1023,6 +1042,7 @@ export async function handler(
       }),
       appliedPlayerLimit: effectiveMaxPlayers,
       playerClaimBudgetMs,
+      inFlightDeadlineAt,
       resume,
       dependencyContract,
       runSummary,

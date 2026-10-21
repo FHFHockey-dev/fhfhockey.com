@@ -151,6 +151,12 @@ export type LockedAssignment = {
   /** Untagged provider snapshot rows retain their legacy authority; manager rows are simulation intent. */
   source?: "provider" | "manager";
 };
+/** The provider's recorded lineup for an elapsed day: display only, never a planner input or lock. */
+export type PastLineup = {
+  date: string; source: "yahoo";
+  /** `position` is the provider's selected position (BN, IR+ ...); `slotId` is the active slot it maps to. */
+  entries: Array<{ playerId: string | null; name: string; position: string; slotId: string | null }>;
+};
 export type AcquisitionEvidence = {
   source: string;
   fetchedAt: string;
@@ -177,6 +183,7 @@ export type PlanningSnapshot = {
   forecasts: GameForecast[];
   rules: LeagueRules;
   lockedAssignments: LockedAssignment[];
+  pastLineups?: PastLineup[];
   realized: StatLine;
   opponent: { roster: RosterEntry[]; realized: StatLine; remaining: StatLine | null } | null;
   evidence: Record<string, SourceEvidence>;

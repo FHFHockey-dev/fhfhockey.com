@@ -475,6 +475,8 @@ details.alternative .candidateRow button { width: auto; }
 .comparison b { color: v.$color-white; font-family: v.$font-family-numbers; font-weight: 600; white-space: nowrap; }
 .dropChip, .reserveChip { margin-left: 6px; padding: 0 5px; border-radius: v.$radius-control; font: normal 700 10px v.$font-family-primary; letter-spacing: .04em; vertical-align: middle; }
 .dropChip { background: v.$color-coral-500; color: v.$color-white; }
+.unprojectedChip { margin-left: 6px; padding: 0 5px; border: v.$border-subtle; border-radius: v.$radius-control; color: v.$text-secondary; font: normal 600 10px v.$font-family-primary; letter-spacing: .04em; vertical-align: middle; }
+.dropNotice { grid-column: 1 / -1; padding-block: 2px; color: v.$text-secondary; font-size: v.$font-size-xs; }
 .reserveChip { border: 1px solid v.$text-secondary; color: v.$text-secondary; }
 .dropCaution { display: block; white-space: normal; color: v.$text-secondary; font-size: 10px; line-height: 1.3; }
 .dropCaution[data-caution="high_demand"] { color: v.$warning-color; }

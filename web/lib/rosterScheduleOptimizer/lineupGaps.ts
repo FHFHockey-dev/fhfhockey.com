@@ -1,6 +1,6 @@
 import { candidatePlanForSort, type CandidateComparison, type CandidatePlan } from "./candidatePlanMetrics";
 import { contributionLedger } from "./contributionLedger";
-import { dropContribution, dropEligible, orderDropCandidates, reservedPlayerIds, retentionCaution, type RetentionCaution } from "./retention";
+import { dropContribution, dropEligible, reservedPlayerIds, retentionCaution, suggestedDrop, type RetentionCaution } from "./retention";
 import { canEligibilityOccupySlot, normalizeEligibility } from "./eligibility";
 import { expandActiveSlots } from "./slots";
 import type { PlanEvaluation, PlanIntent, PlanningPlayer, PlanningSnapshot } from "./planningTypes";
@@ -12,7 +12,11 @@ export type LineupGapReport = {
   /** Active slots the no-move lineup leaves empty on dates with games still to play. */
   gaps: LineupGap[];
   openSlots: number;
+  /** The lowest known contributor among droppable players; null when none has a known contribution. */
   bestDrop: { playerId: string; projectedPoints: number | null; activeGames: number | null; frees: LineupGap[]; caution: RetentionCaution } | null;
+  /** Droppable players with no projection (in points leagues, those missing a forecast; else every unknown
+   * contribution): flagged, never suggested. */
+  unprojectedDrops: string[];
   adds: GapAdd[];
 };
 
@@ -48,7 +52,13 @@ export function lineupGapReport(snapshot: PlanningSnapshot, intent: PlanIntent, 
   const reserved = reservedPlayerIds(snapshot.roster);
   const eligible = snapshot.roster.map(row => players.get(row.playerId))
     .filter((player): player is PlanningPlayer => !!player && dropEligible(player, intent, reserved));
-  const drop = orderDropCandidates(eligible, player => dropContribution(snapshot.rules.scoring.mode, ledger.get(player.id)))[0];
+  const { player: drop, unprojected: unknown } = suggestedDrop(eligible, player => dropContribution(snapshot.rules.scoring.mode, ledger.get(player.id)));
+  // In points leagues one player without a forecast makes the whole lineup's value unknown, so every contribution
+  // reads unknown. Name the players actually missing a forecast for a game still to play; otherwise all unknowns.
+  const lacksForecast = (player: PlanningPlayer) => snapshot.games.some(game => game.teamAbbreviation === player.teamAbbreviation
+    && playable.has(game.date) && !snapshot.forecasts.some(forecast => forecast.playerId === player.id && forecast.gameId === game.id));
+  const missingForecasts = points ? unknown.filter(lacksForecast) : [];
+  const unprojected = missingForecasts.length ? missingForecasts : unknown;
   const dropRow = drop ? ledger.get(drop.id) : undefined;
   const bestDrop = drop ? { playerId: drop.id, projectedPoints: dropRow?.projectedPoints ?? null,
     activeGames: dropRow?.activeGames ?? null,
@@ -74,5 +84,5 @@ export function lineupGapReport(snapshot: PlanningSnapshot, intent: PlanIntent, 
   }
   adds.sort((a, b) => (points ? descending(a.plan.netPoints, b.plan.netPoints) : 0) || descending(a.plan.netAGP, b.plan.netAGP)
     || descending(a.plan.netPoints, b.plan.netPoints) || b.fills.length - a.fills.length || a.playerId.localeCompare(b.playerId));
-  return { gaps, openSlots: open.length, bestDrop, adds: adds.slice(0, limit) };
+  return { gaps, openSlots: open.length, bestDrop, unprojectedDrops: unprojected.map(player => player.id), adds: adds.slice(0, limit) };
 }
