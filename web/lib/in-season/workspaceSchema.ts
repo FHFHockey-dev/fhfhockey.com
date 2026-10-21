@@ -38,6 +38,7 @@ const player = z.object({
 }).strict();
 const rosterEntry = z.object({ playerId: id, position: z.enum(["active", "bench", "IR", "IR+", "NA"]) }).strict();
 const lockedAssignment = z.object({ date, playerId: id, slotId: id.nullable(), source: z.enum(["provider", "manager"]).optional() }).strict();
+const pastLineup = z.object({ date, source: z.literal("yahoo"), entries: z.array(z.object({ playerId: id.nullable(), name: id, position: id, slotId: id.nullable() }).strict()).max(60) }).strict();
 const game = z.object({ id, date, startsAt: instant.nullable(), scheduleRevision: id.optional(), teamAbbreviation: id, opponent: id, home: z.boolean(), status: z.enum(["scheduled", "live", "final", "postponed", "cancelled"]) }).strict();
 const contributionGame = z.object({ seasonId, gameId: positiveInteger, teamId: positiveInteger,
   scheduledAt: instant, scheduleRevision: id, rosterRevision: id,
@@ -145,7 +146,7 @@ export const snapshotSchema: z.ZodType<PlanningSnapshot> = z.object({ id, contex
   forecasts: z.array(forecast).max(15000), baselineSources: z.array(contributionSource).max(15000).optional(),
   participationSources: z.array(contributionParticipation).max(15000).optional(),
   forecastInputExclusions: forecastManifest.shape.exclusions,
-  forecastManifest: forecastManifest.optional(), rules, lockedAssignments: z.array(lockedAssignment).max(1000),
+  forecastManifest: forecastManifest.optional(), rules, lockedAssignments: z.array(lockedAssignment).max(1000), pastLineups: z.array(pastLineup).max(14).optional(),
   realized: statLine, opponent, evidence: z.record(z.string().min(1), evidence) }).strict();
 
 /** Exact UTF-8 bytes of any workspace response as sent (packed): inside Vercel's 4.5 MB response limit. */

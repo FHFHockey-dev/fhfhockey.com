@@ -1,7 +1,7 @@
 import { contributionLedger } from "./contributionLedger";
 import { normalizeEligibility } from "./eligibility";
 import { candidateAcquisitionSteps, candidateHorizonPoints, evaluatePlan, scheduleAdmissionProblem, swapCategoryBreakdown, type CategorySwapRow } from "./planning";
-import { dropContribution, droppedOwnership, orderDropCandidates } from "./retention";
+import { dropContribution, droppedOwnership, knownDropOrder } from "./retention";
 import { expandActiveSlots } from "./slots";
 import type { PlanEvaluation, PlanIntent, PlanningSnapshot, PlanStep } from "./planningTypes";
 
@@ -137,8 +137,10 @@ export function candidatePlanMetrics(snapshot: PlanningSnapshot, intent: PlanInt
   const comparisons: CandidateComparison[] = selected.map(player => ({ playerId: player.id, plans: [], complete: false }));
   // The shared retention order (lineupGaps and the planner use the same one).
   const playersById = new Map(snapshot.players.map(player => [player.id, player]));
-  const dropOrder = new Map(orderDropCandidates([...baselineLedger.keys()].flatMap(id => playersById.get(id) ?? []),
-    player => dropContribution(snapshot.rules.scoring.mode, baselineLedger.get(player.id))).map((player, index) => [player.id, index]));
+  const dropOrder = knownDropOrder([...baselineLedger.keys()].flatMap(id => playersById.get(id) ?? []),
+    player => dropContribution(snapshot.rules.scoring.mode, baselineLedger.get(player.id)),
+    // Legal no-move starts counted so far: known even when the schedule window is still partial.
+    player => baselineLedger.get(player.id)?.knownActiveGames ?? null);
   const iterators = selected.map(player => candidateAcquisitionSteps(snapshot, originalIntent, player, dropOrder));
   const proposals = selected.map(() => 0);
   const finished = selected.map(() => false);

@@ -45,6 +45,23 @@ describe("lineup gap report", () => {
       fills: [{ date: "2026-10-05", slot: "D" }, { date: "2026-10-06", slot: "D" }], plan: { netPoints: 3, netAGP: 2 } });
   });
 
+  it("suggests no drop when every droppable player is unprojected, and names them", () => {
+    const data = snapshot();
+    data.forecasts = [];
+    const report = lineupGapReport(data, intent, evaluatePlan(data, intent, "outcome", [], false));
+    expect(report.bestDrop).toBeNull();
+    expect(report.unprojectedDrops).toEqual(["a", "b"]);
+  });
+
+  it("names only the player missing a forecast when that makes the whole lineup's points unknown", () => {
+    const data = snapshot();
+    // b has no forecast: lineup points are unknown for everyone, so nobody is suggested, and only b is unprojected.
+    data.forecasts = data.forecasts.filter(forecast => forecast.playerId !== "b");
+    const report = lineupGapReport(data, intent, evaluatePlan(data, intent, "outcome", [], false));
+    expect(report.bestDrop).toBeNull();
+    expect(report.unprojectedDrops).toEqual(["b"]);
+  });
+
   it("never offers a protected player as the drop", () => {
     const data = snapshot();
     const report = lineupGapReport(data, { ...intent, protectedPlayerIds: ["a"] }, evaluatePlan(data, intent, "outcome", [], false));

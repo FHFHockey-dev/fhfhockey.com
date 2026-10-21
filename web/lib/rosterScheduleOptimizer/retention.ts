@@ -65,6 +65,28 @@ export function orderDropCandidates<T extends PlanningPlayer>(players: T[], cont
   });
 }
 
+/** The drop surfaces suggest only a player whose contribution is known (TJ, 2026-10-21): a player with no projection is
+ * listed last and flagged, never chosen by ownership, holdValue or id. `player` is the lowest known contributor, or null
+ * when every candidate is unknown; `unprojected` lists the unknown candidates in their list order. */
+export function suggestedDrop<T extends PlanningPlayer>(players: T[], contribution: (player: T) => number | null): { player: T | null; unprojected: T[] } {
+  const ordered = orderDropCandidates(players, contribution);
+  const known = (player: T) => { const value = contribution(player); return typeof value === "number" && Number.isFinite(value); };
+  return { player: ordered.find(known) ?? null, unprojected: ordered.filter(player => !known(player)) };
+}
+
+/** The drop order the planner and Best Fit propose from, as id → rank: players ranked by the first tier they have a
+ * known value in (lowest first, `orderDropCandidates` within a tier), then the next tier. The planner passes projected
+ * points first and active games second, so a schedule-only plan still ranks by games played, never by id. A player
+ * with no known value in any tier is absent, so no search auto-proposes him (TJ, 2026-10-21). */
+export function knownDropOrder<T extends PlanningPlayer>(players: T[], ...tiers: Array<(player: T) => number | null>): Map<string, number> {
+  const order = new Map<string, number>();
+  for (const contribution of tiers) for (const player of orderDropCandidates(players, contribution)) {
+    const value = contribution(player);
+    if (typeof value === "number" && Number.isFinite(value) && !order.has(player.id)) order.set(player.id, order.size);
+  }
+  return order;
+}
+
 /** Highest known ownership among a plan's dropped players; null when it drops nobody or any drop's ownership is unknown. */
 export function droppedOwnership(steps: Array<{ type: string; playerId: string; dropPlayerId?: string }>, players: ReadonlyMap<string, PlanningPlayer>) {
   const ids = steps.flatMap(step => step.type === "drop" ? [step.playerId] : step.dropPlayerId ? [step.dropPlayerId] : []);

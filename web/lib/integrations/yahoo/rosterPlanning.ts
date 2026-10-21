@@ -3,7 +3,7 @@ import { loadPlanningData, parsePlanningDataQuery } from "lib/rosterScheduleData
 import { expandActiveSlots } from "lib/rosterScheduleOptimizer/slots";
 import { normalizeEligibility } from "lib/rosterScheduleOptimizer/eligibility";
 import { nextLocalMidnight, zonedMidnight } from "lib/rosterScheduleOptimizer/planningDates";
-import type { AcquisitionEvidence, LeagueRules, PlanningData, PlanningPlayer, PlanningSnapshot, ProviderCapabilities, RosterEntry, ScoringCategory, StatLine } from "lib/rosterScheduleOptimizer/planningTypes";
+import type { AcquisitionEvidence, LeagueRules, PastLineup, PlanningData, PlanningPlayer, PlanningSnapshot, ProviderCapabilities, RosterEntry, ScoringCategory, StatLine } from "lib/rosterScheduleOptimizer/planningTypes";
 import { assertYahooLeagueGameContext, resolveYahooGameContext } from "./gameContext";
 import { parseYahooBoardSettings, YAHOO_STAT_KEY_BY_ID, YahooLiveDraftError } from "./liveDraft";
 import { fetchYahooBoardResource, fetchYahooDraftResource, fetchYahooPlanningResource, type YahooProviderJsonResult } from "./providerClient";
@@ -14,6 +14,9 @@ const text = (value: unknown): string | null => typeof value === "string" || typ
 const numeric = (value: unknown): number | null => value === null || value === undefined || value === "" || value === "-" || !Number.isFinite(Number(value)) ? null : Number(value);
 const yes = (value: unknown) => value === true || value === 1 || value === "1";
 const no = (value: unknown) => value === false || value === 0 || value === "0";
+/** A recorded lineup for an elapsed day never changes, so a warm instance reuses it instead of asking Yahoo again. */
+const pastRosterCache = new Map<string, Row[]>();
+const PAST_ROSTER_CACHE_LIMIT = 500;
 
 export function yahooPlanningEditable(rosterEditable: unknown, playerEditable: unknown, fresh: boolean, started: boolean, daily: boolean) {
   return fresh && yes(rosterEditable) && yes(playerEditable) && !started && daily;
@@ -179,6 +182,28 @@ export async function loadYahooPlanningSnapshot(args: {
   const timeZone = providerTimeZone ?? args.timeZone ?? "UTC";
   try { new Intl.DateTimeFormat("en", { timeZone }).format(now); } catch { throw new YahooLiveDraftError("Choose a valid league time zone.", 400, "invalid_time_zone"); }
   const today = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  // Elapsed days of the selected matchup (league-local), read as Yahoo recorded them; a combined matchup has at most 13.
+  const pastDates: string[] = [];
+  for (let time = Date.parse(`${query.startDate}T12:00:00Z`); pastDates.length < 13; time += 86400000) {
+    const day = new Date(time).toISOString().slice(0, 10);
+    if (day >= today || day > query.endDate) break;
+    pastDates.push(day);
+  }
+  const pastRosterReads = Promise.all(pastDates.map(async date => {
+    const key = `${userId}|${team.external_team_key}|${date}`;
+    const cached = pastRosterCache.get(key);
+    if (cached) return { date, rows: cached };
+    try {
+      const response = await fetchYahooBoardResource({ ...provider, resource: { type: "roster", teamKey: team.external_team_key, date } });
+      const payload = yahooFields(yahooValue(response.payload, "roster"));
+      if (text(yahooValue(response.payload, "team_key")) !== team.external_team_key || text(payload.date) !== date
+        || text(payload.coverage_type) !== "date" || !yes(yahooValue(response.payload, "is_owned_by_current_login"))) return { date, rows: null };
+      const rows = yahooPlanningPlayers(response.payload);
+      if (pastRosterCache.size >= PAST_ROSTER_CACHE_LIMIT) pastRosterCache.delete(pastRosterCache.keys().next().value!);
+      pastRosterCache.set(key, rows);
+      return { date, rows };
+    } catch (error) { optionalFailure(error); return { date, rows: null }; }
+  }));
   const [data, rosterResponse, scoreboardResult, leagueRosterResult, leagueResult, teamResult] = await Promise.all([
     loadPlanningData(db, { ...query, timeZone }, { now, forgeDailyBridge: true }),
     readRequiredPlanningResource(() => fetchYahooBoardResource({ ...provider, resource: { type: "roster", teamKey: team.external_team_key, date: today } })),
@@ -303,6 +328,18 @@ export async function loadYahooPlanningSnapshot(args: {
     if (slot) usedSlots.add(slot.id);
     lockedAssignments.push({ date: today, playerId: player.id, slotId: slot?.id ?? null });
   }
+  const pastLineups: PastLineup[] = [];
+  for (const { date, rows } of await pastRosterReads) {
+    if (!rows) { limitations.push(`Yahoo's recorded lineup for ${date} could not be read; that day shows no lineup.`); continue; }
+    const usedPast = new Set<string>();
+    pastLineups.push({ date, source: "yahoo", entries: rows.map(row => {
+      const player = resolve(row);
+      const position = text(yahooFields(row.selected_position).position) ?? "BN";
+      const slot = slots.find(entry => entry.type === position.toUpperCase() && !usedPast.has(entry.id));
+      if (slot) usedPast.add(slot.id);
+      return { playerId: player?.id ?? null, name: player?.name ?? text(yahooFields(row.name).full) ?? String(row.player_key), position, slotId: slot?.id ?? null };
+    }) });
+  }
   let pagesChecked = 0, availabilityComplete = false;
   let pagesAttempted = 0, pagesAccepted = 0, rowsAccepted = 0, repeatedRows = 0;
   let availabilityStop = "page limit";
@@ -402,7 +439,7 @@ export async function loadYahooPlanningSnapshot(args: {
   const observedAt = rosterResponse.transport.responseDate;
   const snapshot: PlanningSnapshot = {
     id: `yahoo:${team.id}:${now.toISOString()}`, context: { provider: "yahoo", seasonId: query.seasonId, leagueId: league.id, teamId: team.id, startDate: query.startDate, endDate: query.endDate, timeZone, asOf: now.toISOString() },
-    ...data, roster, rules, lockedAssignments, realized, opponent, acquisitionEvidence,
+    ...data, roster, rules, lockedAssignments, pastLineups, realized, opponent, acquisitionEvidence,
     evidence: { ...data.evidence,
       roster: { source: "Yahoo authorized current roster", asOf: observedAt, seasonId: query.seasonId, completeness: fresh && roster.length === ownRows.length && roster.length > 0 ? "complete" : "partial", limitations },
       availability: { source: `Yahoo league ownership (${pagesChecked} pages)`, asOf: now.toISOString(), seasonId: query.seasonId, completeness: availabilityComplete ? "complete" : "partial", limitations: availabilityComplete ? [] : ["Only individually verified availability may be actionable."] },

@@ -277,6 +277,8 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   const skaterRows = inputs.skaters.filter(row => runs.has(row.run_id) && row.horizon_games === 1 && finite(row.player_id) && finite(row.team_id));
   const goalieRows = inputs.goalies.filter(row => runs.has(row.run_id) && row.horizon_games === 1 && finite(row.goalie_id) && finite(row.team_id));
   const skaterLatest = latest(skaterRows, row => row.player_id);
+  // A run that projected this very game (tomorrow's run, once it exists) beats a re-aimed line from another game.
+  const exactSkater = latest(skaterRows, row => `${row.game_id}:${row.player_id}`);
   const teamLatestDate = new Map<number, string>();
   for (const row of skaterRows) if ((teamLatestDate.get(row.team_id) ?? "") < row.as_of_date) teamLatestDate.set(row.team_id, row.as_of_date);
   const goalieLatest = latest(goalieRows, row => row.goalie_id), teamGoalieLatest = latest(goalieRows, row => row.team_id);
@@ -346,16 +348,26 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   const identified = players.filter(player => player.nhlId !== null && finite(player.nhlTeamId) && player.rosterRevision && player.teamAbbreviation);
   let staleSkaters = 0, noPowerPlay = 0, unknownPowerPlay = 0;
   for (const player of identified.filter(row => row.playerClass === "skater")) {
-    const row = skaterLatest.get(player.nhlId);
-    if (!row || row.team_id !== player.nhlTeamId) continue;
+    const latestRow = skaterLatest.get(player.nhlId);
+    if (!latestRow || latestRow.team_id !== player.nhlTeamId) continue;
     // Missing from his team's latest run: scratched, injured or reassigned since.
-    if (row.as_of_date !== teamLatestDate.get(row.team_id)) { staleSkaters++; continue; }
-    const special = withSpecialTeamsZeros(row);
-    if (special.filled) noPowerPlay++;
-    if (special.unknown) unknownPowerPlay++;
-    const stats = skaterStats(special.row, rates ? rates.get(player.nhlId!) ?? rates.get(0)! : null);
-    const projectedAgainst = context(player.teamAbbreviation, abbreviationById.get(row.opponent_team_id));
+    if (latestRow.as_of_date !== teamLatestDate.get(latestRow.team_id)) { staleSkaters++; continue; }
+    const lineFor = (row: Row) => {
+      const special = withSpecialTeamsZeros(row);
+      if (special.filled) noPowerPlay++;
+      if (special.unknown) unknownPowerPlay++;
+      return skaterStats(special.row, rates ? rates.get(player.nhlId!) ?? rates.get(0)! : null);
+    };
+    const stats = lineFor(latestRow);
+    const projectedAgainst = context(player.teamAbbreviation, abbreviationById.get(latestRow.opponent_team_id));
     if (stats) for (const game of upcoming(player.teamAbbreviation!)) {
+      const own = exactSkater.get(`${game.id}:${player.nhlId}`);
+      if (own && own !== latestRow && own.team_id === player.nhlTeamId) {
+        // Projected for this game itself: use that line as issued, no re-aiming.
+        const ownStats = lineFor(own);
+        if (ownStats) { emit(player, game, runs.get(own.run_id)!, ownStats, null); continue; }
+      }
+      const row = latestRow;
       const facing = String(row.game_id) === game.id ? null : context(player.teamAbbreviation, game.opponent);
       const scale = projectedAgainst && facing ? (1 + facing.goalsFor) / (1 + projectedAgainst.goalsFor) : 1;
       const rest = String(row.game_id) === game.id ? null : restScale(gameContext(row.game_id, row.team_id), gameContext(game.id, row.team_id));

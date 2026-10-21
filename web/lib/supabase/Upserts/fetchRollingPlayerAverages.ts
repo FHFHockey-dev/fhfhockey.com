@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import dotenv from "dotenv";
 import { createAlignedCountSupportBuilder, readAlignedCountSupport } from "lib/rollingPlayerCountSupport";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
@@ -103,6 +104,9 @@ const RETRY_BASE_DELAY_MS = 1000;
 const RETRY_MAX_DELAY_MS = 30000;
 const TRANSIENT_GATEWAY_STATUSES = [502, 503, 504, 520, 522, 524];
 const SLOW_OPERATION_WARNING_MS = 15000;
+// Strengths whose three NST tables are read at once per player (6 statements
+// in flight per player, 24 at player concurrency 4).
+const NST_STRENGTH_READ_CONCURRENCY = 2;
 type PipelinePhase = "bootstrap" | "fetch" | "merge" | "derive" | "upsert" | "summary";
 type PipelinePhaseStatus = "start" | "complete" | "failed";
 
@@ -380,6 +384,13 @@ export interface FetchOptions {
    * `nextResumeFrom` resumes exactly after it.
    */
   stopClaimingPlayersAtMs?: number;
+  /**
+   * Epoch ms after which in-flight players are abandoned at their next phase
+   * boundary (and retries stop sleeping), so a run answers before the function
+   * is killed. Abandoned players are not counted as processed: `nextResumeFrom`
+   * is the last player of the contiguous completed prefix, so they are redone.
+   */
+  abortInFlightAtMs?: number;
 }
 
 type RollingUpsertRow = Record<string, unknown>;
@@ -968,6 +979,8 @@ export type RollingPlayerRunSummary = {
   totalPlayersAfterResumeFilter?: number;
   remainingPlayerCount?: number;
   stoppedReason?: "complete" | "max_players" | "runtime_budget";
+  // Players abandoned at the in-flight deadline; they sit past nextResumeFrom.
+  abandonedPlayerCount?: number;
 };
 
 const cachedPowerPlayCombos = new Map<string, PowerPlayCombinationRow>();
@@ -1665,6 +1678,31 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// The run's in-flight deadline (options.abortInFlightAtMs), scoped to the
+// async context of one main() call so concurrent runs in one process never
+// see each other's; the phase checks and the retry helper read it.
+const runDeadline = new AsyncLocalStorage<number>();
+
+export class RollingInFlightDeadlineError extends Error {
+  constructor(where: string) {
+    super(`Rolling in-flight deadline reached during ${where}`);
+    this.name = "RollingInFlightDeadlineError";
+  }
+}
+
+function runAbortAtMs(): number | undefined {
+  return runDeadline.getStore();
+}
+
+function isPastRunDeadline(now = Date.now()): boolean {
+  const abortAt = runAbortAtMs();
+  return abortAt !== undefined && now >= abortAt;
+}
+
+function assertBeforeRunDeadline(where: string) {
+  if (isPastRunDeadline()) throw new RollingInFlightDeadlineError(where);
+}
+
 async function executeWithRetry<T>(
   label: string,
   fn: () => Promise<T>
@@ -1675,7 +1713,9 @@ async function executeWithRetry<T>(
       return await fn();
     } catch (error: any) {
       attempt += 1;
-      const isLastAttempt = attempt >= MAX_RETRIES;
+      // Past the deadline nothing is worth another attempt: fail now so the
+      // player is abandoned and resumed by the next invocation.
+      const isLastAttempt = attempt >= MAX_RETRIES || isPastRunDeadline();
       const rawMessage = getErrorMessage(error);
       const message =
         rawMessage.length > 800
@@ -1694,6 +1734,10 @@ async function executeWithRetry<T>(
       const exponential = baseDelay * Math.pow(2, attempt - 1);
       const jitter = Math.floor(Math.random() * Math.min(baseDelay, 2000));
       const waitMs = Math.min(exponential + jitter, RETRY_MAX_DELAY_MS);
+      const abortAt = runAbortAtMs();
+      if (abortAt !== undefined && Date.now() + waitMs >= abortAt) {
+        throw error;
+      }
       console.info(
         `[fetchRollingPlayerAverages] ${label} retrying in ${waitMs}ms`
       );
@@ -2595,6 +2639,7 @@ function buildRunSummary(args: RollingPlayerRunSummary): RollingPlayerRunSummary
     sourceTracking: args.sourceTracking,
     lastProcessedPlayerId: args.lastProcessedPlayerId ?? null,
     nextResumeFrom: args.nextResumeFrom ?? null,
+    abandonedPlayerCount: args.abandonedPlayerCount ?? 0,
     totalPlayersAfterResumeFilter: args.totalPlayersAfterResumeFilter ?? 0,
     remainingPlayerCount: args.remainingPlayerCount ?? 0,
     stoppedReason: args.stoppedReason
@@ -3615,6 +3660,7 @@ async function processPlayer(
   options: FetchOptions
 ): Promise<ProcessPlayerResult> {
   const historyReadOptions = buildPlayerHistoryReadOptions(options);
+  assertBeforeRunDeadline(`player ${playerId} history read`);
   const wgoRows = await fetchWgoRowsForPlayer(playerId, historyReadOptions);
   if (wgoRows.length === 0) {
     return {
@@ -3644,10 +3690,21 @@ async function processPlayer(
     freshnessBlockerCount: 0,
     sourceTracking: createEmptySourceTrackingSummary()
   };
-  for (const config of getStrengthConfigs(options.strengths)) {
-    const strengthLabel = `[fetchRollingPlayerAverages] player:${playerId} strength:${config.state}`;
-    console.time(strengthLabel);
-    try {
+  // Every strength's NST reads are independent of the others, so they go out
+  // a few at a time (a daily run is bound by these round trips, not by the
+  // merge) while keeping the in-flight statements per player bounded against
+  // the database's statement timeout.
+  assertBeforeRunDeadline(`player ${playerId} NST reads`);
+  const strengthConfigs = getStrengthConfigs(options.strengths);
+  const strengthSources: Array<{
+    config: (typeof strengthConfigs)[number];
+    countsRows: NstCountsRow[];
+    ratesRows: NstRatesRow[];
+    countsOiRows: NstCountsOiRow[];
+  }> = [];
+  for (let index = 0; index < strengthConfigs.length; index += NST_STRENGTH_READ_CONCURRENCY) {
+    strengthSources.push(...(await Promise.all(
+    strengthConfigs.slice(index, index + NST_STRENGTH_READ_CONCURRENCY).map(async (config) => {
       const fetchPhaseStartedAt = Date.now();
       logPipelinePhase({
         phase: "fetch",
@@ -3697,7 +3754,15 @@ async function processPlayer(
           lineRows: lineRows.length
         }
       });
-
+      return { config, countsRows, ratesRows, countsOiRows };
+    })
+    )));
+  }
+  for (const { config, countsRows, ratesRows, countsOiRows } of strengthSources) {
+    const strengthLabel = `[fetchRollingPlayerAverages] player:${playerId} strength:${config.state}`;
+    console.time(strengthLabel);
+    try {
+      assertBeforeRunDeadline(`player ${playerId} strength ${config.state} merge`);
       const countsByDate = groupByDate(countsRows);
       const ratesByDate = groupByDate(ratesRows);
       const countsOiByDate = groupByDate(countsOiRows);
@@ -4179,6 +4244,15 @@ export async function fetchPlayerValidationSourceData(options: {
 export async function main(
   options: FetchOptions = {}
 ): Promise<RollingPlayerRunSummary> {
+  // Undefined clears any inherited deadline: a run without one has none.
+  return options.abortInFlightAtMs === undefined
+    ? runDeadline.exit(() => runMain(options))
+    : runDeadline.run(options.abortInFlightAtMs, () => runMain(options));
+}
+
+async function runMain(
+  options: FetchOptions
+): Promise<RollingPlayerRunSummary> {
   console.info(
     "[fetchRollingPlayerAverages] Starting run",
     JSON.stringify(options)
@@ -4450,13 +4524,16 @@ export async function main(
   });
   let nextPlayerIndex = 0;
   let stoppedForRuntimeBudget = false;
+  let abandonedPlayerCount = 0;
+  const completedIndexes = new Set<number>();
   const runPlayerWorker = async () => {
     while (true) {
       const currentIndex = nextPlayerIndex;
       if (currentIndex >= boundedPlayerIds.length) return;
       if (
-        options.stopClaimingPlayersAtMs !== undefined &&
-        Date.now() >= options.stopClaimingPlayersAtMs
+        (options.stopClaimingPlayersAtMs !== undefined &&
+          Date.now() >= options.stopClaimingPlayersAtMs) ||
+        isPastRunDeadline()
       ) {
         stoppedForRuntimeBudget = true;
         return;
@@ -4467,6 +4544,29 @@ export async function main(
       const playerLabel = `[fetchRollingPlayerAverages] player:${playerId}`;
       console.time(playerLabel);
       try {
+        await processClaimedPlayer(playerId);
+        completedIndexes.add(currentIndex);
+      } catch (error) {
+        // Past the deadline every error ends the player the same way: it is
+        // left unfinished for the next invocation and this worker stops.
+        if (!(error instanceof RollingInFlightDeadlineError) && !isPastRunDeadline()) {
+          throw error;
+        }
+        abandonedPlayerCount += 1;
+        stoppedForRuntimeBudget = true;
+        console.warn(
+          "[fetchRollingPlayerAverages] In-flight deadline reached; abandoned player",
+          JSON.stringify({ playerId, detail: getErrorMessage(error) })
+        );
+        return;
+      } finally {
+        console.timeEnd(playerLabel);
+      }
+    }
+  };
+  // Runs one claimed player to completion. Throws RollingInFlightDeadlineError
+  // (from a phase check or a retry that ran out of time) to abandon it.
+  const processClaimedPlayer = async (playerId: number) => {
         const { rows, diagnostics } = await processPlayer(
           playerId,
           ledger,
@@ -4485,8 +4585,9 @@ export async function main(
             processedPlayers,
             `player:${playerId} rowsUpserted:${rowsUpserted} coverageWarn:${coverageWarnings} suspicious:${suspiciousOutputWarnings} freshness:${freshnessBlockers}`
           );
-          continue;
+          return;
         }
+        assertBeforeRunDeadline(`player ${playerId} upsert`);
         playersWithRows += 1;
         const totalBatches = Math.ceil(rows.length / batchSize);
         const upsertPhaseStartedAt = Date.now();
@@ -4541,8 +4642,9 @@ export async function main(
               );
               continue;
             }
-            await upsertLimit(async () =>
-              executeWithSlowLog(
+            await upsertLimit(async () => {
+              assertBeforeRunDeadline(`player ${playerId} upsert batch ${batchNumber}`);
+              return executeWithSlowLog(
                 `upsert player:${playerId} batch:${batchNumber}/${totalBatches} rows:${batch.length}`,
                 () =>
                   executeWithRetry(
@@ -4553,8 +4655,8 @@ export async function main(
                       );
                     }
                   )
-              )
-            );
+              );
+            });
             rowsUpserted += batch.length;
             playerProgress.update(
               processedPlayers,
@@ -4575,6 +4677,13 @@ export async function main(
               error: getErrorMessage(error)
             }
           });
+          // A retry that ran out of deadline abandons the player, like a
+          // phase check does; the next invocation redoes its rows.
+          if (isPastRunDeadline() && !(error instanceof RollingInFlightDeadlineError)) {
+            throw new RollingInFlightDeadlineError(
+              `player ${playerId} upsert retry: ${getErrorMessage(error)}`
+            );
+          }
           if (options.debugUpsertPayload || !options.skipDiagnostics) {
             console.error(
               "[fetchRollingPlayerAverages] upsertFailureDetail",
@@ -4607,10 +4716,6 @@ export async function main(
           processedPlayers,
           `player:${playerId} rowsUpserted:${rowsUpserted} coverageWarn:${coverageWarnings} suspicious:${suspiciousOutputWarnings} freshness:${freshnessBlockers}`
         );
-      } finally {
-        console.timeEnd(playerLabel);
-      }
-    }
   };
 
   const workerCount = Math.min(playerConcurrency, boundedPlayerIds.length);
@@ -4623,9 +4728,12 @@ export async function main(
     `rowsUpserted:${rowsUpserted} playersWithRows:${playersWithRows} coverageWarn:${coverageWarnings} suspicious:${suspiciousOutputWarnings} freshness:${freshnessBlockers}`
   );
 
-  // Players are claimed in id order and every claimed player finished (a
-  // failure throws above), so the claimed players form a contiguous prefix.
-  const claimedPlayerCount = nextPlayerIndex;
+  // Players are claimed in id order and a non-deadline failure throws above,
+  // so the resume point is the end of the contiguous completed prefix. A
+  // player abandoned at the deadline (and any later one a sibling worker
+  // finished) sits past it and is redone by the next invocation.
+  let claimedPlayerCount = 0;
+  while (completedIndexes.has(claimedPlayerCount)) claimedPlayerCount += 1;
   const lastClaimedPlayerId =
     claimedPlayerCount > 0 ? boundedPlayerIds[claimedPlayerCount - 1] : null;
   const remainingPlayerCount = filteredPlayerIds.length - claimedPlayerCount;
@@ -4639,6 +4747,7 @@ export async function main(
     console.warn(
       "[fetchRollingPlayerAverages] Runtime budget reached; stopped claiming players",
       JSON.stringify({
+        abandonedPlayerCount,
         claimedPlayerCount,
         remainingPlayerCount,
         lastClaimedPlayerId
@@ -4671,7 +4780,8 @@ export async function main(
         : null,
     totalPlayersAfterResumeFilter: filteredPlayerIds.length,
     remainingPlayerCount,
-    stoppedReason
+    stoppedReason,
+    abandonedPlayerCount
   });
   console.info(
     "[fetchRollingPlayerAverages] Completed run",

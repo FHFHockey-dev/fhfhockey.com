@@ -911,6 +911,16 @@
       "migrationClass": "security",
       "rolloutGate": "Drafted 2026-10-20 for ticket D4. Resets and re-grants the ACLs of the 76 reviewed tables, one identity sequence and 46 RPCs to exactly the operations traced callers use: browser access stays only on the owner-scoped provider-linkage SELECT and the deliberate public-read RSO schedule; service_role loses unused TRUNCATE/REFERENCES/TRIGGER everywhere, unused DELETE on Draft Pro/in-season/provider_sync_runs, the ALL grants on three forecast tables, and EXECUTE on the uncalled promote_player_forecast_model_atomic. Narrows privileges only; no RLS, policy or body change. Hosted apply needs TJ's separate explicit approval and no migration command was run.",
       "stateEvidence": "Local source only; no hosted ledger or apply receipt. Disposable PostgreSQL 17.11 replay receipts and the per-grant caller list are in tasks/artifacts/d4-grants-2026-10-20/."
+    },
+    {
+      "order": 91,
+      "path": "supabase/migrations/20261021145154_drop_rolling_support_payload_gin.sql",
+      "sha256": "31d817e79c4258ce406f686e47d9199e91f60eb0f17dfce8b58b2b801b0789aa",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Recorded 2026-10-21 at TJ's request (FORGE pipeline repair): drops the unused GIN index idx_rolling_player_metric_support_payloads_payload_gin (jsonb_path_ops on support_payload, ~1.5 GB). No code queries support_payload by containment; the index made 5-row support-payload upserts hit the 8 s PostgREST statement timeout and stalled the scheduled rolling stage. The production drop itself was run by direct SQL on 2026-10-21 (about 14:16-14:20Z) with TJ's explicit approval; this file records it, idempotently, so baseline-built environments match. Rollback: CREATE INDEX CONCURRENTLY idx_rolling_player_metric_support_payloads_payload_gin ON public.rolling_player_metric_support_payloads USING gin (support_payload jsonb_path_ops).",
+      "stateEvidence": "Production ledger version 20261021145154 name drop_rolling_support_payload_gin (applied 2026-10-21 by explicit TJ approval via session local_08a0bf1c; a no-op because the index was already dropped). Readback: rolling_player_metric_support_payloads keeps only rolling_player_metric_support_payloads_pkey and idx_rolling_player_metric_support_payloads_snapshot. After the drop the 10-20 rolling tail ran about 3 players/s versus about 1/s before (pipeline repair diary 2026-10-21)."
     }
   ],
   "sourceExtensionApproval": {

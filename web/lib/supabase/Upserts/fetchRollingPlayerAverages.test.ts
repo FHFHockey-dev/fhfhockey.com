@@ -202,7 +202,11 @@ describe("fetchRollingPlayerAverages main runtime budget", () => {
       points: 1,
       toi_per_game: 1080
     }],
-    games: Record<string, unknown>[] = []
+    games: Record<string, unknown>[] = [],
+    // Runs before every round trip resolves; may throw to fail the trip.
+    onRoundTrip: () => void = () => undefined,
+    // Sees every query of a table start (when awaited) and end.
+    onQuery: (table: string, phase: "start" | "end") => void = () => undefined
   ) {
     return {
       rpc: vi.fn(async () => ({ data: null, error: null })),
@@ -230,11 +234,26 @@ describe("fetchRollingPlayerAverages main runtime budget", () => {
           }
           return historyRows(filters.player_id);
         };
-        query.then = (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
-          Promise.resolve({ data: rows(), error: null }).then(resolve, reject);
+        query.then = (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => {
+          onQuery(table, "start");
+          return Promise.resolve()
+            .then(() => {
+              onQuery(table, "end");
+              onRoundTrip();
+              return { data: rows(), error: null };
+            })
+            .then(resolve, reject);
+        };
         return query;
       }
     };
+  }
+
+  // Silences the writer's progress logging for a test.
+  function silenceConsole() {
+    for (const method of ["info", "warn", "debug", "error", "time", "timeEnd"] as const) {
+      vi.spyOn(console, method).mockImplementation(() => undefined);
+    }
   }
 
   async function importMainWithClient(client: unknown) {
@@ -440,6 +459,114 @@ describe("fetchRollingPlayerAverages main runtime budget", () => {
       nextResumeFrom: PLAYER_IDS[1],
       remainingPlayerCount: 5
     });
+  });
+
+  // Each DB round trip costs 10 fake ms, so a deadline lands inside a player.
+  async function runWithInFlightDeadline(args: {
+    abortInFlightAtMs: number;
+    failTripsPastDeadline?: boolean;
+  }) {
+    silenceConsole();
+    let fakeNow = 1_000;
+    vi.spyOn(Date, "now").mockImplementation(() => fakeNow);
+    const processed: number[] = [];
+    // Trips fail only during the first run's past-deadline tail.
+    let failTrips = Boolean(args.failTripsPastDeadline);
+    const main = await importMainWithClient(
+      createWindowClient(undefined, [], () => {
+        fakeNow += 10;
+        if (failTrips && fakeNow >= args.abortInFlightAtMs) {
+          throw new Error("connection reset");
+        }
+      })
+    );
+    const window = {
+      startDate: "2026-10-05",
+      endDate: "2026-10-19",
+      dryRunUpsert: true,
+      skipDiagnostics: true,
+      playerConcurrency: 1,
+      dryRunBatchObserver: (batch: { playerId: number }) => {
+        processed.push(batch.playerId);
+      }
+    };
+
+    const first = await main({ ...window, abortInFlightAtMs: args.abortInFlightAtMs });
+    const firstProcessed = [...processed];
+    failTrips = false;
+    const second = await main({ ...window, resumePlayerId: first.nextResumeFrom ?? undefined });
+
+    return { first, firstProcessed, second, processed };
+  }
+
+  it("abandons the in-flight player at the hard deadline; the resume redoes it and skips no one", async () => {
+    const { first, firstProcessed, second, processed } = await runWithInFlightDeadline({
+      abortInFlightAtMs: 1_300
+    });
+
+    expect(first.stoppedReason).toBe("runtime_budget");
+    expect(first.abandonedPlayerCount).toBe(1);
+    // The finished players are an id-ordered prefix; the cursor ends it.
+    expect(firstProcessed).toEqual(PLAYER_IDS.slice(0, firstProcessed.length));
+    expect(firstProcessed.length).toBeGreaterThan(0);
+    expect(firstProcessed.length).toBeLessThan(PLAYER_IDS.length);
+    expect(first).toMatchObject({
+      processedPlayers: firstProcessed.length,
+      nextResumeFrom: PLAYER_IDS[firstProcessed.length - 1],
+      remainingPlayerCount: PLAYER_IDS.length - firstProcessed.length
+    });
+    expect(second).toMatchObject({ stoppedReason: "complete", nextResumeFrom: null, abandonedPlayerCount: 0 });
+    expect(processed).toEqual(PLAYER_IDS);
+  });
+
+  it("keeps each concurrent run's deadline to itself", async () => {
+    silenceConsole();
+    let fakeNow = 1_000;
+    vi.spyOn(Date, "now").mockImplementation(() => fakeNow);
+    const main = await importMainWithClient(createWindowClient(undefined, [], () => { fakeNow += 10; }));
+    const window = { startDate: "2026-10-05", endDate: "2026-10-19", dryRunUpsert: true, skipDiagnostics: true, playerConcurrency: 1 };
+    const processedA: number[] = [], processedB: number[] = [];
+
+    // A has no deadline; B's is already past. Neither may see the other's.
+    const [a, b] = await Promise.all([
+      main({ ...window, dryRunBatchObserver: batch => { processedA.push(batch.playerId); } }),
+      main({ ...window, abortInFlightAtMs: 1, dryRunBatchObserver: batch => { processedB.push(batch.playerId); } })
+    ]);
+
+    expect(a).toMatchObject({ stoppedReason: "complete", abandonedPlayerCount: 0, remainingPlayerCount: 0 });
+    expect(processedA).toEqual(PLAYER_IDS);
+    expect(b).toMatchObject({ stoppedReason: "runtime_budget", processedPlayers: 0, remainingPlayerCount: PLAYER_IDS.length });
+    expect(processedB).toEqual([]);
+  });
+
+  it("reads at most two strengths' NST tables at once per player", async () => {
+    silenceConsole();
+    let inFlight = 0, maxInFlight = 0;
+    const main = await importMainWithClient(createWindowClient(undefined, [], undefined, (table, phase) => {
+      if (!table.startsWith("nst_")) return;
+      inFlight += phase === "start" ? 1 : -1;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+    }));
+
+    await main({ startDate: "2026-10-05", endDate: "2026-10-19", dryRunUpsert: true, skipDiagnostics: true, playerConcurrency: 1, maxPlayers: 1 });
+
+    // Two strengths × three tables.
+    expect(maxInFlight).toBe(6);
+  });
+
+  it("treats a read that fails past the deadline as an abandoned player, not a failed run", async () => {
+    const { first, firstProcessed, second, processed } = await runWithInFlightDeadline({
+      abortInFlightAtMs: 1_300,
+      failTripsPastDeadline: true
+    });
+
+    expect(first).toMatchObject({
+      stoppedReason: "runtime_budget",
+      abandonedPlayerCount: 1,
+      nextResumeFrom: PLAYER_IDS[firstProcessed.length - 1]
+    });
+    expect(second.stoppedReason).toBe("complete");
+    expect(processed).toEqual(PLAYER_IDS);
   });
 });
 
@@ -1030,6 +1157,7 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
 
     expect(summary).toEqual({
       rowsUpserted: 5452,
+      abandonedPlayerCount: 0,
       processedPlayers: 3,
       playersWithRows: 2,
       coverageWarnings: 8,

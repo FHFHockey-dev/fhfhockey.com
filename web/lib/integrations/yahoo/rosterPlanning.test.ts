@@ -352,6 +352,29 @@ describe("Yahoo snapshot evidence", () => {
     expect(result.snapshot.rules.acquisitionTiming).toBe("unknown");
     expect(result.snapshot.lockedAssignments).toEqual([{ date: "2026-10-01", playerId: "canonical", slotId: "C#1" }]);
     expect(result.capabilities.availability).toBe(true);
+    expect(result.snapshot.pastLineups).toEqual([]);
+
+    // Elapsed matchup days come from Yahoo's recorded lineups, display-only; a failed day is disclosed, not invented.
+    mocks.boardResource.mockImplementation(async ({ resource }: any) => {
+      if (resource.type !== "roster") throw new Error("Optional league roster read unavailable");
+      if (resource.date === "2026-09-29") throw new Error("Past roster read unavailable");
+      const past = resource.date !== "2026-10-01";
+      return { payload: { team_key: "453.l.1.t.1", is_owned_by_current_login: "1", roster: { date: resource.date, coverage_type: "date", is_editable: "1",
+        0: { players: { count: past ? 2 : 1, 0: { player: [{ player_key: "453.p.2001" }, { selected_position: [{ position: "C" }] }] },
+          ...(past ? { 1: { player: [{ player_key: "453.p.7777" }, { name: { full: "Gone Player" } }, { selected_position: [{ position: "BN" }] }] } } : {}) } } } }, transport };
+    });
+    const withPast = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-09-28", endDate: "2026-10-04", now });
+    const recorded = [{ playerId: "canonical", name: "Mapped Player", position: "C", slotId: "C#1" }, { playerId: null, name: "Gone Player", position: "BN", slotId: null }];
+    expect(withPast.snapshot.pastLineups).toEqual([{ date: "2026-09-28", source: "yahoo", entries: recorded }, { date: "2026-09-30", source: "yahoo", entries: recorded }]);
+    expect(withPast.snapshot.evidence.roster.limitations).toContain("Yahoo's recorded lineup for 2026-09-29 could not be read; that day shows no lineup.");
+    expect(withPast.snapshot.lockedAssignments).toEqual([{ date: "2026-10-01", playerId: "canonical", slotId: "C#1" }]);
+    const readsBefore = mocks.boardResource.mock.calls.length;
+    const again = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-09-28", endDate: "2026-10-04", now });
+    expect(again.snapshot.pastLineups?.map(day => day.date)).toEqual(["2026-09-28", "2026-09-30"]);
+    // Recorded days already read are reused; only today's roster and the failed day go back to Yahoo.
+    expect(mocks.boardResource.mock.calls.slice(readsBefore).map(([args]: any) => args.resource).filter((resource: any) => resource.type === "roster")
+      .map((resource: any) => resource.date).sort()).toEqual(["2026-09-29", "2026-10-01"]);
+
     mocks.boardResource.mockImplementation(async ({ resource }: any) => {
       if (resource.type !== "roster") throw new Error("Optional league roster read unavailable");
       return { payload: { team_key: "453.l.1.t.1", is_owned_by_current_login: "1", roster: { date: "2026-10-01", coverage_type: "date", is_editable: "1",

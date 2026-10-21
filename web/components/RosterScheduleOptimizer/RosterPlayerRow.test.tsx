@@ -6,8 +6,8 @@ import type { PlanningPlayer } from "lib/rosterScheduleOptimizer/planningTypes";
 afterEach(cleanup);
 const player = (ownership: number | null): PlanningPlayer => ({ id: "p", nhlId: null, name: "Depth Center", teamAbbreviation: "CAR",
   eligiblePositions: ["C"], playerClass: "skater", availability: "rostered", ownership, canDrop: true, holdValue: null, reserveEligibility: [] });
-const row = (ownership: number | null, dropCandidate = true) => render(<RosterPlayerRow player={player(ownership)} entry={{ playerId: "p", position: "bench" }}
-  nameOf={id => id} protectedPlayer={false} manual={false} select={vi.fn()} protect={vi.fn()} position={vi.fn()} remove={vi.fn()} dropCandidate={dropCandidate} />);
+const row = (ownership: number | null, dropCandidate = true, unprojected = false) => render(<RosterPlayerRow player={player(ownership)} entry={{ playerId: "p", position: "bench" }}
+  nameOf={id => id} protectedPlayer={false} manual={false} select={vi.fn()} protect={vi.fn()} position={vi.fn()} remove={vi.fn()} dropCandidate={dropCandidate} unprojected={unprojected} />);
 
 describe("roster DROP chip retention caution (R7)", () => {
   it("cautions on a widely rostered suggested drop, even at exactly 50%", () => {
@@ -21,6 +21,12 @@ describe("roster DROP chip retention caution (R7)", () => {
     cleanup();
     row(0);
     expect(screen.queryByText(/Widely rostered|Ownership unknown/)).toBeNull();
+  });
+  it("flags an unprojected player instead of suggesting him as the drop", () => {
+    row(95, false, true);
+    expect(screen.getByText("no projection")).toBeTruthy();
+    expect(screen.queryByText("DROP")).toBeNull();
+    expect(screen.queryByText(/Widely rostered/)).toBeNull();
   });
   it("shows no caution on rows that are not the suggested drop", () => {
     row(95, false);

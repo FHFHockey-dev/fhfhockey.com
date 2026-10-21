@@ -6,7 +6,7 @@ import { canEligibilityOccupySlot, normalizeEligibility } from "./eligibility";
 import { expandActiveSlots } from "./slots";
 import { acquisitionEffectiveAt, buildTimeline } from "./planningTimeline";
 import { deferBenchDecisions, explainBenchDecisions, reserveBenchEvaluation, type BenchEvaluationBudget } from "./benchDecisions";
-import { dropEligible, droppedOwnership, orderDropCandidates, providerListsOut, reservedPlayerIds } from "./retention";
+import { dropEligible, droppedOwnership, knownDropOrder, orderDropCandidates, providerListsOut, reservedPlayerIds } from "./retention";
 import type { ContributionPlanningSnapshot, ForecastExclusionReason, ForecastOpportunityExclusion, GameForecast, PlanEvaluation, PlanIntent, PlanStep, PlanningAssignment, PlanningGame, PlanningObjective, PlanningPlayer, PlanningResult, PlanningSnapshot, ScoringCategory, StatLine } from "./planningTypes";
 
 export type PlanningSearchOptions = { maxEvaluations?: number; beamWidth?: number; maxCandidates?: number; maxSteps?: number; timeBudgetMs?: number; maxBenchEvaluations?: number };
@@ -1152,10 +1152,14 @@ function* extensions(snapshot: PlanningSnapshot, intent: PlanIntent, prior: Plan
     if (step.type === "drop") owned.delete(step.playerId);
   }
   const dates = [...new Set(snapshot.games.filter(game => game.status === "scheduled" && game.date >= snapshot.context.startDate && game.date <= snapshot.context.endDate && eligibleGame(game, snapshot)).map(game => game.date))].sort();
-  // Shared retention policy: no reserve-held (frees no spot), out-injured or protected players. The caller's contribution
-  // order leads; players it doesn't rank keep the policy's ownership/holdValue/id order (a stable sort).
+  // Shared retention policy: no reserve-held (frees no spot), out-injured or protected players. A roster player is
+  // proposed only when the caller ranked him by a known contribution (`knownDropOrder`), in that order: a player
+  // with no known value is never an automatic drop (TJ, 2026-10-21). Players added by earlier steps of this plan
+  // have no no-move contribution yet; they follow the ranked ones in the policy's ownership/holdValue/id order.
   const reserved = reservedPlayerIds(snapshot.roster, prior);
-  const drops = orderDropCandidates(snapshot.players.filter(player => owned.has(player.id) && dropEligible(player, intent, reserved)), () => null)
+  const onRoster = new Set(snapshot.roster.map(entry => entry.playerId));
+  const drops = orderDropCandidates(snapshot.players.filter(player => owned.has(player.id) && dropEligible(player, intent, reserved)
+    && (dropOrder?.has(player.id) || !onRoster.has(player.id))), () => null)
     .sort((a, b) => (dropOrder?.get(a.id) ?? Infinity) - (dropOrder?.get(b.id) ?? Infinity));
   const proposals: Array<{ player: PlanningPlayer; date: string; step: PlanStep }> = [];
   const useful = candidates.map(player => ({ player, dates: owned.has(player.id) ? [] : dates.filter(date => snapshot.games.some(game => game.date === date && game.teamAbbreviation === player.teamAbbreviation)) }));
@@ -1195,8 +1199,17 @@ function* extensions(snapshot: PlanningSnapshot, intent: PlanIntent, prior: Plan
     yield [{ ...step, id: `${step.id}:drop:${drop.id}`, dropPlayerId: drop.id }];
 }
 
+/** The no-move drop ranking (`knownDropOrder`): projected points first in points leagues, then active games. */
+export function noMoveDropOrder(snapshot: PlanningSnapshot, intent: PlanIntent): Map<string, number> {
+  const outcome = evaluatePlan(snapshot, intent, "outcome", [], false), agp = evaluatePlan(snapshot, intent, "agp", [], false);
+  return knownDropOrder(snapshot.roster.flatMap(entry => snapshot.players.find(player => player.id === entry.playerId) ?? []),
+    player => snapshot.rules.scoring.mode === "points" ? playerAssignedPoints(snapshot, outcome, player.id) : null,
+    player => agp.assignments.filter(row => row.playerId === player.id).length);
+}
+
 /** Reuse the same timed acquisition/reserve/drop proposals for bounded candidate comparisons. */
-export function candidateAcquisitionSteps(snapshot: PlanningSnapshot, intent: PlanIntent, player: PlanningPlayer, dropOrder?: ReadonlyMap<string, number>) {
+export function candidateAcquisitionSteps(snapshot: PlanningSnapshot, intent: PlanIntent, player: PlanningPlayer,
+  dropOrder: ReadonlyMap<string, number> = noMoveDropOrder(snapshot, intent)) {
   return extensions(snapshot, intent, [], [player], dropOrder);
 }
 
@@ -1238,10 +1251,13 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   });
   const fitResult = scheduleFits(snapshot, intent, noMoveAgp, timeBudgetMs === Infinity ? Infinity : Math.min(500, timeBudgetMs / 3));
   const candidates = shortlist(snapshot, intent, maxCandidates, fitResult.fits);
-  // The same drop order as the DROP chip and Best Fit: lowest no-move contribution first, ownership only on exact ties.
-  const dropOrder = new Map(orderDropCandidates(snapshot.roster.flatMap(entry => snapshot.players.find(player => player.id === entry.playerId) ?? []),
-    player => snapshot.rules.scoring.mode === "points" ? playerAssignedPoints(snapshot, noMoveOutcome, player.id)
-      : noMoveAgp.legal ? noMoveAgp.assignments.filter(row => row.playerId === player.id).length : null).map((player, index) => [player.id, index]));
+  // The same drop order as Best Fit: lowest known no-move points first (points leagues), then lowest active games
+  // for players whose points are unknown (the schedule-only plans), ownership only on exact ties. A player with
+  // neither is never proposed; the DROP chip itself stays points-only.
+  const dropOrder = knownDropOrder(snapshot.roster.flatMap(entry => snapshot.players.find(player => player.id === entry.playerId) ?? []),
+    player => snapshot.rules.scoring.mode === "points" ? playerAssignedPoints(snapshot, noMoveOutcome, player.id) : null,
+    // No-move starts counted so far, a known lower bound even while the lineup is not yet legal.
+    player => noMoveAgp.assignments.filter(row => row.playerId === player.id).length);
   candidates.forEach(player => relevantPlayerIds.add(player.id));
   snapshot = resolvePlanningContributions(sourceSnapshot, { playerIds: relevantPlayerIds });
   const limitations = new Set<string>();

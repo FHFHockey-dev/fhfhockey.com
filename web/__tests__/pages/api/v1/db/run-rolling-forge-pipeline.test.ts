@@ -26,6 +26,8 @@ const {
   gamesGteMock,
   gamesLteMock,
   gamesOrderMock,
+  lineCombosInMock,
+  lineCombosSelectMock,
   pipelineStateRows,
   pipelineStateFrom,
   pipelineStateRpc
@@ -125,6 +127,15 @@ const {
   const gamesSelectMock = vi.fn(() => ({
     gte: gamesGteMock
   }));
+  // lineCombinations rows for the source date's games; both teams by default.
+  const lineCombosInMock = vi.fn(async (_column: string, gameIds: number[]) => ({
+    data: gameIds.flatMap((gameId) => [
+      { gameId, teamId: 1 },
+      { gameId, teamId: 2 }
+    ]),
+    error: null
+  }));
+  const lineCombosSelectMock = vi.fn(() => ({ in: lineCombosInMock }));
   return {
     updateGamesMock: vi.fn(successResponder),
     updateTeamsMock: vi.fn(successResponder),
@@ -147,6 +158,8 @@ const {
     gamesGteMock,
     gamesLteMock,
     gamesOrderMock,
+    lineCombosInMock,
+    lineCombosSelectMock,
     pipelineStateRows,
     pipelineStateFrom,
     pipelineStateRpc
@@ -168,7 +181,9 @@ vi.mock("lib/supabase/server", () => ({
         ? { insert: auditInsertMock }
         : table === "projection_pipeline_state"
           ? pipelineStateFrom()
-          : { select: gamesSelectMock }
+          : table === "lineCombinations"
+            ? { select: lineCombosSelectMock }
+            : { select: gamesSelectMock }
     ),
     rpc: pipelineStateRpc
   }
@@ -763,7 +778,9 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         runProjectionV2Mock
       ].flatMap((mock) => mock.mock.invocationCallOrder);
       expect(order).toEqual([...order].sort((a, b) => a - b));
-      expect(order).toHaveLength(11);
+      // The projection runs the run date and then the next day.
+      expect(order).toHaveLength(12);
+      expect(runProjectionV2Mock.mock.calls.map((call: any[]) => call[0].query.date)).toEqual(["2026-10-19", "2026-10-20"]);
 
       // 4: a later scheduled call finds the run complete and does no work.
       const fourth = await invokeScheduled("2026-10-19T10:20:00.000Z");
@@ -773,7 +790,7 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         stagesRun: 0
       });
       expect(updateGamesMock).toHaveBeenCalledTimes(1);
-      expect(runProjectionV2Mock).toHaveBeenCalledTimes(1);
+      expect(runProjectionV2Mock).toHaveBeenCalledTimes(2);
     });
 
     // The scheduled run's NST deadline: its 180 s budget less 20 s of audit headroom.
@@ -1041,7 +1058,11 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       const done = await invokeScheduled("2026-10-19T10:20:00.000Z");
       expect(done.statusCode).toBe(200);
       expect(done.body.termination).toMatchObject({ state: "completed" });
-      expect(runProjectionV2Mock).toHaveBeenCalledTimes(4);
+      // Three partial calls for the run date, then its completion and the next day.
+      expect(runProjectionV2Mock).toHaveBeenCalledTimes(5);
+      expect(runProjectionV2Mock.mock.calls.map((call: any[]) => call[0].query.date)).toEqual([
+        "2026-10-19", "2026-10-19", "2026-10-19", "2026-10-19", "2026-10-20"
+      ]);
       expect(updateGamesMock).toHaveBeenCalledTimes(1);
       expect(
         auditInsertMock.mock.calls.map((call: any[]) => call[0]?.status)
@@ -1078,6 +1099,298 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       });
       expect(updateGamesMock).not.toHaveBeenCalled();
     });
+
+    const stageKey = (stageId: string) =>
+      `rolling_forge_pipeline|daily_incremental:2026-10-19|${stageId}`;
+    const seedStageRow = (stageId: string, overrides: Record<string, unknown>) => {
+      pipelineStateRows.set(stageKey(stageId), {
+        pipeline_key: "rolling_forge_pipeline",
+        scope_key: "daily_incremental:2026-10-19",
+        operation_key: stageId,
+        revision: 1,
+        status: "complete",
+        cursor_game_id: null,
+        cursor_date: "2026-10-19",
+        range_start_date: "2026-10-19",
+        range_end_date: "2026-10-19",
+        lease_owner: null,
+        lease_expires_at: null,
+        last_error: null,
+        updated_at: "2026-10-19T10:04:00.000Z",
+        ...overrides
+      });
+    };
+    // A rolling chunk that takes `ms` and reports where the next one starts.
+    const rollingChunk = (args: {
+      ms: number;
+      processedPlayers: number;
+      nextResumeFrom: number | null;
+      stoppedReason: "max_players" | "complete";
+    }) =>
+      async (_req: any, res: any) => {
+        vi.setSystemTime(Date.now() + args.ms);
+        res.status(200).json({
+          success: true,
+          operationStatus: "success",
+          runSummary: {
+            processedPlayers: args.processedPlayers,
+            nextResumeFrom: args.nextResumeFrom,
+            remainingPlayerCount: args.nextResumeFrom == null ? 0 : 10,
+            stoppedReason: args.stoppedReason
+          }
+        });
+      };
+
+    it("runs the rolling step in chunks and stores the cursor after every chunk", async () => {
+      const at = "2026-10-19T10:05:00.000Z";
+      updateRollingPlayerAveragesMock
+        .mockImplementationOnce(
+          rollingChunk({ ms: 20_000, processedPlayers: 16, nextResumeFrom: 8478000, stoppedReason: "max_players" })
+        )
+        .mockImplementationOnce(async (req: any, res: any) => {
+          // The first chunk's cursor is already durable before the second runs.
+          expect(pipelineStateRows.get(stageKey("rolling_player_recompute"))).toMatchObject({
+            status: "running",
+            cursor_game_id: 8478000
+          });
+          await rollingChunk({ ms: 20_000, processedPlayers: 60, nextResumeFrom: 8479000, stoppedReason: "max_players" })(req, res);
+        })
+        .mockImplementationOnce(
+          rollingChunk({ ms: 5_000, processedPlayers: 5, nextResumeFrom: null, stoppedReason: "complete" })
+        );
+
+      const res = await invokeScheduled(at);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.termination).toMatchObject({ state: "completed" });
+      const queries = updateRollingPlayerAveragesMock.mock.calls.map((call: any[]) => call[0].query);
+      expect(queries).toHaveLength(3);
+      expect(queries[0]).toMatchObject({
+        startDate: "2026-10-18",
+        endDate: "2026-10-18",
+        maxPlayers: "16",
+        bypassFreshnessBlockers: "true",
+        deadlineAt: String(Date.parse(at) + 220_000)
+      });
+      expect(queries[0]).not.toHaveProperty("resumeFrom");
+      // 20 s for 16 players, 160 s left: 96 would fit, capped at 60.
+      expect(queries[1]).toMatchObject({ resumeFrom: "8478000", maxPlayers: "60" });
+      expect(Number(queries[1].maxRuntimeMs)).toBe(160_000);
+      expect(queries[2]).toMatchObject({ resumeFrom: "8479000" });
+      expect(stageStatus(res, "rolling_player_recompute")).toMatchObject({ status: "success" });
+      expect(stageStatus(res, "rolling_player_recompute").steps).toHaveLength(3);
+      expect(pipelineStateRows.get(stageKey("rolling_player_recompute"))).toMatchObject({
+        status: "complete",
+        cursor_game_id: 8479000
+      });
+      expect(ingestProjectionInputsMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("stops the rolling chunks at the claim budget and resumes them next invocation", async () => {
+      updateRollingPlayerAveragesMock
+        .mockImplementationOnce(
+          rollingChunk({ ms: 100_000, processedPlayers: 16, nextResumeFrom: 8478000, stoppedReason: "max_players" })
+        )
+        .mockImplementationOnce(
+          rollingChunk({ ms: 60_000, processedPlayers: 8, nextResumeFrom: 8478500, stoppedReason: "max_players" })
+        )
+        .mockImplementationOnce(
+          rollingChunk({ ms: 10_000, processedPlayers: 3, nextResumeFrom: null, stoppedReason: "complete" })
+        );
+
+      const first = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+      // 160 s spent: under 30 s of claim budget left, so no third chunk here.
+      expect(first.statusCode).toBe(207);
+      expect(first.body.termination).toMatchObject({
+        state: "continuation_required",
+        reason: "stage_partial",
+        nextStageId: "rolling_player_recompute",
+        rollingResumeFrom: 8478500
+      });
+      expect(first.body.failureSummary.failedStepCount).toBe(0);
+      expect(stageStatus(first, "rolling_player_recompute").status).toBe("partial");
+      expect(updateRollingPlayerAveragesMock).toHaveBeenCalledTimes(2);
+
+      const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
+
+      expect(second.statusCode).toBe(200);
+      expect(updateRollingPlayerAveragesMock.mock.calls[2]?.[0]?.query).toMatchObject({
+        resumeFrom: "8478500",
+        maxPlayers: "16"
+      });
+    });
+
+    it("takes over a stage whose invocation died, from its stored cursor, and stops after repeated deaths", async () => {
+      for (const stageId of ["core_entity_freshness", "upstream_skater_sources", "contextual_builders"]) {
+        seedStageRow(stageId, {});
+      }
+      const deadLease = {
+        revision: 9,
+        status: "running",
+        cursor_game_id: 8478402,
+        lease_owner: "dead-invocation",
+        lease_expires_at: "2026-10-19T10:09:30.000Z"
+      };
+      seedStageRow("rolling_player_recompute", deadLease);
+
+      const res = await invokeScheduled("2026-10-19T10:10:00.000Z");
+
+      expect(res.statusCode).toBe(200);
+      expect(updateRollingPlayerAveragesMock.mock.calls[0]?.[0]?.query).toMatchObject({
+        resumeFrom: "8478402"
+      });
+      expect(pipelineStateRows.get(stageKey("rolling_player_recompute:kills"))).toMatchObject({
+        status: "failed",
+        cursor_game_id: 1,
+        last_error: "stage_killed:attempt-1"
+      });
+
+      // The third death closes the stage; later invocations stop without work.
+      seedStageRow("rolling_player_recompute", deadLease);
+      seedStageRow("rolling_player_recompute:kills", {
+        status: "failed",
+        cursor_game_id: 2,
+        last_error: "stage_killed:attempt-2"
+      });
+      vi.clearAllMocks();
+
+      const third = await invokeScheduled("2026-10-19T10:15:00.000Z");
+
+      expect(third.statusCode).toBe(207);
+      expect(third.body.termination).toMatchObject({
+        state: "stopped_on_blocking_failure",
+        reason: "attempts_exhausted",
+        nextStageId: "rolling_player_recompute",
+        detail: "Killed 3 time(s)."
+      });
+      expect(stageStatus(third, "rolling_player_recompute").status).toBe("failed");
+      expect(updateRollingPlayerAveragesMock).not.toHaveBeenCalled();
+      expect(pipelineStateRows.get(stageKey("rolling_player_recompute"))).toMatchObject({
+        status: "failed",
+        cursor_game_id: 8478402,
+        last_error: "stage_failed:attempt-2"
+      });
+
+      const fourth = await invokeScheduled("2026-10-19T10:20:00.000Z");
+
+      expect(fourth.body.termination).toMatchObject({ reason: "attempts_exhausted" });
+      expect(updateRollingPlayerAveragesMock).not.toHaveBeenCalled();
+      expect(pipelineStateRows.get(stageKey("rolling_player_recompute:kills"))?.cursor_game_id).toBe(3);
+    });
+
+    it("projects the next day after the run date, remembering finished dates across invocations", async () => {
+      runProjectionV2Mock
+        .mockImplementationOnce(slowSuccess(20_000))
+        .mockImplementationOnce(async (_req: any, res: any) => {
+          // The run date is already recorded as done before the next day starts.
+          expect(pipelineStateRows.get(stageKey("projection_execution"))).toMatchObject({
+            status: "running",
+            cursor_game_id: 1
+          });
+          vi.setSystemTime(Date.now() + 100_000);
+          res.status(207).json({
+            success: false,
+            operationStatus: "partial",
+            resume: { required: true, reason: "runtime_budget", request: { date: "2026-10-20", horizonGames: "1" } }
+          });
+        });
+
+      const first = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+      expect(first.statusCode).toBe(207);
+      expect(first.body.termination).toMatchObject({
+        state: "continuation_required",
+        reason: "stage_partial",
+        nextStageId: "projection_execution"
+      });
+      expect(runProjectionV2Mock.mock.calls.map((call: any[]) => call[0].query.date)).toEqual(["2026-10-19", "2026-10-20"]);
+      expect(Number(runProjectionV2Mock.mock.calls[1][0].query.maxDurationMs)).toBe(160_000);
+      expect(pipelineStateRows.get(stageKey("projection_execution"))).toMatchObject({ status: "running", cursor_game_id: 1 });
+
+      const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
+
+      expect(second.statusCode).toBe(200);
+      // Only the unfinished next day runs again.
+      expect(runProjectionV2Mock).toHaveBeenCalledTimes(3);
+      expect(runProjectionV2Mock.mock.calls[2][0].query).toMatchObject({ date: "2026-10-20" });
+      expect(pipelineStateRows.get(stageKey("projection_execution"))).toMatchObject({ status: "complete", cursor_game_id: 2 });
+    });
+
+    it("records a failed next-day projection as a warning and completes the run date's downstream stages", async () => {
+      runProjectionV2Mock
+        .mockImplementationOnce(slowSuccess(10_000))
+        .mockImplementationOnce(async (_req: any, res: any) => {
+          res.status(422).json({ success: false, error: "Preflight failed", preflight: { status: "FAIL", gates: [{ gate_key: "goalie_start_priors_v2", status: "FAIL" }] } });
+        });
+
+      const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.termination).toMatchObject({ state: "completed" });
+      expect(res.body.failureSummary).toMatchObject({ failedStepCount: 0, firstFailure: null });
+      const stage = stageStatus(res, "projection_execution");
+      expect(stage.status).toBe("success");
+      const projections = stage.steps.filter((step: any) => step.id === "run-projection-v2");
+      expect(projections.map((step: any) => [step.query.date, step.status])).toEqual([["2026-10-19", "success"], ["2026-10-20", "skipped"]]);
+      expect(projections[1].reason).toContain("Next-day projection for 2026-10-20 failed (non-blocking): HTTP 422; failed gates goalie_start_priors_v2");
+      expect(pipelineStateRows.get(stageKey("projection_execution"))).toMatchObject({ status: "complete", cursor_game_id: 1 });
+      expect(runProjectionAccuracyMock).not.toHaveBeenCalled();
+    });
+
+    it("defers the next day's projection to the following invocation when the run date used the budget", async () => {
+      runProjectionV2Mock.mockImplementationOnce(slowSuccess(170_000));
+
+      const first = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+      expect(first.statusCode).toBe(207);
+      expect(first.body.termination).toMatchObject({ reason: "stage_partial", nextStageId: "projection_execution" });
+      expect(stageStatus(first, "projection_execution").status).toBe("partial");
+      expect(runProjectionV2Mock).toHaveBeenCalledTimes(1);
+
+      const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
+
+      expect(second.statusCode).toBe(200);
+      expect(runProjectionV2Mock).toHaveBeenCalledTimes(2);
+      expect(runProjectionV2Mock.mock.calls[1][0].query).toMatchObject({ date: "2026-10-20" });
+    });
+
+    it("backfills the completed games' lines, retries once when a game still lacks them, then continues degraded", async () => {
+      const missingSecondTeam = async (_column: string, gameIds: number[]) => ({
+        data: [{ gameId: gameIds[0], teamId: 1 }],
+        error: null
+      });
+      lineCombosInMock.mockImplementationOnce(missingSecondTeam).mockImplementationOnce(missingSecondTeam);
+
+      const first = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+      expect(updateLineCombinationsMock.mock.calls[0]?.[0]?.query).toEqual({
+        repairMode: "historical_backfill",
+        gameIds: "2025021023,2025021024"
+      });
+      expect(first.statusCode).toBe(207);
+      expect(first.body.termination).toMatchObject({
+        state: "stopped_on_blocking_failure",
+        reason: "retry_on_next_invocation",
+        nextStageId: "contextual_builders"
+      });
+      const verify = stageStatus(first, "contextual_builders").steps.find((step: any) => step.id === "verify-line-context");
+      expect(verify).toMatchObject({
+        status: "failed",
+        summary: { missingLineContextGameIds: [2025021023, 2025021024] }
+      });
+      expect(updateRollingPlayerAveragesMock).not.toHaveBeenCalled();
+
+      const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
+
+      expect(second.statusCode).toBe(200);
+      expect(updateLineCombinationsMock).toHaveBeenCalledTimes(2);
+      expect(stageStatus(second, "contextual_builders").status).toBe("success");
+      expect(
+        stageStatus(second, "contextual_builders").steps.find((step: any) => step.id === "verify-line-context").reason
+      ).toContain("degraded");
+      expect(updateRollingPlayerAveragesMock).toHaveBeenCalledTimes(1);
+    });
   });
 
   it("reports a partial rolling step in an explicit-date run as unfinished, not failed", async () => {
@@ -1107,5 +1420,10 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
     });
     expect(res.body.failureSummary.failedStepCount).toBe(0);
     expect(ingestProjectionInputsMock).not.toHaveBeenCalled();
+    // One-shot runs chunk too, with the same hard deadline.
+    const query = updateRollingPlayerAveragesMock.mock.calls[0]?.[0]?.query;
+    expect(query).toMatchObject({ maxPlayers: "16", bypassFreshnessBlockers: "true" });
+    expect(Number(query.deadlineAt)).toBeGreaterThan(Date.now() + 180_000);
+    expect(Number(query.deadlineAt)).toBeLessThanOrEqual(Date.now() + 190_000);
   });
 });

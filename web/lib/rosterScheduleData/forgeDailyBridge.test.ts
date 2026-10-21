@@ -47,6 +47,19 @@ describe("FORGE daily bridge", () => {
     expect(forecasts.some(row => row.playerId === "s2" || row.playerId === "s3")).toBe(false);
   });
 
+  it("prefers the line FORGE issued for the game itself over a re-aimed line from an earlier game", () => {
+    // r3 (issued later) projects s1 for game 2 directly; game 1 still comes from r2's own row, re-aimed nowhere.
+    const data = inputs();
+    data.runs.push({ run_id: "r3", as_of_date: "2026-10-21", created_at: "2026-10-19T18:00:00Z", git_sha: "ghi" });
+    data.skaters.push({ ...skater("r3", "2026-10-21", 2, 101, 10), proj_goals_es: 0.5, proj_goals_pp: 0.2 });
+    const { forecasts } = buildForgeDailyBridgeForecasts(data, players, games, now, 20262027, policy);
+    const s1 = forecasts.filter(row => row.playerId === "s1");
+    expect(s1.map(row => [row.gameId, row.revisionId])).toEqual([["1", `${FORGE_DAILY_BRIDGE_VERSION}:r2`], ["2", `${FORGE_DAILY_BRIDGE_VERSION}:r3`]]);
+    expect(s1[0].stats.GOALS).toBe(0.35);
+    expect(s1[1].stats.GOALS).toBe(0.7);
+    expect(s1[1].issuedAt).toBe("2026-10-19T18:00:00.000Z");
+  });
+
   it("keeps FORGE's starter probability for a projected game and splits the rest by start share", () => {
     const { forecasts } = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy);
     const goalie = (id: string, gameId: string) => forecasts.find(row => row.playerId === id && row.gameId === gameId)!;

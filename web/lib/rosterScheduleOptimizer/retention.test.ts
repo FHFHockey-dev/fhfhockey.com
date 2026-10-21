@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dropEligible, droppedOwnership, knownOwnership, orderDropCandidates, ownershipLabel, retentionCaution, retentionCautionText } from "./retention";
+import { dropEligible, droppedOwnership, knownOwnership, orderDropCandidates, ownershipLabel, retentionCaution, retentionCautionText, suggestedDrop } from "./retention";
 import type { PlanningPlayer } from "./planningTypes";
 
 const player = (id: string, ownership: number | null, holdValue: number | null = null, extra: Partial<PlanningPlayer> = {}): PlanningPlayer => ({
@@ -37,6 +37,21 @@ describe("retention policy", () => {
     // Pairwise "ownership when both known, else holdValue" would cycle here: A<C, C<B, B<A.
     const group = [player("A", 5, 9), player("B", null, 5), player("C", 95, 1)];
     for (const order of permutations(group)) expect(ids(orderDropCandidates(order, () => 0))).toEqual(["C", "B", "A"]);
+  });
+
+  it("suggests only a player whose contribution is known; unknowns are listed last and flagged, never chosen by id", () => {
+    const value = (row: PlanningPlayer) => ({ known: 2, cheap: 1 } as Record<string, number>)[row.id] ?? null;
+    // ids "10012" and "9" would put the unknowns first by text order; neither is ever the suggestion.
+    for (const order of permutations([player("known", 5), player("10012", 95), player("9", null), player("cheap", 50)])) {
+      const result = suggestedDrop(order, value);
+      expect(result.player?.id).toBe("cheap");
+      expect(ids(result.unprojected)).toEqual(["10012", "9"]);
+    }
+    // Every candidate unknown: no suggestion at all, whatever ownership or holdValue says.
+    const none = suggestedDrop([player("10012", 5, 1), player("a", 95, 9)], () => null);
+    expect(none.player).toBeNull();
+    expect(ids(none.unprojected)).toEqual(["10012", "a"]);
+    expect(suggestedDrop([], () => 1)).toEqual({ player: null, unprojected: [] });
   });
 
   it("never offers protected, out or reserve-held players", () => {

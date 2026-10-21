@@ -7,7 +7,7 @@ import { lineupPeriodAtDate, localDate, nextLocalMidnight } from "lib/rosterSche
 import { buildTimeline } from "lib/rosterScheduleOptimizer/planningTimeline";
 import { sanitizeForecastInputs } from "lib/rosterScheduleOptimizer/planning";
 import { resolvePlanningContributions } from "lib/player-forecasts/planningContributions";
-import type { LeagueRules, PlanIntent, PlanningAssignment, PlanningPlayer, PlanningSnapshot, RosterEntry } from "lib/rosterScheduleOptimizer/planningTypes";
+import type { LeagueRules, PastLineup, PlanIntent, PlanningAssignment, PlanningPlayer, PlanningSnapshot, RosterEntry } from "lib/rosterScheduleOptimizer/planningTypes";
 import styles from "./RosterScheduleOptimizer.module.scss";
 import type { PlayerContribution } from "lib/rosterScheduleOptimizer/contributionLedger";
 import InfoTooltip from "./InfoTooltip";
@@ -33,11 +33,41 @@ export function defaultScheduleDate(dates: string[], today: string): string | un
 export type CompactRow = { id: string; slot: string; playerId?: string; player?: PlanningPlayer; status: string; assigned: boolean; change?: string };
 export type CompactGroup = { position: string; rows: CompactRow[] };
 
+/** The provider's recorded lineup for an elapsed day, if the snapshot carries one. */
+export const recordedPastLineup = (snapshot: PlanningSnapshot | null, date: string) =>
+  snapshot && date < localDate(snapshot.context.asOf, snapshot.context.timeZone) ? snapshot.pastLineups?.find(day => day.date === date) : undefined;
+
+/** An elapsed day exactly as the provider recorded it: who held each active slot, the bench and reserves. */
+function pastLineupGroups(snapshot: PlanningSnapshot, past: PastLineup, rules: LeagueRules, players: PlanningPlayer[], date: string): CompactGroup[] {
+  const groups = new Map<string, CompactRow[]>();
+  const add = (position: string, row: CompactRow) => groups.set(position, [...groups.get(position) ?? [], row]);
+  const find = (playerId: string | null) => playerId ? players.find(row => row.id === playerId) ?? snapshot.players.find(row => row.id === playerId) : undefined;
+  const hadGame = (player: PlanningPlayer | undefined) => Boolean(player?.teamAbbreviation && snapshot.games.some(game => game.date === date
+    && game.teamAbbreviation === player.teamAbbreviation && ["scheduled", "live", "final"].includes(game.status)));
+  for (const slot of expandActiveSlots(rules.rosterSlots).activeSlots) {
+    const entry = past.entries.find(row => row.slotId === slot.id);
+    if (!entry) { add(slot.type, { id: slot.id, slot: slot.id, assigned: false, status: `Open ${slot.type}` }); continue; }
+    const player = find(entry.playerId), played = hadGame(player);
+    add(slot.type, { id: slot.id, slot: slot.id, playerId: entry.playerId ?? undefined, player, assigned: Boolean(player) && played,
+      status: !player ? `${entry.name} · identity unmatched` : played ? "Fantasy assigned" : "Held · no active game" });
+  }
+  for (const entry of past.entries.filter(row => row.slotId === null)) {
+    const player = find(entry.playerId), selected = entry.position.toUpperCase();
+    const position = ["IR", "IR+", "NA"].includes(selected) ? selected : "BN";
+    add(position, { id: `past:${entry.playerId ?? entry.name}`, slot: position, playerId: entry.playerId ?? undefined, player, assigned: false,
+      status: !player ? `${entry.name} · identity unmatched` : position !== "BN" ? "Reserve" : selected !== "BN" ? `Unsupported active slot (${entry.position})`
+        : hadGame(player) ? "Yahoo bench · had a game" : "Yahoo bench" });
+  }
+  return [...groups].sort(([a], [b]) => order.indexOf(a) - order.indexOf(b)).map(([position, rows]) => ({ position, rows }));
+}
+
 /** A complete display of existing planning results, not a second assignment engine. */
 export function compactGroups({ snapshot, roster, rules, players, assignments, intent, date, ready }: {
   snapshot: PlanningSnapshot | null; roster: RosterEntry[]; rules: LeagueRules; players: PlanningPlayer[];
   assignments: PlanningAssignment[]; intent: PlanIntent; date: string; ready: boolean;
 }): CompactGroup[] {
+  const past = recordedPastLineup(snapshot, date);
+  if (past && snapshot) return pastLineupGroups(snapshot, past, rules, players, date);
   const members = snapshot && ready
     ? buildTimeline(snapshot, intent, intent.steps).at(new Date(Date.parse(nextLocalMidnight(date, snapshot.context.timeZone)) - 1).toISOString())
     : new Map(roster.map(entry => [entry.playerId, entry]));
@@ -251,7 +281,7 @@ export default function CompactSchedule({ snapshot, roster, rules, players, assi
   };
   return <div className={styles.compactSchedule}>
 
-    <div className={styles.scheduleLegend}><span>{!ready ? "Assignments unverified" : snapshot && date < localDate(snapshot.context.asOf, snapshot.context.timeZone) ? "Past lineup unverified" : "Range totals"}{!completeSchedule && " · partial/unknown"}</span>
+    <div className={styles.scheduleLegend}><span>{recordedPastLineup(snapshot, date) ? "Recorded Yahoo lineup" : !ready ? "Assignments unverified" : snapshot && date < localDate(snapshot.context.asOf, snapshot.context.timeZone) ? "Past lineup unverified" : "Range totals"}{!completeSchedule && " · partial/unknown"}</span>
       <details className={styles.scheduleControlDisclosure}><summary>Day capacity · {daySummary.occupied}/{daySummary.capacity}{daySummary.unresolved ? ` · ${daySummary.unresolved} unresolved` : ""}</summary>    <section className={styles.daySummary} aria-label="Selected-day lineup summary">
       <div title="Verified occupied starting fantasy slots, including held slots without an NHL game; excludes Bench and reserves"><span>Active slots</span><strong>{daySummary.occupied}{daySummary.unresolved ? " known" : ""}/{daySummary.capacity}</strong></div>
       <div title="Verified vacant starting fantasy slots; an occupied no-game slot is not open"><span>Open slots</span><strong>{daySummary.unresolved ? `${daySummary.open ? `${daySummary.open} verified · ` : ""}${daySummary.unresolved} unresolved` : daySummary.open}</strong></div>

@@ -1813,20 +1813,30 @@ describe("one retention ordering across drop surfaces (R7)", () => {
     data.players = data.players.map(row => row.id in owned ? { ...row, ownership: owned[row.id] } : row);
     return data;
   };
-  it("offers the same less-rostered drop on the chip, in candidate proposals and in Best Fit swaps", () => {
-    // No forecasts: every contribution is unknown, so the tie is broken by known ownership, not id.
-    const data = withOwnership(snapshot(), { a: 95, b: 5 });
+  it("suggests nobody on the chip without forecasts, while schedule-only plans rank drops by active games, not ownership or id", () => {
+    // No forecasts: points are unknown for everyone. The chip suggests nobody and flags both; the planner's
+    // schedule-only plans still exist and drop the player with fewer no-move starts (b: one game, a: two),
+    // whatever ownership or id order says (TJ, 2026-10-21).
+    const data = withOwnership(snapshot(), { a: 5, b: 95 });
     data.forecasts = [];
-    const chip = lineupGapReport(data, intent, evaluatePlan(data, intent, "outcome", [], false)).bestDrop;
-    expect(chip).toMatchObject({ playerId: "b", caution: { level: "none", ownership: 5 } });
+    const report = lineupGapReport(data, intent, evaluatePlan(data, intent, "outcome", [], false));
+    expect(report.bestDrop).toBeNull();
+    expect(report.unprojectedDrops).toEqual(["a", "b"]);
     const firstDrop = [...candidateAcquisitionSteps(data, intent, data.players.find(row => row.id === "c")!)].flat().find(step => step.dropPlayerId);
     expect(firstDrop?.dropPlayerId).toBe("b");
     const plans = candidatePlanMetrics(data, intent).candidates.find(row => row.playerId === "c")!.plans;
     expect(plans[0].steps.find(step => step.dropPlayerId)?.dropPlayerId).toBe("b");
-    // One unknown member: the tie falls back to holdValue/id order.
-    const unknown = withOwnership(snapshot(), { a: null, b: 5 });
-    unknown.forecasts = [];
-    expect(lineupGapReport(unknown, intent, evaluatePlan(unknown, intent, "outcome", [], false)).bestDrop).toMatchObject({ playerId: "a", caution: { level: "unknown", ownership: null } });
+  });
+
+  it("never proposes a player with neither points nor a legal active-game count as a drop", () => {
+    // Without a ranking (no known contribution in any tier), candidate proposals carry no drop at all.
+    const data = withOwnership(snapshot(), { a: 95, b: 5 });
+    const steps = [...candidateAcquisitionSteps(data, intent, data.players.find(row => row.id === "c")!, new Map())].flat();
+    expect(steps.length).toBeGreaterThan(0);
+    expect(steps.some(step => step.dropPlayerId)).toBe(false);
+    // Ranked: only ranked players are proposed, in rank order.
+    const ranked = [...candidateAcquisitionSteps(data, intent, data.players.find(row => row.id === "c")!, new Map([["b", 0]]))].flat();
+    expect([...new Set(ranked.flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : []))]).toEqual(["b"]);
   });
 
   it("keeps and shows the less-rostered drop among exactly equivalent plans, whatever the ids", () => {
