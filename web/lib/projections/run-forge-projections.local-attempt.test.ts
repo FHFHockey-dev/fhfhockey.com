@@ -116,6 +116,17 @@ function fixture(failure?: "player" | "snapshot" | "publication") {
       published++;
       return json(1);
     }
+    if (table === "rpc/forge_latest_rolling_rows") {
+      const list = (name: string) => url.searchParams.get(name)!.slice(1, -1).split(",");
+      const before = url.searchParams.get("p_before")!, strength = url.searchParams.get("p_strength");
+      return json([...new Set(list("p_player_ids").map(Number))].sort((a, b) => a - b).map(player_id => {
+        const latest = tables.rolling_player_game_metrics.filter(row => row.player_id === player_id
+          && row.strength_state === strength && String(row.game_date) < before)
+          .sort((a, b) => String(b.game_date).localeCompare(String(a.game_date)))[0];
+        return { player_id, support_row: null,
+          rolling_row: latest ? Object.fromEntries(list("p_columns").map(column => [column, latest[column] ?? null])) : null };
+      }));
+    }
     if (!(table in tables)) throw new Error(`Unexpected fixture table ${table}`);
     if (method === "GET" || method === "HEAD") {
       let rows = tables[table].filter(row => [...url.searchParams].every(([key, value]) => {

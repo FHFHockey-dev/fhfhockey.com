@@ -9,7 +9,10 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
 - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts` - Rolling writer: sidecar split (`isSupportPayloadScalar` :436, `splitRollingUpsertRowForDurableStorage` :462), wide upsert body, history read options (:3031-3035, :2963), `expected_sh_pct` numerator (:1362-1369).
 - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts` - Writer tests: sidecar keys, upsert body, season/history and xG fixtures.
 - `web/lib/projections/queries/skater-queries.ts` - FORGE reader `fetchRollingRows` (:179-318) and `ROLLING_ROW_SELECT_CLAUSE` (:82-133).
-- `web/lib/projections/queries/skater-queries.test.ts` - Reader tests: latest-row selection, sidecar keys, coverage proofs.
+- `web/lib/projections/queries/skater-queries.test.ts` - Reader tests: latest-row selection, sidecar keys, coverage proofs, PGRST202 fallback, capture/replay.
+- `web/lib/projections/queryCaptureHook.ts`, `web/lib/projections/inputCapture.ts` - Browser-safe read-only reconstruction probe; the reader skips the RPC there.
+- `web/scripts/run-forge-local.ts`, `web/lib/projections/run-forge-projections.local-attempt.test.ts` - Local FORGE transport allows the read-only RPC by GET; fixture answers it.
+- `supabase/migrations/20261021180242_forge_latest_rolling_rows.sql` - `forge_latest_rolling_rows(bigint[], text, date, text[])` (not applied; renamed to the ledger version on apply).
 - `web/pages/api/v1/db/run-rolling-forge-pipeline.ts` - Pipeline: goalie step (:919-926), projection stage cursor, effective `stopOnFailure` (:1489-1495).
 - `web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts` - Pipeline tests: goalie step once per run.
 - `web/pages/api/v1/db/run-projection-v2.ts` - Route preflight skipped on a resumed claim (`hasPausedResumableRun`, `preflightSkipped: "resumed_run"`).
@@ -36,7 +39,7 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
 - [ ] 1.0 Measure and confirm the unread set before changing storage
   - [x] 1.1 Ask TJ to approve the read-only queries from `workers/w2-rolling.md` §5: Q1 (heap, TOAST and index sizes, dead tuples), Q2 (per-index use), Q3 with `pg_class.reltuples` instead of the full-table scan, and Q4 (null fractions by season on a 0.5% sample, including pre-pruning rows).
   - [x] 1.2 Run them once and record the results in the task list notes below.
-  - [ ] 1.3 Re-derive the unread column set at HEAD, adding the dynamic readers the audit flagged as unconfirmed (rankings select fields, trends player page builders, `skaterWindowAggregation`, entity-metric rankings, `trendsDebug`, `web/scripts/*`, `rollingPlayerValidationPayload` `select("*")`). Write the reviewed lists to `rolling-column-inventory.json`: wide-unread, wide-diagnostic-only, sidecar-unread and sidecar-read keys.
+  - [x] 1.3 Re-derive the unread column set at HEAD, adding the dynamic readers the audit flagged as unconfirmed (rankings select fields, trends player page builders, `skaterWindowAggregation`, entity-metric rankings, `trendsDebug`, `web/scripts/*`, `rollingPlayerValidationPayload` `select("*")`). Write the reviewed lists to `rolling-column-inventory.json`: wide-unread, wide-diagnostic-only, sidecar-unread and sidecar-read keys.
   - [ ] 1.4 Decide with TJ which diagnostic-only columns (`trendsDebug`, scripts) to keep.
 
 - [ ] 2.0 Sidecar payload diet (Q11)
@@ -47,10 +50,10 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
 
 - [ ] 3.0 FORGE rolling read diet (S-F)
   - [x] 3.1 Decide with TJ: latest row per player × strength via (a) a new RPC with `DISTINCT ON (player_id)` (one round trip per team-game, needs a migration and grants), or (b) one `order by game_date desc limit 1` query per player id (no migration, about 60 small queries per team-game).
-  - [ ] 3.2 Implement the chosen latest-row read in `fetchRollingRows`, keeping the strict coverage proofs (`skater-queries.ts:216-249`) for the new shape. This removes the 365-day window and the 5,000-row cap.
-  - [ ] 3.3 Read only the sidecar keys FORGE uses (`historicalCompatibility`, `alignedCountSupport`) through a JSON-path select instead of the whole `support_payload`.
-  - [ ] 3.4 Drop the per-page `count: "exact"`.
-  - [ ] 3.5 Extend `skater-queries.test.ts`: the latest-row result matches the old path's `pickLatestByPlayer` output on a multi-game fixture, coverage failures still raise, and the sidecar keys hydrate identically.
+  - [x] 3.2 Implement the chosen latest-row read in `fetchRollingRows`, keeping the strict coverage proofs (`skater-queries.ts:216-249`) for the new shape. This removes the 365-day window and the 5,000-row cap.
+  - [x] 3.3 Read only the sidecar keys FORGE uses (`historicalCompatibility`, `alignedCountSupport`) through a JSON-path select instead of the whole `support_payload`.
+  - [x] 3.4 Drop the per-page `count: "exact"`.
+  - [x] 3.5 Extend `skater-queries.test.ts`: the latest-row result matches the old path's `pickLatestByPlayer` output on a multi-game fixture, coverage failures still raise, and the sidecar keys hydrate identically.
   - [ ] 3.6 If (a) was chosen: write the RPC migration, apply it with TJ's approval and record it in the ledger.
 
 - [x] 4.0 Pipeline: no repeated per-invocation work (Q12). Drafts by the audit session's W-C plus this list's worker were handed over 2026-10-21 and are verified here.
@@ -165,3 +168,25 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
   - Response: `stopOnFailureRequested`, and `failureSummary.terminalStop` set to `attempts_exhausted` or `stage_killed`.
 - `run-projection-v2`: a read-only `forge_runs` lookup skips the route preflight when a running run with the same resume scope exists. The response says `preflightSkipped: "resumed_run"`.
 - Checks: the writer, pipeline and RPV2 test files passed (66 + 43 + 17 = 126 tests); eslint on the changed files is clean.
+
+### 1.3 and 3.0 (2026-10-21)
+
+- **1.3 inventory** (`rolling-column-inventory.json`, at `ebdcfe6be`):
+  - 15 identity, 177 wide_runtime, 168 wide_diagonly, 21 wide_unread, 404 pruned_runtime, 235 pruned_diagonly, 94 pruned_unread.
+  - 376 of the diagnostic-only columns (155 wide, 221 pruned) are read only by three `select('*')` family sweeps: `check-rolling-player-family-reconstruction`, `-disputed-metrics` and `-optional-additions`. Without those scripts, 491 columns are unread.
+  - Sidecar:
+    - `historicalCompatibility` and `alignedCountSupport` are read at runtime.
+    - `deprecatedCompatibility` is diagnostic-only, via the validation payload.
+    - `diagnostics` is unread.
+  - A sizing query over the candidate sets hit the statement timeout and was not retried.
+- **3.0**: the reader makes one GET RPC per strength and returns one row per requested id.
+  - Coverage is checked without `count: "exact"`: the row count must match the ids, ids must be strictly ascending, and only requested ids may appear.
+  - The sidecar is trimmed to `historicalCompatibility` (selected keys only) and `alignedCountSupport`.
+  - Fallback to the legacy window scan happens on PGRST202 (function not deployed; warns once), in read-only reconstruction (the probe means no RPC is attempted), and when replaying a snapshot captured on the old path.
+  - The 365-day scope is kept, so outputs are unchanged.
+  - The RPC uses a LATERAL top-1 per player on the primary key, not `DISTINCT ON`.
+  - Checks:
+    - `lib/projections` and `scripts/run-forge-local`: 57 files, 1,277 tests passed.
+    - eslint is clean.
+    - tsc's only errors are in the audit session's untracked `servedForecastLedger.ts`.
+  - Pre-existing, not from this change: `scripts/qualify-native-players-offline.test.ts` fails 30 tests at HEAD (clean export). Commit `b8fe1072e` added `toi_seconds_total_last5` to `ROLLING_ROW_SELECT_CLAUSE` without the offline fixture column. Master doesn't have that commit.

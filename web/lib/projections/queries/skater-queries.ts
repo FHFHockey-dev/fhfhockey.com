@@ -1,5 +1,6 @@
 import supabase from "lib/supabase/server";
 import { readAlignedCountSupport } from "lib/rollingPlayerCountSupport";
+import { isReadOnlyProjectionReconstruction } from "lib/projections/queryCaptureHook";
 import { getCompatibilityFieldOrder } from "lib/rollingPlayerMetricCompatibility";
 import { ROLLING_PLAYER_SUPPORT_PAYLOAD_TABLE, ROLLING_PLAYER_SUPPORT_PAYLOAD_SCHEMA_VERSION } from "lib/supabase/Upserts/rollingPlayerSupportPayload";
 import {
@@ -175,27 +176,177 @@ export class SkaterRollingReadIncompleteError extends Error {
   }
 }
 
-/** Return the complete bounded history or reject; never expose a capped/partial prefix. */
+/** Migration supabase/migrations/20261021180242_forge_latest_rolling_rows.sql. */
+const LATEST_ROLLING_ROWS_RPC = "forge_latest_rolling_rows";
+const ROLLING_ROW_COLUMNS = ROLLING_ROW_SELECT_CLAUSE.split(",");
+const ROLLING_IDENTITY_FIELDS = ["player_id", "game_id", "game_date", "season", "strength_state"];
+const ROLLING_METRIC_FIELDS = ROLLING_ROW_COLUMNS.filter(field => !ROLLING_IDENTITY_FIELDS.includes(field));
+let legacyWindowScanWarned = false;
+
+type RollingStrength = "ev" | "pp" | "all";
+type RollingIdentity = { player_id: number; game_id: number; game_date: string; strength_state: string };
+
+const isIsoDate = (value: unknown): value is string => typeof value === "string"
+  && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value))
+  && new Date(value).toISOString().slice(0, 10) === value;
+const rollingRowKey = (row: RollingIdentity) => `${row.player_id}:${row.game_id}:${row.game_date}:${row.strength_state}`;
+const hasOwn = (value: object, key: string) => Object.prototype.hasOwnProperty.call(value, key);
+
+function isRollingRowInScope(row: RollingRow, requestedIds: Set<number>, strengthState: RollingStrength, cutoffDate: string) {
+  return !!row && typeof row === "object" && Number.isSafeInteger(row.player_id)
+    && requestedIds.has(row.player_id) && Number.isSafeInteger(row.game_id) && row.game_id > 0
+    && Number.isSafeInteger(row.season) && row.season > 0 && row.strength_state === strengthState
+    && isIsoDate(row.game_date) && row.game_date < cutoffDate;
+}
+
+/**
+ * The rolling writer stores pruned historical fields in a durable sidecar.
+ * Fill only the matching event identity; absent fields remain unknown.
+ */
+function hydrateRollingSupport(matched: RollingRow | undefined, support: any, strengthState: RollingStrength, seen: Set<string>) {
+  const payload = support?.support_payload?.historicalCompatibility;
+  if (!matched || support.season !== matched.season
+    || support.payload_schema_version !== ROLLING_PLAYER_SUPPORT_PAYLOAD_SCHEMA_VERSION
+    || !support.support_payload || typeof support.support_payload !== "object" || Array.isArray(support.support_payload)
+    || payload !== undefined && (!payload || typeof payload !== "object" || Array.isArray(payload))) {
+    throw new SkaterRollingReadIncompleteError("invalid_support_row");
+  }
+  if (seen.has(rollingRowKey(support))) throw new SkaterRollingReadIncompleteError("duplicate_row");
+  seen.add(rollingRowKey(support));
+  // Aligned NST count support exists only for split-strength rows.
+  if (strengthState !== "all" && hasOwn(support.support_payload, "alignedCountSupport")) {
+    matched.aligned_count_support = readAlignedCountSupport(support.support_payload.alignedCountSupport, {
+      playerId: matched.player_id, strengthState,
+      anchor: { gameId: matched.game_id, gameDate: matched.game_date, seasonId: matched.season },
+    });
+  }
+  for (const field of ROLLING_METRIC_FIELDS) {
+    const value = payload?.[field];
+    if (value === undefined || value === null) continue;
+    if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+      throw new SkaterRollingReadIncompleteError("invalid_support_row");
+    }
+    const wide = (matched as any)[field];
+    if (typeof wide === "number" && Number.isFinite(wide) && wide !== value) {
+      throw new SkaterRollingReadIncompleteError("invalid_support_row");
+    }
+    if (wide === null || wide === undefined) (matched as any)[field] = value;
+  }
+}
+
+/**
+ * Each requested player's latest row for one strength from the 365 days before
+ * cutoffDate, hydrated from its sidecar, or reject; never a partial read.
+ * Callers keep the latest row per player (pickLatestByPlayer).
+ */
 export async function fetchRollingRows(
   playerIds: number[],
-  strengthState: "ev" | "pp" | "all",
+  strengthState: RollingStrength,
   cutoffDate: string,
   db = supabase
 ): Promise<RollingRow[]> {
   assertSupabase();
   if (playerIds.length === 0) return [];
 
-  const validDate = (value: unknown): value is string => typeof value === "string"
-    && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value))
-    && new Date(value).toISOString().slice(0, 10) === value;
   const ids = [...new Set(playerIds)].sort((a, b) => a - b);
   if (ids.length > 500 || ids.some(id => !Number.isSafeInteger(id) || id <= 0)
-    || !["ev", "pp", "all"].includes(strengthState) || !validDate(cutoffDate)) {
+    || !["ev", "pp", "all"].includes(strengthState) || !isIsoDate(cutoffDate)) {
     throw new SkaterRollingReadIncompleteError("invalid_scope");
   }
   const oneYearAgo = new Date(
     new Date(cutoffDate).getTime() - 365 * 24 * 60 * 60 * 1000
   ).toISOString().split("T")[0];
+
+  // Read-only reconstruction refuses every RPC; read the same scope by table.
+  if (isReadOnlyProjectionReconstruction()) {
+    return fetchRollingRowsByLegacyWindowScan(ids, strengthState, cutoffDate, oneYearAgo, db);
+  }
+  let result: { data: unknown; error: unknown } | undefined;
+  try {
+    // One read-only GET per strength. Not in the generated types until the
+    // migration is applied and types are regenerated.
+    result = await (db as any).rpc(LATEST_ROLLING_ROWS_RPC, {
+      p_player_ids: ids, p_strength: strengthState, p_before: cutoffDate, p_columns: ROLLING_ROW_COLUMNS,
+    }, { get: true });
+  } catch (cause) {
+    // FORGE's capture layer (inputCapture.ts) refuses every RPC during read-only
+    // reconstruction, and replaying a snapshot captured on the legacy scan finds
+    // no recorded RPC read. Both read the same scope through the legacy scan.
+    if (cause instanceof Error && ["RPC is not allowed during read-only FORGE reconstruction",
+      `Unrecorded projection input: rpc ${LATEST_ROLLING_ROWS_RPC}`].includes(cause.message)) {
+      return fetchRollingRowsByLegacyWindowScan(ids, strengthState, cutoffDate, oneYearAgo, db);
+    }
+    throw new SkaterRollingReadIncompleteError("read_failed", cause);
+  }
+  if ((result?.error as { code?: unknown } | null | undefined)?.code === "PGRST202") {
+    // Release safety: this code may ship before the migration is applied. Until
+    // PostgREST finds the function (PGRST202), read through the legacy scan.
+    if (!legacyWindowScanWarned) {
+      legacyWindowScanWarned = true;
+      console.warn(`${LATEST_ROLLING_ROWS_RPC} is not deployed (PGRST202); FORGE reads rolling rows by the legacy window scan.`);
+    }
+    return fetchRollingRowsByLegacyWindowScan(ids, strengthState, cutoffDate, oneYearAgo, db);
+  }
+  if (!result || result.error) throw new SkaterRollingReadIncompleteError("read_failed", result?.error);
+
+  // Coverage proof: exactly one entry per requested player, in ascending ID order.
+  if (!Array.isArray(result.data) || result.data.length !== ids.length) {
+    throw new SkaterRollingReadIncompleteError("invalid_page");
+  }
+  const requestedIds = new Set(ids);
+  const rows: RollingRow[] = [];
+  const supportSeen = new Set<string>();
+  let previousId = 0;
+  for (const entry of result.data as Array<Record<string, any> | null>) {
+    if (!entry || typeof entry !== "object" || !requestedIds.has(entry.player_id)
+      || !hasOwn(entry, "rolling_row") || !hasOwn(entry, "support_row")) {
+      throw new SkaterRollingReadIncompleteError("invalid_row");
+    }
+    if (entry.player_id === previousId) throw new SkaterRollingReadIncompleteError("duplicate_row");
+    if (entry.player_id < previousId) throw new SkaterRollingReadIncompleteError("unstable_order");
+    previousId = entry.player_id;
+    const source = entry.rolling_row;
+    if (source === null) {
+      // No row before the cutoff; a sidecar cannot exist without its wide row.
+      if (entry.support_row !== null) throw new SkaterRollingReadIncompleteError("invalid_support_row");
+      continue;
+    }
+    if (!source || typeof source !== "object" || Array.isArray(source)
+      || ROLLING_ROW_COLUMNS.some(column => !hasOwn(source, column))) {
+      throw new SkaterRollingReadIncompleteError("invalid_row");
+    }
+    // Exactly the selected columns, as the table select returned them.
+    const row = Object.fromEntries(ROLLING_ROW_COLUMNS.map(column => [column, source[column]])) as unknown as RollingRow;
+    if (row.player_id !== entry.player_id || !isRollingRowInScope(row, requestedIds, strengthState, cutoffDate)) {
+      throw new SkaterRollingReadIncompleteError("invalid_row");
+    }
+    // The RPC has no lower bound; keep the legacy 365-day scope.
+    if (row.game_date <= oneYearAgo) continue;
+    const support = entry.support_row;
+    if (support !== null) {
+      const matched = support && typeof support === "object" && rollingRowKey(support) === rollingRowKey(row) ? row : undefined;
+      hydrateRollingSupport(matched, support, strengthState, supportSeen);
+    }
+    rows.push(row);
+  }
+  // The legacy scan's order: newest first, then player ascending, then game descending.
+  return rows.sort((a, b) => a.game_date !== b.game_date ? (a.game_date < b.game_date ? 1 : -1)
+    : a.player_id !== b.player_id ? a.player_id - b.player_id : b.game_id - a.game_id);
+}
+
+/**
+ * Legacy window scan, used only while the latest-row RPC is unavailable (see
+ * fetchRollingRows): every row of the 365 days before the cutoff in counted
+ * 500-row pages, then every matching sidecar. Returns the complete bounded
+ * history or rejects; never a capped/partial prefix.
+ */
+async function fetchRollingRowsByLegacyWindowScan(
+  ids: number[],
+  strengthState: RollingStrength,
+  cutoffDate: string,
+  oneYearAgo: string,
+  db: typeof supabase
+): Promise<RollingRow[]> {
   const requestedIds = new Set(ids);
   const rows: RollingRow[] = [];
   const seen = new Set<string>();
@@ -232,10 +383,7 @@ export async function fetchRollingRows(
     }
     for (const value of result.data) {
       const row = value as RollingRow;
-      if (!row || typeof row !== "object" || !Number.isSafeInteger(row.player_id)
-        || !requestedIds.has(row.player_id) || !Number.isSafeInteger(row.game_id) || row.game_id <= 0
-        || !Number.isSafeInteger(row.season) || row.season <= 0 || row.strength_state !== strengthState
-        || !validDate(row.game_date) || row.game_date >= cutoffDate || row.game_date <= oneYearAgo) {
+      if (!isRollingRowInScope(row, requestedIds, strengthState, cutoffDate) || row.game_date <= oneYearAgo) {
         throw new SkaterRollingReadIncompleteError("invalid_row");
       }
       const key = `${row.player_id}:${row.game_id}:${row.strength_state}`;
@@ -254,13 +402,8 @@ export async function fetchRollingRows(
   }
   if (!rows.length) return rows;
 
-  // The rolling writer stores pruned historical fields in a durable sidecar.
-  // Join only matching event identities; absent fields remain unknown.
-  const key = (row: { player_id: number; game_id: number; game_date: string; strength_state: string }) =>
-    `${row.player_id}:${row.game_id}:${row.game_date}:${row.strength_state}`;
-  const byKey = new Map(rows.map(row => [key(row), { ...row }]));
-  const metrics = ROLLING_ROW_SELECT_CLAUSE.split(",").filter(field =>
-    !["player_id", "game_id", "game_date", "season", "strength_state"].includes(field));
+  // Join sidecars only to matching event identities (hydrateRollingSupport).
+  const byKey = new Map(rows.map(row => [rollingRowKey(row), { ...row }]));
   const supportSeen = new Set<string>();
   let offset = 0, supportTotal: number | null = null;
   for (;;) {
@@ -285,38 +428,10 @@ export async function fetchRollingRows(
       throw new SkaterRollingReadIncompleteError("invalid_page");
     }
     for (const support of result.data) {
-      const matched = support && byKey.get(key(support));
-      const payload = support?.support_payload?.historicalCompatibility;
-      if (!matched || support.season !== matched.season
-        || support.payload_schema_version !== ROLLING_PLAYER_SUPPORT_PAYLOAD_SCHEMA_VERSION
-        || !support.support_payload || typeof support.support_payload !== "object" || Array.isArray(support.support_payload)
-        || payload !== undefined && (!payload || typeof payload !== "object" || Array.isArray(payload))) {
-        throw new SkaterRollingReadIncompleteError("invalid_support_row");
-      }
-      if (supportSeen.has(key(support))) throw new SkaterRollingReadIncompleteError("duplicate_row");
-      supportSeen.add(key(support));
-      // Aligned NST count support exists only for split-strength rows.
-      if (strengthState !== "all" && Object.prototype.hasOwnProperty.call(support.support_payload, "alignedCountSupport")) {
-        matched.aligned_count_support = readAlignedCountSupport(support.support_payload.alignedCountSupport, {
-          playerId: matched.player_id, strengthState,
-          anchor: { gameId: matched.game_id, gameDate: matched.game_date, seasonId: matched.season },
-        });
-      }
-      for (const field of metrics) {
-        const value = payload?.[field];
-        if (value === undefined || value === null) continue;
-        if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
-          throw new SkaterRollingReadIncompleteError("invalid_support_row");
-        }
-        const wide = (matched as any)[field];
-        if (typeof wide === "number" && Number.isFinite(wide) && wide !== value) {
-          throw new SkaterRollingReadIncompleteError("invalid_support_row");
-        }
-        if (wide === null || wide === undefined) (matched as any)[field] = value;
-      }
+      hydrateRollingSupport(support ? byKey.get(rollingRowKey(support)) : undefined, support, strengthState, supportSeen);
     }
     offset += result.data.length;
-    if (offset === supportTotal) return rows.map(row => byKey.get(key(row))!);
+    if (offset === supportTotal) return rows.map(row => byKey.get(rollingRowKey(row))!);
   }
 }
 
