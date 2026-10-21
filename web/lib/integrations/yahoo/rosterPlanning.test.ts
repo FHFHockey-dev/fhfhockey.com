@@ -23,7 +23,7 @@ vi.mock("lib/integrations/yahoo/rosterPlanning", async (original) => ({
   loadYahooPlanningSnapshot: mocks.snapshot,
 }));
 
-import { yahooInjury, yahooPlanningAcquisitions, yahooPlanningCategories, yahooPlanningEditable, yahooPlanningPlayers, yahooPlanningStats, yahooPlanningTeams } from "./rosterPlanning";
+import { yahooCreditedGoalieAppearances, yahooInjury, yahooPlanningAcquisitions, yahooPlanningCategories, yahooPlanningEditable, yahooPlanningPlayers, yahooPlanningStats, yahooPlanningTeams } from "./rosterPlanning";
 import type { YahooProviderJsonResult } from "./providerClient";
 import { YahooLiveDraftError } from "./liveDraft";
 import providerHandler from "../../../pages/api/v1/roster-schedule-optimizer/provider";
@@ -574,5 +574,44 @@ describe("Yahoo injury status", () => {
     expect(yahooInjury({ status: "ir-lt" })).toEqual({ status: "IR-LT", label: "IR-LT", note: null });
     expect(yahooInjury({ status: "NA", status_full: "Not Active" })).toBeNull();
     expect(yahooInjury({})).toBeNull();
+  });
+});
+
+describe("Yahoo goalie appearances already credited", () => {
+  const goalie = (id: string, nhlId: number, team: string) => ({ id, nhlId, name: id, teamAbbreviation: team, eligiblePositions: ["G"],
+    eligibilityVerified: true, playerClass: "goalie" as const, availability: "rostered" as const, ownership: null, canDrop: true, holdValue: null, reserveEligibility: [] });
+  const players = [goalie("dal", 1, "DAL"), goalie("vgk", 2, "VGK"), goalie("bench", 3, "TOR")];
+  const game = (id: string, date: string, team: string, status: "final" | "live" | "postponed" = "final") =>
+    ({ id, date, startsAt: `${date}T23:00:00Z`, teamAbbreviation: team, opponent: "OPP", home: true, status });
+  const games = [game("101", "2026-10-19", "DAL"), game("102", "2026-10-20", "DAL"), game("103", "2026-10-20", "VGK"), game("104", "2026-10-19", "TOR")];
+  const slots = [{ id: "G#1", type: "G" }, { id: "G#2", type: "G" }, { id: "C#1", type: "C" }];
+  const lineup = (date: string) => ({ date, source: "yahoo" as const, entries: [
+    { playerId: "dal", name: "dal", position: "G", slotId: "G#1" }, { playerId: "vgk", name: "vgk", position: "G", slotId: "G#2" },
+    { playerId: "bench", name: "bench", position: "BN", slotId: null }] });
+  const db = (rows: Array<{ goalie_id: number; game_id: number; games_played: number }>) => ({ from: () => ({ select: () => ({
+    in: async (_column: string, ids: number[]) => ({ data: rows.filter(row => ids.includes(row.game_id)), error: null }) }) }) }) as any;
+  // DAL's goalie played both nights; VGK's goalie sat 10-20 (his backup played); the benched TOR goalie's start doesn't count.
+  const played = [{ goalie_id: 1, game_id: 101, games_played: 1 }, { goalie_id: 1, game_id: 102, games_played: 1 },
+    { goalie_id: 9, game_id: 103, games_played: 1 }, { goalie_id: 3, game_id: 104, games_played: 1 }];
+  const base = { periodStart: "2026-10-19", today: "2026-10-21", pastLineups: [lineup("2026-10-19"), lineup("2026-10-20")], slots, players, games };
+
+  it("counts active-slot goalies who played on elapsed days", async () => {
+    await expect(yahooCreditedGoalieAppearances(db(played), base)).resolves.toBe(2);
+  });
+  it("is zero before the matchup's first day ends", async () => {
+    await expect(yahooCreditedGoalieAppearances(db(played), { ...base, today: "2026-10-19", pastLineups: [] })).resolves.toBe(0);
+  });
+  it("stays unknown instead of undercounting", async () => {
+    // A day's lineup wasn't read.
+    await expect(yahooCreditedGoalieAppearances(db(played), { ...base, pastLineups: [lineup("2026-10-19")] })).resolves.toBeNull();
+    // A final game whose goalie rows haven't landed.
+    await expect(yahooCreditedGoalieAppearances(db(played.filter(row => row.game_id !== 103)), base)).resolves.toBeNull();
+    // A past game that isn't final yet.
+    await expect(yahooCreditedGoalieAppearances(db(played), { ...base, games: [...games.filter(row => row.id !== "103"), game("103", "2026-10-20", "VGK", "live")] })).resolves.toBeNull();
+    // No period start.
+    await expect(yahooCreditedGoalieAppearances(db(played), { ...base, periodStart: null })).resolves.toBeNull();
+  });
+  it("skips postponed games without an appearance", async () => {
+    await expect(yahooCreditedGoalieAppearances(db(played), { ...base, games: [...games.filter(row => row.id !== "103"), game("103", "2026-10-20", "VGK", "postponed")] })).resolves.toBe(2);
   });
 });
