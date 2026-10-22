@@ -981,6 +981,16 @@
       "migrationClass": "feature",
       "rolloutGate": "FORGE projection audit 2026-10-21, S-B (TJ approved in session local_08a0bf1c: apply before the R19 deploy): table forge_served_forecast_ledger (served forecasts and naive controls, settled against WGO actuals; PK served_date, player_id, game_id, source) and the optional view forge_served_forecast_scoreboard_daily (security_invoker). RLS on, no policies; all privileges revoked from public, anon, authenticated and service_role, then select/insert/update on the table and select on the view granted to service_role (D4 pattern). Readers/writers: forge-served-forecast-snapshot, forge-served-forecast-settle, /api/v1/forge/scoreboard (release R19). SQL from tasks/artifacts/forge-projection-audit-2026-10-21/s-b-served-forecast-ledger-design.md section 7, with its begin/commit wrappers removed. Rollback: drop view, then drop table (no other object depends on them).",
       "stateEvidence": "Production ledger version 20261021230025 name forge_served_forecast_ledger (applied 2026-10-21 by explicit TJ approval via session local_08a0bf1c). Readback: relrowsecurity true; table grants service_role INSERT/SELECT/UPDATE (plus owner postgres), view grant service_role SELECT; no anon or authenticated grants; 0 rows."
+    },
+    {
+      "order": 98,
+      "path": "supabase/migrations/20261022133743_route_runner_tables.sql",
+      "sha256": "bf8425edd040182d2f2b87092c934e32572a893d429cef18d4a4315ad3c4a109",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Long-run route runner (TJ approved 2026-10-22 in this session: apply migration 98, push R21, then schedule the route-runner-tick pg_cron job): tables route_runner_jobs (queue: route, initial/next query, contract, status, lease, expiry, step/kill/row counters, progress) and route_runner_events (terminal lines, cascade on job delete). RLS on, no policies; all privileges revoked from public, anon, authenticated and service_role, then select/insert/update on both tables and usage on route_runner_events_id_seq granted to service_role (D4 pattern). Readers/writers: lib/routeRunner/store.ts via route-runner-tick and the route-runner jobs APIs, all adminOnly (release R21). SQL is the tables block of tasks/artifacts/route-runner/route_runner_tables.sql; its commented pg_cron block is scheduled separately after the deploy. Rollback: unschedule route-runner-tick, then drop route_runner_events, then route_runner_jobs.",
+      "stateEvidence": "Production ledger version 20261022133743 name route_runner_tables (applied 2026-10-22 by explicit TJ approval, before the R21 deploy). Pre-check: public.update_updated_at_column exists; neither table nor a route-runner-tick job existed. Readback: relrowsecurity true on both tables, 0 policies; grants service_role INSERT/SELECT/UPDATE on both tables and USAGE on the sequence (plus owner postgres); no anon or authenticated grants."
     }
   ],
   "sourceExtensionApproval": {

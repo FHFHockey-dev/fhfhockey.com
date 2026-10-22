@@ -1,6 +1,7 @@
--- DRAFT, NOT A FILED MIGRATION. Route runner tables (2026-10-22, claude route-runner session).
--- File under supabase/migrations (renamed to its ledger version) and apply only with TJ's approval.
--- Nothing in this file has been applied anywhere.
+-- Route runner tables (2026-10-22, claude route-runner session). The tables block below was filed
+-- as supabase/migrations/20261022133743_route_runner_tables.sql (migration authority order 98) and
+-- applied 2026-10-22 by explicit TJ approval. The pg_cron block at the end is the reference for the
+-- route-runner-tick job (see tasks/TASKS/cron-operations/cron-schedule.md).
 --
 -- Readers and writers (web/): lib/routeRunner/store.ts through
 --   pages/api/v1/db/route-runner-tick.ts            (claim, lease, step bookkeeping, events)
