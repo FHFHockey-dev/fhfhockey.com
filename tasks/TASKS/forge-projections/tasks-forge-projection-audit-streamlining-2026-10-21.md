@@ -66,7 +66,7 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
   - [x] 4.4 Extend the pipeline tests: the goalie step runs on the first projection invocation and not on resumed ones, and a failed goalie step is retried on the next invocation. Add a resumed-claim preflight test in the `run-projection-v2` tests.
   - [x] 4.5 Write a cross-platform note asking Codex to alert on `attempts_exhausted` and `stage_killed` in the daily cron report. (The audit session's `tasks/artifacts/cross-platform/2026-10-21-claude-to-codex-forge-audit-followups.md` §5 covers it; the job 329 move is in `2026-10-21-claude-to-codex-nst-team-stats-schedule.md`.)
 
-- [ ] 5.0 Cron schedule cleanup (Q13, DB/Ops)
+- [x] 5.0 Cron schedule cleanup (Q13, DB/Ops)
   - [x] 5.1 With TJ's approval, read jobs 278, 79 and 329 (`cron.job`) and their last 7 days of `cron_job_audit` outcomes.
   - [x] 5.2 Decide with TJ on job 278 (08:15Z rolling, implicit 14-day window): (a) unschedule it, (b) narrow it to `startDate=endDate=run−1`, or (c) move it to a weekly run that still revisits late-arriving source days.
   - [x] 5.3 Apply the job 278 decision and record it in `cron-schedule.md`; update the frozen cron counts if the active set changes.
@@ -74,12 +74,14 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
   - [x] 5.5 After 6.0 confirms the backfill, unschedule job 79 (the 07:25Z 6-URL NST job; the pipeline's NST step covers the previous day) with TJ's approval. Record it and write a cross-platform note to Codex as the route owner.
     - Unscheduled 2026-10-22 ~14:40Z by TJ's approval (read-back: no job 79, no pg_cron job calls the gamelog route). Recorded in `cron-schedule.md`; 07:25 slot removed from `NST_ACTIVE_DIRECT_CRON_STARTS`; cron counts pg_cron 57 / total 87. Note: `tasks/artifacts/cross-platform/2026-10-22-claude-to-codex-nst-gamelog-job79-retired.md`.
 
-- [ ] 6.0 NST backfill follow-through (TJ is running the 10-07..10-18 backfill links)
+- [x] 6.0 NST backfill follow-through (TJ is running the 10-07..10-18 backfill links)
   - [x] 6.1 With TJ's approval, count NST rows per date × table for 10-07..10-18 and confirm the ES/PP/5v5 gaps are filled.
     - TJ's backfill finished 2026-10-22 14:19Z (240/240 URLs; one 500 at 208 on a failed cron_job_audit progress read, rerun resumed at 208).
     - Count (14:25Z): all 12 dates have rows in all 20 `nst_gamelog_*` tables. All-strength, 5v5 and ES counts equal the WGO skater count every date (e.g. 575/575 on 10-13, 504/504 on 10-17); PP and PK counts are lower (only players with that ice time) and equal across each family's four tables.
-  - [ ] 6.2 Prepare the exact bounded rolling recompute for the affected window, per the bounds in `web/README.md`. TJ runs it.
-  - [ ] 6.3 Confirm with a read-only count that rolling rows were rewritten for the window.
+  - [x] 6.2 Prepare the exact bounded rolling recompute for the affected window, per the bounds in `web/README.md`. TJ runs it.
+    - TJ ran it on /db/runner (first live runner use): `startDate=2026-10-07&endDate=2026-10-21&fastMode=true&executionProfile=overnight`. The first job exposed the runner claim bug (fixed in R23 `6d5664f76`), then stopped on HTTP 422 freshness blockers after 203/682 players: per-date sources were complete, so it was re-queued with `bypassFreshnessBlockers=true&resumeFrom=8478020` and finished 479/479 at 15:11:51Z in 3 steps.
+  - [x] 6.3 Confirm with a read-only count that rolling rows were rewritten for the window.
+    - Audit Q5 re-run 15:15Z: ev rows equal the WGO skater count on every date 10-07..10-21 (10-15: 114 → 396); null last-5 SOG/hit/block rates 0 on every date (were 61–398 on 10-12..10-18); zero last-5 hit/block rates 6–14% (were 36–49% on 10-19..10-21). FORGE picks this up on the 10-23 10:05Z run.
 
 - [ ] 7.0 Wide-table unread columns (S-G)
   - [x] 7.1 Stop writing the confirmed wide-unread columns (from 1.3) in the writer's upsert body, and omit the always-null pruned keys if Q4 shows no pre-pruning values that a reader would still see.

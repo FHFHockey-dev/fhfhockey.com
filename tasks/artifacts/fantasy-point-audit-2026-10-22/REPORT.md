@@ -418,6 +418,7 @@ Q1, Q2, Q5 and Q6 were run once each against production. Q3 and Q4 wait until th
 - The null band (10-12..10-18) lines up with the NST gamelog gap now being backfilled.
 - From 10-19 the nulls are gone, but zero last-5 hit and block rates jump from about 21–29% to 38–49%. That is consistent with last-5 windows that span the NST gap counting the missing games as zero (inferred, not traced).
 - Re-run Q5 after the backfill and the bounded rolling recompute.
+- **Re-run 15:15Z, after the backfill and recompute:** 0 null last-5 rates on every date; zero hit/block rates 6–14% (10-20: 31 / 41 of 396); ev rows equal the WGO skater count on every date. The zero-rate spike was the NST gap. F3's constant-fallback code path remains for future gaps.
 
 **Q6: production FORGE h1 rows.**
 
