@@ -49,9 +49,11 @@ changed files: 0 errors, 1 pre-existing warning (player-aliases loadData deps). 
 tsc --noEmit under the heavy lock: exit 0.
 
 ## Next
-Committed in two commits (route runner; /db gate). Open, needs TJ: apply the draft SQL as a filed
-migration, then the pg_cron job (both NOT applied); decide whether emailed reviewToken links to
-/db/player-aliases and /db/player-forecast-review should bypass the page gate; optionally add the tick's
+Committed: route runner `87dcbd984`, /db gate `716896be8`, admin-flash + review-token links `38749d503`.
+R21 candidate `99c9e56b7` (those three on master `248df9923`) gated: vitest baseline-only, eslint
+clean, tsc 0; the master copy drops the tick's `responsePreviewKeys` (master's `withCronJobAudit`
+lacks it). Open, needs TJ: file and apply the draft SQL as migration 98, push R21, then schedule the
+`route-runner-tick` pg_cron job and update the cron inventory/tests. Optionally add the tick's
 handler map to the CRON_AUTH_NON_CRON_CALLERS manifest. Keep this diary until those land.
 
 ## Gotchas
