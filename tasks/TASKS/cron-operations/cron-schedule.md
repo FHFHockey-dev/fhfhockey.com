@@ -2474,3 +2474,46 @@ curl -i -sS -m 180 \
 -- stale assertions with the shared fail-closed Unauthorized. response.
 -- This local evidence does not resolve the Production job-392 HTTP-401
 -- current-secret parity gate; keep NEW 9.0 open and credential values unread.
+
+----------------------------------------------------------------------------------
+-- PROPOSED, NOT YET APPLIED (2026-10-22): route-runner-tick
+--
+-- Worker for the /db/runner long-run route runner (web/pages/api/v1/db/route-runner-tick.ts).
+-- Every minute it calls the worker only when a route_runner_jobs row is runnable and no job holds
+-- an unexpired lease, so idle and busy minutes make zero Vercel calls. Each call runs one step of
+-- one job (concurrency 1) inside the 240 s maxDuration; the inner routes write their own audits and
+-- the tick writes one small cron_job_audit row (job_name route-runner-tick).
+-- Prerequisites: the tables in tasks/artifacts/route-runner/route_runner_tables.sql applied and the
+-- release with the route live. Apply only with TJ's approval. Not in the JSON inventory above until
+-- it is applied and read back from cron.job.
+--
+-- SELECT cron.schedule(
+--   'route-runner-tick',
+--   '* * * * *',
+--   $$
+--     SELECT net.http_get(
+--       url := 'https://fhfhockey.com/api/v1/db/route-runner-tick',
+--       headers := jsonb_build_object(
+--         'Authorization', 'Bearer ' || (
+--           SELECT decrypted_secret FROM vault.decrypted_secrets
+--           WHERE name = 'cron_secret'
+--         )
+--       ),
+--       timeout_milliseconds := 300000
+--     )
+--     WHERE EXISTS (
+--       SELECT 1 FROM public.route_runner_jobs
+--       WHERE status IN ('queued', 'running', 'waiting')
+--         AND coalesce(not_before, now()) <= now()
+--         AND coalesce(lease_until, now() - interval '1 second') < now()
+--         AND expires_at > now()
+--     )
+--     AND NOT EXISTS (
+--       SELECT 1 FROM public.route_runner_jobs WHERE lease_until > now()
+--     );
+--   $$
+-- );
+--
+-- Rollback: SELECT cron.unschedule('route-runner-tick');
+-- Queued jobs stop advancing and keep their next_query; they resume if the job is rescheduled
+-- before their expires_at (72 h after creation).
