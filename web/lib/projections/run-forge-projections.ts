@@ -306,6 +306,7 @@ import {
   type GoalieStageCandidate,
   type SelectedGoalieProjection,
 } from "./stages/goalie-stage";
+import type { SeasonLeagueSavePctCache } from "./goalie/leagueSavePct";
 import { runPerGameSkaterStage } from "./stages/skater-stage";
 import {
   ANALYTICS_MODEL_NAME,
@@ -778,6 +779,7 @@ async function runProjectionCalculations(
     const goalieEvidenceCache = new Map<string, GoalieEvidence>();
     const teamStrengthCache = new Map<string, TeamStrengthAverages>();
     const leaguePhysicalTotalsCache = new Map<string, LeaguePhysicalTotals | null>();
+    const leagueSavePctCache: SeasonLeagueSavePctCache = new Map();
     const learningCounters = {
       players: 0,
       goalRecent: 0,
@@ -989,6 +991,7 @@ async function runProjectionCalculations(
         playerPredictionOutputRows,
         modelMarketFlagRows,
         gameMarketSummary: gameMarketContextByGameId.get(game.id),
+        leagueSavePctCache,
         metrics: metrics as { warnings: string[] },
       });
       goalieRowsUpserted += goalieStageResult.goalieRowsUpserted;

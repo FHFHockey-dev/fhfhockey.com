@@ -15,7 +15,7 @@ import {
   marketTeamWinProbability,
   teamWinProbability,
 } from "../goalie/goalieOutcomes";
-import { getSeasonLeagueSavePct } from "../goalie/leagueSavePct";
+import { getSeasonLeagueSavePct, type SeasonLeagueSavePctCache } from "../goalie/leagueSavePct";
 import {
   augmentStarterModelMetaWithScenarioProjections,
   buildGoalieUncertaintyWithModel,
@@ -119,6 +119,8 @@ export async function runPerGameGoalieStage(args: {
   goalieCandidates: GoalieStageCandidate[];
   /** This game's market summaries (h2h moneyline -> de-vigged team win probability when present). */
   gameMarketSummary?: Record<string, MarketTypeSummary>;
+  /** The run's league save % cache (one per run, so each run records its own read). */
+  leagueSavePctCache: SeasonLeagueSavePctCache;
   teamShotsByTeamId: Map<number, { shotsEs: number; shotsPp: number }>;
   teamGoalsByTeamId: Map<number, number>;
   teamAbbreviationById: Map<number, string>;
@@ -176,7 +178,7 @@ export async function runPerGameGoalieStage(args: {
   const bootstrap = args.seasonBootstrap ? await loadSeasonBootstrap(
     [...new Set(goalieCandidates.flatMap((candidate) => candidate.candidateGoalieIds))],
     seasonYear * 10000 + seasonYear + 1, asOfDate, "goalie", false) : new Map<number, SeasonBootstrap>();
-  const seasonLeague = await getSeasonLeagueSavePct(asOfDate);
+  const seasonLeague = await getSeasonLeagueSavePct(asOfDate, args.leagueSavePctCache);
   if (seasonLeague.warning) metrics.warnings.push(seasonLeague.warning);
   for (const c of goalieCandidates) {
     if (Date.now() > deadlineMs) {

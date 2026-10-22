@@ -79,10 +79,18 @@ async function loadSeasonLeagueSavePct(asOfDate: string): Promise<SeasonLeagueSa
   };
 }
 
-const cache = new Map<string, Promise<SeasonLeagueSavePct>>();
+/** One per projection run (created beside the run's other caches), keyed by as-of date. */
+export type SeasonLeagueSavePctCache = Map<string, Promise<SeasonLeagueSavePct>>;
 
-/** Memoized per as-of date; a failed read falls back to the fitted constant with a warning. */
-export function getSeasonLeagueSavePct(asOfDate: string): Promise<SeasonLeagueSavePct> {
+/**
+ * Memoized per run and as-of date, never across runs: every run makes its own read, so
+ * reconstruction input capture records it even when a process runs several times. A failed
+ * read falls back to the fitted constant with a warning.
+ */
+export function getSeasonLeagueSavePct(
+  asOfDate: string,
+  cache: SeasonLeagueSavePctCache
+): Promise<SeasonLeagueSavePct> {
   const cached = cache.get(asOfDate);
   if (cached) return cached;
   const pending = (async () => {

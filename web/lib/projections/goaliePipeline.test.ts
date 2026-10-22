@@ -84,7 +84,8 @@ describe("goalie producer confirmation evidence", () => {
       teamHorizonScalarsCache: new Map(), playerPropContextByGamePlayerKey: new Map([100, 101].map(id => [`${game.id}:${id}`, {
         player_total_saves: { marketType: "player_total_saves", sourceRank: 1, sourceNames: ["synthetic-book"], sportsbookKeys: [],
           observedAt: null, freshnessExpiresAt: null, outcomes: [] } }])),
-      selectedGoalieByTeamId: new Map(), playerPredictionOutputRows: [], modelMarketFlagRows: [], metrics: { warnings: [] },
+      selectedGoalieByTeamId: new Map(), playerPredictionOutputRows: [], modelMarketFlagRows: [], leagueSavePctCache: new Map(),
+      metrics: { warnings: [] },
     };
     fixtureWrites.mockClear();
     expect(await runPerGameGoalieStage(args)).toEqual({ timedOut: false, goalieRowsUpserted: 1 });
@@ -227,7 +228,7 @@ describe("goalie producer paired game win probabilities", () => {
         startsLast7Days: 0, startsLast14Days: 0, daysSinceLastStart: 3, isGoalieBackToBack: false }])),
       goalieRestSplitProfileCache: new Map([100, 200].map(id => [`${id}:${date}`, null])),
       teamHorizonScalarsCache: new Map(), playerPropContextByGamePlayerKey: new Map(), selectedGoalieByTeamId: new Map(),
-      playerPredictionOutputRows: [], modelMarketFlagRows: [], metrics: { warnings: [] },
+      playerPredictionOutputRows: [], modelMarketFlagRows: [], leagueSavePctCache: new Map(), metrics: { warnings: [] },
     };
     fixtureWrites.mockClear();
     expect(await runPerGameGoalieStage(args)).toEqual({ timedOut: false, goalieRowsUpserted: 2 });
