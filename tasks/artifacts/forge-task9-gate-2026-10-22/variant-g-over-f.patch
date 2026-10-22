@@ -1,0 +1,81 @@
+diff --git a/web/lib/projections/calculators/skater-adjustments.ts b/web/lib/projections/calculators/skater-adjustments.ts
+index 071127d..a85ed6d 100644
+--- a/web/lib/projections/calculators/skater-adjustments.ts
++++ b/web/lib/projections/calculators/skater-adjustments.ts
+@@ -51,7 +51,6 @@ import {
+   SKATER_CONVERSION_MIN_MULTIPLIER,
+   SKATER_CONVERSION_MAX_MULTIPLIER,
+   TEAM_5V5_PDO_BASELINE,
+-  TEAM_5V5_SAVE_PCT_BASELINE,
+   TEAM_NST_XGA_PER60_BASELINE,
+   TEAM_XG_BASELINE_PER_GAME
+ } from "../constants/projection-weights";
+@@ -256,7 +255,6 @@ export function computeSkaterTeamLevelContextAdjustments(args: {
+   const teamXgfPerGame = teamStrength?.xgfPerGame ?? TEAM_XG_BASELINE_PER_GAME;
+   const opponentXgaPerGame = opponentStrength?.xgaPerGame ?? TEAM_XG_BASELINE_PER_GAME;
+   const teamPdo = normalizeRateOrPercent(teamFiveOnFive?.shootingPlusSavePct5v5) ?? TEAM_5V5_PDO_BASELINE;
+-  const opponentSavePct5v5 = normalizeRateOrPercent(opponentFiveOnFive?.savePct5v5) ?? TEAM_5V5_SAVE_PCT_BASELINE;
+   const teamNstXgaPer60 = teamNst?.xgaPer60 ?? TEAM_NST_XGA_PER60_BASELINE;
+   const opponentNstXgaPer60 = opponentNst?.xgaPer60 ?? TEAM_NST_XGA_PER60_BASELINE;
+   const nstPaceProxy = (teamNstXgaPer60 + opponentNstXgaPer60) / 2;
+@@ -276,7 +274,6 @@ export function computeSkaterTeamLevelContextAdjustments(args: {
+   const defenseLiabilityEdge = clamp((opponentXgaPerGame - TEAM_XG_BASELINE_PER_GAME) / TEAM_XG_BASELINE_PER_GAME, -0.22, 0.22);
+   const paceEdge = clamp((nstPaceProxy - TEAM_NST_XGA_PER60_BASELINE) / TEAM_NST_XGA_PER60_BASELINE, -0.2, 0.2);
+   const pdoEdge = clamp(teamPdo - TEAM_5V5_PDO_BASELINE, -0.08, 0.08);
+-  const opponentSaveEdge = clamp(TEAM_5V5_SAVE_PCT_BASELINE - opponentSavePct5v5, -0.03, 0.03);
+ 
+   const shotRateMultiplier = clamp(
+     1 + sampleWeight * (offenseEdge * 0.14 + defenseLiabilityEdge * 0.18 + paceEdge * 0.2 + pdoEdge * 0.06),
+@@ -284,7 +281,8 @@ export function computeSkaterTeamLevelContextAdjustments(args: {
+     SKATER_TEAM_LEVEL_SHOT_MAX_MULTIPLIER
+   );
+   const goalRateMultiplier = clamp(
+-    1 + sampleWeight * (offenseEdge * 0.16 + defenseLiabilityEdge * 0.22 + opponentSaveEdge * 2.3 + paceEdge * 0.08),
++    // Opponent goaltending is owned by the opponent-goalie context (task 9), not the team save %.
++    1 + sampleWeight * (offenseEdge * 0.16 + defenseLiabilityEdge * 0.22 + paceEdge * 0.08),
+     SKATER_TEAM_LEVEL_GOAL_MIN_MULTIPLIER,
+     SKATER_TEAM_LEVEL_GOAL_MAX_MULTIPLIER
+   );
+@@ -330,13 +328,14 @@ export function computeSkaterOpponentGoalieContextAdjustments(args: {
+   const sampleWeight = clamp(probabilityMass * (0.45 + 0.55 * starterCertainty), 0, 1);
+   const qualityEdge = weightedGsaa != null ? clamp(weightedGsaa / GOALIE_GSAA_PRIOR_MAX_ABS, -1, 1) : 0;
+ 
++  // Damped 50% (task 9): projected GSAA is noisy and partly already in team goals against.
+   const goalRateMultiplier = clamp(
+-    1 + sampleWeight * (-qualityEdge * 0.18),
++    1 + sampleWeight * (-qualityEdge * 0.09),
+     SKATER_OPP_GOALIE_GOAL_MIN_MULTIPLIER,
+     SKATER_OPP_GOALIE_GOAL_MAX_MULTIPLIER
+   );
+   const assistRateMultiplier = clamp(
+-    1 + sampleWeight * (-qualityEdge * 0.11),
++    1 + sampleWeight * (-qualityEdge * 0.055),
+     SKATER_OPP_GOALIE_ASSIST_MIN_MULTIPLIER,
+     SKATER_OPP_GOALIE_ASSIST_MAX_MULTIPLIER
+   );
+diff --git a/web/lib/projections/stages/skater-stage.ts b/web/lib/projections/stages/skater-stage.ts
+index 5751688..182e1b7 100644
+--- a/web/lib/projections/stages/skater-stage.ts
++++ b/web/lib/projections/stages/skater-stage.ts
+@@ -2285,10 +2285,10 @@ export async function runPerGameSkaterStage(args: {
+           : null;
+       const recencyMultiplier =
+         activeSkaterFilter.recencyMultiplierByPlayerId.get(playerId) ?? 1;
++      // Role stability widens the bands (task 9); it no longer cuts the mean.
+       const availabilityMultiplier =
+         eventAvailabilityMultiplier *
+-        recencyMultiplier *
+-        roleStabilityMultiplier;
++        recencyMultiplier;
+       if (availabilityMultiplier <= 0) continue;
+       const trendAdjustment = trendAdjustmentByPlayerId.get(playerId) ?? null;
+       const trendShotMultiplier = trendAdjustment?.shotRateMultiplier ?? 1;
+@@ -2802,7 +2802,7 @@ export async function runPerGameSkaterStage(args: {
+             shotsPp,
+           })),
+         ),
+-        p.trendAdjustment?.uncertaintyVolatilityMultiplier ?? 1,
++        (p.trendAdjustment?.uncertaintyVolatilityMultiplier ?? 1) * (2 - Math.min(1, p.roleStabilityMultiplier)),
+       );
+       const scenarioMetadata = buildSkaterScenarioMetadata({
+         scenarios: p.roleScenarios,

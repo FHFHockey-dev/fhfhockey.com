@@ -1,0 +1,16 @@
+diff --git a/web/lib/projections/stages/skater-stage.ts b/web/lib/projections/stages/skater-stage.ts
+index 182e1b7..163789f 100644
+--- a/web/lib/projections/stages/skater-stage.ts
++++ b/web/lib/projections/stages/skater-stage.ts
+@@ -2235,8 +2235,9 @@ export async function runPerGameSkaterStage(args: {
+       // compound to about 1.3 for some skaters until task 9 sizes them (dropping it, Q7, raised
+       // forward goals per shot to 0.154 in the 10-13 pilot).
+       const goalPrior = SKATER_GOAL_CONVERSION_PRIORS[shotPosition === "D" ? "D" : "F"];
+-      const goalRateEs = clamp(splitRates.goalRateEs * sampleWeight + (1 - sampleWeight) * goalPrior.es.perShot, 0.025, 0.3);
+-      const goalRatePp = clamp(splitRates.goalRatePp * sampleWeight + (1 - sampleWeight) * goalPrior.pp.perShot, 0.04, 0.45);
++      void goalPrior;
++      const goalRateEs = clamp(splitRates.goalRateEs, 0.025, 0.3);
++      const goalRatePp = clamp(splitRates.goalRatePp, 0.04, 0.45);
+       // Assist rates are shares of on-ice goals for (task 3), shrunk to F/D priors; the
+       // team-goal environment carries the goal context terms, so no assist multiplier applies.
+       const assistPosition = playerMetaById.get(playerId)?.position ?? null;
