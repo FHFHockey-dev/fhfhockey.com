@@ -27,8 +27,9 @@
   - pg_repack is unusable at 1.5.0; TJ runs `VACUUM FULL`.
 - **10-22 update**
   - Live since: R19 `3929c6422` (S-F-lite, S-B crons, pp1, ledger 97) and R20 `248df9923` (NST gamelog deadline/resume). 10-22 morning pipeline clean.
-  - R21 candidate `99c9e56b7` (route runner + admin gate on /db + review-token links) gated on master `248df9923`: vitest baseline-only failures, eslint clean, tsc 0. Master copy drops the tick's `responsePreviewKeys` (master's `withCronJobAudit` lacks it). Not pushed: needs TJ for migration 98 (route_runner tables), push, then the `route-runner-tick` pg_cron job.
-  - FP valuation audit saved: `tasks/artifacts/fantasy-point-audit-2026-10-22/REPORT.md`. No FP arithmetic bug; input-side under-projection (PP assists per-two-goals scale, hit/block constant fallbacks, position-blind shot priors). Appendix Q1–Q6 are read-only and need TJ's go-ahead.
+  - R21 `99c9e56b7` live (deployment `dpl_7ZG28acCKCeHXn7tgL6x5eDEeQEi` READY; smoke 5/5 incl. `/db/runner` 200 and the jobs API 401 unauthenticated). Migration 98 (route_runner tables, ledger `20261022133743`) applied before the push; pg_cron job 399 `route-runner-tick` scheduled after it (first runs succeeded with 0 rows, so no HTTP call while idle). Route-runner diary retired.
+  - FP valuation audit saved: `tasks/artifacts/fantasy-point-audit-2026-10-22/REPORT.md`, with production Q1/Q2/Q5/Q6 results in Appendix C (F2 confirmed in production; F3 null band 10-12..10-18 matches the NST gap; zero hit/block rates 38–49% from 10-19). Q3/Q4 wait for a week of ledger data.
+  - Gotcha: `supportedBaselineMigration.test.ts` fails at octoberBranch HEAD because `20261021210000_in_season_sandbox_billing.sql` (committed in `fd58ba245` by another session) has no migration-authority record. Not mine.
 - **Next**
   1. TJ runs `VACUUM FULL` on `rolling_player_game_metrics` at a quiet hour; then check the size.
   2. TJ's console-loop NST gamelog backfill (10-07..10-18) was 126/240 at 13:30Z. On "Backfill complete": the 6.1 counts, the 6.2 bounded rolling recompute and the job 79 unschedule.

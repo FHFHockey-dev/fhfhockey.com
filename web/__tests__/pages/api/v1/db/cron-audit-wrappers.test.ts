@@ -77,20 +77,21 @@ describe("scheduled cron audit coverage", () => {
     // scheduled only by the Vercel 0 13 * * * cron, outside this pg_cron set.
     // 2026-10-21: job 393 (run-projection-v2?horizonGames=5) was unscheduled;
     // run-projection-v2 has no other active pg_cron owner.
-    expect(authFindings).toHaveLength(45);
+    // 2026-10-22: job 399 (route-runner-tick, cron-only) was scheduled after R21.
+    expect(authFindings).toHaveLength(46);
     expect(
       authFindings.reduce(
         (jobCount, finding) => jobCount + finding.jobNames.length,
         0,
       ),
-    ).toBe(49);
+    ).toBe(50);
     expect(modeCounts).toEqual({
-      "admin-or-cron": 45,
+      "admin-or-cron": 46,
     });
     expect(callerCounts).toEqual({
       "browser-admin": 5,
       "browser-admin-and-internal": 4,
-      "cron-only": 26,
+      "cron-only": 27,
       "internal-server": 10,
     });
     expect(authFindings.some((finding) => finding.routePath === "/api/v1/db/cron-report")).toBe(false);

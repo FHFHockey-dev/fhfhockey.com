@@ -708,6 +708,17 @@
     "active": false,
     "method": "GET",
     "route": "/api/v1/db/update-power-rankings"
+  },
+  {
+    "jobid": 399,
+    "jobname": "route-runner-tick",
+    "schedule": "* * * * *",
+    "run_time_utc": null,
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/route-runner-tick",
+    "auth": "Supabase Vault cron_secret",
+    "verification": "Scheduled 2026-10-22 by explicit TJ approval after release R21 (master 99c9e56b7, deployment dpl_7ZG28acCKCeHXn7tgL6x5eDEeQEi) was READY and smoke-tested. Calls the route only when a route_runner_jobs row is runnable and no lease is live; idle minutes make no HTTP call."
   }
 ]
 ```
@@ -2476,16 +2487,16 @@ curl -i -sS -m 180 \
 -- current-secret parity gate; keep NEW 9.0 open and credential values unread.
 
 ----------------------------------------------------------------------------------
--- PROPOSED, NOT YET APPLIED (2026-10-22): route-runner-tick
+-- APPLIED 2026-10-22 as job 399 (route-runner-tick), by explicit TJ approval, after release R21
+-- (master 99c9e56b7) was READY and smoke-tested. Migration 98 (route_runner tables) applied first.
 --
 -- Worker for the /db/runner long-run route runner (web/pages/api/v1/db/route-runner-tick.ts).
 -- Every minute it calls the worker only when a route_runner_jobs row is runnable and no job holds
 -- an unexpired lease, so idle and busy minutes make zero Vercel calls. Each call runs one step of
 -- one job (concurrency 1) inside the 240 s maxDuration; the inner routes write their own audits and
 -- the tick writes one small cron_job_audit row (job_name route-runner-tick).
--- Prerequisites: the tables in tasks/artifacts/route-runner/route_runner_tables.sql applied and the
--- release with the route live. Apply only with TJ's approval. Not in the JSON inventory above until
--- it is applied and read back from cron.job.
+-- Prerequisites (met): migration 98 (supabase/migrations/20261022133743_route_runner_tables.sql)
+-- and release R21 with the route live. Listed in the JSON inventory above as job 399.
 --
 -- SELECT cron.schedule(
 --   'route-runner-tick',
