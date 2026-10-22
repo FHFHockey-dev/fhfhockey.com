@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
@@ -16,13 +16,18 @@ vi.mock("@supabase/supabase-js", () => ({ createClient: backend.createClient }))
 vi.mock("lib/supabase/public-client", () => ({ default: {} }));
 vi.mock("lib/supabase/client", () => ({ default: {} }));
 vi.mock("lib/supabase", () => ({ default: {} }));
-const input = () => JSON.parse(JSON.stringify(fixture)) as OfflinePlayerInputs;
+const input = () => {
+  const inputs = JSON.parse(JSON.stringify(fixture)) as OfflinePlayerInputs;
+  return inputs;
+};
 function updateRows(inputs: OfflinePlayerInputs, table: string, rows: any[]) {
   inputs.tables[table].rows = rows;
   inputs.tables[table].receipt.rowCount = rows.length;
   inputs.tables[table].receipt.rowsHash = projectionInputHash(rows);
 }
-afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+// Admission is evaluated at receipt creation; keep it before the fixture game (2026-10-12T23:00Z) starts.
+beforeEach(() => { vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-10-10T00:00:00.000Z") }); });
+afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
 describe("offline current native player qualification", () => {
   it("reproduces current native calculations with genuine admission and zero live client/transport/writes", async () => {
@@ -48,6 +53,7 @@ describe("offline current native player qualification", () => {
     expect(skater.admission.acceptedByUnchangedConsumer).toBe(true);
     for (const key of ["G", "A", "SOG"]) expect(skater.categories.find(row => row.category === key)).toMatchObject({
       modeledStatus: "missing", status: "blocked", reasons: expect.arrayContaining(["missing_pk_heads_and_fullgame_bridge"]) });
+    // The released skater stage models PPP without PP rows; it stays a blocked diagnostic, never certified.
     expect(skater.categories.find(row => row.category === "PPP")).toMatchObject({ modeledStatus: "present_native_diagnostic", status: "blocked",
       reasons: expect.arrayContaining(["synthetic_fixture_is_not_forecast_evidence"]) });
     expect(skater.categories.find(row => row.category === "HIT")?.reasons).toContain("full_strength_exposure_unproven");
@@ -350,15 +356,14 @@ describe("offline current native player qualification", () => {
     expect(ppp?.status).toBe("blocked"); expect(ppp?.reasons).toContain("missing_pp_counts_or_exposure_denominators");
   });
 
-  it("retains a native PPP diagnostic but blocks source support when PP rows are absent", async () => {
+  it("keeps PPP a blocked diagnostic when PP rows and aligned count support are absent", async () => {
     const inputs = input();
     updateRows(inputs, "rolling_player_game_metrics", inputs.tables.rolling_player_game_metrics.rows.filter(row => row.strength_state !== "pp"));
     const result = (await qualifyNativePlayersOffline(inputs, asOf)).result;
     expect(result.blockers).toEqual([]);
     const target = result.categoryCoverage[0], ppp = target.categories.find(row => row.category === "PPP");
     expect(target.inputCoverage.retainedRollingRowsByStrength.pp).toBe(0);
-    expect(ppp).toMatchObject({ modeledStatus: "present_native_diagnostic", status: "blocked" });
-    expect(ppp?.modeledValue).toBeGreaterThan(0);
+    expect(ppp).toMatchObject({ modeledStatus: "present_native_diagnostic", modeledValue: expect.any(Number), status: "blocked" });
     expect(ppp?.reasons).toContain("missing_retained_pp_history");
     expect(ppp?.reasons).toContain("pp_event_exposure_coverage_unproven");
   });

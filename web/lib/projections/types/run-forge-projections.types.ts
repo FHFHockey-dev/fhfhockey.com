@@ -1,3 +1,5 @@
+import type { RollingPlayerAlignedCountSupport } from "lib/rollingPlayerCountSupport";
+
 export type GameRow = {
   id: number;
   date: string;
@@ -19,6 +21,7 @@ export type LineCombinationContext = {
 };
 
 export type RollingRow = {
+  aligned_count_support?: RollingPlayerAlignedCountSupport | null;
   game_id: number;
   season: number;
   player_id: number;
@@ -44,7 +47,23 @@ export type RollingRow = {
   hits_per_60_avg_all: number | null;
   blocks_per_60_avg_last5: number | null;
   blocks_per_60_avg_all: number | null;
+  toi_seconds_total_last5?: number | null;
+  hits_per_60_hits_3ya?: number | null;
+  hits_per_60_toi_seconds_3ya?: number | null;
+  blocks_per_60_blocks_3ya?: number | null;
+  blocks_per_60_toi_seconds_3ya?: number | null;
+  hits_per_60_hits_season?: number | null;
+  hits_per_60_toi_seconds_season?: number | null;
+  blocks_per_60_blocks_season?: number | null;
+  blocks_per_60_toi_seconds_season?: number | null;
 };
+
+/** League all-situation totals by position group: this season to date and the two prior seasons pooled. */
+export type LeaguePhysicalTotals = Record<"F" | "D", Record<"toDate" | "prior", {
+  hits: number;
+  blocks: number;
+  toiSeconds: number;
+}>>;
 
 export type RosterEventRow = {
   event_id: number;
@@ -320,7 +339,7 @@ export type StarterScenarioProjection = {
   proj_shots_against: number;
   proj_saves: number;
   proj_goals_allowed: number;
-  proj_win_prob: number;
+  proj_win_prob: number | null;
   proj_shutout_prob: number;
   modeled_save_pct: number;
   workload_save_pct_penalty: number;

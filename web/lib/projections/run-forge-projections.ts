@@ -26,6 +26,7 @@ import {
 import type {
   GameRow,
   ForgeTeamGameStrengthRow,
+  LeaguePhysicalTotals,
   GoalieGameHistoryRow,
   GoalieRestSplitBucket,
   GoalieRestSplitProfile,
@@ -303,6 +304,7 @@ import {
   type GoalieStageCandidate,
   type SelectedGoalieProjection,
 } from "./stages/goalie-stage";
+import type { SeasonLeagueSavePctCache } from "./goalie/leagueSavePct";
 import { runPerGameSkaterStage } from "./stages/skater-stage";
 import {
   ANALYTICS_MODEL_NAME,
@@ -705,6 +707,7 @@ async function runProjectionCalculations(
       skater_pool_underfilled_projected_teams: 0,
       skater_pool_emergency_toi_target_caps_applied: 0,
       missing_ev_metrics_players: 0,
+      physical_league_totals_unavailable: 0,
       missing_pp_metrics_players: 0,
       deployment_prior_profiles_found: 0,
       deployment_prior_toi_blends_applied: 0,
@@ -773,6 +776,8 @@ async function runProjectionCalculations(
     const activeRosterSkaterIdsByTeamId = new Map<number, number[]>();
     const goalieEvidenceCache = new Map<string, GoalieEvidence>();
     const teamStrengthCache = new Map<string, TeamStrengthAverages>();
+    const leaguePhysicalTotalsCache = new Map<string, LeaguePhysicalTotals | null>();
+    const leagueSavePctCache: SeasonLeagueSavePctCache = new Map();
     const learningCounters = {
       players: 0,
       goalRecent: 0,
@@ -934,6 +939,7 @@ async function runProjectionCalculations(
         teamRestDaysCache,
         teamStrengthPriorCache,
         teamStrengthCache,
+        leaguePhysicalTotalsCache,
         teamFiveOnFiveProfileCache,
         teamNstExpectedGoalsCache,
         teamLineComboGoaliePriorCache,
@@ -982,6 +988,8 @@ async function runProjectionCalculations(
         selectedGoalieByTeamId,
         playerPredictionOutputRows,
         modelMarketFlagRows,
+        gameMarketSummary: gameMarketContextByGameId.get(game.id),
+        leagueSavePctCache,
         metrics: metrics as { warnings: string[] },
       });
       goalieRowsUpserted += goalieStageResult.goalieRowsUpserted;

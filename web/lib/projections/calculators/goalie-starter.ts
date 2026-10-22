@@ -40,13 +40,15 @@ export function blendTopStarterScenarioOutputs(opts: {
     modeled_save_pct: 0
   };
   let probabilityMass = 0;
+  let winsAvailable = true;
   for (const s of opts.scenarioProjections) {
     const w = clamp(s.starter_probability_raw, 0, 1);
     probabilityMass += w;
     weighted.proj_shots_against += w * s.proj_shots_against;
     weighted.proj_saves += w * s.proj_saves;
     weighted.proj_goals_allowed += w * s.proj_goals_allowed;
-    weighted.proj_win_prob += w * s.proj_win_prob;
+    if (w > 0 && s.proj_win_prob === null) winsAvailable = false;
+    else if (s.proj_win_prob !== null) weighted.proj_win_prob += w * s.proj_win_prob;
     weighted.proj_shutout_prob += w * s.proj_shutout_prob;
     weighted.modeled_save_pct += w * s.modeled_save_pct;
   }
@@ -62,7 +64,8 @@ export function blendTopStarterScenarioOutputs(opts: {
     proj_saves: weighted.proj_saves + residualMass * fallback.proj_saves,
     proj_goals_allowed:
       weighted.proj_goals_allowed + residualMass * fallback.proj_goals_allowed,
-    proj_win_prob: weighted.proj_win_prob + residualMass * fallback.proj_win_prob,
+    proj_win_prob: winsAvailable && (residualMass === 0 || fallback.proj_win_prob !== null)
+      ? weighted.proj_win_prob + (residualMass > 0 ? residualMass * fallback.proj_win_prob! : 0) : null,
     proj_shutout_prob:
       weighted.proj_shutout_prob + residualMass * fallback.proj_shutout_prob,
     modeled_save_pct:
@@ -129,8 +132,8 @@ export function computeStarterProbabilities(opts: {
   projectedGsaaPer60ByGoalieId?: Map<number, number>;
   seasonStartPctByGoalieId?: Map<number, number>;
   seasonGamesPlayedByGoalieId?: Map<number, number>;
-  teamGoalsFor: number;
-  opponentGoalsFor: number;
+  teamGoalsFor: number | null;
+  opponentGoalsFor: number | null;
 }): Map<number, number> {
   const probs = new Map<number, number>();
   const candidates = Array.from(new Set(opts.candidateGoalieIds)).filter((id) =>
@@ -150,9 +153,9 @@ export function computeStarterProbabilities(opts: {
   const seasonGamesPlayedByGoalieId =
     opts.seasonGamesPlayedByGoalieId ?? new Map();
   const totalGames = Math.max(1, opts.starterContext.totalGames);
-  const teamIsWeaker =
-    opts.teamGoalsFor + TEAM_STRENGTH_WEAKER_GAP < opts.opponentGoalsFor;
-  const opponentIsWeak = opts.opponentGoalsFor <= WEAK_OPPONENT_GF_THRESHOLD;
+  const teamIsWeaker = opts.teamGoalsFor !== null && opts.opponentGoalsFor !== null
+    && opts.teamGoalsFor + TEAM_STRENGTH_WEAKER_GAP < opts.opponentGoalsFor;
+  const opponentIsWeak = opts.opponentGoalsFor !== null && opts.opponentGoalsFor <= WEAK_OPPONENT_GF_THRESHOLD;
   const previousGameDate = opts.starterContext.previousGameDate;
   const isB2B =
     previousGameDate != null &&

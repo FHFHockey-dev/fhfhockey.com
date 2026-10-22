@@ -5,6 +5,7 @@ import { buildSkaterModeledHeadTotals } from "lib/projections/modeledHeadTotals"
 import { excludeOffReleaseRuns, restrictRunsToHorizon } from "lib/projections/releasedRunFence";
 import { computeTeamStrengthContextAdjustment } from "lib/projections/calculators/team-context-adjustments";
 import { computeSkaterRestScheduleAdjustments } from "lib/projections/calculators/skater-adjustments";
+import { STARTER_DECISION_SHARE, teamWinProbability as forgeTeamWinProbability } from "lib/projections/goalie/goalieOutcomes";
 import { DEFENSE_B2B_FATIGUE_BOOST, OPPONENT_AWAY_PENALTY, OPPONENT_B2B_PENALTY, OPPONENT_HOME_BOOST, OPPONENT_RESTED_BOOST } from "lib/projections/constants/projection-weights";
 import type { TeamStrengthPrior } from "lib/projections/types/run-forge-projections.types";
 import type { GameForecast, PlanningGame, PlanningPlayer, StatLine } from "lib/rosterScheduleOptimizer/planningTypes";
@@ -136,18 +137,6 @@ export function opponentTilts(rows: Row[], seasonId: number): Map<string, Tilt> 
   }
   return tilts;
 }
-/** A team's chance to win (ties split for overtime) from both teams' xG, as Poisson goals; home ice tilts the rates
- * by 4% (about 54% home wins between equal teams). Neutral 0.5 when either team's strength is unknown. */
-export function teamWinProbability(own: TeamStrengthPrior | undefined, other: TeamStrengthPrior | undefined, isHome: boolean): number {
-  if (!own?.xgfPerGame || !own.xgaPerGame || !other?.xgfPerGame || !other.xgaPerGame) return 0.5;
-  const venue = isHome ? 1.04 : 0.96;
-  const scored = (own.xgfPerGame + other.xgaPerGame) / 2 * venue, allowed = (other.xgfPerGame + own.xgaPerGame) / 2 / venue;
-  const poisson = (rate: number) => { const out: number[] = [Math.exp(-rate)]; for (let k = 1; k <= 12; k++) out.push(out[k - 1] * rate / k); return out; };
-  const a = poisson(scored), b = poisson(allowed);
-  let win = 0, tie = 0;
-  for (let i = 0; i <= 12; i++) for (let j = 0; j <= 12; j++) { if (i > j) win += a[i] * b[j]; else if (i === j) tie += a[i] * b[j]; }
-  return Math.min(0.95, Math.max(0.05, win + tie / 2));
-}
 /** Multipliers that move a skater line between game contexts, from FORGE's own rest/home model. */
 function restScale(from: GameContext | null, to: GameContext | null) {
   if (!from || !to) return null;
@@ -176,18 +165,34 @@ function retargetSkater(stats: StatLine, team: number, rest: ReturnType<typeof r
   if (sum("SH_GOALS", "SH_ASSISTS") !== null) out.SH_POINTS = sum("SH_GOALS", "SH_ASSISTS");
   return out;
 }
-/** Moves a goalie's per-start line from the opponent FORGE projected to a new one, with FORGE's own team-strength terms. */
+/** The served-forecast ledger's naive-baseline win chance (ties split for overtime) from both teams' xG, as Poisson goals;
+ * home ice tilts the rates by 4%. Neutral 0.5 when either team's strength is unknown. Bridge forecasts no longer use it:
+ * they serve FORGE's paired probability (BridgeTeamWin). Retire once the ledger reads `teamWins`. */
+export function teamWinProbability(own: TeamStrengthPrior | undefined, other: TeamStrengthPrior | undefined, isHome: boolean): number {
+  if (!own?.xgfPerGame || !own.xgaPerGame || !other?.xgfPerGame || !other.xgaPerGame) return 0.5;
+  const venue = isHome ? 1.04 : 0.96;
+  const scored = (own.xgfPerGame + other.xgaPerGame) / 2 * venue, allowed = (other.xgfPerGame + own.xgaPerGame) / 2 / venue;
+  const poisson = (rate: number) => { const out: number[] = [Math.exp(-rate)]; for (let k = 1; k <= 12; k++) out.push(out[k - 1] * rate / k); return out; };
+  const a = poisson(scored), b = poisson(allowed);
+  let win = 0, tie = 0;
+  for (let i = 0; i <= 12; i++) for (let j = 0; j <= 12; j++) { if (i > j) win += a[i] * b[j]; else if (i === j) tie += a[i] * b[j]; }
+  return Math.min(0.95, Math.max(0.05, win + tie / 2));
+}
+/** Moves a goalie's per-start line from the opponent FORGE projected to a new one, with FORGE's own team-strength terms.
+ * Wins are not moved here: they come from the game's paired team probability. */
 function retargetGoalieLine(line: StatLine, from: Context, to: Context, venue: { from: number; to: number } = { from: 0, to: 0 }): StatLine {
   const shots = (1 + to.shotsAgainst) / (1 + from.shotsAgainst) * (1 + venue.to) / (1 + venue.from);
   const against = (1 + to.goalsAgainst) / (1 + from.goalsAgainst) * (1 + venue.to) / (1 + venue.from);
-  const edge = (to.goalsFor - to.goalsAgainst) - (from.goalsFor - from.goalsAgainst);
-  const win = line.WINS_GOALIE === null ? null : Math.min(0.98, Math.max(0.02, line.WINS_GOALIE * (1 + edge)));
   const scale = (value: number | null, factor: number) => value === null ? null : round(value * factor);
   return { ...line, SAVES_GOALIE: scale(line.SAVES_GOALIE, shots), SHOTS_AGAINST_GOALIE: scale(line.SHOTS_AGAINST_GOALIE, shots),
-    GOALS_AGAINST_GOALIE: scale(line.GOALS_AGAINST_GOALIE, against), WINS_GOALIE: round(win), LOSSES_GOALIE: win === null ? null : round(1 - win),
+    GOALS_AGAINST_GOALIE: scale(line.GOALS_AGAINST_GOALIE, against),
     SHUTOUTS_GOALIE: line.SHUTOUTS_GOALIE === null ? null : round(Math.min(1, line.SHUTOUTS_GOALIE / against)) };
 }
-export type ForgeDailyBridgeResult = { forecasts: GameForecast[]; limitations: string[] };
+/** A team's chance to win one game (OT/SO included), kept apart from any goalie's wins. Both teams of a game sum to 1.
+ * `forge`: FORGE projected the game; `forge_paired`: 1 − the opponent's FORGE value; `forge_model`: FORGE's win model on
+ * team xG priors for a game FORGE has not projected yet. */
+export type BridgeTeamWin = { gameId: string; team: string; probability: number; source: "forge" | "forge_paired" | "forge_model" };
+export type ForgeDailyBridgeResult = { forecasts: GameForecast[]; limitations: string[]; teamWins: BridgeTeamWin[] };
 type SeasonRates = Record<string, number> & { gwgShare: number };
 
 /** Per-game rates for the stats FORGE does not project, blended over this season and half of last, pulled toward the league rate. */
@@ -249,12 +254,11 @@ function skaterStats(row: Row, rates: SeasonRates | null): StatLine | null {
   return Object.fromEntries(Object.entries(stats).map(([key, value]) => [key, round(value)]));
 }
 
+/** Per-start volume and shutout line; wins come from the game's paired team probability, not this row. */
 function goalieLine(row: Row): StatLine {
-  const win = finite(row.proj_win_prob) ? row.proj_win_prob : null;
   const line: StatLine = { SAVES_GOALIE: finite(row.proj_saves) ? row.proj_saves : null,
     GOALS_AGAINST_GOALIE: finite(row.proj_goals_allowed) ? row.proj_goals_allowed : null,
     SHOTS_AGAINST_GOALIE: finite(row.proj_shots_against) ? row.proj_shots_against : null,
-    WINS_GOALIE: win, LOSSES_GOALIE: win === null ? null : Math.max(0, 1 - win),
     SHUTOUTS_GOALIE: finite(row.proj_shutout_prob) ? row.proj_shutout_prob : null, GOALIE_MINUTES: 60, GAMES_STARTED: 1 };
   return Object.fromEntries(Object.entries(line).map(([key, value]) => [key, round(value)]));
 }
@@ -267,7 +271,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   for (const row of inputs.runs) if (typeof row.run_id === "string" && /^\d{4}-\d{2}-\d{2}$/.test(row.as_of_date)
     && Date.parse(row.created_at) <= now.getTime()) runs.set(row.run_id, { runId: row.run_id, asOfDate: row.as_of_date,
     issuedAt: new Date(row.created_at).toISOString(), gitSha: row.git_sha ?? null });
-  if (!runs.size) return { forecasts: [], limitations: ["Interim FORGE projections: no successful FORGE run in the last week, so planning is schedule-only."] };
+  if (!runs.size) return { forecasts: [], teamWins: [], limitations: ["Interim FORGE projections: no successful FORGE run in the last week, so planning is schedule-only."] };
   const order = (row: Row) => `${row.as_of_date}|${runs.get(row.run_id)!.issuedAt}`;
   const latest = <K>(rows: Row[], key: (row: Row) => K) => {
     const result = new Map<K, Row>();
@@ -293,7 +297,6 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   const rates = inputs.seasonTotals ? seasonRates(inputs.seasonTotals, seasonId) : null;
   const priors = teamStrengthPriors(inputs.teamPriors ?? [], inputs.lastSeasonTeams ?? []);
   const tilts = opponentTilts(inputs.positionAllowed ?? [], seasonId);
-  let estimatedWins = 0;
   const tiltBetween = (player: PlanningPlayer, from: string | undefined, to: string | undefined): Tilt | undefined => {
     const group = player.eligiblePositions.some(position => position.toUpperCase() === "D") ? "D" : "F";
     const a = from ? tilts.get(`${from.toUpperCase()}|${group}`) : undefined, b = to ? tilts.get(`${to.toUpperCase()}|${group}`) : undefined;
@@ -372,7 +375,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     };
     const stats = stale ? null : lineFor(latestRow);
     const projectedAgainst = stale ? null : context(player.teamAbbreviation, opponentAbbreviation(latestRow.opponent_team_id));
-    if (stale || stats) for (const game of upcoming(player.teamAbbreviation!)) {
+    for (const game of upcoming(player.teamAbbreviation!)) {
       const own = exactSkater.get(`${game.id}:${player.nhlId}`);
       if (own && (stale || own !== latestRow) && own.team_id === player.nhlTeamId) {
         // Projected for this game itself: use that line as issued, no re-aiming.
@@ -389,6 +392,40 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     }
     if (stale && forecasts.length === emitted) staleSkaters++;
   }
+  // One win model per game: FORGE's team probability, paired so both teams sum to 1. Pre-7.2 FORGE rows are not
+  // paired, so a game with both teams' rows is normalised; a game FORGE projected without a win value stays unknown.
+  const idByAbbreviation = new Map([...abbreviationById].map(([id, abbreviation]) => [abbreviation, id]));
+  const teamWins = new Map<string, BridgeTeamWin | null>();
+  const teamWin = (game: PlanningGame, teamId: number): BridgeTeamWin | null => {
+    const key = `${game.id}:${teamId}`;
+    if (teamWins.has(key)) return teamWins.get(key)!;
+    const team = game.teamAbbreviation!.toUpperCase(), opponent = game.opponent.toUpperCase();
+    const scheduled = scheduleById.get(game.id), ownRow = exactGoalie.get(key);
+    const opponentId: number | undefined = scheduled && (scheduled.homeTeamId === teamId || scheduled.awayTeamId === teamId)
+      ? scheduled.homeTeamId === teamId ? scheduled.awayTeamId : scheduled.homeTeamId
+      : finite(ownRow?.opponent_team_id) ? ownRow!.opponent_team_id : idByAbbreviation.get(opponent);
+    const otherRow = opponentId === undefined ? undefined : exactGoalie.get(`${game.id}:${opponentId}`);
+    const own = finite(ownRow?.proj_win_prob) ? ownRow!.proj_win_prob : null, other = finite(otherRow?.proj_win_prob) ? otherRow!.proj_win_prob : null;
+    const unit = (value: number) => Math.min(1, Math.max(0, value));
+    let result: BridgeTeamWin | null = null;
+    if (own !== null && other !== null && own + other > 0) result = { gameId: game.id, team, probability: own / (own + other), source: "forge" };
+    else if (own !== null) result = { gameId: game.id, team, probability: unit(own / STARTER_DECISION_SHARE), source: "forge" };
+    else if (other !== null) result = { gameId: game.id, team, probability: 1 - unit(other / STARTER_DECISION_SHARE), source: "forge_paired" };
+    else if (!ownRow && !otherRow) {
+      // Not projected yet: FORGE's Poisson-race win model on each team's xG for and against, with FORGE's rest/home goal effect.
+      const ownPrior = priors.get(team), otherPrior = priors.get(opponent);
+      const goals = (attack: TeamStrengthPrior | undefined, defence: TeamStrengthPrior | undefined, side: number | undefined) => {
+        if (!finite(attack?.xgfPerGame) || !finite(defence?.xgaPerGame)) return null;
+        const rest = side === undefined ? null : gameContext(game.id, side);
+        return (attack!.xgfPerGame! + defence!.xgaPerGame!) / 2 * (rest ? computeSkaterRestScheduleAdjustments(rest).goalRateMultiplier : 1);
+      };
+      const scored = goals(ownPrior, otherPrior, teamId), allowed = goals(otherPrior, ownPrior, opponentId);
+      if (scored !== null && allowed !== null) result = { gameId: game.id, team, probability: forgeTeamWinProbability(scored, allowed), source: "forge_model" };
+    }
+    teamWins.set(key, result);
+    return result;
+  };
+  let unknownWins = 0;
   const goaliesByTeam = new Map<number, PlanningPlayer[]>();
   for (const player of identified.filter(row => row.playerClass === "goalie")) goaliesByTeam.set(player.nhlTeamId!, [...(goaliesByTeam.get(player.nhlTeamId!) ?? []), player]);
   for (const [teamId, goalies] of goaliesByTeam) for (const game of upcoming(goalies[0].teamAbbreviation!)) {
@@ -439,10 +476,10 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       const fromGame = String(source.game_id) === game.id ? null : gameContext(source.game_id, teamId), toGame = fromGame ? gameContext(game.id, teamId) : null;
       const venue = fromGame && toGame ? { from: goalieShotContext(fromGame), to: goalieShotContext(toGame) } : undefined;
       const forgeLine = from && to ? retargetGoalieLine(goalieLine(source), from, to, venue) : goalieLine(source);
-      // FORGE rarely fills a goalie's win chance; estimate the team's from both teams' xG so wins can be scored.
-      const winChance = forgeLine.WINS_GOALIE === null ? teamWinProbability(priors.get(goalies[0].teamAbbreviation!.toUpperCase()), priors.get(game.opponent.toUpperCase()), game.home) : null;
-      if (winChance !== null) estimatedWins++;
-      const line = winChance === null ? forgeLine : { ...forgeLine, WINS_GOALIE: round(winChance), LOSSES_GOALIE: round(1 - winChance) };
+      // If he starts he is credited with FORGE's decision share of his team's wins; unknown stays unknown.
+      const win = teamWin(game, teamId), startWin = win === null ? null : win.probability * STARTER_DECISION_SHARE;
+      if (win === null) unknownWins++;
+      const line = { ...forgeLine, WINS_GOALIE: round(startWin), LOSSES_GOALIE: startWin === null ? null : round(1 - startWin) };
       emit(goalie, game, runs.get(source.run_id)!, Object.fromEntries(Object.entries(line).map(([key, value]) => [key, value === null ? null : round(value * p)])),
         round(p), line, confirmedId === String(goalie.nhlId));
     }
@@ -462,7 +499,8 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       : "Season rates could not be read, so penalty minutes, plus-minus, shorthanded points, game-winning goals and faceoffs count as 0.",
     priors.size ? `Future games move each FORGE line to that game's opponent with FORGE's team-strength adjustment (team xG for and against, ${priors.size} teams${inputs.lastSeasonTeams?.length ? `, last season blended in as ${LAST_SEASON_PRIOR_GAMES} games` : ""})${scheduleById.size ? ", plus FORGE's home-ice and rest model (back-to-backs included); a goalie's start chance drops on the second night of a back-to-back" : ""}${tilts.size ? ", and each opponent's tilt toward forwards or defencemen (points and shots allowed by position vs league, shrunk)" : ""}.`
       : "Team strength could not be read, so future games reuse each FORGE line without an opponent adjustment.",
-    ...(estimatedWins ? ["Goalie wins use the team's win chance from both teams' xG (Poisson goals, home ice, ties split) where FORGE gives none."] : []),
+    ...(teamWins.size ? [`Goalie wins: FORGE's per-game team win probability (both teams sum to 1) × ${STARTER_DECISION_SHARE} starter decision share, times his start chance; games FORGE has not projected yet use FORGE's same win model on team xG.`] : []),
+    ...(unknownWins ? [`${unknownWins} goalie-games have no team win probability (FORGE left it blank, or a team-strength prior is missing), so their wins are unknown.`] : []),
     "Goalie starts use each goalie's last-10 start share (season share when missing), or FORGE's own starter probability for an already projected game. Per-start lines come from his latest FORGE line, or his team's when he has none.",
     inputs.goalieNews ? `Goalie news (IFTTT, accepted automatically): ${news.confirmed} confirmed, ${news.speculative} likely or projected (start chance at least ${FORGE_DAILY_BRIDGE_GOALIE_NEWS_FLOORS.likely * 100}% / ${FORGE_DAILY_BRIDGE_GOALIE_NEWS_FLOORS.projected * 100}%), ${news.ruledOut} ruled out${news.disputed ? `, ${news.disputed} disputed and ignored` : ""}.`
       : "Goalie news could not be read; start chances use start shares only.",
@@ -475,7 +513,9 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     ...(priors.size && missingPriors.size ? [`${missingPriors.size} opponents have no team-strength prior, so lines projected against or moved to them skip the opponent adjustment.`] : []),
     ...(kept < forecasts.length ? [`Interim projections were trimmed to the first ${kept} of ${forecasts.length} player-games to fit the planning transport; later games stay schedule-only.`] : []),
   ];
-  return { forecasts: forecasts.slice(0, kept), limitations };
+  const servedTeams = new Set(forecasts.slice(0, kept).map(row => `${row.gameId}:${row.issuedContext!.teamId}`));
+  return { forecasts: forecasts.slice(0, kept), limitations,
+    teamWins: [...teamWins].flatMap(([key, win]) => win && servedTeams.has(key) ? [win] : []) };
 }
 
 /** Read-only: the latest successful public h1 FORGE run per slate date in the lookback, as Start Chart serves it. */

@@ -5,8 +5,19 @@ import { bootstrapGoalieLine, loadSeasonBootstrap, type SeasonBootstrap } from "
 import { buildGoalieUncertainty } from "../uncertainty";
 import {
   computeGoalieProjectionModel,
+  computeModeledSavePct,
   type GoalieEvidence,
 } from "../goalieModel";
+import {
+  GOALIE_CONTEXT_SAVE_PCT_PASS_THROUGH,
+  goalieConditionalWinProbability,
+  goalieRestSavePctAdjustment,
+  goalieWinPopulations,
+  marketTeamWinProbability,
+  STARTER_DECISION_SHARE,
+  teamWinProbability,
+} from "../goalie/goalieOutcomes";
+import { getSeasonLeagueSavePct, type SeasonLeagueSavePctCache } from "../goalie/leagueSavePct";
 import {
   augmentStarterModelMetaWithScenarioProjections,
   buildGoalieUncertaintyWithModel,
@@ -18,10 +29,12 @@ import { daysBetweenDates } from "../utils/date-utils";
 import {
   ANALYTICS_MODEL_NAME,
   ANALYTICS_MODEL_VERSION,
-  buildModelMarketFlagRow,
+  buildModelMarketProbabilityFlagRow,
+  compareModelWithMarket,
+  forgePropOverProbability,
   getConsensusLineValue,
   getProjectionValueForPropMarket,
-  PLAYER_MARKET_EDGE_THRESHOLDS,
+  quotesFromMarketSummary,
 } from "../utils/market-output-builders";
 import {
   DEFENSE_B2B_FATIGUE_BOOST,
@@ -34,7 +47,6 @@ import {
 } from "../constants/projection-weights";
 import {
   computeGoalieRestSplitSavePctAdjustment,
-  computeWorkloadSavePctPenalty,
   toGoalieRestSplitBucket,
 } from "../calculators/goalie-save-pct-context";
 import {
@@ -107,6 +119,10 @@ export async function runPerGameGoalieStage(args: {
   game: GameRow;
   deadlineMs: number;
   goalieCandidates: GoalieStageCandidate[];
+  /** This game's market summaries (h2h moneyline -> de-vigged team win probability when present). */
+  gameMarketSummary?: Record<string, MarketTypeSummary>;
+  /** The run's league save % cache (one per run, so each run records its own read). */
+  leagueSavePctCache: SeasonLeagueSavePctCache;
   teamShotsByTeamId: Map<number, { shotsEs: number; shotsPp: number }>;
   teamGoalsByTeamId: Map<number, number>;
   teamAbbreviationById: Map<number, string>;
@@ -163,7 +179,9 @@ export async function runPerGameGoalieStage(args: {
   const seasonYear = Math.floor(game.id / 1_000_000);
   const bootstrap = args.seasonBootstrap ? await loadSeasonBootstrap(
     [...new Set(goalieCandidates.flatMap((candidate) => candidate.candidateGoalieIds))],
-    seasonYear * 10000 + seasonYear + 1, asOfDate, "goalie", true) : new Map<number, SeasonBootstrap>();
+    seasonYear * 10000 + seasonYear + 1, asOfDate, "goalie", false) : new Map<number, SeasonBootstrap>();
+  const seasonLeague = await getSeasonLeagueSavePct(asOfDate, args.leagueSavePctCache);
+  if (seasonLeague.warning) metrics.warnings.push(seasonLeague.warning);
   for (const c of goalieCandidates) {
     if (Date.now() > deadlineMs) {
       return { timedOut: true, goalieRowsUpserted };
@@ -286,7 +304,7 @@ export async function runPerGameGoalieStage(args: {
     const baseShotsAgainst = Number(
       Math.max(0, adjustedBaseShotsAgainst).toFixed(3),
     );
-    const teamGoalsFor = teamGoalsByTeamId.get(c.teamId) ?? 0;
+    const teamGoalsFor = teamGoalsByTeamId.get(c.teamId) ?? null;
     if (!teamOffenseEnvironmentCache.has(teamDateKey(c.opponentTeamId))) {
       teamOffenseEnvironmentCache.set(
         teamDateKey(c.opponentTeamId),
@@ -342,14 +360,26 @@ export async function runPerGameGoalieStage(args: {
     const shotsAgainst = Number(
       Math.max(0, baseShotsAgainst * (1 + contextPct)).toFixed(3),
     );
-    const leagueSavePct = clamp(
-      0.9 -
-        contextPct * 0.04 +
-        teamFiveOnFiveContextAdjustment.leagueSavePctAdjustment,
-      0.88,
-      0.92,
+    // Beta prior mean = season-current league save %; the legacy game-context shift (formerly
+    // folded into a 0.9 "league" mean) is applied additively at its legacy effective weight.
+    const leagueSavePct = seasonLeague.savePct;
+    const contextSavePctShift = clamp(
+      -contextPct * 0.04 + teamFiveOnFiveContextAdjustment.leagueSavePctAdjustment,
+      -0.02,
+      0.02,
     );
-    const adjustedTeamGoalsFor = Number(
+    // Paired per game: both teams read the same two expected-goal values (or the same de-vigged
+    // moneyline), so P(home wins) + P(away wins) = 1.
+    const lambdaFor = teamGoalsByTeamId.get(c.teamId) ?? null;
+    const lambdaAgainst = teamGoalsByTeamId.get(c.opponentTeamId) ?? null;
+    const lambdasAvailable = lambdaFor !== null && lambdaAgainst !== null;
+    const marketTeamWinProb = marketTeamWinProbability(
+      args.gameMarketSummary?.h2h, defendingTeamAbbrev, opponentTeamAbbrev,
+    );
+    const teamWinProb = marketTeamWinProb ?? (lambdasAvailable ? teamWinProbability(lambdaFor, lambdaAgainst) : null);
+    const teamWinSource = marketTeamWinProb !== null ? "moneyline_devig_proportional"
+      : teamWinProb !== null ? "poisson_race" : null;
+    const adjustedTeamGoalsFor = teamGoalsFor === null ? null : Number(
       Math.max(
         0,
         teamGoalsFor *
@@ -385,17 +415,17 @@ export async function runPerGameGoalieStage(args: {
         teamGoalieStarterContextCache.get(teamDateKey(c.teamId)) ??
         (await fetchTeamGoalieStarterContext(c.teamId, asOfDate));
       teamGoalieStarterContextCache.set(teamDateKey(c.teamId), starterContext);
-      const opponentGoalsForRaw = teamGoalsByTeamId.get(c.opponentTeamId) ?? 0;
-      const opponentGoalsFor = Number(
+      const opponentGoalsForRaw = teamGoalsByTeamId.get(c.opponentTeamId) ?? null;
+      const opponentGoalsFor = opponentGoalsForRaw === null ? null : Number(
         Math.max(
           0,
           opponentGoalsForRaw *
             (1 + teamStrengthContextAdjustment.opponentGoalsForPctAdjustment),
         ).toFixed(3),
       );
-      const teamIsWeaker =
-        adjustedTeamGoalsFor + TEAM_STRENGTH_WEAKER_GAP < opponentGoalsFor;
-      const opponentIsWeak = opponentGoalsFor <= WEAK_OPPONENT_GF_THRESHOLD;
+      const teamIsWeaker = adjustedTeamGoalsFor === null || opponentGoalsFor === null ? null
+        : adjustedTeamGoalsFor + TEAM_STRENGTH_WEAKER_GAP < opponentGoalsFor;
+      const opponentIsWeak = opponentGoalsFor === null ? null : opponentGoalsFor <= WEAK_OPPONENT_GF_THRESHOLD;
       const isB2B =
         starterContext.previousGameDate != null &&
         daysBetweenDates(asOfDate, starterContext.previousGameDate) === 1;
@@ -478,108 +508,106 @@ export async function runPerGameGoalieStage(args: {
         }) : [];
     const selectedConfirmation = confirmationFor(selectedGoalieId);
     const confirmedStatus = selectedConfirmation.length > 0;
-    if (!goalieEvidenceCache.has(playerDateKey(selectedGoalieId))) {
-      goalieEvidenceCache.set(
-        playerDateKey(selectedGoalieId),
-        await fetchGoalieEvidence(selectedGoalieId, asOfDate),
-      );
-    }
-    if (!goalieWorkloadContextCache.has(playerDateKey(selectedGoalieId))) {
-      goalieWorkloadContextCache.set(
-        playerDateKey(selectedGoalieId),
-        await fetchGoalieWorkloadContext(selectedGoalieId, asOfDate),
-      );
-    }
-    if (!goalieRestSplitProfileCache.has(playerDateKey(selectedGoalieId))) {
-      goalieRestSplitProfileCache.set(
-        playerDateKey(selectedGoalieId),
-        await fetchGoalieRestSplitProfile(selectedGoalieId, asOfDate),
-      );
-    }
-    const evidence = goalieEvidenceCache.get(
-      playerDateKey(selectedGoalieId),
-    ) as GoalieEvidence;
-    const workload = goalieWorkloadContextCache.get(
-      playerDateKey(selectedGoalieId),
-    ) as GoalieWorkloadContext;
-    const restSplitProfile =
-      goalieRestSplitProfileCache.get(playerDateKey(selectedGoalieId)) ?? null;
-    const workloadSavePctPenalty = computeWorkloadSavePctPenalty(workload);
-    const restSplitSavePctAdjustment = computeGoalieRestSplitSavePctAdjustment({
-      profile: restSplitProfile,
-      daysSinceLastStart: workload.daysSinceLastStart,
-    });
-    const adjustedLeagueSavePct = clamp(
-      leagueSavePct - workloadSavePctPenalty + restSplitSavePctAdjustment,
-      0.86,
-      0.92,
-    );
-    const goalieModel = computeGoalieProjectionModel({
-      projectedShotsAgainst: shotsAgainst,
-      starterProbability: starterProb,
-      projectedGoalsFor: adjustedTeamGoalsFor,
-      evidence,
-      leagueSavePct: adjustedLeagueSavePct,
-    });
-    const selectedGoalieFullStartModel = computeGoalieProjectionModel({
-      projectedShotsAgainst: shotsAgainst,
-      starterProbability: 1,
-      projectedGoalsFor: adjustedTeamGoalsFor,
-      evidence,
-      leagueSavePct: adjustedLeagueSavePct,
-    });
+    // One candidate's evidence (cached) and save % inputs: fitted additive B2B/workload terms, with
+    // the rest-split and game-context shifts at their legacy effective weight.
+    const loadGoalieInputs = async (goalieId: number) => {
+      const key = playerDateKey(goalieId);
+      if (!goalieEvidenceCache.has(key)) {
+        goalieEvidenceCache.set(key, await fetchGoalieEvidence(goalieId, asOfDate));
+      }
+      if (!goalieWorkloadContextCache.has(key)) {
+        goalieWorkloadContextCache.set(key, await fetchGoalieWorkloadContext(goalieId, asOfDate));
+      }
+      if (!goalieRestSplitProfileCache.has(key)) {
+        goalieRestSplitProfileCache.set(key, await fetchGoalieRestSplitProfile(goalieId, asOfDate));
+      }
+      const goalieEvidence = goalieEvidenceCache.get(key) as GoalieEvidence;
+      const goalieWorkload = goalieWorkloadContextCache.get(key) as GoalieWorkloadContext;
+      const goalieRestSplitProfile = goalieRestSplitProfileCache.get(key) ?? null;
+      const restAdjustment = goalieRestSavePctAdjustment(goalieWorkload);
+      const restSplitAdjustment = computeGoalieRestSplitSavePctAdjustment({
+        profile: goalieRestSplitProfile,
+        daysSinceLastStart: goalieWorkload.daysSinceLastStart,
+      });
+      const savePctAdjustment = restAdjustment +
+        GOALIE_CONTEXT_SAVE_PCT_PASS_THROUGH * (contextSavePctShift + restSplitAdjustment);
+      return {
+        evidence: goalieEvidence,
+        workload: goalieWorkload,
+        restSplitProfile: goalieRestSplitProfile,
+        workloadPenalty: -restAdjustment,
+        restSplitAdjustment,
+        savePctAdjustment,
+        modeledSavePct: computeModeledSavePct({ evidence: goalieEvidence, leagueSavePct, savePctAdjustment }),
+      };
+    };
+    const selectedInputs = await loadGoalieInputs(selectedGoalieId);
+    const { evidence, workload, restSplitProfile } = selectedInputs;
+    const workloadSavePctPenalty = selectedInputs.workloadPenalty;
+    const restSplitSavePctAdjustment = selectedInputs.restSplitAdjustment;
+    const adjustedLeagueSavePct = leagueSavePct;
 
     const scenarioProjections: StarterScenarioProjection[] = [];
     const dailyBoardCandidates: Array<Record<string, unknown>> = [];
     const computationScenarios = starterBoardFlags().compute
       ? [...boardStarterProbabilities.entries()].map(([goalieId, probability], index) => ({ goalieId, probability, rawProbability: probability, rank: index + 1 }))
       : topStarterScenarios;
+    const scenarioInputs = new Map<number, Awaited<ReturnType<typeof loadGoalieInputs>>>();
     for (const scenario of computationScenarios) {
-      if (!goalieEvidenceCache.has(playerDateKey(scenario.goalieId))) {
-        goalieEvidenceCache.set(
-          playerDateKey(scenario.goalieId),
-          await fetchGoalieEvidence(scenario.goalieId, asOfDate),
-        );
-      }
-      if (!goalieWorkloadContextCache.has(playerDateKey(scenario.goalieId))) {
-        goalieWorkloadContextCache.set(
-          playerDateKey(scenario.goalieId),
-          await fetchGoalieWorkloadContext(scenario.goalieId, asOfDate),
-        );
-      }
-      if (!goalieRestSplitProfileCache.has(playerDateKey(scenario.goalieId))) {
-        goalieRestSplitProfileCache.set(
-          playerDateKey(scenario.goalieId),
-          await fetchGoalieRestSplitProfile(scenario.goalieId, asOfDate),
-        );
-      }
-      const scenarioEvidence = goalieEvidenceCache.get(
-        playerDateKey(scenario.goalieId),
-      ) as GoalieEvidence;
-      const scenarioWorkload = goalieWorkloadContextCache.get(
-        playerDateKey(scenario.goalieId),
-      ) as GoalieWorkloadContext;
-      const scenarioRestSplitProfile =
-        goalieRestSplitProfileCache.get(playerDateKey(scenario.goalieId)) ??
-        null;
-      const scenarioWorkloadPenalty =
-        computeWorkloadSavePctPenalty(scenarioWorkload);
-      const scenarioRestSplitAdjustment =
-        computeGoalieRestSplitSavePctAdjustment({
-          profile: scenarioRestSplitProfile,
-          daysSinceLastStart: scenarioWorkload.daysSinceLastStart,
-        });
-      const scenarioLeagueSavePct = clamp(
-        leagueSavePct - scenarioWorkloadPenalty + scenarioRestSplitAdjustment,
-        0.86,
-        0.92,
-      );
+      scenarioInputs.set(scenario.goalieId, await loadGoalieInputs(scenario.goalieId));
+    }
+    // The team's start-weighted goals per shot is the reference for each goalie's win adjustment.
+    let startWeight = 0;
+    let weightedGoalsPerShot = 0;
+    for (const scenario of computationScenarios) {
+      const weight = Math.max(0, scenario.probability);
+      startWeight += weight;
+      weightedGoalsPerShot += weight * (1 - (scenarioInputs.get(scenario.goalieId)?.modeledSavePct ?? 0));
+    }
+    const teamGoalsPerShot = startWeight > 0
+      ? weightedGoalsPerShot / startWeight
+      : 1 - selectedInputs.modeledSavePct;
+    const winIfStarts = (modeledSavePct: number) => {
+      if (teamWinProb === null) return null;
+      if (lambdaFor === null || lambdaAgainst === null || teamGoalsPerShot <= 0) return teamWinProb;
+      return goalieConditionalWinProbability({
+        teamWinProbability: teamWinProb,
+        lambdaFor,
+        lambdaAgainst,
+        goalsAgainstRatio: (1 - modeledSavePct) / teamGoalsPerShot,
+      });
+    };
+    const goalieModel = computeGoalieProjectionModel({
+      projectedShotsAgainst: shotsAgainst,
+      starterProbability: starterProb,
+      projectedGoalsFor: adjustedTeamGoalsFor,
+      evidence,
+      leagueSavePct,
+      savePctAdjustment: selectedInputs.savePctAdjustment,
+      teamWinProbabilityIfStarts: winIfStarts(selectedInputs.modeledSavePct),
+    });
+    const selectedGoalieFullStartModel = computeGoalieProjectionModel({
+      projectedShotsAgainst: shotsAgainst,
+      starterProbability: 1,
+      projectedGoalsFor: adjustedTeamGoalsFor,
+      evidence,
+      leagueSavePct,
+      savePctAdjustment: selectedInputs.savePctAdjustment,
+      teamWinProbabilityIfStarts: winIfStarts(selectedInputs.modeledSavePct),
+    });
+
+    for (const scenario of computationScenarios) {
+      const inputs = scenarioInputs.get(scenario.goalieId)!;
+      const scenarioWorkloadPenalty = inputs.workloadPenalty;
+      const scenarioRestSplitAdjustment = inputs.restSplitAdjustment;
       const scenarioModel = computeGoalieProjectionModel({
         projectedShotsAgainst: shotsAgainst,
         starterProbability: 1,
         projectedGoalsFor: adjustedTeamGoalsFor,
-        evidence: scenarioEvidence,
-        leagueSavePct: scenarioLeagueSavePct,
+        evidence: inputs.evidence,
+        leagueSavePct,
+        savePctAdjustment: inputs.savePctAdjustment,
+        teamWinProbabilityIfStarts: winIfStarts(inputs.modeledSavePct),
       });
       const organicConditional = { SHOTS_AGAINST_GOALIE: shotsAgainst, SAVES_GOALIE: scenarioModel.projectedSaves,
         GOALS_AGAINST_GOALIE: scenarioModel.projectedGoalsAllowed,
@@ -595,7 +623,8 @@ export async function runPerGameGoalieStage(args: {
           evidenceCutoffAt: args.evidenceCutoffAt ?? null,
           confirmationEvidenceIds: confirmation.map(item => item.evidenceId).sort(),
           nonStartAssumption: "zero_relief_minutes",
-          conditional: seasonForecast?.stats ?? organicConditional,
+          conditional: { ...(seasonForecast?.stats ?? organicConditional),
+            ...(scenarioModel.winProbability === null ? { WINS_GOALIE: null } : {}) },
           seasonBootstrap: seasonForecast?.disclosure ?? null,
         });
       }
@@ -612,7 +641,7 @@ export async function runPerGameGoalieStage(args: {
         proj_goals_allowed: Number(
           scenarioModel.projectedGoalsAllowed.toFixed(3),
         ),
-        proj_win_prob: Number(scenarioModel.winProbability.toFixed(4)),
+        proj_win_prob: scenarioModel.winProbability === null ? null : Number(scenarioModel.winProbability.toFixed(4)),
         proj_shutout_prob: Number(scenarioModel.shutoutProbability.toFixed(4)),
         modeled_save_pct: Number(scenarioModel.modeledSavePct.toFixed(4)),
         workload_save_pct_penalty: Number(scenarioWorkloadPenalty.toFixed(4)),
@@ -631,7 +660,7 @@ export async function runPerGameGoalieStage(args: {
         proj_goals_allowed: Number(
           selectedGoalieFullStartModel.projectedGoalsAllowed.toFixed(3),
         ),
-        proj_win_prob: Number(
+        proj_win_prob: selectedGoalieFullStartModel.winProbability === null ? null : Number(
           selectedGoalieFullStartModel.winProbability.toFixed(4),
         ),
         proj_shutout_prob: Number(
@@ -713,6 +742,7 @@ export async function runPerGameGoalieStage(args: {
         horizonGames,
         goalieHorizonScalars,
         uncertaintyScenarioMixture,
+        { negativeBinomial: true, position: "G" },
       ),
       blendedProjection,
       goalieModel,
@@ -735,6 +765,39 @@ export async function runPerGameGoalieStage(args: {
       starterModelMeta,
     });
 
+    // Keep the two win populations apart (Codex review 7.2). proj_win_prob is unchanged: it is the
+    // team's goalie slot, sum over starters of P(start) x P(team wins | starts) x decision share.
+    const winPopulations = teamWinProb === null ? null : goalieWinPopulations(
+      [...boardStarterProbabilities.entries()].map(([goalieId, startProbability]) => {
+        const inputs = scenarioInputs.get(goalieId);
+        return { goalieId, startProbability, teamWinIfStarts: inputs ? winIfStarts(inputs.modeledSavePct)! : teamWinProb };
+      }),
+    );
+    const winPopulationsMeta = {
+      team: {
+        population: "team_game",
+        denominator: "games",
+        win_probability: teamWinProb === null ? null : Number(teamWinProb.toFixed(4)),
+        source: teamWinSource,
+        paired_with_opponent: "sums_to_1",
+      },
+      goalies: (winPopulations?.goalies ?? []).map((g) => ({
+        goalie_id: g.goalieId,
+        start_probability: Number(g.startProbability.toFixed(4)),
+        team_win_if_starts: Number(g.teamWinIfStarts.toFixed(4)),
+        credited_win_if_starts: Number(g.creditedWinIfStarts.toFixed(4)),
+        starter_win: Number(g.starterWin.toFixed(4)),
+        relief_win: Number(g.reliefWin.toFixed(4)),
+        unconditional_win: Number(g.unconditionalWin.toFixed(4)),
+      })),
+      goalie_population: "candidate_goalie_game",
+      goalie_denominators: { credited_win_if_starts: "starts", unconditional_win: "candidate_games" },
+      decision_share: STARTER_DECISION_SHARE,
+      start_probability_mass: winPopulations ? Number(winPopulations.startProbabilityMass.toFixed(4)) : null,
+      values_per: "single_game",
+      proj_win_prob_population: "team_goalie_slot_credited_starter_win",
+    };
+
     const goalieUpsert = {
       run_id: runId,
       as_of_date: asOfDate,
@@ -751,11 +814,11 @@ export async function runPerGameGoalieStage(args: {
         (goalsAllowed * goalieHorizonTotalScalar).toFixed(3),
       ),
       proj_saves: Number((saves * goalieHorizonTotalScalar).toFixed(3)),
-      proj_win_prob: Number((winProb * goalieHorizonTotalScalar).toFixed(4)),
+      proj_win_prob: winProb === null ? null : Number((winProb * goalieHorizonTotalScalar).toFixed(4)),
       proj_shutout_prob: Number(
         (shutoutProb * goalieHorizonTotalScalar).toFixed(4),
       ),
-      uncertainty: { ...goalieUncertainty, daily_board_candidates: dailyBoardCandidates } as any,
+      uncertainty: { ...goalieUncertainty, daily_board_candidates: dailyBoardCandidates, win_populations: winPopulationsMeta } as any,
       updated_at: new Date().toISOString(),
     };
 
@@ -822,35 +885,25 @@ export async function runPerGameGoalieStage(args: {
           },
         });
 
-        const consensusLineValue = getConsensusLineValue(marketSummary);
-        const edgeThreshold = PLAYER_MARKET_EDGE_THRESHOLDS[marketType] ?? 0.25;
-        if (consensusLineValue != null) {
-          const edgeValue = expectedValue - consensusLineValue;
-          if (Math.abs(edgeValue) >= edgeThreshold) {
-            modelMarketFlagRows.push(
-              buildModelMarketFlagRow({
-                asOfDate,
-                entityType: "player",
-                entityId: selectedGoalieId,
-                gameId: game.id,
-                marketType,
-                flagType: edgeValue > 0 ? "model_over" : "model_under",
-                edgeValue,
-                reasons: [
-                  {
-                    expected_value: expectedValue,
-                    line_value: consensusLineValue,
-                    sportsbook_count: marketSummary.sportsbookKeys.length,
-                  },
-                ],
-                provider: marketSummary.sourceNames[0] ?? null,
-                metadata: {
-                  horizon_games: horizonGames,
-                  run_id: runId,
-                },
-              }),
-            );
-          }
+        const comparison = compareModelWithMarket({
+          marketType,
+          expectedValue,
+          quotes: quotesFromMarketSummary(marketSummary),
+          overProbability: forgePropOverProbability("G"),
+        });
+        if (comparison) {
+          const outputRow = playerPredictionOutputRows[playerPredictionOutputRows.length - 1];
+          outputRow.probability_over = Number(comparison.model.over.toFixed(4));
+          const flagRow = buildModelMarketProbabilityFlagRow({
+            asOfDate,
+            entityType: "player",
+            entityId: selectedGoalieId,
+            gameId: game.id,
+            comparison,
+            provider: marketSummary.sourceNames[0] ?? null,
+            metadata: { horizon_games: horizonGames, run_id: runId },
+          });
+          if (flagRow) modelMarketFlagRows.push(flagRow);
         }
       }
     }

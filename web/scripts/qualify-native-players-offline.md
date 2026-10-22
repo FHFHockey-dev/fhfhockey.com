@@ -7,7 +7,7 @@ NODE_PATH=. ./node_modules/.bin/ts-node --transpile-only \
   --compiler-options '{"module":"commonjs","moduleResolution":"node"}' \
   scripts/qualify-native-players-offline.ts \
   --input scripts/fixtures/native-player-offline-synthetic.json \
-  --input-sha256 244bd60b4f9aca636273826f6cf585c175c3c53452a0f8ff5898b5d7c9f70f54 \
+  --input-sha256 12953ed69ad7ab160c91f712bee24b3f891ce62092ce12ac7d0962a489d538fe \
   --as-of 2026-10-09T18:00:00.000Z \
   --output /tmp/native-player-offline-qualification.json
 ```

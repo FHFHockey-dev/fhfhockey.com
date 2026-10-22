@@ -1,11 +1,14 @@
 import supabase from "lib/supabase/server";
+import { readAlignedCountSupport } from "lib/rollingPlayerCountSupport";
 import { isReadOnlyProjectionReconstruction } from "lib/projections/queryCaptureHook";
 import { getCompatibilityFieldOrder } from "lib/rollingPlayerMetricCompatibility";
+import { ROLLING_PLAYER_SUPPORT_PAYLOAD_TABLE, ROLLING_PLAYER_SUPPORT_PAYLOAD_SCHEMA_VERSION } from "lib/supabase/Upserts/rollingPlayerSupportPayload";
 import {
   TREND_BAND_METRIC_PRIORITY,
   TREND_BAND_WINDOW_PRIORITY
 } from "../constants/projection-weights";
 import type {
+  LeaguePhysicalTotals,
   RollingRow,
   SkaterOnIceContextProfile,
   SkaterShotQualityProfile,
@@ -121,7 +124,17 @@ export const ROLLING_ROW_SELECT_CLAUSE =
       family: "weighted_rate",
       canonicalField: "blocks_per_60_all",
       legacyField: "blocks_per_60_avg_all"
-    })
+    }),
+    // Window exposure plus three-season and current-season event/TOI totals for hit and block shrinkage.
+    "toi_seconds_total_last5",
+    "hits_per_60_hits_3ya",
+    "hits_per_60_toi_seconds_3ya",
+    "blocks_per_60_blocks_3ya",
+    "blocks_per_60_toi_seconds_3ya",
+    "hits_per_60_hits_season",
+    "hits_per_60_toi_seconds_season",
+    "blocks_per_60_blocks_season",
+    "blocks_per_60_toi_seconds_season"
   ].join(",");
 
 function normalizeWgoToiToSeconds(value: number | null | undefined): number | null {
@@ -166,13 +179,17 @@ export class SkaterRollingReadIncompleteError extends Error {
 /** Migration supabase/migrations/20261021182129_forge_latest_rolling_rows.sql. */
 const LATEST_ROLLING_ROWS_RPC = "forge_latest_rolling_rows";
 const ROLLING_ROW_COLUMNS = ROLLING_ROW_SELECT_CLAUSE.split(",");
+const ROLLING_IDENTITY_FIELDS = ["player_id", "game_id", "game_date", "season", "strength_state"];
+const ROLLING_METRIC_FIELDS = ROLLING_ROW_COLUMNS.filter(field => !ROLLING_IDENTITY_FIELDS.includes(field));
 let legacyWindowScanWarned = false;
 
-type RollingStrength = "ev" | "pp";
+type RollingStrength = "ev" | "pp" | "all";
+type RollingIdentity = { player_id: number; game_id: number; game_date: string; strength_state: string };
 
 const isIsoDate = (value: unknown): value is string => typeof value === "string"
   && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value))
   && new Date(value).toISOString().slice(0, 10) === value;
+const rollingRowKey = (row: RollingIdentity) => `${row.player_id}:${row.game_id}:${row.game_date}:${row.strength_state}`;
 const hasOwn = (value: object, key: string) => Object.prototype.hasOwnProperty.call(value, key);
 
 function isRollingRowInScope(row: RollingRow, requestedIds: Set<number>, strengthState: RollingStrength, cutoffDate: string) {
@@ -183,10 +200,44 @@ function isRollingRowInScope(row: RollingRow, requestedIds: Set<number>, strengt
 }
 
 /**
+ * The rolling writer stores pruned historical fields in a durable sidecar.
+ * Fill only the matching event identity; absent fields remain unknown.
+ */
+function hydrateRollingSupport(matched: RollingRow | undefined, support: any, strengthState: RollingStrength, seen: Set<string>) {
+  const payload = support?.support_payload?.historicalCompatibility;
+  if (!matched || support.season !== matched.season
+    || support.payload_schema_version !== ROLLING_PLAYER_SUPPORT_PAYLOAD_SCHEMA_VERSION
+    || !support.support_payload || typeof support.support_payload !== "object" || Array.isArray(support.support_payload)
+    || payload !== undefined && (!payload || typeof payload !== "object" || Array.isArray(payload))) {
+    throw new SkaterRollingReadIncompleteError("invalid_support_row");
+  }
+  if (seen.has(rollingRowKey(support))) throw new SkaterRollingReadIncompleteError("duplicate_row");
+  seen.add(rollingRowKey(support));
+  // Aligned NST count support exists only for split-strength rows.
+  if (strengthState !== "all" && hasOwn(support.support_payload, "alignedCountSupport")) {
+    matched.aligned_count_support = readAlignedCountSupport(support.support_payload.alignedCountSupport, {
+      playerId: matched.player_id, strengthState,
+      anchor: { gameId: matched.game_id, gameDate: matched.game_date, seasonId: matched.season },
+    });
+  }
+  for (const field of ROLLING_METRIC_FIELDS) {
+    const value = payload?.[field];
+    if (value === undefined || value === null) continue;
+    if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+      throw new SkaterRollingReadIncompleteError("invalid_support_row");
+    }
+    const wide = (matched as any)[field];
+    if (typeof wide === "number" && Number.isFinite(wide) && wide !== value) {
+      throw new SkaterRollingReadIncompleteError("invalid_support_row");
+    }
+    if (wide === null || wide === undefined) (matched as any)[field] = value;
+  }
+}
+
+/**
  * Each requested player's latest row for one strength from the 365 days before
- * cutoffDate, or reject; never a partial read. Callers keep the latest row per
- * player (pickLatestByPlayer). The RPC's support_row (durable sidecar) is not
- * read here: this reader returns the wide columns only, as the legacy scan does.
+ * cutoffDate, hydrated from its sidecar, or reject; never a partial read.
+ * Callers keep the latest row per player (pickLatestByPlayer).
  */
 export async function fetchRollingRows(
   playerIds: number[],
@@ -199,7 +250,7 @@ export async function fetchRollingRows(
 
   const ids = [...new Set(playerIds)].sort((a, b) => a - b);
   if (ids.length > 500 || ids.some(id => !Number.isSafeInteger(id) || id <= 0)
-    || (strengthState !== "ev" && strengthState !== "pp") || !isIsoDate(cutoffDate)) {
+    || !["ev", "pp", "all"].includes(strengthState) || !isIsoDate(cutoffDate)) {
     throw new SkaterRollingReadIncompleteError("invalid_scope");
   }
   const oneYearAgo = new Date(
@@ -244,6 +295,7 @@ export async function fetchRollingRows(
   }
   const requestedIds = new Set(ids);
   const rows: RollingRow[] = [];
+  const supportSeen = new Set<string>();
   let previousId = 0;
   for (const entry of result.data as Array<Record<string, any> | null>) {
     if (!entry || typeof entry !== "object" || !requestedIds.has(entry.player_id)
@@ -270,6 +322,11 @@ export async function fetchRollingRows(
     }
     // The RPC has no lower bound; keep the legacy 365-day scope.
     if (row.game_date <= oneYearAgo) continue;
+    const support = entry.support_row;
+    if (support !== null) {
+      const matched = support && typeof support === "object" && rollingRowKey(support) === rollingRowKey(row) ? row : undefined;
+      hydrateRollingSupport(matched, support, strengthState, supportSeen);
+    }
     rows.push(row);
   }
   // The legacy scan's order: newest first, then player ascending, then game descending.
@@ -280,8 +337,8 @@ export async function fetchRollingRows(
 /**
  * Legacy window scan, used only while the latest-row RPC is unavailable (see
  * fetchRollingRows): every row of the 365 days before the cutoff in counted
- * 500-row pages. Returns the complete bounded history or rejects; never a
- * capped/partial prefix.
+ * 500-row pages, then every matching sidecar. Returns the complete bounded
+ * history or rejects; never a capped/partial prefix.
  */
 async function fetchRollingRowsByLegacyWindowScan(
   ids: number[],
@@ -341,8 +398,98 @@ async function fetchRollingRowsByLegacyWindowScan(
       seen.add(key);
       rows.push(row);
     }
-    if (rows.length === total) return rows;
+    if (rows.length === total) break;
   }
+  if (!rows.length) return rows;
+
+  // Join sidecars only to matching event identities (hydrateRollingSupport).
+  const byKey = new Map(rows.map(row => [rollingRowKey(row), { ...row }]));
+  const supportSeen = new Set<string>();
+  let offset = 0, supportTotal: number | null = null;
+  for (;;) {
+    let result: { data: unknown; count: number | null; error: unknown };
+    try {
+      result = await db.from(ROLLING_PLAYER_SUPPORT_PAYLOAD_TABLE)
+        .select("player_id,game_id,game_date,season,strength_state,payload_schema_version,support_payload,updated_at", { count: "exact" })
+        .in("player_id", ids).eq("strength_state", strengthState)
+        .lt("game_date", cutoffDate).gt("game_date", oneYearAgo)
+        .order("game_date", { ascending: false }).order("player_id", { ascending: true })
+        .order("game_id", { ascending: false }).range(offset, offset + 499);
+    } catch (cause) {
+      throw new SkaterRollingReadIncompleteError("read_failed", cause);
+    }
+    if (result.error) throw new SkaterRollingReadIncompleteError("read_failed", result.error);
+    const count = result.count;
+    if (!Number.isSafeInteger(count) || count! < 0) throw new SkaterRollingReadIncompleteError("invalid_count");
+    if (count! > 5000) throw new SkaterRollingReadIncompleteError("row_limit_exceeded");
+    if (supportTotal !== null && count !== supportTotal) throw new SkaterRollingReadIncompleteError("count_drift");
+    supportTotal = count;
+    if (!Array.isArray(result.data) || result.data.length !== Math.min(500, count! - offset)) {
+      throw new SkaterRollingReadIncompleteError("invalid_page");
+    }
+    for (const support of result.data) {
+      hydrateRollingSupport(support ? byKey.get(rollingRowKey(support)) : undefined, support, strengthState, supportSeen);
+    }
+    offset += result.data.length;
+    if (offset === supportTotal) return rows.map(row => byKey.get(rollingRowKey(row))!);
+  }
+}
+
+export class LeaguePhysicalTotalsReadError extends Error {
+  constructor(readonly reason: "invalid_scope" | "rpc_missing" | "read_only_reconstruction" | "read_failed" | "invalid_rows", cause?: unknown) {
+    super(`League physical totals read failed: ${reason}`, { cause });
+    this.name = "LeaguePhysicalTotalsReadError";
+  }
+}
+
+/** League all-situation hits, blocks and TOI by F/D: this season before cutoffDate and the two prior seasons. */
+export async function fetchLeaguePhysicalTotals(
+  seasonId: number,
+  cutoffDate: string,
+  db = supabase
+): Promise<LeaguePhysicalTotals> {
+  if (!db) throw new Error("Supabase server client not available");
+  if (!Number.isSafeInteger(seasonId) || seasonId % 10000 !== Math.floor(seasonId / 10000) + 1
+    || !isIsoDate(cutoffDate)) {
+    throw new LeaguePhysicalTotalsReadError("invalid_scope");
+  }
+  // Offline reconstruction has no league-totals table contract and forbids RPCs.
+  // Select the unscaled fallback before dispatch, rather than swallowing a fence violation.
+  if (isReadOnlyProjectionReconstruction()) {
+    throw new LeaguePhysicalTotalsReadError("read_only_reconstruction");
+  }
+  let result: { data: unknown; error: unknown };
+  try {
+    // Not in the generated types until the migration is applied and types are regenerated.
+    result = await (db as any).rpc("forge_league_skater_physical_totals", { p_season_id: seasonId, p_cutoff: cutoffDate }, { get: true });
+  } catch (cause) {
+    throw new LeaguePhysicalTotalsReadError("read_failed", cause);
+  }
+  // Migration 88 is optional for this candidate. Missing RPC means constant F/D
+  // priors with scale=1; do not replace the bounded RPC with a league-wide scan.
+  if ((result.error as { code?: unknown } | null)?.code === "PGRST202") {
+    throw new LeaguePhysicalTotalsReadError("rpc_missing", result.error);
+  }
+  if (result.error) throw new LeaguePhysicalTotalsReadError("read_failed", result.error);
+  const rows = Array.isArray(result.data) ? result.data : [];
+  const totals: Partial<Record<string, { hits: number; blocks: number; toiSeconds: number }>> = {};
+  for (const row of rows) {
+    const key = `${row?.position_group}:${row?.scope}`;
+    // bigint columns may arrive as numeric strings; null or blank must not read as zero.
+    const raw = [row?.hits, row?.blocks, row?.toi_seconds];
+    const values = raw.map(Number);
+    if (!["F:to_date", "F:prior2", "D:to_date", "D:prior2"].includes(key) || totals[key]
+      || raw.some(value => typeof value !== "number" && !(typeof value === "string" && value.trim() !== ""))
+      || values.some(value => !Number.isFinite(value) || value < 0)) {
+      throw new LeaguePhysicalTotalsReadError("invalid_rows");
+    }
+    totals[key] = { hits: values[0], blocks: values[1], toiSeconds: values[2] };
+  }
+  if (rows.length !== 4) throw new LeaguePhysicalTotalsReadError("invalid_rows");
+  return {
+    F: { toDate: totals["F:to_date"]!, prior: totals["F:prior2"]! },
+    D: { toDate: totals["D:to_date"]!, prior: totals["D:prior2"]! },
+  };
 }
 
 export async function fetchLatestWgoSkaterDeploymentProfiles(
@@ -422,7 +569,8 @@ export async function fetchLatestSkaterContextProfiles(
       "player_id,date,nst_shots_per_60,nst_ixg_per_60,nst_rush_attempts_per_60,nst_rebounds_created_per_60,nst_oi_xgf_per_60,nst_oi_xga_per_60,nst_oi_cf_pct_rates,nst_oi_cf_pct,possession_pct_safe"
     )
     .in("player_id", playerIds)
-    .lte("date", cutoffDate)
+    // These are per-game actuals; the target slate is not pregame context.
+    .lt("date", cutoffDate)
     .gte("date", oneYearAgo)
     .order("date", { ascending: false })
     .limit(5000);

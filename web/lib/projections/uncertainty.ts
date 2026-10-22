@@ -1,3 +1,10 @@
+import {
+  getDispersionFit,
+  resolveDispersionAlpha,
+  type DispersionStat,
+  type ResolveDispersionOptions
+} from "./dispersion";
+
 const Z_P10 = -1.2815515655446004;
 const Z_P90 = 1.2815515655446004;
 
@@ -156,7 +163,8 @@ export function buildPlayerUncertainty(
     shotsEs?: number;
     shotsPp?: number;
   }>,
-  trendVolatilityMultiplier = 1
+  trendVolatilityMultiplier = 1,
+  countModel?: CountModelOptions
 ) {
   const effectiveHorizon = Math.max(1, Math.floor(horizonGames));
   const scalars =
@@ -165,6 +173,8 @@ export function buildPlayerUncertainty(
       : Array.from({ length: effectiveHorizon }, () => 1);
   const samples = UNCERTAINTY_CONFIG.simulationSamples;
   const totalScalar = scalars.reduce((acc, v) => acc + v, 0);
+  const useNb = countModel?.negativeBinomial === true;
+  const simToiCv = playerToiCv(u.toiEsSeconds, u.toiPpSeconds);
   const volatilityMultiplier = Math.max(
     0.75,
     Math.min(1.8, trendVolatilityMultiplier)
@@ -358,8 +368,15 @@ export function buildPlayerUncertainty(
           ? scenarioAssistsPp * scalar * (goalsPpMean / (scenarioGoalsPp * scalar))
           : 0;
 
-      const shotsEs = samplePoisson(shotsEsMean, rand);
-      const shotsPp = samplePoisson(shotsPpMean, rand);
+      // NB: one gamma multiplier shared by ES and PP shots keeps total SOG NB(mu, alpha).
+      const shotsAlpha = useNb
+        ? normalizeAlpha(
+            simulationAlpha("sog", countModel?.position, shotsEsMean + shotsPpMean, simToiCv)
+          )
+        : 0;
+      const shotsMultiplier = shotsAlpha > 0 ? sampleGammaMeanOne(1 / shotsAlpha, rand) : 1;
+      const shotsEs = samplePoisson(shotsEsMean * shotsMultiplier, rand);
+      const shotsPp = samplePoisson(shotsPpMean * shotsMultiplier, rand);
       const goalsEs = samplePoisson(goalsEsMean, rand);
       const goalsPp = samplePoisson(goalsPpMean, rand);
       const assistsEs = samplePoisson(assistsEsMean, rand);
@@ -367,8 +384,20 @@ export function buildPlayerUncertainty(
 
       const hitsMean = Math.max(0, u.hits) * scalar * toiScale;
       const blocksMean = Math.max(0, u.blocks) * scalar * toiScale;
-      const hits = samplePoisson(hitsMean, rand);
-      const blocks = samplePoisson(blocksMean, rand);
+      const hits = useNb
+        ? sampleNegativeBinomial(
+            hitsMean,
+            simulationAlpha("hit", countModel?.position, hitsMean, simToiCv),
+            rand
+          )
+        : samplePoisson(hitsMean, rand);
+      const blocks = useNb
+        ? sampleNegativeBinomial(
+            blocksMean,
+            simulationAlpha("blk", countModel?.position, blocksMean, simToiCv),
+            rand
+          )
+        : samplePoisson(blocksMean, rand);
 
       totalToiEs += toiEs;
       totalToiPp += toiPp;
@@ -569,7 +598,8 @@ export function buildGoalieUncertainty(
     shotsAgainst: number;
     goalsAllowed: number;
     saves: number;
-  }>
+  }>,
+  countModel?: CountModelOptions
 ) {
   const effectiveHorizon = Math.max(1, Math.floor(horizonGames));
   const scalars =
@@ -645,7 +675,14 @@ export function buildGoalieUncertainty(
     for (let g = 0; g < effectiveHorizon; g += 1) {
       const scalar = scalars[g] ?? 1;
       const shotsMean = scenarioShots * scalar;
-      const shots = samplePoisson(shotsMean, rand);
+      const shots =
+        countModel?.negativeBinomial === true
+          ? sampleNegativeBinomial(
+              shotsMean,
+              resolveDispersionAlpha("sa", countModel.position ?? "G", shotsMean),
+              rand
+            )
+          : samplePoisson(shotsMean, rand);
       const baseShotsScaled = scenarioShots * scalar;
       const goalsMean =
         baseShotsScaled > 0
@@ -669,4 +706,264 @@ export function buildGoalieUncertainty(
     goals_allowed: quantilesFromSamples(samplesGoals),
     saves: quantilesFromSamples(samplesSaves)
   };
+}
+
+// ---------------------------------------------------------------------------
+// Count distributions: negative binomial with Poisson fallback (tasks 8.1/8.2).
+// alpha is the NB2 dispersion (Var = mu + alpha * mu^2); alpha null/0 = Poisson.
+// Fitted alphas come from ./dispersion (resolveDispersionAlpha).
+// ---------------------------------------------------------------------------
+
+const NB_MIN_ALPHA = 1e-9;
+
+/**
+ * Opt-in count model for buildPlayerUncertainty / buildGoalieUncertainty.
+ * Default (omitted) keeps the legacy Poisson draws.
+ */
+export type CountModelOptions = {
+  /** Draw SOG/hits/blocks (skaters) or shots against (goalies) from the fitted NB. */
+  negativeBinomial?: boolean;
+  /** F/C/L/R/D/G; unknown positions fall back to Poisson. */
+  position?: string | null;
+};
+
+/**
+ * Per-game alpha inside the simulation, where TOI is already drawn with CV
+ * `simToiCv`: the TOI-conditional fit compounded with whatever empirical TOI
+ * variance (fit.toiCv2) the simulated TOI noise does not cover.
+ */
+function simulationAlpha(
+  stat: DispersionStat,
+  position: string | null | undefined,
+  perGameMean: number,
+  simToiCv: number
+): number | null {
+  const fit = getDispersionFit(stat, position);
+  if (!fit) return null;
+  const residualCv = Math.sqrt(Math.max(0, fit.toiCv2 - simToiCv * simToiCv));
+  return resolveDispersionAlpha(stat, position, perGameMean, { toiCv: residualCv });
+}
+const COUNT_TAIL_EPS = 1e-12;
+const COUNT_MAX_SUPPORT = 20000;
+
+function normalizeAlpha(alpha: number | null | undefined): number {
+  if (alpha == null || !Number.isFinite(alpha) || alpha < NB_MIN_ALPHA) return 0;
+  return alpha;
+}
+
+/** Probability mass over 0..K, truncated once the remaining tail is below 1e-12. */
+export function countPmf(mean: number, alpha?: number | null): number[] {
+  const mu = clampNonNegative(mean);
+  if (mu === 0) return [1];
+  const a = normalizeAlpha(alpha);
+  const r = a > 0 ? 1 / a : Infinity;
+  // log P(0) and the log ratio P(k+1)/P(k).
+  let logP = a > 0 ? -r * Math.log1p(mu / r) : -mu;
+  const logQ = a > 0 ? Math.log(mu / (r + mu)) : Math.log(mu);
+  const pmf: number[] = [];
+  let cumulative = 0;
+  for (let k = 0; k < COUNT_MAX_SUPPORT; k += 1) {
+    const p = Math.exp(logP);
+    pmf.push(p);
+    cumulative += p;
+    if (k >= mu && 1 - cumulative < COUNT_TAIL_EPS) break;
+    logP += a > 0 ? Math.log((k + r) / (k + 1)) + logQ : logQ - Math.log(k + 1);
+  }
+  return pmf;
+}
+
+export function countVariance(mean: number, alpha?: number | null): number {
+  const mu = clampNonNegative(mean);
+  return mu + normalizeAlpha(alpha) * mu * mu;
+}
+
+/** P(X <= k). */
+export function countCdf(k: number, mean: number, alpha?: number | null): number {
+  if (!Number.isFinite(k) || k < 0) return 0;
+  const pmf = countPmf(mean, alpha);
+  const upper = Math.min(Math.floor(k), pmf.length - 1);
+  let total = 0;
+  for (let i = 0; i <= upper; i += 1) total += pmf[i];
+  return Math.min(1, total);
+}
+
+/** P(X >= k). */
+export function countProbabilityAtLeast(
+  k: number,
+  mean: number,
+  alpha?: number | null
+): number {
+  if (!Number.isFinite(k) || k <= 0) return 1;
+  return Math.max(0, 1 - countCdf(Math.ceil(k) - 1, mean, alpha));
+}
+
+/** Smallest integer k with P(X <= k) >= p. */
+export function countQuantile(p: number, mean: number, alpha?: number | null): number {
+  const pmf = countPmf(mean, alpha);
+  const target = Math.max(0, Math.min(1, p));
+  let total = 0;
+  for (let k = 0; k < pmf.length; k += 1) {
+    total += pmf[k];
+    if (total >= target - 1e-12) return k;
+  }
+  return pmf.length - 1;
+}
+
+export type CountDistributionSummary = {
+  mean: number;
+  /** NB dispersion used; 0 means Poisson. */
+  alpha: number;
+  model: "negative_binomial" | "poisson";
+  variance: number;
+  /** P(X >= k) keyed by k. */
+  pAtLeast: Record<number, number>;
+  quantiles: { p10: number; p50: number; p90: number };
+};
+
+export function summarizeCountDistribution(
+  mean: number,
+  alpha?: number | null,
+  atLeast: number[] = [1, 2, 3, 4, 5]
+): CountDistributionSummary {
+  const mu = clampNonNegative(mean);
+  const a = normalizeAlpha(alpha);
+  const pmf = countPmf(mu, a);
+  const cdf: number[] = [];
+  pmf.reduce((acc, p, k) => (cdf[k] = acc + p), 0);
+  const cdfAt = (k: number) => (k < 0 ? 0 : Math.min(1, cdf[Math.min(k, cdf.length - 1)]));
+  const quantileAt = (p: number) => {
+    const k = cdf.findIndex((c) => c >= p - 1e-12);
+    return k < 0 ? cdf.length - 1 : k;
+  };
+  const pAtLeast: Record<number, number> = {};
+  for (const k of atLeast) {
+    if (!Number.isFinite(k)) continue;
+    const kk = Math.max(0, Math.ceil(k));
+    pAtLeast[kk] = round6(kk === 0 ? 1 : Math.max(0, 1 - cdfAt(kk - 1)));
+  }
+  return {
+    mean: round3(mu),
+    alpha: round6(a),
+    model: a > 0 ? "negative_binomial" : "poisson",
+    variance: round3(countVariance(mu, a)),
+    pAtLeast,
+    quantiles: { p10: quantileAt(0.1), p50: quantileAt(0.5), p90: quantileAt(0.9) }
+  };
+}
+
+function round6(n: number): number {
+  return Number(n.toFixed(6));
+}
+
+export type StatDistributionOptions = ResolveDispersionOptions & {
+  /** Overrides the fitted alpha (null forces Poisson). */
+  alphaOverride?: number | null;
+  atLeast?: number[];
+};
+
+function statAlpha(
+  stat: DispersionStat,
+  position: string | null | undefined,
+  mean: number,
+  options: StatDistributionOptions
+): number | null {
+  if (options.alphaOverride !== undefined) return options.alphaOverride;
+  return resolveDispersionAlpha(stat, position, mean, options);
+}
+
+/** Mean, P(X >= k) and quantiles for a projected stat total; Poisson when no alpha is fitted. */
+export function summarizeStatDistribution(
+  stat: DispersionStat,
+  position: string | null | undefined,
+  mean: number,
+  options: StatDistributionOptions = {}
+): CountDistributionSummary {
+  return summarizeCountDistribution(
+    mean,
+    statAlpha(stat, position, mean, options),
+    options.atLeast
+  );
+}
+
+export type OverUnderPush = { over: number; under: number; push: number };
+
+/** Over = X > line, under = X < line, push = X == line (integer lines only). */
+export function overUnderPushProbabilities(
+  mean: number,
+  alpha: number | null | undefined,
+  line: number
+): OverUnderPush {
+  if (!Number.isFinite(line)) return { over: 0, under: 0, push: 0 };
+  if (line < 0) return { over: 1, under: 0, push: 0 };
+  const pmf = countPmf(mean, alpha);
+  const pAt = (k: number) => (k >= 0 && k < pmf.length ? pmf[k] : 0);
+  let cdfFloor = 0;
+  for (let k = 0; k <= Math.min(Math.floor(line), pmf.length - 1); k += 1) cdfFloor += pmf[k];
+  cdfFloor = Math.min(1, cdfFloor);
+  const isInteger = Math.abs(line - Math.round(line)) < 1e-9;
+  const push = isInteger ? pAt(Math.round(line)) : 0;
+  return {
+    over: Math.max(0, 1 - cdfFloor),
+    under: Math.max(0, cdfFloor - push),
+    push
+  };
+}
+
+/**
+ * P(over `line`) for a projected stat total, e.g. P(SOG > 2.5). Integer lines
+ * exclude the push (X == line); divide by (over + under) for a no-push price.
+ * Falls back to Poisson when no dispersion is fitted for (stat, position).
+ */
+export function probabilityOverLine(
+  stat: DispersionStat,
+  position: string | null | undefined,
+  mean: number,
+  line: number,
+  options: StatDistributionOptions = {}
+): number {
+  return overUnderPushProbabilities(mean, statAlpha(stat, position, mean, options), line).over;
+}
+
+/** Per-game TOI CV implied by the ES/PP TOI noise used in buildPlayerUncertainty. */
+export function playerToiCv(
+  toiEsSeconds: number,
+  toiPpSeconds: number,
+  esSdPct: number = UNCERTAINTY_CONFIG.playerEsToiSdPct,
+  ppSdPct: number = UNCERTAINTY_CONFIG.playerPpToiSdPct
+): number {
+  const es = clampNonNegative(toiEsSeconds);
+  const pp = clampNonNegative(toiPpSeconds);
+  const total = es + pp;
+  if (total <= 0) return 0;
+  return Math.sqrt((es * esSdPct) ** 2 + (pp * ppSdPct) ** 2) / total;
+}
+
+/** Gamma(shape, scale = 1/shape) multiplier with mean 1 and variance 1/shape (Marsaglia-Tsang). */
+function sampleGammaMeanOne(shape: number, rand: () => number): number {
+  if (!Number.isFinite(shape) || shape <= 0) return 1;
+  if (shape < 1) {
+    const u = Math.max(rand(), 1e-12);
+    return sampleGammaMeanOne(shape + 1, rand) * ((shape + 1) / shape) * u ** (1 / shape);
+  }
+  const d = shape - 1 / 3;
+  const c = 1 / Math.sqrt(9 * d);
+  for (let i = 0; i < 100; i += 1) {
+    const x = sampleNormal(0, 1, rand);
+    const v = (1 + c * x) ** 3;
+    if (v <= 0) continue;
+    const u = Math.max(rand(), 1e-12);
+    if (Math.log(u) < 0.5 * x * x + d - d * v + d * Math.log(v)) return (d * v) / shape;
+  }
+  return 1;
+}
+
+/** Gamma-Poisson draw: X ~ NB(mean, alpha); alpha 0/null draws Poisson. */
+export function sampleNegativeBinomial(
+  mean: number,
+  alpha: number | null | undefined,
+  rand: () => number
+): number {
+  const a = normalizeAlpha(alpha);
+  if (a === 0) return samplePoisson(mean, rand);
+  return samplePoisson(clampNonNegative(mean) * sampleGammaMeanOne(1 / a, rand), rand);
 }

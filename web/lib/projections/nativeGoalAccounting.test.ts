@@ -11,6 +11,8 @@ import { buildSequentialHorizonScalarsFromDates } from "./utils/date-utils";
 const producer = vi.hoisted(() => ({
   roster: (teamId: number) => Array.from({ length: 18 }, (_, index) => teamId * 100 + index + 1),
   ppLine: { goalsPp: 0.1114, assistsPp: 0.2 },
+  rollingStrengths: [] as string[],
+  leagueReads: 0,
   playerWrites: vi.fn(async (rows: unknown[]) => rows.length),
   teamWrites: vi.fn(async (_row: unknown) => 1),
 }));
@@ -28,7 +30,12 @@ vi.mock("./queries/line-combo-queries", () => ({ fetchRecentTeamLineCombinations
 }] }));
 vi.mock("./queries/skater-queries", () => ({
   fetchCurrentRosterPlayerIds: async (teamId: number) => producer.roster(teamId),
-  fetchRollingRows: async () => [], fetchSkaterRecencyEvents: async () => new Map(),
+  fetchRollingRows: async (_ids: number[], strength: "ev" | "pp" | "all") => (producer.rollingStrengths.push(strength), []),
+  fetchLeaguePhysicalTotals: async () => (producer.leagueReads += 1, {
+    F: { toDate: { hits: 490, blocks: 210, toiSeconds: 360_000 }, prior: { hits: 4900, blocks: 2100, toiSeconds: 3_600_000 } },
+    D: { toDate: { hits: 280, blocks: 440, toiSeconds: 360_000 }, prior: { hits: 3200, blocks: 4400, toiSeconds: 3_600_000 } },
+  }),
+  fetchSkaterRecencyEvents: async () => new Map(),
   fetchLatestWgoSkaterDeploymentProfiles: async () => new Map(),
   fetchLatestSkaterContextProfiles: async () => ({ shotQuality: new Map(), onIceContext: new Map() }),
   fetchLatestSkaterTrendAdjustments: async () => ({ adjustments: new Map(), diagnostics: {
@@ -303,6 +310,8 @@ describe("native skater-stage accounting integration", () => {
     producer.playerWrites.mockClear();
     producer.teamWrites.mockClear();
     producer.ppLine = { goalsPp: fixture.goalsPp, assistsPp: fixture.assistsPp };
+    producer.rollingStrengths.length = 0;
+    producer.leagueReads = 0;
     const asOfDate = "2026-10-07";
     const cached = <T>(value: T) => new Map([10, 11].map(teamId => [`${teamId}:${asOfDate}`, value]));
     const teamGoalsByTeamId = new Map<number, number>();
@@ -326,6 +335,7 @@ describe("native skater-stage accounting integration", () => {
       teamDefensiveEnvironmentCache: new Map(), teamOffenseEnvironmentCache: new Map(), teamRestDaysCache: cached(null),
       teamStrengthPriorCache: cached(null), teamStrengthCache: cached({ toiEsSecondsAvg: 15000, toiPpSecondsAvg: 3000, toiPkSecondsAvg: null, shotsEsAvg: 36, shotsPpAvg: 18 }),
       teamOfficialPpUsageCache: cached(null),
+      leaguePhysicalTotalsCache: new Map(),
       teamFiveOnFiveProfileCache: cached(null), teamNstExpectedGoalsCache: cached(null), teamLineComboGoaliePriorCache: cached(new Map()),
       currentTeamGoalieIdsCache: cached(new Set()), playerPropContextByGamePlayerKey, playerPredictionOutputRows, modelMarketFlagRows: [],
       goalieCandidates: [], learningCounters: { players: 0, goalRecent: 0, assistRecent: 0 }, metrics: { data_quality: {}, warnings: [] },
@@ -333,6 +343,11 @@ describe("native skater-stage accounting integration", () => {
         conflicts: [{ gameId: 2026020002, teamId: 10, playerId: 1018, dimension: "pp", evidenceIds: ["synthetic-pp-conflict"] }] },
     });
     expect(result).toEqual({ timedOut: false, playerRowsUpserted: 36, teamRowsUpserted: 2 });
+    const reads = (strength: string) => producer.rollingStrengths.filter(value => value === strength).length;
+    expect(reads("all")).toBeGreaterThanOrEqual(2);
+    expect(reads("all")).toBe(reads("ev"));
+    // Both teams share one league totals read per run and date.
+    expect(producer.leagueReads).toBe(1);
     expect(producer.playerWrites).toHaveBeenCalledTimes(2);
     const added = producer.playerWrites.mock.calls[0][0].find((row: any) => row.player_id === 1018) as any;
     expect(added.uncertainty.model.skater_selection).toMatchObject({ participation_probability: 1, participation_reason: null });
@@ -397,6 +412,7 @@ describe("native skater-stage accounting integration", () => {
       // A 2999 s PP average leaves a 15001 s ES target, so the team total is fractional too.
       teamStrengthPriorCache: cached(null), teamStrengthCache: cached({ toiEsSecondsAvg: 15000, toiPpSecondsAvg: 2999, toiPkSecondsAvg: null, shotsEsAvg: 36, shotsPpAvg: 18 }),
       teamOfficialPpUsageCache: cached(null),
+      leaguePhysicalTotalsCache: new Map(),
       teamFiveOnFiveProfileCache: cached(null), teamNstExpectedGoalsCache: cached(null), teamLineComboGoaliePriorCache: cached(new Map()),
       currentTeamGoalieIdsCache: cached(new Set()), playerPropContextByGamePlayerKey: new Map(), playerPredictionOutputRows: [], modelMarketFlagRows: [],
       goalieCandidates: [], learningCounters: { players: 0, goalRecent: 0, assistRecent: 0 }, metrics: { data_quality: {}, warnings: [] },

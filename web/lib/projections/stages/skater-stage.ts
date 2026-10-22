@@ -43,6 +43,7 @@ import type {
   ReconciledSkaterVector,
   ReconciliationDistributionValidation,
   RollingSkaterMetricRow,
+  LeaguePhysicalTotals,
   RollingRow,
   RosterEventRow,
   RunProjectionOptions,
@@ -220,6 +221,7 @@ import {
   fetchLatestSkaterContextProfiles,
   fetchLatestSkaterTrendAdjustments,
   fetchLatestWgoSkaterDeploymentProfiles,
+  fetchLeaguePhysicalTotals,
   fetchRollingRows,
 } from "../queries/skater-queries";
 import { type MarketTypeSummary } from "../queries/market-queries";
@@ -249,6 +251,7 @@ import { createRun, finalizeRun } from "../queries/run-lifecycle-queries";
 import {
   computeSkaterOnIceContextAdjustments,
   computeSkaterOpponentGoalieContextAdjustments,
+  computeSkaterPhysicalEventRates,
   computeSkaterRestScheduleAdjustments,
   computeSkaterSampleShrinkageAdjustments,
   computeSkaterShotQualityAdjustments,
@@ -300,11 +303,13 @@ import {
 import {
   ANALYTICS_MODEL_NAME,
   ANALYTICS_MODEL_VERSION,
-  buildModelMarketFlagRow,
+  buildModelMarketProbabilityFlagRow,
+  compareModelWithMarket,
+  forgePropOverProbability,
   GAME_MARKET_EDGE_THRESHOLDS,
   getConsensusLineValue,
   getProjectionValueForPropMarket,
-  PLAYER_MARKET_EDGE_THRESHOLDS,
+  quotesFromMarketSummary,
 } from "../utils/market-output-builders";
 
 function assertSupabase() {
@@ -1299,6 +1304,7 @@ export async function runPerGameSkaterStage(args: {
   teamRestDaysCache: Map<string, number | null>;
   teamStrengthPriorCache: Map<string, TeamStrengthPrior | null>;
   teamStrengthCache: Map<string, TeamStrengthAverages>;
+  leaguePhysicalTotalsCache: Map<string, LeaguePhysicalTotals | null>;
   teamFiveOnFiveProfileCache: Map<string, TeamFiveOnFiveProfile | null>;
   teamNstExpectedGoalsCache: Map<string, TeamNstExpectedGoalsProfile | null>;
   teamLineComboGoaliePriorCache: Map<string, Map<number, number>>;
@@ -1346,6 +1352,7 @@ export async function runPerGameSkaterStage(args: {
     teamRestDaysCache,
     teamStrengthPriorCache,
     teamStrengthCache,
+    leaguePhysicalTotalsCache,
     teamFiveOnFiveProfileCache,
     teamNstExpectedGoalsCache,
     teamLineComboGoaliePriorCache,
@@ -1508,6 +1515,28 @@ export async function runPerGameSkaterStage(args: {
       "pp",
       asOfDate,
     );
+    // Hits and blocks only: the all-strength row keeps NHL counts where NST is missing.
+    let allLatest = pickLatestByPlayer(await fetchRollingRows(
+      teamPositionFilteredSkaterIds,
+      "all",
+      asOfDate,
+    ));
+    // League hit/block totals rescale prior-season history: one read per run and date; constant priors if it fails.
+    const leaguePhysicalKey = `${currentSeasonId}:${asOfDate}`;
+    if (!leaguePhysicalTotalsCache.has(leaguePhysicalKey)) {
+      let totals: LeaguePhysicalTotals | null = null;
+      try {
+        totals = await fetchLeaguePhysicalTotals(currentSeasonId, asOfDate);
+      } catch (error) {
+        metrics.data_quality.physical_league_totals_unavailable =
+          (metrics.data_quality.physical_league_totals_unavailable ?? 0) + 1;
+        if (error instanceof Error && "reason" in error && error.reason === "rpc_missing") {
+          metrics.warnings.push("physical_league_totals_rpc_missing:without_league_rescale");
+        }
+      }
+      leaguePhysicalTotalsCache.set(leaguePhysicalKey, totals);
+    }
+    const leaguePhysicalTotals = leaguePhysicalTotalsCache.get(leaguePhysicalKey) ?? null;
     let evLatest = pickLatestByPlayer(evRows);
     let ppLatest = pickLatestByPlayer(ppRows);
     let latestMetricDateByPlayerId = new Map<number, string>();
@@ -1637,6 +1666,11 @@ export async function runPerGameSkaterStage(args: {
           "pp",
           asOfDate,
         );
+        allLatest = pickLatestByPlayer(await fetchRollingRows(
+          teamPositionFilteredSkaterIds,
+          "all",
+          asOfDate,
+        ));
         evLatest = pickLatestByPlayer(evRows);
         ppLatest = pickLatestByPlayer(ppRows);
         latestMetricDateByPlayerId = new Map<number, string>();
@@ -1924,6 +1958,7 @@ export async function runPerGameSkaterStage(args: {
         assistRatePp: number;
         hitsRate: number;
         blocksRate: number;
+        physicalToiMultiplier: number;
         roleTag: SkaterRoleTag | null;
         roleContinuity: SkaterRoleContinuitySummary | null;
         roleStabilityMultiplier: number;
@@ -2168,36 +2203,13 @@ export async function runPerGameSkaterStage(args: {
       const sogPer60Ev = boundedUsage.sogPer60Es;
       const sogPer60Pp = ppUsage.sogPer60Pp;
 
-      const hitsPer60 = safeNumber(
-        resolveNullableCompatibilityValue(
-          "weighted_rate",
-          ev?.hits_per_60_last5,
-          ev?.hits_per_60_avg_last5,
-        ),
-        safeNumber(
-          resolveNullableCompatibilityValue(
-            "weighted_rate",
-            ev?.hits_per_60_all,
-            ev?.hits_per_60_avg_all,
-          ),
-          1,
-        ),
-      );
-      const blocksPer60 = safeNumber(
-        resolveNullableCompatibilityValue(
-          "weighted_rate",
-          ev?.blocks_per_60_last5,
-          ev?.blocks_per_60_avg_last5,
-        ),
-        safeNumber(
-          resolveNullableCompatibilityValue(
-            "weighted_rate",
-            ev?.blocks_per_60_all,
-            ev?.blocks_per_60_avg_all,
-          ),
-          0.5,
-        ),
-      );
+      const physicalRates = computeSkaterPhysicalEventRates({
+        all: allLatest.get(playerId),
+        position: playerMetaById.get(playerId)?.position ?? null,
+        esPpToiSeconds: toiEs + toiPp,
+        currentSeasonId,
+        league: leaguePhysicalTotals,
+      });
 
       const shotsEs = computeShotsFromRate(boundedToiEs, sogPer60Ev);
       const shotsPp = computeShotsFromRate(boundedToiPp, sogPer60Pp);
@@ -2321,8 +2333,9 @@ export async function runPerGameSkaterStage(args: {
         goalRatePp: clamp(goalRatePp * trendGoalMultiplier, 0.04, 0.45),
         assistRateEs: clamp(assistRateEs * trendAssistMultiplier, 0.4, 3.4),
         assistRatePp: clamp(assistRatePp * trendAssistMultiplier, 0.3, 2),
-        hitsRate: hitsPer60,
-        blocksRate: blocksPer60,
+        hitsRate: physicalRates.hitsPer60,
+        blocksRate: physicalRates.blocksPer60,
+        physicalToiMultiplier: physicalRates.toiMultiplier,
         roleTag,
         roleContinuity,
         roleStabilityMultiplier,
@@ -2742,9 +2755,10 @@ export async function runPerGameSkaterStage(args: {
       let assistsEs = selectedSkaterStatLine.assistsEs;
       let assistsPp = selectedSkaterStatLine.assistsPp;
 
-      const totalToiMinutes = (p.toiEs + p.toiPp) / 60;
-      let projHits = (totalToiMinutes / 60) * p.hitsRate;
-      let projBlocks = (totalToiMinutes / 60) * p.blocksRate;
+      // Hits and blocks are all-situation rates, so they use ES+PP TOI plus recent PK share.
+      const physicalToiMinutes = ((p.toiEs + p.toiPp) * p.physicalToiMultiplier) / 60;
+      let projHits = (physicalToiMinutes / 60) * p.hitsRate;
+      let projBlocks = (physicalToiMinutes / 60) * p.blocksRate;
       const seasonPrior = bootstrap.get(playerId);
       const seasonLine = seasonPrior ? bootstrapSkaterLine({ goalsEs, goalsPp, assistsEs, assistsPp,
         shotsEs, shotsPp, hits: projHits, blocks: projBlocks }, seasonPrior, {
@@ -2800,6 +2814,10 @@ export async function runPerGameSkaterStage(args: {
           })),
         ),
         p.trendAdjustment?.uncertaintyVolatilityMultiplier ?? 1,
+        {
+          negativeBinomial: true,
+          position: playerMetaById.get(playerId)?.position ?? null,
+        },
       );
       const scenarioMetadata = buildSkaterScenarioMetadata({
         scenarios: p.roleScenarios,
@@ -3288,35 +3306,27 @@ export async function runPerGameSkaterStage(args: {
           },
         });
 
-        const consensusLineValue = getConsensusLineValue(marketSummary);
-        const edgeThreshold = PLAYER_MARKET_EDGE_THRESHOLDS[marketType] ?? 0.25;
-        if (consensusLineValue != null) {
-          const edgeValue = expectedValue - consensusLineValue;
-          if (Math.abs(edgeValue) >= edgeThreshold) {
-            modelMarketFlagRows.push(
-              buildModelMarketFlagRow({
-                asOfDate,
-                entityType: "player",
-                entityId: playerId,
-                gameId: game.id,
-                marketType,
-                flagType: edgeValue > 0 ? "model_over" : "model_under",
-                edgeValue,
-                reasons: [
-                  {
-                    expected_value: expectedValue,
-                    line_value: consensusLineValue,
-                    sportsbook_count: marketSummary.sportsbookKeys.length,
-                  },
-                ],
-                provider: marketSummary.sourceNames[0] ?? null,
-                metadata: {
-                  horizon_games: horizonGames,
-                  run_id: runId,
-                },
-              }),
-            );
-          }
+        const comparison = compareModelWithMarket({
+          marketType,
+          expectedValue,
+          quotes: quotesFromMarketSummary(marketSummary),
+          overProbability: forgePropOverProbability(
+            playerMetaById.get(playerId)?.position ?? null,
+          ),
+        });
+        if (comparison) {
+          const outputRow = playerPredictionOutputRows[playerPredictionOutputRows.length - 1];
+          outputRow.probability_over = Number(comparison.model.over.toFixed(4));
+          const flagRow = buildModelMarketProbabilityFlagRow({
+            asOfDate,
+            entityType: "player",
+            entityId: playerId,
+            gameId: game.id,
+            comparison,
+            provider: marketSummary.sourceNames[0] ?? null,
+            metadata: { horizon_games: horizonGames, run_id: runId },
+          });
+          if (flagRow) modelMarketFlagRows.push(flagRow);
         }
       }
     }

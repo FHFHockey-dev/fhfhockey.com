@@ -111,8 +111,8 @@ export function buildStarterHeuristicMetadata(args: {
   priorMaps: StarterPriorMaps;
   daysBetweenDates: DaysBetweenDatesFn;
   isBackToBack: boolean;
-  teamIsWeaker: boolean;
-  opponentIsWeak: boolean;
+  teamIsWeaker: boolean | null;
+  opponentIsWeak: boolean | null;
   opponentProjectedShotsAgainst: number;
   teamSaAvg10: number | null;
   teamSaAvg5: number | null;
@@ -171,9 +171,9 @@ export function buildStarterHeuristicMetadata(args: {
     xgaPerGame: number | null;
     xgfPerGame: number | null;
   } | null;
-  teamGoalsFor: number;
-  adjustedTeamGoalsFor: number;
-  opponentGoalsFor: number;
+  teamGoalsFor: number | null;
+  adjustedTeamGoalsFor: number | null;
+  opponentGoalsFor: number | null;
   contextPct: number;
   leagueSavePct: number;
 }) {
@@ -254,11 +254,11 @@ export function buildStarterHeuristicMetadata(args: {
       opponent_team_xga: args.opponentStrengthPrior?.xga ?? null,
       opponent_team_xga_per_game: args.opponentStrengthPrior?.xgaPerGame ?? null,
       opponent_team_xgf_per_game: args.opponentStrengthPrior?.xgfPerGame ?? null,
-      team_goals_for_pre_strength_adjustment: Number(args.teamGoalsFor.toFixed(3)),
-      team_goals_for_post_strength_adjustment: Number(
+      team_goals_for_pre_strength_adjustment: args.teamGoalsFor === null ? null : Number(args.teamGoalsFor.toFixed(3)),
+      team_goals_for_post_strength_adjustment: args.adjustedTeamGoalsFor === null ? null : Number(
         args.adjustedTeamGoalsFor.toFixed(3)
       ),
-      opponent_goals_for_post_strength_adjustment: Number(
+      opponent_goals_for_post_strength_adjustment: args.opponentGoalsFor === null ? null : Number(
         args.opponentGoalsFor.toFixed(3)
       ),
       context_adjustment_pct: Number(args.contextPct.toFixed(4)),
@@ -330,7 +330,7 @@ export function augmentStarterModelMetaWithScenarioProjections(args: {
     residual_probability_mass: number;
     proj_saves: number;
     proj_goals_allowed: number;
-    proj_win_prob: number;
+    proj_win_prob: number | null;
     proj_shutout_prob: number;
     modeled_save_pct: number;
   };
@@ -344,7 +344,7 @@ export function augmentStarterModelMetaWithScenarioProjections(args: {
       residual_probability_mass: args.blendedProjection.residual_probability_mass,
       proj_saves: Number(args.blendedProjection.proj_saves.toFixed(3)),
       proj_goals_allowed: Number(args.blendedProjection.proj_goals_allowed.toFixed(3)),
-      proj_win_prob: Number(args.blendedProjection.proj_win_prob.toFixed(4)),
+      proj_win_prob: args.blendedProjection.proj_win_prob === null ? null : Number(args.blendedProjection.proj_win_prob.toFixed(4)),
       proj_shutout_prob: Number(args.blendedProjection.proj_shutout_prob.toFixed(4)),
       modeled_save_pct: Number(args.blendedProjection.modeled_save_pct.toFixed(4))
     }
@@ -358,7 +358,7 @@ export function buildGoalieUncertaintyWithModel(args: {
     residual_probability_mass: number;
     proj_saves: number;
     proj_goals_allowed: number;
-    proj_win_prob: number;
+    proj_win_prob: number | null;
     proj_shutout_prob: number;
   };
   goalieModel: {
@@ -451,7 +451,7 @@ export function buildGoalieUncertaintyWithModel(args: {
               args.blendedProjection.proj_goals_allowed * args.goalieHorizonTotalScalar
             ).toFixed(3)
           ),
-          proj_win_prob: Number(
+          proj_win_prob: args.blendedProjection.proj_win_prob === null ? null : Number(
             (args.blendedProjection.proj_win_prob * args.goalieHorizonTotalScalar).toFixed(4)
           ),
           proj_shutout_prob: Number(

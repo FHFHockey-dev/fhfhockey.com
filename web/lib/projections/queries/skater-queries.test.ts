@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { createAlignedCountSupportBuilder } from "lib/rollingPlayerCountSupport";
 
 const dbState = vi.hoisted(() => ({ rows: [] as Record<string, unknown>[], calls: [] as Array<[string, unknown[]]>,
   rollingFrom: null as null | ((table: string) => unknown), rollingRpc: null as null | ((...args: any[]) => unknown) }));
@@ -9,21 +10,29 @@ vi.mock("lib/supabase/server", () => ({ default: {
     return Promise.resolve({ data: null, error: { code: "PGRST202", message: "Could not find the function in the schema cache" } });
   },
   from(table: string) {
-    if (table === "rolling_player_game_metrics" && dbState.rollingFrom) return dbState.rollingFrom(table);
+    if (["rolling_player_game_metrics", "rolling_player_metric_support_payloads"].includes(table) && dbState.rollingFrom) return dbState.rollingFrom(table);
     dbState.calls.push(["from", [table]]);
+    let rows = dbState.rows;
     const query: Record<string, unknown> = { then(resolve: (value: unknown) => void) {
-      resolve({ data: dbState.rows, error: null });
+      resolve({ data: rows, error: null });
     } };
+    query.lt = (column: string, value: string) => {
+      dbState.calls.push(["lt", [column, value]]);
+      rows = rows.filter(row => typeof row[column] === "string" && String(row[column]) < value);
+      return query;
+    };
     for (const name of ["select", "in", "lte", "gte", "order", "limit"]) {
       query[name] = (...args: unknown[]) => { dbState.calls.push([name, args]); return query; };
     }
-    return query;
+    return table === "player_stats_unified" ? interceptProjectionQuery("from", [table], () => query) ?? query : query;
   },
 } }));
 
-import { ROLLING_ROW_SELECT_CLAUSE, fetchRollingRows, fetchCurrentRosterPlayerIds, fetchSkaterRecencyEvents, fetchLatestSkaterContextProfiles } from "./skater-queries";
+import { ROLLING_ROW_SELECT_CLAUSE, fetchRollingRows, fetchCurrentRosterPlayerIds, fetchSkaterRecencyEvents, fetchLatestSkaterContextProfiles,
+  fetchLeaguePhysicalTotals } from "./skater-queries";
 import { captureProjectionInputs, interceptProjectionQuery, replayProjectionInputs } from "../inputCapture";
 import { pickLatestByPlayer } from "../utils/collection-utils";
+import { computeSkaterPhysicalEventRates } from "../calculators/skater-adjustments";
 
 describe("native skater recency event identity", () => {
   const rows = [{ player_id: 7, game_id: 2026020025, season: 20262027, game_date: "2026-10-03" }] as any;
@@ -163,10 +172,17 @@ describe("counted rolling skater history (legacy window scan)", () => {
     sog_per_60_avg_all: 7.5, goals_total_all: 0, toi_seconds_avg_all: 900,
   }));
   type Reply = { data?: unknown; count?: unknown; error?: unknown; thrown?: Error };
-  function fixture(source = rows(501), replies: Reply[] = []) {
+  function fixture(source: Record<string, any>[] = rows(501), replies: Reply[] = [], supportRows: any[] = [], supportReplies: Reply[] = []) {
     const reads: number[][] = [];
     const queries: Array<Record<string, any>> = [];
     const from = vi.fn((table: string) => {
+      if (table === "rolling_player_metric_support_payloads") {
+        const query: Record<string, any> = {};
+        for (const name of ["select", "in", "eq", "lt", "gt", "order"]) query[name] = vi.fn(() => query);
+        query.range = vi.fn(async (start: number, end: number) => ({ data: supportRows.slice(start, end + 1), count: supportRows.length,
+          error: null, ...supportReplies[Math.floor(start / 500)] }));
+        return query;
+      }
       expect(table).toBe("rolling_player_game_metrics");
       const query: Record<string, any> = {};
       for (const name of ["select", "in", "eq", "lt", "gt", "order", "limit"]) query[name] = vi.fn(() => query);
@@ -210,6 +226,67 @@ describe("counted rolling skater history (legacy window scan)", () => {
     expect(actual).toEqual(source);
     expect(db.reads).toEqual([[0, 499], [500, 999], [1000, 1499], [1500, 1999]]);
   });
+  it("hydrates pruned conversion counts without overwriting authoritative values or imputing missing fields", async () => {
+    const source = [{ ...rows(1)[0], goals_total_all: null, shots_total_all: null, assists_total_all: null, goals_total_last5: 0 }];
+    const support = [{ ...source[0], payload_schema_version: 1, support_payload: { historicalCompatibility: {
+      goals_total_all: 331, shots_total_all: 510, assists_total_all: 63, goals_total_last5: 0, toi_seconds_avg_all: 900,
+      shots_total_last5: null, player_id: 999, arbitrary_projection: 999,
+    } } }];
+    fixture(source, [], support);
+    const actual = await fetch();
+    expect(actual[0]).toMatchObject({ goals_total_all: 331, shots_total_all: 510, assists_total_all: 63,
+      goals_total_last5: 0, toi_seconds_avg_all: 900, player_id: 7 });
+    expect(actual[0]).not.toHaveProperty("arbitrary_projection");
+    expect(actual[0].shots_total_last5).toBeUndefined();
+    expect(source[0].goals_total_all).toBeNull();
+    fixture(source);
+    expect((await fetch())[0].goals_total_all).toBeNull();
+  });
+
+  it("hydrates only exact-anchor aligned support without converting legacy scalars into proof", async () => {
+    const source = rows(1), row = source[0];
+    const aligned = createAlignedCountSupportBuilder({ playerId: row.player_id, strengthState: "ev", sourceTable: "nst_gamelog_es_counts",
+      startDate: row.game_date, canonicalGames: [{ id: row.game_id, date: row.game_date, seasonId: row.season }],
+      countsRows: [{ id: 1, player_id: row.player_id, date_scraped: row.game_date, season: row.season, goals: 0, shots: 4, total_assists: null }],
+    }).push({ player_id: row.player_id, game_id: row.game_id, date: row.game_date, season_id: row.season })!;
+    const sidecar = { ...row, payload_schema_version: 1, support_payload: { alignedCountSupport: aligned } };
+    fixture(source, [], [sidecar]);
+    expect((await fetch())[0].aligned_count_support).toEqual(aligned);
+    expect(source[0]).not.toHaveProperty("aligned_count_support");
+    fixture(source, [], [{ ...sidecar, support_payload: { alignedCountSupport: { ...aligned, anchor: { ...aligned.anchor, gameId: 99 } } } }]);
+    expect((await fetch())[0]).toMatchObject({ aligned_count_support: null, goals_total_all: 0, sog_per_60_all: 6.25 });
+    fixture(source);
+    expect((await fetch())[0]).not.toHaveProperty("aligned_count_support");
+  });
+
+  it("pages sidecars independently when only a subset of history has durable payloads", async () => {
+    const source = rows(501).map(row => ({ ...row, goals_total_all: null }));
+    const support = source.map(row => ({ ...row, payload_schema_version: 1,
+      support_payload: { historicalCompatibility: { goals_total_all: 0 } } }));
+    const db = fixture(source, [], support);
+    expect((await fetch()).every(row => row.goals_total_all === 0)).toBe(true);
+    expect(db.from).toHaveBeenCalledWith("rolling_player_metric_support_payloads");
+  });
+
+  it.each([{ game_id: 99 }, { season: 20252026 }, { payload_schema_version: 2 }, { support_payload: null },
+    { support_payload: { historicalCompatibility: [] } }, { support_payload: { historicalCompatibility: { goals_total_all: -1 } } },
+    { support_payload: { historicalCompatibility: { goals_total_all: "331" } } },
+    { support_payload: { historicalCompatibility: { goals_total_all: 9 } } }])("rejects malformed or substituted sidecar %j", changed => {
+    const source = rows(1), support = { ...source[0], payload_schema_version: 1, support_payload: { historicalCompatibility: { goals_total_all: 1 } }, ...changed };
+    fixture(source, [], [support]);
+    return expect(fetch()).rejects.toMatchObject({ status: "incomplete", reason: "invalid_support_row" });
+  });
+
+  it("rejects duplicate, truncated, uncounted and denied sidecar reads", async () => {
+    const source = rows(1), support = { ...source[0], payload_schema_version: 1, support_payload: { historicalCompatibility: {} } };
+    fixture(source, [], [support, support]);
+    await expect(fetch()).rejects.toMatchObject({ reason: "duplicate_row" });
+    for (const reply of [{ count: null }, { count: 1, data: [] }, { error: new Error("denied") }]) {
+      fixture(source, [], [support], [reply]);
+      await expect(fetch()).rejects.toMatchObject({ status: "incomplete" });
+    }
+  });
+
   it("does not treat a count-less retained read shape as complete", async () => {
     const db = fixture(rows(1501), [{ data: rows(1000), count: null }]);
     await expect(fetch()).rejects.toMatchObject({ status: "incomplete", reason: "invalid_count" });
@@ -223,13 +300,28 @@ describe("counted rolling skater history (legacy window scan)", () => {
     expect(db.queries[0].order.mock.calls).toEqual([["game_date", { ascending: false }],
       ["player_id", { ascending: true }], ["game_id", { ascending: false }]]);
     expect(await fetch([])).toEqual([]);
-    expect(db.from).toHaveBeenCalledTimes(1);
+    expect(db.from).toHaveBeenCalledTimes(2);
   });
   it("retains the requested PP scope and existing row values", async () => {
     const source = rows(1).map(row => ({ ...row, strength_state: "pp" }));
     const db = fixture(source);
     expect(await fetchRollingRows([7], "pp", "2026-10-07")).toEqual(source);
     expect(db.queries[0].eq).toHaveBeenCalledWith("strength_state", "pp");
+  });
+  it("reads the all-strength scope with pruned three-season hit and block totals but no aligned NST support", async () => {
+    const source = rows(1).map(row => ({ ...row, strength_state: "all", toi_seconds_total_last5: 6600 }));
+    const support = [{ ...source[0], payload_schema_version: 1, support_payload: { alignedCountSupport: null,
+      historicalCompatibility: { hits_per_60_hits_3ya: 220, hits_per_60_toi_seconds_3ya: 300000,
+        blocks_per_60_blocks_3ya: 380, blocks_per_60_toi_seconds_3ya: 300000 } } }];
+    const db = fixture(source, [], support);
+    const [row] = await fetchRollingRows([7], "all", "2026-10-07");
+    expect(db.queries[0].eq).toHaveBeenCalledWith("strength_state", "all");
+    expect(row).toMatchObject({ strength_state: "all", toi_seconds_total_last5: 6600, hits_per_60_hits_3ya: 220,
+      hits_per_60_toi_seconds_3ya: 300000, blocks_per_60_blocks_3ya: 380, blocks_per_60_toi_seconds_3ya: 300000 });
+    expect(row).not.toHaveProperty("aligned_count_support");
+    for (const field of ["toi_seconds_total_last5", "hits_per_60_hits_3ya", "hits_per_60_toi_seconds_3ya",
+      "blocks_per_60_blocks_3ya", "blocks_per_60_toi_seconds_3ya", "hits_per_60_hits_season", "hits_per_60_toi_seconds_season",
+      "blocks_per_60_blocks_season", "blocks_per_60_toi_seconds_season"]) expect(ROLLING_ROW_SELECT_CLAUSE.split(",")).toContain(field);
   });
   it.each([null, undefined, -1, 1.5, NaN, "1"])("rejects unproved exact count %s", async count => {
     fixture(rows(1), [{ count }]);
@@ -310,7 +402,6 @@ describe("counted rolling skater history (legacy window scan)", () => {
 });
 
 // Fictional multi-game history. The fake RPC applies the migration's contract to the same rows the legacy scan reads.
-// This reader ignores support_row: sidecars are returned by the RPC but never hydrate or reject a row.
 describe("latest rolling row per player (forge_latest_rolling_rows)", () => {
   type Row = Record<string, any>;
   const cutoff = "2026-10-07";
@@ -320,8 +411,8 @@ describe("latest rolling row per player (forge_latest_rolling_rows)", () => {
     season: game_date >= "2026-09-01" ? 20262027 : game_date >= "2025-09-01" ? 20252026 : 20242025,
     sog_per_60_last5: (game_id % 97) / 10, goals_total_all: 3, ...values,
   });
-  const sidecar = (row: Row, support_payload: Row, changed: Row = {}) => ({ player_id: row.player_id, game_id: row.game_id,
-    game_date: row.game_date, season: row.season, strength_state: row.strength_state, payload_schema_version: 1, support_payload, ...changed });
+  const sidecar = (row: Row, support_payload: Row) => ({ player_id: row.player_id, game_id: row.game_id, game_date: row.game_date,
+    season: row.season, strength_state: row.strength_state, payload_schema_version: 1, support_payload });
   // Scan order (newest first, then player, then game). Player 11's only row predates the 365-day scope.
   const history = [
     wide(7, "2026-10-06", 2026020030, { goals_total_all: null, shots_total_all: null }),
@@ -333,11 +424,15 @@ describe("latest rolling row per player (forge_latest_rolling_rows)", () => {
     wide(9, "2025-12-01", 2025020400),
     wide(11, "2025-04-01", 2024021100),
   ];
-  // Sidecars that a hydrating reader would use (or reject); this reader must leave the wide rows untouched.
+  const aligned = createAlignedCountSupportBuilder({ playerId: 8, strengthState: "ev", sourceTable: "nst_gamelog_es_counts",
+    startDate: "2026-10-06", canonicalGames: [{ id: 2026020030, date: "2026-10-06", seasonId: 20262027 }],
+    countsRows: [{ id: 1, player_id: 8, date_scraped: "2026-10-06", season: 20262027, goals: 0, shots: 4, total_assists: null }],
+  }).push({ player_id: 8, game_id: 2026020030, date: "2026-10-06", season_id: 20262027 })!;
   const sidecars = [
-    sidecar(history[0], { historicalCompatibility: { goals_total_all: 12, shots_total_all: 80, sog_per_60_last5: 99 },
-      alignedCountSupport: { synthetic: true } }),
-    sidecar(history[1], { historicalCompatibility: { shots_total_all: 55 } }, { payload_schema_version: 2 }),
+    sidecar(history[0], { historicalCompatibility: { goals_total_all: 12, shots_total_all: 80,
+      sog_per_60_last5: history[0].sog_per_60_last5, arbitrary_projection: 999 }, unreadKey: { large: true } }),
+    sidecar(history[1], { alignedCountSupport: aligned, historicalCompatibility: { shots_total_all: 55 } }),
+    sidecar(history[2], { historicalCompatibility: { goals_total_all: 11 } }),
     sidecar(history[7], { historicalCompatibility: { goals_total_all: 40 } }),
   ];
   const has = (row: Row, key: string) => Object.prototype.hasOwnProperty.call(row, key);
@@ -348,14 +443,19 @@ describe("latest rolling row per player (forge_latest_rolling_rows)", () => {
         && row.game_date < args.p_before).sort((a, b) => b.game_date.localeCompare(a.game_date))[0];
       const support = latest && supports.find(row => row.player_id === player_id && row.game_date === latest.game_date
         && row.strength_state === latest.strength_state);
-      return { player_id, rolling_row: latest ? pick(latest, args.p_columns) : null, support_row: support ?? null };
+      const payload = support?.support_payload;
+      return { player_id, rolling_row: latest ? pick(latest, args.p_columns) : null, support_row: support ? {
+        ...pick(support, ["player_id", "game_id", "game_date", "season", "strength_state", "payload_schema_version"]),
+        support_payload: Object.fromEntries(["historicalCompatibility", "alignedCountSupport"].filter(key => has(payload, key))
+          .map(key => [key, key === "historicalCompatibility" && payload[key] && typeof payload[key] === "object"
+            && !Array.isArray(payload[key]) ? pick(payload[key], args.p_columns) : payload[key]])),
+      } : null };
     }) });
-  /** The legacy table answers the 365-day scope in scan order; without `rpc` the function is not deployed. */
+  /** Legacy tables answer the 365-day scope in scan order; without `rpc` the function is not deployed. */
   function backend(rpc?: (...args: any[]) => unknown) {
     const inScope = (row: Row) => row.game_date < cutoff && row.game_date > "2025-10-07";
     const from = vi.fn((table: string) => {
-      expect(table).toBe("rolling_player_game_metrics");
-      const source = history.filter(inScope);
+      const source = (table === "rolling_player_game_metrics" ? history : sidecars).filter(inScope);
       const query: Row = {};
       for (const name of ["select", "in", "eq", "lt", "gt", "order"]) query[name] = vi.fn(() => query);
       query.range = vi.fn(async (start: number, end: number) => ({ data: source.slice(start, end + 1), count: source.length, error: null }));
@@ -367,7 +467,7 @@ describe("latest rolling row per player (forge_latest_rolling_rows)", () => {
     return db;
   }
 
-  it("returns the legacy scan's latest row per player, unhydrated, from one RPC call", async () => {
+  it("returns the legacy scan's latest row per player, hydrated identically, from one RPC call", async () => {
     const ids = [11, 9, 8, 7, 10, 8];
     backend();
     const legacy = await fetchRollingRows(ids, "ev", cutoff);
@@ -377,17 +477,43 @@ describe("latest rolling row per player (forge_latest_rolling_rows)", () => {
     expect(latest).toEqual([...pickLatestByPlayer(legacy).values()]);
     expect(pickLatestByPlayer(latest)).toEqual(pickLatestByPlayer(legacy));
     expect(latest.map(row => [row.player_id, row.game_date])).toEqual([[7, "2026-10-06"], [8, "2026-10-06"], [9, "2026-04-12"]]);
-    // support_row is ignored: no sidecar value fills, overrides or rejects a wide row.
-    expect(latest).toEqual([history[0], history[1], history[4]]);
-    expect(latest[0]).toMatchObject({ goals_total_all: null, shots_total_all: null, sog_per_60_last5: history[0].sog_per_60_last5 });
-    for (const row of latest) expect(row).not.toHaveProperty("aligned_count_support");
+    expect(latest[0]).toMatchObject({ goals_total_all: 12, shots_total_all: 80 });
+    expect(latest[0]).not.toHaveProperty("arbitrary_projection");
+    expect(latest[1]).toMatchObject({ aligned_count_support: aligned, shots_total_all: 55 });
+    expect(latest[2]).toEqual(history[4]);
+    expect(latest[2]).not.toHaveProperty("aligned_count_support");
+    expect(history[0].goals_total_all).toBeNull();
     expect(db.rpc).toHaveBeenCalledTimes(1);
     expect(db.rpc).toHaveBeenCalledWith("forge_latest_rolling_rows", { p_player_ids: [7, 8, 9, 10, 11], p_strength: "ev",
       p_before: cutoff, p_columns: columns }, { get: true });
     expect(db.from).not.toHaveBeenCalled();
   });
 
+  it("hydrates all-strength physical totals from the exact sidecar and computes F/D priors without league rescaling", async () => {
+    const row = wide(7, "2026-10-06", 2026020030, { strength_state: "all", hits_per_60_last5: 0, blocks_per_60_last5: 0 });
+    const history = { toi_seconds_total_last5: 6000, hits_per_60_hits_3ya: 200, hits_per_60_toi_seconds_3ya: 240000,
+      hits_per_60_hits_season: 10, hits_per_60_toi_seconds_season: 6000,
+      blocks_per_60_blocks_3ya: 300, blocks_per_60_toi_seconds_3ya: 240000,
+      blocks_per_60_blocks_season: 12, blocks_per_60_toi_seconds_season: 6000 };
+    const support = sidecar(row, { historicalCompatibility: history });
+    const db = backend(latestRowsRpc([row], [support]));
+    const [hydrated] = await fetchRollingRows([7], "all", cutoff);
+    expect(hydrated).toMatchObject(history);
+    expect(row.hits_per_60_hits_3ya).toBeNull();
+    for (const [position, hitsPrior, blocksPrior] of [["C", 4.9, 2.1], ["D", 3.2, 4.4]] as const) {
+      const rates = computeSkaterPhysicalEventRates({ all: hydrated, position, esPpToiSeconds: 1200,
+        currentSeasonId: 20262027, league: null });
+      const weightedMinutes = (6000 + 0.5 * (240000 - 6000)) / 60;
+      expect(rates.hitsPer60).toBeCloseTo((1 - 100 / 340) * ((10 + 0.5 * 190) * 60 + 50 * hitsPrior) / (weightedMinutes + 50), 12);
+      expect(rates.blocksPer60).toBeCloseTo((1 - 100 / 1100) * ((12 + 0.5 * 288) * 60 + 300 * blocksPrior) / (weightedMinutes + 300), 12);
+      expect(rates).toMatchObject({ hitsLeagueScale: 1, blocksLeagueScale: 1 });
+    }
+    expect(db.rpc).toHaveBeenCalledTimes(1);
+    expect(db.from).not.toHaveBeenCalled();
+  });
+
   const entry = (rolling_row: unknown = { ...history[0] }, support_row: unknown = null, player_id = 7) => ({ player_id, rolling_row, support_row });
+  const support7 = (changed: Row = {}) => ({ ...sidecar(history[0], { historicalCompatibility: { goals_total_all: 12 } }), ...changed });
 
   it("returns exactly the selected columns and omits players without history or outside the 365-day scope", async () => {
     backend(async () => ({ error: null, data: [entry({ ...history[0], unselected_metric: 5 }), entry(null, null, 8),
@@ -395,19 +521,6 @@ describe("latest rolling row per player (forge_latest_rolling_rows)", () => {
     const rows = await fetchRollingRows([7, 8, 11], "ev", cutoff);
     expect(rows).toEqual([history[0]]);
     expect(rows[0]).not.toHaveProperty("unselected_metric");
-  });
-
-  it.each<[string, unknown]>([
-    ["a sidecar for another game", sidecar(history[0], {}, { game_id: 99 })],
-    ["a sidecar from another season", sidecar(history[0], {}, { season: 20252026 })],
-    ["a newer payload schema", sidecar(history[0], {}, { payload_schema_version: 2 })],
-    ["a missing payload", sidecar(history[0], {}, { support_payload: null })],
-    ["a conflicting value", sidecar(history[0], { historicalCompatibility: { sog_per_60_last5: 99, goals_total_all: 12 } })],
-    ["a negative value", sidecar(history[0], { historicalCompatibility: { goals_total_all: -1 } })],
-    ["a non-object sidecar", "sidecar"],
-  ])("ignores %s and returns the wide row unchanged", async (_label, support) => {
-    backend(async () => ({ error: null, data: [entry(undefined, support)] }));
-    expect(await fetchRollingRows([7], "ev", cutoff)).toEqual([history[0]]);
   });
 
   it.each<[string, unknown, number[], string]>([
@@ -420,7 +533,7 @@ describe("latest rolling row per player (forge_latest_rolling_rows)", () => {
     ["an unrequested player", [entry({ ...history[0], player_id: 99 }, null, 99)], [7], "invalid_row"],
     ["a null entry", [null], [7], "invalid_row"],
     ["no support_row key", [{ player_id: 7, rolling_row: { ...history[0] } }], [7], "invalid_row"],
-    ["a missing selected column", [entry(pick(history[0], columns.filter(column => column !== "toi_seconds_avg_all")))], [7], "invalid_row"],
+    ["a missing selected column", [entry(pick(history[0], columns.filter(column => column !== "blocks_per_60_toi_seconds_season")))], [7], "invalid_row"],
     ["an array row", [entry([])], [7], "invalid_row"],
     ["another player's row", [entry({ ...history[0], player_id: 8 })], [7], "invalid_row"],
     ["a row at the cutoff", [entry({ ...history[0], game_date: cutoff })], [7], "invalid_row"],
@@ -428,7 +541,15 @@ describe("latest rolling row per player (forge_latest_rolling_rows)", () => {
     ["no game identity", [entry({ ...history[0], game_id: null })], [7], "invalid_row"],
     ["no season", [entry({ ...history[0], season: null })], [7], "invalid_row"],
     ["an impossible date", [entry({ ...history[0], game_date: "2026-02-30" })], [7], "invalid_row"],
-    ["a sidecar without its row", [entry(null, sidecar(history[0], {}))], [7], "invalid_support_row"],
+    ["a sidecar without its row", [entry(null, support7())], [7], "invalid_support_row"],
+    ["a sidecar for another game", [entry(undefined, support7({ game_id: 99 }))], [7], "invalid_support_row"],
+    ["a sidecar from another season", [entry(undefined, support7({ season: 20252026 }))], [7], "invalid_support_row"],
+    ["a newer payload schema", [entry(undefined, support7({ payload_schema_version: 2 }))], [7], "invalid_support_row"],
+    ["a missing payload", [entry(undefined, support7({ support_payload: null }))], [7], "invalid_support_row"],
+    ["a non-object historical payload", [entry(undefined, support7({ support_payload: { historicalCompatibility: [] } }))], [7], "invalid_support_row"],
+    ["a conflicting value", [entry(undefined, support7({ support_payload: { historicalCompatibility: { sog_per_60_last5: 99 } } }))], [7], "invalid_support_row"],
+    ["a negative value", [entry(undefined, support7({ support_payload: { historicalCompatibility: { goals_total_all: -1 } } }))], [7], "invalid_support_row"],
+    ["a non-object sidecar", [entry(undefined, "sidecar")], [7], "invalid_support_row"],
   ])("rejects %s without falling back", async (_label, data, ids, reason) => {
     const db = backend(async () => ({ data, error: null }));
     await expect(fetchRollingRows(ids, "ev", cutoff)).rejects.toMatchObject({ status: "incomplete", reason });
@@ -450,7 +571,7 @@ describe("latest rolling row per player (forge_latest_rolling_rows)", () => {
     const db = backend(async () => ({ data: null, error: { code: "PGRST202", message: "Could not find the function" } }));
     const rows = await fetchRollingRows([7, 8, 9], "ev", cutoff);
     expect(db.rpc).toHaveBeenCalledTimes(1);
-    expect(db.from.mock.calls).toEqual([["rolling_player_game_metrics"]]);
+    expect(db.from.mock.calls).toEqual([["rolling_player_game_metrics"], ["rolling_player_metric_support_payloads"]]);
     expect(rows).toHaveLength(7);
     expect([...pickLatestByPlayer(rows).values()]).toEqual(
       await fetchRollingRows([7, 8, 9], "ev", cutoff, { rpc: latestRowsRpc(history, sidecars) } as any));
@@ -463,7 +584,7 @@ describe("latest rolling row per player (forge_latest_rolling_rows)", () => {
     const read = () => fetchRollingRows([7, 8, 9], "ev", cutoff, client as any);
     const captured = await captureProjectionInputs(read, { suppressWrites: true });
     expect(db.rpc).not.toHaveBeenCalled();
-    expect(captured.reads.map(input => input.request[0].args[0])).toEqual(["rolling_player_game_metrics"]);
+    expect(captured.reads.map(input => input.request[0].args[0])).toEqual(["rolling_player_game_metrics", "rolling_player_metric_support_payloads"]);
     const replayed = await replayProjectionInputs(captured.reads, read);
     expect(replayed.result).toEqual(captured.result);
     expect([...pickLatestByPlayer(captured.result).values()]).toEqual(await fetchRollingRows([7, 8, 9], "ev", cutoff));
@@ -474,6 +595,7 @@ describe("combined skater context read", () => {
   it("uses one cutoff-bounded query and preserves both latest-player maps with missing fields", async () => {
     dbState.calls = [];
     dbState.rows = [
+      { player_id: 7, date: "2026-09-29", nst_shots_per_60: 999, nst_ixg_per_60: 99, nst_oi_xgf_per_60: 999 },
       { player_id: 7, date: "2026-09-28", nst_shots_per_60: 12, nst_ixg_per_60: 1.1,
         nst_oi_xgf_per_60: 3.2, nst_oi_cf_pct_rates: 0.55, possession_pct_safe: 0.54 },
       { player_id: 7, date: "2026-09-27", nst_shots_per_60: 99, nst_oi_xgf_per_60: 99 },
@@ -481,7 +603,7 @@ describe("combined skater context read", () => {
     ];
     const result = await fetchLatestSkaterContextProfiles([7, 8], "2026-09-29");
     expect(dbState.calls.filter(([name]) => name === "from")).toEqual([["from", ["player_stats_unified"]]]);
-    expect(dbState.calls).toContainEqual(["lte", ["date", "2026-09-29"]]);
+    expect(dbState.calls).toContainEqual(["lt", ["date", "2026-09-29"]]);
     expect(dbState.calls).toContainEqual(["gte", ["date", "2025-09-29"]]);
     expect(dbState.calls).toContainEqual(["limit", [5000]]);
     expect(result.shotQuality.get(7)).toEqual({ sourceDate: "2026-09-28", nstShotsPer60: 12,
@@ -490,5 +612,86 @@ describe("combined skater context read", () => {
       nstOiXgaPer60: null, nstOiCfPct: 0.55, possessionPctSafe: 0.54 });
     expect(result.shotQuality.get(8)?.nstShotsPer60).toBeNull();
     expect(result.onIceContext.get(8)?.nstOiCfPct).toBe(0.49);
+  });
+
+  it("keeps a target-only history unknown and preserves prior zero observations", async () => {
+    dbState.rows = [{ player_id: 7, date: "2026-09-29", nst_shots_per_60: 99 }];
+    const empty = await fetchLatestSkaterContextProfiles([7], "2026-09-29");
+    expect(empty.shotQuality.size).toBe(0);
+    expect(empty.onIceContext.size).toBe(0);
+    dbState.rows.push({ player_id: 7, date: "2026-09-28", nst_shots_per_60: 0 });
+    const prior = await fetchLatestSkaterContextProfiles([7], "2026-09-29");
+    expect(prior.shotQuality.get(7)).toMatchObject({ sourceDate: "2026-09-28", nstShotsPer60: 0, nstIxgPer60: null });
+  });
+
+  it("replays the strictly prior capture and refuses an inclusive historical capture", async () => {
+    dbState.rows = [{ player_id: 7, date: "2026-09-29", nst_shots_per_60: 99 },
+      { player_id: 7, date: "2026-09-28", nst_shots_per_60: 10 }];
+    const read = () => fetchLatestSkaterContextProfiles([7], "2026-09-29");
+    const capture = await captureProjectionInputs(read, { suppressWrites: true });
+    expect(capture.reads).toHaveLength(1);
+    expect(capture.writes).toEqual([]);
+    dbState.rows = [];
+    const replay = await replayProjectionInputs(capture.reads, read);
+    expect(replay.result).toEqual(capture.result);
+    expect(replay.writes).toEqual([]);
+    const legacy = capture.reads.map(input => ({ ...input, request: input.request.map(op => op.method === "lt" ? { ...op, method: "lte" } : op) }));
+    await expect(replayProjectionInputs(legacy, read)).rejects.toThrow("Unrecorded projection input");
+  });
+});
+
+describe("league physical totals", () => {
+  const rows = [
+    { scope: "prior2", position_group: "D", player_games: 9000, hits: 3200, blocks: 4400, toi_seconds: 3_600_000 },
+    { scope: "prior2", position_group: "F", player_games: 18000, hits: 4900, blocks: 2100, toi_seconds: 3_600_000 },
+    { scope: "to_date", position_group: "D", player_games: 900, hits: 280, blocks: 440, toi_seconds: 360_000 },
+    { scope: "to_date", position_group: "F", player_games: 1800, hits: "490", blocks: "210", toi_seconds: 360_000 },
+  ];
+  const client = (data: unknown, error: unknown = null) => ({ rpc: vi.fn().mockResolvedValue({ data, error }) });
+
+  it("reads this season to date and the prior two seasons by position in one call", async () => {
+    const db = client(rows);
+    await expect(fetchLeaguePhysicalTotals(20262027, "2026-10-20", db as any)).resolves.toEqual({
+      F: { toDate: { hits: 490, blocks: 210, toiSeconds: 360_000 }, prior: { hits: 4900, blocks: 2100, toiSeconds: 3_600_000 } },
+      D: { toDate: { hits: 280, blocks: 440, toiSeconds: 360_000 }, prior: { hits: 3200, blocks: 4400, toiSeconds: 3_600_000 } },
+    });
+    expect(db.rpc).toHaveBeenCalledTimes(1);
+    expect(db.rpc).toHaveBeenCalledWith("forge_league_skater_physical_totals", { p_season_id: 20262027, p_cutoff: "2026-10-20" }, { get: true });
+  });
+
+  it("rejects an invalid scope before reading, and missing, extra, duplicate or negative rows", async () => {
+    for (const [season, cutoff] of [[20262026, "2026-10-20"], [2026, "2026-10-20"], [20262027, "10/20/2026"],
+      [20262027, "2026-02-30"]] as const) {
+      const db = client(rows);
+      await expect(fetchLeaguePhysicalTotals(season, cutoff, db as any)).rejects.toMatchObject({ reason: "invalid_scope" });
+      expect(db.rpc).not.toHaveBeenCalled();
+    }
+    for (const data of [rows.slice(1), [...rows, rows[0]], [rows[0], rows[0], rows[2], rows[3]],
+      [{ ...rows[0], hits: -1 }, ...rows.slice(1)], [{ ...rows[0], toi_seconds: null }, ...rows.slice(1)],
+      [{ ...rows[0], scope: "career" }, ...rows.slice(1)], null]) {
+      await expect(fetchLeaguePhysicalTotals(20262027, "2026-10-20", client(data) as any)).rejects.toMatchObject({ reason: "invalid_rows" });
+    }
+  });
+
+  it("distinguishes the unapplied RPC from provider and transport failures without a table-scan fallback", async () => {
+    for (const [code, reason] of [["PGRST202", "rpc_missing"], ["42501", "read_failed"], ["57014", "read_failed"]]) {
+      const error = { code };
+      const db = { ...client(null, error), from: vi.fn(() => { throw new Error("League scan forbidden"); }) };
+      await expect(fetchLeaguePhysicalTotals(20262027, "2026-10-20", db as any)).rejects.toMatchObject({ reason, cause: error });
+      expect(db.rpc).toHaveBeenCalledTimes(1);
+      expect(db.from).not.toHaveBeenCalled();
+    }
+    const cause = new Error("offline transport interruption");
+    const db = { rpc: vi.fn().mockRejectedValue(cause) };
+    await expect(fetchLeaguePhysicalTotals(20262027, "2026-10-20", db as any)).rejects.toMatchObject({ reason: "read_failed", cause });
+  });
+
+  it("selects the unscaled fallback in offline reconstruction before any RPC dispatch", async () => {
+    const db = client(rows);
+    await captureProjectionInputs(async () => {
+      await expect(fetchLeaguePhysicalTotals(20262027, "2026-10-20", db as any))
+        .rejects.toMatchObject({ reason: "read_only_reconstruction" });
+    }, { suppressWrites: true });
+    expect(db.rpc).not.toHaveBeenCalled();
   });
 });

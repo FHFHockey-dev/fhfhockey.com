@@ -84,6 +84,29 @@ export const SKATER_SMALL_SAMPLE_TOI_SECONDS_SCALE = 900;
 export const SKATER_SMALL_SAMPLE_SHOTS_SCALE = 45;
 export const SKATER_SMALL_SAMPLE_LOW_WEIGHT_THRESHOLD = 0.45;
 export const SKATER_SMALL_SAMPLE_CALLUP_WEIGHT_THRESHOLD = 0.22;
+// All-situation hits/blocks per 60. Priors are the 2024-25 + 2025-26 league
+// position rates (WGO), used when the league totals read is unavailable. Fitted
+// by Poisson deviance on games 2-30 of 2024-25 and 2025-26, as of the previous
+// game (2026-10-19/20): hits follow the recent window, blocks the baseline, and
+// prior seasons are rescaled to this season's league rate because league hit and
+// block rates keep falling (D hits 4.19 -> 3.35 -> 3.03, 2023-24 to 2025-26).
+export const SKATER_PHYSICAL_RATE_PRIORS = {
+  F: { hitsPer60: 4.9, blocksPer60: 2.1 },
+  D: { hitsPer60: 3.2, blocksPer60: 4.4 },
+} as const;
+/** Three-season minutes that weigh as much as the position prior. */
+export const SKATER_PHYSICAL_PRIOR_MINUTES = { hits: 50, blocks: 300 } as const;
+/** Baseline minutes the last-5 window is blended against. */
+export const SKATER_PHYSICAL_RECENT_SHRINK_MINUTES = { hits: 240, blocks: 1000 } as const;
+/** Weight on the two prior seasons' events and minutes against this season's. */
+export const SKATER_PHYSICAL_PRIOR_SEASON_WEIGHT = 0.5;
+/** League minutes (about 50 team-games) that shrink this season's league rate toward the prior two seasons'. */
+export const SKATER_PHYSICAL_LEAGUE_SHRINK_MINUTES = { F: 9000, D: 5750 } as const;
+/** Bounds on this season's league rate over the prior two seasons' when rescaling prior-season events. */
+export const SKATER_PHYSICAL_LEAGUE_SCALE_MIN = 0.7;
+export const SKATER_PHYSICAL_LEAGUE_SCALE_MAX = 1.3;
+/** Cap on all-situation over ES+PP TOI when adding PK time (2025-26 last-5 p99 is about 1.3). */
+export const SKATER_PHYSICAL_TOI_RATIO_MAX = 1.3;
 export const SKATER_TEAMMATE_ASSIST_ES_MIN_MULTIPLIER = 0.82;
 export const SKATER_TEAMMATE_ASSIST_ES_MAX_MULTIPLIER = 1.2;
 export const SKATER_TEAMMATE_ASSIST_PP_MIN_MULTIPLIER = 0.8;
