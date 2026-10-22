@@ -38,6 +38,8 @@ need a port.
 - Checks: 109 suites / 2,830 tests in the working tree. The one failure (forgeDailyBridge "planner accepts league points") comes from Codex P07's uncommitted planner edits: it passes 28/28 in HEAD plus only the sprint files. eslint clean on all sprint files. tsc running in that clean copy.
 - Release port notes: the goalie lane depends on octoberBranch-only nullable GF/W (F1 HOLD commits); the D1 route ports clean, and its run-forge-projections hunks apply with offsets; the D2 runner files are on master already (R22/R23) plus this diff.
 
+- Released the ops subset (11.1–11.3) as master `d45a287f0` 16:40Z: gate green (13 master-baseline failures only, eslint, tsc), READY, smoke 5/5; octoberBranch synced `20307fe13`. Held: goalie (7.x), market (6.x), NB (8.x) and the moneyline wiring → next FORGE model release (goalie needs the octoberBranch-only nullable GF/W code ported).
+
 ## Next
 Review each report and diff, integrate (Lane B's P(over) consumes Lane C's distributions; Lane A's
 moneyline de-vig is to be deduped with Lane B's devig.ts), run the checks, commit with explicit
