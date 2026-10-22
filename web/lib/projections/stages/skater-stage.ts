@@ -255,6 +255,7 @@ import {
   computeSkaterOpponentGoalieContextAdjustments,
   computeSkaterPhysicalEventRates,
   computeSkaterAssistShare,
+  computeSkaterShotRatePer60,
   allocateTeamAssists,
   computeSkaterRestScheduleAdjustments,
   computeSkaterSampleShrinkageAdjustments,
@@ -2203,55 +2204,24 @@ export async function runPerGameSkaterStage(args: {
         metrics.data_quality.on_ice_context_adjustments_applied += 1;
       }
 
-      const sogPer60EvRaw = safeNumber(
-        resolveNullableCompatibilityValue(
-          "weighted_rate",
-          ev?.sog_per_60_last5,
-          ev?.sog_per_60_avg_last5,
-        ),
-        safeNumber(
-          resolveNullableCompatibilityValue(
-            "weighted_rate",
-            ev?.sog_per_60_all,
-            ev?.sog_per_60_avg_all,
-          ),
-          6,
-        ),
-      );
-      const sogPer60PpRaw = safeNumber(
-        resolveNullableCompatibilityValue(
-          "weighted_rate",
-          pp?.sog_per_60_last5,
-          pp?.sog_per_60_avg_last5,
-        ),
-        safeNumber(
-          resolveNullableCompatibilityValue(
-            "weighted_rate",
-            pp?.sog_per_60_all,
-            pp?.sog_per_60_avg_all,
-          ),
-          8,
-        ),
-      );
+      // Shot rates shrink once, to F/D priors by measured hours (task 4); no second games-based shrink.
+      const shotPosition = playerMetaById.get(playerId)?.position ?? null;
+      const shotRateMultiplier =
+        shotQualityAdjustment.shotRateMultiplier *
+        onIceContextAdjustment.shotEnvironmentMultiplier *
+        teamLevelContextAdjustment.shotRateMultiplier *
+        restScheduleAdjustment.shotRateMultiplier;
       const sogPer60EvPreBound = clamp(
-        sogPer60EvRaw *
-          shotQualityAdjustment.shotRateMultiplier *
-          onIceContextAdjustment.shotEnvironmentMultiplier *
-          teamLevelContextAdjustment.shotRateMultiplier *
-          restScheduleAdjustment.shotRateMultiplier *
-          sampleWeight +
-          (1 - sampleWeight) * 6,
+        computeSkaterShotRatePer60({ position: shotPosition, strength: "es", shotsAll: ev?.shots_total_all,
+          ratePer60All: resolveNullableCompatibilityValue("weighted_rate", ev?.sog_per_60_all, ev?.sog_per_60_avg_all),
+          shotsRecent: ev?.shots_total_last5, toiRecentSeconds: ev?.toi_seconds_total_last5 }) * shotRateMultiplier,
         1.5,
         20,
       );
       const sogPer60PpPreBound = clamp(
-        sogPer60PpRaw *
-          shotQualityAdjustment.shotRateMultiplier *
-          onIceContextAdjustment.shotEnvironmentMultiplier *
-          teamLevelContextAdjustment.shotRateMultiplier *
-          restScheduleAdjustment.shotRateMultiplier *
-          sampleWeight +
-          (1 - sampleWeight) * 8,
+        computeSkaterShotRatePer60({ position: shotPosition, strength: "pp", shotsAll: pp?.shots_total_all,
+          ratePer60All: resolveNullableCompatibilityValue("weighted_rate", pp?.sog_per_60_all, pp?.sog_per_60_avg_all),
+          shotsRecent: pp?.shots_total_last5, toiRecentSeconds: pp?.toi_seconds_total_last5 }) * shotRateMultiplier,
         2,
         28,
       );
@@ -2301,6 +2271,7 @@ export async function runPerGameSkaterStage(args: {
           teamLevelContextAdjustment.assistRateMultiplier *
           opponentGoalieContextAdjustment.assistRateMultiplier *
           restScheduleAdjustment.assistRateMultiplier,
+        position: shotPosition,
       });
       if (splitRates.goalRatePp === null) metrics.data_quality.missing_pp_conversion_samples += 1;
       learningCounters.players += 1;
@@ -2311,7 +2282,7 @@ export async function runPerGameSkaterStage(args: {
         goalRateEs,
         goalRatePp,
         conversionShrink,
-      } = resolveSkaterConversionRates({ splitRates, sampleWeight });
+      } = resolveSkaterConversionRates({ splitRates, sampleWeight, position: shotPosition });
       // Assist rates are shares of on-ice goals for (task 3), shrunk to F/D priors; the
       // team-goal environment carries the goal context terms, so no assist multiplier applies.
       const assistPosition = playerMetaById.get(playerId)?.position ?? null;

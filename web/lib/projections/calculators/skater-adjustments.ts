@@ -26,6 +26,8 @@ import {
   SKATER_ASSIST_SHARE_MIN,
   SKATER_ASSIST_SHARE_MAX,
   SKATER_TEAM_ASSISTS_PER_GOAL,
+  SKATER_GOAL_CONVERSION_PRIORS,
+  SKATER_SHOT_RATE_PRIORS,
   SKATER_PHYSICAL_RECENT_SHRINK_MINUTES,
   SKATER_PHYSICAL_TOI_RATIO_MAX,
   SKATER_REST_ASSIST_MAX_MULTIPLIER,
@@ -624,6 +626,30 @@ export function allocateTeamAssists(players: ReadonlyArray<{
   }));
 }
 
+/**
+ * Shots per 60 at one strength: the all-window rate shrunk to the F/D prior by its hours, then the
+ * last five games blended in by their own hours against the same prior strength. Exposure comes
+ * from shots over rate (all) and summed TOI (last five); a window without exposure adds nothing.
+ */
+export function computeSkaterShotRatePer60(args: {
+  position: string | null | undefined;
+  strength: "es" | "pp";
+  shotsAll: number | null | undefined;
+  ratePer60All: number | null | undefined;
+  shotsRecent: number | null | undefined;
+  toiRecentSeconds: number | null | undefined;
+}): number {
+  const prior = SKATER_SHOT_RATE_PRIORS[args.position === "D" ? "D" : "F"][args.strength];
+  const shotsAll = finiteOrNull(args.shotsAll), rateAll = finiteOrNull(args.ratePer60All);
+  const hoursAll = shotsAll != null && shotsAll > 0 && rateAll != null && rateAll > 0 ? shotsAll / rateAll : 0;
+  const base = ((hoursAll > 0 ? shotsAll! : 0) + prior.kHours * prior.per60) / (hoursAll + prior.kHours);
+  const shotsRecent = finiteOrNull(args.shotsRecent), toiRecent = finiteOrNull(args.toiRecentSeconds);
+  if (shotsRecent == null || shotsRecent < 0 || toiRecent == null || toiRecent <= 0) return base;
+  const hoursRecent = toiRecent / 3600;
+  const weight = hoursRecent / (hoursRecent + prior.kHours);
+  return base + weight * (shotsRecent / hoursRecent - base);
+}
+
 export function computeStrengthSplitConversionRates(args: {
   evGoalsRecent: number;
   evShotsRecent: number;
@@ -640,6 +666,8 @@ export function computeStrengthSplitConversionRates(args: {
   goalRateMultiplier: number;
   assistRateMultiplier: number;
   assistDenominator?: SkaterAssistDenominatorOption;
+  /** With a position, goals per shot shrink to the F/D prior by its measured shots (task 4). */
+  position?: string | null;
 }): {
   goalRateEs: number;
   goalRatePp: number;
@@ -659,14 +687,16 @@ export function computeStrengthSplitConversionRates(args: {
     return clamp(scaled, opts.minStrength, opts.maxStrength);
   };
 
-  const evGoalPriorStrength = adaptivePriorStrength({
+  const goalPriors = args.position === undefined ? null
+    : SKATER_GOAL_CONVERSION_PRIORS[args.position === "D" ? "D" : "F"];
+  const evGoalPriorStrength = goalPriors ? goalPriors.es.k : adaptivePriorStrength({
     baseStrength: 42,
     evidenceDenom: Math.max(0, args.evShotsAll) + Math.max(0, args.evShotsRecent),
     evidenceScale: 70,
     minStrength: 12,
     maxStrength: 72
   });
-  const ppGoalPriorStrength = adaptivePriorStrength({
+  const ppGoalPriorStrength = goalPriors ? goalPriors.pp.k : adaptivePriorStrength({
     baseStrength: 26,
     evidenceDenom: Math.max(0, args.ppShotsAll) + Math.max(0, args.ppShotsRecent),
     evidenceScale: 40,
@@ -697,7 +727,7 @@ export function computeStrengthSplitConversionRates(args: {
     recentDenom: args.evShotsRecent,
     baseNumerator: args.evGoalsAll,
     baseDenom: args.evShotsAll,
-    fallback: 0.095,
+    fallback: goalPriors?.es.perShot ?? 0.095,
     priorStrength: evGoalPriorStrength,
     minRate: 0.025,
     maxRate: 0.24
@@ -707,7 +737,7 @@ export function computeStrengthSplitConversionRates(args: {
     recentDenom: args.ppShotsRecent,
     baseNumerator: args.ppGoalsAll,
     baseDenom: args.ppShotsAll,
-    fallback: 0.145,
+    fallback: goalPriors?.pp.perShot ?? 0.145,
     priorStrength: ppGoalPriorStrength,
     minRate: 0.04,
     maxRate: 0.36
@@ -759,14 +789,25 @@ export function resolveSkaterConversionRates(args: {
   splitRates: { goalRateEs: number | null; goalRatePp: number | null; assistRateEs: number | null; assistRatePp: number | null };
   sampleWeight: number;
   assistDenominator?: SkaterAssistDenominatorOption;
+  /**
+   * With a position (task 4), goal heads use the F/D prior and keep the small-sample shrink toward
+   * it: it also damps the context goal multipliers, which compound to about 1.3 for some skaters
+   * until task 9 sizes them (dropping it raised forward goals per shot to 0.154 in the 10-13 pilot).
+   */
+  position?: string | null;
 }) {
-  const { priors, bounds } = skaterConversionPriorsAndBounds(resolveAssistDenominators(args.assistDenominator));
+  const { priors: fixedPriors, bounds } = skaterConversionPriorsAndBounds(resolveAssistDenominators(args.assistDenominator));
+  const positionPriors = args.position === undefined ? null
+    : SKATER_GOAL_CONVERSION_PRIORS[args.position === "D" ? "D" : "F"];
+  const priors = positionPriors
+    ? { ...fixedPriors, goalRateEs: positionPriors.es.perShot, goalRatePp: positionPriors.pp.perShot } : fixedPriors;
   const resolve = (key: keyof typeof priors) => {
     const prior = priors[key];
     const [min, max] = bounds[key];
     const bayes = args.splitRates[key];
     const legacy = clamp((bayes ?? prior) * args.sampleWeight + (1 - args.sampleWeight) * prior, min, max);
-    return { value: bayes == null ? legacy : clamp(bayes, min, max),
+    const keepsShrink = positionPriors != null && (key === "goalRateEs" || key === "goalRatePp");
+    return { value: bayes == null || keepsShrink ? legacy : clamp(bayes, min, max),
       shrink: { bayes, legacy, sample_weight: args.sampleWeight } };
   };
   const goalEs = resolve("goalRateEs"), goalPp = resolve("goalRatePp");
@@ -784,6 +825,7 @@ export function computeSupportedStrengthSplitConversionRates(args: {
   goalRateMultiplier: number;
   assistRateMultiplier: number;
   assistDenominator?: SkaterAssistDenominatorOption;
+  position?: string | null;
 }) {
   const support = (row: RollingRow | undefined, strengthState: "ev" | "pp") => row
     ? readAlignedCountSupport(row.aligned_count_support, {
@@ -809,7 +851,7 @@ export function computeSupportedStrengthSplitConversionRates(args: {
       ppAssistsRecent: name === "assistPerGoal" ? p?.last5.numerator ?? 0 : 0,
       ppAssistsAll: name === "assistPerGoal" ? p?.all.numerator ?? 0 : 0,
       goalRateMultiplier: args.goalRateMultiplier, assistRateMultiplier: args.assistRateMultiplier,
-      assistDenominator: args.assistDenominator,
+      assistDenominator: args.assistDenominator, position: args.position,
     });
   };
   const goals = calculate("goalPerShot"), assists = calculate("assistPerGoal");

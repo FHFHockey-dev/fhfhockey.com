@@ -46,7 +46,7 @@ import {
   toGoalieRestSplitBucket,
   type StarterContextForTest
 } from "./run-forge-projections";
-import { allocateTeamAssists, computeSkaterAssistShare, computeSkaterPhysicalEventRates, resolveAssistDenominators, SKATER_ASSIST_DENOMINATOR_DEFAULT } from "./calculators/skater-adjustments";
+import { allocateTeamAssists, computeSkaterAssistShare, computeSkaterPhysicalEventRates, computeSkaterShotRatePer60, resolveSkaterConversionRates, resolveAssistDenominators, SKATER_ASSIST_DENOMINATOR_DEFAULT } from "./calculators/skater-adjustments";
 import { SKATER_PHYSICAL_RATE_PRIORS } from "./constants/projection-weights";
 import { computeTeamPpShare } from "./stages/skater-stage";
 import type { RollingRow } from "./types/run-forge-projections.types";
@@ -833,6 +833,48 @@ describe("skater assist share of on-ice goals", () => {
     expect(capped.onIceGoalsHistory).toBeCloseTo(20, 10);
     expect(capped.share).toBeCloseTo((20 + 58 * 0.3554) / 78, 10);
     expect(computeSkaterAssistShare({ goalsAll: 0, assistsAll: 1e6, ippAllPct: 100, position: "C", strength: "es" }).share).toBe(0.9);
+  });
+});
+
+describe("skater shot rate prior", () => {
+  it("returns the F/D prior without exposure", () => {
+    expect(computeSkaterShotRatePer60({ position: "C", strength: "es", shotsAll: null, ratePer60All: null, shotsRecent: null, toiRecentSeconds: null })).toBe(6.62);
+    expect(computeSkaterShotRatePer60({ position: "D", strength: "pp", shotsAll: 0, ratePer60All: 0, shotsRecent: 0, toiRecentSeconds: 0 })).toBe(8.39);
+  });
+
+  it("shrinks the all-window rate by its hours, then blends the last five by theirs", () => {
+    // 100 shots at 10/60 = 10 h; base = (100 + 8.4 x 6.62) / 18.4. Last five: 5 shots in 1 h.
+    const base = (100 + 8.4 * 6.62) / 18.4;
+    expect(computeSkaterShotRatePer60({ position: "R", strength: "es", shotsAll: 100, ratePer60All: 10, shotsRecent: null, toiRecentSeconds: null }))
+      .toBeCloseTo(base, 10);
+    expect(computeSkaterShotRatePer60({ position: "R", strength: "es", shotsAll: 100, ratePer60All: 10, shotsRecent: 5, toiRecentSeconds: 3600 }))
+      .toBeCloseTo(base + (1 / 9.4) * (5 - base), 10);
+  });
+});
+
+describe("position goal-conversion priors", () => {
+  const counts = { evGoalsRecent: 0, evShotsRecent: 0, evGoalsAll: 0, evShotsAll: 0, evAssistsRecent: 0, evAssistsAll: 0,
+    ppGoalsRecent: 0, ppShotsRecent: 0, ppGoalsAll: 0, ppShotsAll: 0, ppAssistsRecent: 0, ppAssistsAll: 0,
+    goalRateMultiplier: 1, assistRateMultiplier: 1 };
+
+  it("falls back to the F/D prior and weighs history against its measured shots", () => {
+    const d = computeStrengthSplitConversionRates({ ...counts, position: "D" });
+    expect(d.goalRateEs).toBeCloseTo(0.0537, 10);
+    expect(d.goalRatePp).toBeCloseTo(0.0862, 10);
+    // A forward's 30 goals on 200 ES shots against 423 prior shots.
+    const f = computeStrengthSplitConversionRates({ ...counts, evGoalsAll: 30, evShotsAll: 200, position: "C" });
+    expect(f.goalRateEs).toBeCloseTo((30 + 423 * 0.1181) / 623, 10);
+    // Without a position the former position-blind prior remains.
+    expect(computeStrengthSplitConversionRates(counts).goalRateEs).toBeCloseTo(0.095, 10);
+  });
+
+  it("keeps the small-sample goal shrink toward the position prior", () => {
+    const rates = { goalRateEs: 0.2, goalRatePp: null, assistRateEs: null, assistRatePp: null };
+    const resolved = resolveSkaterConversionRates({ splitRates: rates, sampleWeight: 0.5, position: "D" });
+    expect(resolved.goalRateEs).toBeCloseTo(0.5 * 0.2 + 0.5 * 0.0537, 10);
+    expect(resolved.goalRatePp).toBeCloseTo(0.0862, 10);
+    // Without a position a supported head is used as fitted.
+    expect(resolveSkaterConversionRates({ splitRates: rates, sampleWeight: 0.5 }).goalRateEs).toBeCloseTo(0.2, 10);
   });
 });
 
