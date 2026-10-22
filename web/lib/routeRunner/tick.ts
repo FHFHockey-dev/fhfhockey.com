@@ -12,6 +12,7 @@ import {
   buildStepQuery,
   classifyStepResult,
   extractStepProgress,
+  formatFreshnessBypass,
   mergeJobProgress,
   readJobProgress,
   type RouteQuery,
@@ -335,7 +336,9 @@ export async function runRouteRunnerTick(args: {
   const rowsTotal = Number(job.rows_total ?? 0) + (stepProgress.rows ?? 0);
   const progress = {
     ...mergeJobProgress(previous, stepProgress, guarded.stalls),
-    ...(decision.kind === "fail" && decision.blockedBy ? { blockedBy: decision.blockedBy } : {}),
+    ...(decision.kind === "fail" && decision.blockedBy
+      ? { blockedBy: decision.blockedBy, blockerCount: decision.blockerCount ?? null }
+      : {}),
     rowsTotal,
     lastStepMs: result.durationMs
   };
@@ -367,10 +370,12 @@ export async function runRouteRunnerTick(args: {
               ...(decision.nextQuery ? { next_query: decision.nextQuery } : {})
             };
 
+  // A bypassed job's results stay marked as built past its freshness blockers.
+  const bypass = previous?.freshnessBypass ?? null;
   events.push({
     job_id: job.id,
-    level: LEVEL_BY_DECISION[decision.kind],
-    message: decision.reason,
+    level: bypass && decision.kind === "complete" ? "warn" : LEVEL_BY_DECISION[decision.kind],
+    message: bypass ? `${decision.reason} ${formatFreshnessBypass(bypass)}` : decision.reason,
     step,
     status_code: result.statusCode,
     rows: stepProgress.rows,

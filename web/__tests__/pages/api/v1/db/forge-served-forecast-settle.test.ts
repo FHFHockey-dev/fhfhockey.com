@@ -72,6 +72,19 @@ describe("forge-served-forecast-settle", () => {
     expect(rows.some((row: any) => row.game_id === 200)).toBe(false);
   });
 
+  it("clears a previously fabricated DNP when only an unrelated actual is available, then recovers on arrival", async () => {
+    tables.forge_served_forecast_ledger = [{ ...ledger("2026-10-20", 99, 100, "bridge_exact"), settled_at: "old", dressed: false, act_goals: 0 }];
+    const absent = res();
+    await handler({ method: "POST", query: {} } as any, absent);
+    expect(absent.body).toMatchObject({ rowsSettled: 0, rowsCleared: 1, rowsUnsettled: 1, rowsUpserted: 1 });
+    expect(upsertMock.mock.calls[0][1][0]).toMatchObject({ player_id: 99, dressed: null, act_goals: null, act_fantasy_points: null, settled_at: null });
+    tables.wgo_skater_stats.push({ ...tables.wgo_skater_stats[0], player_id: 99, goals: 0 });
+    const arrived = res();
+    await handler({ method: "POST", query: {} } as any, arrived);
+    expect(arrived.body).toMatchObject({ rowsSettled: 1, rowsCleared: 0 });
+    expect(upsertMock.mock.calls[1][1][0]).toMatchObject({ player_id: 99, dressed: true, act_goals: 0 });
+  });
+
   it("returns zero counts when there are no ledger rows and rejects bad input", async () => {
     tables.forge_served_forecast_ledger = [];
     const out = res();

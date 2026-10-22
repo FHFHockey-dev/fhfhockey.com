@@ -45,10 +45,13 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         .gte("date", from).lte("date", date).order("date").order("goalie_id"), deadline, 1000, row => [row.goalie_id, row.date]),
     ]);
     const settledAt = now.toISOString();
-    const settled = settleLedgerRows(ledger, { skaters, goalies: goalieRows.map(row => ({ ...row, player_id: row.goalie_id })), goalieSource: "wgo_goalie_stats" }, settledAt)
-      .filter(row => row.settled_at === settledAt);
+    // No verified finality/completeness receipt is available here. Missing players remain unknown.
+    const reconciled = settleLedgerRows(ledger, { skaters, goalies: goalieRows.map(row => ({ ...row, player_id: row.goalie_id })), goalieSource: "wgo_goalie_stats" }, settledAt);
+    const settled = reconciled.filter(row => row.settled_at === settledAt);
+    const changed = reconciled.filter((row, index) => row.settled_at === settledAt || ledger[index].settled_at !== null);
+    const rowsCleared = changed.length - settled.length;
     let rowsUpserted = 0;
-    for (const batch of chunks(settled, UPSERT_BATCH)) {
+    for (const batch of chunks(changed, UPSERT_BATCH)) {
       const payload = batch.map(row => Object.fromEntries([...CARRIED_COLUMNS, ...SETTLED_COLUMNS].map(column => [column, (row as Row)[column]])));
       const { error } = await db.from(LEDGER_TABLE).upsert(payload, { onConflict: "served_date,player_id,game_id,source" });
       if (error) return res.status(rowsUpserted ? 207 : 500).json({ success: false, date, dates, rowsRead: ledger.length, rowsUpserted, error: error.message });
@@ -58,7 +61,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       const read = ledger.filter(row => row.served_date === day).length, done = settled.filter(row => row.served_date === day).length;
       return [day, { read, settled: done, unsettled: read - done }];
     }));
-    return res.status(200).json({ success: true, date, dates, rowsRead: ledger.length, rowsSettled: settled.length, rowsUnsettled: ledger.length - settled.length, rowsUpserted, byDate });
+    return res.status(200).json({ success: true, date, dates, rowsRead: ledger.length, rowsSettled: settled.length, rowsUnsettled: ledger.length - settled.length, rowsUpserted, rowsCleared, byDate });
   } catch (error: any) {
     console.error("forge-served-forecast-settle failed:", error);
     return res.status(500).json({ success: false, date, error: error?.message ?? String(error) });

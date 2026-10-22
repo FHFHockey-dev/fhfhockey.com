@@ -73,7 +73,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       teamWin.set(`${game.gameId}:${game.homeTeamId}`, teamWinProbability(priors.get(home.toUpperCase()), priors.get(away.toUpperCase()), true));
       teamWin.set(`${game.gameId}:${game.awayTeamId}`, teamWinProbability(priors.get(away.toUpperCase()), priors.get(home.toUpperCase()), false));
     }
-    const { rows, skippedGameIds } = buildLedgerRows({ date, seasonId, now, games, players, bridgeForecasts: bridge.forecasts,
+    const { rows, universe, skippedGameIds } = buildLedgerRows({ date, seasonId, now, games, players, bridgeForecasts: bridge.forecasts,
       runDates: new Map(runs.map(row => [row.run_id, row.as_of_date])), scheduleGames, wgoGameRows, goalieGameRows, teamWin });
     let rowsUpserted = 0;
     for (const batch of chunks(rows, UPSERT_BATCH)) {
@@ -83,6 +83,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     }
     const countsBySource = Object.fromEntries(LEDGER_SOURCES.map(source => [source, rows.filter(row => row.source === source).length]));
     return res.status(200).json({ success: true, date, seasonId, games: games.length, players: players.length, rowsUpserted, countsBySource,
+      identifiedPlayerGames: universe.length, coverageStatus: "unavailable_independent_universe_not_persisted",
       skippedGames: skippedGameIds, bridgeLimitations: bridge.limitations });
   } catch (error: any) {
     console.error("forge-served-forecast-snapshot failed:", error);

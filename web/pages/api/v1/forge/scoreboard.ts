@@ -5,16 +5,16 @@ import { z } from "zod";
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { getQueryStringParam } from "lib/projections/apiHelpers";
-import { scoreLedger, type LedgerRow } from "lib/player-forecasts/servedForecastLedger";
+import { LEDGER_SCORING_LIMITATIONS, scoreLedger, scorePairedLedger, type LedgerRow } from "lib/player-forecasts/servedForecastLedger";
 import { pages } from "lib/rosterScheduleData/planningInputs";
 
-/** S-B2 scoreboard: served-forecast ledger scores (MAE/bias per head, fantasy points, coverage, calibration) per served
- * date × source, plus pooled over the window. Read-only. */
+/** Served-forecast scoreboard: dressed-only descriptive scores and player-game paired comparisons.
+ * Binary events use known settled outcomes, including proven non-starts. Read-only. */
 const DAY_MS = 86400000, MAX_ROWS = 120000;
-const COLUMNS = "served_date,player_id,game_id,source,player_class,team_rest_days,start_probability,dressed,started,settled_at,"
+const COLUMNS = "served_date,season_id,player_id,game_id,source,player_class,team_rest_days,start_probability,dressed,started,settled_at,"
   + "exp_goals,exp_assists,exp_pp_points,exp_shots,exp_hits,exp_blocks,exp_saves,exp_goals_against,exp_shots_against,exp_win_prob,exp_shutout_prob,exp_fantasy_points,"
   + "act_goals,act_assists,act_pp_points,act_shots,act_hits,act_blocks,act_saves,act_goals_against,act_shots_against,act_win,act_shutout,act_fantasy_points";
-const NUMERIC = COLUMNS.split(",").filter(column => /^(exp_|act_|start_probability|team_rest_days|player_id|game_id)/.test(column));
+const NUMERIC = COLUMNS.split(",").filter(column => /^(exp_|act_|start_probability|team_rest_days|season_id|player_id|game_id)/.test(column));
 
 const querySchema = z.object({
   days: z.coerce.number().int().min(1).max(60).default(14),
@@ -45,15 +45,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return (scope === "all" ? query : query.eq("player_class", scope)).order("served_date").order("game_id").order("player_id").order("source");
     }, Date.now() + 45000, MAX_ROWS, row => [row.served_date, row.player_id, row.game_id, row.source]);
     // PostgREST returns numeric columns as strings; scoring needs numbers (null stays null).
-    const rows = raw.map(row => { const out = { ...row }; for (const column of NUMERIC) out[column] = row[column] === null || row[column] === undefined ? null : Number(row[column]); return out as LedgerRow; });
+    const rows = raw.map(row => {
+      const out = { ...row };
+      for (const column of NUMERIC) {
+        const value = row[column];
+        out[column] = (typeof value === "number" || (typeof value === "string" && value.trim() !== "")) && Number.isFinite(Number(value)) ? Number(value) : null;
+      }
+      return out as LedgerRow;
+    });
     const dates = [...new Set(rows.map(row => row.served_date))].sort();
-    const daily = dates.map(served_date => ({ served_date, scores: scoreLedger(rows.filter(row => row.served_date === served_date)) }));
+    const daily = dates.map(served_date => {
+      const dayRows = rows.filter(row => row.served_date === served_date);
+      return { served_date, scores: scoreLedger(dayRows), paired: scorePairedLedger(dayRows) };
+    });
     res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=900");
     return res.status(200).json({
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       scope, days, startDate, endDate,
+      coverageStatus: "unavailable_independent_universe_not_persisted",
+      comparison: "paired_player_game", sourceSamples: "unpaired_descriptive_only", limitations: LEDGER_SCORING_LIMITATIONS,
       data: daily,
       pooled: rows.length ? scoreLedger(rows) : [],
+      pooledPaired: scorePairedLedger(rows),
       ...(rows.length ? {} : { empty: true })
     });
   } catch (e) {

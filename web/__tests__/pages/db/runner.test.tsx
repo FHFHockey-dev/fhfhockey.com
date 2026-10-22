@@ -137,10 +137,46 @@ describe("/db/runner", () => {
     render(<RouteRunnerPage />);
     fireEvent.click(within(await screen.findByRole("list")).getByRole("button", { name: /Rolling player averages/ }));
     fireEvent.click(await screen.findByRole("button", { name: "Re-queue with bypass" }));
+    // The click only opens the confirmation: it shows the blocker count and reason and sends nothing.
+    const dialog = await screen.findByRole("alertdialog", { name: "Bypass 1 freshness blocker(s)?" });
+    expect(dialog.textContent).toContain("Blocked by freshness checks (HTTP 422, 1 blocker(s)).");
+    const confirm = within(dialog).getByRole("button", { name: "Confirm bypass re-queue" }) as HTMLButtonElement;
+    expect(confirm.disabled).toBe(true);
+    expect(fetchMock.mock.calls.some(([, init]) => init?.method === "POST")).toBe(false);
+    fireEvent.click(within(dialog).getByRole("checkbox", { name: "I approve running past these blockers" }));
+    fireEvent.click(confirm);
     await waitFor(() => expect(fetchMock.mock.calls.some(([, init]) => init?.method === "POST")).toBe(true));
     const [, init] = fetchMock.mock.calls.find(([, call]) => call?.method === "POST")!;
     expect(JSON.parse(init.body as string)).toEqual({
-      path: "/api/v1/db/update-rolling-player-averages?startDate=2026-01-01&endDate=2026-01-31&resumeFrom=8478402&bypassFreshnessBlockers=true"
+      path: "/api/v1/db/update-rolling-player-averages?startDate=2026-01-01&endDate=2026-01-31&resumeFrom=8478402&bypassFreshnessBlockers=true",
+      bypassApproval: { sourceJobId: blocked.id, blockerCount: 1, confirmed: true }
     });
+  });
+
+  it("keeps the bypass warning on a bypassed job and in the job list", async () => {
+    const bypassed = makeJob({
+      route_path: "/api/v1/db/update-rolling-player-averages",
+      contract: "rolling_resume_from",
+      status: "completed",
+      next_query: { startDate: "2026-01-01", bypassFreshnessBlockers: "true" },
+      progress: { stalls: 0, freshnessBypass: { approvedBy: "admin-1", approvedAt: "2026-10-22T12:00:00.000Z",
+        sourceJobId: "00000000-0000-4000-8000-000000000009", blockerCount: 1, reason: "Blocked." } }
+    });
+    fetchMock.mockImplementation((url: string) => {
+      if (url === "/api/v1/db/route-runner/jobs") {
+        return reply({ success: true, jobs: [bypassed], serverTime: new Date().toISOString() });
+      }
+      if (url.startsWith(`/api/v1/db/route-runner/jobs/${bypassed.id}`)) {
+        return reply({ success: true, job: bypassed, events: [], hasMore: false });
+      }
+      return reply({ success: false, error: "unexpected" }, 404);
+    });
+    render(<RouteRunnerPage />);
+    const list = await screen.findByRole("list");
+    expect(within(list).getByText("freshness bypassed")).toBeTruthy();
+    fireEvent.click(within(list).getByRole("button", { name: /Rolling player averages/ }));
+    const note = await screen.findByRole("note", { name: "Freshness bypass" });
+    expect(note.textContent).toContain("Freshness bypass approved by admin-1 at 2026-10-22T12:00:00.000Z");
+    expect(screen.queryByRole("button", { name: "Re-queue with bypass" })).toBeNull();
   });
 });
