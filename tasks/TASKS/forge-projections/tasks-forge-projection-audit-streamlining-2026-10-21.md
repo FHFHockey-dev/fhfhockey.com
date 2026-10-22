@@ -289,3 +289,17 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
 - **octoberBranch:**
   - synced with `-s ours`;
   - vercel crons and cron counts committed (`7099fa414`, `4aec56d65`, `e1cd41eeb`): 30 Vercel crons, 87 jobs, 21 routes, 17 audited.
+
+### R20 (2026-10-22 ~00:04Z): NST gamelog hang fix
+
+- **Candidate:** `248df9923`. Codex's `6ea6f3bdd` ported to master, along with the gamelog hunks of `7f094c8e6` and `e89dfdde5` it builds on.
+- **Behaviour:**
+  - a 220 s deadline on every NST, database and audit await;
+  - no hidden client retries;
+  - HTTP 520–527 returns 503 `source_down`, keeping the cursor;
+  - explicit date ranges return a 207 with their resume query;
+  - the pipeline treats a 503 `source_down` as an NST outage and degrades.
+- **Unchanged:** other NST jobs keep master's client and burst plans.
+- **Gate:** the full suite shows master's baseline failures only; tsc and eslint 0.
+- **Deploy and smoke:** READY 00:09Z; smoke test 3/3.
+- **octoberBranch:** pipeline and test changes in `c5b0012b5`, synced with `-s ours`.
