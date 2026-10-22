@@ -161,6 +161,10 @@ import {
   SKATER_TEAMMATE_ASSIST_ES_MAX_MULTIPLIER,
   SKATER_TEAMMATE_ASSIST_PP_MIN_MULTIPLIER,
   SKATER_TEAMMATE_ASSIST_PP_MAX_MULTIPLIER,
+  SKATER_ASSIST_SHARE_MIN,
+  SKATER_ASSIST_SHARE_MAX,
+  SKATER_TEAM_ASSISTS_PER_GOAL,
+  SKATER_GOAL_CONVERSION_PRIORS,
   SKATER_ROLE_TOP_TOI_ES_MIN,
   SKATER_ROLE_TOP_TOI_ES_MAX,
   SKATER_ROLE_TOP_TOI_PP_MIN,
@@ -252,6 +256,8 @@ import {
   computeSkaterOnIceContextAdjustments,
   computeSkaterOpponentGoalieContextAdjustments,
   computeSkaterPhysicalEventRates,
+  computeSkaterAssistShare,
+  computeSkaterShotRatePer60,
   computeSkaterRestScheduleAdjustments,
   computeSkaterSampleShrinkageAdjustments,
   computeSkaterShotQualityAdjustments,
@@ -2130,55 +2136,24 @@ export async function runPerGameSkaterStage(args: {
         metrics.data_quality.on_ice_context_adjustments_applied += 1;
       }
 
-      const sogPer60EvRaw = safeNumber(
-        resolveNullableCompatibilityValue(
-          "weighted_rate",
-          ev?.sog_per_60_last5,
-          ev?.sog_per_60_avg_last5,
-        ),
-        safeNumber(
-          resolveNullableCompatibilityValue(
-            "weighted_rate",
-            ev?.sog_per_60_all,
-            ev?.sog_per_60_avg_all,
-          ),
-          6,
-        ),
-      );
-      const sogPer60PpRaw = safeNumber(
-        resolveNullableCompatibilityValue(
-          "weighted_rate",
-          pp?.sog_per_60_last5,
-          pp?.sog_per_60_avg_last5,
-        ),
-        safeNumber(
-          resolveNullableCompatibilityValue(
-            "weighted_rate",
-            pp?.sog_per_60_all,
-            pp?.sog_per_60_avg_all,
-          ),
-          8,
-        ),
-      );
+      // Shot rates shrink once, to F/D priors by measured hours (task 4); no second games-based shrink.
+      const shotPosition = playerMetaById.get(playerId)?.position ?? null;
+      const shotRateMultiplier =
+        shotQualityAdjustment.shotRateMultiplier *
+        onIceContextAdjustment.shotEnvironmentMultiplier *
+        teamLevelContextAdjustment.shotRateMultiplier *
+        restScheduleAdjustment.shotRateMultiplier;
       const sogPer60EvPreBound = clamp(
-        sogPer60EvRaw *
-          shotQualityAdjustment.shotRateMultiplier *
-          onIceContextAdjustment.shotEnvironmentMultiplier *
-          teamLevelContextAdjustment.shotRateMultiplier *
-          restScheduleAdjustment.shotRateMultiplier *
-          sampleWeight +
-          (1 - sampleWeight) * 6,
+        computeSkaterShotRatePer60({ position: shotPosition, strength: "es", shotsAll: ev?.shots_total_all,
+          ratePer60All: resolveNullableCompatibilityValue("weighted_rate", ev?.sog_per_60_all, ev?.sog_per_60_avg_all),
+          shotsRecent: ev?.shots_total_last5, toiRecentSeconds: ev?.toi_seconds_total_last5 }) * shotRateMultiplier,
         1.5,
         20,
       );
       const sogPer60PpPreBound = clamp(
-        sogPer60PpRaw *
-          shotQualityAdjustment.shotRateMultiplier *
-          onIceContextAdjustment.shotEnvironmentMultiplier *
-          teamLevelContextAdjustment.shotRateMultiplier *
-          restScheduleAdjustment.shotRateMultiplier *
-          sampleWeight +
-          (1 - sampleWeight) * 8,
+        computeSkaterShotRatePer60({ position: shotPosition, strength: "pp", shotsAll: pp?.shots_total_all,
+          ratePer60All: resolveNullableCompatibilityValue("weighted_rate", pp?.sog_per_60_all, pp?.sog_per_60_avg_all),
+          shotsRecent: pp?.shots_total_last5, toiRecentSeconds: pp?.toi_seconds_total_last5 }) * shotRateMultiplier,
         2,
         28,
       );
@@ -2259,21 +2234,22 @@ export async function runPerGameSkaterStage(args: {
           teamLevelContextAdjustment.assistRateMultiplier *
           opponentGoalieContextAdjustment.assistRateMultiplier *
           restScheduleAdjustment.assistRateMultiplier,
+        position: playerMetaById.get(playerId)?.position ?? null,
       });
-      const goalRateEs = clamp(
-        splitRates.goalRateEs * sampleWeight + (1 - sampleWeight) * 0.095,
-        0.025,
-        0.3,
-      );
-      const goalRatePp = clamp(
-        splitRates.goalRatePp * sampleWeight + (1 - sampleWeight) * 0.145,
-        0.04,
-        0.45,
-      );
-      // Split assist rates are already shrunk toward an adaptive prior, so they are used as
-      // fitted (clamped) without a second sample-weight shrink. ES is per goal, PP per two goals.
-      const assistRateEs = splitRates.assistRateEs;
-      const assistRatePp = splitRates.assistRatePp;
+      // Goals per shot shrink to the F/D prior by measured shots (task 4). The small-sample shrink
+      // stays, now toward that prior: it also damps the context goal multipliers above, which
+      // compound to about 1.3 for some skaters until task 9 sizes them (dropping it, Q7, raised
+      // forward goals per shot to 0.154 in the 10-13 pilot).
+      const goalPrior = SKATER_GOAL_CONVERSION_PRIORS[shotPosition === "D" ? "D" : "F"];
+      const goalRateEs = clamp(splitRates.goalRateEs * sampleWeight + (1 - sampleWeight) * goalPrior.es.perShot, 0.025, 0.3);
+      const goalRatePp = clamp(splitRates.goalRatePp * sampleWeight + (1 - sampleWeight) * goalPrior.pp.perShot, 0.04, 0.45);
+      // Assist rates are shares of on-ice goals for (task 3), shrunk to F/D priors; the
+      // team-goal environment carries the goal context terms, so no assist multiplier applies.
+      const assistPosition = playerMetaById.get(playerId)?.position ?? null;
+      const assistRateEs = computeSkaterAssistShare({ goalsAll: ev?.goals_total_all, assistsAll: ev?.assists_total_all,
+        ippAllPct: ev?.ipp_all, position: assistPosition, strength: "es" }).share;
+      const assistRatePp = computeSkaterAssistShare({ goalsAll: pp?.goals_total_all, assistsAll: pp?.assists_total_all,
+        ippAllPct: pp?.ipp_all, position: assistPosition, strength: "pp" }).share;
 
       const roleContinuity =
         roleTag != null
@@ -2331,8 +2307,8 @@ export async function runPerGameSkaterStage(args: {
         shotsPp: shotsPp * availabilityMultiplier * trendShotMultiplier,
         goalRateEs: clamp(goalRateEs * trendGoalMultiplier, 0.025, 0.3),
         goalRatePp: clamp(goalRatePp * trendGoalMultiplier, 0.04, 0.45),
-        assistRateEs: clamp(assistRateEs * trendAssistMultiplier, 0.4, 3.4),
-        assistRatePp: clamp(assistRatePp * trendAssistMultiplier, 0.3, 2),
+        assistRateEs: clamp(assistRateEs * trendAssistMultiplier, SKATER_ASSIST_SHARE_MIN, SKATER_ASSIST_SHARE_MAX),
+        assistRatePp: clamp(assistRatePp * trendAssistMultiplier, SKATER_ASSIST_SHARE_MIN, SKATER_ASSIST_SHARE_MAX),
         hitsRate: physicalRates.hitsPer60,
         blocksRate: physicalRates.blocksPer60,
         physicalToiMultiplier: physicalRates.toiMultiplier,
@@ -2589,13 +2565,13 @@ export async function runPerGameSkaterStage(args: {
       }
       p.assistRateEs = clamp(
         p.assistRateEs * teammateCoupling.assistRateEsMultiplier,
-        0.4,
-        3.6,
+        SKATER_ASSIST_SHARE_MIN,
+        SKATER_ASSIST_SHARE_MAX,
       );
       p.assistRatePp = clamp(
         p.assistRatePp * teammateCoupling.assistRatePpMultiplier,
-        0.3,
-        2.1,
+        SKATER_ASSIST_SHARE_MIN,
+        SKATER_ASSIST_SHARE_MAX,
       );
       p.teammateAssistEsMultiplier = teammateCoupling.assistRateEsMultiplier;
       p.teammateAssistPpMultiplier = teammateCoupling.assistRatePpMultiplier;
@@ -2718,13 +2694,32 @@ export async function runPerGameSkaterStage(args: {
       assistsPp: 0,
     };
 
+    // Assists come from the goals scored while a skater is on the ice: team goals at each
+    // strength x his share of the five skater slots x his assist share, scaled so the team's
+    // assists per goal match the league's at that strength.
+    const assistTeam = { goalsEs: 0, goalsPp: 0, toiEs: 0, toiPp: 0, rawEs: 0, rawPp: 0 };
+    for (const p of projected.values()) {
+      assistTeam.goalsEs += p.shotsEs * p.goalRateEs;
+      assistTeam.goalsPp += p.shotsPp * p.goalRatePp;
+      assistTeam.toiEs += p.toiEs;
+      assistTeam.toiPp += p.toiPp;
+    }
+    const onIceGoals = (toi: number, teamToi: number, teamGoals: number) =>
+      teamToi > 0 ? (teamGoals * 5 * toi) / teamToi : 0;
+    for (const p of projected.values()) {
+      assistTeam.rawEs += onIceGoals(p.toiEs, assistTeam.toiEs, assistTeam.goalsEs) * p.assistRateEs;
+      assistTeam.rawPp += onIceGoals(p.toiPp, assistTeam.toiPp, assistTeam.goalsPp) * p.assistRatePp;
+    }
+    const assistScaleEs = assistTeam.rawEs > 0 ? (SKATER_TEAM_ASSISTS_PER_GOAL.es * assistTeam.goalsEs) / assistTeam.rawEs : 0;
+    const assistScalePp = assistTeam.rawPp > 0 ? (SKATER_TEAM_ASSISTS_PER_GOAL.pp * assistTeam.goalsPp) / assistTeam.rawPp : 0;
+
     for (const [playerId, p] of projected.entries()) {
       let shotsEs = p.shotsEs;
       let shotsPp = p.shotsPp;
       const baseGoalsEs = shotsEs * p.goalRateEs;
       const baseGoalsPp = shotsPp * p.goalRatePp;
-      const baseAssistsEs = baseGoalsEs * p.assistRateEs;
-      const baseAssistsPp = baseGoalsPp * p.assistRatePp;
+      const baseAssistsEs = onIceGoals(p.toiEs, assistTeam.toiEs, assistTeam.goalsEs) * p.assistRateEs * assistScaleEs;
+      const baseAssistsPp = onIceGoals(p.toiPp, assistTeam.toiPp, assistTeam.goalsPp) * p.assistRatePp * assistScalePp;
       const scenarioBlend = blendSkaterScenarioStatLinesAcrossHorizon({
         currentRole: p.roleTag?.esRole ?? null,
         scenarios: p.roleScenarios,

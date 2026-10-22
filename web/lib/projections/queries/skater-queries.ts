@@ -105,6 +105,8 @@ export const ROLLING_ROW_SELECT_CLAUSE =
     "goals_total_all",
     "shots_total_all",
     "assists_total_all",
+    // Points over on-ice goals for, as a percentage: the denominator of the assist share.
+    "ipp_all",
     ...getCompatibilityFieldOrder({
       family: "weighted_rate",
       canonicalField: "hits_per_60_last5",
