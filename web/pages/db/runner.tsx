@@ -1,24 +1,16 @@
 /**
- * /db/runner: queue a long allowlisted route run and watch it. The server
- * runs it step by step (pg_cron -> /api/v1/db/route-runner-tick), so the
- * browser can close. This page only reads jobs/events and sends
+ * /db/runner: build or paste an allowlisted route run, queue it and watch it.
+ * The server runs it step by step (pg_cron -> /api/v1/db/route-runner-tick),
+ * so the browser can close. This page only reads jobs/events and sends
  * queue/cancel/run-now requests to the admin-only route-runner API.
+ *
+ * The URL field is the single source of truth: each builder control reads its
+ * value from the URL and writes one param back, so a pasted URL and the
+ * controls always agree.
  */
 import Head from "next/head";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  LinearProgress,
-  Stack,
-  TextField,
-  Typography
-} from "@mui/material";
-import Grid from "@mui/material/Unstable_Grid2";
 import {
   Area,
   AreaChart,
@@ -32,7 +24,6 @@ import {
 } from "recharts";
 
 import AdminPageGate from "components/Admin/AdminPageGate";
-import { TextBanner } from "components/Banner/Banner";
 import Container from "components/Layout/Container";
 import {
   buildTimeline,
@@ -43,9 +34,22 @@ import {
   parseRunnerInput,
   readJobProgress
 } from "lib/routeRunner/core";
-import { ROUTE_RUNNER_PATHS, ROUTE_RUNNER_ROUTES } from "lib/routeRunner/registry";
+import {
+  getRunnerOptions,
+  splitRunnerUrl,
+  switchRunnerRoute,
+  withRunnerParam,
+  type RunnerOption
+} from "lib/routeRunner/options";
+import {
+  ROUTE_RUNNER_PATHS,
+  ROUTE_RUNNER_ROUTES,
+  getRouteRunnerSpec,
+  type RouteRunnerContract
+} from "lib/routeRunner/registry";
 import type { RouteRunnerEventRow, RouteRunnerJobRow } from "lib/routeRunner/store";
 import supabase from "lib/supabase";
+import styles from "styles/RouteRunner.module.scss";
 
 const JOBS_API = "/api/v1/db/route-runner/jobs";
 const ACTIVE_POLL_MS = 3_000;
@@ -54,37 +58,31 @@ const JOB_LIST_POLL_MS = 15_000;
 const MAX_EVENT_PAGES = 20;
 const MAX_EVENTS_KEPT = 5_000;
 
-// Dark chart surface and series/status steps (dataviz reference palette).
-const INK = "#f0efec";
-const INK_MUTED = "#c3c2b7";
-const GRID = "#2c2c2a";
-const SERIES = "#3987e5";
-const STATUS_COLORS: Record<string, string> = {
-  queued: "#8a8a85",
-  running: SERIES,
-  waiting: "#fab219",
-  completed: "#0ca30c",
-  failed: "#d03b3b",
-  cancelled: "#8a8a85"
-};
-const LEVEL_STYLE: Record<string, { tag: string; color: string }> = {
-  info: { tag: "INFO", color: INK_MUTED },
-  success: { tag: "OK  ", color: "#0ca30c" },
-  warn: { tag: "WARN", color: "#fab219" },
-  error: { tag: "ERR ", color: "#e66767" }
+// Chart colors mirror styles/vars.scss: $primary-color, $text-secondary,
+// $border-secondary and $background-dark (SVG attributes cannot read SCSS).
+const SERIES = "#14a2d2";
+const AXIS_TEXT = "#aaaaaa";
+const GRID = "rgba(80, 80, 80, 0.45)";
+const TOOLTIP_BG = "#1a1d21";
+
+const CONTRACT_LABELS: Record<RouteRunnerContract, string> = {
+  nst_resume: "resumes",
+  rolling_resume_from: "resumes by player",
+  next_start_date: "resumes by date",
+  once: "runs once"
 };
 
-const cardSx = (border: string) => ({
-  border: `5px solid ${border}`,
-  borderRadius: "8px",
-  background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-  color: "#fff"
-});
-const inputSx = {
-  backgroundColor: "#202020",
-  borderRadius: "4px",
-  "& .MuiInputBase-input, & .MuiInputLabel-root": { color: "#fff" }
+const LEVEL_TAGS: Record<string, string> = {
+  info: "INFO",
+  success: "OK  ",
+  warn: "WARN",
+  error: "ERR "
 };
+
+const OPTION_GROUPS = [
+  { key: "mode", label: "Mode" },
+  { key: "scope", label: "Scope" }
+] as const;
 
 async function authFetch(path: string, init?: { method?: string; body?: unknown }) {
   const { data } = await supabase.auth.getSession();
@@ -118,19 +116,15 @@ function toSubmittedPath(input: string) {
   return origin && trimmed.startsWith(`${origin}/`) ? trimmed.slice(origin.length) : trimmed;
 }
 
-function StatusChip({ status }: { status: string }) {
+function routeLabel(path: string) {
+  return getRouteRunnerSpec(path)?.label ?? path;
+}
+
+function StatusPill({ status }: { status: string }) {
   return (
-    <Chip
-      size="small"
-      label={status}
-      sx={{
-        color: "#101010",
-        backgroundColor: STATUS_COLORS[status] ?? INK_MUTED,
-        fontWeight: 600,
-        textTransform: "uppercase",
-        fontSize: 11
-      }}
-    />
+    <span className={styles.statusPill} data-status={status}>
+      {status}
+    </span>
   );
 }
 
@@ -143,18 +137,18 @@ function Countdown({ targetMs, offsetMs }: { targetMs: number; offsetMs: number 
   return <>{targetMs <= now ? "due now" : `in ${formatDuration(targetMs - now)}`}</>;
 }
 
-function StatTile({ label, value }: { label: string; value: string }) {
+function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <Box sx={{ background: "#1a1a19", borderRadius: 1, px: 1.5, py: 1, minWidth: 110 }}>
-      <Typography sx={{ color: INK_MUTED, fontSize: 12 }}>{label}</Typography>
-      <Typography sx={{ color: INK, fontSize: 20, fontWeight: 600 }}>{value}</Typography>
-    </Box>
+    <div className={styles.metric}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
   );
 }
 
 function queryText(query: unknown) {
   const rendered = new URLSearchParams((query ?? {}) as Record<string, string>).toString();
-  return rendered ? `?${rendered}` : "";
+  return rendered ? `?${rendered.replace(/%2C/gi, ",")}` : "";
 }
 
 function nextStepText(job: RouteRunnerJobRow, offsetMs: number) {
@@ -171,6 +165,280 @@ function nextStepText(job: RouteRunnerJobRow, offsetMs: number) {
   return `Finished ${job.finished_at ? new Date(job.finished_at).toLocaleString() : ""}.`;
 }
 
+function OptionControl(props: {
+  option: RunnerOption;
+  value: string;
+  disabled: boolean;
+  onChange: (value: string | null) => void;
+}) {
+  const { option, value, disabled, onChange } = props;
+  const id = `runner-option-${option.key}`;
+  const label = (
+    <span className={styles.optionLabel}>
+      {option.label}
+      <code>{option.key}</code>
+    </span>
+  );
+  const help = option.help ? <p className={styles.optionHelp}>{option.help}</p> : null;
+
+  if (option.kind === "flag") {
+    return (
+      <div className={styles.option}>
+        <label className={styles.flag}>
+          <input
+            type="checkbox"
+            checked={value !== ""}
+            disabled={disabled}
+            onChange={(event) => onChange(event.target.checked ? option.flagValue ?? "true" : null)}
+          />
+          {option.label}
+        </label>
+        {help}
+      </div>
+    );
+  }
+
+  if (option.kind === "choice" || option.kind === "multi") {
+    const selected = option.kind === "multi" ? value.split(",").filter(Boolean) : [value];
+    const toggle = (choice: string) => {
+      if (option.kind === "choice") return onChange(value === choice ? null : choice);
+      const next = selected.includes(choice)
+        ? selected.filter((item) => item !== choice)
+        : [...selected, choice];
+      onChange(next.length ? next.join(",") : null);
+    };
+    // Size the slot to the rail so its segments stay on one line.
+    const railChars = 7 + (option.values ?? []).reduce((sum, choice) => sum + choice.length + 2, 0);
+    const width = railChars > 40 ? styles.optionWide : railChars > 22 ? styles.optionSpan2 : "";
+    return (
+      <div className={`${styles.option} ${width}`}>
+        {label}
+        <div className={styles.segmentRail} role="group" aria-label={option.label}>
+          <button
+            type="button"
+            className={`${styles.segment} ${styles.segmentDefault}`}
+            aria-pressed={value === ""}
+            disabled={disabled}
+            onClick={() => onChange(null)}
+          >
+            default
+          </button>
+          {option.values?.map((choice) => (
+            <button
+              key={choice}
+              type="button"
+              className={styles.segment}
+              aria-pressed={selected.includes(choice)}
+              disabled={disabled}
+              onClick={() => toggle(choice)}
+            >
+              {choice}
+            </button>
+          ))}
+        </div>
+        {help}
+      </div>
+    );
+  }
+
+  if (option.kind === "select") {
+    return (
+      <div className={styles.option}>
+        <label htmlFor={id}>{label}</label>
+        <select
+          id={id}
+          className={styles.field}
+          value={value}
+          disabled={disabled}
+          onChange={(event) => onChange(event.target.value || null)}
+        >
+          <option value="">Route default</option>
+          {option.values?.map((choice) => (
+            <option key={choice} value={choice}>
+              {choice}
+            </option>
+          ))}
+          {value && !option.values?.includes(value) && <option value={value}>{value}</option>}
+        </select>
+        {help}
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.option}>
+      <label htmlFor={id}>{label}</label>
+      <input
+        id={id}
+        className={styles.field}
+        type={option.kind === "date" ? "date" : option.kind === "number" ? "number" : "text"}
+        inputMode={option.kind === "number" ? "numeric" : undefined}
+        min={option.min}
+        max={option.max}
+        placeholder={option.placeholder}
+        value={value}
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.value || null)}
+      />
+      {help}
+    </div>
+  );
+}
+
+function RunBuilder(props: {
+  input: string;
+  setInput: (value: string) => void;
+  queueing: boolean;
+  error: string | null;
+  onQueue: () => void;
+}) {
+  const { input, setInput, queueing } = props;
+  const [copied, setCopied] = useState(false);
+  const parts = useMemo(() => splitRunnerUrl(input), [input]);
+  const spec = parts ? getRouteRunnerSpec(parts.path) : null;
+  const options = spec && parts ? getRunnerOptions(parts.path) : [];
+  const advanced = options.filter((option) => option.group === "advanced");
+  const preview = useMemo(() => {
+    if (!input.trim()) return null;
+    const origin = ownOrigin();
+    return parseRunnerInput(input, origin ? [origin] : []);
+  }, [input]);
+  const offeredKeys = new Set(options.map((option) => option.key));
+  const otherKeys = parts
+    ? Array.from(parts.params.keys()).filter(
+        (key) => !offeredKeys.has(key) && !(spec?.runnerParams ?? []).includes(key)
+      )
+    : [];
+
+  const setParam = (key: string, value: string | null) => setInput(withRunnerParam(input, key, value));
+  const renderOption = (option: RunnerOption) => (
+    <OptionControl
+      key={option.key}
+      option={option}
+      value={parts?.params.get(option.key) ?? ""}
+      disabled={queueing}
+      onChange={(value) => setParam(option.key, value)}
+    />
+  );
+
+  async function copyUrl() {
+    const origin = ownOrigin() ?? "";
+    const text = input.trim().startsWith("/") ? `${origin}${input.trim()}` : input.trim();
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1_500);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <section className={`${styles.panel} ${styles.panelAccent}`} aria-labelledby="runner-builder-title">
+      <div className={styles.panelHead}>
+        <h2 id="runner-builder-title">Build a run</h2>
+        <span>Pick a route, set its options, or paste a URL. Unset options use the route default.</span>
+      </div>
+      <div className={styles.panelBody}>
+        <div className={styles.routeGrid} role="group" aria-label="Route">
+          {ROUTE_RUNNER_PATHS.map((path) => {
+            const route = ROUTE_RUNNER_ROUTES[path];
+            return (
+              <button
+                key={path}
+                type="button"
+                className={styles.routeCard}
+                aria-pressed={parts?.path === path}
+                disabled={queueing}
+                onClick={() => setInput(switchRunnerRoute(input, path))}
+              >
+                <strong>{route.label}</strong>
+                <span>{CONTRACT_LABELS[route.contract]}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {spec ? (
+          <>
+            <p className={styles.routeNotes}>{spec.notes}</p>
+            {options.length === 0 && <p className={styles.routeNotes}>This route takes no options.</p>}
+            {OPTION_GROUPS.map((group) => {
+              const groupOptions = options.filter((option) => option.group === group.key);
+              if (groupOptions.length === 0) return null;
+              return (
+                <fieldset key={group.key} className={styles.optionGroup}>
+                  <legend>{group.label}</legend>
+                  <div className={styles.optionGrid}>{groupOptions.map(renderOption)}</div>
+                </fieldset>
+              );
+            })}
+            {advanced.length > 0 && (
+              <details className={styles.advanced}>
+                <summary>Advanced ({advanced.length})</summary>
+                <div className={styles.optionGrid}>{advanced.map(renderOption)}</div>
+              </details>
+            )}
+          </>
+        ) : (
+          <p className={styles.routeNotes}>
+            {parts ? `${parts.path} is not on the runner allowlist.` : "Pick a route above, or paste a URL below."}
+          </p>
+        )}
+
+        <div className={styles.urlBar}>
+          <div className={styles.option}>
+            <label htmlFor="runner-url" className={styles.optionLabel}>
+              Route URL or path
+            </label>
+            <input
+              id="runner-url"
+              className={`${styles.field} ${styles.urlField}`}
+              value={input}
+              spellCheck={false}
+              onChange={(event) => setInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !queueing) props.onQueue();
+              }}
+              placeholder={ROUTE_RUNNER_ROUTES["/api/v1/db/update-nst-gamelog"].example}
+              disabled={queueing}
+            />
+          </div>
+          <button type="button" className={styles.buttonSecondary} onClick={() => void copyUrl()} disabled={!input.trim()}>
+            {copied ? "Copied" : "Copy URL"}
+          </button>
+          <button
+            type="button"
+            className={styles.buttonPrimary}
+            onClick={props.onQueue}
+            disabled={queueing || !input.trim() || preview?.ok === false}
+          >
+            {queueing ? "Queueing…" : "Queue run"}
+          </button>
+        </div>
+
+        {preview?.ok && (
+          <p className={styles.urlMeta}>
+            <strong>{ROUTE_RUNNER_ROUTES[preview.routePath].label}</strong> · {CONTRACT_LABELS[preview.contract]}
+            {preview.ignoredParams.length ? ` · the runner sets ${preview.ignoredParams.join(", ")}` : ""}
+            {otherKeys.length ? ` · kept as typed: ${otherKeys.join(", ")}` : ""}
+          </p>
+        )}
+        {preview && !preview.ok && (
+          <p role="alert" className={styles.error}>
+            {preview.error}
+          </p>
+        )}
+        {props.error && (
+          <p role="alert" className={styles.error}>
+            {props.error}
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function Terminal({ events }: { events: RouteRunnerEventRow[] }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const pinnedRef = useRef(true);
@@ -179,41 +447,26 @@ function Terminal({ events }: { events: RouteRunnerEventRow[] }) {
     if (element && pinnedRef.current) element.scrollTop = element.scrollHeight;
   }, [events]);
   return (
-    <Box
+    <div
       ref={ref}
       role="log"
       aria-label="Route runner terminal"
+      className={styles.terminal}
       onScroll={(event) => {
         const element = event.currentTarget;
         pinnedRef.current = element.scrollHeight - element.scrollTop - element.clientHeight < 24;
       }}
-      sx={{
-        background: "#0b0b0b",
-        border: "1px solid #333",
-        borderRadius: 1,
-        p: 1.5,
-        height: 360,
-        overflow: "auto",
-        fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-        fontSize: 12,
-        lineHeight: 1.6,
-        whiteSpace: "pre-wrap",
-        wordBreak: "break-word"
-      }}
     >
       {events.length === 0 ? (
-        <span style={{ color: INK_MUTED }}>No events yet.</span>
+        <span className={styles.line}>No events yet.</span>
       ) : (
-        events.map((event) => {
-          const style = LEVEL_STYLE[event.level] ?? LEVEL_STYLE.info;
-          return (
-            <div key={event.id} style={{ color: style.color }}>
-              {`${style.tag} ${formatEventLine(event)}`}
-            </div>
-          );
-        })
+        events.map((event) => (
+          <div key={event.id} className={styles.line} data-level={event.level}>
+            {`${LEVEL_TAGS[event.level] ?? LEVEL_TAGS.info} ${formatEventLine(event)}`}
+          </div>
+        ))
       )}
-    </Box>
+    </div>
   );
 }
 
@@ -247,109 +500,141 @@ function JobDetail(props: {
     step: point.step,
     seconds: Math.round((point.durationMs ?? 0) / 100) / 10
   }));
-  const axis = { tick: { fill: INK_MUTED, fontSize: 11 }, stroke: GRID };
+  const axis = { tick: { fill: AXIS_TEXT, fontSize: 11 }, stroke: GRID };
   const tooltipStyle = {
-    contentStyle: { background: "#1a1a19", border: "1px solid #333", color: INK },
-    labelStyle: { color: INK_MUTED }
+    contentStyle: { background: TOOLTIP_BG, border: `1px solid ${GRID}`, color: "#cccccc" },
+    labelStyle: { color: AXIS_TEXT }
   };
 
   return (
-    <Card sx={cardSx("#4caf50")}>
-      <CardContent>
-        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-          <StatusChip status={job.status} />
-          <Typography variant="h6" component="h2">
-            {ROUTE_RUNNER_ROUTES[job.route_path as keyof typeof ROUTE_RUNNER_ROUTES]?.label ?? job.route_path}
-          </Typography>
-          <Chip size="small" variant="outlined" label={job.contract ?? "once"} sx={{ color: INK_MUTED, borderColor: "#555" }} />
-        </Stack>
-        <Typography sx={{ fontFamily: "monospace", fontSize: 12, color: INK_MUTED, mt: 1, wordBreak: "break-all" }}>
+    <section className={styles.panel} aria-labelledby="runner-job-title">
+      <div className={styles.panelHead}>
+        <div className={styles.detailTitle}>
+          <StatusPill status={job.status} />
+          <h2 id="runner-job-title">{routeLabel(job.route_path)}</h2>
+          <span className={styles.contractPill}>{job.contract ?? "once"}</span>
+        </div>
+        <span>{new Date(job.created_at).toLocaleString()}</span>
+      </div>
+      <div className={styles.panelBody}>
+        <p className={styles.query}>
           {job.route_path}
           {queryText(job.next_query)}
-        </Typography>
+        </p>
         {reason && (
-          <Typography sx={{ mt: 1, color: job.status === "failed" ? "#e66767" : INK }}>{reason}</Typography>
+          <p className={`${styles.reason} ${job.status === "failed" ? styles.reasonFailed : ""}`}>{reason}</p>
         )}
-        <Typography sx={{ mt: 0.5, color: INK_MUTED, fontSize: 14 }}>{nextStepText(job, offsetMs)}</Typography>
+        <p className={styles.nextStep}>{nextStepText(job, offsetMs)}</p>
 
-        <Box sx={{ mt: 2 }}>
-          {percent != null ? (
-            <>
-              <LinearProgress variant="determinate" value={percent} sx={{ height: 10, borderRadius: 1 }} aria-label="Job progress" />
-              <Typography sx={{ fontSize: 13, color: INK_MUTED, mt: 0.5 }}>
-                {progress?.done} / {progress?.total} {progress?.unit ?? ""} ({percent.toFixed(1)}%)
+        {percent != null ? (
+          <div className={styles.progress}>
+            <div className={styles.progressHead}>
+              <span>
+                {progress?.unit ?? "progress"}
                 {progress?.cursor ? ` · ${progress.cursor}` : ""}
-              </Typography>
-            </>
-          ) : job.status === "running" ? (
-            <LinearProgress sx={{ height: 10, borderRadius: 1 }} aria-label="Step running" />
-          ) : progress?.cursor ? (
-            <Typography sx={{ fontSize: 13, color: INK_MUTED }}>{progress.cursor}</Typography>
-          ) : null}
-        </Box>
+              </span>
+              <strong>
+                {progress?.done} / {progress?.total} ({percent.toFixed(1)}%)
+              </strong>
+            </div>
+            <div
+              className={styles.track}
+              role="progressbar"
+              aria-label="Job progress"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(percent)}
+            >
+              <div className={styles.trackFill} style={{ width: `${percent}%` }} />
+            </div>
+          </div>
+        ) : job.status === "running" ? (
+          <div className={styles.track} role="progressbar" aria-label="Step running">
+            <div className={`${styles.trackFill} ${styles.trackIndeterminate}`} />
+          </div>
+        ) : progress?.cursor ? (
+          <p className={styles.nextStep}>{progress.cursor}</p>
+        ) : null}
 
-        <Stack direction="row" spacing={1} sx={{ mt: 2 }} flexWrap="wrap" useFlexGap>
-          <StatTile label="Steps" value={String(job.steps)} />
-          <StatTile label={`Total ${rowsUnit}`} value={Number(job.rows_total).toLocaleString()} />
-          <StatTile label="Kills" value={String(job.kills)} />
-          <StatTile label="ETA" value={etaMs != null ? formatDuration(etaMs) : "—"} />
-          <StatTile label="Elapsed" value={formatDuration(Math.max(0, elapsedMs))} />
-          <StatTile label="Avg step" value={averageStepMs != null ? formatDuration(averageStepMs) : "—"} />
-        </Stack>
+        <div className={styles.metrics}>
+          <Metric label="Steps" value={String(job.steps)} />
+          <Metric label={`Total ${rowsUnit}`} value={Number(job.rows_total).toLocaleString()} />
+          <Metric label="Kills" value={String(job.kills)} />
+          <Metric label="ETA" value={etaMs != null ? formatDuration(etaMs) : "—"} />
+          <Metric label="Elapsed" value={formatDuration(Math.max(0, elapsedMs))} />
+          <Metric label="Avg step" value={averageStepMs != null ? formatDuration(averageStepMs) : "—"} />
+        </div>
 
-        <Grid container spacing={2} sx={{ mt: 1 }}>
-          <Grid xs={12} md={6}>
-            <Typography sx={{ color: INK_MUTED, fontSize: 13, mb: 0.5 }}>Cumulative {rowsUnit}</Typography>
-            <Box sx={{ height: 200 }}>
+        <div className={styles.charts}>
+          <div className={styles.chartFrame}>
+            <h3>Cumulative {rowsUnit}</h3>
+            <div className={styles.chartBody}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={rowsSeries} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
                   <CartesianGrid stroke={GRID} vertical={false} />
                   <XAxis dataKey="time" {...axis} minTickGap={24} />
                   <YAxis {...axis} width={56} allowDecimals={false} />
                   <Tooltip {...tooltipStyle} formatter={(value: number) => [value.toLocaleString(), rowsUnit]} />
-                  <Area type="monotone" dataKey="rows" stroke={SERIES} strokeWidth={2} fill={SERIES} fillOpacity={0.15} isAnimationActive={false} />
+                  <Area
+                    type="monotone"
+                    dataKey="rows"
+                    stroke={SERIES}
+                    strokeWidth={2}
+                    fill={SERIES}
+                    fillOpacity={0.15}
+                    isAnimationActive={false}
+                  />
                 </AreaChart>
               </ResponsiveContainer>
-            </Box>
-          </Grid>
-          <Grid xs={12} md={6}>
-            <Typography sx={{ color: INK_MUTED, fontSize: 13, mb: 0.5 }}>Step duration (s)</Typography>
-            <Box sx={{ height: 200 }}>
+            </div>
+          </div>
+          <div className={styles.chartFrame}>
+            <h3>Step duration (s)</h3>
+            <div className={styles.chartBody}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={durationSeries} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
                   <CartesianGrid stroke={GRID} vertical={false} />
                   <XAxis dataKey="step" {...axis} />
                   <YAxis {...axis} width={40} />
-                  <Tooltip {...tooltipStyle} cursor={{ fill: "#ffffff10" }} formatter={(value: number) => [`${value} s`, "duration"]} labelFormatter={(step) => `step ${step}`} />
+                  <Tooltip
+                    {...tooltipStyle}
+                    cursor={{ fill: "rgba(255, 255, 255, 0.06)" }}
+                    formatter={(value: number) => [`${value} s`, "duration"]}
+                    labelFormatter={(step) => `step ${step}`}
+                  />
                   <Bar dataKey="seconds" fill={SERIES} radius={[4, 4, 0, 0]} maxBarSize={18} isAnimationActive={false} />
                 </BarChart>
               </ResponsiveContainer>
-            </Box>
-          </Grid>
-        </Grid>
+            </div>
+          </div>
+        </div>
 
-        <Typography sx={{ color: INK_MUTED, fontSize: 13, mt: 2, mb: 0.5 }}>Live terminal</Typography>
+        <div className={styles.terminalHead}>
+          <h3>Live terminal</h3>
+          <span className={styles.nextStep}>{events.length.toLocaleString()} lines</span>
+        </div>
         <Terminal events={events} />
 
-        <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-          <Button
-            variant="outlined"
-            color="error"
+        <div className={styles.actions}>
+          <button
+            type="button"
+            className={styles.buttonDanger}
             disabled={props.busy || !isActiveStatus(job.status)}
             onClick={() => props.onAction("cancel")}
           >
             Cancel job
-          </Button>
-          <Button
-            variant="outlined"
+          </button>
+          <button
+            type="button"
+            className={styles.buttonSecondary}
             disabled={props.busy || job.status !== "waiting"}
             onClick={() => props.onAction("run_now")}
           >
             Run now
-          </Button>
-        </Stack>
-      </CardContent>
-    </Card>
+          </button>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -366,12 +651,6 @@ function RouteRunner() {
   const lastEventIdRef = useRef(0);
   const selectedRef = useRef<string | null>(null);
   const jobRef = useRef<RouteRunnerJobRow | null>(null);
-
-  const preview = useMemo(() => {
-    if (!input.trim()) return null;
-    const origin = ownOrigin();
-    return parseRunnerInput(input, origin ? [origin] : []);
-  }, [input]);
 
   const loadJobs = useCallback(async () => {
     const body = await authFetch(JOBS_API);
@@ -437,7 +716,9 @@ function RouteRunner() {
 
   async function queueRun() {
     setError(null);
-    if (preview && !preview.ok) {
+    const origin = ownOrigin();
+    const preview = parseRunnerInput(input, origin ? [origin] : []);
+    if (!preview.ok) {
       setError(preview.error);
       return;
     }
@@ -468,138 +749,82 @@ function RouteRunner() {
     }
   }
 
+  const activeCount = jobs.filter((row) => isActiveStatus(row.status)).length;
+
   return (
-    <Container>
+    <Container contentVariant="full">
       <Head>
         <title>Route Runner | FHFH</title>
       </Head>
-      <TextBanner text="Route Runner" />
-      <Grid container spacing={2}>
-        <Grid xs={12}>
-          <Card sx={cardSx("#ffb300")}>
-            <CardContent>
-              <Typography variant="body2">
-                Paste an allowlisted route URL. The server runs it step by step, following the route&apos;s
-                resume contract, until it finishes (up to 72 h). You can close this page.{" "}
-                <Link href="/db" style={{ color: "#ffb300" }}>
-                  Back to /db
-                </Link>
-              </Typography>
-              <TextField
-                label="Route URL or path"
-                size="small"
-                fullWidth
-                margin="normal"
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !queueing) void queueRun();
-                }}
-                placeholder={ROUTE_RUNNER_ROUTES["/api/v1/db/update-nst-gamelog"].example}
-                disabled={queueing}
-                sx={inputSx}
-              />
-              {preview?.ok && (
-                <Typography sx={{ fontSize: 13, color: INK_MUTED }}>
-                  {ROUTE_RUNNER_ROUTES[preview.routePath].label} · contract {preview.contract}
-                  {preview.ignoredParams.length ? ` · runner sets ${preview.ignoredParams.join(", ")}` : ""}
-                </Typography>
-              )}
-              {error && (
-                <Typography role="alert" sx={{ color: "#ff6b6b", mt: 1 }}>
-                  {error}
-                </Typography>
-              )}
-              <Button
-                sx={{ mt: 1 }}
-                variant="contained"
-                color="warning"
-                onClick={() => void queueRun()}
-                disabled={queueing || !input.trim()}
-              >
-                {queueing ? "Queueing…" : "Queue run"}
-              </Button>
-              <Box component="ul" sx={{ listStyle: "none", p: 0, mt: 2, mb: 0 }} aria-label="Allowlisted routes">
-                {ROUTE_RUNNER_PATHS.map((path) => {
-                  const spec = ROUTE_RUNNER_ROUTES[path];
-                  return (
-                    <Box component="li" key={path} sx={{ py: 0.75, borderTop: "1px solid #333" }}>
-                      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                        <Typography sx={{ fontWeight: 600 }}>{spec.label}</Typography>
-                        <Chip size="small" variant="outlined" label={spec.contract} sx={{ color: INK_MUTED, borderColor: "#555" }} />
-                        <Typography sx={{ fontFamily: "monospace", fontSize: 12, color: INK_MUTED }}>{path}</Typography>
-                        <Button size="small" onClick={() => setInput(spec.example)} disabled={queueing}>
-                          Use example
-                        </Button>
-                      </Stack>
-                      <Typography sx={{ fontSize: 12, color: INK_MUTED }}>{spec.notes}</Typography>
-                    </Box>
-                  );
-                })}
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+      <div className={styles.workspace}>
+        <header className={styles.topbar}>
+          <div>
+            <span className={styles.eyebrow}>Admin · Database</span>
+            <h1>Route Runner</h1>
+            <p>
+              The server runs a queued route step by step, following its resume contract, until it finishes (up
+              to 72 h). You can close this page.
+            </p>
+          </div>
+          <nav className={styles.topActions} aria-label="Runner links">
+            <span>
+              {activeCount} active · {jobs.length} recent
+            </span>
+            <Link href="/db" className={styles.link}>
+              Back to /db
+            </Link>
+          </nav>
+        </header>
 
-        <Grid xs={12} md={4}>
-          <Card sx={cardSx("#07aae2")}>
-            <CardContent>
-              <Typography variant="h6" component="h2" gutterBottom>
-                Jobs
-              </Typography>
-              {jobs.length === 0 ? (
-                <Typography sx={{ color: INK_MUTED }}>No jobs yet.</Typography>
-              ) : (
-                <Stack spacing={0.5}>
-                  {jobs.map((row) => (
-                    <Box
-                      key={row.id}
-                      component="button"
+        <RunBuilder input={input} setInput={setInput} queueing={queueing} error={error} onQueue={() => void queueRun()} />
+
+        <div className={styles.panels}>
+          <section className={styles.panel} aria-labelledby="runner-jobs-title">
+            <div className={styles.panelHead}>
+              <h2 id="runner-jobs-title">Jobs</h2>
+              <span>latest 50</span>
+            </div>
+            {jobs.length === 0 ? (
+              <div className={styles.empty}>No jobs yet. Queue a run above.</div>
+            ) : (
+              <ul className={styles.jobList}>
+                {jobs.map((row) => (
+                  <li key={row.id}>
+                    <button
                       type="button"
+                      className={styles.jobRow}
                       onClick={() => setSelectedId(row.id)}
                       aria-pressed={row.id === selectedId}
-                      sx={{
-                        textAlign: "left",
-                        cursor: "pointer",
-                        background: row.id === selectedId ? "#2c2c2a" : "transparent",
-                        border: "1px solid #333",
-                        borderRadius: 1,
-                        color: INK,
-                        p: 1
-                      }}
                     >
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <StatusChip status={row.status} />
-                        <Typography sx={{ fontSize: 14 }}>
-                          {ROUTE_RUNNER_ROUTES[row.route_path as keyof typeof ROUTE_RUNNER_ROUTES]?.label ?? row.route_path}
-                        </Typography>
-                      </Stack>
-                      <Typography sx={{ fontSize: 12, color: INK_MUTED }}>
+                      <span className={styles.jobRowTitle}>
+                        <StatusPill status={row.status} />
+                        {routeLabel(row.route_path)}
+                      </span>
+                      <span className={styles.jobRowMeta}>
                         {new Date(row.created_at).toLocaleString()} · {row.steps} steps ·{" "}
                         {Number(row.rows_total).toLocaleString()} {readJobProgress(row.progress)?.rowsUnit ?? "rows"}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Stack>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
 
-        <Grid xs={12} md={8}>
           {job ? (
             <JobDetail job={job} events={events} offsetMs={offsetMs} onAction={(action) => void runAction(action)} busy={actionBusy} />
           ) : (
-            <Card sx={cardSx("#4caf50")}>
-              <CardContent>
-                <Typography sx={{ color: INK_MUTED }}>
-                  {selectedId ? "Loading the job…" : "Select a job to see its terminal and progress."}
-                </Typography>
-              </CardContent>
-            </Card>
+            <section className={styles.panel} aria-label="Job detail">
+              <div className={styles.panelHead}>
+                <h2>Job detail</h2>
+              </div>
+              <div className={styles.empty}>
+                {selectedId ? "Loading the job…" : "Select a job to see its terminal, progress and charts."}
+              </div>
+            </section>
           )}
-        </Grid>
-      </Grid>
+        </div>
+      </div>
     </Container>
   );
 }

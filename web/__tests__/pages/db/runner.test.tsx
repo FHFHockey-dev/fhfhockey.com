@@ -1,6 +1,6 @@
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 // jsdom has no ResizeObserver; recharts' ResponsiveContainer needs one.
 globalThis.ResizeObserver ??= class {
@@ -41,6 +41,9 @@ beforeEach(() => {
   fetchMock.mockReset();
   fetchMock.mockImplementation((url: string, init?: RequestInit) => {
     expect((init?.headers as Record<string, string>).Authorization).toBe("Bearer admin-token");
+    if (url === "/api/v1/db/route-runner/jobs" && init?.method === "POST") {
+      return reply({ success: true, job });
+    }
     if (url === "/api/v1/db/route-runner/jobs") {
       return reply({ success: true, jobs: [job], serverTime: new Date().toISOString() });
     }
@@ -58,20 +61,54 @@ afterEach(() => {
 });
 
 describe("/db/runner", () => {
-  it("lists allowlisted routes and checks a pasted route before queueing", async () => {
+  it("offers every allowlisted route and checks a pasted route before queueing", async () => {
     render(<RouteRunnerPage />);
-    expect(screen.getByRole("list", { name: "Allowlisted routes" }).textContent).toContain("/api/v1/db/update-rolling-player-averages");
+    expect(screen.getByRole("group", { name: "Route" }).textContent).toContain("Rolling player averages");
     fireEvent.change(screen.getByLabelText("Route URL or path"), { target: { value: "/api/v1/db/update-teams" } });
-    fireEvent.click(screen.getByRole("button", { name: "Queue run" }));
     expect((await screen.findByRole("alert")).textContent).toContain("not on the route runner allowlist");
+    expect((screen.getByRole("button", { name: "Queue run" }) as HTMLButtonElement).disabled).toBe(true);
     expect(fetchMock.mock.calls.some(([, init]) => init?.method === "POST")).toBe(false);
+  });
+
+  it("builds a URL from the route options and queues it", async () => {
+    render(<RouteRunnerPage />);
+    const url = screen.getByLabelText("Route URL or path") as HTMLInputElement;
+    fireEvent.click(within(screen.getByRole("group", { name: "Route" })).getByRole("button", { name: /NST skater gamelogs/ }));
+    expect(url.value).toBe("/api/v1/db/update-nst-gamelog");
+    fireEvent.click(within(screen.getByRole("group", { name: "Run mode" })).getByRole("button", { name: "incremental" }));
+    fireEvent.change(screen.getByLabelText(/Start date/), { target: { value: "2026-10-07" } });
+    fireEvent.change(screen.getByLabelText(/End date/), { target: { value: "2026-10-18" } });
+    fireEvent.click(within(screen.getByRole("group", { name: "Overwrite" })).getByRole("button", { name: "yes" }));
+    expect(url.value).toBe(
+      "/api/v1/db/update-nst-gamelog?runMode=incremental&startDate=2026-10-07&endDate=2026-10-18&overwrite=yes"
+    );
+    fireEvent.click(within(screen.getByRole("group", { name: "Overwrite" })).getByRole("button", { name: "default" }));
+    expect(url.value).not.toContain("overwrite");
+
+    fireEvent.click(screen.getByRole("button", { name: "Queue run" }));
+    await waitFor(() => expect(fetchMock.mock.calls.some(([, init]) => init?.method === "POST")).toBe(true));
+    const [, init] = fetchMock.mock.calls.find(([, call]) => call?.method === "POST")!;
+    expect(JSON.parse(init.body as string)).toEqual({
+      path: "/api/v1/db/update-nst-gamelog?runMode=incremental&startDate=2026-10-07&endDate=2026-10-18"
+    });
+  });
+
+  it("reads a pasted URL back into the controls", () => {
+    render(<RouteRunnerPage />);
+    fireEvent.change(screen.getByLabelText("Route URL or path"), {
+      target: { value: "https://fhfhockey.com/api/v1/db/update-rolling-player-averages?strength=ev,pp&fastMode=true" }
+    });
+    const strengths = screen.getByRole("group", { name: "Strengths" });
+    expect(within(strengths).getByRole("button", { name: "ev" }).getAttribute("aria-pressed")).toBe("true");
+    expect(within(strengths).getByRole("button", { name: "5v5" }).getAttribute("aria-pressed")).toBe("false");
+    expect((screen.getByRole("checkbox", { name: "Fast mode" }) as HTMLInputElement).checked).toBe(true);
   });
 
   it("shows a job's progress and terminal", async () => {
     render(<RouteRunnerPage />);
-    fireEvent.click(await screen.findByRole("button", { name: /NST skater gamelogs/ }));
+    fireEvent.click(within(await screen.findByRole("list")).getByRole("button", { name: /NST skater gamelogs/ }));
     await waitFor(() => expect(screen.getByRole("log").textContent).toContain("step 1  HTTP 207  continuation_required"));
-    expect(screen.getByText(/40 \/ 400 urls \(10\.0%\)/)).toBeTruthy();
+    expect(screen.getByText(/40 \/ 400 \(10\.0%\)/)).toBeTruthy();
     expect(screen.getByText("Next step on the next tick (within about a minute).")).toBeTruthy();
   });
 });
