@@ -30,7 +30,10 @@
   - R21 `99c9e56b7` live (deployment `dpl_7ZG28acCKCeHXn7tgL6x5eDEeQEi` READY; smoke 5/5 incl. `/db/runner` 200 and the jobs API 401 unauthenticated). Migration 98 (route_runner tables, ledger `20261022133743`) applied before the push; pg_cron job 399 `route-runner-tick` scheduled after it (first runs succeeded with 0 rows, so no HTTP call while idle). Route-runner diary retired.
   - FP valuation audit saved: `tasks/artifacts/fantasy-point-audit-2026-10-22/REPORT.md`, with production Q1/Q2/Q5/Q6 results in Appendix C (F2 confirmed in production; F3 null band 10-12..10-18 matches the NST gap; zero hit/block rates 38–49% from 10-19). Q3/Q4 wait for a week of ledger data.
   - Gotcha: `supportedBaselineMigration.test.ts` fails at octoberBranch HEAD because `20261021210000_in_season_sandbox_billing.sql` (committed in `fd58ba245` by another session) has no migration-authority record. Not mine.
+  - R22 `f8c874a6c` live (`dpl_5GUANvUtWoqaWa38PTAgM6PYaD4j` READY; smoke 5/5): /db/runner URL builder + restyle, `$page-max-width` 90% token. Runner-builder diary retired. octoberBranch synced (`878dbc9e3`).
+  - NST backfill 10-07..10-18 complete (TJ, 14:19Z) and counted (6.1 done). Job 79 unscheduled by TJ's approval (5.5 done, `0b6ef82e2`).
 - **Next**
+  0. TJ queues the bounded rolling recompute on /db/runner: `/api/v1/db/update-rolling-player-averages?startDate=2026-10-07&endDate=2026-10-21&fastMode=true&executionProfile=overnight`; then 6.3 (re-run audit Q5 for null/zero last-5 rates).
   1. TJ runs `VACUUM FULL` on `rolling_player_game_metrics` at a quiet hour; then check the size.
   2. TJ's console-loop NST gamelog backfill (10-07..10-18) was 126/240 at 13:30Z. On "Backfill complete": the 6.1 counts, the 6.2 bounded rolling recompute and the job 79 unschedule.
   3. R21 approvals as above.
