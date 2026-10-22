@@ -26,6 +26,7 @@ import {
 import AdminPageGate from "components/Admin/AdminPageGate";
 import Container from "components/Layout/Container";
 import {
+  buildBypassRequeuePath,
   buildTimeline,
   estimateEtaMs,
   formatDuration,
@@ -69,6 +70,7 @@ const CONTRACT_LABELS: Record<RouteRunnerContract, string> = {
   nst_resume: "resumes",
   rolling_resume_from: "resumes by player",
   next_start_date: "resumes by date",
+  projection_resume: "resumes by game",
   once: "runs once"
 };
 
@@ -475,9 +477,11 @@ function JobDetail(props: {
   events: RouteRunnerEventRow[];
   offsetMs: number;
   onAction: (action: "cancel" | "run_now") => void;
+  onRequeue: (path: string) => void;
   busy: boolean;
 }) {
   const { job, events, offsetMs } = props;
+  const requeuePath = buildBypassRequeuePath(job);
   const timeline = useMemo(() => buildTimeline(events), [events]);
   const progress = readJobProgress(job.progress);
   const percent =
@@ -512,7 +516,9 @@ function JobDetail(props: {
         <div className={styles.detailTitle}>
           <StatusPill status={job.status} />
           <h2 id="runner-job-title">{routeLabel(job.route_path)}</h2>
-          <span className={styles.contractPill}>{job.contract ?? "once"}</span>
+          <span className={styles.contractPill}>
+            {getRouteRunnerSpec(job.route_path)?.contract ?? job.contract ?? "once"}
+          </span>
         </div>
         <span>{new Date(job.created_at).toLocaleString()}</span>
       </div>
@@ -632,6 +638,17 @@ function JobDetail(props: {
           >
             Run now
           </button>
+          {requeuePath && (
+            <button
+              type="button"
+              className={styles.buttonPrimary}
+              disabled={props.busy}
+              title={requeuePath}
+              onClick={() => props.onRequeue(requeuePath)}
+            >
+              Re-queue with bypass
+            </button>
+          )}
         </div>
       </div>
     </section>
@@ -749,6 +766,20 @@ function RouteRunner() {
     }
   }
 
+  async function requeue(path: string) {
+    setActionBusy(true);
+    setError(null);
+    try {
+      const body = await authFetch(JOBS_API, { method: "POST", body: { path } });
+      await loadJobs();
+      setSelectedId(body.job.id);
+    } catch (caught: any) {
+      setError(String(caught?.message ?? caught));
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
   const activeCount = jobs.filter((row) => isActiveStatus(row.status)).length;
 
   return (
@@ -812,7 +843,14 @@ function RouteRunner() {
           </section>
 
           {job ? (
-            <JobDetail job={job} events={events} offsetMs={offsetMs} onAction={(action) => void runAction(action)} busy={actionBusy} />
+            <JobDetail
+              job={job}
+              events={events}
+              offsetMs={offsetMs}
+              onAction={(action) => void runAction(action)}
+              onRequeue={(path) => void requeue(path)}
+              busy={actionBusy}
+            />
           ) : (
             <section className={styles.panel} aria-label="Job detail">
               <div className={styles.panelHead}>

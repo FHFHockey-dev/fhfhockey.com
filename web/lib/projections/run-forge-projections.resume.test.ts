@@ -169,6 +169,8 @@ const fakes = vi.hoisted(() => ({
   strayRowGameIds: new Set<number>(),
   skaterCalls: [] as number[],
   stageMs: 20_000,
+  // Games that take longer than `stageMs`.
+  slowGameMs: new Map<number, number>(),
   // Keyed by the invocation's deadline: the value it writes, and where it pauses.
   plans: new Map<number, { value: number; pause?: "projection_write" | "sidecar"; paused?: () => void; resume?: Promise<void> }>(),
   skaterError: null as Error | null,
@@ -237,7 +239,7 @@ vi.mock("./stages/skater-stage", async (importOriginal) => ({
       if (existing) existing.proj_goals_es = 0.2;
       else rows.push({ ...key, proj_goals_es: 0.1 });
     }
-    vi.setSystemTime(Date.now() + fakes.stageMs);
+    vi.setSystemTime(Date.now() + (fakes.slowGameMs.get(args.game.id) ?? fakes.stageMs));
     return { playerRowsUpserted: players.length, teamRowsUpserted: 2, timedOut: Date.now() > args.deadlineMs };
   },
 }));
@@ -335,6 +337,7 @@ beforeEach(() => {
   db.reset();
   fakes.games = [1, 2, 3, 4].map((id) => ({ id, date, homeTeamId: 10 + id, awayTeamId: 20 + id }));
   fakes.strayRowGameIds.clear();
+  fakes.slowGameMs.clear();
   fakes.plans.clear();
   fakes.skaterError = null;
   fakes.snapshotError = null;
@@ -360,10 +363,12 @@ describe("resumable FORGE projection run", () => {
       run_id: "earlier-succeeded", status: "succeeded", created_at: "2026-10-20T06:00:00.000Z",
       metrics: { input_provenance: buildForgeInputProvenance() },
     });
-    // Game 3 is cut off partway and leaves a row its next pass will not write.
+    // Game 3 starts in time but runs slow, so it is cut off partway and leaves
+    // a row its next pass will not write.
     fakes.strayRowGameIds.add(3);
+    fakes.slowGameMs.set(3, 40_000);
 
-    const first = await runProjectionV2ForDate(date, { deadlineMs: start + 50_000 });
+    const first = await runProjectionV2ForDate(date, { deadlineMs: start + 65_000 });
 
     expect(first).toMatchObject({
       timedOut: true, gamesProcessed: 2, playerRowsUpserted: 4,
@@ -397,6 +402,19 @@ describe("resumable FORGE projection run", () => {
     // One row per game and player; game 3's stray row from the cut-off pass is gone.
     expect(playerRows(first.runId)).toEqual(["1:1", "1:2", "2:1", "2:2", "3:1", "3:2", "4:1", "4:2"]);
     expect(await requireLatestSucceededRunId(date)).toBe(first.runId);
+  });
+
+  it("does not start a game the slowest game so far would carry past the deadline", async () => {
+    // Games take 20 s: game 3 would start at 40 s with 10 s left, so the run
+    // pauses after game 2 instead of overrunning (2026-10-22: a 504 at 240 s).
+    const first = await runProjectionV2ForDate(date, { deadlineMs: start + 50_000 });
+
+    expect(fakes.skaterCalls).toEqual([1, 2]);
+    expect(Date.now()).toBeLessThanOrEqual(start + 50_000);
+    expect(first).toMatchObject({ timedOut: true, gamesProcessed: 2, resume: { completedGames: 2, pendingGames: 2 } });
+    const run = runs().find((row) => row.run_id === first.runId)!;
+    expect(run).toMatchObject({ status: "running", metrics: { resume: { completed_game_ids: [1, 2] } } });
+    expect(run.metrics.resume.released_by).toBe(run.metrics.resume.lease_owner);
   });
 
   it.each([undefined, ""])("stamps an uncaptured localhost run local:unknown and keeps serving the released run (SHA env %j)", async (sha) => {

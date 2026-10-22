@@ -110,5 +110,37 @@ describe("/db/runner", () => {
     await waitFor(() => expect(screen.getByRole("log").textContent).toContain("step 1  HTTP 207  continuation_required"));
     expect(screen.getByText(/40 \/ 400 \(10\.0%\)/)).toBeTruthy();
     expect(screen.getByText("Next step on the next tick (within about a minute).")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Re-queue with bypass" })).toBeNull();
+  });
+
+  it("re-queues a freshness-blocked rolling job with the bypass and its resumeFrom", async () => {
+    const blocked = makeJob({
+      route_path: "/api/v1/db/update-rolling-player-averages",
+      contract: "rolling_resume_from",
+      status: "failed",
+      next_query: { startDate: "2026-01-01", endDate: "2026-01-31", resumeFrom: "8478402" },
+      last_status_code: 422,
+      last_operation_status: "blocked",
+      last_error: "Blocked by freshness checks (HTTP 422, 1 blocker(s)).",
+      progress: { blockedBy: "freshness", stalls: 0 }
+    });
+    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+      if (url === "/api/v1/db/route-runner/jobs" && init?.method === "POST") return reply({ success: true, job });
+      if (url === "/api/v1/db/route-runner/jobs") {
+        return reply({ success: true, jobs: [blocked], serverTime: new Date().toISOString() });
+      }
+      if (url.startsWith(`/api/v1/db/route-runner/jobs/${blocked.id}`)) {
+        return reply({ success: true, job: blocked, events: [], hasMore: false });
+      }
+      return reply({ success: false, error: "unexpected" }, 404);
+    });
+    render(<RouteRunnerPage />);
+    fireEvent.click(within(await screen.findByRole("list")).getByRole("button", { name: /Rolling player averages/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Re-queue with bypass" }));
+    await waitFor(() => expect(fetchMock.mock.calls.some(([, init]) => init?.method === "POST")).toBe(true));
+    const [, init] = fetchMock.mock.calls.find(([, call]) => call?.method === "POST")!;
+    expect(JSON.parse(init.body as string)).toEqual({
+      path: "/api/v1/db/update-rolling-player-averages?startDate=2026-01-01&endDate=2026-01-31&resumeFrom=8478402&bypassFreshnessBlockers=true"
+    });
   });
 });

@@ -14,6 +14,7 @@ import { createSupabaseRouteRunnerStore } from "lib/routeRunner/store";
 import { runRouteRunnerTick, type RouteHandler } from "lib/routeRunner/tick";
 import adminOnly from "utils/adminOnlyMiddleware";
 
+import runProjectionV2Handler from "./run-projection-v2";
 import updateNstCurrentSeasonHandler from "./update-nst-current-season";
 import updateNstGamelogHandler from "./update-nst-gamelog";
 import updateNstGoaliesHandler from "./update-nst-goalies";
@@ -27,6 +28,7 @@ import updateWgoTotalsHandler from "./update-wgo-totals";
 const ROUTE_RUNNER_HANDLERS = {
   "/api/v1/db/update-nst-gamelog": updateNstGamelogHandler,
   "/api/v1/db/update-rolling-player-averages": updateRollingPlayerAveragesHandler,
+  "/api/v1/db/run-projection-v2": runProjectionV2Handler,
   "/api/v1/db/update-nst-team-daily": updateNstTeamDailyHandler,
   "/api/v1/db/update-nst-goalies": updateNstGoaliesHandler,
   "/api/v1/db/update-nst-current-season": updateNstCurrentSeasonHandler,

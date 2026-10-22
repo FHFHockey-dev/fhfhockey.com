@@ -26,6 +26,8 @@
  *    - Description: The maximum allowed execution time for the job in milliseconds.
  *    - Acts as a server-side timeout to prevent the process from running indefinitely.
  *    - Defaults to `210000` (3.5 minutes) if not specified, leaving 30 seconds for final audit persistence.
+ *    - Capped at `210000`. The route answers within 15 seconds after this budget (by 225 s at most),
+ *      even when a projection step is still running; that step keeps its run's lease until it stops.
  *    - Example: `?maxDurationMs=120000`
  *
  * 4. `gameIds` (optional)
@@ -60,6 +62,8 @@
  * - A single-date live run is resumable: on timeout it returns 207 with `operationStatus: "partial"` and
  *   `resume.request`, keeps its `forge_runs` row `running`, and the next call for the same date reuses that
  *   run_id and projects only the unfinished games. The run is marked `succeeded` once every game is done.
+ *   When a step is still running at the forced answer, the 207 has `resume.runId: null` and null game
+ *   counts; the next call usually gets `run_in_progress_elsewhere` until that step stops or its lease lapses.
  * - Errors during execution will result in a `500 Internal Server Error` with a descriptive error message.
  */
 import type { NextApiRequest, NextApiResponse } from "next";
@@ -102,6 +106,45 @@ import {
 } from "lib/projections/queries/run-lifecycle-queries";
 import supabase from "lib/supabase/server";
 import adminOnly from "utils/adminOnlyMiddleware";
+
+// vercel.json kills pages/api functions at 240 s. The route answers by this
+// point even when a projection step is stuck, leaving time for the response
+// and the cron audit write.
+const PROJECTION_ROUTE_HARD_LIMIT_MS = 225_000;
+// Between the run deadline and that forced answer: a game started before the
+// deadline finishes and the run checkpoints and releases its lease.
+const PROJECTION_ROUTE_FINALIZATION_RESERVE_MS = 15_000;
+const PROJECTION_ROUTE_MAX_BUDGET_MS =
+  PROJECTION_ROUTE_HARD_LIMIT_MS - PROJECTION_ROUTE_FINALIZATION_RESERVE_MS;
+
+/**
+ * The work's result, or `null` when `limitAtMs` comes first. The work keeps
+ * running; it holds its run's lease until it stops, so the next call waits for
+ * it (`run_in_progress_elsewhere`) instead of overlapping it.
+ */
+async function settleBeforeLimit<T>(
+  work: Promise<T>,
+  limitAtMs: number,
+): Promise<{ value: T } | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const limit = new Promise<null>((resolve) => {
+    timer = setTimeout(() => resolve(null), Math.max(0, limitAtMs - Date.now()));
+  });
+  try {
+    const settled = await Promise.race([work.then((value) => ({ value })), limit]);
+    if (settled === null) {
+      work.catch((error) =>
+        console.error(
+          "run-projection-v2: projection work failed after the route answered",
+          error,
+        ),
+      );
+    }
+    return settled;
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 type PreflightGate = {
   gate_key: string;
@@ -1111,10 +1154,21 @@ async function handler(
   const maxDurationMs = Number(
     getParam(req, "maxDurationMs") ?? PROJECTION_ROUTE_DEFAULT_BUDGET_MS,
   );
-  const budgetMs = Number.isFinite(maxDurationMs)
-    ? maxDurationMs
-    : PROJECTION_ROUTE_DEFAULT_BUDGET_MS;
+  const budgetMs = Math.min(
+    Number.isFinite(maxDurationMs)
+      ? maxDurationMs
+      : PROJECTION_ROUTE_DEFAULT_BUDGET_MS,
+    PROJECTION_ROUTE_MAX_BUDGET_MS,
+  );
   const deadlineMs = startedAt + budgetMs;
+  // An in-process caller (the rolling pipeline) passes its own remaining time,
+  // so the forced answer follows the budget, never past the platform limit.
+  const answerByMs =
+    startedAt +
+    Math.min(
+      Math.max(0, budgetMs) + PROJECTION_ROUTE_FINALIZATION_RESERVE_MS,
+      PROJECTION_ROUTE_HARD_LIMIT_MS,
+    );
   let preflight = defaultPreflight;
   // No `error` field: the pipeline and the cron audit read this as unfinished.
   const buildResumablePartialBody = (args: {
@@ -1296,7 +1350,7 @@ async function handler(
             }),
           );
         }
-        if (Date.now() > deadlineMs) {
+        const respondRangeTimedOut = () => {
           const timedOutObservability = buildGoalieObservability({
             preflight: rangePreflight,
             gamesProcessed: results.reduce(
@@ -1372,11 +1426,17 @@ async function handler(
               processedDates: results.map((r) => r.asOfDate),
             }),
           );
-        }
-        const out = await runProjectionV2ForDate(date, {
-          deadlineMs,
-          horizonGames,
-        });
+        };
+        if (Date.now() > deadlineMs) return respondRangeTimedOut();
+        const settled = await settleBeforeLimit(
+          runProjectionV2ForDate(date, {
+            deadlineMs,
+            horizonGames,
+          }),
+          answerByMs,
+        );
+        if (!settled) return respondRangeTimedOut();
+        const out = settled.value;
         if (out.postRunFailure) {
           rangePostRunFailures.push({ asOfDate: date, failure: out.postRunFailure });
         }
@@ -1530,11 +1590,34 @@ async function handler(
       );
     }
 
-    const out = await runProjectionV2ForDate(asOfDate, {
-      deadlineMs,
-      horizonGames,
-      gameIds,
-    });
+    const settled = await settleBeforeLimit(
+      runProjectionV2ForDate(asOfDate, {
+        deadlineMs,
+        horizonGames,
+        gameIds,
+      }),
+      answerByMs,
+    );
+    if (!settled) {
+      // A step overran the deadline: answer before the platform kills the
+      // function. Progress so far is checkpointed on the run.
+      return res.status(207).json(
+        withTiming(
+          buildResumablePartialBody({
+            reason: "runtime_budget",
+            runId: null,
+            resume: null,
+            observability: buildGoalieObservability({
+              preflight,
+              gamesProcessed: 0,
+              goalieRowsProcessed: 0,
+            }),
+            rowCounts: {},
+          }),
+        ),
+      );
+    }
+    const out = settled.value;
     const singleRunObservability = buildGoalieObservability({
       preflight,
       gamesProcessed: out.gamesProcessed,

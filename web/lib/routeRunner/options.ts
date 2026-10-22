@@ -262,6 +262,31 @@ export const ROUTE_RUNNER_OPTIONS = {
       min: 1
     }
   ],
+  "/api/v1/db/run-projection-v2": [
+    {
+      key: "date",
+      label: "Date (required)",
+      kind: "date",
+      group: "scope",
+      help: "The as-of date to project. One date per job; startDate/endDate ranges are not resumable."
+    },
+    {
+      key: "gameIds",
+      label: "Game ids",
+      kind: "text",
+      group: "scope",
+      placeholder: "2025020101,2025020102",
+      help: "Comma-separated game ids on that date; default: every game on the slate."
+    },
+    {
+      key: "bypassPreflight",
+      label: "Bypass preflight",
+      kind: "flag",
+      group: "advanced",
+      flagValue: "true",
+      help: "Skips the freshness preflight that otherwise blocks the run."
+    }
+  ],
   "/api/v1/db/update-nst-team-daily": [
     {
       ...nstRunMode,

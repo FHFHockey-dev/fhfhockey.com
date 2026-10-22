@@ -273,6 +273,80 @@ describe("/api/v1/db/run-projection-v2", () => {
     expect(auditInsertMock.mock.calls[0]?.[0]?.status).toBe("continued");
   });
 
+  // 2026-10-22: a game stalled after the 210 s budget's last boundary check and
+  // Vercel killed the call at 240 s (504) before it answered.
+  it.each([
+    ["the default budget", {}, 210_000, 225_000],
+    ["a budget above the cap", { maxDurationMs: "999999" }, 210_000, 225_000],
+    ["an in-process caller's shorter budget", { maxDurationMs: "60000" }, 60_000, 75_000],
+  ])("answers a stuck run with a 207 resume before the platform limit (%s)", async (_label, query, budgetMs, answerAfterMs) => {
+    vi.useFakeTimers();
+    try {
+      const startedAt = Date.now();
+      type Out = Awaited<ReturnType<typeof runProjectionV2ForDate>>;
+      let finishLate!: (value: Out) => void;
+      vi.mocked(runProjectionV2ForDate).mockReturnValueOnce(new Promise<Out>((resolve) => { finishLate = resolve; }));
+      const res = createMockRes();
+
+      const answered = handler({ method: "GET", query: { date: "2026-10-22", bypassPreflight: "true", ...query } } as any, res);
+      await vi.advanceTimersByTimeAsync(answerAfterMs - 1);
+      expect(res.headersSent).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      await answered;
+
+      expect(vi.mocked(runProjectionV2ForDate).mock.calls[0]?.[1]).toMatchObject({ deadlineMs: startedAt + budgetMs });
+      expect(res.statusCode).toBe(207);
+      expect(res.body).not.toHaveProperty("error");
+      expect(res.body).toMatchObject({
+        success: false,
+        operationStatus: "partial",
+        timedOut: true,
+        termination: { state: "resume_required", resumeRequired: true, nextStartDate: "2026-10-22" },
+        resume: {
+          required: true,
+          reason: "runtime_budget",
+          runId: null,
+          completedGames: null,
+          request: { date: "2026-10-22", horizonGames: "1", bypassPreflight: "true" },
+        },
+      });
+      expect(auditInsertMock.mock.calls[0]?.[0]?.status).toBe("continued");
+
+      // The abandoned work settles later without touching the answered response.
+      finishLate({ runId: "run-late", gamesProcessed: 12, playerRowsUpserted: 0, teamRowsUpserted: 0, goalieRowsUpserted: 0, timedOut: false });
+      await vi.advanceTimersByTimeAsync(0);
+      expect(res.body.resume.runId).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("answers a stuck range date with the range timeout before the platform limit", async () => {
+    vi.useFakeTimers();
+    try {
+      vi.mocked(runProjectionV2ForDate).mockReturnValueOnce(new Promise<never>(() => undefined));
+      const res = createMockRes();
+
+      const answered = handler({
+        method: "GET",
+        query: { startDate: "2026-10-22", endDate: "2026-10-23", bypassPreflight: "true" },
+      } as any, res);
+      await vi.advanceTimersByTimeAsync(225_000);
+      await answered;
+
+      expect(runProjectionV2ForDate).toHaveBeenCalledTimes(1);
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toMatchObject({
+        success: false,
+        timedOut: true,
+        nextStartDate: "2026-10-22",
+        termination: { state: "resume_required", resumeRequired: true, nextStartDate: "2026-10-22" },
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("reports a succeeded run whose post-run snapshot save failed as succeeded, with a non-blocking warning", async () => {
     vi.mocked(runProjectionV2ForDate).mockResolvedValueOnce({
       runId: "run-3",

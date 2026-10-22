@@ -25,6 +25,8 @@ const MIN_CLAIM_BUDGET_MS = 30_000;
 export const ROUTE_RUNNER_MAX_KILLS = 3;
 export const ROUTE_RUNNER_MAX_STALLS = 3;
 export const ROUTE_RUNNER_SOURCE_DOWN_WAIT_MS = 30 * 60_000;
+// run-projection-v2 takes over a stalled run at its lease expiry + 2 min.
+export const ROUTE_RUNNER_PROJECTION_ELSEWHERE_WAIT_MS = 150_000;
 export const ROUTE_RUNNER_JOB_TTL_MS = 72 * 60 * 60_000;
 
 export const ROUTE_RUNNER_ACTIVE_STATUSES = [
@@ -109,6 +111,14 @@ export function parseRunnerInput(
     }
     entries.set(key, value);
   }
+  const rejected = spec.rejectedParams?.keys.filter((key) => entries.has(key)) ?? [];
+  if (rejected.length > 0) {
+    return { ok: false, error: spec.rejectedParams!.reason };
+  }
+  const missing = spec.requiredParams?.filter((key) => !entries.get(key)?.trim()) ?? [];
+  if (missing.length > 0) {
+    return { ok: false, error: `${routePath} needs ${missing.join(", ")}.` };
+  }
 
   return {
     ok: true,
@@ -145,6 +155,17 @@ export function buildStepQuery(
         (spec.deadlineHeadroomMs ?? 0)
     );
   }
+  if (spec.budgetParam) {
+    step[spec.budgetParam] = String(
+      Math.max(
+        MIN_CLAIM_BUDGET_MS,
+        tickStartedAtMs +
+          ROUTE_RUNNER_STEP_DEADLINE_MS -
+          (spec.deadlineHeadroomMs ?? 0) -
+          nowMs
+      )
+    );
+  }
   if (spec.maxRuntimeParam && spec.maxRuntimeMs != null) {
     step[spec.maxRuntimeParam] = String(
       Math.max(
@@ -163,10 +184,22 @@ export function buildStepQuery(
 export type StepResult = { statusCode: number; body: unknown };
 
 export type StepDecision =
-  | { kind: "continue"; nextQuery: RouteQuery; reason: string }
+  | {
+      kind: "continue";
+      nextQuery: RouteQuery;
+      reason: string;
+      /** Cumulative completed units; the stall guard compares it across steps. */
+      progressDone?: number;
+    }
   | { kind: "complete"; reason: string }
   | { kind: "wait"; delayMs: number; reason: string }
-  | { kind: "fail"; reason: string };
+  | {
+      kind: "fail";
+      reason: string;
+      /** A continuation kept on the failed job (for a manual re-queue). */
+      nextQuery?: RouteQuery;
+      blockedBy?: "freshness";
+    };
 
 type Body = Record<string, any>;
 
@@ -318,6 +351,26 @@ function classifyRolling(
   const nextResumeFrom =
     positiveInteger(body?.resume?.nextResumeFrom) ??
     positiveInteger(body?.runSummary?.nextResumeFrom);
+  if (
+    result.statusCode === 422 &&
+    body?.operationStatus === "blocked" &&
+    asRecord(body?.freshnessGate)?.status === "FAIL"
+  ) {
+    // The step ran and wrote rows, then the freshness gate refused it. Keep
+    // the continuation so the page can re-queue it with the bypass.
+    const nextQuery = dropKeys(
+      { ...sentQuery, ...(scalarQuery(body?.resume?.request) ?? {}) },
+      runnerParams
+    );
+    if (nextResumeFrom != null) nextQuery.resumeFrom = String(nextResumeFrom);
+    const blockers = body?.freshnessGate?.blockerCount;
+    return {
+      kind: "fail",
+      reason: `Blocked by freshness checks (HTTP 422${Number.isSafeInteger(blockers) ? `, ${blockers} blocker(s)` : ""}). Refresh the stale sources, or re-queue with bypassFreshnessBlockers=true${nextResumeFrom != null ? ` from resumeFrom ${nextResumeFrom}` : ""}.`,
+      nextQuery,
+      blockedBy: "freshness"
+    };
+  }
   const partial =
     result.statusCode === 207 &&
     body?.operationStatus === "partial" &&
@@ -375,6 +428,59 @@ function classifyNextStartDate(
   };
 }
 
+function classifyProjection(
+  result: StepResult,
+  body: Body | null,
+  sentQuery: RouteQuery
+): StepDecision {
+  if (result.statusCode === 200 && body?.success === true && !nonEmptyString(body?.error)) {
+    const games = count(body?.gamesProcessed);
+    return {
+      kind: "complete",
+      reason:
+        body?.skipped === true
+          ? withMessage("Projection skipped", body)
+          : `Projection: ${games != null ? `${games} game(s) projected` : "done"} for ${nonEmptyString(body?.asOfDate) ?? sentQuery.date ?? "the date"}.`
+    };
+  }
+  const resume = asRecord(body?.resume);
+  if (
+    result.statusCode !== 207 ||
+    body?.operationStatus !== "partial" ||
+    resume?.required !== true
+  ) {
+    return { kind: "fail", reason: withMessage(`HTTP ${result.statusCode}`, body) };
+  }
+  const resumeDate = nonEmptyString(asRecord(resume.request)?.date);
+  if (sentQuery.date && resumeDate && resumeDate !== sentQuery.date) {
+    return {
+      kind: "fail",
+      reason: `Projection resume is for ${resumeDate}, not the date sent (${sentQuery.date}).`
+    };
+  }
+  const completed = count(resume.completedGames);
+  const total = count(resume.totalGames);
+  if (resume.reason === "runtime_budget") {
+    return {
+      kind: "continue",
+      nextQuery: { ...sentQuery },
+      reason: `Projection: ${completed != null && total != null ? `${completed} of ${total} games done; ` : ""}stopped at the runtime budget, replaying the same date.`,
+      ...(completed != null ? { progressDone: completed } : {})
+    };
+  }
+  if (resume.reason === "run_in_progress_elsewhere") {
+    return {
+      kind: "wait",
+      delayMs: ROUTE_RUNNER_PROJECTION_ELSEWHERE_WAIT_MS,
+      reason: "Projection: another call holds this date's run; replaying in 150 s."
+    };
+  }
+  return {
+    kind: "fail",
+    reason: withMessage(`HTTP 207 with an unknown resume reason (${String(resume.reason)})`, body)
+  };
+}
+
 /**
  * Turns a step's answer into the job's next move. `sentQuery` is the job's
  * query for this step (without runtime params).
@@ -393,6 +499,9 @@ export function classifyStepResult(
       reason: withMessage("Source down (503 source_down); replaying the same query in 30 min", body)
     };
   }
+  if (contract === "projection_resume") {
+    return classifyProjection(result, body, sentQuery);
+  }
   const decision =
     contract === "nst_resume"
       ? classifyNst(result, body, sentQuery, runnerParams)
@@ -404,13 +513,23 @@ export function classifyStepResult(
   return decision ?? classifyOnce(result, body);
 }
 
-/** A continuation that asks for the same query again makes no progress. */
+/**
+ * A continuation that asks for the same query again makes no progress,
+ * unless it reports progressDone above the job's previous done count (a
+ * route that resumes its own run from the same query). A wait keeps the count.
+ */
 export function applyStallGuard(
   decision: StepDecision,
   sentQuery: RouteQuery,
-  previousStalls: number
+  previousStalls: number,
+  previousDone: number | null = null
 ): { decision: StepDecision; stalls: number } {
+  if (decision.kind === "wait") return { decision, stalls: previousStalls };
   if (decision.kind !== "continue" || !sameQuery(decision.nextQuery, sentQuery)) {
+    return { decision, stalls: 0 };
+  }
+  const measured = decision.progressDone != null;
+  if (measured && decision.progressDone! > (previousDone ?? 0)) {
     return { decision, stalls: 0 };
   }
   const stalls = previousStalls + 1;
@@ -418,7 +537,9 @@ export function applyStallGuard(
     return {
       decision: {
         kind: "fail",
-        reason: `No progress: the route asked for the same query ${stalls} steps in a row.`
+        reason: measured
+          ? `No progress: completed games stayed at ${decision.progressDone} for ${stalls} steps in a row.`
+          : `No progress: the route asked for the same query ${stalls} steps in a row.`
       },
       stalls
     };
@@ -520,7 +641,12 @@ export function extractStepProgress(rawBody: unknown): StepProgress {
   }
 
   const continuation = asRecord(body.nstProgress?.continuation);
-  if (count(continuation?.nextIndex) != null && count(continuation?.totalUrls) != null) {
+  const resume = asRecord(body.resume);
+  if (count(resume?.completedGames) != null && count(resume?.totalGames) != null) {
+    progress.done = count(resume?.completedGames);
+    progress.total = count(resume?.totalGames);
+    progress.unit = "games";
+  } else if (count(continuation?.nextIndex) != null && count(continuation?.totalUrls) != null) {
     progress.done = count(continuation?.nextIndex);
     progress.total = count(continuation?.totalUrls);
     progress.unit = "urls";
@@ -549,6 +675,8 @@ export type JobProgress = {
   cursor: string | null;
   rowsUnit: string;
   stalls: number;
+  /** Set when the job failed on a gate a manual re-queue can bypass. */
+  blockedBy: "freshness" | null;
 };
 
 export function readJobProgress(value: unknown): JobProgress | null {
@@ -560,7 +688,8 @@ export function readJobProgress(value: unknown): JobProgress | null {
     total: count(record.total),
     cursor: nonEmptyString(record.cursor),
     rowsUnit: nonEmptyString(record.rowsUnit) ?? "rows",
-    stalls: count(record.stalls) ?? 0
+    stalls: count(record.stalls) ?? 0,
+    blockedBy: record.blockedBy === "freshness" ? "freshness" : null
   };
 }
 
@@ -588,13 +717,33 @@ export function mergeJobProgress(
     total,
     cursor: step.cursor ?? previous?.cursor ?? null,
     rowsUnit: step.rows != null ? step.rowsUnit : (previous?.rowsUnit ?? step.rowsUnit),
-    stalls
+    stalls,
+    blockedBy: null
   };
 }
 
 // ---------------------------------------------------------------------------
 // Page helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * The path that re-queues a job failed by the rolling freshness gate: its
+ * kept continuation (resumeFrom included) plus bypassFreshnessBlockers=true.
+ * Null for any other job.
+ */
+export function buildBypassRequeuePath(job: {
+  route_path: string;
+  status: string;
+  next_query: unknown;
+  progress: unknown;
+}): string | null {
+  if (job.status !== "failed" || readJobProgress(job.progress)?.blockedBy !== "freshness") {
+    return null;
+  }
+  const query = scalarQuery(job.next_query) ?? {};
+  query.bypassFreshnessBlockers = "true";
+  return `${job.route_path}?${new URLSearchParams(query).toString().replace(/%2C/gi, ",")}`;
+}
 
 export type RouteRunnerEventLike = {
   id: number;
