@@ -53,7 +53,7 @@
     - task 7.3 (bridge): its test carries the unresolved P07 planner regression; the fix is unassigned;
     - task 6.3: needs an explicit ledger handoff from task 1;
     - snapshot/settle routes: free from P08, but declare them before editing.
-  - **Claude fix requested:** `goalie/leagueSavePct.ts` caches the league save % at module level, so a warm second run skips the read. The reconstruction capture then records 99 of 100 inputs, which blocks task 2's reproducibility gate.
+  - **Fixed in `59daabf00`:** `goalie/leagueSavePct.ts` used to cache the league save % at module level, so a warm second run skipped the read and the reconstruction capture recorded 99 of 100 inputs, blocking task 2's reproducibility gate. The cache is now per run. Offline qualification 56/56; note sent to Codex.
   - **Codex review concerns on Claude's sprint:**
     - 6.2: the 8% Yes-only overround assumption;
     - 7.2: keeping the team win probability separate from the player's unconditional win;
