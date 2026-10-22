@@ -93,6 +93,7 @@ Scope (TJ, 2026-10-21): the "Streamlining and speed" section — unread rolling 
     - Done 2026-10-22 ~15:44–15:48Z: pg_repack was unusable (1.5.0), so TJ ran `VACUUM (FULL, ANALYZE, VERBOSE)` over the direct connection after the projection rerun: 4m01s (heap copy 77 s), 898,403 rows, 0 dead. Table 6,328 MB → 2,933 MB (heap 2,803 MB, indexes 129 MB; pages 787,693 → 358,846); database 28 GB → 25 GB; disk ~29.4 → ~26 GB of 40 GB.
   - [x] 7.4 Write the drop-column migration, apply it with TJ's approval, record it in the ledger, and regenerate `database-generated.types.ts`.
   - [ ] 7.5 Verify: a row-identical recompute for 20 players × 5 strengths, plus the rankings and trends tests.
+    - 2026-10-22: moved to `tasks-forge-projection-improvements-2026-10-22.md` task 2.5 (runs with the hydration release). Full S-F (3.0, sidecar hydration in the reader) moved there as task 2.4; S-F-lite is live since R19.
 
 - [ ] 8.0 Release and record
   - [ ] 8.1 For each finished set: commit on octoberBranch with explicit paths, build a master candidate in a temporary index, gate it in a clean export (tests, lint, type check), push with TJ's approval and the Vercel check, smoke-test, and sync octoberBranch.
