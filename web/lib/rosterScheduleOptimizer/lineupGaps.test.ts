@@ -66,6 +66,66 @@ describe("lineup gap report", () => {
     expect(report.unprojectedDrops).toEqual(["b"]);
   });
 
+  it("gives the missing forecast as that player's reason", () => {
+    const data = snapshot();
+    data.forecasts = data.forecasts.filter(forecast => forecast.playerId !== "b");
+    const report = lineupGapReport(data, intent, evaluatePlan(data, intent, "outcome", [], false));
+    expect(report.projectionBlockers).toEqual([{ playerId: "b", reason: "has unknown projected points: no FORGE projection issued for 2026-10-06" }]);
+  });
+
+  // TJ 2026-10-22: "16 players unprojected" listed every droppable star although each had complete forecasts.
+  // One roster member who is not a drop candidate blocked the lineup's points; the report blamed the others.
+  it("names a non-droppable roster player who blocks the lineup's points, not the droppable players with forecasts", () => {
+    const data = snapshot();
+    const d = { ...member("d", "C", ["D"], "rostered"), id: "d" };
+    data.players = [...data.players, d];
+    data.roster = [...data.roster, { playerId: "d", position: "active" }];
+    const kept = { ...intent, protectedPlayerIds: ["d"] };
+    const report = lineupGapReport(data, kept, evaluatePlan(data, kept, "outcome", [], false));
+    expect(report.bestDrop).toBeNull();
+    expect(report.unprojectedDrops).toEqual([]);
+    expect(report.projectionBlockers).toEqual([{ playerId: "d", reason: "has unknown projected points: no FORGE projection issued for 2026-10-05, 2026-10-06" }]);
+  });
+
+  it("says when unverified league positions, not projections, leave the lineup's points unknown", () => {
+    const data = snapshot();
+    data.players = data.players.map(row => row.id === "b" ? { ...row, eligibilityVerified: false } : row);
+    const report = lineupGapReport(data, intent, evaluatePlan(data, intent, "outcome", [], false));
+    expect(report.bestDrop).toBeNull();
+    expect(report.projectionBlockers).toEqual([{ playerId: "b", reason: "has unknown projected points: league positions not verified" }]);
+    expect(report.unprojectedDrops).toEqual(["b"]);
+  });
+
+  it("says the no-move lineup fails a rule check instead of calling players with forecasts unprojected", () => {
+    const data = snapshot();
+    data.rules.lineupMode = "unsupported";
+    const baseline = evaluatePlan(data, intent, "outcome", [], false);
+    expect(baseline.legal).toBe(false);
+    const report = lineupGapReport(data, intent, baseline);
+    expect(report.bestDrop).toBeNull();
+    expect(report.unprojectedDrops).toEqual([]);
+    expect(report.projectionBlockers).toEqual([{ playerId: null, reason: expect.stringMatching(/^the no-move lineup fails a rule check/) }]);
+  });
+
+  // TJ 2026-10-22: a healthy player left in IR (no Yahoo IR eligibility) made the no-move lineup illegal.
+  it("names a reserve player without verified eligibility as the reason the lineup fails its rule check", () => {
+    const data = snapshot();
+    const d = member("d", "C", ["D"], "rostered");
+    data.players = [...data.players, d];
+    data.roster = [...data.roster, { playerId: "d", position: "IR" }];
+    data.rules.rosterSlots = { ...data.rules.rosterSlots, IR: 1 };
+    const baseline = evaluatePlan(data, intent, "outcome", [], false);
+    expect(baseline.legal).toBe(false);
+    const report = lineupGapReport(data, intent, baseline);
+    expect(report.unprojectedDrops).toEqual([]);
+    expect(report.projectionBlockers).toEqual([{ playerId: "d",
+      reason: "in IR without verified IR eligibility, so the lineup fails a rule check; move him to an active or bench spot, or refresh league data" }]);
+    data.players = data.players.map(row => row.id === "d" ? { ...row, reserveEligibility: ["IR"] } : row);
+    const legal = lineupGapReport(data, intent, evaluatePlan(data, intent, "outcome", [], false));
+    expect(legal.projectionBlockers).toEqual([]);
+    expect(legal.bestDrop?.playerId).toBe("a");
+  });
+
   it("never offers a protected player as the drop", () => {
     const data = snapshot();
     const report = lineupGapReport(data, { ...intent, protectedPlayerIds: ["a"] }, evaluatePlan(data, intent, "outcome", [], false));
