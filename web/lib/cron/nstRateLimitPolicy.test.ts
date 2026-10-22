@@ -32,6 +32,7 @@ describe("nstRateLimitPolicy", () => {
   it("allows at most 39 requests in a burst", () => {
     expect(NST_MAX_BURST_REQUESTS).toBe(39);
     expect(canBurstNstRequests(10)).toBe(true);
+    for (const count of [0, -1, 1.5, NaN, Infinity]) expect(canBurstNstRequests(count)).toBe(false);
     expect(canBurstNstRequests(39)).toBe(true);
     expect(canBurstNstRequests(40)).toBe(false);
     expect(canBurstNstRequests(80)).toBe(false);

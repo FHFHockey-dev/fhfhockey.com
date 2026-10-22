@@ -1,4 +1,5 @@
 import fetchWithCache from "lib/fetchWithCache";
+import { NstExecutionLimitError, withNstRequestBudget, type NstRequestControl } from "./requestBudget";
 
 export const NST_BASE_URL = "https://data.naturalstattrick.com";
 export const NST_KEY_ENV_NAME = "NST_KEY";
@@ -52,12 +53,15 @@ export interface NstRequestOptions {
   retries?: number;
   headers?: Record<string, string>;
   allowQueryKeyFallback?: boolean;
+  // Opt-in shared admission. Callers that omit it keep the unbudgeted path.
+  requestControl?: NstRequestControl;
 }
 
 export interface NstRequestResult {
   response: Response;
   url: string;
   redactedUrl: string;
+  text?: string;
 }
 
 export interface ParsedNstUrl {
@@ -207,6 +211,34 @@ export function buildNstRequestUrlFromAbsoluteUrl(
   );
 }
 
+async function executeBudgetedNstUrl(
+  url: URL,
+  options: Omit<NstRequestOptions, "path" | "query">,
+  control: NstRequestControl
+): Promise<NstRequestResult> {
+  const headers = getNstHeaders(options);
+  return withNstRequestBudget(url.toString(), control, async () => {
+    const controller = new AbortController();
+    const timeoutMs = Math.min(options.timeoutMs ?? NST_DEFAULT_TIMEOUT_MS, control.deadlineAt - Date.now());
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(url.toString(), {
+        method: "GET", signal: controller.signal, headers, cache: "no-store", redirect: "error"
+      });
+      const redactedUrl = redactNstUrl(url);
+      if (!response.ok) {
+        controller.abort();
+        throw new NstResponseError({ status: response.status, redactedUrl });
+      }
+      // Keep the abort timer active through body consumption, not only headers.
+      const text = await response.clone().text();
+      return { response, url: url.toString(), redactedUrl, text };
+    } finally {
+      clearTimeout(timeout);
+    }
+  });
+}
+
 async function executeNstRequest(
   options: NstRequestOptions
 ): Promise<NstRequestResult> {
@@ -216,6 +248,9 @@ async function executeNstRequest(
     options.query,
     options.allowQueryKeyFallback ?? false
   );
+  if (options.requestControl) {
+    return executeBudgetedNstUrl(url, options, options.requestControl);
+  }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -255,6 +290,9 @@ async function executeNstRequestUrl(
     inputUrl,
     options?.allowQueryKeyFallback ?? false
   );
+  if (options?.requestControl) {
+    return executeBudgetedNstUrl(url, options, options.requestControl);
+  }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -287,6 +325,7 @@ async function executeNstRequestUrl(
 
 function shouldRetry(response: Response | null, error: unknown): boolean {
   if (error) {
+    if (error instanceof NstExecutionLimitError) return false;
     if (isNstResponseError(error)) {
       return error.status >= 500;
     }
@@ -359,7 +398,7 @@ export async function fetchNstText(
   options: NstRequestOptions
 ): Promise<{ text: string; redactedUrl: string; response: Response }> {
   const result = await nstRequest(options);
-  const text = await result.response.text();
+  const text = result.text ?? await result.response.text();
   return {
     text: redactNstMessage(text),
     redactedUrl: result.redactedUrl,
@@ -372,7 +411,7 @@ export async function fetchNstTextByUrl(
   options?: Omit<NstRequestOptions, "path" | "query">
 ): Promise<{ text: string; redactedUrl: string; response: Response }> {
   const result = await nstRequestUrl(url, options);
-  const text = await result.response.text();
+  const text = result.text ?? await result.response.text();
   return {
     text: redactNstMessage(text),
     redactedUrl: result.redactedUrl,

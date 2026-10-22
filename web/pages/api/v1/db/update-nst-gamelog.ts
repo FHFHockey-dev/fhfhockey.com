@@ -36,11 +36,12 @@
  *    The format for each date must be YYYY-MM-DD.
  *    Example: /api/v1/db/update-nst-gamelog?runMode=incremental&dates=2026-01-12,2026-04-12&datasetGroup=fiveOnFive&overwrite=yes
  *
- * 5. `overwrite` (optional): Controls whether to re-fetch and overwrite existing dates.
+ * 5. `overwrite` (optional): Retained refresh/scope flag. Both values currently refetch
+ *    selected sources and upsert conflicting rows; `no` does not protect existing rows.
  *    - Accepted: `yes` | `no` (also `true` | `false`, `1` | `0`)
  *    - Defaults preserve current behavior:
  *      - reverse/forward: overwrite defaults to yes (full-refresh)
- *      - incremental: overwrite defaults to no (skip complete dates)
+ *      - incremental: overwrite defaults to no
  *    Example: /api/v1/db/update-nst-gamelog?runMode=reverse&overwrite=no
  *
  * 6. `datasetType` (optional): Filters the operation to a specific dataset type.
@@ -50,6 +51,18 @@
  *
  * 7. `datasetGroup` (optional): Filters the operation to a supported dataset family.
  *    Example: /api/v1/db/update-nst-gamelog?runMode=reverse&startDate=2026-03-01&datasetGroup=fiveOnFive
+ *
+ * 8. `maxRequests` (optional): Total actual NST network attempts, including all retry
+ *    layers/passes. Integer 1–40, default 40. Paced apertures keep the six-item cap.
+ * 9. `maxRuntimeMs` (optional): Admission/database deadline, integer 1–220000,
+ *    default 220000. A timeout can follow committed writes; do not blindly rerun.
+ *
+ * `deadlineAt` optionally supplies the caller's absolute epoch-ms deadline;
+ * `resume.request.query` on HTTP207 is the exact continuation request.
+ * Full jobs below40 URLs may burst; larger/unknown jobs use at least21 seconds.
+ * Shared admission enforces40/min,80/5min,100/15min,180/hour, conservatively
+ * charging every attempt including retries. All participating jobs share them.
+ * Separate cloud hosts/containers and clients bypassing lib/nst/client are excluded.
  *
  * --- How It Works ---
  *
@@ -88,7 +101,9 @@ import axios from "axios";
 import * as cheerio from "cheerio";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { AsyncLocalStorage } from "node:async_hooks";
+import { NstExecutionLimitError, NST_BUDGET_COORDINATION_SCOPE, type NstRequestControl } from "lib/nst/requestBudget";
 import {
   buildNstGamelogScope,
   NST_GAMELOG_BOOKMARK_TTL_MS,
@@ -116,7 +131,6 @@ import {
   resolveNstGamelogRequestPlan
 } from "lib/cron/nstBurstPlans";
 import { buildCronJobTiming } from "lib/cron/timingContract";
-import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import {
@@ -150,10 +164,45 @@ if (!supabaseUrl || !supabaseKey) {
   process.exit(1);
 }
 
-const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
+const runControlStorage = new AsyncLocalStorage<NstRequestControl>();
 
-// Route-local pacing for sequential requests inside one run.
-// Shared cross-job NST coordination is handled separately by the NST budget policy.
+async function beforeDeadline<T>(work: () => PromiseLike<T>, deadlineAt: number, onTimeout?: () => void): Promise<T> {
+  if (Date.now() >= deadlineAt) throw new NstExecutionLimitError("NST run deadline reached.");
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      new Promise<never>((_, reject) => {
+        timeout = setTimeout(() => {
+          onTimeout?.();
+          reject(new NstExecutionLimitError("NST run deadline reached while awaiting work."));
+        }, deadlineAt - Date.now());
+      }),
+      Promise.resolve().then(work)
+    ]);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey, {
+  global: {
+    fetch: async (input, init) => {
+      const control = runControlStorage.getStore();
+      if (!control) return fetch(input, init);
+      if (Date.now() >= control.deadlineAt) throw new NstExecutionLimitError("NST run deadline reached before database request.");
+      const controller = new AbortController();
+      return beforeDeadline(async () => {
+        const response = await fetch(input, {
+          ...init, signal: init?.signal ? AbortSignal.any([init.signal, controller.signal]) : controller.signal
+        });
+        await response.clone().arrayBuffer();
+        return response;
+      }, Math.min(Date.now() + 30_000, control.deadlineAt), () => controller.abort());
+    }
+  }
+});
+
+// Larger apertures retain the paced policy at the shared client dispatch boundary.
 const REQUEST_INTERVAL_MS = 21000;
 
 const BASE_URL = "https://data.naturalstattrick.com/playerteams.php";
@@ -209,46 +258,26 @@ function keyValuesBlock(
   console.log("|======================|");
 }
 
-function logRateLimitWait(
-  waitMs: number,
-  intervalMs: number,
-  elapsedMs: number
-) {
-  section("Rate limit");
-  const secs = (waitMs / 1000).toFixed(1);
-  const intervalSecs = (intervalMs / 1000).toFixed(1);
-  const elapsedSecs = (elapsedMs / 1000).toFixed(1);
-  const eta = new Date(Date.now() + waitMs).toLocaleTimeString();
-  keyValuesBlock([
-    ["Waiting", `${secs}s`],
-    ["Interval", `${intervalSecs}s`],
-    ["Elapsed", `${elapsedSecs}s`],
-    ["ETA", eta]
-  ]);
-}
-
-// --- Global NST rate limiter ---
-let lastNstRequestAt = 0;
+// NST admission and retry accounting live at the actual client dispatch boundary.
 async function nstGet(
   url: string,
   timeoutMs = 30000,
-  options?: { bypassRateLimit?: boolean; minIntervalMs?: number }
+  options?: { bypassRateLimit?: boolean; minIntervalMs?: number; requestControl?: NstRequestControl; retries?: number }
 ) {
-  const now = Date.now();
-  const intervalMs =
-    options?.bypassRateLimit === true
-      ? 0
-      : (options?.minIntervalMs ?? REQUEST_INTERVAL_MS);
-  if (intervalMs > 0) {
-    const elapsed = now - lastNstRequestAt;
-    if (elapsed < intervalMs) {
-      const waitMs = intervalMs - elapsed;
-      logRateLimitWait(waitMs, intervalMs, elapsed);
-      await delay(waitMs);
+  if (options?.requestControl) {
+    const control = options.requestControl;
+    if (Date.now() >= control.deadlineAt || control.attemptsStarted >= control.maxAttempts) {
+      throw new NstExecutionLimitError("NST run deadline or network-attempt budget reached.");
     }
   }
-  lastNstRequestAt = Date.now();
-  const result = await fetchNstTextByUrl(url, { timeoutMs });
+  // The route owns retries so a 520–527 response reaches its stop logic before
+  // another network attempt. Every call still passes through shared admission.
+  const fetchText = () => fetchNstTextByUrl(url, {
+    timeoutMs, requestControl: options?.requestControl, retries: options?.retries ?? 0
+  });
+  const result = options?.requestControl
+    ? await beforeDeadline(fetchText, options.requestControl.deadlineAt)
+    : await fetchText();
 
   return {
     data: result.text,
@@ -256,7 +285,7 @@ async function nstGet(
   };
 }
 
-// --- Helper Functions (Normalize Name, Delay, Dates Between, Map Header, Get Table Name) ---
+// --- Helper Functions (Normalize Name, Dates Between, Map Header, Get Table Name) ---
 // These functions remain largely the same as before.
 
 function normalizeName(name: string): string {
@@ -265,11 +294,6 @@ function normalizeName(name: string): string {
     .replace(/[\s\-']/g, "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
-}
-
-function delay(ms: number) {
-  // Silent sleep; specific wait messaging is logged by callers (e.g., rate limiter).
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function firstQueryValue(value: string | string[] | undefined): string | null {
@@ -331,6 +355,7 @@ export type NstScheduledGameDateRow = {
   date: string;
   seasonId: string | number;
   type: number | null;
+  startTime?: string | null;
 };
 
 export type NstScheduledDateInfo = {
@@ -338,6 +363,7 @@ export type NstScheduledDateInfo = {
   seasonId: string;
   gameType: NhlGameType;
   stype: NstSeasonType;
+  allGamesUnstarted: boolean;
 };
 
 function normalizeScheduleDate(value: string): string {
@@ -370,11 +396,16 @@ export function buildNstScheduledDateMap(
       date,
       seasonId: String(row.seasonId),
       gameType,
-      stype
+      stype,
+      allGamesUnstarted: Number.isFinite(Date.parse(row.startTime ?? "")) &&
+        Date.parse(row.startTime!) > Date.now()
     };
     const existing = byDate.get(date);
+    if (existing) candidate.allGamesUnstarted &&= existing.allGamesUnstarted;
     if (!existing || priority[candidate.gameType] > priority[existing.gameType]) {
       byDate.set(date, candidate);
+    } else {
+      existing.allGamesUnstarted &&= candidate.allGamesUnstarted;
     }
   }
 
@@ -458,7 +489,7 @@ async function fetchScheduledGameDateMap(args: {
     ({ from, to }) =>
       supabase
         .from("games")
-        .select("date, seasonId, type")
+        .select("date, seasonId, type, startTime")
         .in("seasonId", seasonIds)
         .in("type", [1, 2, 3])
         .gte("date", args.startDate)
@@ -690,6 +721,8 @@ export const NST_DATASET_GROUPS: Record<string, readonly string[]> = {
     "powerPlayCountsOi",
     "powerPlayRatesOi"
   ],
+  evenStrength: ["evenStrengthCounts", "evenStrengthRates", "evenStrengthCountsOi", "evenStrengthRatesOi"],
+  penaltyKill: ["penaltyKillCounts", "penaltyKillRates", "penaltyKillCountsOi", "penaltyKillRatesOi"],
   rankingFreshnessSkaterSources: [
     "allStrengthsCounts",
     "allStrengthsRates",
@@ -987,6 +1020,24 @@ async function getPlayerIdByName(
   return data[0].id;
 }
 
+type NstWritePersistence = "rejected" | "not_confirmed";
+
+class NstWriteError extends Error {
+  constructor(public writePersistence: NstWritePersistence, public nstPartialRowsAffected: number) {
+    super(writePersistence === "not_confirmed"
+      ? "NST write persistence is unconfirmed; writes may have committed. Do not automatically rerun."
+      : "NST database rejected a write; run stopped after confirmed partial writes.");
+    this.name = "NstWriteError";
+  }
+}
+
+// PostgreSQL data/constraint/statement errors establish rejection of that atomic
+// statement. Transport errors, timeouts, missing acknowledgements and other codes
+// do not establish whether a write committed.
+function isDefinitiveNstWriteRejection(error: any): boolean {
+  return typeof error?.code === "string" && /^(22|23|42)[0-9A-Z]{3}$/.test(error.code);
+}
+
 async function upsertData(
   datasetType: string,
   dataRows: any[]
@@ -1106,12 +1157,17 @@ async function upsertData(
     `Attempting to upsert ${dataRows.length} rows into table "${tableName}"...`
   );
 
+  let confirmedCount = 0;
   try {
-    const { error, count } = await supabase.from(tableName).upsert(dataRows, {
+    const result = await supabase.from(tableName).upsert(dataRows, {
       onConflict: "player_id,date_scraped",
       count: "exact"
     });
 
+    if (!result || (result.error !== null && !isDefinitiveNstWriteRejection(result.error))) {
+      throw new NstWriteError("not_confirmed", confirmedCount);
+    }
+    const { error, count } = result;
     if (error) {
       console.error(
         `Error upserting data into ${tableName}:`,
@@ -1124,16 +1180,23 @@ async function upsertData(
         );
       }
 
-      // Fall back to row-by-row upserts on batch failure so the offending row is identified.
+      // Only data/constraint rejections justify identifying an offending row.
+      // Never replay a batch whose commit acknowledgement is unknown.
+      if (!/^(22|23)/.test(error.code)) throw new NstWriteError("rejected", confirmedCount);
       for (const row of dataRows) {
-        const { error: singleRowError } = await supabase
+        const singleResult = await supabase
           .from(tableName)
           .upsert([row], {
             onConflict: "player_id,date_scraped",
             count: "exact"
           });
 
-        if (!singleRowError) {
+        if (!singleResult || (singleResult.error !== null && !isDefinitiveNstWriteRejection(singleResult.error))) {
+          throw new NstWriteError("not_confirmed", confirmedCount);
+        }
+        const singleRowError = singleResult.error;
+        if (singleRowError === null) {
+          confirmedCount += singleResult.count ?? 1;
           continue;
         }
 
@@ -1163,10 +1226,10 @@ async function upsertData(
             _key === "__nstDebug" ? undefined : value
           )
         );
-        break;
+        throw new NstWriteError("rejected", confirmedCount);
       }
 
-      return { success: false, count: 0 };
+      return { success: true, count: confirmedCount };
     }
 
     const upsertedCount = count ?? dataRows.length;
@@ -1179,7 +1242,8 @@ async function upsertData(
       `Unexpected error during upsert operation for ${tableName}:`,
       e.message
     );
-    return { success: false, count: 0 };
+    if (e instanceof NstWriteError) throw e;
+    throw new NstWriteError("not_confirmed", confirmedCount);
   }
 }
 
@@ -1200,7 +1264,7 @@ async function fetchAndParseData(
   date: string,
   seasonId: string,
   retries: number = 2,
-  options?: { bypassRateLimit?: boolean; minIntervalMs?: number }
+  options?: { bypassRateLimit?: boolean; minIntervalMs?: number; requestControl?: NstRequestControl }
 ): Promise<{ success: boolean; data: any[]; outcome: NstGamelogOutcome }> {
   const dateFromUrl = getDateFromUrl(url);
   const effectiveDate = dateFromUrl || date;
@@ -1448,7 +1512,8 @@ async function fetchAndParseData(
           ? "rows_persisted" : "parse_or_identity_unresolved"
       };
     } catch (error: any) {
-      if (isNstAuthError(error) || isNstRateLimitError(error) || isNstConfigError(error)) {
+      if (error instanceof NstExecutionLimitError || isNstAuthError(error) || isNstRateLimitError(error) || isNstConfigError(error) ||
+        (isNstResponseError(error) && error.status >= 520 && error.status <= 527)) {
         throw error;
       }
       if (isNstNotFoundError(error)) {
@@ -1603,7 +1668,11 @@ async function handleNstStatusCheck(req: NextApiRequest, res: NextApiResponse) {
   const startedAt = new Date().toISOString();
   try {
     const response = await nstGet(diagnostic.url, 30000, {
-      bypassRateLimit: firstQueryValue(req.query.bypassLocalWait) === "yes"
+      retries: 0,
+      requestControl: {
+        deadlineAt: Date.now() + 220_000, maxAttempts: 1,
+        attemptsStarted: 0, minIntervalMs: REQUEST_INTERVAL_MS
+      }
     });
     const hasTable = cheerio.load(response.data)("table").first().length > 0;
     return res.status(200).json({
@@ -1662,6 +1731,14 @@ interface UrlQueueItem {
   seasonId: string;
 }
 
+type ExplicitContinuation = {
+  version: 1;
+  chainId: string;
+  nextIndex: number;
+  totalUrls: number;
+  blocked: boolean;
+};
+
 async function processUrls(
   urlsQueue: UrlQueueItem[],
   isFullRefresh: boolean,
@@ -1671,12 +1748,14 @@ async function processUrls(
     bypassRateLimit?: boolean;
     minIntervalMs?: number;
     maxRequests?: number;
+    requestControl?: NstRequestControl;
   }
 ): Promise<{
   totalRowsProcessed: number;
   requestsAttempted: number;
   stoppedEarly: boolean;
   nextItem: UrlQueueItem | null;
+  sourceDown: { status: number; url: string } | null;
   outcomes: Map<string, { item: NstGamelogItem; outcome: NstGamelogOutcome }>;
 }> {
   banner(
@@ -1687,6 +1766,7 @@ async function processUrls(
   let requestsAttempted = 0;
   let stoppedEarly = false;
   let nextItem: UrlQueueItem | null = urlsQueue[0] ?? null;
+  let sourceDown: { status: number; url: string } | null = null;
   const outcomes = new Map<string, { item: NstGamelogItem; outcome: NstGamelogOutcome }>();
 
   for (let i = 0; i < urlsQueue.length; i++) {
@@ -1730,6 +1810,19 @@ async function processUrls(
           options?.bypassRateLimit ? 1 : 2, options
         );
       } catch (error) {
+        if (isNstResponseError(error) && error.status >= 520 && error.status <= 527) {
+          sourceDown = { status: error.status, url };
+          failedUrls.push(item);
+          outcomes.set(nstGamelogItemKey(item), { item: nstGamelogItemIdentity(item), outcome: "fetch_or_write_failed" });
+          stoppedEarly = true;
+          nextItem = item;
+          break;
+        }
+        if (error instanceof NstExecutionLimitError) {
+          stoppedEarly = true;
+          nextItem = item;
+          break;
+        }
         // Preserve confirmed writes before a fatal auth/rate/config stop.
         Object.assign(error as object, {
           nstPartialRowsAffected: totalRowsProcessed,
@@ -1747,7 +1840,16 @@ async function processUrls(
         );
 
         console.log(`\nTarget Table: "${getTableName(datasetType)}"`);
-        const upsertResponse = await upsertData(datasetType, parseResult);
+        let upsertResponse;
+        try {
+          upsertResponse = await upsertData(datasetType, parseResult);
+        } catch (error: any) {
+          Object.assign(error, {
+            nstPartialRowsAffected: totalRowsProcessed + (error.nstPartialRowsAffected ?? 0),
+            nstSourceItem: nstGamelogItemIdentity(item)
+          });
+          throw error;
+        }
         upsertSuccess = upsertResponse.success;
         upsertedCount = upsertResponse.count;
 
@@ -1792,7 +1894,7 @@ async function processUrls(
     `\n--- Initial URL processing complete. ${failedUrls.length} failures recorded. ---`
   );
 
-  return { totalRowsProcessed, requestsAttempted, stoppedEarly, nextItem, outcomes };
+  return { totalRowsProcessed, requestsAttempted, stoppedEarly, nextItem, sourceDown, outcomes };
 }
 
 // --- NHL API Cross-Referencing ---
@@ -2038,6 +2140,11 @@ async function main(
     datasetGroup?: string;
     seasonId?: string;
     allowHistoricalDatedRequests?: boolean;
+    requestControl?: NstRequestControl;
+    cursor?: number;
+    replayQuery?: Record<string, unknown>;
+    auditDeadlineAt?: number;
+    maxRuntimeMs?: number;
   }
 ) {
   const isForwardFull = runMode === "forward";
@@ -2046,6 +2153,7 @@ async function main(
   const targetDataset = options?.datasetType;
   const targetDatasetGroup = options?.datasetGroup;
   const targetSeasonId = options?.seasonId;
+  const requestControl = options?.requestControl;
   const allowHistoricalDatedRequests =
     options?.allowHistoricalDatedRequests ?? false;
   const targetDates = options?.dates?.length
@@ -2097,6 +2205,7 @@ async function main(
   let progressScope: string | undefined;
   let bookmarkState = "explicit_scope";
   let basedOnRunId: string | null = null;
+  let explicitContinuation: ExplicitContinuation | undefined;
   let auditWriteStarted = false;
   let auditPersistence = "not_attempted";
   // A failed or lost acknowledgement can still follow a committed insert.
@@ -2104,7 +2213,10 @@ async function main(
   const writeAudit = async (row: Record<string, unknown>) => {
     auditWriteStarted = true;
     try {
-      const result = await supabase.from("cron_job_audit").insert([row]);
+      const insert = () => runControlStorage.run(requestControl && options?.auditDeadlineAt
+        ? { ...requestControl, deadlineAt: options.auditDeadlineAt } : requestControl!,
+      async () => await supabase.from("cron_job_audit").insert([row]));
+      const result = options?.auditDeadlineAt ? await beforeDeadline(insert, options.auditDeadlineAt) : await insert();
       if (!result || result.error !== null) throw new Error("Audit insert was not acknowledged.");
       auditPersistence = "confirmed";
     } catch {
@@ -2118,15 +2230,16 @@ async function main(
   try {
 
     if (isReverseFull) {
-      // NOTE: Reverse mode logic is preserved as-is, per user request.
-      // This logic path is separate from the incremental/forward fixes.
+      // Reverse remains a separate, capped aperture with no automatic bookmark.
       const requestedStartDateStr = options?.startDate;
-      const currentSeasonInfo = await fetchCurrentSeason();
-      if (!currentSeasonInfo?.id) {
-        throw new Error(
-          "Could not determine the current season to start the reverse process."
-        );
-      }
+      const { data: allSeasons, error: seasonsError } = await supabase
+        .from("seasons")
+        .select("id, startDate, regularSeasonEndDate, endDate")
+        .order("startDate", { ascending: false });
+      if (seasonsError) throw seasonsError;
+      const today = tzFormat(toZonedTime(new Date(), "America/New_York"), "yyyy-MM-dd");
+      const currentSeasonInfo = allSeasons?.find((season) => String(season.startDate).slice(0, 10) <= today);
+      if (!currentSeasonInfo?.id) throw new Error("No started season found for the reverse NST aperture.");
       const reverseAnchorSeasonId =
         targetSeasonId ?? String(currentSeasonInfo.id);
       if (requestedStartDateStr) {
@@ -2138,17 +2251,6 @@ async function main(
         console.log(`Reverse mode requested seasonId=${targetSeasonId}`);
       }
       console.log(`Reverse mode start: ${reverseAnchorSeasonId}`);
-
-      const { data: allSeasons, error: seasonsError } = await supabase
-        .from("seasons")
-        .select("id, startDate, regularSeasonEndDate, endDate")
-        .order("startDate", { ascending: false });
-
-      if (seasonsError) throw seasonsError;
-      if (!allSeasons || allSeasons.length === 0) {
-        console.log("No seasons found in the database to process.");
-        return;
-      }
 
       // Print current season details if available
       const currentSeason = allSeasons.find(
@@ -2319,28 +2421,35 @@ async function main(
         failedUrls,
         {
           bypassRateLimit: false,
+          requestControl,
           maxRequests: NST_STRICT_MAX_URLS_PER_RUN
         }
       );
       totalRowsAffected += initialResult.totalRowsProcessed || 0;
 
-      await supabase.from("cron_job_audit").insert([
-        {
-          job_name: "update-nst-gamelog",
-          status: "success",
-          rows_affected: totalRowsAffected,
-          details: {
-            timing: { ...buildCronJobTiming(startTime), source: "audit" },
-            failedRows: failedUrls.length,
-            troublesomePlayersCount: troublesomePlayers.length,
-            isReverseFull: fullRefreshFlag("reverse"),
-          }
+      const sourceOutcomes = summarizeNstGamelogOutcomes(initialResult.outcomes);
+      const success = !initialResult.stoppedEarly && failedUrls.length === 0 &&
+        sourceOutcomes.unresolvedCount === 0 && reverseQueue.length > 0;
+      const nstProgress = {
+        version: NST_GAMELOG_PROGRESS_VERSION, bookmarkRead: "explicit_scope", bookmark: null,
+        coordinationScope: NST_BUDGET_COORDINATION_SCOPE,
+        concurrency: "not_exclusive; overlapping runs may replay attempts",
+        networkAttempts: requestControl?.attemptsStarted, maxNetworkAttempts: requestControl?.maxAttempts,
+        deadlineAt: requestControl?.deadlineAt, stoppedEarly: initialResult.stoppedEarly,
+        deferredUrls: reverseQueue.length - initialResult.outcomes.size, sourceOutcomes
+      };
+      await writeAudit({
+        job_name: "update-nst-gamelog", status: success ? "success" : "failure",
+        rows_affected: totalRowsAffected,
+        details: {
+          timing: { ...buildCronJobTiming(startTime), source: "audit" },
+          failedRows: failedUrls.length, failedUrls: failedUrls.map((item) => item.url), sourceDown: initialResult.sourceDown,
+          troublesomePlayersCount: troublesomePlayers.length,
+          isReverseFull: fullRefreshFlag("reverse"), nstProgress
         }
-      ]);
-      console.log(
-        `Reverse full-refresh complete: ${totalRowsAffected} rows affected.`
-      );
-      return;
+      });
+      return { success, ...(initialResult.sourceDown ? { operationStatus: "source_down" } : {}),
+        nstProgress: { ...nstProgress, auditPersistence: "confirmed" } };
     }
 
     // --- Refactored Logic for Incremental and Forward Modes ---
@@ -2494,18 +2603,16 @@ async function main(
 
     if (allDatesToScrape.length === 0) {
       console.log("No new dates to scrape based on the determined range.");
-      await supabase.from("cron_job_audit").insert([
-        {
-          job_name: "update-nst-gamelog",
-          status: "success",
-          rows_affected: 0,
-          details: {
-            message: "no new dates to scrape",
-            failedRows: 0,
-            timing: { ...buildCronJobTiming(startTime), source: "audit" }
-          }
+      await writeAudit({
+        job_name: "update-nst-gamelog",
+        status: "success",
+        rows_affected: 0,
+        details: {
+          message: "no new dates to scrape",
+          failedRows: 0,
+          timing: { ...buildCronJobTiming(startTime), source: "audit" }
         }
-      ]);
+      });
       console.log(
         "--- Script execution finished early: No dates to process. ---"
       );
@@ -2536,11 +2643,18 @@ async function main(
     );
 
     let initialUrlsQueue: UrlQueueItem[] = [];
+    const skippedUnstartedDates: string[] = [];
+    const missingScheduleDates: string[] = [];
     for (const date of allDatesToScrape) {
       const scheduledInfo = scheduledDateMap.get(date);
 
       if (!scheduledInfo) {
+        missingScheduleDates.push(date);
         console.log(`Date ${date} has no scheduled NHL games. Skipping.`);
+        continue;
+      }
+      if (scheduledInfo.allGamesUnstarted) {
+        skippedUnstartedDates.push(date);
         continue;
       }
 
@@ -2565,7 +2679,44 @@ async function main(
     console.log(
       `Generated ${initialUrlsQueue.length} initial URLs to process.`
     );
-    if (progressScope) {
+    const fullPlanRequestCount = initialUrlsQueue.length;
+    const explicitScope = Boolean(options?.startDate || options?.endDate || targetDates || targetSeasonId || isForwardFull);
+    if (options?.cursor !== undefined && !explicitScope) throw new Error("NST cursor requires an explicit date scope.");
+    let resumeOffset = 0;
+    if (explicitScope) {
+      // Freeze the entire requested aperture, not a per-invocation suffix. A row
+      // sample cannot certify a source; only an acknowledged audit advances it.
+      progressScope = JSON.stringify({ version: 2, runMode, dates: allDatesToScrape,
+        datasetType: targetDataset, datasetGroup: targetDatasetGroup, seasonId: targetSeasonId,
+        overwrite: fullRefreshFlag(runMode), allowHistoricalDatedRequests,
+        queue: createHash("sha256").update(JSON.stringify(initialUrlsQueue.map((item) => [nstGamelogItemKey(item), item.url]))).digest("hex") });
+      const query = supabase.from("cron_job_audit").select("run_time, details")
+        .eq("job_name", "update-nst-gamelog")
+        .eq("details->nstProgress->>scope", progressScope);
+      const result = await query.order("run_time", { ascending: false }).limit(2);
+      if (result.error || !Array.isArray(result.data)) throw new Error("NST explicit progress read is unconfirmed; admission stopped.");
+      if (result.data.length > 1 && result.data[0].run_time === result.data[1].run_time) {
+        throw new Error("NST explicit progress is ambiguous; admission stopped.");
+      }
+      const prior = result.data[0]?.details?.nstProgress?.continuation as ExplicitContinuation | undefined;
+      if (options?.cursor !== undefined && (!prior || prior.blocked || options.cursor > prior.nextIndex)) {
+        throw new Error("NST continuation is missing, changed or blocked; inspect the prior audit before retrying.");
+      }
+      if (prior && (prior.version !== 1 || !Number.isInteger(prior.nextIndex) || prior.nextIndex < 0 ||
+        prior.nextIndex > fullPlanRequestCount || prior.totalUrls !== fullPlanRequestCount ||
+        typeof prior.chainId !== "string")) throw new Error("NST explicit progress is invalid; admission stopped.");
+      // Only an explicit overwrite starts a completed scope afresh. Replayed
+      // cursors and ordinary retries retain acknowledged progress.
+      if (prior && (options?.cursor !== undefined || !overwriteRequested || prior.nextIndex < fullPlanRequestCount)) {
+        explicitContinuation = { ...prior, blocked: false };
+        resumeOffset = prior.nextIndex;
+        bookmarkState = "resumed_explicit";
+      } else {
+        explicitContinuation = { version: 1, chainId: progressRunId, nextIndex: 0,
+          totalUrls: fullPlanRequestCount, blocked: false };
+      }
+      initialUrlsQueue = initialUrlsQueue.slice(resumeOffset);
+    } else if (progressScope) {
       let rows: NstGamelogAuditRow[] = [];
       let readFailed = false;
       try {
@@ -2592,16 +2743,17 @@ async function main(
     const failedUrls: UrlQueueItem[] = [];
     const uniqueDatesToScrape = new Set(initialUrlsQueue.map((q) => q.date));
     const uniqueDateCount = uniqueDatesToScrape.size;
-    const initialNstRequestPlan = resolveNstGamelogRequestPlan({
-      queuedDates: uniqueDateCount,
-      requestCount: initialUrlsQueue.length
-    });
-    const nstPacing = initialNstRequestPlan.burstAllowed
-      ? { bypassRateLimit: true }
-      : {
-          minIntervalMs: initialNstRequestPlan.requestIntervalMs,
-          maxRequests: NST_STRICT_MAX_URLS_PER_RUN
-        };
+    // A short resumed suffix never turns a large original job into a burst.
+    const requestPlan = resolveNstGamelogRequestPlan({ queuedDates: uniqueDateCount, requestCount: fullPlanRequestCount });
+    if (requestControl) {
+      requestControl.minIntervalMs = requestPlan.requestIntervalMs;
+      requestControl.plannedRequestCount = fullPlanRequestCount;
+    }
+    const nstPacing = {
+      requestControl,
+      minIntervalMs: requestPlan.requestIntervalMs,
+      maxRequests: explicitScope && requestPlan.burstAllowed ? fullPlanRequestCount : NST_STRICT_MAX_URLS_PER_RUN
+    };
     const initialProcessResult = await processUrls(
       initialUrlsQueue,
       fullRefreshFlag(isForwardFull ? "forward" : "incremental"),
@@ -2613,25 +2765,20 @@ async function main(
     totalRowsAffected += initialProcessResult.totalRowsProcessed || 0;
     failedUrlCountAfterRetry = failedUrls.length;
     const finalOutcomes = new Map(initialProcessResult.outcomes);
+    let stoppedEarly = initialProcessResult.stoppedEarly;
+    let nextItem = initialProcessResult.nextItem;
+    let sourceDown = initialProcessResult.sourceDown;
+    let remainingFailedUrls = [...failedUrls];
 
-    if (failedUrls.length > 0) {
+    if (!stoppedEarly && failedUrls.length > 0 && (!requestControl ||
+      (requestControl.attemptsStarted < requestControl.maxAttempts && Date.now() < requestControl.deadlineAt))) {
       console.log(`\n--- Retrying ${failedUrls.length} failed URLs ---`);
       const failedUrlsRetryCopy = [...failedUrls];
       failedUrls.length = 0;
       const retryProcessedIds = new Set<number>();
       const retryFailedUrls: UrlQueueItem[] = [];
-      const retryUniqueDates = new Set(failedUrlsRetryCopy.map((q) => q.date));
-      const retryUniqueDateCount = retryUniqueDates.size;
-      const retryNstRequestPlan = resolveNstGamelogRequestPlan({
-        queuedDates: retryUniqueDateCount,
-        requestCount: failedUrlsRetryCopy.length
-      });
-      const retryNstPacing = {
-        minIntervalMs: Math.max(
-          retryNstRequestPlan.requestIntervalMs,
-          REQUEST_INTERVAL_MS
-        )
-      };
+      // Retries retain the minimum spacing and the SAME attempt budget.
+      const retryNstPacing = { requestControl, minIntervalMs: requestPlan.requestIntervalMs };
       const retryResult = await processUrls(
         failedUrlsRetryCopy,
         true,
@@ -2641,8 +2788,18 @@ async function main(
       );
 
       totalRowsAffected += retryResult.totalRowsProcessed || 0;
-      failedUrlCountAfterRetry = retryFailedUrls.length;
+      sourceDown = retryResult.sourceDown;
+      if (retryResult.stoppedEarly) {
+        stoppedEarly = true;
+        nextItem = retryResult.nextItem;
+      }
       for (const [key, outcome] of retryResult.outcomes) finalOutcomes.set(key, outcome);
+      // Unvisited retries remain failed; an early stop never clears them.
+      remainingFailedUrls = failedUrlsRetryCopy.filter((item) => {
+        const outcome = finalOutcomes.get(nstGamelogItemKey(item))?.outcome;
+        return outcome !== "rows_persisted" && outcome !== "already_present";
+      });
+      failedUrlCountAfterRetry = remainingFailedUrls.length;
 
       if (retryFailedUrls.length > 0) {
         console.error(
@@ -2650,10 +2807,10 @@ async function main(
         );
         retryFailedUrls.forEach((item) => console.error(`  - ${item.url}`));
       } else {
-        console.log("All initial failures successfully retried.");
+        console.log(retryResult.stoppedEarly ? "Retry pass stopped before all failures could be revisited." : "All initial failures successfully retried.");
       }
     } else {
-      console.log("No failures during initial processing pass.");
+      console.log(failedUrls.length > 0 ? "Failed URLs retained; retry pass was not admitted." : "No failures during initial processing pass.");
     }
 
     if (isForwardFull) {
@@ -2667,8 +2824,28 @@ async function main(
     const endTime = Date.now();
     const duration = ((endTime - startTime) / 1000 / 60).toFixed(2);
     const sourceOutcomes = summarizeNstGamelogOutcomes(finalOutcomes);
-    const success = failedUrlCountAfterRetry === 0 && !initialProcessResult.stoppedEarly &&
-      sourceOutcomes.unresolvedCount === 0 && initialUrlsQueue.length > 0;
+    const sourceFailed = failedUrlCountAfterRetry > 0 || sourceOutcomes.unresolvedCount > 0 || missingScheduleDates.length > 0;
+    if (explicitContinuation) {
+      let acknowledged = 0;
+      for (const item of initialUrlsQueue) {
+        const outcome = finalOutcomes.get(nstGamelogItemKey(item))?.outcome;
+        if (outcome !== "rows_persisted" && outcome !== "already_present") break;
+        acknowledged++;
+      }
+      explicitContinuation.nextIndex = resumeOffset + acknowledged;
+      // An origin outage has no write acknowledgement ambiguity. Replaying the
+      // same cursor remains safe and must retry this unacknowledged URL.
+      explicitContinuation.blocked = sourceFailed && !sourceDown;
+    }
+    const skippedNoCompletedGames = fullPlanRequestCount === 0 &&
+      allDatesToScrape.length === skippedUnstartedDates.length;
+    const continuationRequired = Boolean(explicitContinuation && !sourceFailed && stoppedEarly &&
+      explicitContinuation.nextIndex < fullPlanRequestCount && explicitContinuation.nextIndex > resumeOffset &&
+      explicitContinuation.nextIndex > (options?.cursor ?? 0));
+    const success = skippedNoCompletedGames || (!sourceFailed && !stoppedEarly &&
+      (fullPlanRequestCount > 0) && (!explicitContinuation || explicitContinuation.nextIndex === fullPlanRequestCount));
+    const operationStatus = sourceDown ? "source_down" : continuationRequired ? "continuation_required"
+      : skippedNoCompletedGames ? "skipped_no_completed_games" : success ? "completed" : "blocked";
     const progress = {
       version: NST_GAMELOG_PROGRESS_VERSION,
       scope: progressScope,
@@ -2676,27 +2853,41 @@ async function main(
       basedOnRunId,
       bookmarkRead: bookmarkState,
       concurrency: "not_exclusive; overlapping runs may replay attempts",
+      coordinationScope: NST_BUDGET_COORDINATION_SCOPE,
+      networkAttempts: requestControl?.attemptsStarted,
+      maxNetworkAttempts: requestControl?.maxAttempts,
+      deadlineAt: requestControl?.deadlineAt,
       sourceOutcomes,
-      stoppedEarly: initialProcessResult.stoppedEarly,
+      sourceDown,
+      plannedRequestCount: fullPlanRequestCount,
+      requestIntervalMs: requestPlan.requestIntervalMs,
+      skippedUnstartedDates,
+      missingScheduleDates,
+      continuation: explicitContinuation,
+      stoppedEarly,
       deferredUrls: initialUrlsQueue.length - finalOutcomes.size,
-      state: initialUrlsQueue.length === 0 ? "no_scheduled_games_unverified"
+      state: skippedNoCompletedGames ? "skipped_no_completed_games"
+        : fullPlanRequestCount === 0 ? "no_scheduled_games_unverified"
+        : continuationRequired ? "continuation_required"
         : success ? "attempts_finished_coverage_unverified" : "incomplete",
-      bookmark: progressScope && initialProcessResult.nextItem ? {
+      bookmark: !explicitScope && progressScope && nextItem ? {
         version: NST_GAMELOG_PROGRESS_VERSION, scope: progressScope,
-        runId: progressRunId, next: nstGamelogItemIdentity(initialProcessResult.nextItem)
+        runId: progressRunId, next: nstGamelogItemIdentity(nextItem)
       } : null
     };
 
     await writeAudit({
         job_name: "update-nst-gamelog",
-        status: success ? "success" : "failure",
+        status: continuationRequired ? "continued" : success ? "success" : "failure",
         rows_affected: totalRowsAffected,
         details: {
           timing: { ...buildCronJobTiming(startTime, endTime), source: "audit" },
           failedRows: failedUrlCountAfterRetry,
+          failedUrls: remainingFailedUrls.map((item) => item.url),
+          sourceDown,
           urlsProcessed: initialProcessResult.requestsAttempted,
           urlsQueued: initialUrlsQueue.length,
-          stoppedEarly: initialProcessResult.stoppedEarly,
+          stoppedEarly,
           playersProcessed: processedPlayerIds.size,
           troublesomePlayersCount: troublesomePlayers.length,
           isForwardFull: isForwardFull,
@@ -2713,7 +2904,12 @@ async function main(
         )}`
       );
     }
-    return { success, nstProgress: { ...progress, auditPersistence: "confirmed" } };
+    // The pipeline stores only this ordinal. All scope keys remain byte-for-byte
+    // equal to its request; the consumer refreshes deadlineAt on replay.
+    const replayQuery = { ...options?.replayQuery, cursor: String(explicitContinuation?.nextIndex) };
+    return { success, operationStatus,
+      ...(continuationRequired ? { resume: { required: true, request: { query: replayQuery } } } : {}),
+      nstProgress: { ...progress, auditPersistence: "confirmed" } };
   } catch (error: any) {
     totalRowsAffected += error.nstPartialRowsAffected ?? 0;
     Object.assign(error, { confirmedRowsAffected: totalRowsAffected });
@@ -2728,7 +2924,10 @@ async function main(
             error: error.message,
             failedRows: failedUrlCountAfterRetry,
             sourceItem: error.nstSourceItem,
+            writePersistence: error.writePersistence,
             coverage: "not_verified",
+            nstProgress: explicitContinuation ? { scope: progressScope,
+              continuation: { ...explicitContinuation, blocked: true } } : undefined,
             timing: { ...buildCronJobTiming(startTime), source: "audit" }
           }
         });
@@ -2896,18 +3095,41 @@ async function handler(
     } | seasonId=${seasonId || "auto"} | allowHistoricalDatedRequests=${allowHistoricalDatedRequests}`
   );
   try {
-    const outcome = await main(runMode, {
-      startDate,
-      endDate,
-      dates,
-      overwrite,
-      datasetType,
-      datasetGroup,
-      seasonId,
-      allowHistoricalDatedRequests
-    });
+    const input = req.method === "POST" ? req.body : req.query;
+    const boundedInteger = (name: string, fallback: number, maximum: number) => {
+      const value = input?.[name];
+      if (value === undefined) return fallback;
+      const parsed = typeof value === "number" ? value : typeof value === "string" && /^\d+$/.test(value) ? Number(value) : NaN;
+      if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > maximum) {
+        throw new Error(`${name} must be an integer from 1 through ${maximum}.`);
+      }
+      return parsed;
+    };
+    const maxRuntimeMs = boundedInteger("maxRuntimeMs", 220_000, 220_000);
+    const suppliedDeadline = input?.deadlineAt;
+    const deadlineAt = suppliedDeadline === undefined ? Date.now() + maxRuntimeMs
+      : Number(suppliedDeadline);
+    if (!Number.isSafeInteger(deadlineAt) || deadlineAt <= Date.now()) {
+      throw new Error("deadlineAt must be a future epoch millisecond integer.");
+    }
+    const auditDeadlineAt = Math.min(Date.now() + maxRuntimeMs, deadlineAt);
+    const cursor = input?.cursor === undefined ? undefined : boundedInteger("cursor", 1, Number.MAX_SAFE_INTEGER);
+    if (cursor !== undefined && runMode === "reverse") throw new Error("cursor is supported only for incremental and forward scopes.");
+    const requestControl: NstRequestControl = {
+      // Leave five seconds inside the caller's remaining budget for the audit.
+      deadlineAt: auditDeadlineAt - 5_000,
+      maxAttempts: boundedInteger("maxRequests", 40, 40),
+      attemptsStarted: 0,
+      minIntervalMs: REQUEST_INTERVAL_MS
+    };
+    const outcome = await runControlStorage.run(requestControl, () => main(runMode, {
+      startDate, endDate, dates, overwrite, datasetType, datasetGroup, seasonId,
+      allowHistoricalDatedRequests, requestControl, auditDeadlineAt, maxRuntimeMs,
+      cursor, replayQuery: { ...input }
+    }));
     return res
-      .status(200)
+      .status(outcome && "operationStatus" in outcome && outcome.operationStatus === "continuation_required" ? 207
+        : outcome && "operationStatus" in outcome && outcome.operationStatus === "source_down" ? 503 : 200)
       .json({
         message: outcome?.success === false ? "Incomplete NST work; inspect source outcomes and deferred URLs." : "Done",
         runMode,
@@ -2925,7 +3147,8 @@ async function handler(
     console.error(err);
     return res.status(500).json({
       success: false, error: err.message, auditPersistence: err.auditPersistence ?? "not_attempted",
-      sourceItem: err.nstSourceItem, confirmedRowsAffected: err.confirmedRowsAffected
+      sourceItem: err.nstSourceItem, confirmedRowsAffected: err.confirmedRowsAffected,
+      writePersistence: err.writePersistence
     });
   }
 }

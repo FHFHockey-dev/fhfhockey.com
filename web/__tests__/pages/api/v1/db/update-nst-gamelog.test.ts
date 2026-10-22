@@ -1,4 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const { db, fetchNstTextByUrlMock, fetchCurrentSeasonMock } = vi.hoisted(() => {
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
@@ -12,7 +15,10 @@ const { db, fetchNstTextByUrlMock, fetchCurrentSeasonMock } = vi.hoisted(() => {
       audits: [] as any[],
       auditReadError: false,
       auditWriteFailure: "",
-      auditWriteCalls: 0
+      auditWriteCalls: 0,
+      auditProbe: null as null | (() => Promise<unknown>),
+      upsertPlan: [] as Array<{ result?: any; reject?: string; commit?: boolean }>,
+      upsertCalls: [] as Array<{ table: string; rows: any[] }>
     },
     fetchNstTextByUrlMock: vi.fn(),
     fetchCurrentSeasonMock: vi.fn()
@@ -21,14 +27,13 @@ const { db, fetchNstTextByUrlMock, fetchCurrentSeasonMock } = vi.hoisted(() => {
 
 vi.mock("dotenv", () => ({ default: { config: vi.fn() } }));
 vi.mock("utils/adminOnlyMiddleware", () => ({ default: (handler: unknown) => handler }));
-vi.mock("lib/cron/nhlOffSeason", () => ({ withNhlOffSeasonSkip: (handler: unknown) => handler }));
 vi.mock("utils/fetchCurrentSeason", () => ({ fetchCurrentSeason: fetchCurrentSeasonMock }));
 vi.mock("lib/nst/client", async (importOriginal) => ({
   ...await importOriginal<typeof import("lib/nst/client")>(),
   fetchNstTextByUrl: fetchNstTextByUrlMock
 }));
 vi.mock("@supabase/supabase-js", () => ({
-  createClient: () => ({
+  createClient: (_url: unknown, _key: unknown, options: any) => ({
     from(table: string) {
       const query = { table, filters: [] as Array<[string, string, any]> };
       db.queries.push(query);
@@ -65,6 +70,15 @@ vi.mock("@supabase/supabase-js", () => ({
         range: () => builder,
         maybeSingle: async () => ({ data: result().data?.[0] ?? null, error: null }),
         insert(rows: any[]) {
+          if (db.auditProbe) {
+            // Supabase builders are lazy: start work only when awaited.
+            return { then: async (resolve: (value: unknown) => unknown) => {
+              await db.auditProbe!();
+              await options.global.fetch("https://example.supabase.co/audit-probe");
+              db.audits.push(...rows.map((row) => ({ ...row, run_time: new Date().toISOString() })));
+              return resolve({ error: null });
+            } };
+          }
           db.auditWriteCalls++;
           if (db.auditWriteFailure !== "error" && db.auditWriteFailure !== "transport") {
             db.audits.push(...rows.map((row) => ({ ...row, run_time: new Date().toISOString() })));
@@ -75,12 +89,18 @@ vi.mock("@supabase/supabase-js", () => ({
           return Promise.resolve({ error: null });
         },
         upsert(rows: any[]) {
-          const stored = db.tables[table] ?? [];
-          for (const row of rows) {
-            const index = stored.findIndex((existing) => existing.player_id === row.player_id && existing.date_scraped === row.date_scraped);
-            if (index < 0) stored.push({ ...row }); else stored[index] = { ...row };
+          db.upsertCalls.push({ table, rows });
+          const plan = db.upsertPlan.shift();
+          if (!plan || plan.commit || plan.result?.error === null) {
+            const stored = db.tables[table] ?? [];
+            for (const row of rows) {
+              const index = stored.findIndex((existing) => existing.player_id === row.player_id && existing.date_scraped === row.date_scraped);
+              if (index < 0) stored.push({ ...row }); else stored[index] = { ...row };
+            }
+            db.tables[table] = stored;
           }
-          db.tables[table] = stored;
+          if (plan?.reject) return Promise.reject(new Error(plan.reject));
+          if (plan) return Promise.resolve(plan.result);
           return Promise.resolve({ error: null, count: rows.length });
         },
         then(resolve: (value: unknown) => unknown) { return Promise.resolve(result()).then(resolve); }
@@ -92,6 +112,7 @@ vi.mock("@supabase/supabase-js", () => ({
 
 import retainedNst from "../../../../fixtures/nst/oct1-identity-source.json";
 import handler from "../../../../../pages/api/v1/db/update-nst-gamelog";
+import { createNstFileBudgetStore, NstExecutionLimitError, withNstRequestBudget } from "../../../../../lib/nst/requestBudget";
 import { NstResponseError } from "lib/nst/client";
 import { fromZonedTime } from "date-fns-tz";
 import {
@@ -378,6 +399,9 @@ describe("update-nst-gamelog automatic season cursor", () => {
     db.auditReadError = false;
     db.auditWriteFailure = "";
     db.auditWriteCalls = 0;
+    db.auditProbe = null;
+    db.upsertPlan = [];
+    db.upsertCalls = [];
     fetchCurrentSeasonMock.mockReset().mockResolvedValue({
       id: 20262027, startDate: "2026-09-29", regularSeasonEndDate: "2027-04-17", endDate: "2027-06-25"
     });
@@ -389,6 +413,7 @@ describe("update-nst-gamelog automatic season cursor", () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   async function run(query: Record<string, string> = {}, method = "GET") {
@@ -401,12 +426,478 @@ describe("update-nst-gamelog automatic season cursor", () => {
       body: method === "POST" ? query : {}, headers: {} } as any, res as any);
     await vi.runAllTimersAsync();
     await pending;
+    // The network mock has no elapsed time; preserve distinct audit timestamps.
+    await vi.advanceTimersByTimeAsync(1);
     return res;
   }
 
   function fetchedDates() {
     return fetchNstTextByUrlMock.mock.calls.map(([url]) => new URL(url).searchParams.get("fd"));
   }
+
+  function supplyThreePlayerRows() {
+    db.tables.players = Array.from({ length: 3 }, (_, i) => ({ id: i + 1, fullName: `Test Player ${i}`, position: "C" }));
+    fetchNstTextByUrlMock.mockResolvedValue({ response: { status: 200 }, text:
+      `<table><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>TOI</th></tr></thead><tbody>${
+        db.tables.players.map((player) => `<tr><td>${player.fullName}</td><td>BOS</td><td>C</td><td>10:00</td></tr>`).join("")
+      }</tbody></table>` });
+  }
+
+  it.each(["timeout", "lost_ack", "malformed_ack", "null_ack"])(
+    "stops after ambiguous %s batch acknowledgement without replaying rows or the source", async (failure) => {
+      supplyThreePlayerRows();
+      db.upsertPlan = [failure === "lost_ack" ? { reject: "transport lost", commit: true }
+        : { result: failure === "timeout" ? { error: { message: "AbortError: timed out", code: "" }, count: null }
+          : failure === "null_ack" ? null : {}, commit: true },
+        { result: { error: null, count: 1 } }, { result: { error: { code: "23514", message: "row rejected" } } }];
+      const res = await run({ dates: "2026-10-03", datasetType: "fiveOnFiveCounts" });
+      expect(res.statusCode).toBe(500);
+      expect(res.body.writePersistence).toBe("not_confirmed");
+      expect(res.body.confirmedRowsAffected).toBe(0);
+      expect(res.body.error).toContain("Do not automatically rerun");
+      expect(db.upsertCalls).toHaveLength(1);
+      expect(db.tables.nst_gamelog_5v5_counts).toHaveLength(3);
+      expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(1);
+      expect(db.audits[0].rows_affected).toBe(0);
+      expect(db.audits[0].details.writePersistence).toBe("not_confirmed");
+    }
+  );
+
+  it("preserves confirmed rows from an earlier source and definitive row fallback before rejection", async () => {
+    supplyThreePlayerRows();
+    db.upsertPlan = [{ result: { error: null, count: 3 } },
+      { result: { error: { code: "23514", message: "batch constraint rejected" } } },
+      { result: { error: null, count: 1 } },
+      { result: { error: { code: "23514", message: "row constraint rejected" } } }];
+    const res = await run({ dates: "2026-10-02,2026-10-03", datasetType: "fiveOnFiveCounts" });
+    expect(res.statusCode).toBe(500);
+    expect(res.body.writePersistence).toBe("rejected");
+    expect(res.body.confirmedRowsAffected).toBe(4);
+    expect(db.upsertCalls).toHaveLength(4);
+    expect(db.tables.nst_gamelog_5v5_counts).toHaveLength(4);
+    expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(2);
+    expect(db.audits[0].rows_affected).toBe(4);
+    expect(db.audits[0].details.sourceItem.date).toBe("2026-10-03");
+  });
+
+  it("preserves confirmed partial rows when a subsequent row loses its commit acknowledgement", async () => {
+    supplyThreePlayerRows();
+    db.upsertPlan = [{ result: { error: { code: "23514", message: "batch rejected" } } },
+      { result: { error: null, count: 1 } }, { reject: "row acknowledgement lost", commit: true }];
+    const res = await run({ dates: "2026-10-03", datasetType: "fiveOnFiveCounts" });
+    expect(res.statusCode).toBe(500);
+    expect(res.body.writePersistence).toBe("not_confirmed");
+    expect(res.body.confirmedRowsAffected).toBe(1);
+    expect(db.upsertCalls).toHaveLength(3);
+    expect(db.tables.nst_gamelog_5v5_counts).toHaveLength(2);
+    expect(db.audits[0].rows_affected).toBe(1);
+    expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps separate status diagnostics at least 21 seconds apart without granting burst admission", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "nst-diagnostic-test-"));
+    const starts: number[] = [];
+    const store = createNstFileBudgetStore(directory);
+    try {
+      fetchNstTextByUrlMock.mockImplementation((url, options) => withNstRequestBudget(url, options.requestControl, async () => {
+        starts.push(Date.now());
+        return { text: "<table></table>", response: { status: 200 } };
+      }, store));
+      await run({ action: "nstStatus", date: "2026-10-03" });
+      await run({ action: "nstStatus", date: "2026-10-03", bypassLocalWait: "yes" });
+      expect(starts[1] - starts[0]).toBe(21_000);
+      for (const [, options] of fetchNstTextByUrlMock.mock.calls) {
+        expect(options.retries).toBe(0);
+        expect(options.requestControl.minIntervalMs).toBe(21_000);
+        expect(options.requestControl.maxAttempts).toBe(1);
+      }
+      expect(db.upsertCalls).toHaveLength(0);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("allows one-day bursts while rotating the automatic bounded aperture", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "nst-chunk-test-"));
+    const store = createNstFileBudgetStore(directory);
+    const starts: number[] = [];
+    try {
+      db.games = [db.games.at(-1)];
+      fetchNstTextByUrlMock.mockImplementation((url, options) => withNstRequestBudget(url, options.requestControl, async () => {
+        starts.push(Date.now());
+        return { text: "<body>No skaters found</body>", response: { status: 200 } };
+      }, store));
+      const first = await run();
+      const second = await run();
+      expect(starts).toHaveLength(12);
+      for (let index = 1; index < starts.length; index++) {
+        expect(starts[index] - starts[index - 1]).toBeLessThan(21_000);
+      }
+      expect(new Set(fetchNstTextByUrlMock.mock.calls.map(([url]) => url)).size).toBe(12);
+      expect(first.body.success).toBe(false);
+      expect(first.body.nstProgress).toMatchObject({ networkAttempts: 6, deferredUrls: 14, stoppedEarly: true });
+      expect(second.body.nstProgress).toMatchObject({ networkAttempts: 6, deferredUrls: 14, stoppedEarly: true, bookmarkRead: "resumed" });
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps small-job retry attempts inside the shared burst budget", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "nst-retry-test-"));
+    const store = createNstFileBudgetStore(directory);
+    const starts: number[] = [];
+    try {
+      fetchNstTextByUrlMock.mockImplementation((url, options) => withNstRequestBudget(url, options.requestControl, async () => {
+        starts.push(Date.now());
+        throw new Error("temporary provider failure");
+      }, store));
+      const res = await run({ dates: "2026-10-03", datasetType: "fiveOnFiveCounts", maxRequests: "3" });
+      expect(starts[1] - starts[0]).toBeLessThan(21_000);
+      expect(starts[2] - starts[1]).toBeLessThan(21_000);
+      expect(res.body.success).toBe(false);
+      expect(res.body.nstProgress.networkAttempts).toBe(3);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("stops on the first of ten queued 521s, audits the outage, and retries that URL on a later call", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "nst-source-down-test-"));
+    const store = createNstFileBudgetStore(directory);
+    const starts: string[] = [];
+    const startedAt = Date.now();
+    try {
+      // Model the reported run of fast failures; none after the first may dispatch.
+      for (let i = 0; i < 10; i++) {
+        fetchNstTextByUrlMock.mockImplementationOnce((url, options) => {
+          expect(options.retries).toBe(0);
+          return withNstRequestBudget(url, options.requestControl, async () => {
+            starts.push(url);
+            throw new NstResponseError({ status: 521, redactedUrl: url });
+          }, store);
+        });
+      }
+      const query = { runMode: "incremental", dates: "2026-10-03", overwrite: "yes" };
+      const result = await run(query);
+      expect(result.statusCode).toBe(503);
+      expect(Date.now() - startedAt).toBeLessThan(220_000);
+      expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(1);
+      expect(starts).toHaveLength(1);
+      expect(result.body).toMatchObject({ success: false, operationStatus: "source_down" });
+      // The pipeline degrades on this answer: no error string, one unresolved source.
+      expect(result.body.error).toBeUndefined();
+      expect(result.body.nstProgress.sourceOutcomes.unresolvedCount).toBe(1);
+      expect(result.body.nstProgress).toMatchObject({ networkAttempts: 1, stoppedEarly: true,
+        continuation: { nextIndex: 0 }, auditPersistence: "confirmed" });
+      expect(db.audits).toHaveLength(1);
+      expect(db.audits[0]).toMatchObject({ status: "failure", details: {
+        failedRows: 1, failedUrls: [starts[0]], sourceDown: { status: 521, url: starts[0] }
+      } });
+      const second = await run(query);
+      expect(second.statusCode).toBe(503);
+      expect(starts).toEqual([starts[0], starts[0]]);
+      expect(db.audits).toHaveLength(2);
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+
+  it.each([520, 522, 523, 524, 525, 526, 527])("stops and audits origin status %i without an internal or failed-URL retry", async (status) => {
+    fetchNstTextByUrlMock.mockRejectedValue(new NstResponseError({ status, redactedUrl: "https://data.naturalstattrick.com" }));
+    const result = await run({ dates: "2026-10-03" });
+    expect(result.statusCode).toBe(503);
+    expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(1);
+    expect(fetchNstTextByUrlMock.mock.calls[0][1].retries).toBe(0);
+    expect(db.audits[0].details.sourceDown.status).toBe(status);
+  });
+
+  it("bounds a stalled NST await by maxRuntimeMs, audits the date-range cursor, and resumes the same URL", async () => {
+    supplyThreePlayerRows();
+    const source = await fetchNstTextByUrlMock();
+    const directory = mkdtempSync(join(tmpdir(), "nst-stalled-test-"));
+    const store = createNstFileBudgetStore(directory);
+    const starts: string[] = [];
+    const startedAt = Date.now();
+    let finishStalled: (() => void) | undefined;
+    try {
+      fetchNstTextByUrlMock.mockReset().mockImplementation((url, options) =>
+        withNstRequestBudget(url, options.requestControl, async () => {
+          starts.push(url);
+          if (starts.length === 2) return new Promise<typeof source>((resolve) => { finishStalled = () => resolve(source); });
+          return source;
+        }, store));
+      const query = { runMode: "incremental", startDate: "2026-10-02", endDate: "2026-10-03", maxRuntimeMs: "30000" };
+      const first = await run(query);
+      expect(first.statusCode).toBe(207);
+      expect(Date.now() - startedAt).toBeLessThan(30_000);
+      expect(first.body.resume.request.query).toEqual({ ...query, cursor: "1" });
+      expect(first.body.nstProgress).toMatchObject({ networkAttempts: 2, auditPersistence: "confirmed", continuation: { nextIndex: 1 } });
+      expect(db.audits[0]).toMatchObject({ status: "continued", details: { nstProgress: { continuation: { nextIndex: 1 } } } });
+      const stalledUrl = starts[1];
+      // Admission keeps the stalled attempt active until transport settles.
+      // A late response must never proceed to parsing/writing after the cutoff.
+      finishStalled!();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(db.upsertCalls).toHaveLength(1);
+      const second = await run(query);
+      expect(second.statusCode).toBe(207);
+      expect(starts[2]).toBe(stalledUrl);
+      expect(second.body.nstProgress.continuation.nextIndex).toBe(2);
+      expect(db.audits[1].details.nstProgress.continuation.nextIndex).toBe(2);
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+
+  it("retains the acknowledged prefix on source-down and resumes the failed URL", async () => {
+    supplyThreePlayerRows();
+    const source = await fetchNstTextByUrlMock();
+    const directory = mkdtempSync(join(tmpdir(), "nst-outage-prefix-test-"));
+    const store = createNstFileBudgetStore(directory);
+    const starts: string[] = [];
+    try {
+      fetchNstTextByUrlMock.mockReset().mockImplementation((url, options) =>
+        withNstRequestBudget(url, options.requestControl, async () => {
+          starts.push(url);
+          if (starts.length === 4) throw new NstResponseError({ status: 521, redactedUrl: url });
+          return source;
+        }, store));
+      const query = { dates: "2026-10-03", overwrite: "yes", maxRequests: "3" };
+      const chunk = await run(query);
+      expect(chunk.statusCode).toBe(207);
+      const resumedQuery = chunk.body.resume.request.query;
+      const outage = await run(resumedQuery);
+      expect(outage.statusCode).toBe(503);
+      expect(outage.body.nstProgress.continuation).toMatchObject({ nextIndex: 3, blocked: false });
+      expect(db.audits[1].details.nstProgress.continuation.nextIndex).toBe(3);
+      const second = await run(resumedQuery);
+      expect(second.statusCode).toBe(207);
+      expect(starts[4]).toBe(starts[3]);
+      expect(second.body.nstProgress.continuation.nextIndex).toBe(6);
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+
+  it("stops the failed-URL pass on source-down and retains unvisited failures in the audit", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "nst-retry-outage-test-"));
+    const store = createNstFileBudgetStore(directory);
+    let attempts = 0;
+    try {
+      fetchNstTextByUrlMock.mockImplementation((url, options) =>
+        withNstRequestBudget(url, options.requestControl, async () => {
+          attempts++;
+          // Four sources, two route attempts each, then the retry pass.
+          throw new NstResponseError({ status: attempts === 9 ? 521 : 500, redactedUrl: url });
+        }, store));
+      const result = await run({ dates: "2026-10-03", datasetGroup: "fiveOnFive" });
+      expect(result.statusCode).toBe(503);
+      expect(attempts).toBe(9);
+      expect(db.audits[0].details).toMatchObject({ failedRows: 4, sourceDown: { status: 521 } });
+      expect(db.audits[0].details.failedUrls).toHaveLength(4);
+      expect(result.body.nstProgress.continuation.nextIndex).toBe(0);
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+
+  it("ends a run of plain HTTP 500s on an explicit date range at the default deadline with an acknowledged audit", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "nst-http500-deadline-test-"));
+    const store = createNstFileBudgetStore(directory);
+    const starts: number[] = [];
+    const startedAt = Date.now();
+    try {
+      fetchNstTextByUrlMock.mockImplementation((url, options) => {
+        expect(options.retries).toBe(0);
+        return withNstRequestBudget(url, options.requestControl, async () => {
+          starts.push(Date.now() - startedAt);
+          throw new NstResponseError({ status: 500, redactedUrl: url });
+        }, store);
+      });
+      // Two scheduled dates make a 40-URL plan, paced at 21 seconds per attempt.
+      const query = { runMode: "incremental", startDate: "2026-10-02", endDate: "2026-10-03" };
+      const result = await run(query);
+      // Default budget: 220 s, with the last five reserved for the audit.
+      expect(Date.now() - startedAt).toBeLessThan(220_000);
+      expect(starts).toHaveLength(11);
+      expect(starts.at(-1)).toBe(210_000);
+      expect(result.statusCode).toBe(200);
+      expect(result.body).toMatchObject({ success: false, operationStatus: "blocked" });
+      expect(result.body.resume).toBeUndefined();
+      expect(result.body.nstProgress).toMatchObject({
+        networkAttempts: 11, stoppedEarly: true, sourceDown: null, plannedRequestCount: 40,
+        auditPersistence: "confirmed", continuation: { nextIndex: 0, totalUrls: 40, blocked: true }
+      });
+      expect(db.audits).toHaveLength(1);
+      expect(db.audits[0]).toMatchObject({ status: "failure", details: {
+        failedRows: 5, stoppedEarly: true, sourceDown: null,
+        nstProgress: { continuation: { nextIndex: 0, blocked: true } }
+      } });
+      expect(db.audits[0].details.failedUrls).toHaveLength(5);
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+
+  it("finishes an explicit scope in three invocations and replays old cursors without refetching acknowledged sources", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "nst-explicit-test-"));
+    const store = createNstFileBudgetStore(directory);
+    try {
+      supplyThreePlayerRows();
+      const source = await fetchNstTextByUrlMock();
+      fetchNstTextByUrlMock.mockReset().mockImplementation((url, options) =>
+        withNstRequestBudget(url, options.requestControl, async () => source, store));
+      const first = await run({ runMode: "incremental", startDate: "2026-10-03", endDate: "2026-10-03", maxRequests: "7" });
+      expect(first.statusCode).toBe(207);
+      expect(first.body.operationStatus).toBe("continuation_required");
+      expect(first.body.resume.request.query).toEqual({ runMode: "incremental", startDate: "2026-10-03", endDate: "2026-10-03", maxRequests: "7", cursor: "7" });
+      expect(first.body.nstProgress.continuation.nextIndex).toBe(7);
+      expect(db.audits.at(-1).status).toBe("continued");
+      const second = await run(first.body.resume.request.query);
+      expect(second.statusCode).toBe(207);
+      expect(second.body.nstProgress.continuation.nextIndex).toBe(14);
+      // Replay the first cursor; latest acknowledged progress wins.
+      const third = await run(first.body.resume.request.query);
+      expect(third.statusCode).toBe(200);
+      expect(third.body.success).toBe(true);
+      expect(third.body.nstProgress.continuation.nextIndex).toBe(20);
+      expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(20);
+      const ordinaryRetry = await run({ runMode: "incremental", startDate: "2026-10-03", endDate: "2026-10-03", maxRequests: "7" });
+      expect(ordinaryRetry.body.success).toBe(true);
+      expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(20);
+      expect(new Set(fetchNstTextByUrlMock.mock.calls.map(([url]) => url)).size).toBe(20);
+      const replay = await run(second.body.resume.request.query);
+      expect(replay.body.success).toBe(true);
+      expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(20);
+      expect(third.body.nstProgress.sourceOutcomes.coverage).toBe("not_verified");
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+
+  it("preserves the forty-URL paced plan through its short final suffix", async () => {
+    supplyThreePlayerRows();
+    let query: Record<string, string> = { dates: "2026-10-02,2026-10-03" };
+    for (let i = 0; i < 7; i++) {
+      const response = await run(query);
+      expect(response.body.nstProgress.plannedRequestCount).toBe(40);
+      expect(response.body.nstProgress.requestIntervalMs).toBe(21_000);
+      if (i < 6) {
+        expect(response.statusCode).toBe(207);
+        query = response.body.resume.request.query;
+      } else expect(response.body.success).toBe(true);
+    }
+    expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(40);
+    expect(new Set(fetchNstTextByUrlMock.mock.calls.map(([url]) => url)).size).toBe(40);
+  });
+
+  it("skips a positively known unstarted regular-season slate with zero NST requests", async () => {
+    db.games = [{ date: "2026-10-04", seasonId: 20262027, type: 2, startTime: "2026-10-04T23:00:00Z" }];
+    const result = await run({ startDate: "2026-10-04", endDate: "2026-10-04" });
+    expect(result.statusCode).toBe(200);
+    expect(result.body).toMatchObject({ success: true, operationStatus: "skipped_no_completed_games" });
+    expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps a missing slate unverified and refuses mismatched or retained-out cursors", async () => {
+    db.games = [];
+    const missing = await run({ dates: "2026-10-04" });
+    expect(missing.body.success).toBe(false);
+    expect(missing.body.operationStatus).toBe("blocked");
+    expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
+    db.games = [{ date: "2026-10-03", seasonId: 20262027, type: 2 }];
+    supplyThreePlayerRows();
+    db.games.push({ date: "2026-10-02", seasonId: 20262027, type: 2 });
+    const chunk = await run({ dates: "2026-10-02,2026-10-03" });
+    const before = fetchNstTextByUrlMock.mock.calls.length;
+    const mismatch = await run({ ...chunk.body.resume.request.query, datasetGroup: "fiveOnFive" });
+    expect(mismatch.statusCode).toBe(500);
+    db.audits = [];
+    const lost = await run(chunk.body.resume.request.query);
+    expect(lost.statusCode).toBe(500);
+    expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(before);
+  });
+
+  it("returns continuation inside the caller deadline and leaves terminal audit headroom", async () => {
+    supplyThreePlayerRows();
+    const directory = mkdtempSync(join(tmpdir(), "nst-deadline-test-"));
+    const store = createNstFileBudgetStore(directory);
+    try {
+      const source = await fetchNstTextByUrlMock();
+      fetchNstTextByUrlMock.mockReset().mockImplementation((url, options) =>
+        withNstRequestBudget(url, options.requestControl, async () => source, store));
+      const deadline = Date.now() + 30_000;
+      db.auditProbe = async () => { await new Promise((resolve) => setTimeout(resolve, 5_000)); };
+      const databaseFetch = vi.fn(async () => new Response("[]", { status: 200 }));
+      vi.stubGlobal("fetch", databaseFetch);
+      const result = await run({ dates: "2026-10-02,2026-10-03", deadlineAt: String(deadline) });
+      expect(result.statusCode).toBe(207);
+      expect(result.body.nstProgress.networkAttempts).toBe(2);
+      expect(result.body.nstProgress.deadlineAt).toBe(deadline - 5_000);
+      expect(Date.now()).toBeLessThan(deadline);
+      expect(result.body.nstProgress.auditPersistence).toBe("confirmed");
+      expect(databaseFetch).toHaveBeenCalledTimes(1);
+      expect(Date.now()).toBeGreaterThan(result.body.nstProgress.deadlineAt);
+      expect(result.body.resume.request.query).toEqual({ dates: "2026-10-02,2026-10-03", deadlineAt: String(deadline), cursor: "2" });
+      const calls = fetchNstTextByUrlMock.mock.calls.length;
+      const stalled = await run({ dates: "2026-10-02,2026-10-03", cursor: "1", deadlineAt: String(Date.now() + 6_000) });
+      expect(stalled.body.operationStatus).toBe("blocked");
+      expect(stalled.body.resume).toBeUndefined();
+      expect(fetchNstTextByUrlMock.mock.calls.length).toBe(calls + 1); // Admission was tried; no transport was started.
+      expect(stalled.body.nstProgress.networkAttempts).toBe(0);
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+
+  it("blocks a mixed window with a missing scheduled date instead of dropping it", async () => {
+    supplyThreePlayerRows();
+    const result = await run({ dates: "2026-10-01,2026-10-03" });
+    expect(result.body.success).toBe(false);
+    expect(result.body.nstProgress.missingScheduleDates).toEqual(["2026-10-01"]);
+    expect(result.body.resume).toBeUndefined();
+  });
+
+  it("never emits a continuation after an unresolved source or lost audit acknowledgement", async () => {
+    const failed = await run({ dates: "2026-10-02,2026-10-03" });
+    expect(failed.body.success).toBe(false);
+    expect(failed.body.resume).toBeUndefined();
+    supplyThreePlayerRows();
+    db.auditWriteFailure = "lost_ack";
+    const lost = await run({ dates: "2026-10-02,2026-10-03", overwrite: "yes" });
+    expect(lost.statusCode).toBe(500);
+    expect(lost.body.auditPersistence).toBe("not_confirmed");
+    expect(lost.body.resume).toBeUndefined();
+  });
+
+  it("caps actual network attempts across both initial and failed-item retry passes", async () => {
+    fetchNstTextByUrlMock.mockImplementation(async (_url, options) => {
+      options.requestControl.attemptsStarted++;
+      throw new Error("temporary provider failure");
+    });
+    const res = await run({ dates: "2026-10-03", datasetType: "fiveOnFiveCounts", maxRequests: "2" });
+    expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(2);
+    expect(fetchNstTextByUrlMock.mock.calls[0][1].requestControl).toBe(fetchNstTextByUrlMock.mock.calls[1][1].requestControl);
+    expect(res.body.success).toBe(false);
+    expect(res.body.nstProgress.networkAttempts).toBe(2);
+    expect(res.body.nstProgress).toMatchObject({ stoppedEarly: false, deferredUrls: 0, state: "incomplete" });
+  });
+
+  it("defers remaining source items when the network budget is exhausted", async () => {
+    fetchNstTextByUrlMock.mockImplementation(async (_url, options) => {
+      options.requestControl.attemptsStarted++;
+      return { text: "<body>No skaters found</body>", response: { status: 200 } };
+    });
+    const res = await run({ dates: "2026-10-03", datasetGroup: "fiveOnFive", maxRequests: "2" }, "POST");
+    expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(2);
+    expect(res.body.nstProgress.deferredUrls).toBe(2);
+    expect(res.body.nstProgress.stoppedEarly).toBe(true);
+    expect(res.body.nstProgress.networkAttempts).toBe(2);
+  });
+
+  it("does not retry an admission deadline failure or report completion", async () => {
+    fetchNstTextByUrlMock.mockRejectedValue(new NstExecutionLimitError("NST run deadline reached."));
+    const res = await run({ dates: "2026-10-03", datasetType: "fiveOnFiveCounts" });
+    expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(1);
+    expect(res.body.success).toBe(false);
+    expect(res.body.nstProgress.stoppedEarly).toBe(true);
+    expect(res.body.nstProgress.deferredUrls).toBe(1);
+  });
+
+  it.each([["maxRequests", "41"], ["maxRequests", "0"], ["maxRuntimeMs", "220001"], ["maxRuntimeMs", "no"]])(
+    "rejects invalid execution bounds before touching data: %s=%s", async (name, value) => {
+      const res = await run({ [name]: value });
+      expect(res.statusCode).toBe(500);
+      expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
+      expect(db.queries).toHaveLength(0);
+    }
+  );
 
   it("starts the default scheduled run in the current season when every cursor is historical", async () => {
     db.tables.nst_gamelog_as_counts = [{ date_scraped: "2026-04-02" }];
@@ -480,8 +971,10 @@ describe("update-nst-gamelog automatic season cursor", () => {
     for (const table of ["counts", "rates", "counts_oi", "rates_oi"]) {
       db.tables[`nst_gamelog_5v5_${table}`] = [{ date_scraped: table === "rates_oi" ? "2026-10-02" : "2026-10-03" }];
     }
-    await run({ datasetGroup: "fiveOnFive" });
-    expect(new Set(fetchedDates())).toEqual(new Set(["2026-09-29", "2026-10-02", "2026-10-03"]));
+    const res = await run({ datasetGroup: "fiveOnFive" });
+    expect(new Set(fetchedDates())).toEqual(new Set(["2026-09-29", "2026-10-02"]));
+    expect(res.body.nstProgress.stoppedEarly).toBe(true);
+    expect(fetchNstTextByUrlMock.mock.calls[0][1].requestControl.minIntervalMs).toBe(0);
   });
 
   it("starts an empty current-season dataset at the season boundary, excluding future rows", async () => {
@@ -614,14 +1107,14 @@ describe("update-nst-gamelog automatic season cursor", () => {
     expect(rolled.body.nstProgress.bookmark.next.seasonId).toBe("20272028");
   });
 
-  it("keeps explicit end-date and forward requests outside automatic bookmark scope", async () => {
+  it("gives explicit end-date and forward requests their own scoped progress", async () => {
     await run();
     const explicitQueries: Record<string, string>[] = [{ endDate: "2026-10-03" }, { runMode: "forward", dates: "2026-10-03" }];
     for (const query of explicitQueries) {
       const queryIndex = db.queries.length;
       const res = await run(query);
-      expect(res.body.nstProgress.bookmark).toBeNull();
-      expect(db.queries.slice(queryIndex).some((q) => q.table === "cron_job_audit" && q.filters.length > 0)).toBe(false);
+      expect(res.body.nstProgress.continuation.totalUrls).toBeGreaterThan(0);
+      expect(db.queries.slice(queryIndex).some((q) => q.table === "cron_job_audit" && q.filters.length > 0)).toBe(true);
     }
   });
 

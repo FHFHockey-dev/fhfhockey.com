@@ -30,6 +30,7 @@ export const NST_RATE_LIMIT_WINDOWS: readonly NstRateLimitWindow[] = [
 ] as const;
 
 export const NST_BURST_INTERVAL_MS = 0;
+export const NST_MIN_REQUEST_INTERVAL_MS = 21_000;
 export const NST_MAX_BURST_REQUESTS = 39;
 export const NST_TOKENS_PER_PAGE = 10;
 export const NST_STANDARD_TOKEN_CAP = 1_800;
@@ -100,6 +101,7 @@ export function assessNstRequestPlan(
 
 export function canBurstNstRequests(requestCount: number): boolean {
   return (
+    Number.isInteger(requestCount) && requestCount > 0 &&
     requestCount <= NST_MAX_BURST_REQUESTS &&
     assessNstRequestPlan({
       requestCount,

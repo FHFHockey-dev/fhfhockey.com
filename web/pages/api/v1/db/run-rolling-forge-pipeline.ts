@@ -466,13 +466,16 @@ function readNstOutcome(step: StepResult, sentCursor: number | null): NstOutcome
 }
 
 // The NST route answered, but the source left dates unresolved (NST down or
-// returning 5xx). The run continues on WGO without that day's NST counts;
-// route exceptions and HTTP errors still fail the step.
+// returning 5xx; an HTTP 520-527 origin outage answers 503 "source_down").
+// The run continues on WGO without that day's NST counts; route exceptions
+// and other HTTP errors still fail the step.
 function isNstSourceShortfall(step: StepResult): boolean {
   const record = step.summary && typeof step.summary === "object"
     ? step.summary as Record<string, any> : null;
   const unresolved = record?.nstProgress?.sourceOutcomes?.unresolvedCount;
-  return step.statusCode === 200 && record?.success === false
+  const answered = step.statusCode === 200 ||
+    (step.statusCode === 503 && record?.operationStatus === "source_down");
+  return answered && record?.success === false
     && !(typeof record.error === "string" && record.error.trim())
     && Number.isSafeInteger(unresolved) && unresolved > 0;
 }
