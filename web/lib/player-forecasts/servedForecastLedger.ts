@@ -207,34 +207,93 @@ export function settleLedgerRows(rows: LedgerRow[], actuals: LedgerActuals, sett
   });
 }
 
-export type ErrorStat = { n: number; mae: Num; bias: Num };
+export type ErrorStat = { n: number; mae: Num; bias: Num; rmse: Num; expected: Num; actual: Num; ratio: Num; mzSlope: Num; mzIntercept: Num };
 export type ReliabilityBin = { bin: number; n: number; predicted: number; observed: number };
+export type BinaryScore = { n: number; brier: Num; reliability: ReliabilityBin[] };
+export const LEDGER_SCORING_LIMITATIONS = {
+  position: "unavailable_skater_position_not_captured",
+  opportunityRate: "unavailable_expected_and_actual_toi_pp_toi_not_captured",
+  coverage: "unavailable_independent_universe_not_persisted",
+  settlement: "known_outcomes_only_missing_players_remain_unknown_without_complete_scope",
+  qualification: "descriptive_scores_not_predictive_qualification",
+} as const;
+type HeadScores = { heads: Record<string, ErrorStat>; fantasyPoints: ErrorStat };
+type ExpectedFpBin = HeadScores & { decile: number; n: number; minExpectedFp: number; maxExpectedFp: number };
 export type LedgerScore = { source: LedgerSource; player_class: Class; n: number; dressed: Num; covered: number; coverage: Num;
   coverageStatus: "known" | "unavailable" | "incomplete"; phantoms: number;
   heads: Record<string, ErrorStat>; fantasyPoints: ErrorStat; decile10: { n: number; expected: number; actual: number; ratio: Num } | null;
-  reliability: Partial<Record<"win" | "shutout" | "start", ReliabilityBin[]>>; b2b: { heads: Record<string, ErrorStat>; fantasyPoints: ErrorStat } };
+  scoringPopulation: "dressed_only"; position: "G" | "unknown"; expectedFpDeciles: ExpectedFpBin[];
+  binary: Partial<Record<"win" | "shutout" | "start", BinaryScore>>;
+  reliability: Partial<Record<"win" | "shutout" | "start", ReliabilityBin[]>>; b2b: HeadScores };
 const SCORED_HEADS: Record<Class, string[]> = { skater: ["goals", "assists", "pp_points", "shots", "hits", "blocks"], goalie: ["saves", "goals_against", "shots_against"] };
 
 function errorStat(pairs: Array<[Num, Num]>): ErrorStat {
   const known = pairs.filter((pair): pair is [number, number] => finite(pair[0]) && finite(pair[1]));
-  if (!known.length) return { n: 0, mae: null, bias: null };
-  return { n: known.length, mae: round(known.reduce((sum, [e, a]) => sum + Math.abs(e - a), 0) / known.length), bias: round(known.reduce((sum, [e, a]) => sum + e - a, 0) / known.length) };
+  if (!known.length) return { n: 0, mae: null, bias: null, rmse: null, expected: null, actual: null, ratio: null, mzSlope: null, mzIntercept: null };
+  const n = known.length, expected = known.reduce((s, [e]) => s + e, 0), actual = known.reduce((s, [, a]) => s + a, 0);
+  const variance = known.reduce((s, [e]) => s + (e - expected / n) ** 2, 0);
+  // Mincer–Zarnowitz: actual = intercept + slope * forecast, with an intercept.
+  const slope = n > 1 && variance > 0 ? known.reduce((s, [e, a]) => s + (e - expected / n) * (a - actual / n), 0) / variance : null;
+  return { n, mae: round(known.reduce((s, [e, a]) => s + Math.abs(e - a), 0) / n), bias: round((expected - actual) / n),
+    rmse: round(Math.sqrt(known.reduce((s, [e, a]) => s + (e - a) ** 2, 0) / n)), expected: round(expected), actual: round(actual),
+    ratio: expected !== 0 ? round(actual / expected) : null, mzSlope: round(slope), mzIntercept: slope === null ? null : round(actual / n - slope * expected / n) };
 }
-function reliability(pairs: Array<[Num, Num | boolean | null]>): ReliabilityBin[] | undefined {
-  const known = pairs.map(([p, o]) => [p, typeof o === "boolean" ? Number(o) : o] as [Num, Num]).filter((pair): pair is [number, number] => finite(pair[0]) && finite(pair[1]));
-  if (!known.length) return undefined;
+const probability = (value: unknown): value is number => finite(value) && value >= 0 && value <= 1;
+const binaryOutcome = (value: unknown): Num => typeof value === "boolean" ? Number(value) : value === 0 || value === 1 ? value : null;
+function binaryScore(pairs: Array<[Num, Num | boolean | null]>): BinaryScore {
+  const known = pairs.map(([p, o]) => [p, binaryOutcome(o)] as [Num, Num])
+    .filter((pair): pair is [number, number] => probability(pair[0]) && pair[1] !== null);
+  if (!known.length) return { n: 0, brier: null, reliability: [] };
   const bins = new Map<number, number[][]>();
-  for (const [p, o] of known) { const bin = Math.min(9, Math.max(0, Math.floor(p * 10))); bins.set(bin, [...(bins.get(bin) ?? []), [p, o]]); }
-  return [...bins].sort((a, b) => a[0] - b[0]).map(([bin, list]) => ({ bin, n: list.length,
-    predicted: round(list.reduce((s, x) => s + x[0], 0) / list.length)!, observed: round(list.reduce((s, x) => s + x[1], 0) / list.length)! }));
+  for (const [p, o] of known) {
+    const bin = Math.min(9, Math.floor(p * 10)), list = bins.get(bin) ?? [];
+    list.push([p, o]); bins.set(bin, list);
+  }
+  return { n: known.length, brier: round(known.reduce((s, [p, o]) => s + (p - o) ** 2, 0) / known.length),
+    reliability: [...bins].sort((a, b) => a[0] - b[0]).map(([bin, list]) => ({ bin, n: list.length,
+      predicted: round(list.reduce((s, x) => s + x[0], 0) / list.length)!, observed: round(list.reduce((s, x) => s + x[1], 0) / list.length)! })) };
+}
+
+const ledgerKey = (row: LedgerRow) => `${row.season_id}:${row.served_date}:${row.player_class}:${row.player_id}:${row.game_id}`;
+function scoringRows(rows: LedgerRow[]) {
+  let invalidIdentityRows = 0;
+  const grouped = new Map<string, LedgerRow[]>();
+  for (const row of rows) {
+    if (!Number.isInteger(row.season_id) || !Number.isInteger(row.player_id) || row.player_id <= 0 || !Number.isInteger(row.game_id) || row.game_id <= 0
+      || !/^\d{4}-\d{2}-\d{2}$/.test(row.served_date) || !["skater", "goalie"].includes(row.player_class) || !LEDGER_SOURCES.includes(row.source)) {
+      invalidIdentityRows++; continue;
+    }
+    const key = `${row.source}:${ledgerKey(row)}`, list = grouped.get(key) ?? [];
+    list.push(row); grouped.set(key, list);
+  }
+  return { invalidIdentityRows,
+    unique: [...grouped.values()].filter(list => list.length === 1).map(list => list[0]).filter(row => !!row.settled_at),
+    duplicates: [...grouped.values()].filter(list => list.length > 1).map(list => list[0]) };
+}
+const fantasyPair = (row: LedgerRow, weights?: FantasyWeights): [Num, Num] => weights
+  ? [ledgerFantasyPoints(row.player_class, expHeads(row), weights), ledgerFantasyPoints(row.player_class, actHeads(row), weights)]
+  : [row.exp_fantasy_points, row.act_fantasy_points];
+/** Ascending expected FP rank; tied predictions stay together, independent of outcome/input order.
+ * Small or tied cohorts can leave deciles empty. No actuals are used to assign bins. */
+function fpBins<T>(list: T[], expected: (value: T) => Num): Array<{ decile: number; list: T[]; minExpectedFp: number; maxExpectedFp: number }> {
+  const ranked = list.filter(row => finite(expected(row))).sort((a, b) => expected(a)! - expected(b)!);
+  const bins = new Map<number, { decile: number; list: T[]; minExpectedFp: number; maxExpectedFp: number }>();
+  for (let i = 0; i < ranked.length;) {
+    let end = i + 1;
+    while (end < ranked.length && expected(ranked[end]) === expected(ranked[i])) end++;
+    const decile = Math.min(10, Math.floor(((i + end) / 2) / ranked.length * 10) + 1), value = expected(ranked[i])!;
+    const bin = bins.get(decile) ?? { decile, list: [], minExpectedFp: value, maxExpectedFp: value };
+    for (let j = i; j < end; j++) bin.list.push(ranked[j]);
+    bin.maxExpectedFp = value; bins.set(decile, bin); i = end;
+  }
+  return [...bins.values()];
 }
 
 /** Per-source errors use each source's own observed sample, not a paired model comparison.
  * Coverage requires an independently captured and settled universe; forecast rows cannot supply it. */
 export function scoreLedger(rows: LedgerRow[], weights?: FantasyWeights, universe?: LedgerUniverseRow[]): LedgerScore[] {
-  const settled = rows.filter(row => row.settled_at !== null);
-  const fp = (row: LedgerRow): [Num, Num] => weights ? [ledgerFantasyPoints(row.player_class, expHeads(row), weights), ledgerFantasyPoints(row.player_class, actHeads(row), weights)]
-    : [row.exp_fantasy_points, row.act_fantasy_points];
+  const settled = scoringRows(rows).unique;
+  const fp = (row: LedgerRow) => fantasyPair(row, weights);
   const errors = (list: LedgerRow[], playerClass: Class) => ({
     heads: Object.fromEntries(SCORED_HEADS[playerClass].map(head => [head, errorStat(list.map(row => [(row as Row)[`exp_${head}`], (row as Row)[`act_${head}`]]))])),
     fantasyPoints: errorStat(list.map(fp)) });
@@ -250,15 +309,103 @@ export function scoreLedger(rows: LedgerRow[], weights?: FantasyWeights, univers
       const list = classRows.filter(row => row.source === source);
       if (!list.length) continue;
       const covered = new Set(list.filter(row => row.dressed && (members === undefined || dressedKeys.has(key(row)))).map(key)).size;
-      const ranked = list.filter(row => finite(row.exp_goals) && finite(row.act_goals)).sort((a, b) => b.exp_goals! - a.exp_goals! || a.player_id - b.player_id || a.game_id - b.game_id);
-      const top = ranked.slice(0, Math.ceil(ranked.length / 10)), expected = top.reduce((s, row) => s + row.exp_goals!, 0), actual = top.reduce((s, row) => s + row.act_goals!, 0);
-      const bins = { win: reliability(list.map(row => [row.exp_win_prob, row.act_win])), shutout: reliability(list.map(row => [row.exp_shutout_prob, row.act_shutout])),
-        start: playerClass === "goalie" ? reliability(list.map(row => [row.start_probability, row.started])) : undefined };
+      const dressedRows = list.filter(row => row.dressed === true);
+      const expectedFpDeciles = fpBins(dressedRows, row => fp(row)[0]).map(({ list: binRows, ...bin }) => ({ ...bin, n: binRows.length, ...errors(binRows, playerClass) }));
+      const top = expectedFpDeciles.find(bin => bin.decile === 10)?.fantasyPoints;
+      const binary = playerClass === "goalie" ? { win: binaryScore(list.map(row => [row.exp_win_prob, row.act_win])),
+        shutout: binaryScore(list.map(row => [row.exp_shutout_prob, row.act_shutout])), start: binaryScore(list.map(row => [row.start_probability, row.started])) } : {};
       out.push({ source, player_class: playerClass, n: list.length, dressed, covered, coverageStatus, coverage: dressed ? round(covered / dressed) : null,
-        phantoms: list.filter(row => row.dressed === false).length, ...errors(list, playerClass),
-        decile10: top.length ? { n: top.length, expected: round(expected)!, actual: round(actual)!, ratio: expected > 0 ? round(actual / expected) : null } : null,
-        reliability: Object.fromEntries(Object.entries(bins).filter(([, value]) => value)), b2b: errors(list.filter(row => row.team_rest_days === 1), playerClass) });
+        phantoms: list.filter(row => row.dressed === false).length, ...errors(dressedRows, playerClass),
+        scoringPopulation: "dressed_only", position: playerClass === "goalie" ? "G" : "unknown", expectedFpDeciles,
+        decile10: top?.n ? { n: top.n, expected: top.expected!, actual: top.actual!, ratio: top.ratio } : null,
+        binary, reliability: Object.fromEntries(Object.entries(binary).filter(([, value]) => value.n).map(([event, value]) => [event, value.reliability])),
+        b2b: errors(dressedRows.filter(row => row.team_rest_days === 1), playerClass) });
     }
   }
   return out;
+}
+
+type LedgerPair = [LedgerRow, LedgerRow];
+type PairExclusions = { missingPrediction: number; missingOutcome: number; conflictingOutcome: number };
+export type PairedErrorStat = {
+  source: ErrorStat; reference: ErrorStat; rmseSkill: Num;
+  status: "scored" | "no_valid_pairs"; exclusions: PairExclusions;
+};
+type PairedHeads = { heads: Record<string, PairedErrorStat>; fantasyPoints: PairedErrorStat };
+type PairedBinaryScore = { source: BinaryScore; reference: BinaryScore; exclusions: PairExclusions };
+export type PairedLedgerScore = PairedHeads & {
+  source: LedgerSource; reference: LedgerSource; player_class: Class; position: "G" | "unknown";
+  status: "paired" | "no_shared_player_games"; scoringPopulation: "dressed_only"; binaryPopulation: "settled_known_event";
+  pairing: { sourceRows: number; referenceRows: number; matched: number; sourceOnly: number; referenceOnly: number;
+    duplicateSourceKeys: number; duplicateReferenceKeys: number; conflictingParticipation: number; dressed: number };
+  expectedFpDeciles: Array<PairedHeads & { decile: number; n: number; minExpectedFp: number; maxExpectedFp: number }>;
+  binary: Partial<Record<"start" | "win" | "shutout", PairedBinaryScore>>;
+};
+
+function comparableValues(pairs: LedgerPair[], values: (row: LedgerRow) => [Num, Num], binary = false) {
+  const known: Array<[number, number, number]> = [];
+  const exclusions: PairExclusions = { missingPrediction: 0, missingOutcome: 0, conflictingOutcome: 0 };
+  for (const [source, reference] of pairs) {
+    const [p, a] = values(source), [q, b] = values(reference);
+    if (!(binary ? probability(p) && probability(q) : finite(p) && finite(q))) { exclusions.missingPrediction++; continue; }
+    if (!finite(a) || !finite(b) || (binary && (binaryOutcome(a) === null || binaryOutcome(b) === null))) { exclusions.missingOutcome++; continue; }
+    if (a !== b) { exclusions.conflictingOutcome++; continue; }
+    known.push([p!, q!, a]);
+  }
+  return { known, exclusions };
+}
+
+function pairedError(pairs: LedgerPair[], values: (row: LedgerRow) => [Num, Num]): PairedErrorStat {
+  const { known, exclusions } = comparableValues(pairs, values);
+  const source = errorStat(known.map(([p, , a]) => [p, a])), reference = errorStat(known.map(([, q, a]) => [q, a]));
+  // Compute skill from unrounded SSEs on exactly the same head-specific cohort.
+  const sourceSse = known.reduce((s, [p, , a]) => s + (p - a) ** 2, 0), referenceSse = known.reduce((s, [, q, a]) => s + (q - a) ** 2, 0);
+  return { source, reference, rmseSkill: referenceSse > 0 ? round(1 - Math.sqrt(sourceSse / referenceSse)) : null,
+    status: known.length ? "scored" : "no_valid_pairs", exclusions };
+}
+
+/** Pairwise comparisons, never intersections of unrelated source-level averages. Each head requires
+ * both forecasts and equal known outcomes on the same served date, season, player and game.
+ * Duplicate source keys are ambiguous and excluded, even when input order would pick a winner.
+ * Historical F/D and opportunity/rate decompositions are unavailable in the persisted contract. */
+export function scorePairedLedger(rows: LedgerRow[], weights?: FantasyWeights): {
+  pairingKey: string[]; biasDefinition: string; rmseSkillDefinition: string; binning: string; limitations: typeof LEDGER_SCORING_LIMITATIONS;
+  invalidIdentityRows: number; comparisons: PairedLedgerScore[];
+} {
+  const { unique, duplicates, invalidIdentityRows } = scoringRows(rows);
+  const comparisons: PairedLedgerScore[] = [];
+  for (const playerClass of ["skater", "goalie"] as const) {
+    const index = new Map(LEDGER_SOURCES.map(source => [source, new Map(unique.filter(row => row.source === source && row.player_class === playerClass).map(row => [ledgerKey(row), row]))]));
+    for (let i = 0; i < LEDGER_SOURCES.length; i++) for (const reference of LEDGER_SOURCES.slice(i + 1)) {
+      const source = LEDGER_SOURCES[i], sourceRows = index.get(source)!, referenceRows = index.get(reference)!;
+      const duplicateSourceKeys = duplicates.filter(row => row.source === source && row.player_class === playerClass).length;
+      const duplicateReferenceKeys = duplicates.filter(row => row.source === reference && row.player_class === playerClass).length;
+      if (!sourceRows.size && !referenceRows.size && !duplicateSourceKeys && !duplicateReferenceKeys) continue;
+      const matches: LedgerPair[] = [...sourceRows].flatMap(([key, row]) => referenceRows.has(key) ? [[row, referenceRows.get(key)!] as LedgerPair] : []);
+      const consistent = matches.filter(([a, b]) => a.dressed === b.dressed);
+      const dressed = consistent.filter(([a, b]) => a.dressed === true && b.dressed === true);
+      const summarize = (list: LedgerPair[]): PairedHeads => ({
+        heads: Object.fromEntries(SCORED_HEADS[playerClass].map(head => [head, pairedError(list, row => [(row as Row)[`exp_${head}`], (row as Row)[`act_${head}`]])])),
+        fantasyPoints: pairedError(list, row => fantasyPair(row, weights)),
+      });
+      const binary: PairedLedgerScore["binary"] = {};
+      if (playerClass === "goalie") for (const event of ["start", "win", "shutout"] as const) {
+        const { known, exclusions } = comparableValues(consistent, row => event === "start"
+          ? [row.start_probability, binaryOutcome(row.started)] : [row[`exp_${event}_prob`], row[`act_${event}`]], true);
+        binary[event] = { source: binaryScore(known.map(([p, , a]) => [p, a])), reference: binaryScore(known.map(([, q, a]) => [q, a])), exclusions };
+      }
+      comparisons.push({ source, reference, player_class: playerClass, position: playerClass === "goalie" ? "G" : "unknown",
+        status: matches.length ? "paired" : "no_shared_player_games", scoringPopulation: "dressed_only", binaryPopulation: "settled_known_event",
+        pairing: { sourceRows: sourceRows.size, referenceRows: referenceRows.size, matched: matches.length,
+          sourceOnly: sourceRows.size - matches.length, referenceOnly: referenceRows.size - matches.length,
+          duplicateSourceKeys, duplicateReferenceKeys, conflictingParticipation: matches.length - consistent.length, dressed: dressed.length },
+        ...summarize(dressed), expectedFpDeciles: fpBins(dressed, ([row]) => fantasyPair(row, weights)[0])
+          .map(({ list, ...bin }) => ({ ...bin, n: list.length, ...summarize(list) })), binary });
+    }
+  }
+  return { pairingKey: ["season_id", "served_date", "player_class", "player_id", "game_id"],
+    biasDefinition: "mean(forecast - actual)",
+    rmseSkillDefinition: "1 - RMSE(source) / RMSE(reference); null when reference RMSE is zero or no pairs",
+    binning: "ascending source expected FP, tied values share midpoint-rank decile; head-specific missing pairs remain excluded",
+    limitations: LEDGER_SCORING_LIMITATIONS, invalidIdentityRows, comparisons };
 }

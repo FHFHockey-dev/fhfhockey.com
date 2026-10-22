@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { GameForecast } from "lib/rosterScheduleOptimizer/planningTypes";
-import { buildLedgerRows, scoreLedger, settleLedgerRows, settleLedgerUniverse, type BuildLedgerInput, type LedgerRow } from "./servedForecastLedger";
+import { buildLedgerRows, scoreLedger, scorePairedLedger, settleLedgerRows, settleLedgerUniverse, type BuildLedgerInput, type LedgerRow } from "./servedForecastLedger";
 
 const NOW = new Date("2026-10-21T12:30:00Z");
 const forecast = (playerId: string, gameId: string, runId: string, stats: Record<string, number | null>, startProbability: number | null = null): GameForecast => ({
@@ -110,15 +110,16 @@ describe("scoreLedger", () => {
 
   it("reports n, coverage, phantoms, MAE and signed bias", () => {
     expect(score).toMatchObject({ source: "bridge_exact", player_class: "skater", n: 20, dressed: 19, covered: 19, coverage: 1, phantoms: 1 });
-    const meanExp = 21 / 40, meanAct = 2 / 20;
+    const meanExp = (10.5 - 0.05) / 19, meanAct = 2 / 19;
     expect(score.heads.goals.bias).toBeCloseTo(meanExp - meanAct, 4);
-    expect(score.heads.goals.n).toBe(20);
-    expect(score.fantasyPoints).toMatchObject({ n: 20, mae: 1.5, bias: -0.5 });
+    expect(score.heads.goals.n).toBe(19);
+    expect(score.fantasyPoints).toMatchObject({ n: 19, mae: 1.4737, bias: -0.4211 });
   });
 
-  it("calibrates the top expected-goals decile and slices back-to-backs", () => {
-    expect(score.decile10).toEqual({ n: 2, expected: 1.95, actual: 2, ratio: 1.0256 });
-    expect(score.b2b.fantasyPoints).toMatchObject({ n: 10, mae: 2, bias: -2 });
+  it("keeps tied expected FP together and slices dressed-only back-to-backs", () => {
+    expect(score.decile10).toBeNull();
+    expect(score.expectedFpDeciles).toMatchObject([{ decile: 6, n: 19, minExpectedFp: 2, maxExpectedFp: 2 }]);
+    expect(score.b2b.fantasyPoints).toMatchObject({ n: 9, mae: 2, bias: -2 });
     expect(score.reliability).toEqual({});
   });
 
@@ -141,5 +142,123 @@ describe("scoreLedger", () => {
     expect(scoreLedger(rows)[0]).toMatchObject({ dressed: null, coverage: null, coverageStatus: "unavailable" });
     expect(scoreLedger(rows, undefined, built.universe)[0]).toMatchObject({ dressed: null, coverage: null, coverageStatus: "incomplete" });
     expect(scoreLedger(rows, undefined, [])[0]).toMatchObject({ dressed: 0, covered: 0, coverage: null, coverageStatus: "known" });
+  });
+});
+
+describe("paired served-forecast scoring", () => {
+  const base = buildLedgerRows(input()).rows.find(row => row.source === "bridge_exact")!;
+  const row = (player_id: number, source: LedgerRow["source"], expected: number, actual: number, extra: Partial<LedgerRow> = {}): LedgerRow => ({
+    ...base, player_id, source, dressed: true, settled_at: "2026-10-22T11:00:00Z", exp_goals: expected, act_goals: actual,
+    exp_fantasy_points: expected, act_fantasy_points: actual, ...extra,
+  });
+  const comparison = (rows: LedgerRow[]) => scorePairedLedger(rows).comparisons.find(value => value.source === "bridge_exact" && value.reference === "naive_last5")!;
+
+  it("scores the common player-game cohort and computes RMSE skill and MZ with an intercept", () => {
+    const rows = [row(1, "bridge_exact", 1, 3), row(2, "bridge_exact", 2, 5), row(99, "bridge_exact", 100, 0),
+      row(1, "naive_last5", 0, 3), row(2, "naive_last5", 0, 5), row(88, "naive_last5", 0, 100)];
+    const score = comparison(rows);
+    expect(score.pairing).toMatchObject({ matched: 2, dressed: 2, sourceOnly: 1, referenceOnly: 1 });
+    expect(score.heads.goals.source).toEqual({ n: 2, expected: 3, actual: 8, ratio: 2.6667, mae: 2.5, bias: -2.5, rmse: 2.5495, mzSlope: 2, mzIntercept: 1 });
+    expect(score.heads.goals.reference).toMatchObject({ n: 2, rmse: 4.1231, mzSlope: null, mzIntercept: null, ratio: null });
+    expect(score.heads.goals.rmseSkill).toBeCloseTo(1 - Math.sqrt(6.5 / 17), 4);
+    expect(score.fantasyPoints).toEqual(score.heads.goals);
+    expect(comparison([...rows].reverse())).toEqual(score);
+  });
+
+  it("does not join a different served date, season or game, and reports missing source evidence", () => {
+    const rows = [row(1, "bridge_exact", 1, 1), row(1, "naive_last5", 1, 1, { game_id: 101 }),
+      row(1, "naive_last5", 1, 1, { served_date: "2026-10-20" }), row(1, "naive_last5", 1, 1, { season_id: 20252026 })];
+    expect(comparison(rows)).toMatchObject({ status: "no_shared_player_games", pairing: { matched: 0, sourceOnly: 1, referenceOnly: 3 },
+      fantasyPoints: { status: "no_valid_pairs", source: { n: 0, rmse: null }, rmseSkill: null } });
+    const missing = scorePairedLedger(rows).comparisons.find(value => value.source === "bridge_exact" && value.reference === "naive_season")!;
+    expect(missing.pairing).toMatchObject({ sourceRows: 1, referenceRows: 0, matched: 0 });
+  });
+
+  it("excludes duplicate source keys and malformed identities instead of picking a row", () => {
+    const score = scorePairedLedger([row(1, "bridge_exact", 1, 1), row(1, "bridge_exact", 9, 1), row(1, "naive_last5", 1, 1),
+      row(NaN, "bridge_exact", 1, 1), row(2, "bridge_exact", 1, 1, { season_id: null as any })]);
+    expect(score.invalidIdentityRows).toBe(2);
+    expect(score.comparisons.find(value => value.source === "bridge_exact" && value.reference === "naive_last5"))
+      .toMatchObject({ pairing: { duplicateSourceKeys: 1, matched: 0 }, fantasyPoints: { source: { n: 0 } } });
+    const goalie = row(1, "bridge_exact", 0, 0, { player_class: "goalie", start_probability: 0.8, started: true });
+    expect(scoreLedger([goalie, goalie, { ...goalie, player_id: NaN }])).toEqual([]);
+  });
+
+  it("keeps partial heads separate, rejects conflicting actuals, and excludes DNP/unknown participation", () => {
+    const rows = [
+      row(1, "bridge_exact", 1, 1, { act_hits: null, exp_hits: 1 }), row(1, "naive_last5", 2, 1, { act_hits: 0, exp_hits: 1 }),
+      row(2, "bridge_exact", 1, 1), row(2, "naive_last5", 1, 2),
+      row(3, "bridge_exact", 9, 0, { dressed: false }), row(3, "naive_last5", 2, 0, { dressed: false }),
+      row(4, "bridge_exact", 9, 0, { dressed: null }), row(4, "naive_last5", 2, 0, { dressed: null }),
+      row(5, "bridge_exact", 9, 0), row(5, "naive_last5", 2, 0, { dressed: false }),
+    ];
+    const score = comparison(rows);
+    expect(score.pairing).toMatchObject({ matched: 5, dressed: 2, conflictingParticipation: 1 });
+    expect(score.heads.goals).toMatchObject({ source: { n: 1, bias: 0 }, reference: { n: 1, bias: 1 }, exclusions: { conflictingOutcome: 1 } });
+    expect(score.heads.hits).toMatchObject({ source: { n: 0 }, exclusions: { missingOutcome: 2 } });
+    expect(score.fantasyPoints.source.n).toBe(1);
+  });
+
+  it("bins by source expected FP rather than goals or actual FP and exposes per-head ratios", () => {
+    const rows = Array.from({ length: 20 }, (_, i) => [
+      row(i + 1, "bridge_exact", 20 - i, i >= 18 ? 4 : 0, { exp_fantasy_points: i + 1, act_fantasy_points: 2 }),
+      row(i + 1, "naive_last5", 1, i >= 18 ? 4 : 0, { exp_fantasy_points: 1, act_fantasy_points: 2 }),
+    ]).flat();
+    const score = comparison(rows), top = score.expectedFpDeciles.find(bin => bin.decile === 10)!;
+    expect(top).toMatchObject({ n: 2, minExpectedFp: 19, maxExpectedFp: 20,
+      heads: { goals: { source: { n: 2, expected: 3, actual: 8, ratio: 2.6667 } } },
+      fantasyPoints: { source: { expected: 39, actual: 4, ratio: 0.1026 } } });
+    expect(scoreLedger(rows)[0].decile10).toEqual({ n: 2, expected: 39, actual: 4, ratio: 0.1026 });
+    expect(score.position).toBe("unknown");
+    expect(scorePairedLedger(rows).limitations).toMatchObject({ position: "unavailable_skater_position_not_captured",
+      opportunityRate: "unavailable_expected_and_actual_toi_pp_toi_not_captured" });
+  });
+
+  it("recomputes FP with supplied weights and does not fill missing weighted heads", () => {
+    const rows = [row(1, "bridge_exact", 2, 1, { act_hits: null }), row(1, "naive_last5", 3, 1, { act_hits: null })];
+    const goalsOnly = scorePairedLedger(rows, { skater: { GOALS: 2 } }).comparisons.find(value => value.reference === "naive_last5")!;
+    expect(goalsOnly.fantasyPoints.source).toMatchObject({ n: 1, expected: 4, actual: 2, bias: 2 });
+    const withHits = scorePairedLedger(rows, { skater: { GOALS: 2, HITS: 1 } }).comparisons.find(value => value.reference === "naive_last5")!;
+    expect(withHits.fantasyPoints.source.n).toBe(0);
+    expect(withHits.heads.goals.source.n).toBe(1);
+  });
+
+  it("keeps zero-reference-error skill and constant-forecast slopes undefined", () => {
+    const score = comparison([row(1, "bridge_exact", 2, 1), row(1, "naive_last5", 1, 1)]);
+    expect(score.fantasyPoints).toMatchObject({ rmseSkill: null, source: { rmse: 1, mzSlope: null, mzIntercept: null }, reference: { rmse: 0 } });
+  });
+
+  it("pairs goalie event probabilities with their own binary outcomes, including proven non-starts", () => {
+    const rows = [row(1, "bridge_exact", 0, 0, { player_class: "goalie", start_probability: 0.8, started: true, exp_win_prob: 0.6, act_win: 1, exp_shutout_prob: 0.2, act_shutout: 0 }),
+      row(1, "naive_last5", 0, 0, { player_class: "goalie", start_probability: 0.5, started: true, exp_win_prob: 0.5, act_win: 1, exp_shutout_prob: 0.1, act_shutout: 0 }),
+      row(2, "bridge_exact", 0, 0, { player_class: "goalie", dressed: false, start_probability: 0.2, started: false, exp_win_prob: 0.1, act_win: 0, exp_shutout_prob: 0.05, act_shutout: 0 }),
+      row(2, "naive_last5", 0, 0, { player_class: "goalie", dressed: false, start_probability: 0.5, started: false, exp_win_prob: 0.2, act_win: 0, exp_shutout_prob: 0.1, act_shutout: 0 })];
+    const score = comparison(rows);
+    expect(score).toMatchObject({ position: "G", pairing: { dressed: 1 }, binaryPopulation: "settled_known_event" });
+    expect(score.binary.start).toMatchObject({ source: { n: 2, brier: 0.04 }, reference: { n: 2, brier: 0.25 } });
+    expect(score.binary.win).toMatchObject({ source: { n: 2, brier: 0.085 }, reference: { n: 2, brier: 0.145 } });
+    expect(score.binary.shutout).toMatchObject({ source: { n: 2, brier: 0.0213 } });
+    expect(score.binary.start!.source.reliability).toEqual([{ bin: 2, n: 1, predicted: 0.2, observed: 0 }, { bin: 8, n: 1, predicted: 0.8, observed: 1 }]);
+    expect(scoreLedger(rows)[0].binary.start).toEqual(score.binary.start!.source);
+  });
+
+  it("withholds missing, non-binary, out-of-range and conflicting event pairs", () => {
+    const variants: Partial<LedgerRow>[] = [{ exp_win_prob: -0.1 }, { exp_win_prob: 1.1 }, { act_win: 0.5 }, { act_win: null }, { act_win: 0 }];
+    const rows = variants.flatMap((extra, i) => [
+      row(i + 1, "bridge_exact", 0, 0, { player_class: "goalie", exp_win_prob: 0.5, act_win: 1, ...extra }),
+      row(i + 1, "naive_last5", 0, 0, { player_class: "goalie", exp_win_prob: 0.5, act_win: 1 }),
+    ]);
+    expect(comparison(rows).binary.win).toEqual({ source: { n: 0, brier: null, reliability: [] }, reference: { n: 0, brier: null, reliability: [] },
+      exclusions: { missingPrediction: 2, missingOutcome: 2, conflictingOutcome: 1 } });
+    expect(comparison(rows).binary.start!.source.n).toBe(0);
+  });
+
+  it("includes exact zero/one probabilities and excludes an unsettled event partner", () => {
+    const rows = [row(1, "bridge_exact", 0, 0, { player_class: "goalie", start_probability: 1, started: true }),
+      row(1, "naive_last5", 0, 0, { player_class: "goalie", start_probability: 0, started: true }),
+      row(2, "bridge_exact", 0, 0, { player_class: "goalie", start_probability: 0, started: false }),
+      row(2, "naive_last5", 0, 0, { player_class: "goalie", start_probability: 1, started: false, settled_at: null })];
+    expect(comparison(rows).binary.start).toMatchObject({ source: { n: 1, brier: 0, reliability: [{ bin: 9, predicted: 1, observed: 1 }] },
+      reference: { n: 1, brier: 1, reliability: [{ bin: 0, predicted: 0, observed: 1 }] } });
   });
 });
